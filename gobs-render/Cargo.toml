@@ -1,0 +1,17 @@
+[package]
+name = "gobs-render"
+version = "0.1.0"
+authors = ["franckv <franck.vdl@gmail.com>"]
+
+[lib]
+name = "gobs_render"
+path = "src/lib.rs"
+
+[dependencies]
+vulkano = {path = "../../../vulkano/vulkano", version="0.9"}
+vulkano-shader-derive = {path = "../../../vulkano/vulkano-shader-derive", version="0.9"}
+vulkano-win = {path = "../../../vulkano/vulkano-win", version="0.9"}
+winit = "0.11"
+cgmath = "0.16"
+rusttype = "0.5.2"
+image = "0.18"
