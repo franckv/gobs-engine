@@ -444,7 +444,7 @@ impl App {
 }
 
 #[test]
-pub fn main() {
+pub fn showcase() {
     let mut engine = Application::new();
     engine.run(App::new());
 }
