@@ -23,9 +23,9 @@ impl Camera {
             projection: Matrix4::identity(),
             view: Matrix4::identity(),
             mode: ProjectionMode::ORTHO,
-            fov: 0.,
-            near: 0.,
-            far: 0.
+            fov: 60.,
+            near: -10.,
+            far: 10.
         }
     }
 
