@@ -19,13 +19,13 @@ impl Tile {
 pub struct TileMap {
     mesh: Arc<Mesh>,
     texture: Arc<Texture>,
-    tile_size: [u32; 2],
-    size: [u32; 2]
+    tile_size: [usize; 2],
+    size: [usize; 2]
 }
 
 impl TileMap {
     pub fn new(asset_manager: &mut AssetManager, texture: Arc<Texture>,
-        tile_size: [u32; 2]) -> TileMap {
+        tile_size: [usize; 2]) -> TileMap {
         let size = {
             let img_size = texture.size();
             [img_size[0] / tile_size[0], img_size[1] / tile_size[1]]
@@ -49,7 +49,7 @@ impl TileMap {
         .build()
     }
 
-    pub fn size(&self) -> [u32; 2]{
+    pub fn size(&self) -> [usize; 2]{
             self.size
     }
 }

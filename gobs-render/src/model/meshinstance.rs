@@ -51,7 +51,7 @@ impl MeshInstanceBuilder {
         self
     }
 
-    pub fn atlas(self, i: usize, j: usize, tile_size: [u32; 2]) -> MeshInstanceBuilder {
+    pub fn atlas(self, i: usize, j: usize, tile_size: [usize; 2]) -> MeshInstanceBuilder {
         let (ustep, vstep) = {
             let texture = self.texture.as_ref().unwrap();
             let img_size = texture.size();

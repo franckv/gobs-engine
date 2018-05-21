@@ -2,6 +2,7 @@ use std::sync::Arc;
 use std::vec::Vec;
 
 use render::color::Color;
+use render::font::Font;
 use render::model::{Mesh, MeshBuilder, MeshManager};
 use render::Renderer;
 use render::texture::{Texture, TextureLoader};
@@ -23,9 +24,15 @@ impl AssetManager {
         Arc::new(self.texture_loader.load_texture(path))
     }
 
-    pub fn load_texture_raw(&self, raw: &Vec<u8>, width: u32, height: u32)
+    pub fn load_texture_raw(&self, raw: &Vec<u8>, width: usize, height: usize)
     -> Arc<Texture> {
         Arc::new(self.texture_loader.load_texture_raw(raw, width, height))
+    }
+
+    pub fn load_font(&self, size: usize, path: &str) -> Font {
+        let font = Font::new(&self.texture_loader, size, path);
+
+        font
     }
 
     pub fn get_color_texture(&self, color: Color) -> Arc<Texture> {

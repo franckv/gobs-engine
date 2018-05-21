@@ -11,11 +11,10 @@ use std::io::{BufRead, BufReader};
 use cgmath::{Point3, Vector3};
 
 use render::color::Color;
-use render::model::{MeshInstance, MeshInstanceBuilder};
+use render::model::MeshInstanceBuilder;
 use render::scene::coord::SphericalCoord;
 use render::scene::light::LightBuilder;
 use render::scene::SceneGraph;
-use render::font::Font;
 
 use game::app::{Application, Run};
 use game::asset::{AssetManager, TileMap};
@@ -396,50 +395,21 @@ impl App {
         }
     }
 
-    fn get_text(&mut self, asset_manager: &mut AssetManager,
-        text: &str, size: usize, font: &Font) -> MeshInstance {
-        let glyphs = font.get_glyphs(text);
-
-        let width = Font::get_width(&glyphs);
-
-        let image_data = Font::rasterize(&glyphs, width, size, Color::yellow());
-
-        let texture = asset_manager.load_texture_raw(&image_data, width as u32,
-            size as u32);
-
-        let square = asset_manager.build_quad();
-
-        let mut instance = MeshInstanceBuilder::new(square.clone())
-            .texture(texture.clone())
-            .build();
-
-        let scale = width as f32 / size as f32;
-
-        instance.scale(scale, 1., 1.);
-
-        instance
-    }
-
     fn draw_font(&mut self, asset_manager: &mut AssetManager) {
         self.ortho(30.);
 
         let size: usize = 100;
 
-        let font = Font::new(size, &Self::asset("font.ttf"));
+        let font = asset_manager.load_font(size, &Self::asset("font.ttf"));
+        let mesh = asset_manager.build_cube();
 
-        let mut text1 = self.get_text(asset_manager, "Press space to go",
-            size, &font);
+        let mut text = MeshInstanceBuilder::new(mesh.clone())
+            .texture(font.texture())
+            .build();
 
-        text1.scale(1.5, 1.5, 1.);
+        text.scale(10., 10., 1.);
 
-        let mut text2 = self.get_text(asset_manager, "to the next example",
-            size, &font);
-
-        text2.scale(1.5, 1.5, 1.);
-        text2.translate((0., -2., 0.));
-
-        self.graph.add_instance(Arc::new(text1));
-        self.graph.add_instance(Arc::new(text2));
+        self.graph.add_instance(Arc::new(text));
     }
 }
 

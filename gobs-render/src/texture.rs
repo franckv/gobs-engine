@@ -30,7 +30,7 @@ impl TextureLoader {
         Texture::new(path, self.queue.clone())
     }
 
-    pub fn load_texture_raw(&self, raw: &Vec<u8>, width: u32, height: u32) -> Texture {
+    pub fn load_texture_raw(&self, raw: &Vec<u8>, width: usize, height: usize) -> Texture {
         Texture::from_raw(raw, width, height, self.queue.clone())
     }
 
@@ -42,14 +42,14 @@ impl TextureLoader {
 pub struct Texture {
     image: Arc<ImmutableImage<R8G8B8A8Srgb>>,
     sampler: Arc<Sampler>,
-    size: [u32; 2]
+    size: [usize; 2]
 }
 
 impl Texture {
     pub fn new(path: &str, queue: Arc<Queue>) -> Texture {
         let img = image::open(path).expect("Texture file not found");
 
-        let (width, height) = (img.width(), img.height());
+        let (width, height) = (img.width() as usize, img.height() as usize);
 
         let img_data = img.to_rgba().into_raw();
 
@@ -67,10 +67,10 @@ impl Texture {
         Self::from_raw(&img_data, 1, 1, queue)
     }
 
-    fn from_raw(img_data: &Vec<u8>, width: u32, height: u32, queue: Arc<Queue>)
+    fn from_raw(img_data: &Vec<u8>, width: usize, height: usize, queue: Arc<Queue>)
     -> Texture {
         let (image, future) = ImmutableImage::from_iter(img_data.iter().cloned(),
-        Dim2d { width: width, height: height},
+        Dim2d { width: width as u32, height: height as u32},
         R8G8B8A8Srgb,
         queue.clone()).expect("Failed to load texture");
 
@@ -81,7 +81,7 @@ impl Texture {
         Texture {
             image: image,
             sampler: Self::create_sampler(queue.device().clone()),
-            size: dim
+            size: [dim[0] as usize, dim[1] as usize]
         }
     }
 
@@ -104,7 +104,7 @@ impl Texture {
         self.sampler.clone()
     }
 
-    pub fn size(&self) -> &[u32; 2] {
+    pub fn size(&self) -> &[usize; 2] {
         &self.size
     }
 }

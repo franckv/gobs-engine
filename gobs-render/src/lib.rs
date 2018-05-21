@@ -7,6 +7,7 @@ extern crate winit;
 extern crate image;
 extern crate rusttype;
 extern crate cgmath;
+extern crate unicode_normalization;
 
 pub mod color;
 pub mod display;
