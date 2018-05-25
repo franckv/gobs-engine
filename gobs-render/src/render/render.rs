@@ -1,5 +1,6 @@
 use std::mem;
 use std::sync::Arc;
+use std::slice::Iter;
 
 use vulkano::buffer::{BufferUsage, ImmutableBuffer};
 use vulkano::command_buffer::{AutoCommandBufferBuilder, DrawIndirectCommand, DynamicState};
@@ -98,13 +99,15 @@ impl Renderer {
     }
 
     pub fn draw_list(&mut self, builder: AutoCommandBufferBuilder,
-        camera: &Camera, light: &Light, instances: &Vec<Arc<MeshInstance>>)
+        camera: &Camera, light: &Light, instances: Iter<Arc<MeshInstance>>)
         -> AutoCommandBufferBuilder {
-        let instance_buffer = self.create_instance_buffer(instances);
-        let indirect_buffer = self.create_indirect_buffer(instances);
+        let instance_buffer = self.create_instance_buffer(instances.clone());
+        let indirect_buffer = self.create_indirect_buffer(instances.clone());
 
-        let mesh = instances.get(0).unwrap().mesh();
-        let texture = instances.get(0).unwrap().texture().unwrap();
+        // TODO: change this
+        let first = instances.as_slice().get(0).unwrap();
+        let mesh = first.mesh();
+        let texture = first.texture().unwrap();
 
         let set = self.shader.bind()
             .matrix(camera.combined())
@@ -150,7 +153,7 @@ impl Renderer {
         }).collect::<Vec<_>>()
     }
 
-    fn create_instance_buffer(&mut self, instances: &Vec<Arc<MeshInstance>>)
+    fn create_instance_buffer(&mut self, instances: Iter<Arc<MeshInstance>>)
     -> Arc<ImmutableBuffer<[Instance]>> {
         let mut instances_data: Vec<Instance> = Vec::new();
 
@@ -164,9 +167,9 @@ impl Renderer {
         instance_buffer
     }
 
-    fn create_indirect_buffer(&mut self, instances: &Vec<Arc<MeshInstance>>)
+    fn create_indirect_buffer(&mut self, instances: Iter<Arc<MeshInstance>>)
     -> Arc<ImmutableBuffer<[DrawIndirectCommand]>> {
-        let mesh = instances.get(0).unwrap().mesh();
+        let mesh = instances.as_slice().get(0).unwrap().mesh();
 
         let indirect_data = vec![DrawIndirectCommand {
             vertex_count: mesh.size() as u32,

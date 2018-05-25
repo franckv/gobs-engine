@@ -109,7 +109,7 @@ impl Batch {
             let camera = graph.camera();
             let light = graph.light();
 
-            let new_builder = self.renderer.draw_list(builder.unwrap(), camera, light, &list);
+            let new_builder = self.renderer.draw_list(builder.unwrap(), camera, light, list.iter());
 
             self.builder = Some(new_builder);
         }

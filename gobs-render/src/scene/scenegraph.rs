@@ -1,4 +1,5 @@
 use std::sync::Arc;
+use std::slice::Iter;
 
 use model::MeshInstance;
 use scene::camera::Camera;
@@ -39,8 +40,8 @@ impl SceneGraph {
         self.instances.push(instance);
     }
 
-    pub fn instances(&self) -> &Vec<Arc<MeshInstance>> {
-        &self.instances
+    pub fn instances(&self) -> Iter<Arc<MeshInstance>> {
+        self.instances.iter()
     }
 
     pub fn clear(&mut self) {
