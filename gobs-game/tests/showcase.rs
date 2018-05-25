@@ -23,6 +23,7 @@ use game::timer::Timer;
 
 pub enum Example {
     FONT = 0,
+    FONTMAP,
     TILE,
     CHECK,
     MAP,
@@ -201,6 +202,7 @@ impl App {
 
             match self.selected {
                 Example::FONT => self.draw_font(asset_manager),
+                Example::FONTMAP => self.draw_fontmap(asset_manager),
                 Example::TILE => self.draw_tile(asset_manager),
                 Example::CHECK => self.draw_checkboard(asset_manager),
                 Example::MAP => self.draw_map(asset_manager),
@@ -216,7 +218,8 @@ impl App {
 
     fn next_scene(&mut self) {
         self.selected = match self.selected {
-            Example::FONT => Example::TILE,
+            Example::FONT => Example::FONTMAP,
+            Example::FONTMAP => Example::TILE,
             Example::TILE => Example::CHECK,
             Example::CHECK => Example::MAP,
             Example::MAP => Example::DEPTH,
@@ -396,12 +399,35 @@ impl App {
     }
 
     fn draw_font(&mut self, asset_manager: &mut AssetManager) {
+        self.ortho(1.);
+
+        let size: usize = 30;
+
+        let font = asset_manager.load_font(size, &Self::asset("font.ttf"));
+        let square = asset_manager.build_quad();
+
+        let chars = font.layout("Press space to go to the new example");
+
+        for c in chars {
+            let mut instance = MeshInstanceBuilder::new(square.clone())
+                .texture(font.texture())
+                .region(*c.region())
+                .build();
+
+            instance.transform(c.transform());
+            instance.translate((-0.5, 0., 0.));
+            self.graph.add_instance(Arc::new(instance));
+        }
+
+    }
+
+    fn draw_fontmap(&mut self, asset_manager: &mut AssetManager) {
         self.ortho(30.);
 
         let size: usize = 100;
 
         let font = asset_manager.load_font(size, &Self::asset("font.ttf"));
-        let mesh = asset_manager.build_cube();
+        let mesh = asset_manager.build_quad();
 
         let mut text = MeshInstanceBuilder::new(mesh.clone())
             .texture(font.texture())
