@@ -44,7 +44,7 @@ impl AssetManager {
     }
 
     pub fn build_quad(&mut self) -> Arc<Mesh> {
-        let mut builder = self.mesh_manager.get_mesh_builder();
+        let builder = self.mesh_manager.get_mesh_builder();
 
         let v1 = [-0.5, 0.5, 0.];
         let v2 = [0.5, 0.5, 0.];
@@ -58,18 +58,18 @@ impl AssetManager {
         let t3 = [0., 1.];
         let t4 = [1., 1.];
 
-        builder.add_vertex(v1, n, t1);
-        builder.add_vertex(v3, n, t3);
-        builder.add_vertex(v4, n, t4);
-        builder.add_vertex(v4, n, t4);
-        builder.add_vertex(v2, n, t2);
-        builder.add_vertex(v1, n, t1);
-
-        builder.build()
+        builder
+            .add_vertex(v1, n, t1)
+            .add_vertex(v3, n, t3)
+            .add_vertex(v4, n, t4)
+            .add_vertex(v4, n, t4)
+            .add_vertex(v2, n, t2)
+            .add_vertex(v1, n, t1)
+            .build()
     }
 
     pub fn build_triangle(&mut self) -> Arc<Mesh> {
-        let mut builder = self.mesh_manager.get_mesh_builder();
+        let builder = self.mesh_manager.get_mesh_builder();
 
         let v1 = [-0.5, -0.5, 0.];
         let v2 = [0.5, -0.5, 0.];
@@ -81,15 +81,15 @@ impl AssetManager {
         let t2 = [1., 1.];
         let t3 = [0.5, 0.];
 
-        builder.add_vertex(v1, n, t1);
-        builder.add_vertex(v2, n, t2);
-        builder.add_vertex(v3, n, t3);
-
-        builder.build()
+        builder
+            .add_vertex(v1, n, t1)
+            .add_vertex(v2, n, t2)
+            .add_vertex(v3, n, t3)
+            .build()
     }
 
     pub fn build_cube(&mut self) -> Arc<Mesh> {
-        let mut builder = self.mesh_manager.get_mesh_builder();
+        let builder = self.mesh_manager.get_mesh_builder();
 
 /*
             5 ----- 6
@@ -120,54 +120,55 @@ impl AssetManager {
         let t3 = [0., 1.];
         let t4 = [1., 1.];
 
-        // F
-        builder.add_vertex(v3, n1, t3);
-        builder.add_vertex(v4, n1, t4);
-        builder.add_vertex(v2, n1, t2);
-        builder.add_vertex(v3, n1, t3);
-        builder.add_vertex(v2, n1, t2);
-        builder.add_vertex(v1, n1, t1);
+        builder
+            // F
+            .add_vertex(v3, n1, t3)
+            .add_vertex(v4, n1, t4)
+            .add_vertex(v2, n1, t2)
+            .add_vertex(v3, n1, t3)
+            .add_vertex(v2, n1, t2)
+            .add_vertex(v1, n1, t1)
 
-        // B
-        builder.add_vertex(v8, n2, t3);
-        builder.add_vertex(v7, n2, t4);
-        builder.add_vertex(v5, n2, t2);
-        builder.add_vertex(v8, n2, t3);
-        builder.add_vertex(v5, n2, t2);
-        builder.add_vertex(v6, n2, t1);
+            // B
+            .add_vertex(v8, n2, t3)
+            .add_vertex(v7, n2, t4)
+            .add_vertex(v5, n2, t2)
+            .add_vertex(v8, n2, t3)
+            .add_vertex(v5, n2, t2)
+            .add_vertex(v6, n2, t1)
 
-        // L
-        builder.add_vertex(v7, n3, t3);
-        builder.add_vertex(v3, n3, t4);
-        builder.add_vertex(v1, n3, t2);
-        builder.add_vertex(v7, n3, t3);
-        builder.add_vertex(v1, n3, t2);
-        builder.add_vertex(v5, n3, t1);
+            // L
+            .add_vertex(v7, n3, t3)
+            .add_vertex(v3, n3, t4)
+            .add_vertex(v1, n3, t2)
+            .add_vertex(v7, n3, t3)
+            .add_vertex(v1, n3, t2)
+            .add_vertex(v5, n3, t1)
 
-        // R
-        builder.add_vertex(v4, n4, t3);
-        builder.add_vertex(v8, n4, t4);
-        builder.add_vertex(v6, n4, t2);
-        builder.add_vertex(v4, n4, t3);
-        builder.add_vertex(v6, n4, t2);
-        builder.add_vertex(v2, n4, t1);
+            // R
+            .add_vertex(v4, n4, t3)
+            .add_vertex(v8, n4, t4)
+            .add_vertex(v6, n4, t2)
+            .add_vertex(v4, n4, t3)
+            .add_vertex(v6, n4, t2)
+            .add_vertex(v2, n4, t1)
 
-        // U
-        builder.add_vertex(v1, n5, t3);
-        builder.add_vertex(v2, n5, t4);
-        builder.add_vertex(v6, n5, t2);
-        builder.add_vertex(v1, n5, t3);
-        builder.add_vertex(v6, n5, t2);
-        builder.add_vertex(v5, n5, t1);
+            // U
+            .add_vertex(v1, n5, t3)
+            .add_vertex(v2, n5, t4)
+            .add_vertex(v6, n5, t2)
+            .add_vertex(v1, n5, t3)
+            .add_vertex(v6, n5, t2)
+            .add_vertex(v5, n5, t1)
 
-        //D
-        builder.add_vertex(v7, n6, t3);
-        builder.add_vertex(v8, n6, t4);
-        builder.add_vertex(v4, n6, t2);
-        builder.add_vertex(v7, n6, t3);
-        builder.add_vertex(v4, n6, t2);
-        builder.add_vertex(v3, n6, t1);
+            //D
+            .add_vertex(v7, n6, t3)
+            .add_vertex(v8, n6, t4)
+            .add_vertex(v4, n6, t2)
+            .add_vertex(v7, n6, t3)
+            .add_vertex(v4, n6, t2)
+            .add_vertex(v3, n6, t1)
 
-        builder.build()
+            .build()
     }
 }

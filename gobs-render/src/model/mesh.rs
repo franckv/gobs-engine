@@ -51,12 +51,14 @@ impl MeshBuilder {
         }
     }
 
-    pub fn add_vertex(&mut self, position: [f32; 3], normal: [f32; 3], tex_uv: [f32; 2]) {
+    pub fn add_vertex(mut self, position: [f32; 3], normal: [f32; 3], tex_uv: [f32; 2]) -> Self {
         let vertex = Vertex { position: position, normal: normal, tex_uv: tex_uv };
 
         if let Some(ref mut v) = self.vlist {
             v.push(vertex);
         }
+
+        self
     }
 
     pub fn build(mut self) -> Arc<Mesh> {
