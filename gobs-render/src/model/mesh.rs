@@ -15,6 +15,12 @@ pub struct Vertex {
 
 impl_vertex!(Vertex, position, normal, tex_uv);
 
+#[derive(Copy, Clone)]
+pub enum PrimitiveType {
+    Triangle,
+    Line
+}
+
 pub struct MeshManager {
     id: usize,
     context: Arc<Context>
@@ -36,6 +42,7 @@ impl MeshManager {
 
 pub struct MeshBuilder {
     id: usize,
+    primitive_type: PrimitiveType,
     vlist: Option<Vec<Vertex>>,
     ilist: Option<Vec<u32>>,
     queue: Arc<Queue>
@@ -45,6 +52,7 @@ impl MeshBuilder {
     fn new(id: usize, queue: Arc<Queue>) -> Self {
         MeshBuilder {
             id: id,
+            primitive_type: PrimitiveType::Triangle,
             vlist: Some(Vec::new()),
             ilist: None,
             queue: queue
@@ -61,20 +69,27 @@ impl MeshBuilder {
         self
     }
 
+    pub fn line(mut self) -> Self {
+        self.primitive_type = PrimitiveType::Line;
+
+        self
+    }
+
     pub fn build(mut self) -> Arc<Mesh> {
-        Mesh::new(self.id, self.vlist.take().unwrap(), self.ilist.take(), self.queue.clone())
+        Mesh::new(self.id, self.primitive_type, self.vlist.take().unwrap(), self.ilist.take(), self.queue.clone())
     }
 }
 
 pub struct Mesh {
     id: usize,
     size: usize,
+    primitive_type: PrimitiveType,
     vbuf: Arc<ImmutableBuffer<[Vertex]>>,
     ibuf: Option<Arc<ImmutableBuffer<[u32]>>>
 }
 
 impl Mesh {
-    fn new(id: usize, vlist: Vec<Vertex>, ilist: Option<Vec<u32>>, queue: Arc<Queue>)
+    fn new(id: usize, primitive_type: PrimitiveType, vlist: Vec<Vertex>, ilist: Option<Vec<u32>>, queue: Arc<Queue>)
     -> Arc<Mesh> {
         let size = vlist.len();
         let (vbuf, future) = ImmutableBuffer::from_iter(vlist.into_iter(),
@@ -83,6 +98,7 @@ impl Mesh {
         let mut mesh = Mesh {
             id: id,
             size: size,
+            primitive_type: primitive_type,
             vbuf: vbuf,
             ibuf: None
         };
@@ -106,6 +122,10 @@ impl Mesh {
 
     pub fn size(&self) -> usize {
         self.size
+    }
+
+    pub fn primitive_type(&self) -> PrimitiveType {
+            self.primitive_type
     }
 
     pub fn buffer(&self) -> Arc<ImmutableBuffer<[Vertex]>> {

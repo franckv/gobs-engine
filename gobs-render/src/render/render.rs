@@ -124,6 +124,7 @@ impl Renderer {
         let first = instances.as_slice().get(0).unwrap();
         let mesh = first.mesh();
         let texture = first.texture().unwrap();
+        let primitive = mesh.primitive_type();
 
         let set = self.shader.bind()
             .matrix(camera.combined())
@@ -142,8 +143,9 @@ impl Renderer {
             .. DynamicState::none()
         };
 
+        let pipeline = self.shader.pipeline(primitive);
         builder.draw_indirect(
-            self.shader.pipeline(), dynamic_state,
+            pipeline, dynamic_state,
             vec![mesh.buffer(), instance_buffer],
             indirect_buffer, set.clone(), ()).unwrap()
     }

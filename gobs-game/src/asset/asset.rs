@@ -1,6 +1,8 @@
 use std::sync::Arc;
 use std::vec::Vec;
 
+use cgmath::Point3;
+
 use render::color::Color;
 use render::font::Font;
 use render::model::{Mesh, MeshBuilder, MeshManager};
@@ -89,6 +91,24 @@ impl AssetManager {
             .add_vertex(v1, n, t1)
             .add_vertex(v2, n, t2)
             .add_vertex(v3, n, t3)
+            .build()
+    }
+
+    pub fn build_line(&mut self, a: Point3<f32>, b: Point3<f32>) -> Arc<Mesh> {
+        let builder = self.mesh_manager.get_mesh_builder();
+
+        let v1 = [a.x, a.y, a.z];
+        let v2 = [b.x, b.y, b.z];
+
+        let n = [0., 0., 1.];
+
+        let t1 = [0., 0.];
+        let t2 = [1., 1.];
+
+        builder
+            .add_vertex(v1, n, t1)
+            .add_vertex(v2, n, t2)
+            .line()
             .build()
     }
 

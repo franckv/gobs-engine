@@ -11,7 +11,7 @@ use vulkano::pipeline::{GraphicsPipeline, GraphicsPipelineAbstract};
 use vulkano::pipeline::vertex::OneVertexOneInstanceDefinition;
 
 use scene::light::Light;
-use model::{Vertex, Instance};
+use model::{Instance, PrimitiveType, Vertex};
 use texture::Texture;
 
 mod vs {
@@ -100,6 +100,7 @@ impl<'a> DescriptorBuilder<'a> {
 
 pub struct Shader {
     pipeline: Arc<GraphicsPipelineAbstract + Send + Sync>,
+    pipeline_line: Arc<GraphicsPipelineAbstract + Send + Sync>,
     descriptor_sets_pool: FixedSizeDescriptorSetsPool<Arc<GraphicsPipelineAbstract + Send + Sync>>,
     matrix_buffers: CpuBufferPool<vs::ty::MatrixData>,
     light_buffers: CpuBufferPool<vs::ty::LightData>
@@ -108,7 +109,10 @@ pub struct Shader {
 impl Shader {
     pub fn new(render_pass: Arc<RenderPassAbstract + Send + Sync>, device: Arc<Device>)
     -> Shader {
-        let pipeline = Self::create_pipeline(render_pass, device.clone());
+        let pipeline = Self::create_pipeline(render_pass.clone(), device.clone(),
+            PrimitiveType::Triangle);
+        let pipeline_line = Self::create_pipeline(render_pass, device.clone(),
+            PrimitiveType::Line);
 
         let descriptor_sets_pool = FixedSizeDescriptorSetsPool::new(pipeline.clone(), 0);
 
@@ -117,6 +121,7 @@ impl Shader {
 
         Shader {
             pipeline: pipeline,
+            pipeline_line: pipeline_line,
             descriptor_sets_pool: descriptor_sets_pool,
             matrix_buffers: matrix_buffers,
             light_buffers: light_buffers
@@ -124,13 +129,21 @@ impl Shader {
     }
 
     fn create_pipeline(render_pass: Arc<RenderPassAbstract + Send + Sync>,
-        device: Arc<Device>) -> Arc<GraphicsPipelineAbstract + Send + Sync> {
+        device: Arc<Device>, primitive: PrimitiveType)
+        -> Arc<GraphicsPipelineAbstract + Send + Sync> {
         let vshader = vs::Shader::load(device.clone()).expect("error");
         let fshader = fs::Shader::load(device.clone()).expect("error");
 
-        Arc::new(GraphicsPipeline::start()
+        let mut builder = GraphicsPipeline::start()
             .vertex_input(OneVertexOneInstanceDefinition::<Vertex, Instance>::new())
-            .vertex_shader(vshader.main_entry_point(), ())
+            .vertex_shader(vshader.main_entry_point(), ());
+
+        builder = match primitive {
+            PrimitiveType::Triangle => builder,
+            PrimitiveType::Line => builder.line_list(),
+        };
+
+        Arc::new(builder
             .viewports_dynamic_scissors_irrelevant(1)
             .fragment_shader(fshader.main_entry_point(), ())
             .blend_alpha_blending()
@@ -140,8 +153,12 @@ impl Shader {
             .build(device.clone()).unwrap())
     }
 
-    pub fn pipeline(&self) -> Arc<GraphicsPipelineAbstract + Send + Sync> {
-        self.pipeline.clone()
+    pub fn pipeline(&self, primitive: PrimitiveType)
+    -> Arc<GraphicsPipelineAbstract + Send + Sync> {
+        match primitive {
+            PrimitiveType::Triangle => self.pipeline.clone(),
+            PrimitiveType::Line => self.pipeline_line.clone()
+        }
     }
 
     pub fn bind(&mut self) -> DescriptorBuilder {
