@@ -4,14 +4,14 @@ use std::slice::Iter;
 
 use vulkano::buffer::{BufferUsage, ImmutableBuffer};
 use vulkano::command_buffer::{AutoCommandBufferBuilder, DrawIndirectCommand, DynamicState};
-use vulkano::device::{Device, Queue};
+use vulkano::device::Device;
 use vulkano::format::Format;
 use vulkano::framebuffer::{Framebuffer, FramebufferAbstract, RenderPassAbstract};
 use vulkano::image::AttachmentImage;
 use vulkano::image::swapchain::SwapchainImage;
 use vulkano::pipeline::viewport::Viewport;
 use vulkano::swapchain;
-use vulkano::swapchain::{AcquireError, Swapchain};
+use vulkano::swapchain::{AcquireError, PresentMode, SurfaceTransform, Swapchain};
 use vulkano::sync::GpuFuture;
 
 use winit::Window;
@@ -20,34 +20,42 @@ use scene::camera::Camera;
 use scene::light::Light;
 use model::{Instance, MeshInstance};
 use render::shader::Shader;
+use context::Context;
+use display::Display;
 
 pub struct Renderer {
-    device: Arc<Device>,
-    queue: Arc<Queue>,
+    context: Arc<Context>,
+    display: Arc<Display>,
     swapchain: Arc<Swapchain<Window>>,
-    images: Vec<Arc<SwapchainImage<Window>>>,
-    dimensions: [u32; 2],
     framebuffers: Vec<Arc<FramebufferAbstract + Send + Sync>>,
     render_pass: Arc<RenderPassAbstract + Send + Sync>,
     shader: Shader
 }
 
 impl Renderer {
-    pub fn new(device: Arc<Device>, queue: Arc<Queue>,
-               swapchain: Arc<Swapchain<Window>>, images: Vec<Arc<SwapchainImage<Window>>>,
-               dimensions: [u32; 2]) -> Renderer {
-        let render_pass = Self::create_render_pass(device.clone(), swapchain.format());
+    pub fn new(context: Arc<Context>, display: Arc<Display>) -> Renderer {
+        let (swapchain, images) = {
+            let caps = display.surface().capabilities(
+                context.device().physical_device()).expect("error");
+            let alpha = caps.supported_composite_alpha.iter().next().unwrap();
+            let format = caps.supported_formats[0].0;
 
-        let shader = Shader::new(render_pass.clone(), device.clone());
+            Swapchain::new(context.device(), display.surface(), caps.min_image_count,
+                format, display.dimensions(), 1, caps.supported_usage_flags, &context.queue(),
+                SurfaceTransform::Identity, alpha, PresentMode::Fifo, true, None).expect("error")
+        };
 
-        let framebuffers = Self::create_framebuffer(render_pass.clone(), device.clone(), dimensions, &images);
+        let render_pass = Self::create_render_pass(context.device(), swapchain.format());
+
+        let shader = Shader::new(render_pass.clone(), context.device());
+
+        let framebuffers = Self::create_framebuffer(render_pass.clone(), context.clone(),
+            swapchain.dimensions(), images);
 
         Renderer {
-            device: device,
-            queue: queue,
+            context: context,
+            display: display,
             swapchain: swapchain,
-            images: images,
-            dimensions: dimensions,
             framebuffers: framebuffers,
             render_pass: render_pass,
             shader: shader
@@ -60,6 +68,27 @@ impl Renderer {
 
     pub fn swapchain(&self) -> Arc<Swapchain<Window>> {
         self.swapchain.clone()
+    }
+
+    pub fn new_frame(&mut self) -> Result<(usize, Box<GpuFuture>), AcquireError> {
+        let (idx, acquire_future) = match swapchain::acquire_next_image(
+            self.swapchain.clone(), None) {
+            Ok(r) => r,
+            Err(AcquireError::OutOfDate) => {
+                println!("OutOfDate");
+                return Err(AcquireError::OutOfDate)
+            },
+            Err(err) => panic!("{:?}", err)
+        };
+
+        Ok((idx, Box::new(acquire_future)))
+    }
+
+    pub fn new_builder(&mut self, swapchain_idx: usize) -> AutoCommandBufferBuilder {
+        AutoCommandBufferBuilder::primary_one_time_submit(self.context.device(),
+            self.context.queue().family()).unwrap()
+        .begin_render_pass(self.framebuffer(swapchain_idx),
+            false, vec![[0., 0., 1., 1.].into(), 1f32.into()]).unwrap()
     }
 
     fn create_render_pass(device: Arc<Device>, format: Format) -> Arc<RenderPassAbstract + Send + Sync> {
@@ -85,19 +114,6 @@ impl Renderer {
         ).unwrap())
     }
 
-    pub fn new_frame(&mut self) -> Result<(usize, Box<GpuFuture>), AcquireError> {
-        let (idx, acquire_future) = match swapchain::acquire_next_image(self.swapchain.clone(), None) {
-            Ok(r) => r,
-            Err(AcquireError::OutOfDate) => {
-                println!("OutOfDate");
-                return Err(AcquireError::OutOfDate)
-            },
-            Err(err) => panic!("{:?}", err)
-        };
-
-        Ok((idx, Box::new(acquire_future)))
-    }
-
     pub fn draw_list(&mut self, builder: AutoCommandBufferBuilder,
         camera: &Camera, light: &Light, instances: Iter<Arc<MeshInstance>>)
         -> AutoCommandBufferBuilder {
@@ -115,10 +131,12 @@ impl Renderer {
             .texture(texture)
             .get();
 
+        let dim = self.swapchain.dimensions();
+
         let dynamic_state = DynamicState {
             viewports: Some(vec![Viewport {
                 origin: [0., 0.],
-                dimensions: [self.dimensions[0] as f32, self.dimensions[1] as f32],
+                dimensions: [dim[0] as f32, dim[1] as f32],
                 depth_range: 0.0 .. 1.0,
             }]),
             .. DynamicState::none()
@@ -130,19 +148,12 @@ impl Renderer {
             indirect_buffer, set.clone(), ()).unwrap()
     }
 
-    pub fn device(&self) -> Arc<Device> {
-        self.device.clone()
-    }
-
-    pub fn queue(&self) -> Arc<Queue> {
-        self.queue.clone()
-    }
-
     fn create_framebuffer(render_pass: Arc<RenderPassAbstract + Send + Sync>,
-        device: Arc<Device>, dimensions: [u32; 2], images: &Vec<Arc<SwapchainImage<Window>>>)
+        context: Arc<Context>, dimensions: [u32; 2],
+        images: Vec<Arc<SwapchainImage<Window>>>)
         -> Vec<Arc<FramebufferAbstract + Send + Sync>> {
 
-        let depth_buffer = AttachmentImage::transient(device.clone(),
+        let depth_buffer = AttachmentImage::transient(context.device(),
             dimensions.clone(), Format::D16Unorm).unwrap();
 
         images.iter().map(|image| {
@@ -162,7 +173,7 @@ impl Renderer {
         }
 
         let (instance_buffer, _future) = ImmutableBuffer::from_iter(instances_data.into_iter(),
-        BufferUsage::vertex_buffer(), self.queue.clone()).unwrap();
+        BufferUsage::vertex_buffer(), self.context.queue()).unwrap();
 
         instance_buffer
     }
@@ -179,22 +190,18 @@ impl Renderer {
         }];
 
         let (indirect_buffer, _future) = ImmutableBuffer::from_iter(indirect_data.into_iter(),
-        BufferUsage::indirect_buffer(), self.queue.clone()).unwrap();
+        BufferUsage::indirect_buffer(), self.context.queue()).unwrap();
 
         indirect_buffer
     }
 
-    pub fn resize(&mut self, width: u32, height: u32) {
-        println!("Resize");
-        self.dimensions[0] = width;
-        self.dimensions[1] = height;
-
-        let (swapchain, images) = self.swapchain.recreate_with_dimension(self.dimensions).unwrap();
+    pub fn resize(&mut self) {
+        let (swapchain, images) = self.swapchain.recreate_with_dimension(
+            self.display.dimensions()).unwrap();
 
         mem::replace(&mut self.swapchain, swapchain);
-        mem::replace(&mut self.images, images);
 
-        self.framebuffers = Self::create_framebuffer(self.render_pass.clone(), self.device.clone(),
-            self.dimensions, &self.images)
+        self.framebuffers = Self::create_framebuffer(self.render_pass.clone(),
+            self.context.clone(), self.swapchain.dimensions(), images)
     }
 }

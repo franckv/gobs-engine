@@ -3,14 +3,16 @@ use std::mem;
 use std::sync::Arc;
 
 use vulkano::command_buffer::{AutoCommandBufferBuilder};
-use vulkano::device::Queue;
 use vulkano::sync::{GpuFuture, now, FlushError};
 
+use context::Context;
+use display::Display;
 use render::Renderer;
 use scene::SceneGraph;
 
 pub struct Batch {
     renderer: Renderer,
+    context: Arc<Context>,
     builder: Option<AutoCommandBufferBuilder>,
     last_frame: Box<GpuFuture>,
     next_frame: Box<GpuFuture>,
@@ -18,10 +20,13 @@ pub struct Batch {
 }
 
 impl Batch {
-    pub fn new(renderer: Renderer) -> Self {
-        let device = renderer.device();
+    pub fn new(display: Arc<Display>, context: Arc<Context>) -> Self {
+        let renderer = Renderer::new(context.clone(), display.clone());
+        let device = context.device();
+
         Batch {
             renderer: renderer,
+            context: context,
             builder: None,
             last_frame: Box::new(now(device.clone())) as Box<GpuFuture>,
             next_frame: Box::new(now(device)) as Box<GpuFuture>,
@@ -36,14 +41,11 @@ impl Batch {
             self.next_frame = future;
             self.swapchain_idx = id;
 
-            let builder =
-                AutoCommandBufferBuilder::primary_one_time_submit(self.renderer.device(),
-                self.renderer.queue().family()).unwrap()
-                .begin_render_pass(self.renderer.framebuffer(id), false, vec![[0., 0., 1., 1.].into(), 1f32.into()]).unwrap();
+            let builder = self.renderer.new_builder(id);
 
             self.builder = Some(builder);
         } else {
-            self.builder = None
+            self.builder = None;
         }
     }
 
@@ -56,8 +58,8 @@ impl Batch {
 
         let command_buffer = builder.unwrap().end_render_pass().unwrap().build().unwrap();
 
-        let device = self.renderer.device();
-        let queue = self.renderer.queue();
+        let device = self.context.device();
+        let queue = self.context.queue();
         let swapchain = self.renderer.swapchain();
 
         let last_frame = mem::replace(&mut self.last_frame, Box::new(now(device.clone())) as Box<GpuFuture>);
@@ -115,11 +117,7 @@ impl Batch {
         }
     }
 
-    pub fn renderer_mut(&mut self) -> &mut Renderer {
-        &mut self.renderer
-    }
-
-    pub fn queue(&self) -> Arc<Queue> {
-        self.renderer.queue()
+    pub fn resize(&mut self) {
+        self.renderer.resize();
     }
 }

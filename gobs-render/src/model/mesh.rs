@@ -4,7 +4,7 @@ use vulkano::buffer::{BufferUsage, ImmutableBuffer};
 use vulkano::device::Queue;
 use vulkano::sync::GpuFuture;
 
-use render::Renderer;
+use context::Context;
 
 #[derive(Copy, Clone)]
 pub struct Vertex {
@@ -17,20 +17,20 @@ impl_vertex!(Vertex, position, normal, tex_uv);
 
 pub struct MeshManager {
     id: usize,
-    queue: Arc<Queue>
+    context: Arc<Context>
 }
 
 impl MeshManager {
-    pub fn new(renderer: &Renderer) -> MeshManager {
+    pub fn new(context: Arc<Context>) -> MeshManager {
         MeshManager {
             id: 0,
-            queue: renderer.queue()
+            context: context
         }
     }
 
     pub fn get_mesh_builder(&mut self) -> MeshBuilder {
         self.id += 1;
-        MeshBuilder::new(self.id, self.queue.clone())
+        MeshBuilder::new(self.id, self.context.queue())
     }
 }
 

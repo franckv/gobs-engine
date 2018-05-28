@@ -1,5 +1,7 @@
+use std::sync::Arc;
+
 use render::Batch;
-use render::display;
+use render::context;
 use render::display::Display;
 
 use asset::AssetManager;
@@ -7,17 +9,17 @@ use input::{Event, InputHandler, InputMap};
 
 pub struct Application {
     batch: Batch,
-    display: Display,
+    display: Arc<Display>,
     asset: AssetManager,
     input_handler: InputHandler
 }
 
 impl Application {
     pub fn new() -> Application {
-        let (events_loop, display, renderer) = display::init();
+        let (events_loop, context, display) = context::init();
 
-        let asset = AssetManager::new(&renderer);
-        let batch = Batch::new(renderer);
+        let asset = AssetManager::new(context.clone());
+        let batch = Batch::new(display.clone(), context.clone());
         let input_handler = InputHandler::new(events_loop);
 
         Application {
@@ -40,8 +42,8 @@ impl Application {
         &mut self.asset
     }
 
-    pub fn dimensions(&self) -> (u32, u32) {
-        self.display.get_dimensions()
+    pub fn dimensions(&self) -> [u32; 2] {
+        self.display.dimensions()
     }
 
     pub fn run<R>(&mut self, mut runnable: R) where R: Run {
@@ -54,9 +56,9 @@ impl Application {
 
             match event {
                 Event::RESIZE => {
-                    let (width, height) = self.display.get_dimensions();
+                    let [width, height] = self.display.dimensions();
 
-                    self.batch.renderer_mut().resize(width, height);
+                    self.batch.resize();
                     runnable.resize(width, height, self);
                 },
                 Event::CLOSE => {

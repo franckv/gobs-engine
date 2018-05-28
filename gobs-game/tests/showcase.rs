@@ -213,7 +213,7 @@ impl App {
         }
 
         let dim = engine.dimensions();
-        self.resize(dim.0, dim.1, engine)
+        self.resize(dim[0], dim[1], engine)
     }
 
     fn next_scene(&mut self) {

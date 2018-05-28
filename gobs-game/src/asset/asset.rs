@@ -4,8 +4,8 @@ use std::vec::Vec;
 use render::color::Color;
 use render::font::Font;
 use render::model::{Mesh, MeshBuilder, MeshManager};
-use render::Renderer;
 use render::texture::{Texture, TextureLoader};
+use render::context::Context;
 
 pub struct AssetManager {
     texture_loader: TextureLoader,
@@ -13,10 +13,10 @@ pub struct AssetManager {
 }
 
 impl AssetManager {
-    pub fn new(renderer: &Renderer) -> AssetManager {
+    pub fn new(context: Arc<Context>) -> AssetManager {
         AssetManager {
-            texture_loader: TextureLoader::new(&renderer),
-            mesh_manager: MeshManager::new(&renderer)
+            texture_loader: TextureLoader::new(context.clone()),
+            mesh_manager: MeshManager::new(context)
         }
     }
 

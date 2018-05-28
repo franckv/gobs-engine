@@ -13,29 +13,29 @@ use vulkano::sampler::Sampler;
 use vulkano::sync::GpuFuture;
 
 use color::Color;
-use render::Renderer;
+use context::Context;
 
 pub struct TextureLoader {
-    queue: Arc<Queue>
+    context: Arc<Context>
 }
 
 impl TextureLoader {
-    pub fn new(renderer: &Renderer) -> TextureLoader {
+    pub fn new(context: Arc<Context>) -> TextureLoader {
         TextureLoader {
-            queue: renderer.queue()
+            context: context
         }
     }
 
     pub fn load_texture(&self, path: &str) -> Texture {
-        Texture::new(path, self.queue.clone())
+        Texture::new(path, self.context.queue())
     }
 
     pub fn load_texture_raw(&self, raw: &Vec<u8>, width: usize, height: usize) -> Texture {
-        Texture::from_raw(raw, width, height, self.queue.clone())
+        Texture::from_raw(raw, width, height, self.context.queue())
     }
 
     pub fn load_color(&self, color: Color) -> Texture {
-        Texture::create_color(color, self.queue.clone())
+        Texture::create_color(color, self.context.queue())
     }
 }
 

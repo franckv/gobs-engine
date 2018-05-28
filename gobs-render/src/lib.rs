@@ -10,6 +10,7 @@ extern crate cgmath;
 extern crate unicode_normalization;
 
 pub mod color;
+pub mod context;
 pub mod display;
 pub mod font;
 pub mod model;
