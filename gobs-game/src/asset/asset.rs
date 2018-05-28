@@ -46,10 +46,12 @@ impl AssetManager {
     pub fn build_quad(&mut self) -> Arc<Mesh> {
         let builder = self.mesh_manager.get_mesh_builder();
 
-        let v1 = [-0.5, 0.5, 0.];
-        let v2 = [0.5, 0.5, 0.];
-        let v3 = [-0.5, -0.5, 0.];
-        let v4 = [0.5, -0.5, 0.];
+        let (top, bottom, left, right) = (0.5, -0.5, -0.5, 0.5);
+
+        let v1 = [left, top, 0.];
+        let v2 = [right, top, 0.];
+        let v3 = [left, bottom, 0.];
+        let v4 = [right, bottom, 0.];
 
         let n = [0., 0., 1.];
 
@@ -71,9 +73,11 @@ impl AssetManager {
     pub fn build_triangle(&mut self) -> Arc<Mesh> {
         let builder = self.mesh_manager.get_mesh_builder();
 
-        let v1 = [-0.5, -0.5, 0.];
-        let v2 = [0.5, -0.5, 0.];
-        let v3 = [0., 0.5, 0.];
+        let (top, bottom, left, right) = (0.5, -0.5, -0.5, 0.5);
+
+        let v1 = [left, bottom, 0.];
+        let v2 = [right, bottom, 0.];
+        let v3 = [(left + right) / 2., top, 0.];
 
         let n = [0., 0., 1.];
 
@@ -91,6 +95,8 @@ impl AssetManager {
     pub fn build_cube(&mut self) -> Arc<Mesh> {
         let builder = self.mesh_manager.get_mesh_builder();
 
+        let (top, bottom, left, right, front, back) = (0.5, -0.5, -0.5, 0.5, 0.5, -0.5);
+
 /*
             5 ----- 6
         1 ----- 2   |
@@ -99,14 +105,14 @@ impl AssetManager {
         3 ----- 4
 */
 
-        let v1 = [-0.5, 0.5, 0.5];
-        let v2 = [0.5, 0.5, 0.5];
-        let v3 = [-0.5, -0.5, 0.5];
-        let v4 = [0.5, -0.5, 0.5];
-        let v5 = [-0.5, 0.5, -0.5];
-        let v6 = [0.5, 0.5, -0.5];
-        let v7 = [-0.5, -0.5, -0.5];
-        let v8 = [0.5, -0.5, -0.5];
+        let v1 = [left, top, front];
+        let v2 = [right, top, front];
+        let v3 = [left, bottom, front];
+        let v4 = [right, bottom, front];
+        let v5 = [left, top, back];
+        let v6 = [right, top, back];
+        let v7 = [left, bottom, back];
+        let v8 = [right, bottom, back];
 
         let n1 = [0., 0., 1.];
         let n2 = [0., 0., -1.];
