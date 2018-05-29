@@ -18,6 +18,11 @@ mod vs {
     #[ty = "vertex"]
     #[path = "src/render/shader/vertex.glsl"]
     struct _Dummy;
+
+    #[cfg(debug_assertions)]
+    fn _reload() {
+        include_bytes!("shader/vertex.glsl");
+    }
 }
 
 mod fs {
@@ -25,12 +30,11 @@ mod fs {
     #[ty = "fragment"]
     #[path = "src/render/shader/fragment.glsl"]
     struct _Dummy;
-}
 
-// force recompilation if changed
-fn _reload() {
-    include_bytes!("shader/vertex.glsl");
-    include_bytes!("shader/fragment.glsl");
+    #[cfg(debug_assertions)]
+    fn _reload() {
+        include_bytes!("shader/fragment.glsl");
+    }
 }
 
 pub struct DescriptorBuilder<'a> {
