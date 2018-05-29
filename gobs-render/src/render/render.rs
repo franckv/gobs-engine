@@ -29,7 +29,6 @@ pub struct Renderer {
     swapchain: Arc<Swapchain<Window>>,
     framebuffers: Vec<Arc<FramebufferAbstract + Send + Sync>>,
     render_pass: Arc<RenderPassAbstract + Send + Sync>,
-    shader: Shader
 }
 
 impl Renderer {
@@ -47,8 +46,6 @@ impl Renderer {
 
         let render_pass = Self::create_render_pass(context.device(), swapchain.format());
 
-        let shader = Shader::new(render_pass.clone(), context.device());
-
         let framebuffers = Self::create_framebuffer(render_pass.clone(), context.clone(),
             swapchain.dimensions(), images);
 
@@ -58,7 +55,6 @@ impl Renderer {
             swapchain: swapchain,
             framebuffers: framebuffers,
             render_pass: render_pass,
-            shader: shader
         }
     }
 
@@ -115,8 +111,8 @@ impl Renderer {
     }
 
     pub fn draw_list(&mut self, builder: AutoCommandBufferBuilder,
-        camera: &Camera, light: &Light, instances: Iter<Arc<MeshInstance>>)
-        -> AutoCommandBufferBuilder {
+        camera: &Camera, light: &Light, shader: &mut Box<Shader>,
+        instances: Iter<Arc<MeshInstance>>) -> AutoCommandBufferBuilder {
         let instance_buffer = self.create_instance_buffer(instances.clone());
         let indirect_buffer = self.create_indirect_buffer(instances.clone());
 
@@ -126,11 +122,8 @@ impl Renderer {
         let texture = first.texture().unwrap();
         let primitive = mesh.primitive_type();
 
-        let set = self.shader.bind()
-            .matrix(camera.combined())
-            .light(light)
-            .texture(texture)
-            .get();
+        let set = shader.get_descriptor_set(self.render_pass.clone(),
+            camera.combined(), light, texture, primitive);
 
         let dim = self.swapchain.dimensions();
 
@@ -143,7 +136,8 @@ impl Renderer {
             .. DynamicState::none()
         };
 
-        let pipeline = self.shader.pipeline(primitive);
+        let pipeline = shader.get_pipeline(self.render_pass.clone(), primitive);
+
         builder.draw_indirect(
             pipeline, dynamic_state,
             vec![mesh.buffer(), instance_buffer],

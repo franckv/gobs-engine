@@ -1,17 +1,19 @@
+use std::boxed::Box;
 use std::sync::Arc;
 
 use cgmath::Matrix4;
 
 use vulkano::buffer::{BufferUsage, CpuBufferPool};
-use vulkano::descriptor::descriptor_set::FixedSizeDescriptorSetsPool;
+use vulkano::descriptor::descriptor_set::{FixedSizeDescriptorSetBuilder,
+    FixedSizeDescriptorSetsPool};
 use vulkano::descriptor::descriptor_set::DescriptorSet;
-use vulkano::device::Device;
 use vulkano::framebuffer::{Subpass, RenderPassAbstract};
 use vulkano::pipeline::{GraphicsPipeline, GraphicsPipelineAbstract};
 use vulkano::pipeline::vertex::OneVertexOneInstanceDefinition;
 
-use scene::light::Light;
+use context::Context;
 use model::{Instance, PrimitiveType, Texture, Vertex};
+use scene::light::Light;
 
 mod vs {
     #[derive(VulkanoShader)]
@@ -37,105 +39,69 @@ mod fs {
     }
 }
 
-pub struct DescriptorBuilder<'a> {
-    shader: &'a mut Shader,
-    matrix_data: Option<vs::ty::MatrixData>,
-    light_data: Option<vs::ty::LightData>,
-    texture: Option<Arc<Texture>>
+pub trait Shader {
+    fn get_pipeline(&mut self, render_pass: Arc<RenderPassAbstract + Send + Sync>,
+        primitive: PrimitiveType) -> Arc<GraphicsPipelineAbstract + Send + Sync>;
+
+    fn get_descriptor_set(&mut self, render_pass: Arc<RenderPassAbstract + Send + Sync>,
+        projection: Matrix4<f32>, light: &Light, texture: Arc<Texture>,
+        primitive: PrimitiveType) -> Arc<DescriptorSet + Send + Sync>;
 }
 
-impl<'a> DescriptorBuilder<'a> {
-    fn new(shader: &'a mut Shader) -> Self {
-        DescriptorBuilder {
-            shader: shader,
-            matrix_data: None,
-            light_data: None,
-            texture: None
+pub struct Pipeline {
+    pipeline: Arc<GraphicsPipelineAbstract + Send + Sync>,
+    descriptor_sets_pool: FixedSizeDescriptorSetsPool<Arc<GraphicsPipelineAbstract + Send + Sync>>
+}
+
+impl Pipeline {
+    pub fn new(pipeline: Arc<GraphicsPipelineAbstract + Send + Sync>) -> Self {
+        let descriptor_sets_pool = FixedSizeDescriptorSetsPool::new(pipeline.clone(), 0);
+
+        Pipeline {
+            pipeline: pipeline,
+            descriptor_sets_pool: descriptor_sets_pool
         }
     }
 
-    pub fn matrix(mut self, projection: Matrix4<f32>) -> Self {
-        self.matrix_data = Some(vs::ty::MatrixData {
-            projection: projection.into(),
-        });
-
-        self
+    pub fn pipeline(&self) -> Arc<GraphicsPipelineAbstract + Send + Sync> {
+        self.pipeline.clone()
     }
 
-    pub fn light(mut self, light: &Light) -> Self {
-        let light_dir = *light.direction();
-        let light_color = *light.color();
-        let light_ambient = *light.ambient();
-
-        self.light_data = Some(vs::ty::LightData {
-            light_dir: light_dir.into(),
-            light_color: light_color.into(),
-            light_ambient: light_ambient.into(),
-        });
-
-        self
-    }
-
-    pub fn texture(mut self, texture: Arc<Texture>) -> Self {
-        self.texture = Some(texture);
-
-        self
-    }
-
-    pub fn get(self) -> Arc<DescriptorSet + Send + Sync> {
-        let matrix_data = self.matrix_data.unwrap();
-        let light_data = self.light_data.unwrap();
-        let texture = self.texture.unwrap();
-
-        let matrix_buffer = self.shader.matrix_buffers.next(matrix_data).unwrap();
-        let light_buffer = self.shader.light_buffers.next(light_data).unwrap();
-
-        let set = self.shader.descriptor_sets_pool.next();
-
-        let set = set.add_buffer(matrix_buffer).unwrap();
-        let set = set.add_buffer(light_buffer).unwrap();
-        let set = set.add_sampled_image(texture.image(), texture.sampler()).unwrap()
-            .build().unwrap();
-
-        Arc::new(set)
+    pub fn descriptor_builder(&mut self)
+    -> FixedSizeDescriptorSetBuilder<Arc<GraphicsPipelineAbstract + Send + Sync>, ()> {
+        self.descriptor_sets_pool.next()
     }
 }
 
-pub struct Shader {
-    pipeline: Arc<GraphicsPipelineAbstract + Send + Sync>,
-    pipeline_line: Arc<GraphicsPipelineAbstract + Send + Sync>,
-    descriptor_sets_pool: FixedSizeDescriptorSetsPool<Arc<GraphicsPipelineAbstract + Send + Sync>>,
+pub struct DefaultShader {
+    context: Arc<Context>,
+    pipeline: Option<Pipeline>,
+    pipeline_line: Option<Pipeline>,
     matrix_buffers: CpuBufferPool<vs::ty::MatrixData>,
     light_buffers: CpuBufferPool<vs::ty::LightData>
 }
 
-impl Shader {
-    pub fn new(render_pass: Arc<RenderPassAbstract + Send + Sync>, device: Arc<Device>)
-    -> Shader {
-        let pipeline = Self::create_pipeline(render_pass.clone(), device.clone(),
-            PrimitiveType::Triangle);
-        let pipeline_line = Self::create_pipeline(render_pass, device.clone(),
-            PrimitiveType::Line);
+impl DefaultShader {
+    pub fn new(context: Arc<Context>) -> Box<Shader> {
+        let matrix_buffers = CpuBufferPool::<vs::ty::MatrixData>::new(
+            context.device(), BufferUsage::uniform_buffer());
+        let light_buffers = CpuBufferPool::<vs::ty::LightData>::new(
+            context.device(), BufferUsage::uniform_buffer());
 
-        let descriptor_sets_pool = FixedSizeDescriptorSetsPool::new(pipeline.clone(), 0);
-
-        let matrix_buffers = CpuBufferPool::<vs::ty::MatrixData>::new(device.clone(), BufferUsage::uniform_buffer());
-        let light_buffers = CpuBufferPool::<vs::ty::LightData>::new(device.clone(), BufferUsage::uniform_buffer());
-
-        Shader {
-            pipeline: pipeline,
-            pipeline_line: pipeline_line,
-            descriptor_sets_pool: descriptor_sets_pool,
+        Box::new(DefaultShader {
+            context: context,
+            pipeline: None,
+            pipeline_line: None,
             matrix_buffers: matrix_buffers,
             light_buffers: light_buffers
-        }
+        })
     }
 
-    fn create_pipeline(render_pass: Arc<RenderPassAbstract + Send + Sync>,
-        device: Arc<Device>, primitive: PrimitiveType)
-        -> Arc<GraphicsPipelineAbstract + Send + Sync> {
-        let vshader = vs::Shader::load(device.clone()).expect("error");
-        let fshader = fs::Shader::load(device.clone()).expect("error");
+    fn create_pipeline(context: Arc<Context>,
+        render_pass: Arc<RenderPassAbstract + Send + Sync>, primitive: PrimitiveType)
+        -> Pipeline {
+        let vshader = vs::Shader::load(context.device()).expect("error");
+        let fshader = fs::Shader::load(context.device()).expect("error");
 
         let mut builder = GraphicsPipeline::start()
             .vertex_input(OneVertexOneInstanceDefinition::<Vertex, Instance>::new())
@@ -146,25 +112,81 @@ impl Shader {
             PrimitiveType::Line => builder.line_list(),
         };
 
-        Arc::new(builder
+        Pipeline::new(Arc::new(builder
             .viewports_dynamic_scissors_irrelevant(1)
             .fragment_shader(fshader.main_entry_point(), ())
             .blend_alpha_blending()
             .depth_stencil_simple_depth()
             .cull_mode_back()
             .render_pass(Subpass::from(render_pass, 0).unwrap())
-            .build(device.clone()).unwrap())
+            .build(context.device()).unwrap()))
     }
 
-    pub fn pipeline(&self, primitive: PrimitiveType)
-    -> Arc<GraphicsPipelineAbstract + Send + Sync> {
-        match primitive {
-            PrimitiveType::Triangle => self.pipeline.clone(),
-            PrimitiveType::Line => self.pipeline_line.clone()
+    fn init_pipelines(&mut self, render_pass: Arc<RenderPassAbstract + Send + Sync>) {
+        if self.pipeline.is_none() {
+            self.pipeline = Some(Self::create_pipeline(self.context.clone(),
+                render_pass.clone(), PrimitiveType::Triangle));
+        }
+
+        if self.pipeline_line.is_none() {
+            self.pipeline_line = Some(Self::create_pipeline(self.context.clone(),
+                render_pass, PrimitiveType::Line));
         }
     }
 
-    pub fn bind(&mut self) -> DescriptorBuilder {
-        DescriptorBuilder::new(self)
+    fn pipeline(&mut self, render_pass: Arc<RenderPassAbstract + Send + Sync>,
+        primitive: PrimitiveType) -> &Pipeline {
+        self.init_pipelines(render_pass);
+
+        match primitive {
+            PrimitiveType::Triangle => self.pipeline.as_ref().unwrap(),
+            PrimitiveType::Line => self.pipeline_line.as_ref().unwrap(),
+        }
+    }
+
+    fn pipeline_mut(&mut self, render_pass: Arc<RenderPassAbstract + Send + Sync>,
+        primitive: PrimitiveType) -> &mut Pipeline {
+        self.init_pipelines(render_pass);
+
+        match primitive {
+            PrimitiveType::Triangle => self.pipeline.as_mut().unwrap(),
+            PrimitiveType::Line => self.pipeline_line.as_mut().unwrap(),
+        }
+    }
+}
+
+impl Shader for DefaultShader {
+    fn get_pipeline(&mut self, render_pass: Arc<RenderPassAbstract + Send + Sync>,
+        primitive: PrimitiveType) -> Arc<GraphicsPipelineAbstract + Send + Sync> {
+        self.pipeline(render_pass, primitive).pipeline()
+    }
+
+    fn get_descriptor_set(&mut self, render_pass: Arc<RenderPassAbstract + Send + Sync>,
+        projection: Matrix4<f32>, light: &Light, texture: Arc<Texture>,
+        primitive: PrimitiveType) -> Arc<DescriptorSet + Send + Sync> {
+        let matrix_data = vs::ty::MatrixData {
+            projection: projection.into(),
+        };
+
+        let light_dir = *light.direction();
+        let light_color = *light.color();
+        let light_ambient = *light.ambient();
+
+        let light_data = vs::ty::LightData {
+            light_dir: light_dir.into(),
+            light_color: light_color.into(),
+            light_ambient: light_ambient.into(),
+        };
+
+        let matrix_buffer = self.matrix_buffers.next(matrix_data).unwrap();
+        let light_buffer = self.light_buffers.next(light_data).unwrap();
+
+        let set = self.pipeline_mut(render_pass, primitive).descriptor_builder()
+            .add_buffer(matrix_buffer).unwrap()
+            .add_buffer(light_buffer).unwrap()
+            .add_sampled_image(texture.image(), texture.sampler()).unwrap()
+            .build().unwrap();
+
+        Arc::new(set)
     }
 }

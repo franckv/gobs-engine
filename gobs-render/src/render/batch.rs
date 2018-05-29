@@ -1,3 +1,4 @@
+use std::boxed::Box;
 use std::collections::HashMap;
 use std::mem;
 use std::sync::Arc;
@@ -8,10 +9,12 @@ use vulkano::sync::{GpuFuture, now, FlushError};
 use context::Context;
 use display::Display;
 use render::Renderer;
+use render::shader::{DefaultShader, Shader};
 use scene::SceneGraph;
 
 pub struct Batch {
     renderer: Renderer,
+    shader: Box<Shader>,
     context: Arc<Context>,
     builder: Option<AutoCommandBufferBuilder>,
     last_frame: Box<GpuFuture>,
@@ -22,10 +25,12 @@ pub struct Batch {
 impl Batch {
     pub fn new(display: Arc<Display>, context: Arc<Context>) -> Self {
         let renderer = Renderer::new(context.clone(), display.clone());
+        let shader = DefaultShader::new(context.clone());
         let device = context.device();
 
         Batch {
             renderer: renderer,
+            shader: shader,
             context: context,
             builder: None,
             last_frame: Box::new(now(device.clone())) as Box<GpuFuture>,
@@ -111,7 +116,8 @@ impl Batch {
             let camera = graph.camera();
             let light = graph.light();
 
-            let new_builder = self.renderer.draw_list(builder.unwrap(), camera, light, list.iter());
+            let new_builder = self.renderer.draw_list(
+                builder.unwrap(), camera, light, &mut self.shader, list.iter());
 
             self.builder = Some(new_builder);
         }
