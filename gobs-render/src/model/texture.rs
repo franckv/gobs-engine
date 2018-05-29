@@ -12,7 +12,7 @@ use vulkano::sampler;
 use vulkano::sampler::Sampler;
 use vulkano::sync::GpuFuture;
 
-use color::Color;
+use model::Color;
 use context::Context;
 
 pub struct TextureLoader {

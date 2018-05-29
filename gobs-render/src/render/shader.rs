@@ -11,8 +11,7 @@ use vulkano::pipeline::{GraphicsPipeline, GraphicsPipelineAbstract};
 use vulkano::pipeline::vertex::OneVertexOneInstanceDefinition;
 
 use scene::light::Light;
-use model::{Instance, PrimitiveType, Vertex};
-use texture::Texture;
+use model::{Instance, PrimitiveType, Texture, Vertex};
 
 mod vs {
     #[derive(VulkanoShader)]

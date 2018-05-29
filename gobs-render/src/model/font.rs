@@ -7,8 +7,8 @@ use unicode_normalization::UnicodeNormalization;
 use cgmath::{Matrix4, SquareMatrix};
 use rusttype::{Font as RFont, FontCollection, Scale, point, Rect};
 
-use color::Color;
-use texture::{Texture, TextureLoader};
+use model::Color;
+use model::{Texture, TextureLoader};
 
 const TEXTURE_SIZE: (usize, usize) = (1024, 1024);
 

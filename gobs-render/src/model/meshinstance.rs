@@ -2,9 +2,9 @@ use std::sync::Arc;
 
 use cgmath::{Matrix, Matrix3, Matrix4, SquareMatrix, Vector4};
 
-use color::Color;
+use model::Color;
 use model::Mesh;
-use texture::Texture;
+use model::Texture;
 
 #[derive(Copy, Clone)]
 pub struct Instance {

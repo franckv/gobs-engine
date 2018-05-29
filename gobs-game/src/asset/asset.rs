@@ -3,10 +3,7 @@ use std::vec::Vec;
 
 use cgmath::Point3;
 
-use render::color::Color;
-use render::font::Font;
-use render::model::{Mesh, MeshBuilder, MeshManager};
-use render::texture::{Texture, TextureLoader};
+use render::model::{Color, Font, Mesh, MeshBuilder, MeshManager, Texture, TextureLoader};
 use render::context::Context;
 
 pub struct AssetManager {

@@ -1,8 +1,6 @@
 use std::sync::Arc;
 
-use render::color::Color;
-use render::model::{Mesh, MeshInstance, MeshInstanceBuilder};
-use render::texture::Texture;
+use render::model::{Color, Mesh, MeshInstance, MeshInstanceBuilder, Texture};
 
 use asset::AssetManager;
 

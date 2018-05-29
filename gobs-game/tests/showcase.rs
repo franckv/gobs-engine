@@ -10,8 +10,7 @@ use std::io::{BufRead, BufReader};
 
 use cgmath::{Point3, Vector3};
 
-use render::color::Color;
-use render::model::MeshInstanceBuilder;
+use render::model::{Color, MeshInstanceBuilder};
 use render::scene::coord::SphericalCoord;
 use render::scene::light::LightBuilder;
 use render::scene::SceneGraph;

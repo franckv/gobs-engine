@@ -4,8 +4,7 @@ extern crate gobs_game as game;
 use std::sync::Arc;
 
 use game::app::{Application, Run};
-use render::color::Color;
-use render::model::MeshInstanceBuilder;
+use render::model::{Color, MeshInstanceBuilder};
 use render::scene::SceneGraph;
 
 struct App {

@@ -9,13 +9,11 @@ extern crate rusttype;
 extern crate cgmath;
 extern crate unicode_normalization;
 
-pub mod color;
 pub mod context;
 pub mod display;
-pub mod font;
 pub mod model;
 pub mod render;
 pub mod scene;
-pub mod texture;
 
 pub use render::{Batch, Renderer};
+pub use model::{Color, Texture};
