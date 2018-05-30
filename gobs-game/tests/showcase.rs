@@ -28,16 +28,18 @@ pub enum Example {
     MAP,
     DEPTH,
     CUBE,
-    DUNGEON,
+    DUNGEON
 }
 
 struct App {
     graph: SceneGraph,
+    uigraph: SceneGraph,
     timer: Timer,
     position: SphericalCoord<f32>,
     world_size: f32,
     selected: Example,
-    show_fps: bool
+    show_fps: bool,
+    show_centers: bool
 }
 
 impl Run for App {
@@ -53,6 +55,7 @@ impl Run for App {
         batch.begin();
 
         batch.draw_graph(&self.graph);
+        batch.draw_graph(&self.uigraph);
 
         batch.end();
 
@@ -82,11 +85,13 @@ impl App {
 
         App {
             graph: SceneGraph::new(),
+            uigraph: SceneGraph::new(),
             timer: Timer::new(),
             position: position,
             world_size: 5.0,
             selected: Example::FONT,
-            show_fps: false
+            show_fps: false,
+            show_centers: false
         }
     }
 
@@ -167,6 +172,14 @@ impl App {
                 self.next_scene();
 
                 redraw = true;
+            }
+
+            if input_map.pressed(Key::TAB) {
+                self.uigraph.clear();
+                self.show_centers = !self.show_centers;
+                if self.show_centers {
+                    self.draw_centers();
+                }
             }
 
             if input_map.pressed(Key::A) {
@@ -412,7 +425,7 @@ impl App {
                 .build();
 
             instance.transform(c.transform());
-            instance.translate((-0.5, 0., 0.));
+            //instance.translate((-0.5, 0., 0.));
             self.graph.add_instance(Arc::new(instance));
         }
 
@@ -433,6 +446,25 @@ impl App {
         text.scale(10., 10., 1.);
 
         self.graph.add_instance(Arc::new(text));
+    }
+
+    fn draw_centers(&mut self) {
+        self.ortho(2.);
+
+        let texture = AssetManager::get_color_texture(Color::green());
+
+        let left: Point3<f32> = [-1., 0., 0.5].into();
+        let right: Point3<f32> = [1., 0., 0.5].into();
+        let top: Point3<f32> = [0., 1., 0.5].into();
+        let bottom: Point3<f32> = [0., -1., 0.5].into();
+
+        let line = AssetManager::build_line(left, right);
+        let instance = MeshInstanceBuilder::new(line).texture(texture.clone()).build();
+        self.uigraph.add_instance(Arc::new(instance));
+
+        let line = AssetManager::build_line(bottom, top);
+        let instance = MeshInstanceBuilder::new(line).texture(texture).build();
+        self.uigraph.add_instance(Arc::new(instance));
     }
 }
 

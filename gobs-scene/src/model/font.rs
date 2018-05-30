@@ -17,6 +17,7 @@ pub struct Character {
     c: char,
     region: [f32; 4],
     transform: Matrix4<f32>,
+    width: f32,
     advance: f32
 }
 
@@ -73,16 +74,24 @@ impl Font {
 
         let mut translate = Matrix4::identity();
 
+        let mut first = true;
         for c in text.nfc() {
             if let Some(character) = self.cache.get(&c) {
-                let advance = character.advance;
-
-                translate = Matrix4::from_translation([advance, 0.0, 0.0].into()) * translate;
-
                 let mut character = character.clone();
+
+                let advance = character.advance;
+                let width = character.width;
+
+                if first {
+                    translate = Matrix4::from_translation([width / 2., 0.0, 0.0].into()) * translate;
+                    first = false;
+                }
+
                 character.translate(translate);
 
                 result.push(character);
+
+                translate = Matrix4::from_translation([advance, 0.0, 0.0].into()) * translate;
             }
         }
 
@@ -146,6 +155,7 @@ impl Font {
                     c: c,
                     region: [xmin, ymin, xmax, ymax],
                     transform: translate * transform,
+                    width: xmax - xmin,
                     advance: advance / width as f32
                 }
             };

@@ -74,6 +74,7 @@ impl InputHandler {
             VirtualKeyCode::PageDown => Key::PAGEDOWN,
             VirtualKeyCode::Return => Key::RETURN,
             VirtualKeyCode::Space => Key::SPACE,
+            VirtualKeyCode::Tab => Key::TAB,
             VirtualKeyCode::A => Key::A,
             VirtualKeyCode::B => Key::B,
             VirtualKeyCode::C => Key::C,
