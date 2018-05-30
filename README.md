@@ -3,7 +3,8 @@
 Game engine based on Rust and Vulkano.
 
 ## Crates
-* gobs-render: graphic stuff
+* gobs-render: rendering engine
+* gobs-scene: scene graph
 * gobs-game: main loop and input management
 
 ## Examples

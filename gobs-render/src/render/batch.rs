@@ -8,12 +8,12 @@ use vulkano::sync::{GpuFuture, now};
 
 use context::Context;
 use display::Display;
-use model::MeshInstance;
 use render::Renderer;
 use render::shader::{DefaultShader, Shader};
+use scene::Camera;
+use scene::Light;
 use scene::SceneGraph;
-use scene::camera::Camera;
-use scene::light::Light;
+use scene::model::MeshInstance;
 
 pub struct Batch {
     renderer: Renderer,

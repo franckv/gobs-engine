@@ -4,13 +4,11 @@ use render::Batch;
 use render::context;
 use render::display::Display;
 
-use asset::AssetManager;
 use input::{Event, InputHandler, InputMap};
 
 pub struct Application {
     batch: Batch,
     display: Arc<Display>,
-    asset: AssetManager,
     input_handler: InputHandler
 }
 
@@ -18,14 +16,12 @@ impl Application {
     pub fn new() -> Application {
         let (events_loop, context, display) = context::init();
 
-        let asset = AssetManager::new(context.clone());
         let batch = Batch::new(display.clone(), context.clone());
         let input_handler = InputHandler::new(events_loop);
 
         Application {
             batch: batch,
             display: display,
-            asset: asset,
             input_handler: input_handler
         }
     }
@@ -36,10 +32,6 @@ impl Application {
 
     pub fn input_map(&self) -> &InputMap {
         &self.input_handler.get_input_map()
-    }
-
-    pub fn asset_manager_mut(&mut self) -> &mut AssetManager {
-        &mut self.asset
     }
 
     pub fn dimensions(&self) -> [u32; 2] {

@@ -1,11 +1,12 @@
-extern crate gobs_render as render;
 extern crate gobs_game as game;
+extern crate gobs_scene as scene;
 
 use std::sync::Arc;
 
 use game::app::{Application, Run};
-use render::model::{Color, MeshInstanceBuilder};
-use render::scene::SceneGraph;
+use game::asset::AssetManager;
+use scene::scene::SceneGraph;
+use scene::model::{Color, MeshInstanceBuilder};
 
 struct App {
     graph: SceneGraph
@@ -13,10 +14,8 @@ struct App {
 
 impl Run for App {
     fn create(&mut self, engine: &mut Application) {
-        let asset_manager = engine.asset_manager_mut();
-
-        let texture = asset_manager.get_color_texture(Color::red());
-        let triangle = asset_manager.build_triangle();
+        let texture = AssetManager::get_color_texture(Color::red());
+        let triangle = AssetManager::build_triangle();
 
         let instance = MeshInstanceBuilder::new(triangle).texture(texture).build();
 

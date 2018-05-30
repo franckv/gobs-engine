@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use render::model::{Color, Mesh, MeshInstance, MeshInstanceBuilder, Texture};
+use scene::model::{Color, Mesh, MeshInstance, MeshInstanceBuilder, Texture};
 
 use asset::AssetManager;
 
@@ -22,14 +22,13 @@ pub struct TileMap {
 }
 
 impl TileMap {
-    pub fn new(asset_manager: &mut AssetManager, texture: Arc<Texture>,
-        tile_size: [usize; 2]) -> TileMap {
+    pub fn new(texture: Arc<Texture>, tile_size: [usize; 2]) -> TileMap {
         let size = {
             let img_size = texture.size();
             [img_size[0] / tile_size[0], img_size[1] / tile_size[1]]
         };
 
-        let mesh = asset_manager.build_quad();
+        let mesh = AssetManager::build_quad();
 
         TileMap {
             mesh: mesh,

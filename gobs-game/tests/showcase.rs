@@ -1,8 +1,8 @@
 extern crate cgmath;
 extern crate image;
 
-extern crate gobs_render as render;
 extern crate gobs_game as game;
+extern crate gobs_scene as scene;
 
 use std::sync::Arc;
 use std::fs::File;
@@ -10,10 +10,10 @@ use std::io::{BufRead, BufReader};
 
 use cgmath::{Point3, Vector3};
 
-use render::model::{Color, MeshInstanceBuilder};
-use render::scene::coord::SphericalCoord;
-use render::scene::light::LightBuilder;
-use render::scene::SceneGraph;
+use scene::SphericalCoord;
+use scene::LightBuilder;
+use scene::SceneGraph;
+use scene::model::{Color, MeshInstanceBuilder};
 
 use game::app::{Application, Run};
 use game::asset::{AssetManager, TileMap};
@@ -197,17 +197,15 @@ impl App {
         self.graph.clear();
 
         {
-            let asset_manager = engine.asset_manager_mut();
-
             match self.selected {
-                Example::FONT => self.draw_font(asset_manager),
-                Example::FONTMAP => self.draw_fontmap(asset_manager),
-                Example::TILE => self.draw_tile(asset_manager),
-                Example::CHECK => self.draw_checkboard(asset_manager),
-                Example::MAP => self.draw_map(asset_manager),
-                Example::DEPTH => self.draw_depth(asset_manager),
-                Example::CUBE => self.draw_cube(asset_manager),
-                Example::DUNGEON => self.draw_dungeon(asset_manager)
+                Example::FONT => self.draw_font(),
+                Example::FONTMAP => self.draw_fontmap(),
+                Example::TILE => self.draw_tile(),
+                Example::CHECK => self.draw_checkboard(),
+                Example::MAP => self.draw_map(),
+                Example::DEPTH => self.draw_depth(),
+                Example::CUBE => self.draw_cube(),
+                Example::DUNGEON => self.draw_dungeon()
             }
         }
 
@@ -233,12 +231,12 @@ impl App {
 
     }
 
-    fn draw_map(&mut self, asset_manager: &mut AssetManager) {
+    fn draw_map(&mut self) {
         self.ortho(40.);
 
-        let texture = asset_manager.get_color_texture(Color::white());
+        let texture = AssetManager::get_color_texture(Color::white());
 
-        let mesh = asset_manager.build_quad();
+        let mesh = AssetManager::build_quad();
 
         let f = File::open(Self::asset("dungeon.map")).expect("File not found");
         let reader = BufReader::new(f);
@@ -262,13 +260,13 @@ impl App {
         }
     }
 
-    fn draw_checkboard(&mut self, asset_manager: &mut AssetManager) {
+    fn draw_checkboard(&mut self) {
         self.ortho(30.);
 
-        let texture = asset_manager.get_color_texture(Color::white());
+        let texture = AssetManager::get_color_texture(Color::white());
 
-        let triangle = asset_manager.build_triangle();
-        let square = asset_manager.build_quad();
+        let triangle = AssetManager::build_triangle();
+        let square = AssetManager::build_quad();
 
         for i in -5..5 {
             for j in -5..5 {
@@ -297,15 +295,15 @@ impl App {
         }
     }
 
-    fn draw_tile(&mut self, asset_manager: &mut AssetManager) {
+    fn draw_tile(&mut self) {
         self.ortho(5.);
 
         let tilemap = {
             let tile_size = [34, 34];
 
-            let texture = asset_manager.load_texture(&Self::asset("tileset.png"));
+            let texture = AssetManager::load_texture(&Self::asset("tileset.png"));
 
-            TileMap::new(asset_manager, texture, tile_size)
+            TileMap::new(texture, tile_size)
         };
 
         let mut tile = tilemap.build_tile(0, 0);
@@ -325,12 +323,12 @@ impl App {
         self.graph.add_instance(Arc::new(tile));
     }
 
-    fn draw_cube(&mut self, asset_manager: &mut AssetManager) {
+    fn draw_cube(&mut self) {
         self.perspective(30.);
 
-        let texture = asset_manager.load_texture(&Self::asset("wall.png"));
+        let texture = AssetManager::load_texture(&Self::asset("wall.png"));
 
-        let mesh = asset_manager.build_cube();
+        let mesh = AssetManager::build_cube();
 
         let instance = MeshInstanceBuilder::new(mesh.clone())
             .color(Color::white())
@@ -340,12 +338,12 @@ impl App {
         self.graph.add_instance(Arc::new(instance));
     }
 
-    fn draw_dungeon(&mut self, asset_manager: &mut AssetManager) {
+    fn draw_dungeon(&mut self) {
         self.perspective(30.);
 
-        let texture = asset_manager.load_texture(&Self::asset("wall.png"));
+        let texture = AssetManager::load_texture(&Self::asset("wall.png"));
 
-        let mesh = asset_manager.build_cube();
+        let mesh = AssetManager::build_cube();
 
         let f = File::open(Self::asset("dungeon.map")).expect("File not found");
         let reader = BufReader::new(f);
@@ -372,12 +370,12 @@ impl App {
         println!("{}", self.graph.instances().len());
     }
 
-    fn draw_depth(&mut self, asset_manager: &mut AssetManager) {
+    fn draw_depth(&mut self) {
         self.ortho(30.);
 
-        let texture = asset_manager.get_color_texture(Color::white());
+        let texture = AssetManager::get_color_texture(Color::white());
 
-        let triangle = asset_manager.build_triangle();
+        let triangle = AssetManager::build_triangle();
 
         for i in -10..11 {
             let color = match i {
@@ -397,13 +395,13 @@ impl App {
         }
     }
 
-    fn draw_font(&mut self, asset_manager: &mut AssetManager) {
+    fn draw_font(&mut self) {
         self.ortho(1.);
 
         let size: usize = 30;
 
-        let font = asset_manager.load_font(size, &Self::asset("font.ttf"));
-        let square = asset_manager.build_quad();
+        let font = AssetManager::load_font(size, &Self::asset("font.ttf"));
+        let square = AssetManager::build_quad();
 
         let chars = font.layout("Press space to go to the new example");
 
@@ -420,13 +418,13 @@ impl App {
 
     }
 
-    fn draw_fontmap(&mut self, asset_manager: &mut AssetManager) {
+    fn draw_fontmap(&mut self) {
         self.ortho(30.);
 
         let size: usize = 100;
 
-        let font = asset_manager.load_font(size, &Self::asset("font.ttf"));
-        let mesh = asset_manager.build_quad();
+        let font = AssetManager::load_font(size, &Self::asset("font.ttf"));
+        let mesh = AssetManager::build_quad();
 
         let mut text = MeshInstanceBuilder::new(mesh.clone())
             .texture(font.texture())

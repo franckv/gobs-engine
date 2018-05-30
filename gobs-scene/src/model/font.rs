@@ -8,7 +8,7 @@ use cgmath::{Matrix4, SquareMatrix};
 use rusttype::{Font as RFont, FontCollection, Scale, point, Rect};
 
 use model::Color;
-use model::{Texture, TextureLoader};
+use model::Texture;
 
 const TEXTURE_SIZE: (usize, usize) = (1024, 1024);
 
@@ -40,7 +40,7 @@ pub struct Font {
 }
 
 impl Font {
-    pub fn new(texture_loader: &TextureLoader, size: usize, path: &str) -> Self {
+    pub fn new(size: usize, path: &str) -> Self {
         let mut f = File::open(path).unwrap();
         let mut v = Vec::new();
         f.read_to_end(&mut v).expect("Cannot read font");
@@ -56,8 +56,7 @@ impl Font {
 
         let image_data = Self::build_texture(&font, &mut cache, scale, width, height);
 
-        let texture = Arc::new(
-            texture_loader.load_texture_raw(&image_data, width, height));
+        let texture = Texture::from_raw(image_data, width, height);
 
         Font {
             texture: texture,

@@ -14,8 +14,6 @@ pub struct Instance {
     pub region: [f32; 4],
 }
 
-impl_vertex!(Instance, transform, normal_transform, color, region);
-
 pub struct MeshInstanceBuilder {
     mesh: Arc<Mesh>,
     color: Color,

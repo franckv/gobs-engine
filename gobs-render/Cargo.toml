@@ -8,6 +8,7 @@ name = "gobs_render"
 path = "src/lib.rs"
 
 [dependencies]
+gobs-scene = {path = "../gobs-scene"}
 vulkano = {path = "../../../vulkano/vulkano", version="0.9"}
 vulkano-shader-derive = {path = "../../../vulkano/vulkano-shader-derive", version="0.9"}
 vulkano-win = {path = "../../../vulkano/vulkano-win", version="0.9"}
@@ -16,3 +17,4 @@ cgmath = "0.16"
 image = "0.18"
 unicode-normalization = "0.1"
 rusttype = "0.5.2"
+uuid = { version = "0.6", features = ["v4"] }

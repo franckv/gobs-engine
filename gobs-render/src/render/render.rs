@@ -16,12 +16,14 @@ use vulkano::sync::{GpuFuture, now, FlushError};
 
 use winit::Window;
 
+use RenderInstance;
+use cache::{MeshCache, TextureCache};
 use context::Context;
 use display::Display;
-use model::{Instance, MeshInstance};
 use render::shader::Shader;
-use scene::camera::Camera;
-use scene::light::Light;
+use scene::Camera;
+use scene::Light;
+use scene::model::MeshInstance;
 
 pub struct Renderer {
     context: Arc<Context>,
@@ -29,6 +31,8 @@ pub struct Renderer {
     swapchain: Arc<Swapchain<Window>>,
     framebuffers: Vec<Arc<FramebufferAbstract + Send + Sync>>,
     render_pass: Arc<RenderPassAbstract + Send + Sync>,
+    texture_cache: TextureCache,
+    mesh_cache: MeshCache
 }
 
 impl Renderer {
@@ -50,11 +54,13 @@ impl Renderer {
             swapchain.dimensions(), images);
 
         Renderer {
-            context: context,
+            context: context.clone(),
             display: display,
             swapchain: swapchain,
             framebuffers: framebuffers,
             render_pass: render_pass,
+            texture_cache: TextureCache::new(context.clone()),
+            mesh_cache: MeshCache::new(context)
         }
     }
 
@@ -143,6 +149,9 @@ impl Renderer {
         let texture = first.texture().unwrap();
         let primitive = mesh.primitive_type();
 
+        let mesh = self.mesh_cache.get(mesh);
+        let texture = self.texture_cache.get(texture);
+
         let set = shader.get_descriptor_set(self.render_pass.clone(),
             camera.combined(), light, texture, primitive);
 
@@ -182,11 +191,12 @@ impl Renderer {
     }
 
     fn create_instance_buffer(&mut self, instances: Iter<Arc<MeshInstance>>)
-    -> Arc<ImmutableBuffer<[Instance]>> {
-        let mut instances_data: Vec<Instance> = Vec::new();
+    -> Arc<ImmutableBuffer<[RenderInstance]>> {
+        let mut instances_data: Vec<RenderInstance> = Vec::new();
 
         for instance in instances {
-            instances_data.push(instance.get_instance_data());
+            let instance_data: RenderInstance = instance.get_instance_data().into();
+            instances_data.push(instance_data);
         }
 
         let (instance_buffer, _future) = ImmutableBuffer::from_iter(instances_data.into_iter(),
@@ -200,7 +210,7 @@ impl Renderer {
         let mesh = instances.as_slice().get(0).unwrap().mesh();
 
         let indirect_data = vec![DrawIndirectCommand {
-            vertex_count: mesh.size() as u32,
+            vertex_count: mesh.vlist().len() as u32,
             instance_count: instances.len() as u32,
             first_vertex: 0,
             first_instance: 0

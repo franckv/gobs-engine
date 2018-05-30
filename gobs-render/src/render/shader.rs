@@ -11,9 +11,12 @@ use vulkano::framebuffer::{Subpass, RenderPassAbstract};
 use vulkano::pipeline::{GraphicsPipeline, GraphicsPipelineAbstract};
 use vulkano::pipeline::vertex::OneVertexOneInstanceDefinition;
 
+use RenderInstance;
+use RenderVertex;
+use cache::TextureCacheEntry;
 use context::Context;
-use model::{Instance, PrimitiveType, Texture, Vertex};
-use scene::light::Light;
+use scene::Light;
+use scene::model::PrimitiveType;
 
 mod vs {
     #[derive(VulkanoShader)]
@@ -44,7 +47,7 @@ pub trait Shader {
         primitive: PrimitiveType) -> Arc<GraphicsPipelineAbstract + Send + Sync>;
 
     fn get_descriptor_set(&mut self, render_pass: Arc<RenderPassAbstract + Send + Sync>,
-        projection: Matrix4<f32>, light: &Light, texture: Arc<Texture>,
+        projection: Matrix4<f32>, light: &Light, texture: &TextureCacheEntry,
         primitive: PrimitiveType) -> Arc<DescriptorSet + Send + Sync>;
 }
 
@@ -104,7 +107,7 @@ impl DefaultShader {
         let fshader = fs::Shader::load(context.device()).expect("error");
 
         let mut builder = GraphicsPipeline::start()
-            .vertex_input(OneVertexOneInstanceDefinition::<Vertex, Instance>::new())
+            .vertex_input(OneVertexOneInstanceDefinition::<RenderVertex, RenderInstance>::new())
             .vertex_shader(vshader.main_entry_point(), ());
 
         builder = match primitive {
@@ -162,7 +165,7 @@ impl Shader for DefaultShader {
     }
 
     fn get_descriptor_set(&mut self, render_pass: Arc<RenderPassAbstract + Send + Sync>,
-        projection: Matrix4<f32>, light: &Light, texture: Arc<Texture>,
+        projection: Matrix4<f32>, light: &Light, texture: &TextureCacheEntry,
         primitive: PrimitiveType) -> Arc<DescriptorSet + Send + Sync> {
         let matrix_data = vs::ty::MatrixData {
             projection: projection.into(),

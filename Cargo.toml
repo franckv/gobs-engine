@@ -1,6 +1,6 @@
 [workspace]
 members = [
+    "gobs-scene",
     "gobs-render",
-    "gobs-game",
-
+    "gobs-game"
 ]

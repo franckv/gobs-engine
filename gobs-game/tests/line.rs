@@ -1,7 +1,7 @@
 extern crate cgmath;
 
-extern crate gobs_render as render;
 extern crate gobs_game as game;
+extern crate gobs_scene as scene;
 
 use std::sync::Arc;
 
@@ -9,8 +9,8 @@ use cgmath::Point3;
 
 use game::app::{Application, Run};
 use game::asset::AssetManager;
-use render::model::{Color, MeshInstanceBuilder};
-use render::scene::SceneGraph;
+use scene::SceneGraph;
+use scene::model::{Color, MeshInstanceBuilder};
 
 struct App {
     graph: SceneGraph
@@ -18,9 +18,7 @@ struct App {
 
 impl Run for App {
     fn create(&mut self, engine: &mut Application) {
-        let asset_manager = engine.asset_manager_mut();
-
-        self.draw_centers(asset_manager);
+        self.draw_centers();
     }
 
     fn update(&mut self, engine: &mut Application) {
@@ -44,19 +42,19 @@ impl App {
         }
     }
 
-    fn draw_centers(&mut self, asset_manager: &mut AssetManager) {
-        let texture = asset_manager.get_color_texture(Color::green());
+    fn draw_centers(&mut self) {
+        let texture = AssetManager::get_color_texture(Color::green());
 
         let left: Point3<f32> = [-1., 0., 0.5].into();
         let right: Point3<f32> = [1., 0., 0.5].into();
         let top: Point3<f32> = [0., 1., 0.5].into();
         let bottom: Point3<f32> = [0., -1., 0.5].into();
 
-        let line = asset_manager.build_line(left, right);
+        let line = AssetManager::build_line(left, right);
         let instance = MeshInstanceBuilder::new(line).texture(texture.clone()).build();
         self.graph.add_instance(Arc::new(instance));
 
-        let line = asset_manager.build_line(bottom, top);
+        let line = AssetManager::build_line(bottom, top);
         let instance = MeshInstanceBuilder::new(line).texture(texture).build();
         self.graph.add_instance(Arc::new(instance));
     }

@@ -1,49 +1,29 @@
 use std::sync::Arc;
-use std::vec::Vec;
 
 use cgmath::Point3;
 
-use render::model::{Color, Font, Mesh, MeshBuilder, MeshManager, Texture, TextureLoader};
-use render::context::Context;
+use scene::model::{Color, Font, Mesh, MeshBuilder, Texture};
 
 pub struct AssetManager {
-    texture_loader: TextureLoader,
-    mesh_manager: MeshManager,
 }
 
 impl AssetManager {
-    pub fn new(context: Arc<Context>) -> AssetManager {
-        AssetManager {
-            texture_loader: TextureLoader::new(context.clone()),
-            mesh_manager: MeshManager::new(context)
-        }
+    pub fn load_texture(path: &str) -> Arc<Texture> {
+        Texture::from_file(path)
     }
 
-    pub fn load_texture(&self, path: &str) -> Arc<Texture> {
-        Arc::new(self.texture_loader.load_texture(path))
-    }
-
-    pub fn load_texture_raw(&self, raw: &Vec<u8>, width: usize, height: usize)
-    -> Arc<Texture> {
-        Arc::new(self.texture_loader.load_texture_raw(raw, width, height))
-    }
-
-    pub fn load_font(&self, size: usize, path: &str) -> Font {
-        let font = Font::new(&self.texture_loader, size, path);
+    pub fn load_font(size: usize, path: &str) -> Font {
+        let font = Font::new(size, path);
 
         font
     }
 
-    pub fn get_color_texture(&self, color: Color) -> Arc<Texture> {
-        Arc::new(self.texture_loader.load_color(color))
+    pub fn get_color_texture(color: Color) -> Arc<Texture> {
+        Texture::from_color(color)
     }
 
-    pub fn get_mesh_builder(&mut self) -> MeshBuilder {
-        self.mesh_manager.get_mesh_builder()
-    }
-
-    pub fn build_quad(&mut self) -> Arc<Mesh> {
-        let builder = self.mesh_manager.get_mesh_builder();
+    pub fn build_quad() -> Arc<Mesh> {
+        let builder = MeshBuilder::new();
 
         let (top, bottom, left, right) = (0.5, -0.5, -0.5, 0.5);
 
@@ -69,8 +49,8 @@ impl AssetManager {
             .build()
     }
 
-    pub fn build_triangle(&mut self) -> Arc<Mesh> {
-        let builder = self.mesh_manager.get_mesh_builder();
+    pub fn build_triangle() -> Arc<Mesh> {
+        let builder = MeshBuilder::new();
 
         let (top, bottom, left, right) = (0.5, -0.5, -0.5, 0.5);
 
@@ -91,8 +71,8 @@ impl AssetManager {
             .build()
     }
 
-    pub fn build_line(&mut self, a: Point3<f32>, b: Point3<f32>) -> Arc<Mesh> {
-        let builder = self.mesh_manager.get_mesh_builder();
+    pub fn build_line(a: Point3<f32>, b: Point3<f32>) -> Arc<Mesh> {
+        let builder = MeshBuilder::new();
 
         let v1 = [a.x, a.y, a.z];
         let v2 = [b.x, b.y, b.z];
@@ -109,8 +89,8 @@ impl AssetManager {
             .build()
     }
 
-    pub fn build_cube(&mut self) -> Arc<Mesh> {
-        let builder = self.mesh_manager.get_mesh_builder();
+    pub fn build_cube() -> Arc<Mesh> {
+        let builder = MeshBuilder::new();
 
         let (top, bottom, left, right, front, back) = (0.5, -0.5, -0.5, 0.5, 0.5, -0.5);
 

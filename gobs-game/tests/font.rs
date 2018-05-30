@@ -1,12 +1,12 @@
-extern crate gobs_render as render;
 extern crate gobs_game as game;
+extern crate gobs_scene as scene;
 
 use std::sync::Arc;
 
 use game::app::{Application, Run};
 use game::asset::AssetManager;
-use render::model::MeshInstanceBuilder;
-use render::scene::SceneGraph;
+use scene::SceneGraph;
+use scene::model::MeshInstanceBuilder;
 
 struct App {
     graph: SceneGraph
@@ -14,9 +14,7 @@ struct App {
 
 impl Run for App {
     fn create(&mut self, engine: &mut Application) {
-        let asset_manager = engine.asset_manager_mut();
-
-        self.draw(asset_manager);
+        self.draw();
     }
 
     fn update(&mut self, engine: &mut Application) {
@@ -40,10 +38,10 @@ impl App {
         }
     }
 
-    pub fn draw(&mut self, asset_manager: &mut AssetManager) {
-        let font = asset_manager.load_font(42, "../../assets/font.ttf");
+    pub fn draw(&mut self) {
+        let font = AssetManager::load_font(42, "../../assets/font.ttf");
 
-        let square = asset_manager.build_quad();
+        let square = AssetManager::build_quad();
 
         let chars = font.layout("The quick brown fox jumps over the lazy dog");
 
