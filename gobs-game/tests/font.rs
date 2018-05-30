@@ -6,14 +6,13 @@ use std::sync::Arc;
 use game::app::{Application, Run};
 use game::asset::AssetManager;
 use scene::SceneGraph;
-use scene::model::MeshInstanceBuilder;
 
 struct App {
     graph: SceneGraph
 }
 
 impl Run for App {
-    fn create(&mut self, engine: &mut Application) {
+    fn create(&mut self, _engine: &mut Application) {
         self.draw();
     }
 
@@ -41,20 +40,11 @@ impl App {
     pub fn draw(&mut self) {
         let font = AssetManager::load_font(42, "../../assets/font.ttf");
 
-        let square = AssetManager::build_quad();
-
         let chars = font.layout("The quick brown fox jumps over the lazy dog");
 
-        for c in chars {
-            let mut instance = MeshInstanceBuilder::new(square.clone())
-                .texture(font.texture())
-                .region(*c.region())
-                .build();
-
-            instance.transform(c.transform());
-            instance.translate((-0.5, 0., 0.));
-            //instance.scale(2.0, 2.0, 1.0);
-            self.graph.add_instance(Arc::new(instance));
+        for mut c in chars {
+            c.translate((-0.5, 0., 0.));
+            self.graph.add_instance(Arc::new(c));
         }
     }
 }

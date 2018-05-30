@@ -260,11 +260,11 @@ impl App {
                     'w' => {
                         let (x, y) = (col as f32, num as f32);
 
-                        let mut tile = MeshInstanceBuilder::new(mesh.clone())
+                        let tile = MeshInstanceBuilder::new(mesh.clone())
                             .color(Color::red())
                             .texture(texture.clone())
+                            .translate((x - 16., 16. - y, 0.0))
                             .build();
-                        tile.translate((x - 16., 16. - y, 0.0));
                         self.graph.add_instance(Arc::new(tile));
                     },
                     _ => ()
@@ -283,13 +283,14 @@ impl App {
 
         for i in -5..5 {
             for j in -5..5 {
-                let mut tile = match i + j {
+                let tile = match i + j {
                     k if (k % 2 == 0) => {
                         let color = Color::red();
 
                         MeshInstanceBuilder::new(triangle.clone())
                             .color(color)
                             .texture(texture.clone())
+                            .translate((i as f32, j as f32, 0.0))
                             .build()
                     },
                     _ => {
@@ -298,11 +299,11 @@ impl App {
                         MeshInstanceBuilder::new(square.clone())
                             .color(color)
                             .texture(texture.clone())
+                            .translate((i as f32, j as f32, 0.0))
                             .build()
                     },
                 };
 
-                tile.translate((i as f32, j as f32, 0.0));
                 self.graph.add_instance(Arc::new(tile));
             }
         }
@@ -367,12 +368,12 @@ impl App {
                     'w' => {
                         let (x, y) = (col as f32, num as f32);
 
-                        let mut instance = MeshInstanceBuilder::new(mesh.clone())
+                        let instance = MeshInstanceBuilder::new(mesh.clone())
                             .color(Color::white())
                             .texture(texture.clone())
+                            .translate((x - 16., 0., y - 16.))
                             .build();
 
-                        instance.translate((x - 16., 0., y - 16.));
                         self.graph.add_instance(Arc::new(instance));
                     },
                     _ => ()
@@ -396,13 +397,14 @@ impl App {
                 0 => Color::yellow(),
                 _ => Color::green()
             };
-            let mut instance = MeshInstanceBuilder::new(triangle.clone())
-                .color(color)
-                .texture(texture.clone())
-                .build();
 
             let i = i as f32;
-            instance.translate((i, 0., i / 10.));
+
+            let instance = MeshInstanceBuilder::new(triangle.clone())
+                .color(color)
+                .texture(texture.clone())
+                .translate((i, 0., i / 10.))
+                .build();
 
             self.graph.add_instance(Arc::new(instance));
         }
@@ -414,19 +416,11 @@ impl App {
         let size: usize = 30;
 
         let font = AssetManager::load_font(size, &Self::asset("font.ttf"));
-        let square = AssetManager::build_quad();
 
         let chars = font.layout("Press space to go to the new example");
 
         for c in chars {
-            let mut instance = MeshInstanceBuilder::new(square.clone())
-                .texture(font.texture())
-                .region(*c.region())
-                .build();
-
-            instance.transform(c.transform());
-            //instance.translate((-0.5, 0., 0.));
-            self.graph.add_instance(Arc::new(instance));
+            self.graph.add_instance(Arc::new(c));
         }
 
     }
@@ -441,9 +435,9 @@ impl App {
 
         let mut text = MeshInstanceBuilder::new(mesh.clone())
             .texture(font.texture())
+            .scale(10., 10., 1.)
             .build();
 
-        text.scale(10., 10., 1.);
 
         self.graph.add_instance(Arc::new(text));
     }

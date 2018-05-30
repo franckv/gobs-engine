@@ -13,7 +13,7 @@ struct App {
 }
 
 impl Run for App {
-    fn create(&mut self, engine: &mut Application) {
+    fn create(&mut self, _engine: &mut Application) {
         let texture = AssetManager::get_color_texture(Color::red());
         let triangle = AssetManager::build_triangle();
 

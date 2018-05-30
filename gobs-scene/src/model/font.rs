@@ -7,8 +7,7 @@ use unicode_normalization::UnicodeNormalization;
 use cgmath::{Matrix4, SquareMatrix};
 use rusttype::{Font as RFont, FontCollection, Scale, point, Rect};
 
-use model::Color;
-use model::Texture;
+use model::{Color, Mesh, MeshBuilder, MeshInstance, MeshInstanceBuilder, Texture};
 
 const TEXTURE_SIZE: (usize, usize) = (1024, 1024);
 
@@ -37,6 +36,7 @@ impl Character {
 
 pub struct Font {
     texture: Arc<Texture>,
+    mesh: Arc<Mesh>,
     cache: HashMap<char, Character>
 }
 
@@ -59,8 +59,11 @@ impl Font {
 
         let texture = Texture::from_raw(image_data, width, height);
 
+        let mesh = Self::build_mesh();
+
         Font {
             texture: texture,
+            mesh: mesh,
             cache: cache
         }
     }
@@ -69,7 +72,7 @@ impl Font {
         self.texture.clone()
     }
 
-    pub fn layout(&self, text: &str) -> Vec<Character> {
+    pub fn layout(&self, text: &str) -> Vec<MeshInstance> {
         let mut result = Vec::new();
 
         let mut translate = Matrix4::identity();
@@ -83,19 +86,53 @@ impl Font {
                 let width = character.width;
 
                 if first {
-                    translate = Matrix4::from_translation([width / 2., 0.0, 0.0].into()) * translate;
+                    translate =
+                        Matrix4::from_translation([width / 2., 0.0, 0.0].into()) * translate;
                     first = false;
                 }
 
-                character.translate(translate);
+                let transform = translate * character.transform();
 
-                result.push(character);
+                let mut instance = MeshInstanceBuilder::new(self.mesh.clone())
+                    .texture(self.texture.clone())
+                    .region(*character.region())
+                    .transform(transform)
+                    .build();
+
+                result.push(instance);
 
                 translate = Matrix4::from_translation([advance, 0.0, 0.0].into()) * translate;
             }
         }
 
         result
+    }
+
+    fn build_mesh() -> Arc<Mesh> {
+        let builder = MeshBuilder::new();
+
+        let (top, bottom, left, right) = (0.5, -0.5, -0.5, 0.5);
+
+        let v1 = [left, top, 0.];
+        let v2 = [right, top, 0.];
+        let v3 = [left, bottom, 0.];
+        let v4 = [right, bottom, 0.];
+
+        let n = [0., 0., 1.];
+
+        let t1 = [0., 0.];
+        let t2 = [1., 0.];
+        let t3 = [0., 1.];
+        let t4 = [1., 1.];
+
+        builder
+            .add_vertex(v1, n, t1)
+            .add_vertex(v3, n, t3)
+            .add_vertex(v4, n, t4)
+            .add_vertex(v4, n, t4)
+            .add_vertex(v2, n, t2)
+            .add_vertex(v1, n, t1)
+            .build()
     }
 
     fn build_texture(font: &RFont, cache: &mut HashMap<char, Character>,

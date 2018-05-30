@@ -17,6 +17,7 @@ pub struct Instance {
 pub struct MeshInstanceBuilder {
     mesh: Arc<Mesh>,
     color: Color,
+    matrix: Matrix4<f32>,
     texture: Option<Arc<Texture>>,
     region: [f32; 4]
 }
@@ -26,6 +27,7 @@ impl MeshInstanceBuilder {
         MeshInstanceBuilder {
             mesh: mesh,
             color: Color::white(),
+            matrix: Matrix4::identity(),
             texture: None,
             region: [0.0, 0.0, 1.0, 1.0]
         }
@@ -63,8 +65,23 @@ impl MeshInstanceBuilder {
         self.region([i * ustep, j * vstep, (i + 1.0) * ustep, (j + 1.0) * vstep])
     }
 
+    pub fn transform(mut self, matrix: Matrix4<f32>) -> MeshInstanceBuilder {
+        self.matrix = matrix * self.matrix;
+
+        self
+    }
+
+    pub fn translate(self, vector: (f32, f32, f32)) -> MeshInstanceBuilder {
+        self.transform(Matrix4::from_translation(vector.into()))
+    }
+
+    pub fn scale(self, scale_x: f32, scale_y: f32, scale_z: f32) -> MeshInstanceBuilder {
+        self.transform(Matrix4::from_diagonal(Vector4::new(scale_x, scale_y, scale_z, 1.)))
+    }
+
     pub fn build(self) -> MeshInstance {
-        MeshInstance::new(self.mesh.clone(), self.color, self.texture, self.region)
+        MeshInstance::new(self.mesh.clone(), self.color, self.matrix, self.texture,
+            self.region)
     }
 }
 
@@ -77,12 +94,12 @@ pub struct MeshInstance {
 }
 
 impl MeshInstance {
-    fn new(mesh: Arc<Mesh>, color: Color, texture: Option<Arc<Texture>>,
-        region: [f32; 4]) -> MeshInstance {
+    fn new(mesh: Arc<Mesh>, color: Color, matrix: Matrix4<f32>,
+        texture: Option<Arc<Texture>>, region: [f32; 4]) -> MeshInstance {
         MeshInstance {
             mesh: mesh,
             color: color,
-            matrix: Matrix4::identity(),
+            matrix: matrix,
             texture: texture,
             region: region
         }
