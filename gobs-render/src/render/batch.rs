@@ -4,21 +4,23 @@ use std::mem;
 use std::sync::Arc;
 
 use vulkano::command_buffer::{AutoCommandBufferBuilder};
-use vulkano::sync::{GpuFuture, now, FlushError};
+use vulkano::sync::{GpuFuture, now};
 
 use context::Context;
 use display::Display;
+use model::MeshInstance;
 use render::Renderer;
 use render::shader::{DefaultShader, Shader};
 use scene::SceneGraph;
+use scene::camera::Camera;
+use scene::light::Light;
 
 pub struct Batch {
     renderer: Renderer,
     shader: Box<Shader>,
     context: Arc<Context>,
     builder: Option<AutoCommandBufferBuilder>,
-    last_frame: Box<GpuFuture>,
-    next_frame: Box<GpuFuture>,
+    last_frame: Box<GpuFuture + Sync + Send>,
     swapchain_idx: usize
 }
 
@@ -33,8 +35,7 @@ impl Batch {
             shader: shader,
             context: context,
             builder: None,
-            last_frame: Box::new(now(device.clone())) as Box<GpuFuture>,
-            next_frame: Box::new(now(device)) as Box<GpuFuture>,
+            last_frame: Box::new(now(device.clone())) as Box<GpuFuture + Sync + Send>,
             swapchain_idx: 0
         }
     }
@@ -43,7 +44,12 @@ impl Batch {
         self.last_frame.cleanup_finished();
 
         if let Ok((id, future)) = self.renderer.new_frame() {
-            self.next_frame = future;
+
+            let last_frame = mem::replace(&mut self.last_frame,
+                Box::new(now(self.context.device())) as Box<GpuFuture + Sync + Send>);
+
+            self.last_frame = Box::new(last_frame.join(future));
+
             self.swapchain_idx = id;
 
             let builder = self.renderer.new_builder(id);
@@ -55,38 +61,24 @@ impl Batch {
     }
 
     pub fn end(&mut self) {
-        if self.builder.is_none() {
-            return;
-        };
+        self.builder.take().map(|builder| {
+            let command_buffer = self.renderer.get_command(builder);
 
-        let builder = self.builder.take();
+            let last_frame = mem::replace(&mut self.last_frame,
+                Box::new(now(self.context.device())) as Box<GpuFuture + Sync + Send>);
 
-        let command_buffer = builder.unwrap().end_render_pass().unwrap().build().unwrap();
+            self.last_frame = self.renderer.submit(command_buffer,
+                self.swapchain_idx, last_frame);
+        });
+    }
 
-        let device = self.context.device();
-        let queue = self.context.queue();
-        let swapchain = self.renderer.swapchain();
+    pub fn draw_instances(&mut self, camera: &Camera, light: &Light,
+        instances: Vec<Arc<MeshInstance>>) {
 
-        let last_frame = mem::replace(&mut self.last_frame, Box::new(now(device.clone())) as Box<GpuFuture>);
-        let next_frame = mem::replace(&mut self.next_frame, Box::new(now(device.clone())) as Box<GpuFuture>);
-
-        let future = last_frame.join(next_frame)
-            .then_execute(queue.clone(), command_buffer).unwrap()
-            .then_swapchain_present(queue, swapchain, self.swapchain_idx)
-            .then_signal_fence_and_flush();
-
-        match future {
-            Ok(future) => {
-                self.last_frame = Box::new(future) as Box<_>;
-            },
-            Err(FlushError::OutOfDate) => {
-                self.last_frame = Box::new(now(device.clone())) as Box<_>;
-            },
-            Err(e) => {
-                println!("{:?}", e);
-                self.last_frame = Box::new(now(device.clone())) as Box<_>;
-            }
-        }
+        self.builder = self.builder.take().and_then(|builder| {
+            Some(self.renderer.draw_list(
+                builder, camera, light, &mut self.shader, instances.iter()))
+        });
     }
 
     pub fn draw_graph(&mut self, graph: &SceneGraph) {
@@ -112,14 +104,10 @@ impl Batch {
         };
 
         for (_id, list) in map {
-            let builder = self.builder.take();
             let camera = graph.camera();
             let light = graph.light();
 
-            let new_builder = self.renderer.draw_list(
-                builder.unwrap(), camera, light, &mut self.shader, list.iter());
-
-            self.builder = Some(new_builder);
+            self.draw_instances(camera, light, list);
         }
     }
 

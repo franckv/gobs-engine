@@ -3,7 +3,7 @@ use std::sync::Arc;
 use std::slice::Iter;
 
 use vulkano::buffer::{BufferUsage, ImmutableBuffer};
-use vulkano::command_buffer::{AutoCommandBufferBuilder, DrawIndirectCommand, DynamicState};
+use vulkano::command_buffer::{AutoCommandBuffer, AutoCommandBufferBuilder, DrawIndirectCommand, DynamicState};
 use vulkano::device::Device;
 use vulkano::format::Format;
 use vulkano::framebuffer::{Framebuffer, FramebufferAbstract, RenderPassAbstract};
@@ -12,16 +12,16 @@ use vulkano::image::swapchain::SwapchainImage;
 use vulkano::pipeline::viewport::Viewport;
 use vulkano::swapchain;
 use vulkano::swapchain::{AcquireError, PresentMode, SurfaceTransform, Swapchain};
-use vulkano::sync::GpuFuture;
+use vulkano::sync::{GpuFuture, now, FlushError};
 
 use winit::Window;
 
-use scene::camera::Camera;
-use scene::light::Light;
-use model::{Instance, MeshInstance};
-use render::shader::Shader;
 use context::Context;
 use display::Display;
+use model::{Instance, MeshInstance};
+use render::shader::Shader;
+use scene::camera::Camera;
+use scene::light::Light;
 
 pub struct Renderer {
     context: Arc<Context>,
@@ -62,11 +62,7 @@ impl Renderer {
         self.framebuffers[id].clone()
     }
 
-    pub fn swapchain(&self) -> Arc<Swapchain<Window>> {
-        self.swapchain.clone()
-    }
-
-    pub fn new_frame(&mut self) -> Result<(usize, Box<GpuFuture>), AcquireError> {
+    pub fn new_frame(&mut self) -> Result<(usize, Box<GpuFuture + Send + Sync>), AcquireError> {
         let (idx, acquire_future) = match swapchain::acquire_next_image(
             self.swapchain.clone(), None) {
             Ok(r) => r,
@@ -80,11 +76,36 @@ impl Renderer {
         Ok((idx, Box::new(acquire_future)))
     }
 
-    pub fn new_builder(&mut self, swapchain_idx: usize) -> AutoCommandBufferBuilder {
+    pub fn new_builder(&self, swapchain_idx: usize) -> AutoCommandBufferBuilder {
         AutoCommandBufferBuilder::primary_one_time_submit(self.context.device(),
             self.context.queue().family()).unwrap()
         .begin_render_pass(self.framebuffer(swapchain_idx),
             false, vec![[0., 0., 1., 1.].into(), 1f32.into()]).unwrap()
+    }
+
+    pub fn get_command(&self, builder: AutoCommandBufferBuilder) -> AutoCommandBuffer {
+        builder.end_render_pass().unwrap().build().unwrap()
+    }
+
+    pub fn submit<'a, T: GpuFuture + Send + Sync + 'a>(&self, command: AutoCommandBuffer,
+        id: usize, last_frame: T) ->  Box<GpuFuture + Send + Sync + 'a> {
+        let future = last_frame
+            .then_execute(self.context.queue(), command).unwrap()
+            .then_swapchain_present(self.context.queue(), self.swapchain.clone(), id)
+            .then_signal_fence_and_flush();
+
+        match future {
+            Ok(future) => {
+                Box::new(future) as Box<_>
+            },
+            Err(FlushError::OutOfDate) => {
+                Box::new(now(self.context.device())) as Box<_>
+            },
+            Err(e) => {
+                println!("{:?}", e);
+                Box::new(now(self.context.device())) as Box<_>
+            }
+        }
     }
 
     fn create_render_pass(device: Arc<Device>, format: Format) -> Arc<RenderPassAbstract + Send + Sync> {
