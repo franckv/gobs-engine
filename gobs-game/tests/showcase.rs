@@ -433,7 +433,7 @@ impl App {
         let font = AssetManager::load_font(size, &Self::asset("font.ttf"));
         let mesh = AssetManager::build_quad();
 
-        let mut text = MeshInstanceBuilder::new(mesh.clone())
+        let text = MeshInstanceBuilder::new(mesh.clone())
             .texture(font.texture())
             .scale(10., 10., 1.)
             .build();
