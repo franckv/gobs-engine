@@ -4,7 +4,6 @@ extern crate vulkano;
 extern crate vulkano_shader_derive;
 extern crate vulkano_win;
 extern crate winit;
-extern crate image;
 extern crate cgmath;
 extern crate uuid;
 

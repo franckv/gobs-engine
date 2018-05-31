@@ -14,7 +14,4 @@ vulkano-shader-derive = {path = "../../../vulkano/vulkano-shader-derive", versio
 vulkano-win = {path = "../../../vulkano/vulkano-win", version="0.9"}
 winit = "0.11"
 cgmath = "0.16"
-image = "0.18"
-unicode-normalization = "0.1"
-rusttype = "0.5.2"
 uuid = { version = "0.6", features = ["v4"] }
