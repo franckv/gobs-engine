@@ -1,12 +1,10 @@
 extern crate gobs_game as game;
 extern crate gobs_scene as scene;
 
-use std::sync::Arc;
-
 use game::app::{Application, Run};
 use game::asset::AssetManager;
-use scene::scene::SceneGraph;
-use scene::model::{Color, MeshInstanceBuilder};
+use scene::SceneGraph;
+use scene::model::{Color, RenderObjectBuilder};
 
 struct App {
     graph: SceneGraph
@@ -17,16 +15,16 @@ impl Run for App {
         let texture = AssetManager::get_color_texture(Color::red());
         let triangle = AssetManager::build_triangle();
 
-        let instance = MeshInstanceBuilder::new(triangle).texture(texture).build();
+        let instance = RenderObjectBuilder::new(triangle).texture(texture).build();
 
-        self.graph.add_instance(Arc::new(instance));
+        self.graph.insert(instance);
     }
 
     fn update(&mut self, engine: &mut Application) {
         let batch = engine.batch_mut();
 
         batch.begin();
-        batch.draw_graph(&self.graph);
+        batch.draw_graph(&mut self.graph);
         batch.end();
     }
 

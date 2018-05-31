@@ -3,6 +3,8 @@ use std::collections::HashMap;
 use std::mem;
 use std::sync::Arc;
 
+use cgmath::Matrix4;
+
 use vulkano::command_buffer::{AutoCommandBufferBuilder};
 use vulkano::sync::{GpuFuture, now};
 
@@ -12,8 +14,8 @@ use render::Renderer;
 use render::shader::{DefaultShader, Shader};
 use scene::Camera;
 use scene::Light;
-use scene::SceneGraph;
-use scene::model::MeshInstance;
+use scene::{SceneGraph, SceneData};
+use scene::model::RenderObject;
 
 pub struct Batch {
     renderer: Renderer,
@@ -73,7 +75,7 @@ impl Batch {
     }
 
     pub fn draw_instances(&mut self, camera: &Camera, light: &Light,
-        instances: Vec<Arc<MeshInstance>>) {
+        instances: Vec<(Arc<RenderObject>, Matrix4<f32>)>) {
 
         self.builder = self.builder.take().and_then(|builder| {
             Some(self.renderer.draw_list(
@@ -81,24 +83,27 @@ impl Batch {
         });
     }
 
-    pub fn draw_graph(&mut self, graph: &SceneGraph) {
+    pub fn draw_graph(&mut self, graph: &mut SceneGraph) {
         if self.builder.is_none() {
             return;
         };
 
-        let instances = graph.instances();
-
         let map = {
             let mut map = HashMap::new();
 
-            for instance in instances {
-                let mesh = instance.mesh();
-                let id = mesh.id();
-                if !map.contains_key(&id) {
-                    map.insert(id, Vec::new());
+            graph.foreach(|data, transform| {
+                match data {
+                    SceneData::Object(o) => {
+                        let mesh = o.mesh();
+                        let id = mesh.id();
+                        if !map.contains_key(&id) {
+                            map.insert(id, Vec::new());
+                        }
+                        map.get_mut(&id).unwrap().push((o.clone(), transform));
+                    },
+                    _ => () // TODO
                 }
-                map.get_mut(&id).unwrap().push(instance.clone());
-            }
+            });
 
             map
         };

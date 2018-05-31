@@ -52,9 +52,9 @@ impl TextureCacheEntry {
         R8G8B8A8Srgb,
         context.queue()).expect("Failed to load texture");
 
-        future.flush().unwrap();
+        println!("Loading");
 
-        //let dim = image.dimensions().width_height();
+        future.flush().unwrap();
 
         TextureCacheEntry {
             image: image,
@@ -79,5 +79,11 @@ impl TextureCacheEntry {
 
     pub fn sampler(&self) -> Arc<Sampler> {
         self.sampler.clone()
+    }
+}
+
+impl Drop for TextureCacheEntry {
+    fn drop(&mut self) {
+        println!("Dropping");
     }
 }

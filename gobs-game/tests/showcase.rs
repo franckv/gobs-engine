@@ -4,16 +4,15 @@ extern crate image;
 extern crate gobs_game as game;
 extern crate gobs_scene as scene;
 
-use std::sync::Arc;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
 
-use cgmath::{Point3, Vector3};
+use cgmath::{Matrix4, Point3, Vector3};
 
 use scene::SphericalCoord;
 use scene::LightBuilder;
 use scene::SceneGraph;
-use scene::model::{Color, MeshInstanceBuilder};
+use scene::model::{Color, RenderObjectBuilder};
 
 use game::app::{Application, Run};
 use game::asset::{AssetManager, TileMap};
@@ -54,8 +53,8 @@ impl Run for App {
 
         batch.begin();
 
-        batch.draw_graph(&self.graph);
-        batch.draw_graph(&self.uigraph);
+        batch.draw_graph(&mut self.graph);
+        batch.draw_graph(&mut self.uigraph);
 
         batch.end();
 
@@ -260,12 +259,12 @@ impl App {
                     'w' => {
                         let (x, y) = (col as f32, num as f32);
 
-                        let tile = MeshInstanceBuilder::new(mesh.clone())
+                        let tile = RenderObjectBuilder::new(mesh.clone())
                             .color(Color::red())
                             .texture(texture.clone())
                             .translate((x - 16., 16. - y, 0.0))
                             .build();
-                        self.graph.add_instance(Arc::new(tile));
+                        self.graph.insert(tile);
                     },
                     _ => ()
                 }
@@ -287,7 +286,7 @@ impl App {
                     k if (k % 2 == 0) => {
                         let color = Color::red();
 
-                        MeshInstanceBuilder::new(triangle.clone())
+                        RenderObjectBuilder::new(triangle.clone())
                             .color(color)
                             .texture(texture.clone())
                             .translate((i as f32, j as f32, 0.0))
@@ -296,7 +295,7 @@ impl App {
                     _ => {
                         let color = Color::white();
 
-                        MeshInstanceBuilder::new(square.clone())
+                        RenderObjectBuilder::new(square.clone())
                             .color(color)
                             .texture(texture.clone())
                             .translate((i as f32, j as f32, 0.0))
@@ -304,7 +303,7 @@ impl App {
                     },
                 };
 
-                self.graph.add_instance(Arc::new(tile));
+                self.graph.insert(tile);
             }
         }
     }
@@ -320,21 +319,21 @@ impl App {
             TileMap::new(texture, tile_size)
         };
 
-        let mut tile = tilemap.build_tile(0, 0);
-        tile.translate((-1.0, 1.0, 0.0));
-        self.graph.add_instance(Arc::new(tile));
+        let tile = tilemap.build_tile(0, 0);
+        let transform = Matrix4::from_translation([-1.0, 1.0, 0.0].into());
+        self.graph.insert_with_transform(tile, transform);
 
-        let mut tile = tilemap.build_tile(0, 20);
-        tile.translate((-1.0, -1.0, 0.0));
-        self.graph.add_instance(Arc::new(tile));
+        let tile = tilemap.build_tile(0, 20);
+        let transform = Matrix4::from_translation([-1.0, -1.0, 0.0].into());
+        self.graph.insert_with_transform(tile, transform);
 
-        let mut tile = tilemap.build_tile(0, 21);
-        tile.translate((1.0, 1.0, 0.0));
-        self.graph.add_instance(Arc::new(tile));
+        let tile = tilemap.build_tile(0, 21);
+        let transform = Matrix4::from_translation([1.0, 1.0, 0.0].into());
+        self.graph.insert_with_transform(tile, transform);
 
-        let mut tile = tilemap.build_tile(0, 22);
-        tile.translate((1.0, -1.0, 0.0));
-        self.graph.add_instance(Arc::new(tile));
+        let tile = tilemap.build_tile(0, 22);
+        let transform = Matrix4::from_translation([1.0, -1.0, 0.0].into());
+        self.graph.insert_with_transform(tile, transform);
     }
 
     fn draw_cube(&mut self) {
@@ -344,12 +343,12 @@ impl App {
 
         let mesh = AssetManager::build_cube();
 
-        let instance = MeshInstanceBuilder::new(mesh.clone())
+        let instance = RenderObjectBuilder::new(mesh.clone())
             .color(Color::white())
             .texture(texture)
             .build();
 
-        self.graph.add_instance(Arc::new(instance));
+        self.graph.insert(instance);
     }
 
     fn draw_dungeon(&mut self) {
@@ -368,20 +367,18 @@ impl App {
                     'w' => {
                         let (x, y) = (col as f32, num as f32);
 
-                        let instance = MeshInstanceBuilder::new(mesh.clone())
+                        let instance = RenderObjectBuilder::new(mesh.clone())
                             .color(Color::white())
                             .texture(texture.clone())
                             .translate((x - 16., 0., y - 16.))
                             .build();
 
-                        self.graph.add_instance(Arc::new(instance));
+                        self.graph.insert(instance);
                     },
                     _ => ()
                 }
             }
         }
-
-        println!("{}", self.graph.instances().len());
     }
 
     fn draw_depth(&mut self) {
@@ -400,13 +397,13 @@ impl App {
 
             let i = i as f32;
 
-            let instance = MeshInstanceBuilder::new(triangle.clone())
+            let instance = RenderObjectBuilder::new(triangle.clone())
                 .color(color)
                 .texture(texture.clone())
                 .translate((i, 0., i / 10.))
                 .build();
 
-            self.graph.add_instance(Arc::new(instance));
+            self.graph.insert(instance);
         }
     }
 
@@ -417,12 +414,11 @@ impl App {
 
         let font = AssetManager::load_font(size, &Self::asset("font.ttf"));
 
-        let chars = font.layout("Press space to go to the new example");
+        let chars = font.layout("Press space to go to the next example");
 
         for c in chars {
-            self.graph.add_instance(Arc::new(c));
+            self.graph.insert(c);
         }
-
     }
 
     fn draw_fontmap(&mut self) {
@@ -433,18 +429,15 @@ impl App {
         let font = AssetManager::load_font(size, &Self::asset("font.ttf"));
         let mesh = AssetManager::build_quad();
 
-        let text = MeshInstanceBuilder::new(mesh.clone())
+        let text = RenderObjectBuilder::new(mesh.clone())
             .texture(font.texture())
             .scale(10., 10., 1.)
             .build();
 
-
-        self.graph.add_instance(Arc::new(text));
+        self.graph.insert(text);
     }
 
     fn draw_centers(&mut self) {
-        self.ortho(2.);
-
         let texture = AssetManager::get_color_texture(Color::green());
 
         let left: Point3<f32> = [-1., 0., 0.5].into();
@@ -453,12 +446,12 @@ impl App {
         let bottom: Point3<f32> = [0., -1., 0.5].into();
 
         let line = AssetManager::build_line(left, right);
-        let instance = MeshInstanceBuilder::new(line).texture(texture.clone()).build();
-        self.uigraph.add_instance(Arc::new(instance));
+        let instance = RenderObjectBuilder::new(line).texture(texture.clone()).build();
+        self.uigraph.insert(instance);
 
         let line = AssetManager::build_line(bottom, top);
-        let instance = MeshInstanceBuilder::new(line).texture(texture).build();
-        self.uigraph.add_instance(Arc::new(instance));
+        let instance = RenderObjectBuilder::new(line).texture(texture).build();
+        self.uigraph.insert(instance);
     }
 }
 

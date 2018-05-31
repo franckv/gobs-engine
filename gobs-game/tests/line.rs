@@ -3,14 +3,12 @@ extern crate cgmath;
 extern crate gobs_game as game;
 extern crate gobs_scene as scene;
 
-use std::sync::Arc;
-
 use cgmath::Point3;
 
 use game::app::{Application, Run};
 use game::asset::AssetManager;
 use scene::SceneGraph;
-use scene::model::{Color, MeshInstanceBuilder};
+use scene::model::{Color, RenderObjectBuilder};
 
 struct App {
     graph: SceneGraph
@@ -25,7 +23,7 @@ impl Run for App {
         let batch = engine.batch_mut();
 
         batch.begin();
-        batch.draw_graph(&self.graph);
+        batch.draw_graph(&mut self.graph);
         batch.end();
     }
 
@@ -51,12 +49,12 @@ impl App {
         let bottom: Point3<f32> = [0., -1., 0.5].into();
 
         let line = AssetManager::build_line(left, right);
-        let instance = MeshInstanceBuilder::new(line).texture(texture.clone()).build();
-        self.graph.add_instance(Arc::new(instance));
+        let instance = RenderObjectBuilder::new(line).texture(texture.clone()).build();
+        self.graph.insert(instance);
 
         let line = AssetManager::build_line(bottom, top);
-        let instance = MeshInstanceBuilder::new(line).texture(texture).build();
-        self.graph.add_instance(Arc::new(instance));
+        let instance = RenderObjectBuilder::new(line).texture(texture).build();
+        self.graph.insert(instance);
     }
 }
 

@@ -14,7 +14,7 @@ pub struct Instance {
     pub region: [f32; 4],
 }
 
-pub struct MeshInstanceBuilder {
+pub struct RenderObjectBuilder {
     mesh: Arc<Mesh>,
     color: Color,
     matrix: Matrix4<f32>,
@@ -22,9 +22,9 @@ pub struct MeshInstanceBuilder {
     region: [f32; 4]
 }
 
-impl MeshInstanceBuilder {
-    pub fn new(mesh: Arc<Mesh>) -> MeshInstanceBuilder {
-        MeshInstanceBuilder {
+impl RenderObjectBuilder {
+    pub fn new(mesh: Arc<Mesh>) -> RenderObjectBuilder {
+        RenderObjectBuilder {
             mesh: mesh,
             color: Color::white(),
             matrix: Matrix4::identity(),
@@ -33,25 +33,25 @@ impl MeshInstanceBuilder {
         }
     }
 
-    pub fn color(mut self, color: Color) -> MeshInstanceBuilder {
+    pub fn color(mut self, color: Color) -> RenderObjectBuilder {
         self.color = color;
 
         self
     }
 
-    pub fn texture(mut self, texture: Arc<Texture>) -> MeshInstanceBuilder {
+    pub fn texture(mut self, texture: Arc<Texture>) -> RenderObjectBuilder {
         self.texture = Some(texture);
 
         self
     }
 
-    pub fn region(mut self, region: [f32; 4]) -> MeshInstanceBuilder {
+    pub fn region(mut self, region: [f32; 4]) -> RenderObjectBuilder {
         self.region = region;
 
         self
     }
 
-    pub fn atlas(self, i: usize, j: usize, tile_size: [usize; 2]) -> MeshInstanceBuilder {
+    pub fn atlas(self, i: usize, j: usize, tile_size: [usize; 2]) -> RenderObjectBuilder {
         let (ustep, vstep) = {
             let texture = self.texture.as_ref().unwrap();
             let img_size = texture.size();
@@ -65,27 +65,27 @@ impl MeshInstanceBuilder {
         self.region([i * ustep, j * vstep, (i + 1.0) * ustep, (j + 1.0) * vstep])
     }
 
-    pub fn transform(mut self, matrix: Matrix4<f32>) -> MeshInstanceBuilder {
+    pub fn transform(mut self, matrix: Matrix4<f32>) -> RenderObjectBuilder {
         self.matrix = matrix * self.matrix;
 
         self
     }
 
-    pub fn translate(self, vector: (f32, f32, f32)) -> MeshInstanceBuilder {
+    pub fn translate(self, vector: (f32, f32, f32)) -> RenderObjectBuilder {
         self.transform(Matrix4::from_translation(vector.into()))
     }
 
-    pub fn scale(self, scale_x: f32, scale_y: f32, scale_z: f32) -> MeshInstanceBuilder {
+    pub fn scale(self, scale_x: f32, scale_y: f32, scale_z: f32) -> RenderObjectBuilder {
         self.transform(Matrix4::from_diagonal(Vector4::new(scale_x, scale_y, scale_z, 1.)))
     }
 
-    pub fn build(self) -> MeshInstance {
-        MeshInstance::new(self.mesh.clone(), self.color, self.matrix, self.texture,
+    pub fn build(self) -> Arc<RenderObject> {
+        RenderObject::new(self.mesh.clone(), self.color, self.matrix, self.texture,
             self.region)
     }
 }
 
-pub struct MeshInstance {
+pub struct RenderObject {
     mesh: Arc<Mesh>,
     color: Color,
     matrix: Matrix4<f32>,
@@ -93,16 +93,16 @@ pub struct MeshInstance {
     region: [f32; 4]
 }
 
-impl MeshInstance {
+impl RenderObject {
     fn new(mesh: Arc<Mesh>, color: Color, matrix: Matrix4<f32>,
-        texture: Option<Arc<Texture>>, region: [f32; 4]) -> MeshInstance {
-        MeshInstance {
+        texture: Option<Arc<Texture>>, region: [f32; 4]) -> Arc<RenderObject> {
+        Arc::new(RenderObject {
             mesh: mesh,
             color: color,
             matrix: matrix,
             texture: texture,
             region: region
-        }
+        })
     }
 
     pub fn mesh(&self) -> Arc<Mesh> {
@@ -125,30 +125,20 @@ impl MeshInstance {
         &self.matrix
     }
 
-    pub fn get_instance_data(&self) -> Instance {
+    pub fn get_instance_data(&self, global_transform: Matrix4<f32>) -> Instance {
+        let transform = global_transform * self.matrix;
+
         let normal_transform = Matrix3::from_cols(
-            self.matrix.x.truncate(),
-            self.matrix.y.truncate(),
-            self.matrix.z.truncate(),
+            transform.x.truncate(),
+            transform.y.truncate(),
+            transform.z.truncate(),
         ).invert().unwrap().transpose();
 
         Instance {
-            transform: self.matrix.into(),
+            transform: transform.into(),
             normal_transform: normal_transform.into(),
             color: self.color.into(),
             region: self.region,
         }
-    }
-
-    pub fn transform(&mut self, trans: &Matrix4<f32>) {
-        self.matrix = trans * self.matrix;
-    }
-
-    pub fn scale(&mut self, scale_x: f32, scale_y: f32, scale_z: f32) {
-        self.transform(&Matrix4::from_diagonal(Vector4::new(scale_x, scale_y, scale_z, 1.)));
-    }
-
-    pub fn translate(&mut self, vector: (f32, f32, f32)) {
-        self.transform(&Matrix4::from_translation(vector.into()));
     }
 }

@@ -1,7 +1,9 @@
 extern crate gobs_game as game;
 extern crate gobs_scene as scene;
 
-use std::sync::Arc;
+extern crate cgmath;
+
+use cgmath::Matrix4;
 
 use game::app::{Application, Run};
 use game::asset::AssetManager;
@@ -20,7 +22,7 @@ impl Run for App {
         let batch = engine.batch_mut();
 
         batch.begin();
-        batch.draw_graph(&self.graph);
+        batch.draw_graph(&mut self.graph);
         batch.end();
     }
 
@@ -43,8 +45,9 @@ impl App {
         let chars = font.layout("The quick brown fox jumps over the lazy dog");
 
         for mut c in chars {
-            c.translate((-0.5, 0., 0.));
-            self.graph.add_instance(Arc::new(c));
+            let transform = Matrix4::from_translation([-0.5, 0., 0.].into());
+            self.graph.insert_with_transform(c, transform);
+
         }
     }
 }

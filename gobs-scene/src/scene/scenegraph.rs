@@ -1,50 +1,32 @@
 use std::sync::Arc;
-use std::slice::Iter;
 
-use model::MeshInstance;
+use data::TreeGraph;
+use model::RenderObject;
 use scene::camera::Camera;
-use scene::light::{Light, LightBuilder};
+use scene::light::Light;
 
-pub struct SceneGraph {
-    camera: Camera,
-    light: Light,
-    instances: Vec<Arc<MeshInstance>>
+pub type SceneGraph = TreeGraph<SceneData>;
+
+pub enum SceneData {
+    Object(Arc<RenderObject>),
+    Camera(Camera),
+    Light(Light),
 }
 
-impl SceneGraph {
-    pub fn new() -> SceneGraph {
-        SceneGraph {
-            camera: Camera::new([0., 0., 0.].into()),
-            light: LightBuilder::new().build(),
-            instances: Vec::new()
-        }
+impl From<Arc<RenderObject>> for SceneData {
+    fn from(r: Arc<RenderObject>) -> Self {
+        SceneData::Object(r)
     }
+}
 
-    pub fn camera(&self) -> &Camera {
-        &self.camera
+impl From<Camera> for SceneData {
+    fn from(c: Camera) -> Self {
+        SceneData::Camera(c)
     }
+}
 
-    pub fn camera_mut(&mut self) -> &mut Camera {
-        &mut self.camera
-    }
-
-    pub fn light(&self) -> &Light {
-        &self.light
-    }
-
-    pub fn set_light(&mut self, light: Light) {
-        self.light = light;
-    }
-
-    pub fn add_instance(&mut self, instance: Arc<MeshInstance>) {
-        self.instances.push(instance);
-    }
-
-    pub fn instances(&self) -> Iter<Arc<MeshInstance>> {
-        self.instances.iter()
-    }
-
-    pub fn clear(&mut self) {
-        self.instances.clear();
+impl From<Light> for SceneData {
+    fn from(l: Light) -> Self {
+        SceneData::Light(l)
     }
 }

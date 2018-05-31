@@ -2,6 +2,8 @@ use std::mem;
 use std::sync::Arc;
 use std::slice::Iter;
 
+use cgmath::Matrix4;
+
 use vulkano::buffer::{BufferUsage, ImmutableBuffer};
 use vulkano::command_buffer::{AutoCommandBuffer, AutoCommandBufferBuilder, DrawIndirectCommand, DynamicState};
 use vulkano::device::Device;
@@ -23,7 +25,7 @@ use display::Display;
 use render::shader::Shader;
 use scene::Camera;
 use scene::Light;
-use scene::model::MeshInstance;
+use scene::model::RenderObject;
 
 pub struct Renderer {
     context: Arc<Context>,
@@ -139,14 +141,14 @@ impl Renderer {
 
     pub fn draw_list(&mut self, builder: AutoCommandBufferBuilder,
         camera: &Camera, light: &Light, shader: &mut Box<Shader>,
-        instances: Iter<Arc<MeshInstance>>) -> AutoCommandBufferBuilder {
+        instances: Iter<(Arc<RenderObject>, Matrix4<f32>)>) -> AutoCommandBufferBuilder {
         let instance_buffer = self.create_instance_buffer(instances.clone());
         let indirect_buffer = self.create_indirect_buffer(instances.clone());
 
         // TODO: change this
         let first = instances.as_slice().get(0).unwrap();
-        let mesh = first.mesh();
-        let texture = first.texture().unwrap();
+        let mesh = first.0.mesh();
+        let texture = first.0.texture().unwrap();
         let primitive = mesh.primitive_type();
 
         let mesh = self.mesh_cache.get(mesh);
@@ -190,24 +192,26 @@ impl Renderer {
         }).collect::<Vec<_>>()
     }
 
-    fn create_instance_buffer(&mut self, instances: Iter<Arc<MeshInstance>>)
+    fn create_instance_buffer(&mut self, instances: Iter<(Arc<RenderObject>, Matrix4<f32>)>)
     -> Arc<ImmutableBuffer<[RenderInstance]>> {
         let mut instances_data: Vec<RenderInstance> = Vec::new();
 
         for instance in instances {
-            let instance_data: RenderInstance = instance.get_instance_data().into();
+            let instance_data: RenderInstance =
+                instance.0.get_instance_data(instance.1).into();
             instances_data.push(instance_data);
         }
 
-        let (instance_buffer, _future) = ImmutableBuffer::from_iter(instances_data.into_iter(),
+        let (instance_buffer, _future) =
+            ImmutableBuffer::from_iter(instances_data.into_iter(),
         BufferUsage::vertex_buffer(), self.context.queue()).unwrap();
 
         instance_buffer
     }
 
-    fn create_indirect_buffer(&mut self, instances: Iter<Arc<MeshInstance>>)
+    fn create_indirect_buffer(&mut self, instances: Iter<(Arc<RenderObject>, Matrix4<f32>)>)
     -> Arc<ImmutableBuffer<[DrawIndirectCommand]>> {
-        let mesh = instances.as_slice().get(0).unwrap().mesh();
+        let mesh = instances.as_slice().get(0).unwrap().0.mesh();
 
         let indirect_data = vec![DrawIndirectCommand {
             vertex_count: mesh.vlist().len() as u32,

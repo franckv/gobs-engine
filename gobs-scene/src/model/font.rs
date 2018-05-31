@@ -7,12 +7,12 @@ use unicode_normalization::UnicodeNormalization;
 use cgmath::{Matrix4, SquareMatrix};
 use rusttype::{Font as RFont, FontCollection, Scale, point, Rect};
 
-use model::{Color, Mesh, MeshBuilder, MeshInstance, MeshInstanceBuilder, Texture};
+use model::{Color, Mesh, MeshBuilder, RenderObject, RenderObjectBuilder, Texture};
 
 const TEXTURE_SIZE: (usize, usize) = (1024, 1024);
 
 #[derive(Clone)]
-pub struct Character {
+struct Character {
     c: char,
     region: [f32; 4],
     transform: Matrix4<f32>,
@@ -27,10 +27,6 @@ impl Character {
 
     pub fn transform(&self) -> &Matrix4<f32> {
         &self.transform
-    }
-
-    pub fn translate(&mut self, transform: Matrix4<f32>) {
-        self.transform = transform * self.transform;
     }
 }
 
@@ -72,7 +68,7 @@ impl Font {
         self.texture.clone()
     }
 
-    pub fn layout(&self, text: &str) -> Vec<MeshInstance> {
+    pub fn layout(&self, text: &str) -> Vec<Arc<RenderObject>> {
         let mut result = Vec::new();
 
         let mut translate = Matrix4::identity();
@@ -80,8 +76,6 @@ impl Font {
         let mut first = true;
         for c in text.nfc() {
             if let Some(character) = self.cache.get(&c) {
-                let mut character = character.clone();
-
                 let advance = character.advance;
                 let width = character.width;
 
@@ -93,7 +87,7 @@ impl Font {
 
                 let transform = translate * character.transform();
 
-                let mut instance = MeshInstanceBuilder::new(self.mesh.clone())
+                let instance = RenderObjectBuilder::new(self.mesh.clone())
                     .texture(self.texture.clone())
                     .region(*character.region())
                     .transform(transform)
