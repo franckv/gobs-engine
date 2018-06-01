@@ -13,6 +13,7 @@ pub enum Key {
     Unknown
 }
 
+#[derive(Copy, Clone)]
 pub struct InputMap {
     state: [bool; 1 + Key::Unknown as usize],
     previous: [bool; 1 + Key::Unknown as usize]
@@ -41,5 +42,11 @@ impl InputMap {
     pub fn reset(&mut self) {
         self.previous = self.state;
         self.state = [false; 1 + Key::Unknown as usize];
+    }
+}
+
+impl Default for InputMap {
+    fn default() -> Self {
+        Self::new()
     }
 }
