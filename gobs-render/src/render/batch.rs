@@ -46,7 +46,6 @@ impl Batch {
         self.last_frame.cleanup_finished();
 
         if let Ok((id, future)) = self.renderer.new_frame() {
-
             let last_frame = mem::replace(&mut self.last_frame,
                 Box::new(now(self.context.device())) as Box<GpuFuture + Sync + Send>);
 
@@ -114,9 +113,5 @@ impl Batch {
 
             self.draw_instances(camera, light, list);
         }
-    }
-
-    pub fn resize(&mut self) {
-        self.renderer.resize();
     }
 }

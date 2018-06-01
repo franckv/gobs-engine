@@ -76,6 +76,7 @@ impl Renderer {
             Ok(r) => r,
             Err(AcquireError::OutOfDate) => {
                 println!("OutOfDate");
+                self.recreate_swapchain();
                 return Err(AcquireError::OutOfDate)
             },
             Err(err) => panic!("{:?}", err)
@@ -192,8 +193,8 @@ impl Renderer {
         }).collect::<Vec<_>>()
     }
 
-    fn create_instance_buffer(&mut self, instances: Iter<(Arc<RenderObject>, Matrix4<f32>)>)
-    -> Arc<ImmutableBuffer<[RenderInstance]>> {
+    fn create_instance_buffer(&mut self, instances: Iter<(Arc<RenderObject>,
+        Matrix4<f32>)>) -> Arc<ImmutableBuffer<[RenderInstance]>> {
         let mut instances_data: Vec<RenderInstance> = Vec::new();
 
         for instance in instances {
@@ -209,8 +210,8 @@ impl Renderer {
         instance_buffer
     }
 
-    fn create_indirect_buffer(&mut self, instances: Iter<(Arc<RenderObject>, Matrix4<f32>)>)
-    -> Arc<ImmutableBuffer<[DrawIndirectCommand]>> {
+    fn create_indirect_buffer(&mut self, instances: Iter<(Arc<RenderObject>,
+        Matrix4<f32>)>) -> Arc<ImmutableBuffer<[DrawIndirectCommand]>> {
         let mesh = instances.as_slice().get(0).unwrap().0.mesh();
 
         let indirect_data = vec![DrawIndirectCommand {
@@ -226,7 +227,7 @@ impl Renderer {
         indirect_buffer
     }
 
-    pub fn resize(&mut self) {
+    fn recreate_swapchain(&mut self) {
         let (swapchain, images) = self.swapchain.recreate_with_dimension(
             self.display.dimensions()).unwrap();
 

@@ -1,16 +1,19 @@
 extern crate cgmath;
 
 extern crate gobs_game as game;
+extern crate gobs_render as render;
 extern crate gobs_scene as scene;
 
 use cgmath::Point3;
 
 use game::app::{Application, Run};
+use render::Batch;
 use scene::SceneGraph;
 use scene::model::{Color, RenderObjectBuilder, Shapes, Texture};
 
 struct App {
-    graph: SceneGraph
+    graph: SceneGraph,
+    batch: Batch
 }
 
 impl Run for App {
@@ -19,11 +22,9 @@ impl Run for App {
     }
 
     fn update(&mut self, engine: &mut Application) {
-        let batch = engine.batch_mut();
-
-        batch.begin();
-        batch.draw_graph(&mut self.graph);
-        batch.end();
+        self.batch.begin();
+        self.batch.draw_graph(&mut self.graph);
+        self.batch.end();
     }
 
     fn resize(&mut self, width: u32, height: u32, _engine: &mut Application) {
@@ -33,9 +34,10 @@ impl Run for App {
 }
 
 impl App {
-    pub fn new() -> Self {
+    pub fn new(engine: &Application) -> Self {
         App {
-            graph: SceneGraph::new()
+            graph: SceneGraph::new(),
+            batch: engine.create_batch()
         }
     }
 
@@ -60,5 +62,6 @@ impl App {
 #[test]
 pub fn line() {
     let mut engine = Application::new();
-    engine.run(App::new());
+    let app = App::new(&engine);
+    engine.run(app);
 }

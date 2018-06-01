@@ -2,12 +2,15 @@ extern crate cgmath;
 extern crate image;
 
 extern crate gobs_game as game;
+extern crate gobs_render as render;
 extern crate gobs_scene as scene;
 
 use std::fs::File;
 use std::io::{BufRead, BufReader};
 
 use cgmath::{Matrix4, Point3, Vector3};
+
+use render::Batch;
 
 use scene::SphericalCoord;
 use scene::LightBuilder;
@@ -33,6 +36,7 @@ pub enum Example {
 struct App {
     graph: SceneGraph,
     uigraph: SceneGraph,
+    batch: Batch,
     timer: Timer,
     position: SphericalCoord<f32>,
     world_size: f32,
@@ -49,14 +53,12 @@ impl Run for App {
     fn update(&mut self, engine: &mut Application) {
         self.handle_input(engine);
 
-        let batch = engine.batch_mut();
+        self.batch.begin();
 
-        batch.begin();
+        self.batch.draw_graph(&mut self.graph);
+        self.batch.draw_graph(&mut self.uigraph);
 
-        batch.draw_graph(&mut self.graph);
-        batch.draw_graph(&mut self.uigraph);
-
-        batch.end();
+        self.batch.end();
 
         self.print_fps();
     }
@@ -74,7 +76,7 @@ impl Run for App {
 }
 
 impl App {
-    fn new() -> App {
+    fn new(engine: &Application) -> App {
         let position = SphericalCoord::new(3., 0., 0.);
         let mut graph = SceneGraph::new();
         let light = LightBuilder::new()
@@ -85,6 +87,7 @@ impl App {
         App {
             graph: SceneGraph::new(),
             uigraph: SceneGraph::new(),
+            batch: engine.create_batch(),
             timer: Timer::new(),
             position: position,
             world_size: 5.0,
@@ -469,5 +472,6 @@ impl App {
 #[test]
 pub fn showcase() {
     let mut engine = Application::new();
-    engine.run(App::new());
+    let app = App::new(&engine);
+    engine.run(app);
 }

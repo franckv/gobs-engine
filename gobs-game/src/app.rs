@@ -2,12 +2,13 @@ use std::sync::Arc;
 
 use render::Batch;
 use render::context;
+use render::context::Context;
 use render::display::Display;
 
 use input::{Event, InputHandler, InputMap};
 
 pub struct Application {
-    batch: Batch,
+    context: Arc<Context>,
     display: Arc<Display>,
     input_handler: InputHandler
 }
@@ -16,18 +17,17 @@ impl Application {
     pub fn new() -> Application {
         let (events_loop, context, display) = context::init();
 
-        let batch = Batch::new(display.clone(), context.clone());
         let input_handler = InputHandler::new(events_loop);
 
         Application {
-            batch: batch,
+            context: context,
             display: display,
             input_handler: input_handler
         }
     }
 
-    pub fn batch_mut(&mut self) -> &mut Batch {
-        &mut self.batch
+    pub fn create_batch(&self) -> Batch {
+        Batch::new(self.display.clone(), self.context.clone())
     }
 
     pub fn input_map(&self) -> &InputMap {
@@ -50,7 +50,6 @@ impl Application {
                 Event::RESIZE => {
                     let [width, height] = self.display.dimensions();
 
-                    self.batch.resize();
                     runnable.resize(width, height, self);
                 },
                 Event::CLOSE => {
