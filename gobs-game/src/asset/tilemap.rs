@@ -1,8 +1,6 @@
 use std::sync::Arc;
 
-use scene::model::{Color, Mesh, RenderObject, RenderObjectBuilder, Texture};
-
-use asset::AssetManager;
+use scene::model::{Color, Mesh, RenderObject, RenderObjectBuilder, Shapes, Texture};
 
 pub struct Tile {
     instance: RenderObject
@@ -28,7 +26,7 @@ impl TileMap {
             [img_size[0] / tile_size[0], img_size[1] / tile_size[1]]
         };
 
-        let mesh = AssetManager::build_quad();
+        let mesh = Shapes::quad();
 
         TileMap {
             mesh: mesh,

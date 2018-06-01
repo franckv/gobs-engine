@@ -6,9 +6,8 @@ extern crate gobs_scene as scene;
 use cgmath::Point3;
 
 use game::app::{Application, Run};
-use game::asset::AssetManager;
 use scene::SceneGraph;
-use scene::model::{Color, RenderObjectBuilder};
+use scene::model::{Color, RenderObjectBuilder, Shapes, Texture};
 
 struct App {
     graph: SceneGraph
@@ -41,18 +40,18 @@ impl App {
     }
 
     fn draw_centers(&mut self) {
-        let texture = AssetManager::get_color_texture(Color::green());
+        let texture = Texture::from_color(Color::green());
 
         let left: Point3<f32> = [-1., 0., 0.5].into();
         let right: Point3<f32> = [1., 0., 0.5].into();
         let top: Point3<f32> = [0., 1., 0.5].into();
         let bottom: Point3<f32> = [0., -1., 0.5].into();
 
-        let line = AssetManager::build_line(left, right);
+        let line = Shapes::line(left, right);
         let instance = RenderObjectBuilder::new(line).texture(texture.clone()).build();
         self.graph.insert(instance);
 
-        let line = AssetManager::build_line(bottom, top);
+        let line = Shapes::line(bottom, top);
         let instance = RenderObjectBuilder::new(line).texture(texture).build();
         self.graph.insert(instance);
     }

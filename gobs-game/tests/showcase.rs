@@ -12,10 +12,10 @@ use cgmath::{Matrix4, Point3, Vector3};
 use scene::SphericalCoord;
 use scene::LightBuilder;
 use scene::SceneGraph;
-use scene::model::{Color, RenderObjectBuilder};
+use scene::model::{Color, Font, RenderObjectBuilder, Shapes, Texture};
 
 use game::app::{Application, Run};
-use game::asset::{AssetManager, TileMap};
+use game::asset::TileMap;
 use game::input::Key;
 use game::timer::Timer;
 
@@ -246,9 +246,9 @@ impl App {
     fn draw_map(&mut self) {
         self.ortho(40.);
 
-        let texture = AssetManager::get_color_texture(Color::white());
+        let texture = Texture::from_color(Color::white());
 
-        let mesh = AssetManager::build_quad();
+        let mesh = Shapes::quad();
 
         let f = File::open(Self::asset("dungeon.map")).expect("File not found");
         let reader = BufReader::new(f);
@@ -275,10 +275,10 @@ impl App {
     fn draw_checkboard(&mut self) {
         self.ortho(30.);
 
-        let texture = AssetManager::get_color_texture(Color::white());
+        let texture = Texture::from_color(Color::white());
 
-        let triangle = AssetManager::build_triangle();
-        let square = AssetManager::build_quad();
+        let triangle = Shapes::triangle();
+        let square = Shapes::quad();
 
         for i in -5..5 {
             for j in -5..5 {
@@ -314,7 +314,7 @@ impl App {
         let tilemap = {
             let tile_size = [34, 34];
 
-            let texture = AssetManager::load_texture(&Self::asset("tileset.png"));
+            let texture = Texture::from_file(&Self::asset("tileset.png"));
 
             TileMap::new(texture, tile_size)
         };
@@ -339,9 +339,9 @@ impl App {
     fn draw_cube(&mut self) {
         self.perspective(30.);
 
-        let texture = AssetManager::load_texture(&Self::asset("wall.png"));
+        let texture = Texture::from_file(&Self::asset("wall.png"));
 
-        let mesh = AssetManager::build_cube();
+        let mesh = Shapes::cube();
 
         let instance = RenderObjectBuilder::new(mesh.clone())
             .color(Color::white())
@@ -354,9 +354,9 @@ impl App {
     fn draw_dungeon(&mut self) {
         self.perspective(30.);
 
-        let texture = AssetManager::load_texture(&Self::asset("wall.png"));
+        let texture = Texture::from_file(&Self::asset("wall.png"));
 
-        let mesh = AssetManager::build_cube();
+        let mesh = Shapes::cube();
 
         let f = File::open(Self::asset("dungeon.map")).expect("File not found");
         let reader = BufReader::new(f);
@@ -384,9 +384,9 @@ impl App {
     fn draw_depth(&mut self) {
         self.ortho(30.);
 
-        let texture = AssetManager::get_color_texture(Color::white());
+        let texture = Texture::from_color(Color::white());
 
-        let triangle = AssetManager::build_triangle();
+        let triangle = Shapes::triangle();
 
         for i in -10..11 {
             let color = match i {
@@ -412,7 +412,7 @@ impl App {
 
         let size: usize = 30;
 
-        let font = AssetManager::load_font(size, &Self::asset("font.ttf"));
+        let font = Font::new(size, &Self::asset("font.ttf"));
 
         let chars = font.layout("Press space to go to the next example");
 
@@ -426,8 +426,8 @@ impl App {
 
         let size: usize = 100;
 
-        let font = AssetManager::load_font(size, &Self::asset("font.ttf"));
-        let mesh = AssetManager::build_quad();
+        let font = Font::new(size, &Self::asset("font.ttf"));
+        let mesh = Shapes::quad();
 
         let text = RenderObjectBuilder::new(mesh.clone())
             .texture(font.texture())
@@ -438,18 +438,18 @@ impl App {
     }
 
     fn draw_centers(&mut self) {
-        let texture = AssetManager::get_color_texture(Color::green());
+        let texture = Texture::from_color(Color::green());
 
         let left: Point3<f32> = [-1., 0., 0.5].into();
         let right: Point3<f32> = [1., 0., 0.5].into();
         let top: Point3<f32> = [0., 1., 0.5].into();
         let bottom: Point3<f32> = [0., -1., 0.5].into();
 
-        let line = AssetManager::build_line(left, right);
+        let line = Shapes::line(left, right);
         let instance = RenderObjectBuilder::new(line).texture(texture.clone()).build();
         self.uigraph.insert(instance);
 
-        let line = AssetManager::build_line(bottom, top);
+        let line = Shapes::line(bottom, top);
         let instance = RenderObjectBuilder::new(line).texture(texture).build();
         self.uigraph.insert(instance);
     }

@@ -6,8 +6,8 @@ extern crate cgmath;
 use cgmath::Matrix4;
 
 use game::app::{Application, Run};
-use game::asset::AssetManager;
 use scene::SceneGraph;
+use scene::model::Font;
 
 struct App {
     graph: SceneGraph
@@ -40,7 +40,7 @@ impl App {
     }
 
     pub fn draw(&mut self) {
-        let font = AssetManager::load_font(42, "../../assets/font.ttf");
+        let font = Font::new(42, "../../assets/font.ttf");
 
         let chars = font.layout("The quick brown fox jumps over the lazy dog");
 

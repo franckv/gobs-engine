@@ -2,9 +2,8 @@ extern crate gobs_game as game;
 extern crate gobs_scene as scene;
 
 use game::app::{Application, Run};
-use game::asset::AssetManager;
 use scene::SceneGraph;
-use scene::model::{Color, RenderObjectBuilder};
+use scene::model::{Color, RenderObjectBuilder, Shapes, Texture};
 
 struct App {
     graph: SceneGraph
@@ -12,8 +11,8 @@ struct App {
 
 impl Run for App {
     fn create(&mut self, _engine: &mut Application) {
-        let texture = AssetManager::get_color_texture(Color::red());
-        let triangle = AssetManager::build_triangle();
+        let texture = Texture::from_color(Color::red());
+        let triangle = Shapes::triangle();
 
         let instance = RenderObjectBuilder::new(triangle).texture(texture).build();
 
