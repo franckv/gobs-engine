@@ -6,9 +6,9 @@ use winit::{ElementState, KeyboardInput, VirtualKeyCode};
 use input::{Key,InputMap};
 
 pub enum Event {
-    RESIZE,
-    CLOSE,
-    CONTINUE
+    Resize,
+    Close,
+    Continue
 }
 
 pub struct InputHandler {
@@ -29,7 +29,7 @@ impl InputHandler {
     }
 
     pub fn read_inputs(&mut self) -> Event {
-        let mut status = Event::CONTINUE;
+        let mut status = Event::Continue;
 
         let input_map = &mut self.input_map;
 
@@ -38,15 +38,15 @@ impl InputHandler {
         self.events_loop.poll_events(|event| {
             match event {
                 WindowEvent { event, .. } => match event {
-                    winit::WindowEvent::Closed => status = Event::CLOSE,
-                    winit::WindowEvent::Resized(_, _) => status = Event::RESIZE,
+                    winit::WindowEvent::Closed => status = Event::Close,
+                    winit::WindowEvent::Resized(_, _) => status = Event::Resize,
                     winit::WindowEvent::KeyboardInput {
                         input: KeyboardInput {
                             virtual_keycode: Some(key_code),
                             state, ..
                         }, ..
                     } => match key_code {
-                        VirtualKeyCode::Escape => status = Event::CLOSE,
+                        VirtualKeyCode::Escape => status = Event::Close,
                         _ => {
                             let key = Self::get_input_key(key_code);
                             match state {
@@ -66,15 +66,15 @@ impl InputHandler {
 
     fn get_input_key(key_code: VirtualKeyCode) -> Key {
         match key_code {
-            VirtualKeyCode::Left => Key::LEFT,
-            VirtualKeyCode::Right => Key::RIGHT,
-            VirtualKeyCode::Up => Key::UP,
-            VirtualKeyCode::Down => Key::DOWN,
-            VirtualKeyCode::PageUp => Key::PAGEUP,
-            VirtualKeyCode::PageDown => Key::PAGEDOWN,
-            VirtualKeyCode::Return => Key::RETURN,
-            VirtualKeyCode::Space => Key::SPACE,
-            VirtualKeyCode::Tab => Key::TAB,
+            VirtualKeyCode::Left => Key::Left,
+            VirtualKeyCode::Right => Key::Right,
+            VirtualKeyCode::Up => Key::Up,
+            VirtualKeyCode::Down => Key::Down,
+            VirtualKeyCode::PageUp => Key::PageUp,
+            VirtualKeyCode::PageDown => Key::PageDown,
+            VirtualKeyCode::Return => Key::Return,
+            VirtualKeyCode::Space => Key::Space,
+            VirtualKeyCode::Tab => Key::Tab,
             VirtualKeyCode::A => Key::A,
             VirtualKeyCode::B => Key::B,
             VirtualKeyCode::C => Key::C,
@@ -101,7 +101,7 @@ impl InputHandler {
             VirtualKeyCode::X => Key::X,
             VirtualKeyCode::Y => Key::Y,
             VirtualKeyCode::Z => Key::Z,
-            _ => Key::UNKNOWN
+            _ => Key::Unknown
         }
     }
 }

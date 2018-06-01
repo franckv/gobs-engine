@@ -1,28 +1,28 @@
 #[derive(Copy, Clone)]
 pub enum Key {
-    LEFT = 0,
-    RIGHT,
-    UP,
-    DOWN,
-    PAGEUP,
-    PAGEDOWN,
-    RETURN,
-    SPACE,
-    TAB,
+    Left = 0,
+    Right,
+    Up,
+    Down,
+    PageUp,
+    PageDown,
+    Return,
+    Space,
+    Tab,
     A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S, T, U, V, W, X, Y, Z,
-    UNKNOWN
+    Unknown
 }
 
 pub struct InputMap {
-    state: [bool; 1 + Key::UNKNOWN as usize],
-    previous: [bool; 1 + Key::UNKNOWN as usize]
+    state: [bool; 1 + Key::Unknown as usize],
+    previous: [bool; 1 + Key::Unknown as usize]
 }
 
 impl InputMap {
     pub fn new() -> Self {
         InputMap {
-            state: [false; 1 + Key::UNKNOWN as usize],
-            previous: [false; 1 + Key::UNKNOWN as usize]
+            state: [false; 1 + Key::Unknown as usize],
+            previous: [false; 1 + Key::Unknown as usize]
         }
     }
 
@@ -40,6 +40,6 @@ impl InputMap {
 
     pub fn reset(&mut self) {
         self.previous = self.state;
-        self.state = [false; 1 + Key::UNKNOWN as usize];
+        self.state = [false; 1 + Key::Unknown as usize];
     }
 }

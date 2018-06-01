@@ -23,14 +23,14 @@ use game::input::Key;
 use game::timer::Timer;
 
 pub enum Example {
-    FONT = 0,
-    FONTMAP,
-    TILE,
-    CHECK,
-    MAP,
-    DEPTH,
-    CUBE,
-    DUNGEON
+    Font = 0,
+    FontMap,
+    Tile,
+    Check,
+    Map,
+    Depth,
+    Cube,
+    Dungeon
 }
 
 struct App {
@@ -91,7 +91,7 @@ impl App {
             timer: Timer::new(),
             position: position,
             world_size: 5.0,
-            selected: Example::FONT,
+            selected: Example::Font,
             show_fps: false,
             show_centers: false
         }
@@ -142,41 +142,41 @@ impl App {
         {
             let input_map = engine.input_map();
 
-            if input_map.pressed(Key::LEFT) {
+            if input_map.pressed(Key::Left) {
                 self.move_camera(0., -0.05, 0.);
             }
 
-            if input_map.pressed(Key::RIGHT) {
+            if input_map.pressed(Key::Right) {
                 self.move_camera(0., 0.05, 0.);
             }
 
-            if input_map.pressed(Key::UP) {
+            if input_map.pressed(Key::Up) {
                 self.move_camera(0., 0., 0.05);
             }
 
-            if input_map.pressed(Key::DOWN) {
+            if input_map.pressed(Key::Down) {
                 self.move_camera(0., 0., -0.05);
             }
 
-            if input_map.pressed(Key::PAGEUP) {
+            if input_map.pressed(Key::PageUp) {
                 self.move_camera(-0.05, 0., 0.);
             }
 
-            if input_map.pressed(Key::PAGEDOWN) {
+            if input_map.pressed(Key::PageDown) {
                 self.move_camera(0.05, 0., 0.);
             }
 
-            if input_map.pressed(Key::RETURN) {
+            if input_map.pressed(Key::Return) {
                 self.goto(3., 0., 0.);
             }
 
-            if input_map.pressed(Key::SPACE) {
+            if input_map.pressed(Key::Space) {
                 self.next_scene();
 
                 redraw = true;
             }
 
-            if input_map.pressed(Key::TAB) {
+            if input_map.pressed(Key::Tab) {
                 self.uigraph.clear();
                 self.show_centers = !self.show_centers;
                 if self.show_centers {
@@ -214,14 +214,14 @@ impl App {
 
         {
             match self.selected {
-                Example::FONT => self.draw_font(),
-                Example::FONTMAP => self.draw_fontmap(),
-                Example::TILE => self.draw_tile(),
-                Example::CHECK => self.draw_checkboard(),
-                Example::MAP => self.draw_map(),
-                Example::DEPTH => self.draw_depth(),
-                Example::CUBE => self.draw_cube(),
-                Example::DUNGEON => self.draw_dungeon()
+                Example::Font => self.draw_font(),
+                Example::FontMap => self.draw_fontmap(),
+                Example::Tile => self.draw_tile(),
+                Example::Check => self.draw_checkboard(),
+                Example::Map => self.draw_map(),
+                Example::Depth => self.draw_depth(),
+                Example::Cube => self.draw_cube(),
+                Example::Dungeon => self.draw_dungeon()
             }
         }
 
@@ -231,14 +231,14 @@ impl App {
 
     fn next_scene(&mut self) {
         self.selected = match self.selected {
-            Example::FONT => Example::FONTMAP,
-            Example::FONTMAP => Example::TILE,
-            Example::TILE => Example::CHECK,
-            Example::CHECK => Example::MAP,
-            Example::MAP => Example::DEPTH,
-            Example::DEPTH => Example::CUBE,
-            Example::CUBE => Example::DUNGEON,
-            Example::DUNGEON => Example::FONT
+            Example::Font => Example::FontMap,
+            Example::FontMap => Example::Tile,
+            Example::Tile => Example::Check,
+            Example::Check => Example::Map,
+            Example::Map => Example::Depth,
+            Example::Depth => Example::Cube,
+            Example::Cube => Example::Dungeon,
+            Example::Dungeon => Example::Font
         }
     }
 

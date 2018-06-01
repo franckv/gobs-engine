@@ -95,6 +95,7 @@ impl Batch {
                     SceneData::Object(o) => {
                         let mesh = o.mesh();
                         let id = mesh.id();
+
                         if !map.contains_key(&id) {
                             map.insert(id, Vec::new());
                         }

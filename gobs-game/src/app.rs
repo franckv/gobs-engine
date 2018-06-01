@@ -47,15 +47,15 @@ impl Application {
             let event = self.input_handler.read_inputs();
 
             match event {
-                Event::RESIZE => {
+                Event::Resize => {
                     let [width, height] = self.display.dimensions();
 
                     runnable.resize(width, height, self);
                 },
-                Event::CLOSE => {
+                Event::Close => {
                     running = false;
                 },
-                Event::CONTINUE => ()
+                Event::Continue => ()
             }
 
             runnable.update(self);
