@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use cgmath::{Matrix, Matrix3, Matrix4, SquareMatrix, Vector4};
+use cgmath::{Deg, Matrix, Matrix3, Matrix4, SquareMatrix, Vector3, Vector4};
 
 use model::Color;
 use model::Mesh;
@@ -71,12 +71,20 @@ impl RenderObjectBuilder {
         self
     }
 
-    pub fn translate(self, vector: (f32, f32, f32)) -> RenderObjectBuilder {
+    pub fn translate<V: Into<Vector3<f32>>>(self, vector: V)
+    -> RenderObjectBuilder {
         self.transform(Matrix4::from_translation(vector.into()))
     }
 
-    pub fn scale(self, scale_x: f32, scale_y: f32, scale_z: f32) -> RenderObjectBuilder {
-        self.transform(Matrix4::from_diagonal(Vector4::new(scale_x, scale_y, scale_z, 1.)))
+    pub fn scale(self, scale_x: f32, scale_y: f32, scale_z: f32)
+    -> RenderObjectBuilder {
+        self.transform(Matrix4::from_diagonal(
+            Vector4::new(scale_x, scale_y, scale_z, 1.)))
+    }
+
+    pub fn rotate<V: Into<Vector3<f32>>>(self, axis: V, angle: f32)
+    -> RenderObjectBuilder {
+        self.transform(Matrix4::from_axis_angle(axis.into(), Deg(angle)))
     }
 
     pub fn build(self) -> Arc<RenderObject> {

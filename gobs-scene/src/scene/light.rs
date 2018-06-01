@@ -17,13 +17,15 @@ impl LightBuilder {
         }
     }
 
-    pub fn directional(mut self, dir: Vector3<f32>) -> Self {
+    pub fn directional<V: Into<Vector3<f32>>>(mut self, dir: V) -> Self {
+        let dir: Vector3<f32> = dir.into();
         self.position = -dir.extend(0.);
 
         self
     }
 
-    pub fn point(mut self, pos: Point3<f32>) -> Self {
+    pub fn point<P: Into<Point3<f32>>>(mut self, pos: P) -> Self {
+        let pos: Point3<f32> = pos.into();
         self.position = Vector4::new(pos.x, pos.y, pos.z, 1.);
 
         self
@@ -54,9 +56,9 @@ pub struct Light {
 
 
 impl Light {
-    fn new(position: Vector4<f32>, color: Color, ambient: Color) -> Self {
+    fn new<V: Into<Vector4<f32>>>(position: V, color: Color, ambient: Color) -> Self {
         Light {
-            position: position,
+            position: position.into(),
             color: color,
             ambient: ambient
         }

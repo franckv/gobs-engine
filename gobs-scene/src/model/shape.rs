@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use cgmath::Point3;
 
-use model::{Color, Font, Mesh, MeshBuilder, Texture};
+use model::{Mesh, MeshBuilder};
 
 pub struct Shapes;
 
@@ -56,7 +56,10 @@ impl Shapes {
             .build()
     }
 
-    pub fn line(a: Point3<f32>, b: Point3<f32>) -> Arc<Mesh> {
+    pub fn line<P: Into<Point3<f32>>>(a: P, b: P) -> Arc<Mesh> {
+        let a : Point3<f32> = a.into();
+        let b : Point3<f32> = b.into();
+
         let builder = MeshBuilder::new();
 
         let v1 = [a.x, a.y, a.z];

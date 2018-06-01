@@ -182,12 +182,13 @@ impl App {
             }
 
             if input_map.pressed(Key::A) {
-                let light = LightBuilder::new().directional(Vector3::new(-1., -1., -1. )).build();
+                let light = LightBuilder::new().directional([-1., -1., -1.])
+                    .build();
                 self.graph.set_light(light);
             }
 
             if input_map.pressed(Key::Z) {
-                let light = LightBuilder::new().point(Point3::new(1., 0., 1.))
+                let light = LightBuilder::new().point([1., 0., 1.])
                     .color(Color::blue()).build();
                 self.graph.set_light(light);
             }
@@ -262,7 +263,7 @@ impl App {
                         let tile = RenderObjectBuilder::new(mesh.clone())
                             .color(Color::red())
                             .texture(texture.clone())
-                            .translate((x - 16., 16. - y, 0.0))
+                            .translate([x - 16., 16. - y, 0.0])
                             .build();
                         self.graph.insert(tile);
                     },
@@ -289,7 +290,7 @@ impl App {
                         RenderObjectBuilder::new(triangle.clone())
                             .color(color)
                             .texture(texture.clone())
-                            .translate((i as f32, j as f32, 0.0))
+                            .translate([i as f32, j as f32, 0.0])
                             .build()
                     },
                     _ => {
@@ -298,7 +299,7 @@ impl App {
                         RenderObjectBuilder::new(square.clone())
                             .color(color)
                             .texture(texture.clone())
-                            .translate((i as f32, j as f32, 0.0))
+                            .translate([i as f32, j as f32, 0.0])
                             .build()
                     },
                 };
@@ -370,7 +371,7 @@ impl App {
                         let instance = RenderObjectBuilder::new(mesh.clone())
                             .color(Color::white())
                             .texture(texture.clone())
-                            .translate((x - 16., 0., y - 16.))
+                            .translate([x - 16., 0., y - 16.])
                             .build();
 
                         self.graph.insert(instance);
@@ -379,6 +380,16 @@ impl App {
                 }
             }
         }
+
+        let floor = Shapes::quad();
+        let instance = RenderObjectBuilder::new(floor)
+            .texture(Texture::from_color(Color::black()))
+            .scale(100., 100., 1.)
+            .rotate([1., 0., 0.], -90.)
+            .translate([0., -0.5, 0.])
+            .build();
+
+        self.graph.insert(instance);
     }
 
     fn draw_depth(&mut self) {
@@ -400,7 +411,7 @@ impl App {
             let instance = RenderObjectBuilder::new(triangle.clone())
                 .color(color)
                 .texture(texture.clone())
-                .translate((i, 0., i / 10.))
+                .translate([i, 0., i / 10.])
                 .build();
 
             self.graph.insert(instance);
@@ -440,10 +451,10 @@ impl App {
     fn draw_centers(&mut self) {
         let texture = Texture::from_color(Color::green());
 
-        let left: Point3<f32> = [-1., 0., 0.5].into();
-        let right: Point3<f32> = [1., 0., 0.5].into();
-        let top: Point3<f32> = [0., 1., 0.5].into();
-        let bottom: Point3<f32> = [0., -1., 0.5].into();
+        let left = [-1., 0., 0.5];
+        let right = [1., 0., 0.5];
+        let top = [0., 1., 0.5];
+        let bottom = [0., -1., 0.5];
 
         let line = Shapes::line(left, right);
         let instance = RenderObjectBuilder::new(line).texture(texture.clone()).build();

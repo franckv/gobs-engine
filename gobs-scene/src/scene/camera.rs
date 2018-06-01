@@ -17,9 +17,9 @@ pub struct Camera {
 }
 
 impl Camera {
-    pub fn new(position: Point3<f32>) -> Camera {
+    pub fn new<P: Into<Point3<f32>>>(position: P) -> Camera {
         Camera {
-            position: position,
+            position: position.into(),
             projection: Matrix4::identity(),
             view: Matrix4::identity(),
             mode: ProjectionMode::ORTHO,
@@ -29,8 +29,8 @@ impl Camera {
         }
     }
 
-    pub fn set_position(&mut self, position: Point3<f32>) {
-        self.position = position;
+    pub fn set_position<P: Into<Point3<f32>>>(&mut self, position: P) {
+        self.position = position.into();
     }
 
     fn get_correction() -> Matrix4<f32> {
@@ -73,13 +73,15 @@ impl Camera {
             },
             ProjectionMode::PERSPECTIVE => {
                 let aspect = width / height;
-                self.projection = correction * perspective(Deg(fov), aspect, near, far);
+                self.projection =
+                    correction * perspective(Deg(fov), aspect, near, far);
             }
         }
     }
 
-    pub fn look_at(&mut self, direction: Vector3<f32>, up: Vector3<f32>) {
-        self.view = Matrix4::look_at_dir(self.position.clone().into(), direction, up);
+    pub fn look_at<V: Into<Vector3<f32>>>(&mut self, direction: V, up: V) {
+        self.view = Matrix4::look_at_dir(
+            self.position.clone().into(), direction.into(), up.into());
     }
 
     pub fn combined(&self) -> Matrix4<f32> {

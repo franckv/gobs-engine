@@ -56,7 +56,7 @@ pub struct TreeGraph<T> {
 impl<T> TreeGraph<T> {
     pub fn new() -> TreeGraph<T> {
         TreeGraph {
-            camera: Camera::new([0., 0., 0.].into()),
+            camera: Camera::new([0., 0., 0.]),
             light: LightBuilder::new().build(),
             root: TreeNode::new(None)
         }
