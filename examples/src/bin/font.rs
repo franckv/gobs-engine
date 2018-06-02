@@ -1,15 +1,15 @@
-extern crate cgmath;
-
+extern crate examples;
 extern crate gobs_game as game;
 extern crate gobs_render as render;
 extern crate gobs_scene as scene;
+extern crate cgmath;
 
-use cgmath::Point3;
+use cgmath::Matrix4;
 
 use game::app::{Application, Run};
 use render::{Batch, Renderer};
 use scene::SceneGraph;
-use scene::model::{Color, RenderObjectBuilder, Shapes, Texture};
+use scene::model::Font;
 
 struct App {
     graph: SceneGraph,
@@ -19,7 +19,7 @@ struct App {
 
 impl Run for App {
     fn create(&mut self, _engine: &mut Application) {
-        self.draw_centers();
+        self.draw();
     }
 
     fn update(&mut self, engine: &mut Application) {
@@ -40,30 +40,24 @@ impl App {
         App {
             graph: SceneGraph::new(),
             batch: renderer.create_batch(),
-            renderer: renderer
+            renderer: renderer,
         }
     }
 
-    fn draw_centers(&mut self) {
-        let texture = Texture::from_color(Color::green());
+    pub fn draw(&mut self) {
+        let font = Font::new(42, &examples::asset("font.ttf"));
 
-        let left: Point3<f32> = [-1., 0., 0.5].into();
-        let right: Point3<f32> = [1., 0., 0.5].into();
-        let top: Point3<f32> = [0., 1., 0.5].into();
-        let bottom: Point3<f32> = [0., -1., 0.5].into();
+        let chars = font.layout("The quick brown fox jumps over the lazy dog");
 
-        let line = Shapes::line(left, right);
-        let instance = RenderObjectBuilder::new(line).texture(texture.clone()).build();
-        self.graph.insert(instance);
+        for mut c in chars {
+            let transform = Matrix4::from_translation([-0.5, 0., 0.].into());
+            self.graph.insert_with_transform(c, transform);
 
-        let line = Shapes::line(bottom, top);
-        let instance = RenderObjectBuilder::new(line).texture(texture).build();
-        self.graph.insert(instance);
+        }
     }
 }
 
-#[test]
-pub fn line() {
+pub fn main() {
     let mut engine = Application::new();
     let app = App::new(&engine);
     engine.run(app);

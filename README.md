@@ -9,4 +9,4 @@ Game engine based on Rust and Vulkano.
 
 ## Examples
 
-See gobs-game/tests folder
+See /examples folder

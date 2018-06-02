@@ -1,15 +1,12 @@
 extern crate gobs_game as game;
 extern crate gobs_render as render;
 extern crate gobs_scene as scene;
-
 extern crate cgmath;
-
-use cgmath::Matrix4;
 
 use game::app::{Application, Run};
 use render::{Batch, Renderer};
 use scene::SceneGraph;
-use scene::model::Font;
+use scene::model::{Color, RenderObjectBuilder, Shapes, Texture};
 
 struct App {
     graph: SceneGraph,
@@ -19,7 +16,12 @@ struct App {
 
 impl Run for App {
     fn create(&mut self, _engine: &mut Application) {
-        self.draw();
+        let texture = Texture::from_color(Color::red());
+        let triangle = Shapes::triangle();
+
+        let instance = RenderObjectBuilder::new(triangle).texture(texture).build();
+
+        self.graph.insert(instance);
     }
 
     fn update(&mut self, engine: &mut Application) {
@@ -40,25 +42,12 @@ impl App {
         App {
             graph: SceneGraph::new(),
             batch: renderer.create_batch(),
-            renderer: renderer,
-        }
-    }
-
-    pub fn draw(&mut self) {
-        let font = Font::new(42, "../../assets/font.ttf");
-
-        let chars = font.layout("The quick brown fox jumps over the lazy dog");
-
-        for mut c in chars {
-            let transform = Matrix4::from_translation([-0.5, 0., 0.].into());
-            self.graph.insert_with_transform(c, transform);
-
+            renderer: renderer
         }
     }
 }
 
-#[test]
-pub fn font() {
+pub fn main() {
     let mut engine = Application::new();
     let app = App::new(&engine);
     engine.run(app);

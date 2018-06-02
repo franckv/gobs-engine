@@ -1,6 +1,9 @@
 extern crate gobs_game as game;
 extern crate gobs_render as render;
 extern crate gobs_scene as scene;
+extern crate cgmath;
+
+use cgmath::Point3;
 
 use game::app::{Application, Run};
 use render::{Batch, Renderer};
@@ -15,12 +18,7 @@ struct App {
 
 impl Run for App {
     fn create(&mut self, _engine: &mut Application) {
-        let texture = Texture::from_color(Color::red());
-        let triangle = Shapes::triangle();
-
-        let instance = RenderObjectBuilder::new(triangle).texture(texture).build();
-
-        self.graph.insert(instance);
+        self.draw_centers();
     }
 
     fn update(&mut self, engine: &mut Application) {
@@ -44,10 +42,26 @@ impl App {
             renderer: renderer
         }
     }
+
+    fn draw_centers(&mut self) {
+        let texture = Texture::from_color(Color::green());
+
+        let left: Point3<f32> = [-1., 0., 0.5].into();
+        let right: Point3<f32> = [1., 0., 0.5].into();
+        let top: Point3<f32> = [0., 1., 0.5].into();
+        let bottom: Point3<f32> = [0., -1., 0.5].into();
+
+        let line = Shapes::line(left, right);
+        let instance = RenderObjectBuilder::new(line).texture(texture.clone()).build();
+        self.graph.insert(instance);
+
+        let line = Shapes::line(bottom, top);
+        let instance = RenderObjectBuilder::new(line).texture(texture).build();
+        self.graph.insert(instance);
+    }
 }
 
-#[test]
-pub fn triangle() {
+pub fn main() {
     let mut engine = Application::new();
     let app = App::new(&engine);
     engine.run(app);

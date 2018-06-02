@@ -1,9 +1,9 @@
-extern crate cgmath;
-extern crate image;
-
+extern crate examples;
 extern crate gobs_game as game;
 extern crate gobs_render as render;
 extern crate gobs_scene as scene;
+extern crate cgmath;
+extern crate image;
 
 use std::fs::File;
 use std::io::{BufRead, BufReader};
@@ -244,11 +244,6 @@ impl App {
         }
     }
 
-    fn asset(filename: &str) -> String {
-        format!("../../assets/{}", filename)
-
-    }
-
     fn draw_map(&mut self) {
         self.ortho(40.);
 
@@ -256,7 +251,7 @@ impl App {
 
         let mesh = Shapes::quad();
 
-        let f = File::open(Self::asset("dungeon.map")).expect("File not found");
+        let f = File::open(examples::asset("dungeon.map")).expect("File not found");
         let reader = BufReader::new(f);
 
         for (num, line) in reader.lines().enumerate() {
@@ -320,7 +315,7 @@ impl App {
         let tilemap = {
             let tile_size = [34, 34];
 
-            let texture = Texture::from_file(&Self::asset("tileset.png"));
+            let texture = Texture::from_file(&examples::asset("tileset.png"));
 
             TileMap::new(texture, tile_size)
         };
@@ -345,7 +340,7 @@ impl App {
     fn draw_cube(&mut self) {
         self.perspective(30.);
 
-        let texture = Texture::from_file(&Self::asset("wall.png"));
+        let texture = Texture::from_file(&examples::asset("wall.png"));
 
         let mesh = Shapes::cube();
 
@@ -360,11 +355,11 @@ impl App {
     fn draw_dungeon(&mut self) {
         self.perspective(30.);
 
-        let texture = Texture::from_file(&Self::asset("wall.png"));
+        let texture = Texture::from_file(&examples::asset("wall.png"));
 
         let mesh = Shapes::cube();
 
-        let f = File::open(Self::asset("dungeon.map")).expect("File not found");
+        let f = File::open(examples::asset("dungeon.map")).expect("File not found");
         let reader = BufReader::new(f);
 
         for (num, line) in reader.lines().enumerate() {
@@ -428,7 +423,7 @@ impl App {
 
         let size: usize = 30;
 
-        let font = Font::new(size, &Self::asset("font.ttf"));
+        let font = Font::new(size, &examples::asset("font.ttf"));
 
         let chars = font.layout("Press space to go to the next example");
 
@@ -442,7 +437,7 @@ impl App {
 
         let size: usize = 100;
 
-        let font = Font::new(size, &Self::asset("font.ttf"));
+        let font = Font::new(size, &examples::asset("font.ttf"));
         let mesh = Shapes::quad();
 
         let text = RenderObjectBuilder::new(mesh.clone())
@@ -471,8 +466,7 @@ impl App {
     }
 }
 
-#[test]
-pub fn showcase() {
+pub fn main() {
     let mut engine = Application::new();
     let app = App::new(&engine);
     engine.run(app);
