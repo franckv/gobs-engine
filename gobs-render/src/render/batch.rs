@@ -1,91 +1,67 @@
-use std::boxed::Box;
 use std::collections::HashMap;
-use std::mem;
 use std::sync::Arc;
+use std::slice::Iter;
 
 use cgmath::Matrix4;
 
-use vulkano::command_buffer::{AutoCommandBufferBuilder};
-use vulkano::sync::{GpuFuture, now};
+use vulkano::buffer::{BufferUsage, ImmutableBuffer};
+use vulkano::command_buffer::{AutoCommandBuffer, AutoCommandBufferBuilder, DrawIndirectCommand, DynamicState};
+use vulkano::framebuffer::{RenderPassAbstract, Subpass};
+use vulkano::pipeline::viewport::Viewport;
 
+use RenderInstance;
+use cache::{MeshCache, TextureCache};
 use context::Context;
 use display::Display;
-use render::Renderer;
 use render::shader::{DefaultShader, Shader};
-use scene::Camera;
-use scene::Light;
-use scene::{SceneGraph, SceneData};
+use scene::{Camera, Light, SceneGraph, SceneData};
 use scene::model::RenderObject;
 
+pub struct Command {
+    command: AutoCommandBuffer
+}
+
+impl Command {
+    fn new(command: AutoCommandBuffer) -> Self {
+        Command {
+            command: command
+        }
+    }
+
+    pub fn command(self) -> AutoCommandBuffer {
+        self.command
+    }
+}
+
 pub struct Batch {
-    renderer: Renderer,
-    shader: Box<Shader>,
     context: Arc<Context>,
-    builder: Option<AutoCommandBufferBuilder>,
-    last_frame: Box<GpuFuture + Sync + Send>,
-    swapchain_idx: usize
+    display: Arc<Display>,
+    shader: Box<Shader>,
+    render_pass: Arc<RenderPassAbstract + Send + Sync>,
+    texture_cache: TextureCache,
+    mesh_cache: MeshCache
 }
 
 impl Batch {
-    pub fn new(display: Arc<Display>, context: Arc<Context>) -> Self {
-        let renderer = Renderer::new(context.clone(), display.clone());
+    pub fn new(display: Arc<Display>, context: Arc<Context>,
+        render_pass: Arc<RenderPassAbstract + Send + Sync>) -> Self {
+
         let shader = DefaultShader::new(context.clone());
-        let device = context.device();
 
         Batch {
-            renderer: renderer,
+            context: context.clone(),
+            display: display.clone(),
             shader: shader,
-            context: context,
-            builder: None,
-            last_frame: Box::new(now(device.clone())) as Box<GpuFuture + Sync + Send>,
-            swapchain_idx: 0
+            render_pass: render_pass,
+            texture_cache: TextureCache::new(context.clone()),
+            mesh_cache: MeshCache::new(context)
         }
     }
 
-    pub fn begin(&mut self) {
-        self.last_frame.cleanup_finished();
-
-        if let Ok((id, future)) = self.renderer.new_frame() {
-            let last_frame = mem::replace(&mut self.last_frame,
-                Box::new(now(self.context.device())) as Box<GpuFuture + Sync + Send>);
-
-            self.last_frame = Box::new(last_frame.join(future));
-
-            self.swapchain_idx = id;
-
-            let builder = self.renderer.new_builder(id);
-
-            self.builder = Some(builder);
-        } else {
-            self.builder = None;
-        }
-    }
-
-    pub fn end(&mut self) {
-        self.builder.take().map(|builder| {
-            let command_buffer = self.renderer.get_command(builder);
-
-            let last_frame = mem::replace(&mut self.last_frame,
-                Box::new(now(self.context.device())) as Box<GpuFuture + Sync + Send>);
-
-            self.last_frame = self.renderer.submit(command_buffer,
-                self.swapchain_idx, last_frame);
-        });
-    }
-
-    pub fn draw_instances(&mut self, camera: &Camera, light: &Light,
-        instances: Vec<(Arc<RenderObject>, Matrix4<f32>)>) {
-
-        self.builder = self.builder.take().and_then(|builder| {
-            Some(self.renderer.draw_list(
-                builder, camera, light, &mut self.shader, instances.iter()))
-        });
-    }
-
-    pub fn draw_graph(&mut self, graph: &mut SceneGraph) {
-        if self.builder.is_none() {
-            return;
-        };
+    pub fn draw_graph(&mut self, graph: &mut SceneGraph) -> Command {
+        let mut builder = AutoCommandBufferBuilder::secondary_graphics_one_time_submit(
+            self.context.device(), self.context.queue().family(),
+            Subpass::from(self.render_pass.clone(), 0).unwrap()).unwrap();
 
         let map = {
             let mut map = HashMap::new();
@@ -112,7 +88,86 @@ impl Batch {
             let camera = graph.camera();
             let light = graph.light();
 
-            self.draw_instances(camera, light, list);
+            builder = self.draw_list(
+                builder, camera, light, list.iter())
         }
+
+        Command::new(builder.build().unwrap())
+    }
+
+    fn draw_list(&mut self, builder: AutoCommandBufferBuilder,
+        camera: &Camera, light: &Light,
+        instances: Iter<(Arc<RenderObject>, Matrix4<f32>)>)
+        -> AutoCommandBufferBuilder {
+        let instance_buffer = self.create_instance_buffer(instances.clone());
+        let indirect_buffer = self.create_indirect_buffer(instances.clone());
+
+        // TODO: change this
+        let first = instances.as_slice().get(0).unwrap();
+        let mesh = first.0.mesh();
+        let texture = first.0.texture().unwrap();
+        let primitive = mesh.primitive_type();
+
+        let mesh = self.mesh_cache.get(mesh);
+        let texture = self.texture_cache.get(texture);
+
+        let set = self.shader.get_descriptor_set(self.render_pass.clone(),
+            camera.combined(), light, texture, primitive);
+
+        /* TODO: should be the size of the swapchain.
+        However, if display has been resized, swapchain will be recreated
+        on batch submission anyway
+        */
+        let dim = self.display.dimensions();
+
+        let dynamic_state = DynamicState {
+            viewports: Some(vec![Viewport {
+                origin: [0., 0.],
+                dimensions: [dim[0] as f32, dim[1] as f32],
+                depth_range: 0.0 .. 1.0,
+            }]),
+            .. DynamicState::none()
+        };
+
+        let pipeline = self.shader.get_pipeline(self.render_pass.clone(), primitive);
+
+        builder.draw_indirect(
+            pipeline, dynamic_state,
+            vec![mesh.buffer(), instance_buffer],
+            indirect_buffer, set.clone(), ()).unwrap()
+    }
+
+    fn create_instance_buffer(&mut self, instances: Iter<(Arc<RenderObject>,
+        Matrix4<f32>)>) -> Arc<ImmutableBuffer<[RenderInstance]>> {
+        let mut instances_data: Vec<RenderInstance> = Vec::new();
+
+        for instance in instances {
+            let instance_data: RenderInstance =
+                instance.0.get_instance_data(instance.1).into();
+            instances_data.push(instance_data);
+        }
+
+        let (instance_buffer, _future) =
+            ImmutableBuffer::from_iter(instances_data.into_iter(),
+        BufferUsage::vertex_buffer(), self.context.queue()).unwrap();
+
+        instance_buffer
+    }
+
+    fn create_indirect_buffer(&mut self, instances: Iter<(Arc<RenderObject>,
+        Matrix4<f32>)>) -> Arc<ImmutableBuffer<[DrawIndirectCommand]>> {
+        let mesh = instances.as_slice().get(0).unwrap().0.mesh();
+
+        let indirect_data = vec![DrawIndirectCommand {
+            vertex_count: mesh.vlist().len() as u32,
+            instance_count: instances.len() as u32,
+            first_vertex: 0,
+            first_instance: 0
+        }];
+
+        let (indirect_buffer, _future) = ImmutableBuffer::from_iter(indirect_data.into_iter(),
+        BufferUsage::indirect_buffer(), self.context.queue()).unwrap();
+
+        indirect_buffer
     }
 }

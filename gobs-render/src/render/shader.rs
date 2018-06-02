@@ -42,7 +42,7 @@ mod fs {
     }
 }
 
-pub trait Shader {
+pub trait Shader: Send {
     fn get_pipeline(&mut self, render_pass: Arc<RenderPassAbstract + Send + Sync>,
         primitive: PrimitiveType) -> Arc<GraphicsPipelineAbstract + Send + Sync>;
 

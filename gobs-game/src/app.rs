@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use render::Batch;
+use render::Renderer;
 use render::context;
 use render::context::Context;
 use render::display::Display;
@@ -26,8 +26,8 @@ impl Application {
         }
     }
 
-    pub fn create_batch(&self) -> Batch {
-        Batch::new(self.display.clone(), self.context.clone())
+    pub fn create_renderer(&self) -> Renderer {
+        Renderer::new(self.context.clone(), self.display.clone())
     }
 
     pub fn input_map(&self) -> &InputMap {

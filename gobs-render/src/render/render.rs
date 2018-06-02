@@ -1,31 +1,22 @@
 use std::mem;
 use std::sync::Arc;
-use std::slice::Iter;
 
-use cgmath::Matrix4;
-
-use vulkano::buffer::{BufferUsage, ImmutableBuffer};
-use vulkano::command_buffer::{AutoCommandBuffer, AutoCommandBufferBuilder, DrawIndirectCommand, DynamicState};
+use vulkano::command_buffer::AutoCommandBufferBuilder;
 use vulkano::device::Device;
 use vulkano::format::Format;
 use vulkano::framebuffer::{Framebuffer, FramebufferAbstract, RenderPassAbstract};
 use vulkano::image::AttachmentImage;
 use vulkano::image::swapchain::SwapchainImage;
-use vulkano::pipeline::viewport::Viewport;
 use vulkano::swapchain;
 use vulkano::swapchain::{AcquireError, PresentMode, SurfaceTransform, Swapchain};
 use vulkano::sync::{GpuFuture, now, FlushError};
 
 use winit::Window;
 
-use RenderInstance;
-use cache::{MeshCache, TextureCache};
 use context::Context;
 use display::Display;
-use render::shader::Shader;
-use scene::Camera;
-use scene::Light;
-use scene::model::RenderObject;
+use render::{Batch, Command};
+use scene::Color;
 
 pub struct Renderer {
     context: Arc<Context>,
@@ -33,8 +24,7 @@ pub struct Renderer {
     swapchain: Arc<Swapchain<Window>>,
     framebuffers: Vec<Arc<FramebufferAbstract + Send + Sync>>,
     render_pass: Arc<RenderPassAbstract + Send + Sync>,
-    texture_cache: TextureCache,
-    mesh_cache: MeshCache
+    last_frame: Box<GpuFuture + Sync + Send>
 }
 
 impl Renderer {
@@ -61,8 +51,8 @@ impl Renderer {
             swapchain: swapchain,
             framebuffers: framebuffers,
             render_pass: render_pass,
-            texture_cache: TextureCache::new(context.clone()),
-            mesh_cache: MeshCache::new(context)
+            last_frame: Box::new(now(context.device()))
+                as Box<GpuFuture + Sync + Send>
         }
     }
 
@@ -85,36 +75,64 @@ impl Renderer {
         Ok((idx, Box::new(acquire_future)))
     }
 
-    pub fn new_builder(&self, swapchain_idx: usize) -> AutoCommandBufferBuilder {
-        AutoCommandBufferBuilder::primary_one_time_submit(self.context.device(),
-            self.context.queue().family()).unwrap()
-        .begin_render_pass(self.framebuffer(swapchain_idx),
-            false, vec![[0., 0., 1., 1.].into(), 1f32.into()]).unwrap()
+    pub fn submit(&mut self, command: Command) {
+        self.submit_list(vec!(command));
     }
 
-    pub fn get_command(&self, builder: AutoCommandBufferBuilder) -> AutoCommandBuffer {
-        builder.end_render_pass().unwrap().build().unwrap()
-    }
+    pub fn submit_list(&mut self, command_list: Vec<Command>) {
+        self.last_frame.cleanup_finished();
 
-    pub fn submit<'a, T: GpuFuture + Send + Sync + 'a>(&self, command: AutoCommandBuffer,
-        id: usize, last_frame: T) ->  Box<GpuFuture + Send + Sync + 'a> {
-        let future = last_frame
-            .then_execute(self.context.queue(), command).unwrap()
-            .then_swapchain_present(self.context.queue(), self.swapchain.clone(), id)
-            .then_signal_fence_and_flush();
+        if let Ok((id, future)) = self.new_frame() {
+            let last_frame = mem::replace(&mut self.last_frame,
+                Box::new(now(self.context.device())) as Box<GpuFuture + Sync + Send>);
 
-        match future {
-            Ok(future) => {
-                Box::new(future) as Box<_>
-            },
-            Err(FlushError::OutOfDate) => {
-                Box::new(now(self.context.device())) as Box<_>
-            },
-            Err(e) => {
-                println!("{:?}", e);
-                Box::new(now(self.context.device())) as Box<_>
+            self.last_frame = Box::new(last_frame.join(future));
+
+            let clear_color: [f32; 4] = Color::blue().into();
+
+            let mut primary = AutoCommandBufferBuilder::primary_one_time_submit(
+                self.context.device(), self.context.queue().family()).unwrap()
+                .begin_render_pass(self.framebuffer(id),
+                    true, vec![clear_color.into(), 1f32.into()]).unwrap();
+
+
+            for command in command_list {
+                let command = command.command();
+
+                unsafe {
+                    primary = primary.execute_commands(command).unwrap();
+                }
+            }
+
+            let last_frame = mem::replace(&mut self.last_frame,
+                Box::new(now(self.context.device())) as Box<GpuFuture + Sync + Send>);
+
+            let command_buffer = primary.end_render_pass().unwrap()
+                .build().unwrap();
+
+            let future = last_frame
+                .then_execute(self.context.queue(), command_buffer).unwrap()
+                .then_swapchain_present(self.context.queue(),
+                    self.swapchain.clone(), id)
+                .then_signal_fence_and_flush();
+
+            self.last_frame = match future {
+                Ok(future) => {
+                    Box::new(future) as Box<_>
+                },
+                Err(FlushError::OutOfDate) => {
+                    Box::new(now(self.context.device())) as Box<_>
+                },
+                Err(e) => {
+                    println!("{:?}", e);
+                    Box::new(now(self.context.device())) as Box<_>
+                }
             }
         }
+    }
+
+    pub fn create_batch(&self) -> Batch {
+        Batch::new(self.display.clone(), self.context.clone(), self.render_pass.clone())
     }
 
     fn create_render_pass(device: Arc<Device>, format: Format) -> Arc<RenderPassAbstract + Send + Sync> {
@@ -140,43 +158,6 @@ impl Renderer {
         ).unwrap())
     }
 
-    pub fn draw_list(&mut self, builder: AutoCommandBufferBuilder,
-        camera: &Camera, light: &Light, shader: &mut Box<Shader>,
-        instances: Iter<(Arc<RenderObject>, Matrix4<f32>)>) -> AutoCommandBufferBuilder {
-        let instance_buffer = self.create_instance_buffer(instances.clone());
-        let indirect_buffer = self.create_indirect_buffer(instances.clone());
-
-        // TODO: change this
-        let first = instances.as_slice().get(0).unwrap();
-        let mesh = first.0.mesh();
-        let texture = first.0.texture().unwrap();
-        let primitive = mesh.primitive_type();
-
-        let mesh = self.mesh_cache.get(mesh);
-        let texture = self.texture_cache.get(texture);
-
-        let set = shader.get_descriptor_set(self.render_pass.clone(),
-            camera.combined(), light, texture, primitive);
-
-        let dim = self.swapchain.dimensions();
-
-        let dynamic_state = DynamicState {
-            viewports: Some(vec![Viewport {
-                origin: [0., 0.],
-                dimensions: [dim[0] as f32, dim[1] as f32],
-                depth_range: 0.0 .. 1.0,
-            }]),
-            .. DynamicState::none()
-        };
-
-        let pipeline = shader.get_pipeline(self.render_pass.clone(), primitive);
-
-        builder.draw_indirect(
-            pipeline, dynamic_state,
-            vec![mesh.buffer(), instance_buffer],
-            indirect_buffer, set.clone(), ()).unwrap()
-    }
-
     fn create_framebuffer(render_pass: Arc<RenderPassAbstract + Send + Sync>,
         context: Arc<Context>, dimensions: [u32; 2],
         images: Vec<Arc<SwapchainImage<Window>>>)
@@ -191,40 +172,6 @@ impl Renderer {
                      .add(depth_buffer.clone()).unwrap()
                      .build().unwrap()) as Arc<FramebufferAbstract + Send + Sync>
         }).collect::<Vec<_>>()
-    }
-
-    fn create_instance_buffer(&mut self, instances: Iter<(Arc<RenderObject>,
-        Matrix4<f32>)>) -> Arc<ImmutableBuffer<[RenderInstance]>> {
-        let mut instances_data: Vec<RenderInstance> = Vec::new();
-
-        for instance in instances {
-            let instance_data: RenderInstance =
-                instance.0.get_instance_data(instance.1).into();
-            instances_data.push(instance_data);
-        }
-
-        let (instance_buffer, _future) =
-            ImmutableBuffer::from_iter(instances_data.into_iter(),
-        BufferUsage::vertex_buffer(), self.context.queue()).unwrap();
-
-        instance_buffer
-    }
-
-    fn create_indirect_buffer(&mut self, instances: Iter<(Arc<RenderObject>,
-        Matrix4<f32>)>) -> Arc<ImmutableBuffer<[DrawIndirectCommand]>> {
-        let mesh = instances.as_slice().get(0).unwrap().0.mesh();
-
-        let indirect_data = vec![DrawIndirectCommand {
-            vertex_count: mesh.vlist().len() as u32,
-            instance_count: instances.len() as u32,
-            first_vertex: 0,
-            first_instance: 0
-        }];
-
-        let (indirect_buffer, _future) = ImmutableBuffer::from_iter(indirect_data.into_iter(),
-        BufferUsage::indirect_buffer(), self.context.queue()).unwrap();
-
-        indirect_buffer
     }
 
     fn recreate_swapchain(&mut self) {

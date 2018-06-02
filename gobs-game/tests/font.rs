@@ -7,12 +7,13 @@ extern crate cgmath;
 use cgmath::Matrix4;
 
 use game::app::{Application, Run};
-use render::Batch;
+use render::{Batch, Renderer};
 use scene::SceneGraph;
 use scene::model::Font;
 
 struct App {
     graph: SceneGraph,
+    renderer: Renderer,
     batch: Batch
 }
 
@@ -22,9 +23,8 @@ impl Run for App {
     }
 
     fn update(&mut self, engine: &mut Application) {
-        self.batch.begin();
-        self.batch.draw_graph(&mut self.graph);
-        self.batch.end();
+        let cmd = self.batch.draw_graph(&mut self.graph);
+        self.renderer.submit(cmd);
     }
 
     fn resize(&mut self, width: u32, height: u32, _engine: &mut Application) {
@@ -35,9 +35,12 @@ impl Run for App {
 
 impl App {
     pub fn new(engine: &Application) -> Self {
+        let renderer = engine.create_renderer();
+
         App {
             graph: SceneGraph::new(),
-            batch: engine.create_batch()
+            batch: renderer.create_batch(),
+            renderer: renderer,
         }
     }
 

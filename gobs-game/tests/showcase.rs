@@ -10,7 +10,7 @@ use std::io::{BufRead, BufReader};
 
 use cgmath::{Matrix4, Point3, Vector3};
 
-use render::Batch;
+use render::{Batch, Renderer};
 
 use scene::SphericalCoord;
 use scene::LightBuilder;
@@ -36,6 +36,7 @@ pub enum Example {
 struct App {
     graph: SceneGraph,
     uigraph: SceneGraph,
+    renderer: Renderer,
     batch: Batch,
     timer: Timer,
     position: SphericalCoord<f32>,
@@ -53,12 +54,10 @@ impl Run for App {
     fn update(&mut self, engine: &mut Application) {
         self.handle_input(engine);
 
-        self.batch.begin();
+        let cmd1 = self.batch.draw_graph(&mut self.graph);
+        let cmd2 = self.batch.draw_graph(&mut self.uigraph);
 
-        self.batch.draw_graph(&mut self.graph);
-        self.batch.draw_graph(&mut self.uigraph);
-
-        self.batch.end();
+        self.renderer.submit_list(vec!(cmd1, cmd2));
 
         self.print_fps();
     }
@@ -84,10 +83,13 @@ impl App {
             .build();
         graph.set_light(light);
 
+        let renderer = engine.create_renderer();
+
         App {
             graph: SceneGraph::new(),
             uigraph: SceneGraph::new(),
-            batch: engine.create_batch(),
+            batch: renderer.create_batch(),
+            renderer: renderer,
             timer: Timer::new(),
             position: position,
             world_size: 5.0,

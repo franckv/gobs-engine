@@ -50,7 +50,8 @@ impl<T> TreeNode<T> {
 pub struct TreeGraph<T> {
     camera: Camera,
     light: Light,
-    root: TreeNode<T>
+    root: TreeNode<T>,
+    dirty: bool
 }
 
 impl<T> TreeGraph<T> {
@@ -58,7 +59,8 @@ impl<T> TreeGraph<T> {
         TreeGraph {
             camera: Camera::new([0., 0., 0.]),
             light: LightBuilder::new().build(),
-            root: TreeNode::new(None)
+            root: TreeNode::new(None),
+            dirty: true
         }
     }
 
@@ -67,6 +69,7 @@ impl<T> TreeGraph<T> {
     }
 
     pub fn camera_mut(&mut self) -> &mut Camera {
+        self.dirty = true;
         &mut self.camera
     }
 
@@ -75,6 +78,7 @@ impl<T> TreeGraph<T> {
     }
 
     pub fn set_light(&mut self, light: Light) {
+        self.dirty = true;
         self.light = light;
     }
 
@@ -82,18 +86,25 @@ impl<T> TreeGraph<T> {
         &self.root
     }
 
+    pub fn is_dirty(&self) -> bool {
+        self.dirty
+    }
+    
     pub fn insert<O>(&mut self, object: O) -> &TreeNode<T> where O: Into<T> {
+        self.dirty = true;
         self.root.insert(object.into())
     }
 
     pub fn insert_with_transform<O>(&mut self, object: O, transform: Matrix4<f32>)
     -> &TreeNode<T> where O: Into<T> {
+        self.dirty = true;
         self.root.insert_with_transform(object.into(), transform)
     }
 
     pub fn foreach<F>(&mut self, mut f: F)
     where F: FnMut(&T, Matrix4<f32>) {
         TreeGraph::visit(&mut self.root, &mut f, Matrix4::identity());
+        self.dirty = false;
     }
 
     fn visit<F>(node: &mut TreeNode<T>, f: &mut F, parent_transform: Matrix4<f32>)
@@ -115,6 +126,7 @@ impl<T> TreeGraph<T> {
     }
 
     pub fn clear(&mut self) {
+        self.dirty = true;
         self.root = TreeNode::new(None);
     }
 }
