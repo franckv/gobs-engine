@@ -62,8 +62,9 @@ impl Pipeline for LinePipeline {
 }
 
 impl LinePipeline {
-    pub fn new(context: Arc<Context>,
-            render_pass: Arc<RenderPassAbstract + Send + Sync>) -> Box<Pipeline> {
+    pub fn new<R>(context: Arc<Context>,
+            subpass: Subpass<R>) -> Box<Pipeline>
+            where R: RenderPassAbstract + Send + Sync + 'static {
         let vshader = pipeline::vs::Shader::load(context.device()).expect("error");
         let fshader = pipeline::fs::Shader::load(context.device()).expect("error");
 
@@ -76,7 +77,7 @@ impl LinePipeline {
             .blend_alpha_blending()
             .depth_stencil_simple_depth()
             .cull_mode_back()
-            .render_pass(Subpass::from(render_pass, 0).unwrap())
+            .render_pass(subpass)
             .build(context.device()).unwrap())
             as Arc<GraphicsPipelineAbstract + Send + Sync>;
 

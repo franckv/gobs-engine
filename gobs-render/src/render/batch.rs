@@ -49,10 +49,10 @@ impl Batch {
         render_pass: Arc<RenderPassAbstract + Send + Sync>) -> Self {
 
         let line_pipeline = LinePipeline::new(context.clone(),
-            render_pass.clone());
+            Subpass::from(render_pass.clone(), 0).unwrap());
 
         let triangle_pipeline = TrianglePipeline::new(context.clone(),
-            render_pass.clone());
+            Subpass::from(render_pass.clone(), 0).unwrap());
 
         Batch {
             context: context.clone(),
