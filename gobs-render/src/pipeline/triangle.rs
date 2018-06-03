@@ -4,8 +4,7 @@ use std::sync::Arc;
 use cgmath::Matrix4;
 
 use vulkano::buffer::{BufferUsage, CpuBufferPool};
-use vulkano::descriptor::descriptor_set::{FixedSizeDescriptorSetBuilder,
-    FixedSizeDescriptorSetsPool};
+use vulkano::descriptor::descriptor_set::FixedSizeDescriptorSetsPool;
 use vulkano::descriptor::descriptor_set::DescriptorSet;
 use vulkano::framebuffer::{Subpass, RenderPassAbstract};
 use vulkano::pipeline::vertex::OneVertexOneInstanceDefinition;
@@ -63,7 +62,7 @@ impl Pipeline for TrianglePipeline {
 
 impl TrianglePipeline {
     pub fn new<R>(context: Arc<Context>,
-            subpass: Subpass<R>) -> Box<Pipeline> 
+            subpass: Subpass<R>) -> Box<Pipeline>
             where R: RenderPassAbstract + Send + Sync + 'static {
         let vshader = pipeline::vs::Shader::load(context.device()).expect("error");
         let fshader = pipeline::fs::Shader::load(context.device()).expect("error");
@@ -94,14 +93,5 @@ impl TrianglePipeline {
             matrix_buffers: matrix_buffers,
             light_buffers: light_buffers
         })
-    }
-
-    pub fn pipeline(&self) -> Arc<GraphicsPipelineAbstract + Send + Sync> {
-        self.pipeline.clone()
-    }
-
-    pub fn descriptor_builder(&mut self)
-    -> FixedSizeDescriptorSetBuilder<Arc<GraphicsPipelineAbstract + Send + Sync>, ()> {
-        self.descriptor_sets_pool.next()
     }
 }
