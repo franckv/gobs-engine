@@ -1,3 +1,4 @@
+use std::boxed::Box;
 use std::collections::HashMap;
 use std::sync::Arc;
 use std::slice::Iter;
@@ -13,9 +14,9 @@ use RenderInstance;
 use cache::{MeshCache, TextureCache};
 use context::Context;
 use display::Display;
-use render::shader::{DefaultShader, Shader};
+use pipeline::{Pipeline, LinePipeline, TrianglePipeline};
 use scene::{Camera, Light, SceneGraph, SceneData};
-use scene::model::RenderObject;
+use scene::model::{PrimitiveType, RenderObject};
 
 pub struct Command {
     command: AutoCommandBuffer
@@ -36,7 +37,8 @@ impl Command {
 pub struct Batch {
     context: Arc<Context>,
     display: Arc<Display>,
-    shader: Box<Shader>,
+    line_pipeline: Box<Pipeline>,
+    triangle_pipeline: Box<Pipeline>,
     render_pass: Arc<RenderPassAbstract + Send + Sync>,
     texture_cache: TextureCache,
     mesh_cache: MeshCache
@@ -46,12 +48,17 @@ impl Batch {
     pub fn new(display: Arc<Display>, context: Arc<Context>,
         render_pass: Arc<RenderPassAbstract + Send + Sync>) -> Self {
 
-        let shader = DefaultShader::new(context.clone());
+        let line_pipeline = LinePipeline::new(context.clone(),
+            render_pass.clone());
+
+        let triangle_pipeline = TrianglePipeline::new(context.clone(),
+            render_pass.clone());
 
         Batch {
             context: context.clone(),
             display: display.clone(),
-            shader: shader,
+            line_pipeline: line_pipeline,
+            triangle_pipeline: triangle_pipeline,
             render_pass: render_pass,
             texture_cache: TextureCache::new(context.clone()),
             mesh_cache: MeshCache::new(context)
@@ -106,13 +113,17 @@ impl Batch {
         let first = instances.as_slice().get(0).unwrap();
         let mesh = first.0.mesh();
         let texture = first.0.texture().unwrap();
-        let primitive = mesh.primitive_type();
+
+        let ref mut pipeline = match mesh.primitive_type() {
+            PrimitiveType::Triangle => &mut self.triangle_pipeline,
+            PrimitiveType::Line => &mut self.line_pipeline,
+        };
 
         let mesh = self.mesh_cache.get(mesh);
         let texture = self.texture_cache.get(texture);
 
-        let set = self.shader.get_descriptor_set(self.render_pass.clone(),
-            camera.combined(), light, texture, primitive);
+        let set = pipeline.get_descriptor_set(camera.combined(),
+            light, texture);
 
         /* TODO: should be the size of the swapchain.
         However, if display has been resized, swapchain will be recreated
@@ -129,7 +140,7 @@ impl Batch {
             .. DynamicState::none()
         };
 
-        let pipeline = self.shader.get_pipeline(self.render_pass.clone(), primitive);
+        let pipeline = pipeline.get_pipeline();
 
         builder.draw_indirect(
             pipeline, dynamic_state,

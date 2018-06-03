@@ -13,6 +13,8 @@ pub mod cache;
 pub mod context;
 pub mod display;
 pub mod render;
+pub mod pipeline;
+
 pub use render::{Batch, Command, Renderer};
 
 pub use scene::model::{Instance, Vertex};
