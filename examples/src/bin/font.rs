@@ -56,14 +56,21 @@ impl App {
     }
 
     pub fn draw(&mut self) {
-        let font = Font::new(42, &examples::asset("font.ttf"));
+        let font = Font::new(40, &examples::asset("font.ttf"));
 
-        let chars = font.layout("The quick brown fox jumps over the lazy dog");
+        let offset = -1.0;
+        for i in 1..40 {
+            let i = i as f32;
+            let chars = font.layout("The quick brown fox jumps over the lazy dog. \
+            The quick brown fox jumps over the lazy dog. \
+            The quick brown fox jumps over the lazy dog. \
+            The quick brown fox jumps over the lazy dog.");
 
-        for mut c in chars {
-            let transform = Matrix4::from_translation([-0.5, 0., 0.].into());
-            self.graph.insert_with_transform(c, transform);
+            for mut c in chars {
+                let transform = Matrix4::from_translation([-1.75, offset + i * 0.05, 0.].into());
+                self.graph.insert_with_transform(c, transform);
 
+            }
         }
     }
 }
