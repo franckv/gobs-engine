@@ -52,7 +52,10 @@ pub fn init() -> (EventsLoop, Arc<Context>, Arc<Display>) {
             khr_swapchain: true,
             .. DeviceExtensions::none()
         };
-        Device::new(physical, &Features::none(), &device_ext,
+        let features = Features {
+            ..Features::none()
+        };
+        Device::new(physical, &features, &device_ext,
                     [(queue_family, 0.5)].iter().cloned()).expect("error")
     };
 
