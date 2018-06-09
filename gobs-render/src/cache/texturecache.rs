@@ -52,7 +52,7 @@ impl TextureCacheEntry {
         R8G8B8A8Srgb,
         context.queue()).expect("Failed to load texture");
 
-        println!("Loading");
+        debug!("Loading");
 
         future.flush().unwrap();
 
@@ -84,6 +84,6 @@ impl TextureCacheEntry {
 
 impl Drop for TextureCacheEntry {
     fn drop(&mut self) {
-        println!("Dropping");
+        debug!("Dropping");
     }
 }

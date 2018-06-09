@@ -41,7 +41,7 @@ pub fn init() -> (EventsLoop, Arc<Context>, Arc<Display>) {
 
     let physical = PhysicalDevice::enumerate(&instance).next().expect("error");
 
-    println!("Using device: {} (type: {:?})", physical.name(), physical.ty());
+    info!("Using device: {} (type: {:?})", physical.name(), physical.ty());
 
     let queue_family = physical.queue_families().find(|&q| {
         q.supports_graphics() && surface.is_supported(q).unwrap_or(false)

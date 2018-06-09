@@ -4,9 +4,15 @@ extern crate gobs_render as render;
 extern crate gobs_scene as scene;
 extern crate cgmath;
 
+#[macro_use] extern crate log;
+extern crate simplelog;
+
 use cgmath::Matrix4;
 
+use simplelog::{Config, LevelFilter, TermLogger};
+
 use game::app::{Application, Run};
+use game::timer::Timer;
 use render::{Batch, Renderer};
 use scene::SceneGraph;
 use scene::model::Font;
@@ -14,7 +20,8 @@ use scene::model::Font;
 struct App {
     graph: SceneGraph,
     renderer: Renderer,
-    batch: Batch
+    batch: Batch,
+    timer: Timer
 }
 
 impl Run for App {
@@ -23,8 +30,11 @@ impl Run for App {
     }
 
     fn update(&mut self, engine: &mut Application) {
+        debug!("Update: {} ms", self.timer.delta() / 1_000_000);
         let cmd = self.batch.draw_graph(&mut self.graph);
+        debug!("Batch: {} ms", self.timer.delta() / 1_000_000);
         self.renderer.submit(cmd);
+        debug!("Rendering: {} ms", self.timer.delta() / 1_000_000);
     }
 
     fn resize(&mut self, width: u32, height: u32, _engine: &mut Application) {
@@ -41,6 +51,7 @@ impl App {
             graph: SceneGraph::new(),
             batch: renderer.create_batch(),
             renderer: renderer,
+            timer: Timer::new()
         }
     }
 
@@ -58,6 +69,7 @@ impl App {
 }
 
 pub fn main() {
+    TermLogger::init(LevelFilter::Debug, Config::default()).expect("error");
     let mut engine = Application::new();
     let app = App::new(&engine);
     engine.run(app);

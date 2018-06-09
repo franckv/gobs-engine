@@ -91,7 +91,8 @@ impl Batch {
             map
         };
 
-        for (_id, list) in map {
+        for (id, list) in map {
+            debug!("Drawing batch: {} ({})", id, list.len());
             let camera = graph.camera();
             let light = graph.light();
 

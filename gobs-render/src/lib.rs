@@ -5,7 +5,9 @@ extern crate vulkano_shader_derive;
 extern crate vulkano_win;
 extern crate winit;
 extern crate cgmath;
+extern crate time;
 extern crate uuid;
+#[macro_use] extern crate log;
 
 extern crate gobs_scene as scene;
 

@@ -65,7 +65,7 @@ impl Renderer {
             self.swapchain.clone(), None) {
             Ok(r) => r,
             Err(AcquireError::OutOfDate) => {
-                println!("OutOfDate");
+                debug!("OutOfDate");
                 self.recreate_swapchain();
                 return Err(AcquireError::OutOfDate)
             },
@@ -124,7 +124,7 @@ impl Renderer {
                     Box::new(now(self.context.device())) as Box<_>
                 },
                 Err(e) => {
-                    println!("{:?}", e);
+                    warn!("{:?}", e);
                     Box::new(now(self.context.device())) as Box<_>
                 }
             }

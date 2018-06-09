@@ -9,3 +9,5 @@ gobs-scene = {path = "../gobs-scene"}
 gobs-game = {path = "../gobs-game"}
 cgmath = "0.16"
 image = "0.18"
+log = "0.4"
+simplelog = "0.5"
