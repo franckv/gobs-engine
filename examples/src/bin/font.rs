@@ -3,12 +3,9 @@ extern crate gobs_game as game;
 extern crate gobs_render as render;
 extern crate gobs_scene as scene;
 extern crate gobs_utils as utils;
-extern crate cgmath;
 
 #[macro_use] extern crate log;
 extern crate simplelog;
-
-use cgmath::Matrix4;
 
 use simplelog::{Config, LevelFilter, TermLogger};
 
@@ -16,7 +13,7 @@ use game::app::{Application, Run};
 use utils::timer::Timer;
 use render::{Batch, Renderer};
 use scene::SceneGraph;
-use scene::model::Font;
+use scene::model::{Font, Transform};
 
 struct App {
     graph: SceneGraph,
@@ -62,16 +59,25 @@ impl App {
         let offset = -1.0;
         for i in 1..40 {
             let i = i as f32;
+
+            let mut group = SceneGraph::new_node()
+                .transform(Transform::translation([-1.75, offset + i * 0.05, 0.]))
+                .build();
+
             let chars = font.layout("The quick brown fox jumps over the lazy dog. \
             The quick brown fox jumps over the lazy dog. \
             The quick brown fox jumps over the lazy dog. \
             The quick brown fox jumps over the lazy dog.");
 
-            for mut c in chars {
-                let transform = Matrix4::from_translation([-1.75, offset + i * 0.05, 0.].into());
-                self.graph.insert_with_transform(c, transform);
-
+            for (c, trans) in chars {
+                let c = SceneGraph::new_node()
+                    .data(c)
+                    .model_transform(trans)
+                    .build();
+                group.insert(c);
             }
+
+            self.graph.insert(group);
         }
     }
 }

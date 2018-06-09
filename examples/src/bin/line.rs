@@ -53,11 +53,11 @@ impl App {
 
         let line = Shapes::line(left, right);
         let instance = RenderObjectBuilder::new(line).texture(texture.clone()).build();
-        self.graph.insert(instance);
+        self.graph.insert(SceneGraph::new_node().data(instance).build());
 
         let line = Shapes::line(bottom, top);
         let instance = RenderObjectBuilder::new(line).texture(texture).build();
-        self.graph.insert(instance);
+        self.graph.insert(SceneGraph::new_node().data(instance).build());
     }
 }
 

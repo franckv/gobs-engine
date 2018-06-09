@@ -9,14 +9,14 @@ extern crate image;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
 
-use cgmath::{Matrix4, Point3, Vector3};
+use cgmath::{Point3, Vector3};
 
 use render::{Batch, Renderer};
 
 use scene::SphericalCoord;
 use scene::LightBuilder;
 use scene::SceneGraph;
-use scene::model::{Color, Font, RenderObjectBuilder, Shapes, Texture};
+use scene::model::{Color, Font, RenderObjectBuilder, Shapes, Texture, Transform};
 
 use game::app::{Application, Run};
 use game::asset::TileMap;
@@ -264,9 +264,11 @@ impl App {
                         let tile = RenderObjectBuilder::new(mesh.clone())
                             .color(Color::red())
                             .texture(texture.clone())
-                            .translate([x - 16., 16. - y, 0.0])
                             .build();
-                        self.graph.insert(tile);
+                        self.graph.insert(SceneGraph::new_node()
+                            .data(tile)
+                            .transform(Transform::translation([x - 16., 16. - y, 0.0]))
+                            .build());
                     },
                     _ => ()
                 }
@@ -291,7 +293,6 @@ impl App {
                         RenderObjectBuilder::new(triangle.clone())
                             .color(color)
                             .texture(texture.clone())
-                            .translate([i as f32, j as f32, 0.0])
                             .build()
                     },
                     _ => {
@@ -300,12 +301,14 @@ impl App {
                         RenderObjectBuilder::new(square.clone())
                             .color(color)
                             .texture(texture.clone())
-                            .translate([i as f32, j as f32, 0.0])
                             .build()
                     },
                 };
 
-                self.graph.insert(tile);
+                self.graph.insert(SceneGraph::new_node()
+                    .data(tile)
+                    .transform(Transform::translation([i as f32, j as f32, 0.0]))
+                    .build());
             }
         }
     }
@@ -322,20 +325,32 @@ impl App {
         };
 
         let tile = tilemap.build_tile(0, 0);
-        let transform = Matrix4::from_translation([-1.0, 1.0, 0.0].into());
-        self.graph.insert_with_transform(tile, transform);
+        let transform = Transform::translation([-1.0, 1.0, 0.0]);
+        self.graph.insert(SceneGraph::new_node()
+            .data(tile)
+            .transform(transform)
+            .build());
 
         let tile = tilemap.build_tile(0, 20);
-        let transform = Matrix4::from_translation([-1.0, -1.0, 0.0].into());
-        self.graph.insert_with_transform(tile, transform);
+        let transform = Transform::translation([-1.0, -1.0, 0.0]);
+        self.graph.insert(SceneGraph::new_node()
+            .data(tile)
+            .transform(transform)
+            .build());
 
         let tile = tilemap.build_tile(0, 21);
-        let transform = Matrix4::from_translation([1.0, 1.0, 0.0].into());
-        self.graph.insert_with_transform(tile, transform);
+        let transform = Transform::translation([1.0, 1.0, 0.0]);
+        self.graph.insert(SceneGraph::new_node()
+            .data(tile)
+            .transform(transform)
+            .build());
 
         let tile = tilemap.build_tile(0, 22);
-        let transform = Matrix4::from_translation([1.0, -1.0, 0.0].into());
-        self.graph.insert_with_transform(tile, transform);
+        let transform = Transform::translation([1.0, -1.0, 0.0]);
+        self.graph.insert(SceneGraph::new_node()
+            .data(tile)
+            .transform(transform)
+            .build());
     }
 
     fn draw_cube(&mut self) {
@@ -350,7 +365,7 @@ impl App {
             .texture(texture)
             .build();
 
-        self.graph.insert(instance);
+        self.graph.insert(SceneGraph::new_node().data(instance).build());
     }
 
     fn draw_dungeon(&mut self) {
@@ -372,10 +387,12 @@ impl App {
                         let instance = RenderObjectBuilder::new(mesh.clone())
                             .color(Color::white())
                             .texture(texture.clone())
-                            .translate([x - 16., 0., y - 16.])
                             .build();
 
-                        self.graph.insert(instance);
+                        self.graph.insert(SceneGraph::new_node()
+                            .data(instance)
+                            .transform(Transform::translation([x - 16., 0., y - 16.]))
+                            .build());
                     },
                     _ => ()
                 }
@@ -385,12 +402,14 @@ impl App {
         let floor = Shapes::quad();
         let instance = RenderObjectBuilder::new(floor)
             .texture(Texture::from_color(Color::black()))
-            .scale(100., 100., 1.)
-            .rotate([1., 0., 0.], -90.)
-            .translate([0., -0.5, 0.])
             .build();
 
-        self.graph.insert(instance);
+        self.graph.insert(SceneGraph::new_node()
+            .data(instance)
+            .model_transform(Transform::scaling(100., 100., 1.))
+            .transform(Transform::rotation([1., 0., 0.], -90.)
+                .translate([0., -0.5, 0.]))
+            .build());
     }
 
     fn draw_depth(&mut self) {
@@ -412,10 +431,12 @@ impl App {
             let instance = RenderObjectBuilder::new(triangle.clone())
                 .color(color)
                 .texture(texture.clone())
-                .translate([i, 0., i / 10.])
                 .build();
 
-            self.graph.insert(instance);
+            self.graph.insert(SceneGraph::new_node()
+                .data(instance)
+                .transform(Transform::translation([i, 0., i / 10.]))
+                .build());
         }
     }
 
@@ -428,8 +449,11 @@ impl App {
 
         let chars = font.layout("Press space to go to the next example");
 
-        for c in chars {
-            self.graph.insert(c);
+        for (c, trans) in chars {
+            self.graph.insert(SceneGraph::new_node()
+                .data(c)
+                .model_transform(trans)
+                .build());
         }
     }
 
@@ -443,10 +467,12 @@ impl App {
 
         let text = RenderObjectBuilder::new(mesh.clone())
             .texture(font.texture())
-            .scale(10., 10., 1.)
             .build();
 
-        self.graph.insert(text);
+        self.graph.insert(SceneGraph::new_node()
+            .data(text)
+            .model_transform(Transform::scaling(10., 10., 1.))
+            .build());
     }
 
     fn draw_centers(&mut self) {
@@ -459,11 +485,11 @@ impl App {
 
         let line = Shapes::line(left, right);
         let instance = RenderObjectBuilder::new(line).texture(texture.clone()).build();
-        self.uigraph.insert(instance);
+        self.uigraph.insert(SceneGraph::new_node().data(instance).build());
 
         let line = Shapes::line(bottom, top);
         let instance = RenderObjectBuilder::new(line).texture(texture).build();
-        self.uigraph.insert(instance);
+        self.uigraph.insert(SceneGraph::new_node().data(instance).build());
     }
 }
 

@@ -9,6 +9,7 @@ path = "src/lib.rs"
 
 [dependencies]
 gobs-scene = {path = "../gobs-scene"}
+gobs-utils = {path = "../gobs-utils"}
 vulkano = {path = "../../../vulkano/vulkano", version="0.9"}
 vulkano-shader-derive = {path = "../../../vulkano/vulkano-shader-derive", version="0.9"}
 vulkano-win = {path = "../../../vulkano/vulkano-win", version="0.9"}

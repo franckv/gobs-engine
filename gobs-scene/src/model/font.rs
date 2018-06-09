@@ -4,10 +4,9 @@ use std::fs::File;
 use std::sync::Arc;
 use unicode_normalization::UnicodeNormalization;
 
-use cgmath::{Matrix4, SquareMatrix};
 use rusttype::{Font as RFont, FontCollection, Scale, point, Rect};
 
-use model::{Color, Mesh, MeshBuilder, RenderObject, RenderObjectBuilder, Texture};
+use model::{Color, Mesh, MeshBuilder, RenderObject, RenderObjectBuilder, Texture, Transform};
 
 const TEXTURE_SIZE: (usize, usize) = (1024, 1024);
 
@@ -15,19 +14,9 @@ const TEXTURE_SIZE: (usize, usize) = (1024, 1024);
 struct Character {
     c: char,
     region: [f32; 4],
-    transform: Matrix4<f32>,
+    transform: Transform,
     width: f32,
     advance: f32
-}
-
-impl Character {
-    pub fn region(&self) -> &[f32; 4] {
-        &self.region
-    }
-
-    pub fn transform(&self) -> &Matrix4<f32> {
-        &self.transform
-    }
 }
 
 pub struct Font {
@@ -68,10 +57,10 @@ impl Font {
         self.texture.clone()
     }
 
-    pub fn layout(&self, text: &str) -> Vec<Arc<RenderObject>> {
+    pub fn layout(&self, text: &str) -> Vec<(Arc<RenderObject>, Transform)> {
         let mut result = Vec::new();
 
-        let mut translate = Matrix4::identity();
+        let mut translate = Transform::new();
 
         let mut first = true;
         for c in text.nfc() {
@@ -80,22 +69,20 @@ impl Font {
                 let width = character.width;
 
                 if first {
-                    translate =
-                        Matrix4::from_translation([width / 2., 0.0, 0.0].into()) * translate;
+                    translate = translate.translate([width / 2., 0.0, 0.0]);
                     first = false;
                 }
 
-                let transform = translate * character.transform();
+                let transform = character.transform.clone().transform(&translate);
 
                 let instance = RenderObjectBuilder::new(self.mesh.clone())
                     .texture(self.texture.clone())
-                    .region(*character.region())
-                    .transform(transform)
+                    .region(character.region)
                     .build();
 
-                result.push(instance);
+                result.push((instance, transform));
 
-                translate = Matrix4::from_translation([advance, 0.0, 0.0].into()) * translate;
+                translate = translate.translate([advance, 0.0, 0.0]);
             }
         }
 
@@ -176,16 +163,14 @@ impl Font {
 
                 // align character on origin
                 let offset = ypos - (ymin + ymax) / 2.;
-                let translate = Matrix4::from_translation([0., offset, 0.].into());
 
-                // resize mesh to fit bounding box
-                let transform = Matrix4::from_diagonal(
-                    [xmax - xmin, ymax - ymin, 1., 1.].into());
+                // resize mesh to fit bounding box and align on origin
+                let transform = Transform::scaling(xmax - xmin, ymax - ymin, 1.).translate([0., offset, 0.]);
 
                 Character {
                     c: c,
                     region: [xmin, ymin, xmax, ymax],
-                    transform: translate * transform,
+                    transform: transform,
                     width: xmax - xmin,
                     advance: advance / width as f32
                 }

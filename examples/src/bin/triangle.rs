@@ -1,7 +1,6 @@
 extern crate gobs_game as game;
 extern crate gobs_render as render;
 extern crate gobs_scene as scene;
-extern crate cgmath;
 
 use game::app::{Application, Run};
 use render::{Batch, Renderer};
@@ -21,7 +20,7 @@ impl Run for App {
 
         let instance = RenderObjectBuilder::new(triangle).texture(texture).build();
 
-        self.graph.insert(instance);
+        self.graph.insert(SceneGraph::new_node().data(instance).build());
     }
 
     fn update(&mut self, engine: &mut Application) {

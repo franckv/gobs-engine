@@ -10,6 +10,7 @@ extern crate uuid;
 #[macro_use] extern crate log;
 
 extern crate gobs_scene as scene;
+extern crate gobs_utils as utils;
 
 pub mod cache;
 pub mod context;
@@ -19,7 +20,7 @@ pub mod pipeline;
 
 pub use render::{Batch, Command, Renderer};
 
-pub use scene::model::{Instance, Vertex};
+pub use scene::model::Vertex;
 
 #[derive(Copy, Clone)]
 pub struct RenderVertex {
@@ -44,17 +45,6 @@ pub struct RenderInstance {
     pub normal_transform: [[f32; 3]; 3],
     pub color: [f32; 4],
     pub region: [f32; 4],
-}
-
-impl From<Instance> for RenderInstance {
-    fn from(i: Instance) -> Self {
-        RenderInstance {
-            transform: i.transform,
-            normal_transform: i.normal_transform,
-            color: i.color,
-            region: i.region
-        }
-    }
 }
 
 impl_vertex!(RenderVertex, position, normal, tex_uv);
