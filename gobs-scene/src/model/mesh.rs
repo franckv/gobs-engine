@@ -18,7 +18,8 @@ pub enum PrimitiveType {
 pub struct MeshBuilder {
     id: Uuid,
     primitive_type: PrimitiveType,
-    vlist: Vec<Vertex>
+    vlist: Vec<Vertex>,
+    ilist: Vec<usize>
 }
 
 impl MeshBuilder {
@@ -26,7 +27,8 @@ impl MeshBuilder {
         MeshBuilder {
             id: Uuid::new_v4(),
             primitive_type: PrimitiveType::Triangle,
-            vlist: Vec::new()
+            vlist: Vec::new(),
+            ilist: Vec::new()
         }
     }
 
@@ -39,6 +41,10 @@ impl MeshBuilder {
         self
     }
 
+    pub fn add_indice(mut self, indice: usize) {
+        self.ilist.push(indice)
+    }
+
     pub fn line(mut self) -> Self {
         self.primitive_type = PrimitiveType::Line;
 
@@ -46,7 +52,20 @@ impl MeshBuilder {
     }
 
     pub fn build(self) -> Arc<Mesh> {
-        Mesh::new(self.id, self.primitive_type, self.vlist)
+        if self.ilist.len() > 0 {
+            let mut vlist = Vec::new();
+
+            for i in self.ilist {
+                let v = self.vlist.get(i);
+                if let Some(v) = v {
+                    vlist.push(*v);
+                }
+            }
+
+            Mesh::new(self.id, self.primitive_type, vlist)
+        } else {
+            Mesh::new(self.id, self.primitive_type, self.vlist)
+        }
     }
 }
 
