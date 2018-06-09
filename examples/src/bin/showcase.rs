@@ -2,6 +2,7 @@ extern crate examples;
 extern crate gobs_game as game;
 extern crate gobs_render as render;
 extern crate gobs_scene as scene;
+extern crate gobs_utils as utils;
 extern crate cgmath;
 extern crate image;
 
@@ -20,7 +21,7 @@ use scene::model::{Color, Font, RenderObjectBuilder, Shapes, Texture};
 use game::app::{Application, Run};
 use game::asset::TileMap;
 use game::input::Key;
-use game::timer::Timer;
+use utils::timer::Timer;
 
 pub enum Example {
     Font = 0,

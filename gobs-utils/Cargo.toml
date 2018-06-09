@@ -1,0 +1,12 @@
+[package]
+name = "gobs-utils"
+version = "0.1.0"
+authors = ["franckv <franck.vdl@gmail.com>"]
+
+[lib]
+name = "gobs_utils"
+path = "src/lib.rs"
+
+[dependencies]
+cgmath = "0.16"
+time = "0.1"

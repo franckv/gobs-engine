@@ -2,6 +2,7 @@ extern crate examples;
 extern crate gobs_game as game;
 extern crate gobs_render as render;
 extern crate gobs_scene as scene;
+extern crate gobs_utils as utils;
 extern crate cgmath;
 
 #[macro_use] extern crate log;
@@ -12,7 +13,7 @@ use cgmath::Matrix4;
 use simplelog::{Config, LevelFilter, TermLogger};
 
 use game::app::{Application, Run};
-use game::timer::Timer;
+use utils::timer::Timer;
 use render::{Batch, Renderer};
 use scene::SceneGraph;
 use scene::model::Font;

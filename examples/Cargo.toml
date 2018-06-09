@@ -7,6 +7,7 @@ authors = ["franckv <franck.vdl@gmail.com>"]
 gobs-render = {path = "../gobs-render"}
 gobs-scene = {path = "../gobs-scene"}
 gobs-game = {path = "../gobs-game"}
+gobs-utils = {path = "../gobs-utils"}
 cgmath = "0.16"
 image = "0.18"
 log = "0.4"
