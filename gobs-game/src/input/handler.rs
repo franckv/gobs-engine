@@ -38,7 +38,7 @@ impl InputHandler {
         self.events_loop.poll_events(|event| {
             match event {
                 WindowEvent { event, .. } => match event {
-                    winit::WindowEvent::Closed => status = Event::Close,
+                    winit::WindowEvent::CloseRequested => status = Event::Close,
                     winit::WindowEvent::Resized(_, _) => status = Event::Resize,
                     winit::WindowEvent::KeyboardInput {
                         input: KeyboardInput {

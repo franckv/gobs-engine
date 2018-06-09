@@ -12,6 +12,6 @@ gobs-scene = {path = "../gobs-scene"}
 vulkano = {path = "../../../vulkano/vulkano", version="0.9"}
 vulkano-shader-derive = {path = "../../../vulkano/vulkano-shader-derive", version="0.9"}
 vulkano-win = {path = "../../../vulkano/vulkano-win", version="0.9"}
-winit = "0.11"
+winit = "0.13"
 cgmath = "0.16"
 uuid = { version = "0.6", features = ["v4"] }
