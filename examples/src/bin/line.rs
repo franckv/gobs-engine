@@ -21,7 +21,7 @@ impl Run for App {
         self.draw_centers();
     }
 
-    fn update(&mut self, engine: &mut Application) {
+    fn update(&mut self, _engine: &mut Application) {
         let cmd = self.batch.draw_graph(&mut self.graph);
         self.renderer.submit(cmd);
     }

@@ -19,7 +19,8 @@ impl Display {
     }
 
     pub fn dimensions(&self) -> [u32; 2] {
-        let dim = self.surface.window().get_inner_size().unwrap();
+        let dpi = self.surface.window().get_hidpi_factor();
+        let dim: (u32, u32) = self.surface.window().get_inner_size().unwrap().to_physical(dpi).into();
         [dim.0, dim.1]
     }
 }

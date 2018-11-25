@@ -2,6 +2,11 @@ extern crate gobs_game as game;
 extern crate gobs_render as render;
 extern crate gobs_scene as scene;
 
+#[macro_use] extern crate log;
+extern crate simplelog;
+
+use simplelog::{Config, LevelFilter, TermLogger};
+
 use game::app::{Application, Run};
 use render::{Batch, Renderer};
 use scene::SceneGraph;
@@ -23,7 +28,7 @@ impl Run for App {
         self.graph.insert(SceneGraph::new_node().data(instance).build());
     }
 
-    fn update(&mut self, engine: &mut Application) {
+    fn update(&mut self, _engine: &mut Application) {
         let cmd = self.batch.draw_graph(&mut self.graph);
         self.renderer.submit(cmd);
     }
@@ -47,6 +52,8 @@ impl App {
 }
 
 pub fn main() {
+    TermLogger::init(LevelFilter::Debug, Config::default()).expect("error");
+
     let mut engine = Application::new();
     let app = App::new(&engine);
     engine.run(app);

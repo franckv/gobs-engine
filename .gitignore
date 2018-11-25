@@ -1,3 +1,6 @@
 **/target/
 **/*.rs.bk
+**/*.spv
 Cargo.lock
+*.iml
+.idea/

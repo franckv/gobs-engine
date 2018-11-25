@@ -10,10 +10,10 @@ path = "src/lib.rs"
 [dependencies]
 gobs-scene = {path = "../gobs-scene"}
 gobs-utils = {path = "../gobs-utils"}
-vulkano = {path = "../../../vulkano/vulkano", version="0.9"}
-vulkano-shader-derive = {path = "../../../vulkano/vulkano-shader-derive", version="0.9"}
-vulkano-win = {path = "../../../vulkano/vulkano-win", version="0.9"}
-winit = "0.13"
+vulkano = {path = "../../../vulkano/vulkano", version="0.10"}
+vulkano-shader-derive = {path = "../../../vulkano/vulkano-shader-derive", version="0.10"}
+vulkano-win = {path = "../../../vulkano/vulkano-win", version="0.10"}
+winit = "0.17"
 cgmath = "0.16"
 log = "0.4"
 time = "0.1"

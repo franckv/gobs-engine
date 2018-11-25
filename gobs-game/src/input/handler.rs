@@ -39,7 +39,7 @@ impl InputHandler {
             match event {
                 WindowEvent { event, .. } => match event {
                     winit::WindowEvent::CloseRequested => status = Event::Close,
-                    winit::WindowEvent::Resized(_, _) => status = Event::Resize,
+                    winit::WindowEvent::Resized(_) => status = Event::Resize,
                     winit::WindowEvent::KeyboardInput {
                         input: KeyboardInput {
                             virtual_keycode: Some(key_code),

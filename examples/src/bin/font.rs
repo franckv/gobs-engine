@@ -27,7 +27,7 @@ impl Run for App {
         self.draw();
     }
 
-    fn update(&mut self, engine: &mut Application) {
+    fn update(&mut self, _engine: &mut Application) {
         debug!("Update: {} ms", self.timer.delta() / 1_000_000);
         let cmd = self.batch.draw_graph(&mut self.graph);
         debug!("Batch: {} ms", self.timer.delta() / 1_000_000);

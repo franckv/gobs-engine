@@ -162,7 +162,7 @@ impl Batch {
         let pipeline = pipeline.get_pipeline();
 
         builder.draw_indirect(
-            pipeline, dynamic_state,
+            pipeline, &dynamic_state,
             vec![mesh.buffer(), instance_buffer],
             indirect_buffer, set.clone(), ()).unwrap()
     }
