@@ -1,0 +1,27 @@
+[package]
+name = "gobs-vulkan"
+version = "0.1.0"
+authors = ["franckv <franck.vdl@gmail.com>"]
+
+[lib]
+name = "gobs_vulkan"
+path = "src/lib.rs"
+
+[[bin]]
+name = "myapp"
+path = "src/main.rs"
+
+[build-dependencies]
+glsl-to-spirv = "0.1.6"
+
+[dependencies]
+ash = "0.24"
+cgmath = "0.16"
+image = "0.18"
+log = "0.4"
+simplelog = "0.5"
+time = "0.1"
+uuid = { version = "0.6", features = ["v4"] }
+winit = "0.17"
+gobs-scene = {path = "../gobs-scene"}
+gobs-utils = {path = "../gobs-utils"}
