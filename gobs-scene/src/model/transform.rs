@@ -1,6 +1,6 @@
 use cgmath::{Deg, Matrix, Matrix3, Matrix4, SquareMatrix, Vector3, Vector4};
 
-#[derive(Clone)]
+#[derive(Clone, Copy, Debug)]
 pub struct Transform {
     matrix: Matrix4<f32>
 }
@@ -9,6 +9,12 @@ impl Transform {
     pub fn new() -> Self {
         Transform {
             matrix: Matrix4::identity()
+        }
+    }
+
+    pub fn from_matrix(matrix: Matrix4<f32>) -> Self {
+        Transform {
+            matrix
         }
     }
 

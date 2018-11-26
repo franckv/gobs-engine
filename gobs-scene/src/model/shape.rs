@@ -31,6 +31,7 @@ impl Shapes {
             .add_vertex(v4, n, t4)
             .add_vertex(v2, n, t2)
             .add_vertex(v1, n, t1)
+            .autoindex()
             .build()
     }
 
@@ -53,6 +54,7 @@ impl Shapes {
             .add_vertex(v1, n, t1)
             .add_vertex(v2, n, t2)
             .add_vertex(v3, n, t3)
+            .autoindex()
             .build()
     }
 
@@ -161,6 +163,7 @@ impl Shapes {
             .add_vertex(v4, n6, t2)
             .add_vertex(v3, n6, t1)
 
+            .autoindex()
             .build()
     }
 }

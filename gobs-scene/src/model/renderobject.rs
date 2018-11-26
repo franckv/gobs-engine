@@ -12,7 +12,7 @@ pub struct RenderObjectBuilder {
 impl RenderObjectBuilder {
     pub fn new(mesh: Arc<Mesh>) -> RenderObjectBuilder {
         RenderObjectBuilder {
-            mesh: mesh,
+            mesh,
             color: Color::white(),
             texture: None,
             region: [0.0, 0.0, 1.0, 1.0]
@@ -67,10 +67,10 @@ impl RenderObject {
     fn new(mesh: Arc<Mesh>, color: Color, texture: Option<Arc<Texture>>, region: [f32; 4])
     -> Arc<RenderObject> {
         Arc::new(RenderObject {
-            mesh: mesh,
-            color: color,
-            texture: texture,
-            region: region
+            mesh,
+            color,
+            texture,
+            region
         })
     }
 

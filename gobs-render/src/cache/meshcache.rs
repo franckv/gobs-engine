@@ -18,7 +18,7 @@ pub struct MeshCache {
 impl MeshCache {
     pub fn new(context: Arc<Context>) -> Self {
         MeshCache {
-            context: context,
+            context,
             cache: HashMap::new()
         }
     }
@@ -37,6 +37,7 @@ impl MeshCache {
 
 pub struct MeshCacheEntry {
     vbuf: Arc<ImmutableBuffer<[RenderVertex]>>,
+    ibuf: Option<Arc<ImmutableBuffer<[u32]>>>,
     size: usize
 }
 
@@ -46,19 +47,44 @@ impl MeshCacheEntry {
 
         let vlist: Vec<RenderVertex> = mesh.vlist().iter().map(|&v| v.into()).collect();
 
-        let (vbuf, future) = ImmutableBuffer::from_iter(vlist.into_iter(),
-            BufferUsage::vertex_buffer(), context.queue()).unwrap();
+        let vbuf = {
+            let (vbuf, v_future) =
+                ImmutableBuffer::from_iter(vlist.into_iter(),
+                                           BufferUsage::vertex_buffer(),
+                                           context.queue()).unwrap();
 
-        future.flush().expect("Error allocating vertex buffer");
+            v_future.flush().expect("Error allocating vertex buffer");
+
+            vbuf
+        };
+
+        let ibuf = match mesh.ilist() {
+            Some(ilist) => {
+                let (ibuf, i_future) =
+                    ImmutableBuffer::from_iter(ilist.iter().cloned(),
+                                               BufferUsage::index_buffer(),
+                                               context.queue()).unwrap();
+
+                i_future.flush().expect("Error allocating index buffer");
+
+                Some(ibuf)
+            },
+            None => None
+        };
 
         MeshCacheEntry {
-            vbuf: vbuf,
-            size: size
+            vbuf,
+            ibuf,
+            size
         }
     }
 
     pub fn buffer(&self) -> Arc<ImmutableBuffer<[RenderVertex]>> {
         self.vbuf.clone()
+    }
+
+    pub fn index(&self) -> Option<Arc<ImmutableBuffer<[u32]>>> {
+        self.ibuf.clone()
     }
 
     pub fn size(&self) -> usize {

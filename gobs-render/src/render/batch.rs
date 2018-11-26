@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use std::sync::Arc;
 
 use vulkano::buffer::{BufferUsage, ImmutableBuffer};
-use vulkano::command_buffer::{AutoCommandBuffer, AutoCommandBufferBuilder, DrawIndirectCommand, DynamicState};
+use vulkano::command_buffer::{AutoCommandBuffer, AutoCommandBufferBuilder, DynamicState};
 use vulkano::framebuffer::{RenderPassAbstract, Subpass};
 use vulkano::pipeline::viewport::Viewport;
 
@@ -13,7 +13,7 @@ use context::Context;
 use display::Display;
 use pipeline::{Pipeline, LinePipeline, TrianglePipeline};
 use scene::{Camera, Light, SceneGraph, SceneData};
-use scene::model::{Mesh, PrimitiveType, RenderObject, Transform};
+use scene::model::{PrimitiveType, RenderObject, Transform};
 use utils::timer::Timer;
 
 pub struct Command {
@@ -55,9 +55,9 @@ impl Batch {
         Batch {
             context: context.clone(),
             display: display.clone(),
-            line_pipeline: line_pipeline,
-            triangle_pipeline: triangle_pipeline,
-            render_pass: render_pass,
+            line_pipeline,
+            triangle_pipeline,
+            render_pass,
             texture_cache: TextureCache::new(context.clone()),
             mesh_cache: MeshCache::new(context)
         }
@@ -115,7 +115,6 @@ impl Batch {
         let mut timer = Timer::new();
 
         // TODO: change this
-        let count = instances.len();
         let (mesh, texture) = {
             let first = instances.as_slice().get(0).unwrap();
             let mesh = first.0.mesh();
@@ -127,11 +126,6 @@ impl Batch {
         let instance_buffer = self.create_instance_buffer(instances);
 
         debug!("Create instance buffers: {} us", timer.delta() / 1_000);
-
-        let indirect_buffer = self.create_indirect_buffer(mesh.clone(), count);
-
-        debug!("Create indirect buffers: {} us", timer.delta() / 1_000);
-
 
         let ref mut pipeline = match mesh.primitive_type() {
             PrimitiveType::Triangle => &mut self.triangle_pipeline,
@@ -161,14 +155,26 @@ impl Batch {
 
         let pipeline = pipeline.get_pipeline();
 
-        builder.draw_indirect(
-            pipeline, &dynamic_state,
-            vec![mesh.buffer(), instance_buffer],
-            indirect_buffer, set.clone(), ()).unwrap()
+        let index = mesh.index();
+
+        match index {
+            Some(ibuf) => {
+                builder.draw_indexed(
+                    pipeline, &dynamic_state,
+                    vec![mesh.buffer(), instance_buffer],
+                    ibuf, set.clone(), ()).unwrap()
+            },
+            None => {
+                builder.draw(
+                    pipeline, &dynamic_state,
+                    vec![mesh.buffer(), instance_buffer],
+                    set.clone(), ()).unwrap()
+            }
+        }
     }
 
     fn create_instance_buffer(&mut self, instances: &Vec<(Arc<RenderObject>,
-        Transform)>) -> Arc<ImmutableBuffer<[RenderInstance]>> {
+                                                          Transform)>) -> Arc<ImmutableBuffer<[RenderInstance]>> {
         let mut timer = Timer::new();
 
         let mut instances_data: Vec<RenderInstance> = Vec::new();
@@ -188,23 +194,8 @@ impl Batch {
 
         let (instance_buffer, _future) =
             ImmutableBuffer::from_iter(instances_data.into_iter(),
-        BufferUsage::vertex_buffer(), self.context.queue()).unwrap();
+                                       BufferUsage::vertex_buffer(), self.context.queue()).unwrap();
 
         instance_buffer
-    }
-
-    fn create_indirect_buffer(&mut self, mesh: Arc<Mesh>, count: usize)
-    -> Arc<ImmutableBuffer<[DrawIndirectCommand]>> {
-        let indirect_data = vec![DrawIndirectCommand {
-            vertex_count: mesh.vlist().len() as u32,
-            instance_count: count as u32,
-            first_vertex: 0,
-            first_instance: 0
-        }];
-
-        let (indirect_buffer, _future) = ImmutableBuffer::from_iter(indirect_data.into_iter(),
-        BufferUsage::indirect_buffer(), self.context.queue()).unwrap();
-
-        indirect_buffer
     }
 }
