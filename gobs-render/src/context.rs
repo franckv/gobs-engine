@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use vulkano::device::{Device, DeviceExtensions, Queue};
-use vulkano::instance::{Instance, Features, PhysicalDevice};
+use vulkano::instance::{Instance, PhysicalDevice};
 use vulkano_win;
 use vulkano_win::VkSurfaceBuild;
 use winit::{EventsLoop, WindowBuilder};
@@ -52,10 +52,7 @@ pub fn init() -> (EventsLoop, Arc<Context>, Arc<Display>) {
             khr_swapchain: true,
             .. DeviceExtensions::none()
         };
-        let features = Features {
-            ..Features::none()
-        };
-        Device::new(physical, &features, &device_ext,
+        Device::new(physical, physical.supported_features(), &device_ext,
                     [(queue_family, 0.5)].iter().cloned()).expect("error")
     };
 

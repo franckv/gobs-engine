@@ -23,10 +23,10 @@ pub trait Pipeline: Send {
 }
 
 pub mod vs {
-    #[derive(VulkanoShader)]
-    #[ty = "vertex"]
-    #[path = "src/pipeline/shader/vertex.glsl"]
-    struct _Dummy;
+    vulkano_shaders::shader!{
+        ty: "vertex",
+        path: "src/pipeline/shader/vertex.glsl"
+    }
 
     #[cfg(debug_assertions)]
     fn _reload() {
@@ -35,10 +35,10 @@ pub mod vs {
 }
 
 pub mod fs {
-    #[derive(VulkanoShader)]
-    #[ty = "fragment"]
-    #[path = "src/pipeline/shader/fragment.glsl"]
-    struct _Dummy;
+    vulkano_shaders::shader!{
+        ty: "fragment",
+        path: "src/pipeline/shader/fragment.glsl"
+    }
 
     #[cfg(debug_assertions)]
     fn _reload() {
