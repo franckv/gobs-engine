@@ -189,31 +189,31 @@ pub enum ImageFormat {
     Astc12x12SrgbBlock,
 }
 
-impl From<vk::types::Format> for ImageFormat {
-    fn from(format: vk::types::Format) -> ImageFormat {
+impl From<vk::Format> for ImageFormat {
+    fn from(format: vk::Format) -> ImageFormat {
         match format {
-            vk::types::Format::R8g8b8a8Unorm => ImageFormat::R8g8b8a8Unorm,
-            vk::types::Format::B8g8r8a8Srgb => ImageFormat::B8g8r8a8Srgb,
-            vk::types::Format::B8g8r8a8Unorm => ImageFormat::B8g8r8a8Unorm,
-            vk::types::Format::R32g32Sfloat => ImageFormat::R32g32Sfloat,
-            vk::types::Format::R32g32b32Sfloat => ImageFormat::R32g32b32Sfloat,
-            vk::types::Format::R32g32b32a32Sfloat => ImageFormat::R32g32b32a32Sfloat,
-            vk::types::Format::D32Sfloat => ImageFormat::D32Sfloat,
+            vk::Format::R8G8B8A8_UNORM => ImageFormat::R8g8b8a8Unorm,
+            vk::Format::B8G8R8A8_SRGB => ImageFormat::B8g8r8a8Srgb,
+            vk::Format::B8G8R8A8_UNORM => ImageFormat::B8g8r8a8Unorm,
+            vk::Format::R32G32_SFLOAT => ImageFormat::R32g32Sfloat,
+            vk::Format::R32G32B32_SFLOAT => ImageFormat::R32g32b32Sfloat,
+            vk::Format::R32G32B32A32_SFLOAT => ImageFormat::R32g32b32a32Sfloat,
+            vk::Format::D32_SFLOAT => ImageFormat::D32Sfloat,
             _ => panic!("Format not implemented")
         }
     }
 }
 
-impl Into<vk::types::Format> for ImageFormat {
-    fn into(self) -> vk::types::Format {
+impl Into<vk::Format> for ImageFormat {
+    fn into(self) -> vk::Format {
         match self {
-            ImageFormat::R8g8b8a8Unorm => vk::types::Format::R8g8b8a8Unorm,
-            ImageFormat::B8g8r8a8Srgb => vk::types::Format::B8g8r8a8Srgb,
-            ImageFormat::B8g8r8a8Unorm => vk::types::Format::B8g8r8a8Unorm,
-            ImageFormat::R32g32Sfloat => vk::types::Format::R32g32Sfloat,
-            ImageFormat::R32g32b32Sfloat => vk::types::Format::R32g32b32Sfloat,
-            ImageFormat::R32g32b32a32Sfloat => vk::types::Format::R32g32b32a32Sfloat,
-            ImageFormat::D32Sfloat => vk::types::Format::D32Sfloat,
+            ImageFormat::R8g8b8a8Unorm => vk::Format::R8G8B8A8_UNORM,
+            ImageFormat::B8g8r8a8Srgb => vk::Format::B8G8R8A8_SRGB,
+            ImageFormat::B8g8r8a8Unorm => vk::Format::B8G8R8A8_UNORM,
+            ImageFormat::R32g32Sfloat => vk::Format::R32G32_SFLOAT,
+            ImageFormat::R32g32b32Sfloat => vk::Format::R32G32B32_SFLOAT,
+            ImageFormat::R32g32b32a32Sfloat => vk::Format::R32G32B32A32_SFLOAT,
+            ImageFormat::D32Sfloat => vk::Format::D32_SFLOAT,
             _ => panic!("Format not implemented")
         }
     }
@@ -225,16 +225,16 @@ pub enum ColorSpace {
     SrgbNonlinear
 }
 
-impl From<vk::types::ColorSpaceKHR> for ColorSpace {
-    fn from(color_space: vk::types::ColorSpaceKHR) -> ColorSpace {
+impl From<vk::ColorSpaceKHR> for ColorSpace {
+    fn from(color_space: vk::ColorSpaceKHR) -> ColorSpace {
         match color_space {
             _ => ColorSpace::SrgbNonlinear
         }
     }
 }
 
-impl Into<vk::types::ColorSpaceKHR> for ColorSpace {
-    fn into(self) -> vk::types::ColorSpaceKHR {
-        vk::types::ColorSpaceKHR::SrgbNonlinear
+impl Into<vk::ColorSpaceKHR> for ColorSpace {
+    fn into(self) -> vk::ColorSpaceKHR {
+        vk::ColorSpaceKHR::SRGB_NONLINEAR
     }
 }

@@ -4,12 +4,11 @@ use std::ptr;
 use std::sync::Arc;
 
 use ash::{self, vk};
-use ash::version::{EntryV1_0, InstanceV1_0};
 use ash::extensions::{DebugReport, Surface as VkSurface};
 #[cfg(all(unix, not(target_os = "android"), not(target_os = "macos")))]
 use ash::extensions::XlibSurface;
-
-use super::{VkEntry, VkInstance};
+use ash::version::EntryV1_0;
+use ash::version::InstanceV1_0;
 
 use backend::physical::PhysicalDevice;
 use backend::queue::QueueFamily;
@@ -20,17 +19,17 @@ unsafe extern "system" fn debug_cb(_: vk::DebugReportFlagsEXT,
                                    _: u64,
                                    _: usize,
                                    _: i32,
-                                   _: *const vk::types::c_char,
-                                   error: *const vk::types::c_char,
-                                   _: *mut vk::types::c_void) -> vk::Bool32 {
+                                   _: *const std::os::raw::c_char,
+                                   error: *const std::os::raw::c_char,
+                                   _: *mut std::os::raw::c_void) -> vk::Bool32 {
     let msg = CStr::from_ptr(error).to_string_lossy();
     error!("DEBUG: {}", msg);
-    vk::VK_FALSE
+    vk::FALSE
 }
 
 pub struct Instance {
-    pub(crate) instance: VkInstance,
-    pub(crate) entry: VkEntry,
+    pub(crate) instance: ash::Instance,
+    pub(crate) entry: ash::Entry,
     pub(crate) surface_loader: VkSurface,
     debug_report_entry: DebugReport,
     debug_report: Option<vk::DebugReportCallbackEXT>
@@ -46,7 +45,7 @@ impl Instance {
 
         let app_info = vk::ApplicationInfo {
             p_application_name: pname,
-            s_type: vk::StructureType::ApplicationInfo,
+            s_type: vk::StructureType::APPLICATION_INFO,
             p_next: ptr::null(),
             application_version: version,
             p_engine_name: pname,
@@ -69,7 +68,7 @@ impl Instance {
         ];
 
         let instance_info = vk::InstanceCreateInfo {
-            s_type: vk::StructureType::InstanceCreateInfo,
+            s_type: vk::StructureType::INSTANCE_CREATE_INFO,
             p_next: ptr::null(),
             flags: Default::default(),
             p_application_info: &app_info,
@@ -79,26 +78,26 @@ impl Instance {
             enabled_extension_count: extensions.len() as u32,
         };
 
-        let entry: VkEntry = VkEntry::new().unwrap();
+        let entry = ash::Entry::new().unwrap();
 
-        let instance: VkInstance = unsafe {
+        let instance: ash::Instance = unsafe {
             debug!("Create instance");
 
             entry.create_instance(&instance_info, None).unwrap()
         };
 
         let surface_loader =
-            VkSurface::new(&entry, &instance).unwrap();
+            VkSurface::new(&entry, &instance);
 
-        let debug_report_entry = DebugReport::new(&entry, &instance).unwrap();
+        let debug_report_entry = DebugReport::new(&entry, &instance);
 
         let debug_report_info = vk::DebugReportCallbackCreateInfoEXT {
-            s_type: vk::StructureType::DebugReportCallbackCreateInfoExt,
+            s_type: vk::StructureType::DEBUG_REPORT_CALLBACK_CREATE_INFO_EXT,
             p_next: ptr::null(),
-            flags: vk::DEBUG_REPORT_WARNING_BIT_EXT |
-                vk::DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT |
-                vk::DEBUG_REPORT_ERROR_BIT_EXT,
-            pfn_callback: debug_cb,
+            flags: vk::DebugReportFlagsEXT::WARNING |
+                vk::DebugReportFlagsEXT::PERFORMANCE_WARNING |
+                vk::DebugReportFlagsEXT::ERROR,
+            pfn_callback: Some(debug_cb),
             p_user_data: ptr::null_mut(),
         };
 

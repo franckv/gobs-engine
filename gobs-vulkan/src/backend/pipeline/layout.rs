@@ -13,11 +13,11 @@ impl Into<vk::DescriptorType> for PipelineLayoutBindingType {
     fn into(self) -> vk::DescriptorType {
         match self {
             PipelineLayoutBindingType::Uniform =>
-                vk::DescriptorType::UniformBuffer,
+                vk::DescriptorType::UNIFORM_BUFFER,
             PipelineLayoutBindingType::UniformDynamic =>
-                vk::DescriptorType::UniformBufferDynamic,
+                vk::DescriptorType::UNIFORM_BUFFER_DYNAMIC,
             PipelineLayoutBindingType::ImageSampler =>
-                vk::DescriptorType::CombinedImageSampler,
+                vk::DescriptorType::COMBINED_IMAGE_SAMPLER,
         }
     }
 }
@@ -33,12 +33,12 @@ impl Into<vk::ShaderStageFlags> for PipelineLayoutBindingStage {
     fn into(self) -> vk::ShaderStageFlags {
         match self {
             PipelineLayoutBindingStage::Vertex =>
-                vk::SHADER_STAGE_VERTEX_BIT,
+                vk::ShaderStageFlags::VERTEX,
             PipelineLayoutBindingStage::Fragment =>
-                vk::SHADER_STAGE_FRAGMENT_BIT,
+                vk::ShaderStageFlags::FRAGMENT,
             PipelineLayoutBindingStage::All =>
-                vk::SHADER_STAGE_VERTEX_BIT |
-                    vk::SHADER_STAGE_FRAGMENT_BIT
+                vk::ShaderStageFlags::VERTEX |
+                    vk::ShaderStageFlags::FRAGMENT
         }
     }
 }

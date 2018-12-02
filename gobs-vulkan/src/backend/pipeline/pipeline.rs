@@ -56,20 +56,20 @@ impl Pipeline {
         let entry = CString::new("main").unwrap();
 
         let vertex_stage_info = vk::PipelineShaderStageCreateInfo {
-            s_type: vk::StructureType::PipelineShaderStageCreateInfo,
+            s_type: vk::StructureType::PIPELINE_SHADER_STAGE_CREATE_INFO,
             p_next: ptr::null(),
             flags: Default::default(),
-            stage: vk::SHADER_STAGE_VERTEX_BIT,
+            stage: vk::ShaderStageFlags::VERTEX,
             module: vshader.raw(),
             p_name: entry.as_ptr(),
             p_specialization_info: ptr::null(),
         };
 
         let fragment_stage_info = vk::PipelineShaderStageCreateInfo {
-            s_type: vk::StructureType::PipelineShaderStageCreateInfo,
+            s_type: vk::StructureType::PIPELINE_SHADER_STAGE_CREATE_INFO,
             p_next: ptr::null(),
             flags: Default::default(),
-            stage: vk::SHADER_STAGE_FRAGMENT_BIT,
+            stage: vk::ShaderStageFlags::FRAGMENT,
             module: fshader.raw(),
             p_name: entry.as_ptr(),
             p_specialization_info: ptr::null(),
@@ -84,7 +84,7 @@ impl Pipeline {
             Self::get_attribute_description(&vertex_layout);
 
         let vertex_input_info = vk::PipelineVertexInputStateCreateInfo {
-            s_type: vk::StructureType::PipelineVertexInputStateCreateInfo,
+            s_type: vk::StructureType::PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
             p_next: ptr::null(),
             flags: Default::default(),
             vertex_binding_description_count: binding_desc.len() as u32,
@@ -94,10 +94,10 @@ impl Pipeline {
         };
 
         let assembly_info = vk::PipelineInputAssemblyStateCreateInfo {
-            s_type: vk::StructureType::PipelineInputAssemblyStateCreateInfo,
+            s_type: vk::StructureType::PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO,
             p_next: ptr::null(),
             flags: Default::default(),
-            topology: vk::PrimitiveTopology::TriangleList,
+            topology: vk::PrimitiveTopology::TRIANGLE_LIST,
             primitive_restart_enable: 0,
         };
 
@@ -120,7 +120,7 @@ impl Pipeline {
         ];
 
         let viewport_info = vk::PipelineViewportStateCreateInfo {
-            s_type: vk::StructureType::PipelineViewportStateCreateInfo,
+            s_type: vk::StructureType::PIPELINE_VIEWPORT_STATE_CREATE_INFO,
             p_next: ptr::null(),
             flags: Default::default(),
             viewport_count: viewports.len() as u32,
@@ -129,10 +129,10 @@ impl Pipeline {
             p_scissors: scissors.as_ptr(),
         };
 
-        let dynamic_states = [vk::DynamicState::Viewport, vk::DynamicState::Scissor];
+        let dynamic_states = [vk::DynamicState::VIEWPORT, vk::DynamicState::SCISSOR];
 
         let dynamic_info = vk::PipelineDynamicStateCreateInfo {
-            s_type: vk::StructureType::PipelineDynamicStateCreateInfo,
+            s_type: vk::StructureType::PIPELINE_DYNAMIC_STATE_CREATE_INFO,
             p_next: ptr::null(),
             flags: Default::default(),
             dynamic_state_count: dynamic_states.len() as u32,
@@ -140,15 +140,15 @@ impl Pipeline {
         };
 
         let rasterization_info = vk::PipelineRasterizationStateCreateInfo {
-            s_type: vk::StructureType::PipelineRasterizationStateCreateInfo,
+            s_type: vk::StructureType::PIPELINE_RASTERIZATION_STATE_CREATE_INFO,
             p_next: ptr::null(),
             flags: Default::default(),
             depth_clamp_enable: 0,
             rasterizer_discard_enable: 0,
-            polygon_mode: vk::PolygonMode::Fill,
+            polygon_mode: vk::PolygonMode::FILL,
             line_width: 1.,
-            cull_mode: vk::CULL_MODE_NONE,
-            front_face: vk::FrontFace::Clockwise,
+            cull_mode: vk::CullModeFlags::NONE,
+            front_face: vk::FrontFace::CLOCKWISE,
             depth_bias_enable: 0,
             depth_bias_constant_factor: 0.,
             depth_bias_clamp: 0.,
@@ -156,11 +156,11 @@ impl Pipeline {
         };
 
         let multisample_info = vk::PipelineMultisampleStateCreateInfo {
-            s_type: vk::StructureType::PipelineMultisampleStateCreateInfo,
+            s_type: vk::StructureType::PIPELINE_MULTISAMPLE_STATE_CREATE_INFO,
             p_next: ptr::null(),
             flags: Default::default(),
             sample_shading_enable: 0,
-            rasterization_samples: vk::SAMPLE_COUNT_1_BIT,
+            rasterization_samples: vk::SampleCountFlags::TYPE_1,
             min_sample_shading: 1.,
             p_sample_mask: ptr::null(),
             alpha_to_coverage_enable: 0,
@@ -171,21 +171,21 @@ impl Pipeline {
             vk::PipelineColorBlendAttachmentState {
                 color_write_mask: vk::ColorComponentFlags::all(),
                 blend_enable: 0,
-                src_color_blend_factor: vk::BlendFactor::One,
-                dst_color_blend_factor: vk::BlendFactor::Zero,
-                color_blend_op: vk::BlendOp::Add,
-                src_alpha_blend_factor: vk::BlendFactor::One,
-                dst_alpha_blend_factor: vk::BlendFactor::Zero,
-                alpha_blend_op: vk::BlendOp::Add,
+                src_color_blend_factor: vk::BlendFactor::ONE,
+                dst_color_blend_factor: vk::BlendFactor::ZERO,
+                color_blend_op: vk::BlendOp::ADD,
+                src_alpha_blend_factor: vk::BlendFactor::ONE,
+                dst_alpha_blend_factor: vk::BlendFactor::ZERO,
+                alpha_blend_op: vk::BlendOp::ADD,
             }
         ];
 
         let color_blend_info = vk::PipelineColorBlendStateCreateInfo {
-            s_type: vk::StructureType::PipelineColorBlendStateCreateInfo,
+            s_type: vk::StructureType::PIPELINE_COLOR_BLEND_STATE_CREATE_INFO,
             p_next: ptr::null(),
             flags: Default::default(),
             logic_op_enable: 0,
-            logic_op: vk::LogicOp::Copy,
+            logic_op: vk::LogicOp::COPY,
             attachment_count: 1,
             p_attachments: color_blend_attachment.as_ptr(),
             blend_constants: [0., 0., 0., 0.],
@@ -194,22 +194,22 @@ impl Pipeline {
         let layout = Self::get_layout(&device, &descriptor_layout);
 
         let op_state = vk::StencilOpState {
-            fail_op: vk::StencilOp::Keep,
-            pass_op: vk::StencilOp::Keep,
-            depth_fail_op: vk::StencilOp::Keep,
-            compare_op: vk::CompareOp::Always,
+            fail_op: vk::StencilOp::KEEP,
+            pass_op: vk::StencilOp::KEEP,
+            depth_fail_op: vk::StencilOp::KEEP,
+            compare_op: vk::CompareOp::ALWAYS,
             compare_mask: 0,
             write_mask: 0,
             reference: 0,
         };
 
         let depth_info = vk::PipelineDepthStencilStateCreateInfo {
-            s_type: vk::StructureType::PipelineDepthStencilStateCreateInfo,
+            s_type: vk::StructureType::PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO,
             p_next: ptr::null(),
             flags: Default::default(),
             depth_test_enable: 1,
             depth_write_enable: 1,
-            depth_compare_op: vk::CompareOp::Less,
+            depth_compare_op: vk::CompareOp::LESS,
             depth_bounds_test_enable: 0,
             min_depth_bounds: 0.,
             max_depth_bounds: 1.,
@@ -219,7 +219,7 @@ impl Pipeline {
         };
 
         let pipeline_info = vk::GraphicsPipelineCreateInfo {
-            s_type: vk::StructureType::GraphicsPipelineCreateInfo,
+            s_type: vk::StructureType::GRAPHICS_PIPELINE_CREATE_INFO,
             p_next: ptr::null(),
             flags: Default::default(),
             stage_count: shader_stages.len() as u32,
@@ -258,7 +258,7 @@ impl Pipeline {
         let set_layout = [descriptor_layout.layout];
 
         let layout_info = vk::PipelineLayoutCreateInfo {
-            s_type: vk::StructureType::PipelineLayoutCreateInfo,
+            s_type: vk::StructureType::PIPELINE_LAYOUT_CREATE_INFO,
             p_next: ptr::null(),
             flags: Default::default(),
             set_layout_count: 1,

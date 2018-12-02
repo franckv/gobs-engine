@@ -15,7 +15,7 @@ pub struct Semaphore {
 impl Semaphore {
     pub fn new(device: Arc<Device>) -> Self {
         let semaphore_info = vk::SemaphoreCreateInfo {
-            s_type: vk::StructureType::SemaphoreCreateInfo,
+            s_type: vk::StructureType::SEMAPHORE_CREATE_INFO,
             p_next: ptr::null(),
             flags: Default::default(),
         };

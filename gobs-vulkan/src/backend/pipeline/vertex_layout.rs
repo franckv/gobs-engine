@@ -28,10 +28,10 @@ impl VertexAttributeFormat {
 impl Into<vk::Format> for VertexAttributeFormat {
     fn into(self) -> vk::Format {
         match self {
-            VertexAttributeFormat::Vec2 => vk::Format::R32g32Sfloat,
-            VertexAttributeFormat::Vec3 => vk::Format::R32g32b32Sfloat,
-            VertexAttributeFormat::Vec4 => vk::Format::R32g32b32a32Sfloat,
-            VertexAttributeFormat::Mat4 => vk::Format::R32g32b32a32Sfloat,
+            VertexAttributeFormat::Vec2 => vk::Format::R32G32_SFLOAT,
+            VertexAttributeFormat::Vec3 => vk::Format::R32G32B32_SFLOAT,
+            VertexAttributeFormat::Vec4 => vk::Format::R32G32B32A32_SFLOAT,
+            VertexAttributeFormat::Mat4 => vk::Format::R32G32B32A32_SFLOAT,
         }
     }
 }
@@ -51,8 +51,8 @@ pub enum VertexLayoutBindingType {
 impl Into<vk::VertexInputRate> for VertexLayoutBindingType {
     fn into(self) -> vk::VertexInputRate {
         match self {
-            VertexLayoutBindingType::Vertex => vk::VertexInputRate::Vertex,
-            VertexLayoutBindingType::Instance => vk::VertexInputRate::Instance,
+            VertexLayoutBindingType::Vertex => vk::VertexInputRate::VERTEX,
+            VertexLayoutBindingType::Instance => vk::VertexInputRate::INSTANCE,
         }
     }
 }

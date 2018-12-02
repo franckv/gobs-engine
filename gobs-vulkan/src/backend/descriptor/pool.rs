@@ -24,13 +24,13 @@ impl DescriptorSetPool {
         let pool_size: Vec<vk::DescriptorPoolSize> =
             pipeline_layout.bindings.iter().map(|binding| {
                 vk::DescriptorPoolSize {
-                    typ: binding.ty.into(),
+                    ty: binding.ty.into(),
                     descriptor_count: count as u32,
                 }
             }).collect();
 
         let pool_info = vk::DescriptorPoolCreateInfo {
-            s_type: vk::StructureType::DescriptorPoolCreateInfo,
+            s_type: vk::StructureType::DESCRIPTOR_POOL_CREATE_INFO,
             p_next: ptr::null(),
             flags: Default::default(),
             pool_size_count: pool_size.len() as u32,
@@ -48,7 +48,7 @@ impl DescriptorSetPool {
         }).collect();
 
         let descriptor_info = vk::DescriptorSetAllocateInfo {
-            s_type: vk::StructureType::DescriptorSetAllocateInfo,
+            s_type: vk::StructureType::DESCRIPTOR_SET_ALLOCATE_INFO,
             p_next: ptr::null(),
             descriptor_pool: pool,
             descriptor_set_count: count as u32,

@@ -24,7 +24,7 @@ impl Framebuffer {
         let attachments = [image.image_view, depth_buffer.image_view];
 
         let framebuffer_info = vk::FramebufferCreateInfo {
-            s_type: vk::StructureType::FramebufferCreateInfo,
+            s_type: vk::StructureType::FRAMEBUFFER_CREATE_INFO,
             p_next: ptr::null(),
             flags: Default::default(),
             render_pass: renderpass.raw(),

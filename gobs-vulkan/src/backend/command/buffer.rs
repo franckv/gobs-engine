@@ -21,7 +21,7 @@ pub trait IndexType: Copy {
 
 impl IndexType for u32 {
     fn get_index_type() -> vk::IndexType {
-        vk::IndexType::Uint32
+        vk::IndexType::UINT32
     }
 }
 
@@ -34,11 +34,11 @@ pub struct CommandBuffer {
 impl CommandBuffer {
     pub fn new(device: Arc<Device>, pool: Arc<CommandPool>) -> Self {
         let buffer_info = vk::CommandBufferAllocateInfo {
-            s_type: vk::StructureType::CommandBufferAllocateInfo,
+            s_type: vk::StructureType::COMMAND_BUFFER_ALLOCATE_INFO,
             p_next: ptr::null(),
             command_pool: pool.raw(),
             command_buffer_count: 1,
-            level: vk::CommandBufferLevel::Primary,
+            level: vk::CommandBufferLevel::PRIMARY,
         };
 
         let command_buffer = unsafe {
@@ -54,7 +54,7 @@ impl CommandBuffer {
 
     pub fn begin(&mut self) {
         let begin_info = vk::CommandBufferBeginInfo {
-            s_type: vk::StructureType::CommandBufferBeginInfo,
+            s_type: vk::StructureType::COMMAND_BUFFER_BEGIN_INFO,
             p_next: ptr::null(),
             flags: Default::default(),
             p_inheritance_info: ptr::null(),
@@ -74,7 +74,7 @@ impl CommandBuffer {
                 }
             },
             vk::ClearValue {
-                depth: vk::ClearDepthStencilValue {
+                depth_stencil: vk::ClearDepthStencilValue {
                     depth: 1.,
                     stencil: 0
                 }
@@ -84,7 +84,7 @@ impl CommandBuffer {
         let dim = framebuffer.dimensions();
 
         let renderpass_info = vk::RenderPassBeginInfo {
-            s_type: vk::StructureType::RenderPassBeginInfo,
+            s_type: vk::StructureType::RENDER_PASS_BEGIN_INFO,
             p_next: ptr::null(),
             render_pass: framebuffer.renderpass().raw(),
             framebuffer: framebuffer.raw(),
@@ -102,14 +102,14 @@ impl CommandBuffer {
         unsafe {
             self.device.raw().cmd_begin_render_pass(
                 self.command_buffer, &renderpass_info,
-                vk::SubpassContents::Inline);
+                vk::SubpassContents::INLINE);
         }
     }
 
     pub fn bind_pipeline(&self, pipeline: &Pipeline) {
         unsafe {
             self.device.raw().cmd_bind_pipeline(
-                self.command_buffer, vk::PipelineBindPoint::Graphics,
+                self.command_buffer, vk::PipelineBindPoint::GRAPHICS,
                 pipeline.raw());
         }
     }
@@ -144,7 +144,7 @@ impl CommandBuffer {
         unsafe {
             self.device.raw().cmd_bind_descriptor_sets(
                 self.command_buffer,
-                vk::PipelineBindPoint::Graphics,
+                vk::PipelineBindPoint::GRAPHICS,
                 pipeline.layout, 0, &sets,
                 offsets.as_ref());
         }
@@ -219,7 +219,7 @@ impl CommandBuffer {
             buffer_row_length: 0,
             buffer_image_height: 0,
             image_subresource: vk::ImageSubresourceLayers {
-                aspect_mask: vk::IMAGE_ASPECT_COLOR_BIT,
+                aspect_mask: vk::ImageAspectFlags::COLOR,
                 mip_level: 0,
                 base_array_layer: 0,
                 layer_count: 1,
@@ -241,7 +241,7 @@ impl CommandBuffer {
                 self.command_buffer,
                 src.raw(),
                 dst.raw(),
-                vk::ImageLayout::TransferDstOptimal,
+                vk::ImageLayout::TRANSFER_DST_OPTIMAL,
                 &[copy_info]);
         }
     }
@@ -250,12 +250,12 @@ impl CommandBuffer {
                                    src_layout: ImageLayout,
                                    dst_layout: ImageLayout) {
         let barrier_info = vk::ImageMemoryBarrier {
-            s_type: vk::StructureType::ImageMemoryBarrier,
+            s_type: vk::StructureType::IMAGE_MEMORY_BARRIER,
             p_next: ptr::null(),
             old_layout: src_layout.into(),
             new_layout: dst_layout.into(),
-            src_queue_family_index: vk::VK_QUEUE_FAMILY_IGNORED,
-            dst_queue_family_index: vk::VK_QUEUE_FAMILY_IGNORED,
+            src_queue_family_index: vk::QUEUE_FAMILY_IGNORED,
+            dst_queue_family_index: vk::QUEUE_FAMILY_IGNORED,
             image: image.raw(),
             src_access_mask: src_layout.into(),
             dst_access_mask: dst_layout.into(),
@@ -301,7 +301,7 @@ impl CommandBuffer {
 
         if let Some(semaphore) = wait {
             wait_semaphores.push(semaphore.raw());
-            wait_stages.push(vk::PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT);
+            wait_stages.push(vk::PipelineStageFlags::COLOR_ATTACHMENT_OUTPUT);
         }
 
         let command_buffers = [self.command_buffer];
@@ -309,7 +309,7 @@ impl CommandBuffer {
         let signal_semaphores = [signal.raw()];
 
         let submit_info = vk::SubmitInfo {
-            s_type: vk::StructureType::SubmitInfo,
+            s_type: vk::StructureType::SUBMIT_INFO,
             p_next: ptr::null(),
             command_buffer_count: command_buffers.len() as u32,
             p_command_buffers: command_buffers.as_ptr(),

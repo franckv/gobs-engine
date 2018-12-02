@@ -54,15 +54,14 @@ impl Surface {
         let xwindow = window.get_xlib_window().unwrap();
 
         let window_info = vk::XlibSurfaceCreateInfoKHR {
-            s_type: vk::StructureType::XlibSurfaceCreateInfoKhr,
+            s_type: vk::StructureType::XLIB_SURFACE_CREATE_INFO_KHR,
             p_next: ptr::null(),
             flags: Default::default(),
             window: xwindow,
             dpy: display as *mut vk::Display,
         };
 
-        let surface_loader = XlibSurface::new(&instance.entry, &instance.instance)
-            .unwrap();
+        let surface_loader = XlibSurface::new(&instance.entry, &instance.instance);
 
         unsafe {
             surface_loader.create_xlib_surface_khr(&window_info, None).unwrap()
@@ -71,16 +70,20 @@ impl Surface {
 
     pub fn family_supported(&self, p_device: &PhysicalDevice,
                             family: &QueueFamily) -> bool {
-        self.instance.surface_loader.get_physical_device_surface_support_khr(
+        unsafe {
+            self.instance.surface_loader.get_physical_device_surface_support_khr(
             p_device.raw(), family.index, self.surface)
+        }
     }
 
     pub fn get_available_format(&self, p_device: &PhysicalDevice) -> Vec<SurfaceFormat> {
         let mut results = Vec::new();
 
-        let formats = self.instance.surface_loader
-            .get_physical_device_surface_formats_khr(
-                p_device.raw(), self.surface).unwrap();
+        let formats = unsafe {
+            self.instance.surface_loader
+                .get_physical_device_surface_formats_khr(
+                    p_device.raw(), self.surface).unwrap()
+        };
 
         for format in formats {
             let format = SurfaceFormat {
@@ -94,25 +97,29 @@ impl Surface {
     }
 
     pub fn get_available_presentation_modes(&self, device: &Arc<Device>)
-                                            -> Vec<PresentationMode> {
-        let mut results = Vec::new();
+        -> Vec<PresentationMode> {
+            let mut results = Vec::new();
 
-        let presents = self.instance.surface_loader
-            .get_physical_device_surface_present_modes_khr(
-                device.p_device.raw(), self.surface).unwrap();
+            let presents = unsafe {
+                self.instance.surface_loader
+                    .get_physical_device_surface_present_modes_khr(
+                        device.p_device.raw(), self.surface).unwrap()
+            };
 
-        for present in presents {
-            let mode: PresentationMode = present.into();
-            results.push(mode);
+            for present in presents {
+                let mode: PresentationMode = present.into();
+                results.push(mode);
+            }
+
+            results
         }
 
-        results
-    }
-
     pub fn get_capabilities(&self, device: &Arc<Device>) -> SurfaceCapabilities {
-        let capabilities = self.instance.surface_loader
-            .get_physical_device_surface_capabilities_khr(
-                device.p_device.raw(), self.surface).unwrap();
+        let capabilities = unsafe {
+            self.instance.surface_loader
+                .get_physical_device_surface_capabilities_khr(
+                    device.p_device.raw(), self.surface).unwrap()
+        };
 
         SurfaceCapabilities {
             min_image_count: capabilities.min_image_count as usize,

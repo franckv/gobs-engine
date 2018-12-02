@@ -16,13 +16,13 @@ pub struct Fence {
 impl Fence {
     pub fn new(device: Arc<Device>, signaled: bool) -> Self {
         let flags = if signaled {
-            vk::FENCE_CREATE_SIGNALED_BIT
+            vk::FenceCreateFlags::SIGNALED
         } else {
             Default::default()
         };
 
         let fence_info = vk::FenceCreateInfo {
-            s_type: vk::StructureType::FenceCreateInfo,
+            s_type: vk::StructureType::FENCE_CREATE_INFO,
             p_next: ptr::null(),
             flags,
         };

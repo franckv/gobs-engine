@@ -22,22 +22,22 @@ impl Into<vk::MemoryPropertyFlags> for BufferUsage {
     fn into(self) -> vk::MemoryPropertyFlags {
         match self {
             BufferUsage::Staging => {
-                vk::MEMORY_PROPERTY_HOST_VISIBLE_BIT |
-                    vk::MEMORY_PROPERTY_HOST_COHERENT_BIT
+                vk::MemoryPropertyFlags::HOST_VISIBLE |
+                    vk::MemoryPropertyFlags::HOST_COHERENT
             },
             BufferUsage::Vertex => {
-                vk::MEMORY_PROPERTY_DEVICE_LOCAL_BIT
+                vk::MemoryPropertyFlags::DEVICE_LOCAL
             },
             BufferUsage::Instance => {
-                vk::MEMORY_PROPERTY_HOST_VISIBLE_BIT |
-                    vk::MEMORY_PROPERTY_HOST_COHERENT_BIT
+                vk::MemoryPropertyFlags::HOST_VISIBLE |
+                    vk::MemoryPropertyFlags::HOST_COHERENT
             },
             BufferUsage::Index => {
-                vk::MEMORY_PROPERTY_DEVICE_LOCAL_BIT
+                vk::MemoryPropertyFlags::DEVICE_LOCAL
             },
             BufferUsage::Uniform => {
-                vk::MEMORY_PROPERTY_HOST_VISIBLE_BIT |
-                    vk::MEMORY_PROPERTY_HOST_COHERENT_BIT
+                vk::MemoryPropertyFlags::HOST_VISIBLE |
+                    vk::MemoryPropertyFlags::HOST_COHERENT
             }
         }
     }
@@ -55,33 +55,33 @@ impl<T: Copy> Buffer<T> {
     pub fn new(count: usize, usage: BufferUsage, device: Arc<Device>) -> Self {
         let usage_flags = match usage {
             BufferUsage::Staging => {
-                vk::BUFFER_USAGE_TRANSFER_SRC_BIT
+                vk::BufferUsageFlags::TRANSFER_SRC
             },
             BufferUsage::Vertex => {
-                vk::BUFFER_USAGE_TRANSFER_DST_BIT |
-                    vk::BUFFER_USAGE_VERTEX_BUFFER_BIT
+                vk::BufferUsageFlags::TRANSFER_DST |
+                    vk::BufferUsageFlags::VERTEX_BUFFER
             },
             BufferUsage::Instance => {
-                vk::BUFFER_USAGE_VERTEX_BUFFER_BIT
+                vk::BufferUsageFlags::VERTEX_BUFFER
             },
             BufferUsage::Index => {
-                vk::BUFFER_USAGE_TRANSFER_DST_BIT |
-                    vk::BUFFER_USAGE_INDEX_BUFFER_BIT
+                vk::BufferUsageFlags::TRANSFER_DST |
+                    vk::BufferUsageFlags::INDEX_BUFFER
             },
             BufferUsage::Uniform => {
-                vk::BUFFER_USAGE_UNIFORM_BUFFER_BIT
+                vk::BufferUsageFlags::UNIFORM_BUFFER
             }
         };
 
         let size = count * mem::size_of::<T>();
 
         let buffer_info = vk::BufferCreateInfo {
-            s_type: vk::StructureType::BufferCreateInfo,
+            s_type: vk::StructureType::BUFFER_CREATE_INFO,
             p_next: ptr::null(),
             flags: Default::default(),
             size: size as u64,
             usage: usage_flags,
-            sharing_mode: vk::SharingMode::Exclusive,
+            sharing_mode: vk::SharingMode::EXCLUSIVE,
             queue_family_index_count: 0,
             p_queue_family_indices: ptr::null(),
         };

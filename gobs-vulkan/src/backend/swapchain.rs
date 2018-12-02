@@ -22,10 +22,11 @@ pub enum PresentationMode {
 impl From<vk::PresentModeKHR> for PresentationMode {
     fn from(present: vk::PresentModeKHR) -> PresentationMode {
         match present {
-            vk::PresentModeKHR::Fifo => PresentationMode::Fifo,
-            vk::PresentModeKHR::FifoRelaxed => PresentationMode::FifoRelaxed,
-            vk::PresentModeKHR::Mailbox => PresentationMode::Mailbox,
-            vk::PresentModeKHR::Immediate => PresentationMode::Immediate,
+            vk::PresentModeKHR::FIFO => PresentationMode::Fifo,
+            vk::PresentModeKHR::FIFO_RELAXED => PresentationMode::FifoRelaxed,
+            vk::PresentModeKHR::MAILBOX => PresentationMode::Mailbox,
+            vk::PresentModeKHR::IMMEDIATE => PresentationMode::Immediate,
+            _ => panic!("Invalid present mode")
         }
     }
 }
@@ -33,10 +34,10 @@ impl From<vk::PresentModeKHR> for PresentationMode {
 impl Into<vk::PresentModeKHR> for PresentationMode {
     fn into(self) -> vk::PresentModeKHR {
         match self {
-            PresentationMode::Fifo => vk::PresentModeKHR::Fifo,
-            PresentationMode::FifoRelaxed => vk::PresentModeKHR::FifoRelaxed,
-            PresentationMode::Mailbox => vk::PresentModeKHR::Mailbox,
-            PresentationMode::Immediate => vk::PresentModeKHR::Immediate
+            PresentationMode::Fifo => vk::PresentModeKHR::FIFO,
+            PresentationMode::FifoRelaxed => vk::PresentModeKHR::FIFO_RELAXED,
+            PresentationMode::Mailbox => vk::PresentModeKHR::MAILBOX,
+            PresentationMode::Immediate => vk::PresentModeKHR::IMMEDIATE
         }
     }
 }
@@ -59,7 +60,7 @@ impl SwapChain {
         let extent = surface.get_extent(&device);
 
         let swapchain_info = vk::SwapchainCreateInfoKHR {
-            s_type: vk::StructureType::SwapchainCreateInfoKhr,
+            s_type: vk::StructureType::SWAPCHAIN_CREATE_INFO_KHR,
             p_next: ptr::null(),
             flags: Default::default(),
             surface: surface.raw(),
@@ -70,10 +71,10 @@ impl SwapChain {
                 width: extent.0,
                 height: extent.1,
             },
-            image_usage: vk::IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
-            image_sharing_mode: vk::SharingMode::Exclusive,
-            pre_transform: vk::SURFACE_TRANSFORM_IDENTITY_BIT_KHR,
-            composite_alpha: vk::COMPOSITE_ALPHA_OPAQUE_BIT_KHR,
+            image_usage: vk::ImageUsageFlags::COLOR_ATTACHMENT,
+            image_sharing_mode: vk::SharingMode::EXCLUSIVE,
+            pre_transform: vk::SurfaceTransformFlagsKHR::IDENTITY,
+            composite_alpha: vk::CompositeAlphaFlagsKHR::OPAQUE,
             present_mode: present.into(),
             clipped: 1,
             old_swapchain: match old_swapchain {
@@ -101,17 +102,19 @@ impl SwapChain {
     pub fn create_images(&self) -> Vec<Image> {
         let extent = self.surface.get_extent(&self.device);
 
-        let vk_images = self.device.swapchain_loader.get_swapchain_images_khr(
-            self.swapchain).unwrap();
+        unsafe {
+            let vk_images = self.device.swapchain_loader.get_swapchain_images_khr(
+                self.swapchain).unwrap();
 
-        vk_images.iter().map(|&image| {
-            Image::with_raw(self.device.clone(),
-                            image,
-                            self.format.format,
-                            ImageUsage::Swapchain,
-                            extent.0,
-                            extent.1)
-        }).collect()
+            vk_images.iter().map(|&image| {
+                Image::with_raw(self.device.clone(),
+                image,
+                self.format.format,
+                ImageUsage::Swapchain,
+                extent.0,
+                extent.1)
+            }).collect()
+        }
     }
 
     pub fn acquire_image(&mut self, signal: &Semaphore) -> Result<usize, ()> {
@@ -120,10 +123,10 @@ impl SwapChain {
                                                      std::u64::MAX,
                                                      signal.raw(),
                                                      vk::Fence::null()) {
-                Ok(idx) => {
+                Ok((idx, _)) => {
                     Ok(idx as usize)
                 }
-                Err(vk::Result::SuboptimalKhr) | Err(vk::Result::ErrorOutOfDateKhr) => {
+                Err(vk::Result::SUBOPTIMAL_KHR) | Err(vk::Result::ERROR_OUT_OF_DATE_KHR) => {
                     Err(())
                 }
                 _ => panic!("Unable to acquire swapchain")
@@ -137,7 +140,7 @@ impl SwapChain {
         let indices = [index as u32];
 
         let present_info = vk::PresentInfoKHR {
-            s_type: vk::StructureType::PresentInfoKhr,
+            s_type: vk::StructureType::PRESENT_INFO_KHR,
             p_next: ptr::null(),
             wait_semaphore_count: wait_semaphores.len() as u32,
             p_wait_semaphores: wait_semaphores.as_ptr(),
@@ -150,7 +153,7 @@ impl SwapChain {
         unsafe {
             match self.device.swapchain_loader.queue_present_khr(queue.queue, &present_info) {
                 Ok(_) => Ok(()),
-                Err(vk::Result::SuboptimalKhr) | Err(vk::Result::ErrorOutOfDateKhr) => {
+                Err(vk::Result::SUBOPTIMAL_KHR) | Err(vk::Result::ERROR_OUT_OF_DATE_KHR) => {
                     Err(())
                 }
                 _ => panic!("Unable to present swapchain")

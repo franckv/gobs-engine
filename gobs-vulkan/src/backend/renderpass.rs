@@ -18,44 +18,44 @@ impl RenderPass {
         let color_attach = vk::AttachmentDescription {
             format: format.into(),
             flags: Default::default(),
-            samples: vk::SAMPLE_COUNT_1_BIT,
-            load_op: vk::AttachmentLoadOp::Clear,
-            store_op: vk::AttachmentStoreOp::Store,
-            stencil_load_op: vk::AttachmentLoadOp::DontCare,
-            stencil_store_op: vk::AttachmentStoreOp::DontCare,
-            initial_layout: vk::ImageLayout::Undefined,
-            final_layout: vk::ImageLayout::PresentSrcKhr,
+            samples: vk::SampleCountFlags::TYPE_1,
+            load_op: vk::AttachmentLoadOp::CLEAR,
+            store_op: vk::AttachmentStoreOp::STORE,
+            stencil_load_op: vk::AttachmentLoadOp::DONT_CARE,
+            stencil_store_op: vk::AttachmentStoreOp::DONT_CARE,
+            initial_layout: vk::ImageLayout::UNDEFINED,
+            final_layout: vk::ImageLayout::PRESENT_SRC_KHR,
         };
 
         let depth_attach = vk::AttachmentDescription {
-            format: vk::Format::D32Sfloat,
+            format: vk::Format::D32_SFLOAT,
             flags: Default::default(),
-            samples: vk::SAMPLE_COUNT_1_BIT,
-            load_op: vk::AttachmentLoadOp::Clear,
-            store_op: vk::AttachmentStoreOp::DontCare,
-            stencil_load_op: vk::AttachmentLoadOp::DontCare,
-            stencil_store_op: vk::AttachmentStoreOp::DontCare,
-            initial_layout: vk::ImageLayout::Undefined,
-            final_layout: vk::ImageLayout::DepthStencilAttachmentOptimal,
+            samples: vk::SampleCountFlags::TYPE_1,
+            load_op: vk::AttachmentLoadOp::CLEAR,
+            store_op: vk::AttachmentStoreOp::DONT_CARE,
+            stencil_load_op: vk::AttachmentLoadOp::DONT_CARE,
+            stencil_store_op: vk::AttachmentStoreOp::DONT_CARE,
+            initial_layout: vk::ImageLayout::UNDEFINED,
+            final_layout: vk::ImageLayout::DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
         };
 
         let color_ref = [
             vk::AttachmentReference {
                 attachment: 0,
-                layout: vk::ImageLayout::ColorAttachmentOptimal,
+                layout: vk::ImageLayout::COLOR_ATTACHMENT_OPTIMAL,
             }
         ];
 
         let depth_ref = [
             vk::AttachmentReference {
                 attachment: 1,
-                layout: vk::ImageLayout::DepthStencilAttachmentOptimal
+                layout: vk::ImageLayout::DEPTH_STENCIL_ATTACHMENT_OPTIMAL
             }
         ];
 
         let subpass = vk::SubpassDescription {
             flags: Default::default(),
-            pipeline_bind_point: vk::PipelineBindPoint::Graphics,
+            pipeline_bind_point: vk::PipelineBindPoint::GRAPHICS,
             color_attachment_count: 1,
             p_color_attachments: color_ref.as_ptr(),
             p_depth_stencil_attachment: depth_ref.as_ptr(),
@@ -68,19 +68,19 @@ impl RenderPass {
 
         let dependency = vk::SubpassDependency {
             dependency_flags: Default::default(),
-            src_subpass: vk::VK_SUBPASS_EXTERNAL,
+            src_subpass: vk::SUBPASS_EXTERNAL,
             dst_subpass: Default::default(),
-            src_stage_mask: vk::PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+            src_stage_mask: vk::PipelineStageFlags::COLOR_ATTACHMENT_OUTPUT,
             src_access_mask: Default::default(),
-            dst_stage_mask: vk::PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-            dst_access_mask: vk::ACCESS_COLOR_ATTACHMENT_READ_BIT |
-                vk::ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+            dst_stage_mask: vk::PipelineStageFlags::COLOR_ATTACHMENT_OUTPUT,
+            dst_access_mask: vk::AccessFlags::COLOR_ATTACHMENT_READ |
+                vk::AccessFlags::COLOR_ATTACHMENT_WRITE,
         };
 
         let attachments = [color_attach, depth_attach];
 
         let renderpass_info = vk::RenderPassCreateInfo {
-            s_type: vk::StructureType::RenderPassCreateInfo,
+            s_type: vk::StructureType::RENDER_PASS_CREATE_INFO,
             p_next: ptr::null(),
             flags: Default::default(),
             attachment_count: 2,

@@ -20,8 +20,9 @@ impl Memory {
     pub(crate) fn with_buffer(device: Arc<Device>,
                               buffer: vk::Buffer,
                               usage: BufferUsage) -> Self {
-        let mem_req =
-            device.raw().get_buffer_memory_requirements(buffer);
+        let mem_req = unsafe {
+            device.raw().get_buffer_memory_requirements(buffer)
+        };
 
         let memory = Self::allocate(&device, mem_req, usage.into());
 
@@ -37,10 +38,11 @@ impl Memory {
     }
 
     pub(crate) fn with_image(device: Arc<Device>, image: vk::Image) -> Self {
-        let mem_req =
-            device.raw().get_image_memory_requirements(image);
+        let mem_req = unsafe {
+            device.raw().get_image_memory_requirements(image)
+        };
 
-        let mem_flags = vk::MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+        let mem_flags = vk::MemoryPropertyFlags::DEVICE_LOCAL;
 
         let memory = Self::allocate(&device, mem_req, mem_flags);
 
@@ -62,7 +64,7 @@ impl Memory {
                                                         mem_flags);
 
         let memory_info = vk::MemoryAllocateInfo {
-            s_type: vk::StructureType::MemoryAllocateInfo,
+            s_type: vk::StructureType::MEMORY_ALLOCATE_INFO,
             p_next: ptr::null(),
             allocation_size: mem_req.size,
             memory_type_index: mem_type,

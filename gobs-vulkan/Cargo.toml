@@ -15,13 +15,13 @@ path = "src/main.rs"
 glsl-to-spirv = "0.1.6"
 
 [dependencies]
-ash = "0.24"
+ash = "0.26"
 cgmath = "0.16"
 image = "0.18"
 log = "0.4"
 simplelog = "0.5"
 time = "0.1"
 uuid = { version = "0.6", features = ["v4"] }
-winit = "0.17"
+winit = "0.18"
 gobs-scene = {path = "../gobs-scene"}
 gobs-utils = {path = "../gobs-utils"}

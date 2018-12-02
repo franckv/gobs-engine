@@ -27,7 +27,7 @@ impl DescriptorSetLayout {
                 }).collect();
 
         let descriptor_info = vk::DescriptorSetLayoutCreateInfo {
-            s_type: vk::StructureType::DescriptorSetLayoutCreateInfo,
+            s_type: vk::StructureType::DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
             p_next: ptr::null(),
             flags: Default::default(),
             binding_count: bindings.len() as u32,

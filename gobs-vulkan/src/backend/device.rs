@@ -2,10 +2,9 @@ use std::ptr;
 use std::sync::Arc;
 
 use ash::vk;
-use ash::version::{DeviceV1_0, InstanceV1_0};
 use ash::extensions::Swapchain;
-
-use super::VkDevice;
+use ash::version::DeviceV1_0;
+use ash::version::InstanceV1_0;
 
 use backend::instance::Instance;
 use backend::physical::PhysicalDevice;
@@ -14,7 +13,7 @@ use backend::Wrap;
 
 pub struct Device {
     _instance: Arc<Instance>,
-    device: VkDevice,
+    device: ash::Device,
     pub(crate) p_device: PhysicalDevice,
     pub(crate) queue_family: QueueFamily,
     pub(crate) swapchain_loader: Swapchain
@@ -30,7 +29,7 @@ impl Device {
         let priorities = [1.0];
 
         let queue_info = vk::DeviceQueueCreateInfo {
-            s_type: vk::StructureType::DeviceQueueCreateInfo,
+            s_type: vk::StructureType::DEVICE_QUEUE_CREATE_INFO,
             p_next: ptr::null(),
             flags: Default::default(),
             queue_family_index: queue_family.index,
@@ -41,7 +40,7 @@ impl Device {
         let extensions = [Swapchain::name().as_ptr()];
 
         let device_info = vk::DeviceCreateInfo {
-            s_type: vk::StructureType::DeviceCreateInfo,
+            s_type: vk::StructureType::DEVICE_CREATE_INFO,
             p_next: ptr::null(),
             flags: Default::default(),
             queue_create_info_count: 1,
@@ -53,14 +52,14 @@ impl Device {
             p_enabled_features: ptr::null(),
         };
 
-        let device: VkDevice = unsafe {
+        let device: ash::Device = unsafe {
             instance.instance.create_device(p_device.raw(),
                                             &device_info,
                                             None)
                 .unwrap()
         };
 
-        let swapchain_loader = Swapchain::new(&instance.instance, &device).unwrap();
+        let swapchain_loader = Swapchain::new(&instance.instance, &device);
 
         Arc::new(Device {
             _instance: instance,
@@ -72,10 +71,12 @@ impl Device {
     }
 
     pub fn wait(&self) {
-        self.device.device_wait_idle().unwrap();
+        unsafe {
+            self.device.device_wait_idle().unwrap()
+        };
     }
 
-    pub(crate) fn raw(&self) -> &VkDevice {
+    pub(crate) fn raw(&self) -> &ash::Device {
         &self.device
     }
 }

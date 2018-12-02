@@ -59,7 +59,7 @@ impl DescriptorSetResources {
 
     pub fn bind_image(mut self, image: &Image, sampler: &Sampler) -> Self {
         self.infos.push(ResourceInfo::Image(vk::DescriptorImageInfo {
-            image_layout: vk::ImageLayout::ShaderReadOnlyOptimal,
+            image_layout: vk::ImageLayout::SHADER_READ_ONLY_OPTIMAL,
             image_view: image.image_view,
             sampler: sampler.raw(),
         }));
@@ -74,12 +74,12 @@ impl DescriptorSetResources {
             match info {
                 ResourceInfo::Buffer(buffer_info) =>
                     updates.push(vk::WriteDescriptorSet {
-                        s_type: vk::StructureType::WriteDescriptorSet,
+                        s_type: vk::StructureType::WRITE_DESCRIPTOR_SET,
                         p_next: ptr::null(),
                         dst_set: self.set,
                         dst_binding: idx as u32,
                         dst_array_element: 0,
-                        descriptor_type: vk::DescriptorType::UniformBuffer,
+                        descriptor_type: vk::DescriptorType::UNIFORM_BUFFER,
                         descriptor_count: 1,
                         p_buffer_info: buffer_info,
                         p_image_info: ptr::null(),
@@ -87,12 +87,12 @@ impl DescriptorSetResources {
                     }),
                 ResourceInfo::DynamicBuffer(buffer_info) =>
                     updates.push(vk::WriteDescriptorSet {
-                        s_type: vk::StructureType::WriteDescriptorSet,
+                        s_type: vk::StructureType::WRITE_DESCRIPTOR_SET,
                         p_next: ptr::null(),
                         dst_set: self.set,
                         dst_binding: idx as u32,
                         dst_array_element: 0,
-                        descriptor_type: vk::DescriptorType::UniformBufferDynamic,
+                        descriptor_type: vk::DescriptorType::UNIFORM_BUFFER_DYNAMIC,
                         descriptor_count: 1,
                         p_buffer_info: buffer_info,
                         p_image_info: ptr::null(),
@@ -100,12 +100,12 @@ impl DescriptorSetResources {
                     }),
                 ResourceInfo::Image(image_info) =>
                     updates.push(vk::WriteDescriptorSet {
-                        s_type: vk::StructureType::WriteDescriptorSet,
+                        s_type: vk::StructureType::WRITE_DESCRIPTOR_SET,
                         p_next: ptr::null(),
                         dst_set: self.set,
                         dst_binding: idx as u32,
                         dst_array_element: 0,
-                        descriptor_type: vk::DescriptorType::CombinedImageSampler,
+                        descriptor_type: vk::DescriptorType::COMBINED_IMAGE_SAMPLER,
                         descriptor_count: 1,
                         p_buffer_info: ptr::null(),
                         p_image_info: image_info,

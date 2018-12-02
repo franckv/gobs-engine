@@ -22,7 +22,7 @@ impl Shader {
         let data: Vec<u8> = file.bytes().filter_map(|b| b.ok()).collect();
 
         let shader_info = vk::ShaderModuleCreateInfo {
-            s_type: vk::StructureType::ShaderModuleCreateInfo,
+            s_type: vk::StructureType::SHADER_MODULE_CREATE_INFO,
             p_next: ptr::null(),
             flags: Default::default(),
             code_size: data.len(),

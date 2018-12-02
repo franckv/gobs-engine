@@ -26,27 +26,31 @@ pub struct PhysicalDevice {
 
 impl PhysicalDevice {
     pub(crate) fn new(instance: &Instance, p_device: vk::PhysicalDevice) -> Self {
-        let props = instance.instance.get_physical_device_properties(p_device);
+        let props = unsafe {
+            instance.instance.get_physical_device_properties(p_device)
+        };
 
         let name = unsafe {
             CStr::from_ptr(props.device_name.as_ptr()).to_str().unwrap()
         };
 
         let gpu_type = match props.device_type {
-            vk::types::PhysicalDeviceType::Other =>
+            vk::PhysicalDeviceType::OTHER =>
                 PhysicalDeviceType::Other,
-            vk::types::PhysicalDeviceType::IntegratedGpu =>
+            vk::PhysicalDeviceType::INTEGRATED_GPU =>
                 PhysicalDeviceType::IntegratedGpu,
-            vk::types::PhysicalDeviceType::DiscreteGpu =>
+            vk::PhysicalDeviceType::DISCRETE_GPU =>
                 PhysicalDeviceType::DiscreteGpu,
-            vk::types::PhysicalDeviceType::VirtualGpu =>
+            vk::PhysicalDeviceType::VIRTUAL_GPU =>
                 PhysicalDeviceType::VirtualGpu,
-            vk::types::PhysicalDeviceType::Cpu =>
+            vk::PhysicalDeviceType::CPU =>
                 PhysicalDeviceType::Cpu,
+            _ => panic!("Invalid device type")
         };
 
-        let memory_properties =
-            instance.instance.get_physical_device_memory_properties(p_device);
+        let memory_properties = unsafe {
+            instance.instance.get_physical_device_memory_properties(p_device)
+        };
 
         PhysicalDevice {
             name: String::from(name),
@@ -60,20 +64,23 @@ impl PhysicalDevice {
     pub fn enumerate(instance: &Instance) -> Vec<PhysicalDevice> {
         let mut result = Vec::new();
 
-        if let Ok(devices) = instance.instance.enumerate_physical_devices() {
+        if let Ok(devices) = unsafe {
+            instance.instance.enumerate_physical_devices()
+        } {
             for device in devices {
                 result.push(PhysicalDevice::new(instance, device));
             }
-        };
+        }
 
         result
     }
 
     fn get_queue_families(p_device: &vk::PhysicalDevice,
                           instance: &Instance) -> Vec<QueueFamily> {
-        let family_properties =
+        let family_properties = unsafe {
             instance.instance.get_physical_device_queue_family_properties(
-                *p_device);
+                *p_device)
+        };
 
         let mut results = Vec::new();
 
@@ -81,9 +88,9 @@ impl PhysicalDevice {
             let family = QueueFamily {
                 index: idx as u32,
                 size: family_property.queue_count,
-                graphics_bit: family_property.queue_flags.subset(vk::QUEUE_GRAPHICS_BIT),
-                compute_bits: family_property.queue_flags.subset(vk::QUEUE_COMPUTE_BIT),
-                transfer_bits: family_property.queue_flags.subset(vk::QUEUE_TRANSFER_BIT),
+                graphics_bit: family_property.queue_flags.contains(vk::QueueFlags::GRAPHICS),
+                compute_bits: family_property.queue_flags.contains(vk::QueueFlags::COMPUTE),
+                transfer_bits: family_property.queue_flags.contains(vk::QueueFlags::TRANSFER),
             };
 
             results.push(family);

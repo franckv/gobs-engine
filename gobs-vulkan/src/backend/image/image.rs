@@ -21,11 +21,11 @@ pub enum ImageLayout {
 impl Into<vk::ImageLayout> for ImageLayout {
     fn into(self) -> vk::ImageLayout {
         match self {
-            ImageLayout::Undefined => vk::ImageLayout::Undefined,
-            ImageLayout::Transfer => vk::ImageLayout::TransferDstOptimal,
-            ImageLayout::Shader => vk::ImageLayout::ShaderReadOnlyOptimal,
-            ImageLayout::Depth => vk::ImageLayout::DepthStencilAttachmentOptimal,
-            ImageLayout::Color => vk::ImageLayout::ColorAttachmentOptimal,
+            ImageLayout::Undefined => vk::ImageLayout::UNDEFINED,
+            ImageLayout::Transfer => vk::ImageLayout::TRANSFER_DST_OPTIMAL,
+            ImageLayout::Shader => vk::ImageLayout::SHADER_READ_ONLY_OPTIMAL,
+            ImageLayout::Depth => vk::ImageLayout::DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
+            ImageLayout::Color => vk::ImageLayout::COLOR_ATTACHMENT_OPTIMAL,
         }
     }
 }
@@ -34,12 +34,12 @@ impl Into<vk::AccessFlags> for ImageLayout {
     fn into(self) -> vk::AccessFlags {
         match self {
             ImageLayout::Undefined => Default::default(),
-            ImageLayout::Transfer => vk::ACCESS_TRANSFER_WRITE_BIT,
-            ImageLayout::Shader => vk::ACCESS_SHADER_READ_BIT,
-            ImageLayout::Depth => vk::ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT |
-                vk::ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
-            ImageLayout::Color => vk::ACCESS_COLOR_ATTACHMENT_READ_BIT |
-                vk::ACCESS_COLOR_ATTACHMENT_WRITE_BIT
+            ImageLayout::Transfer => vk::AccessFlags::TRANSFER_WRITE,
+            ImageLayout::Shader => vk::AccessFlags::SHADER_READ,
+            ImageLayout::Depth => vk::AccessFlags::DEPTH_STENCIL_ATTACHMENT_READ |
+                vk::AccessFlags::DEPTH_STENCIL_ATTACHMENT_WRITE,
+            ImageLayout::Color => vk::AccessFlags::COLOR_ATTACHMENT_READ |
+                vk::AccessFlags::COLOR_ATTACHMENT_WRITE
         }
     }
 }
@@ -47,11 +47,11 @@ impl Into<vk::AccessFlags> for ImageLayout {
 impl Into<vk::PipelineStageFlags> for ImageLayout {
     fn into(self) -> vk::PipelineStageFlags {
         match self {
-            ImageLayout::Undefined => vk::PIPELINE_STAGE_TOP_OF_PIPE_BIT,
-            ImageLayout::Transfer => vk::PIPELINE_STAGE_TRANSFER_BIT,
-            ImageLayout::Shader => vk::PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
-            ImageLayout::Depth => vk::PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT,
-            ImageLayout::Color => vk::PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT
+            ImageLayout::Undefined => vk::PipelineStageFlags::TOP_OF_PIPE,
+            ImageLayout::Transfer => vk::PipelineStageFlags::TRANSFER,
+            ImageLayout::Shader => vk::PipelineStageFlags::FRAGMENT_SHADER,
+            ImageLayout::Depth => vk::PipelineStageFlags::EARLY_FRAGMENT_TESTS,
+            ImageLayout::Color => vk::PipelineStageFlags::COLOR_ATTACHMENT_OUTPUT
         }
     }
 }
@@ -66,10 +66,10 @@ pub enum ImageUsage {
 impl Into<vk::ImageUsageFlags> for ImageUsage {
     fn into(self) -> vk::ImageUsageFlags {
         match self {
-            ImageUsage::Swapchain => vk::IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
-            ImageUsage::Texture => vk::IMAGE_USAGE_TRANSFER_DST_BIT |
-                vk::IMAGE_USAGE_SAMPLED_BIT,
-            ImageUsage::Depth => vk::IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT
+            ImageUsage::Swapchain => vk::ImageUsageFlags::COLOR_ATTACHMENT,
+            ImageUsage::Texture => vk::ImageUsageFlags::TRANSFER_DST |
+                vk::ImageUsageFlags::SAMPLED,
+            ImageUsage::Depth => vk::ImageUsageFlags::DEPTH_STENCIL_ATTACHMENT
         }
     }
 }
@@ -77,9 +77,9 @@ impl Into<vk::ImageUsageFlags> for ImageUsage {
 impl Into<vk::ImageAspectFlags> for ImageUsage {
     fn into(self) -> vk::ImageAspectFlags {
         match self {
-            ImageUsage::Swapchain => vk::IMAGE_ASPECT_COLOR_BIT,
-            ImageUsage::Texture => vk::IMAGE_ASPECT_COLOR_BIT,
-            ImageUsage::Depth => vk::IMAGE_ASPECT_DEPTH_BIT
+            ImageUsage::Swapchain => vk::ImageAspectFlags::COLOR,
+            ImageUsage::Texture => vk::ImageAspectFlags::COLOR,
+            ImageUsage::Depth => vk::ImageAspectFlags::DEPTH
         }
     }
 }
@@ -145,10 +145,10 @@ impl Image {
     fn create_image(device: &Arc<Device>, width: u32, height: u32,
                     format: ImageFormat, usage: ImageUsage) -> vk::Image {
         let image_info = vk::ImageCreateInfo {
-            s_type: vk::StructureType::ImageCreateInfo,
+            s_type: vk::StructureType::IMAGE_CREATE_INFO,
             p_next: ptr::null(),
             flags: Default::default(),
-            image_type: vk::ImageType::Type2d,
+            image_type: vk::ImageType::TYPE_2D,
             extent: vk::Extent3D {
                 width,
                 height,
@@ -157,11 +157,11 @@ impl Image {
             mip_levels: 1,
             array_layers: 1,
             format: format.into(),
-            tiling: vk::ImageTiling::Optimal,
-            initial_layout: vk::ImageLayout::Undefined,
+            tiling: vk::ImageTiling::OPTIMAL,
+            initial_layout: vk::ImageLayout::UNDEFINED,
             usage: usage.into(),
-            sharing_mode: vk::SharingMode::Exclusive,
-            samples: vk::SAMPLE_COUNT_1_BIT,
+            sharing_mode: vk::SharingMode::EXCLUSIVE,
+            samples: vk::SampleCountFlags::TYPE_1,
             queue_family_index_count: 0,
             p_queue_family_indices: ptr::null(),
         };
@@ -178,11 +178,11 @@ impl Image {
                                     usage: ImageUsage) -> vk::ImageView {
 
         let view_info = vk::ImageViewCreateInfo {
-            s_type: vk::StructureType::ImageViewCreateInfo,
+            s_type: vk::StructureType::IMAGE_VIEW_CREATE_INFO,
             p_next: ptr::null(),
             flags: Default::default(),
             image,
-            view_type: vk::ImageViewType::Type2d,
+            view_type: vk::ImageViewType::TYPE_2D,
             format: format.into(),
             subresource_range: vk::ImageSubresourceRange {
                 aspect_mask: usage.into(),
