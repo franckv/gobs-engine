@@ -1,6 +1,6 @@
 # gobs-engine
 
-Game engine based on Rust and Vulkano.
+Game engine written in Rust based on Vulkan.
 
 ## Crates
 * gobs-render: rendering engine
