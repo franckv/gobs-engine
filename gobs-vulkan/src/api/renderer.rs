@@ -74,9 +74,9 @@ impl Renderer {
                                    format,
                                    renderpass.clone());
 
-        let vshader = Shader::from_file("assets/shaders/vert.spv",
+        let vshader = Shader::from_file("examples/assets/shaders/vert.spv",
                                         context.device());
-        let fshader = Shader::from_file("assets/shaders/frag.spv",
+        let fshader = Shader::from_file("examples/assets/shaders/frag.spv",
                                         context.device());
 
         let vertex_layout = VertexLayoutBuilder::new()

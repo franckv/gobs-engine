@@ -1,5 +1,3 @@
-extern crate ash;
-extern crate cgmath;
 #[macro_use]
 extern crate log;
 extern crate simplelog;
@@ -8,7 +6,6 @@ extern crate winit;
 extern crate gobs_vulkan;
 extern crate gobs_scene;
 extern crate gobs_utils;
-
 
 use std::sync::Arc;
 

@@ -1,5 +1,4 @@
 extern crate ash;
-extern crate cgmath;
 extern crate uuid;
 extern crate winit;
 #[macro_use]
