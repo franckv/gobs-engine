@@ -11,6 +11,7 @@ path = "src/lib.rs"
 ash = "0.26"
 log = "0.4"
 simplelog = "0.5"
+timer = "0.1"
 uuid = { version = "0.6", features = ["v4"] }
 winit = "0.18"
 gobs-scene = {path = "../gobs-scene"}

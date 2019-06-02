@@ -4,7 +4,8 @@ use api::context::Context;
 
 use backend::command::CommandBuffer;
 use backend::framebuffer::Framebuffer;
-use backend::image::{Image, ImageFormat, ImageLayout, ImageUsage};
+use backend::image::{ColorSpace, Image, ImageFormat, ImageLayout, ImageUsage};
+use backend::physical::PhysicalDevice;
 use backend::renderpass::RenderPass;
 use backend::surface::{Surface, SurfaceFormat};
 use backend::swapchain::{PresentationMode, SwapChain};
@@ -19,7 +20,6 @@ pub struct Display {
     swapchain: SwapChain,
     pub image_count: usize,
     renderpass: Arc<RenderPass>,
-    current_index: usize,
     framebuffers: Vec<Framebuffer>,
     width: u32,
     height: u32
@@ -68,11 +68,21 @@ impl Display {
             swapchain,
             image_count,
             renderpass,
-            current_index: 0,
             framebuffers,
             width,
             height
         }
+    }
+
+    pub fn get_surface_format(surface: &Arc<Surface>,
+                          p_device: &PhysicalDevice) -> SurfaceFormat {
+        let formats =
+            surface.get_available_format(p_device);
+
+        *formats.iter().find(|f| {
+            f.format == ImageFormat::B8g8r8a8Unorm &&
+                f.color_space == ColorSpace::SrgbNonlinear
+        }).unwrap()
     }
 
     pub fn context_ref(&self) -> &Arc<Context> {
@@ -95,8 +105,12 @@ impl Display {
         (self.width, self.height)
     }
 
-    pub fn framebuffer(&self) -> &Framebuffer {
-        &self.framebuffers[self.current_index]
+    pub fn framebuffer(&self, idx: usize) -> &Framebuffer {
+        &self.framebuffers[idx]
+    }
+
+    pub fn renderpass(&self) -> Arc<RenderPass> {
+        self.renderpass.clone()
     }
 
     fn resize(&mut self) {
@@ -155,11 +169,10 @@ impl Display {
         count
     }
 
-    pub fn next_image(&mut self, signal: &Semaphore) -> Result<(), ()> {
+    pub fn next_image(&mut self, signal: &Semaphore) -> Result<usize, ()> {
         match self.swapchain.acquire_image(signal) {
             Ok(index) => {
-                self.current_index = index;
-                Ok(())
+                Ok(index)
             },
             Err(_) => {
                 self.resize();
@@ -168,9 +181,8 @@ impl Display {
         }
     }
 
-    pub fn present(&mut self, wait: &Semaphore) -> Result<(), ()> {
-        match self.swapchain.present(self.current_index,
-                                     self.context.queue(), wait) {
+    pub fn present(&mut self, idx: usize, wait: &Semaphore) -> Result<(), ()> {
+        match self.swapchain.present(idx, self.context.queue(), wait) {
             Ok(_) => Ok(()),
             Err(_) => {
                 self.resize();

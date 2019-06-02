@@ -1,10 +1,15 @@
 use std::sync::Arc;
 
+use winit::Window;
+
 use backend::command::{CommandBuffer, CommandPool};
 use backend::device::Device;
 use backend::instance::Instance;
 use backend::queue::Queue;
+use backend::renderpass::RenderPass;
 use backend::surface::Surface;
+
+use api::display::Display;
 
 pub struct Context {
     instance: Arc<Instance>,
@@ -14,15 +19,25 @@ pub struct Context {
 }
 
 impl Context {
-    pub fn new(instance: Arc<Instance>, surface: &Arc<Surface>) -> Arc<Self> {
+    pub fn new(name: &str, window: Window) -> (Arc<Self>, Display) {
+        let instance = Instance::new(name, 0);
+
+        let surface = Surface::new(instance.clone(), window);
+
         let p_device = instance.find_adapter(&surface);
 
         info!("Using adapter: {}", p_device.name);
 
         let family = instance.find_family(&p_device, &surface).unwrap();
 
+        let format = Display::get_surface_format(&surface,
+                                                 &p_device);
+
         let device = Device::new(instance.clone(),
                                  p_device, family.clone());
+
+        let renderpass = RenderPass::new(
+            device.clone(), format.format);
 
         let queue = Queue::new(device.clone());
 
@@ -30,12 +45,19 @@ impl Context {
             device.clone(),
             &family);
 
-        Arc::new(Context {
+        let context = Arc::new(Context {
             instance,
             device,
             queue,
             command_pool
-        })
+        });
+
+        let display = Display::new(context.clone(),
+                                   surface.clone(),
+                                   format,
+                                   renderpass.clone());
+
+        (context, display)
     }
 
     pub fn command_pool(&self) -> Arc<CommandPool> { self.command_pool.clone() }

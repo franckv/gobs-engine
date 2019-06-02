@@ -3,7 +3,6 @@ use std::mem;
 use std::sync::Arc;
 
 use uuid::Uuid;
-use winit::Window;
 
 use scene::model::Transform;
 use scene::model::Vertex;
@@ -17,15 +16,11 @@ use api::model_instance::ModelInstance;
 
 use backend::descriptor::{DescriptorSetLayout,
                           DescriptorSetPool, DescriptorSetResources};
-use backend::image::{ColorSpace, ImageFormat, Sampler};
-use backend::instance::Instance;
-use backend::physical::PhysicalDevice;
+use backend::image::Sampler;
 use backend::pipeline::{Pipeline, Shader, PipelineLayout,
                         PipelineLayoutBindingType, PipelineLayoutBindingStage,
                         PipelineLayoutBuilder, VertexAttributeFormat,
                         VertexLayoutBindingType, VertexLayoutBuilder};
-use backend::renderpass::RenderPass;
-use backend::surface::{Surface, SurfaceFormat};
 
 use utils::timer::Timer;
 
@@ -42,7 +37,6 @@ macro_rules! offset_of {
 pub struct Renderer {
     pub context: Arc<Context>,
     pub display: Display,
-    pub renderpass: Arc<RenderPass>,
     pub descriptor_layout: Arc<DescriptorSetLayout>,
     pub descriptor_pool: DescriptorSetPool,
     pub pipeline_layout: Arc<PipelineLayout>,
@@ -51,29 +45,14 @@ pub struct Renderer {
     pub frames: Vec<Frame<Transform, VertexInstance>>,
     pub current_frame: usize,
     pub current_texture: Uuid,
-    pub max_instances: usize
+    pub max_instances: usize,
+    pub current_image: usize
 }
 
 impl Renderer {
-    pub fn new(title: &str, window: Window,
+    pub fn new(context: Arc<Context>,
+               display: Display,
                max_instances: usize, max_draws: usize) -> Self {
-        let instance = Instance::new(title, 0);
-
-        let surface = Surface::new(instance.clone(), window);
-
-        let context = Context::new(instance, &surface);
-
-        let format = Self::get_surface_format(&surface,
-                                              &context.device_ref().p_device);
-
-        let renderpass = RenderPass::new(
-            context.device(), format.format);
-
-        let display = Display::new(context.clone(),
-                                   surface.clone(),
-                                   format,
-                                   renderpass.clone());
-
         let vshader = Shader::from_file("examples/assets/shaders/vert.spv",
                                         context.device());
         let fshader = Shader::from_file("examples/assets/shaders/frag.spv",
@@ -114,7 +93,7 @@ impl Renderer {
             Pipeline::new(context.device(), vshader, fshader,
                           vertex_layout,
                           descriptor_layout.clone(),
-                          renderpass.clone(),
+                          display.renderpass().clone(),
                           0);
 
         let sampler = Sampler::new(context.device());
@@ -125,7 +104,6 @@ impl Renderer {
         Renderer {
             context,
             display,
-            renderpass,
             descriptor_layout,
             descriptor_pool,
             pipeline_layout,
@@ -134,19 +112,9 @@ impl Renderer {
             frames,
             current_frame: 0,
             current_texture: Uuid::nil(),
-            max_instances
+            max_instances,
+            current_image: 0
         }
-    }
-
-    fn get_surface_format(surface: &Arc<Surface>,
-                          p_device: &PhysicalDevice) -> SurfaceFormat {
-        let formats =
-            surface.get_available_format(p_device);
-
-        *formats.iter().find(|f| {
-            f.format == ImageFormat::B8g8r8a8Unorm &&
-                f.color_space == ColorSpace::SrgbNonlinear
-        }).unwrap()
     }
 
     pub fn update_view_proj(&mut self, view_proj: Transform) {
@@ -164,7 +132,10 @@ impl Renderer {
 
             match self.display.next_image(&frame.wait_image) {
                 Err(_) => true,
-                _ => false
+                Ok(index) => {
+                    self.current_image = index;
+                    false
+                }
             }
         };
 
@@ -172,11 +143,9 @@ impl Renderer {
             for frame in &mut self.frames {
                 frame.dirty = true;
             }
-        }
-
-        match error {
-            true => Err(()),
-            false => Ok(())
+            Err(())
+        } else {
+            Ok(())
         }
     }
 
@@ -190,7 +159,7 @@ impl Renderer {
                                         Some(&frame.wait_image),
                                         &frame.wait_command, &frame.submit_fence);
 
-            match self.display.present(&frame.wait_command) {
+            match self.display.present(self.current_image, &frame.wait_command) {
                 Err(_) => true,
                 _ => false
             }
@@ -272,7 +241,7 @@ impl Renderer {
         let command_buffer = &mut frame.command_buffer;
 
         command_buffer.begin();
-        command_buffer.start_render_pass(self.display.framebuffer());
+        command_buffer.start_render_pass(self.display.framebuffer(self.current_image));
         command_buffer.bind_pipeline(&self.pipeline);
         let extent = self.display.dimensions();
         command_buffer.set_viewport(extent.0, extent.1);

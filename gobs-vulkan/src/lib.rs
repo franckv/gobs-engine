@@ -1,4 +1,5 @@
 extern crate ash;
+extern crate timer;
 extern crate uuid;
 extern crate winit;
 #[macro_use]
