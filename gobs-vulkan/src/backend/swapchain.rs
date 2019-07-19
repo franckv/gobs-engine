@@ -87,7 +87,7 @@ impl SwapChain {
         };
 
         let swapchain = unsafe {
-            device.swapchain_loader.create_swapchain_khr(&swapchain_info,
+            device.swapchain_loader.create_swapchain(&swapchain_info,
                                                          None).unwrap()
         };
 
@@ -103,7 +103,7 @@ impl SwapChain {
         let extent = self.surface.get_extent(&self.device);
 
         unsafe {
-            let vk_images = self.device.swapchain_loader.get_swapchain_images_khr(
+            let vk_images = self.device.swapchain_loader.get_swapchain_images(
                 self.swapchain).unwrap();
 
             vk_images.iter().map(|&image| {
@@ -119,7 +119,7 @@ impl SwapChain {
 
     pub fn acquire_image(&mut self, signal: &Semaphore) -> Result<usize, ()> {
         unsafe {
-            match self.device.swapchain_loader.acquire_next_image_khr(self.swapchain,
+            match self.device.swapchain_loader.acquire_next_image(self.swapchain,
                                                      std::u64::MAX,
                                                      signal.raw(),
                                                      vk::Fence::null()) {
@@ -151,7 +151,7 @@ impl SwapChain {
         };
 
         unsafe {
-            match self.device.swapchain_loader.queue_present_khr(queue.queue, &present_info) {
+            match self.device.swapchain_loader.queue_present(queue.queue, &present_info) {
                 Ok(_) => Ok(()),
                 Err(vk::Result::SUBOPTIMAL_KHR) | Err(vk::Result::ERROR_OUT_OF_DATE_KHR) => {
                     Err(())
@@ -163,7 +163,7 @@ impl SwapChain {
 
     fn cleanup(&mut self) {
         unsafe {
-            self.device.swapchain_loader.destroy_swapchain_khr(self.swapchain, None);
+            self.device.swapchain_loader.destroy_swapchain(self.swapchain, None);
         }
     }
 }

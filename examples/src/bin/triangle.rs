@@ -2,7 +2,6 @@ extern crate gobs_game as game;
 extern crate gobs_render as render;
 extern crate gobs_scene as scene;
 
-#[macro_use] extern crate log;
 extern crate simplelog;
 
 use simplelog::{Config, LevelFilter, TermLogger};

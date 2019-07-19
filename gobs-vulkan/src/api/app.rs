@@ -31,8 +31,10 @@ impl Application {
 
         let input_handler = InputHandler::new(events_loop);
 
+        debug!("Create Context");
         let (context, display) = Context::new("Test", window);
 
+        debug!("Create Renderer");
         let renderer = Renderer::new(context.clone(), display,
         MAX_INSTANCES, MAX_DRAWS);
 

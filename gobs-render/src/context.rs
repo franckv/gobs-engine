@@ -37,7 +37,8 @@ pub fn init() -> (EventsLoop, Arc<Context>, Arc<Display>) {
     };
 
     let events_loop = EventsLoop::new();
-    let surface = WindowBuilder::new().build_vk_surface(&events_loop, instance.clone()).unwrap();
+    let window = WindowBuilder::new();
+    let surface = window.build_vk_surface(&events_loop, instance.clone()).unwrap();
 
     let physical = PhysicalDevice::enumerate(&instance).next().expect("error");
 

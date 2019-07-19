@@ -23,6 +23,7 @@ impl CommandPool {
         };
 
         let pool = unsafe {
+            debug!("Create command pool");
             device.raw().create_command_pool(&pool_info, None).unwrap()
         };
 

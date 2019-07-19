@@ -8,7 +8,7 @@ use winit::os::unix::WindowExt;
 
 use ash::vk;
 #[cfg(all(unix, not(target_os = "android"), not(target_os = "macos")))]
-use ash::extensions::XlibSurface;
+use ash::extensions::khr::XlibSurface;
 
 use backend::device::Device;
 use backend::image::{ColorSpace, ImageFormat};
@@ -64,14 +64,15 @@ impl Surface {
         let surface_loader = XlibSurface::new(&instance.entry, &instance.instance);
 
         unsafe {
-            surface_loader.create_xlib_surface_khr(&window_info, None).unwrap()
+            debug!("Create surface");
+            surface_loader.create_xlib_surface(&window_info, None).unwrap()
         }
     }
 
     pub fn family_supported(&self, p_device: &PhysicalDevice,
                             family: &QueueFamily) -> bool {
         unsafe {
-            self.instance.surface_loader.get_physical_device_surface_support_khr(
+            self.instance.surface_loader.get_physical_device_surface_support(
             p_device.raw(), family.index, self.surface)
         }
     }
@@ -81,7 +82,7 @@ impl Surface {
 
         let formats = unsafe {
             self.instance.surface_loader
-                .get_physical_device_surface_formats_khr(
+                .get_physical_device_surface_formats(
                     p_device.raw(), self.surface).unwrap()
         };
 
@@ -102,7 +103,7 @@ impl Surface {
 
             let presents = unsafe {
                 self.instance.surface_loader
-                    .get_physical_device_surface_present_modes_khr(
+                    .get_physical_device_surface_present_modes(
                         device.p_device.raw(), self.surface).unwrap()
             };
 
@@ -117,7 +118,7 @@ impl Surface {
     pub fn get_capabilities(&self, device: &Arc<Device>) -> SurfaceCapabilities {
         let capabilities = unsafe {
             self.instance.surface_loader
-                .get_physical_device_surface_capabilities_khr(
+                .get_physical_device_surface_capabilities(
                     device.p_device.raw(), self.surface).unwrap()
         };
 
@@ -166,7 +167,7 @@ impl Drop for Surface {
     fn drop(&mut self) {
         trace!("Drop surface");
         unsafe {
-            self.instance.surface_loader.destroy_surface_khr(self.surface, None);
+            self.instance.surface_loader.destroy_surface(self.surface, None);
         }
     }
 }

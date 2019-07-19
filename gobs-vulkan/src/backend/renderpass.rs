@@ -92,6 +92,7 @@ impl RenderPass {
         };
 
         let renderpass = unsafe {
+            debug!("Create renderpass");
             device.raw().create_render_pass(&renderpass_info, None).unwrap()
         };
 

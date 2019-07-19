@@ -6,5 +6,5 @@ authors = ["franckv <franck.vdl@gmail.com>"]
 [dependencies]
 gobs-render = {path = "../gobs-render"}
 gobs-scene = {path = "../gobs-scene"}
-cgmath = "0.16"
-winit = "0.18"
+cgmath = "0.17"
+winit = "0.19"

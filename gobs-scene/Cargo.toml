@@ -8,8 +8,8 @@ name = "gobs_scene"
 path = "src/lib.rs"
 
 [dependencies]
-cgmath = "0.16"
-image = "0.18"
+cgmath = "0.17"
+image = "0.21"
 unicode-normalization = "0.1"
 rusttype = "0.5.2"
-uuid = { version = "0.6", features = ["v4"] }
+uuid = { version = "0.7", features = ["v4"] }

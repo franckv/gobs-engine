@@ -8,5 +8,5 @@ name = "gobs_utils"
 path = "src/lib.rs"
 
 [dependencies]
-cgmath = "0.16"
+cgmath = "0.17"
 time = "0.1"

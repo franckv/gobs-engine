@@ -23,6 +23,7 @@ pub struct Queue {
 impl Queue {
     pub fn new(device: Arc<Device>) -> Self {
         let queue = unsafe {
+            debug!("Create queue");
             device.raw().get_device_queue(device.queue_family.index, 0)
         };
 

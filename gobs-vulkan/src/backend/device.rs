@@ -2,7 +2,7 @@ use std::ptr;
 use std::sync::Arc;
 
 use ash::vk;
-use ash::extensions::Swapchain;
+use ash::extensions::khr::Swapchain;
 use ash::version::DeviceV1_0;
 use ash::version::InstanceV1_0;
 
@@ -53,6 +53,7 @@ impl Device {
         };
 
         let device: ash::Device = unsafe {
+            debug!("Create device");
             instance.instance.create_device(p_device.raw(),
                                             &device_info,
                                             None)

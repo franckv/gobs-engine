@@ -1,6 +1,5 @@
 #[macro_use]
 extern crate vulkano;
-#[macro_use]
 extern crate vulkano_shaders;
 extern crate vulkano_win;
 extern crate winit;
@@ -22,7 +21,7 @@ pub use render::{Batch, Command, Renderer};
 
 pub use scene::model::Vertex;
 
-#[derive(Copy, Clone)]
+#[derive(Default, Copy, Clone)]
 pub struct RenderVertex {
     pub position: [f32; 3],
     pub normal: [f32; 3],
@@ -39,7 +38,7 @@ impl From<Vertex> for RenderVertex {
     }
 }
 
-#[derive(Copy, Clone)]
+#[derive(Default, Copy, Clone)]
 pub struct RenderInstance {
     pub transform: [[f32; 4]; 4],
     pub normal_transform: [[f32; 3]; 3],

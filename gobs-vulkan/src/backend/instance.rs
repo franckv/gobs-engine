@@ -4,9 +4,10 @@ use std::ptr;
 use std::sync::Arc;
 
 use ash::{self, vk};
-use ash::extensions::{DebugReport, Surface as VkSurface};
+use ash::extensions::ext::DebugReport;
+use ash::extensions::khr::Surface as VkSurface;
 #[cfg(all(unix, not(target_os = "android"), not(target_os = "macos")))]
-use ash::extensions::XlibSurface;
+use ash::extensions::khr::XlibSurface;
 use ash::version::EntryV1_0;
 use ash::version::InstanceV1_0;
 
@@ -104,7 +105,7 @@ impl Instance {
         let debug_report = unsafe {
             debug!("Create debug report");
 
-            Some(debug_report_entry.create_debug_report_callback_ext(
+            Some(debug_report_entry.create_debug_report_callback(
                 &debug_report_info, None).unwrap())
         };
 
@@ -155,7 +156,7 @@ impl Drop for Instance {
         trace!("Drop instance");
         unsafe {
             if self.debug_report.is_some() {
-                self.debug_report_entry.destroy_debug_report_callback_ext(
+                self.debug_report_entry.destroy_debug_report_callback(
                     self.debug_report.unwrap(), None);
             }
             self.instance.destroy_instance(None);
