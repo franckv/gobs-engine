@@ -22,7 +22,7 @@ use api::context::Context;
 use api::model::Model;
 use api::model_instance::ModelInstance;
 
-use scene::Camera;
+use scene::{Camera, SceneGraph};
 use scene::model::{Color, Mesh, RenderObjectBuilder,
                    Shapes, Texture, Transform, Vertex};
 
@@ -31,8 +31,9 @@ use utils::timer::Timer;
 const N_TRIANGLES: usize = 9;
 
 fn main() {
-    TermLogger::init(LevelFilter::Info, Config::default()).unwrap();
+    TermLogger::init(LevelFilter::Debug, Config::default()).unwrap();
 
+    debug!("Starting");
     let mut engine = Application::new();
     let app = App::new(&engine);
     engine.run(app);
@@ -44,11 +45,14 @@ struct App {
     triangle_r: Option<Arc<Model<Vertex>>>,
     triangle_b: Option<Arc<Model<Vertex>>>,
     square: Option<Arc<Model<Vertex>>>,
-    frame: usize
+    frame: usize,
+    graph: SceneGraph
 }
 
 impl Run for App {
     fn create(&mut self, engine: &mut Application) {
+        debug!("Creating App");
+
         let red = Texture::from_color(Color::red());
         let blue = Texture::from_color(Color::blue());
 
@@ -65,6 +69,8 @@ impl Run for App {
         self.triangle_r = Some(triangle_r);
         self.triangle_b = Some(triangle_b);
         self.square = Some(square);
+
+        debug!("App created");
     }
 
     fn update(&mut self, _delta: u64, engine: &mut Application) {
@@ -106,12 +112,15 @@ impl Run for App {
 
     fn resize(&mut self, width: u32, height: u32, _engine: &mut Application) {
         info!("The window was resized to {}x{}", width, height);
+        let scale = width as f32 / height as f32;
+        self.graph.camera_mut().resize(2. * scale, 2.);
     }
 }
 
 #[allow(dead_code)]
 impl App {
-    pub fn new(engine: &Application) -> Self {
+    pub fn new(_engine: &Application) -> Self {
+        debug!("New App");
         let mut camera = Camera::new([0., 0., 0.]);
         camera.set_ortho(-10., 10.);
         camera.look_at([0., 0., -1.], [0., 1., 0.]);
@@ -122,7 +131,8 @@ impl App {
             triangle_r: None,
             triangle_b: None,
             square: None,
-            frame: 0
+            frame: 0,
+            graph: SceneGraph::new()
         }
     }
 
@@ -176,7 +186,9 @@ impl App {
                 .transform(&Transform::rotation([1., 0., 0.], offset))
                 .translate(*position);
 
-            ModelInstance::new(model, transform)
+            let instance = ModelInstance::new(model, transform);
+
+            instance
         }).collect();
 
         debug!("Instances: {}", timer.delta() / 1_000_000);
