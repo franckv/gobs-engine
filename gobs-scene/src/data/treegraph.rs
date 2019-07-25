@@ -186,7 +186,7 @@ impl<D> TreeGraph<D> {
         let transform = node.cached_transform.as_ref().unwrap();
 
         if let Some(ref mut children) = node.children {
-            for mut child in children {
+            for child in children {
                 TreeGraph::visit(child, f, transform);
             }
         }

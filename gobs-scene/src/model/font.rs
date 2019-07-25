@@ -132,7 +132,7 @@ impl Font {
 
         for c in 32u8..127u8 {
             let c = c as char;
-            let mut glyph = font.glyph(c).scaled(scale);
+            let glyph = font.glyph(c).scaled(scale);
             let advance = glyph.h_metrics().advance_width;
 
             let mut glyph = glyph.positioned(pos);
