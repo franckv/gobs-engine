@@ -22,9 +22,9 @@ pub struct Renderer {
     context: Arc<Context>,
     display: Arc<Display>,
     swapchain: Arc<Swapchain<Window>>,
-    framebuffers: Vec<Arc<FramebufferAbstract + Send + Sync>>,
-    render_pass: Arc<RenderPassAbstract + Send + Sync>,
-    last_frame: Box<GpuFuture + Sync + Send>
+    framebuffers: Vec<Arc<dyn FramebufferAbstract + Send + Sync>>,
+    render_pass: Arc<dyn RenderPassAbstract + Send + Sync>,
+    last_frame: Box<dyn GpuFuture + Sync + Send>
 }
 
 impl Renderer {
@@ -52,15 +52,15 @@ impl Renderer {
             framebuffers: framebuffers,
             render_pass: render_pass,
             last_frame: Box::new(now(context.device()))
-                as Box<GpuFuture + Sync + Send>
+                as Box<dyn GpuFuture + Sync + Send>
         }
     }
 
-    pub fn framebuffer(&self, id: usize) -> Arc<FramebufferAbstract + Send + Sync> {
+    pub fn framebuffer(&self, id: usize) -> Arc<dyn FramebufferAbstract + Send + Sync> {
         self.framebuffers[id].clone()
     }
 
-    pub fn new_frame(&mut self) -> Result<(usize, Box<GpuFuture + Send + Sync>), AcquireError> {
+    pub fn new_frame(&mut self) -> Result<(usize, Box<dyn GpuFuture + Send + Sync>), AcquireError> {
         let (idx, acquire_future) = match swapchain::acquire_next_image(
             self.swapchain.clone(), None) {
             Ok(r) => r,
@@ -84,7 +84,7 @@ impl Renderer {
 
         if let Ok((id, future)) = self.new_frame() {
             let last_frame = mem::replace(&mut self.last_frame,
-                Box::new(now(self.context.device())) as Box<GpuFuture + Sync + Send>);
+                Box::new(now(self.context.device())) as Box<dyn GpuFuture + Sync + Send>);
 
             self.last_frame = Box::new(last_frame.join(future));
 
@@ -105,7 +105,7 @@ impl Renderer {
             }
 
             let last_frame = mem::replace(&mut self.last_frame,
-                Box::new(now(self.context.device())) as Box<GpuFuture + Sync + Send>);
+                Box::new(now(self.context.device())) as Box<dyn GpuFuture + Sync + Send>);
 
             let command_buffer = primary.end_render_pass().unwrap()
                 .build().unwrap();
@@ -135,7 +135,7 @@ impl Renderer {
         Batch::new(self.display.clone(), self.context.clone(), self.render_pass.clone())
     }
 
-    fn create_render_pass(device: Arc<Device>, format: Format) -> Arc<RenderPassAbstract + Send + Sync> {
+    fn create_render_pass(device: Arc<Device>, format: Format) -> Arc<dyn RenderPassAbstract + Send + Sync> {
         Arc::new(single_pass_renderpass!(device,
             attachments: {
                 color: {
@@ -158,10 +158,10 @@ impl Renderer {
         ).unwrap())
     }
 
-    fn create_framebuffer(render_pass: Arc<RenderPassAbstract + Send + Sync>,
+    fn create_framebuffer(render_pass: Arc<dyn RenderPassAbstract + Send + Sync>,
         context: Arc<Context>, dimensions: [u32; 2],
         images: Vec<Arc<SwapchainImage<Window>>>)
-        -> Vec<Arc<FramebufferAbstract + Send + Sync>> {
+        -> Vec<Arc<dyn FramebufferAbstract + Send + Sync>> {
 
         let depth_buffer = AttachmentImage::transient(context.device(),
             dimensions.clone(), Format::D16Unorm).unwrap();
@@ -170,7 +170,7 @@ impl Renderer {
             Arc::new(Framebuffer::start(render_pass.clone())
                      .add(image.clone()).unwrap()
                      .add(depth_buffer.clone()).unwrap()
-                     .build().unwrap()) as Arc<FramebufferAbstract + Send + Sync>
+                     .build().unwrap()) as Arc<dyn FramebufferAbstract + Send + Sync>
         }).collect::<Vec<_>>()
     }
 

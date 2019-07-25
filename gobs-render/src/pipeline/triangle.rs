@@ -19,20 +19,20 @@ use pipeline::Pipeline;
 use scene::Light;
 
 pub struct TrianglePipeline {
-    pipeline: Arc<GraphicsPipelineAbstract + Send + Sync>,
-    descriptor_sets_pool: FixedSizeDescriptorSetsPool<Arc<GraphicsPipelineAbstract + Send + Sync>>,
+    pipeline: Arc<dyn GraphicsPipelineAbstract + Send + Sync>,
+    descriptor_sets_pool: FixedSizeDescriptorSetsPool<Arc<dyn GraphicsPipelineAbstract + Send + Sync>>,
     matrix_buffers: CpuBufferPool<pipeline::vs::ty::MatrixData>,
     light_buffers: CpuBufferPool<pipeline::vs::ty::LightData>
 }
 
 impl Pipeline for TrianglePipeline {
-    fn get_pipeline(&self) -> Arc<GraphicsPipelineAbstract + Send + Sync> {
+    fn get_pipeline(&self) -> Arc<dyn GraphicsPipelineAbstract + Send + Sync> {
         self.pipeline.clone()
     }
 
     fn get_descriptor_set(&mut self,
             projection: Matrix4<f32>, light: &Light, texture: &TextureCacheEntry)
-            -> Arc<DescriptorSet + Send + Sync> {
+            -> Arc<dyn DescriptorSet + Send + Sync> {
         let matrix_data = pipeline::vs::ty::MatrixData {
             projection: projection.into(),
         };
@@ -62,7 +62,7 @@ impl Pipeline for TrianglePipeline {
 
 impl TrianglePipeline {
     pub fn new<R>(context: Arc<Context>,
-            subpass: Subpass<R>) -> Box<Pipeline>
+            subpass: Subpass<R>) -> Box<dyn Pipeline>
             where R: RenderPassAbstract + Send + Sync + 'static {
         let vshader = pipeline::vs::Shader::load(context.device()).expect("error");
         let fshader = pipeline::fs::Shader::load(context.device()).expect("error");
@@ -78,7 +78,7 @@ impl TrianglePipeline {
             .cull_mode_back()
             .render_pass(subpass)
             .build(context.device()).unwrap())
-            as Arc<GraphicsPipelineAbstract + Send + Sync>;
+            as Arc<dyn GraphicsPipelineAbstract + Send + Sync>;
 
         let descriptor_sets_pool = FixedSizeDescriptorSetsPool::new(pipeline.clone(), 0);
 

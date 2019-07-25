@@ -35,16 +35,16 @@ impl Command {
 pub struct Batch {
     context: Arc<Context>,
     display: Arc<Display>,
-    line_pipeline: Box<Pipeline>,
-    triangle_pipeline: Box<Pipeline>,
-    render_pass: Arc<RenderPassAbstract + Send + Sync>,
+    line_pipeline: Box<dyn Pipeline>,
+    triangle_pipeline: Box<dyn Pipeline>,
+    render_pass: Arc<dyn RenderPassAbstract + Send + Sync>,
     texture_cache: TextureCache,
     mesh_cache: MeshCache
 }
 
 impl Batch {
     pub fn new(display: Arc<Display>, context: Arc<Context>,
-        render_pass: Arc<RenderPassAbstract + Send + Sync>) -> Self {
+        render_pass: Arc<dyn RenderPassAbstract + Send + Sync>) -> Self {
 
         let line_pipeline = LinePipeline::new(context.clone(),
             Subpass::from(render_pass.clone(), 0).unwrap());

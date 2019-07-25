@@ -15,11 +15,11 @@ pub use self::line::LinePipeline;
 pub use self::triangle::TrianglePipeline;
 
 pub trait Pipeline: Send {
-    fn get_pipeline(&self) -> Arc<GraphicsPipelineAbstract + Send + Sync>;
+    fn get_pipeline(&self) -> Arc<dyn GraphicsPipelineAbstract + Send + Sync>;
 
     fn get_descriptor_set(&mut self,
         projection: Matrix4<f32>, light: &Light, texture: &TextureCacheEntry)
-        -> Arc<DescriptorSet + Send + Sync>;
+        -> Arc<dyn DescriptorSet + Send + Sync>;
 }
 
 pub mod vs {
