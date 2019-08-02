@@ -19,11 +19,10 @@ use vulkan::api as api;
 
 use api::app::{Application, Run};
 use api::context::Context;
-use api::model::Model;
-use api::model_instance::ModelInstance;
+use api::model::ModelCache;
 
 use scene::{Camera, SceneGraph};
-use scene::model::{Color, Mesh, RenderObjectBuilder,
+use scene::model::{Color, Mesh, ModelBuilder,
                    Shapes, Texture, Transform, Vertex};
 
 use utils::timer::Timer;
@@ -42,9 +41,9 @@ fn main() {
 #[allow(dead_code)]
 struct App {
     camera: Camera,
-    triangle_r: Option<Arc<Model<Vertex>>>,
-    triangle_b: Option<Arc<Model<Vertex>>>,
-    square: Option<Arc<Model<Vertex>>>,
+    triangle_r: Option<Arc<ModelCache<Vertex>>>,
+    triangle_b: Option<Arc<ModelCache<Vertex>>>,
+    square: Option<Arc<ModelCache<Vertex>>>,
     frame: usize,
     graph: SceneGraph
 }
@@ -137,18 +136,18 @@ impl App {
     }
 
     fn build_model(context: &Arc<Context>, shape: Arc<Mesh>,
-                   texture: Arc<Texture>) -> Arc<Model<Vertex>> {
-        let object = RenderObjectBuilder::new(shape)
+                   texture: Arc<Texture>) -> Arc<ModelCache<Vertex>> {
+        let object = ModelBuilder::new(shape)
             .texture(texture).build();
 
-        Model::<Vertex>::new(context, &object)
+        ModelCache::<Vertex>::new(context, &object)
     }
 
-    fn draw_triangle(&self) -> Vec<ModelInstance<Vertex, Transform>> {
-        vec![ModelInstance::new(self.triangle_r.as_ref().unwrap().clone(), Transform::new())]
+    fn draw_triangle(&self) -> Vec<(Arc<ModelCache<Vertex>>, Transform)> {
+        vec![(self.triangle_r.as_ref().unwrap().clone(), Transform::new())]
     }
 
-    fn draw_triangles(&self, rows: usize) -> Vec<ModelInstance<Vertex, Transform>> {
+    fn draw_triangles(&self, rows: usize) -> Vec<(Arc<ModelCache<Vertex>>, Transform)> {
         let mut timer = Timer::new();
 
         let offset = self.frame as f32;
@@ -186,7 +185,7 @@ impl App {
                 .transform(&Transform::rotation([1., 0., 0.], offset))
                 .translate(*position);
 
-            let instance = ModelInstance::new(model, transform);
+            let instance = (model, transform);
 
             instance
         }).collect();

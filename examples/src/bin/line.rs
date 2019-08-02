@@ -8,7 +8,7 @@ use cgmath::Point3;
 use game::app::{Application, Run};
 use render::{Batch, Renderer};
 use scene::SceneGraph;
-use scene::model::{Color, RenderObjectBuilder, Shapes, Texture};
+use scene::model::{Color, ModelBuilder, Shapes, Texture};
 
 struct App {
     graph: SceneGraph,
@@ -52,11 +52,11 @@ impl App {
         let bottom: Point3<f32> = [0., -1., 0.5].into();
 
         let line = Shapes::line(left, right);
-        let instance = RenderObjectBuilder::new(line).texture(texture.clone()).build();
+        let instance = ModelBuilder::new(line).texture(texture.clone()).build();
         self.graph.insert(SceneGraph::new_node().data(instance).build());
 
         let line = Shapes::line(bottom, top);
-        let instance = RenderObjectBuilder::new(line).texture(texture).build();
+        let instance = ModelBuilder::new(line).texture(texture).build();
         self.graph.insert(SceneGraph::new_node().data(instance).build());
     }
 }

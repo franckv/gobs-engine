@@ -6,5 +6,4 @@ pub mod handler;
 pub mod input;
 pub mod instance;
 pub mod model;
-pub mod model_instance;
 pub mod renderer;

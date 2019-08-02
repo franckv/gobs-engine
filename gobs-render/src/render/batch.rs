@@ -13,7 +13,7 @@ use context::Context;
 use display::Display;
 use pipeline::{Pipeline, LinePipeline, TrianglePipeline};
 use scene::{Camera, Light, SceneGraph, SceneData};
-use scene::model::{PrimitiveType, RenderObject, Transform};
+use scene::model::{PrimitiveType, Model, Transform};
 use utils::timer::Timer;
 
 pub struct Command {
@@ -109,7 +109,7 @@ impl Batch {
 
     fn draw_list(&mut self, builder: AutoCommandBufferBuilder,
         camera: &Camera, light: &Light,
-        instances: &Vec<(Arc<RenderObject>, Transform)>)
+        instances: &Vec<(Arc<Model>, Transform)>)
         -> AutoCommandBufferBuilder {
 
         let mut timer = Timer::new();
@@ -173,7 +173,7 @@ impl Batch {
         }
     }
 
-    fn create_instance_buffer(&mut self, instances: &Vec<(Arc<RenderObject>,
+    fn create_instance_buffer(&mut self, instances: &Vec<(Arc<Model>,
                                                           Transform)>) -> Arc<ImmutableBuffer<[RenderInstance]>> {
         let mut timer = Timer::new();
 

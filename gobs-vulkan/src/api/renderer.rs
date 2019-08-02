@@ -11,8 +11,7 @@ use api::context::Context;
 use api::display::Display;
 use api::frame::Frame;
 use api::instance::VertexInstance;
-use api::model::Model;
-use api::model_instance::ModelInstance;
+use api::model::ModelCache;
 
 use backend::descriptor::{DescriptorSetLayout,
                           DescriptorSetPool, DescriptorSetResources};
@@ -174,7 +173,7 @@ impl Renderer {
         self.current_frame = (self.current_frame + 1) % self.frames.len();
     }
 
-    pub fn draw_frame(&mut self, instances: Vec<ModelInstance<Vertex, Transform>>) {
+    pub fn draw_frame(&mut self, instances: Vec<(Arc<ModelCache<Vertex>>, Transform)>) {
         let mut timer = Timer::new();
         debug_assert!(instances.len() <= self.max_instances);
 
@@ -191,7 +190,7 @@ impl Renderer {
             let transforms: Vec<VertexInstance> = {
                 instances.iter().map(|instance| {
                     VertexInstance {
-                        matrix: instance.transform().into()
+                        matrix: instance.1.into()
                     }
                 }).collect()
             };
@@ -201,7 +200,7 @@ impl Renderer {
             self.update_instances(*id, transforms);
 
             if self.frames[self.current_frame].dirty {
-                self.draw_instances(&instances[0].model(), instance_count);
+                self.draw_instances(&instances[0].0, instance_count);
             }
 
             debug!("Draw instances {}: {}", id, timer.delta() / 1_000_000);
@@ -214,13 +213,12 @@ impl Renderer {
         debug!("Draw frame: {}", timer.delta() / 1_000_000);
     }
 
-    fn sort_instances(mut instances: Vec<ModelInstance<Vertex, Transform>>)
-
-                      -> HashMap<Uuid, Vec<ModelInstance<Vertex, Transform>>> {
+    fn sort_instances(mut instances: Vec<(Arc<ModelCache<Vertex>>, Transform)>)
+                      -> HashMap<Uuid, Vec<(Arc<ModelCache<Vertex>>, Transform)>> {
         let mut map = HashMap::new();
 
         for instance in instances.drain(..) {
-            let id = instance.model().texture_id;
+            let id = instance.0.texture_id;
             if !map.contains_key(&id) {
                 map.insert(id, Vec::new());
             }
@@ -257,7 +255,7 @@ impl Renderer {
         frame.dirty = false;
     }
 
-    fn draw_instances(&mut self, model: &Arc<Model<Vertex>>, instance_count: usize) {
+    fn draw_instances(&mut self, model: &Arc<ModelCache<Vertex>>, instance_count: usize) {
         let id = model.texture_id;
         let frame = &mut self.frames[self.current_frame];
         {

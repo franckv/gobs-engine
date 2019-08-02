@@ -1,20 +1,20 @@
 use std::sync::Arc;
 
 use data::TreeGraph;
-use model::RenderObject;
+use model::Model;
 use scene::camera::Camera;
 use scene::light::Light;
 
 pub type SceneGraph = TreeGraph<SceneData>;
 
 pub enum SceneData {
-    Object(Arc<RenderObject>),
+    Object(Arc<Model>),
     Camera(Camera),
     Light(Light),
 }
 
-impl From<Arc<RenderObject>> for SceneData {
-    fn from(r: Arc<RenderObject>) -> Self {
+impl From<Arc<Model>> for SceneData {
+    fn from(r: Arc<Model>) -> Self {
         SceneData::Object(r)
     }
 }

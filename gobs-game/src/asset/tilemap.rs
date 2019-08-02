@@ -1,13 +1,13 @@
 use std::sync::Arc;
 
-use scene::model::{Color, Mesh, RenderObject, RenderObjectBuilder, Shapes, Texture};
+use scene::model::{Color, Mesh, Model, ModelBuilder, Shapes, Texture};
 
 pub struct Tile {
-    instance: RenderObject
+    instance: Model
 }
 
 impl Tile {
-    pub fn instance(&self) -> &RenderObject {
+    pub fn instance(&self) -> &Model {
         &self.instance
     }
 }
@@ -36,8 +36,8 @@ impl TileMap {
         }
     }
 
-    pub fn build_tile(&self, i: usize, j: usize) -> Arc<RenderObject> {
-        RenderObjectBuilder::new(self.mesh.clone())
+    pub fn build_tile(&self, i: usize, j: usize) -> Arc<Model> {
+        ModelBuilder::new(self.mesh.clone())
         .color(Color::white())
         .texture(self.texture.clone())
         .atlas(i, j, self.tile_size)

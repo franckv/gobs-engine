@@ -9,7 +9,7 @@ use simplelog::{Config, LevelFilter, TermLogger};
 use game::app::{Application, Run};
 use render::{Batch, Renderer};
 use scene::SceneGraph;
-use scene::model::{Color, RenderObjectBuilder, Shapes, Texture};
+use scene::model::{Color, ModelBuilder, Shapes, Texture};
 
 struct App {
     graph: SceneGraph,
@@ -22,7 +22,7 @@ impl Run for App {
         let texture = Texture::from_color(Color::red());
         let triangle = Shapes::triangle();
 
-        let instance = RenderObjectBuilder::new(triangle).texture(texture).build();
+        let instance = ModelBuilder::new(triangle).texture(texture).build();
 
         self.graph.insert(SceneGraph::new_node().data(instance).build());
     }

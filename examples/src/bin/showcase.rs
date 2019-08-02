@@ -16,7 +16,7 @@ use render::{Batch, Renderer};
 use scene::SphericalCoord;
 use scene::LightBuilder;
 use scene::SceneGraph;
-use scene::model::{Color, Font, RenderObjectBuilder, Shapes, Texture, Transform};
+use scene::model::{Color, Font, ModelBuilder, Shapes, Texture, Transform};
 
 use game::app::{Application, Run};
 use game::asset::TileMap;
@@ -261,7 +261,7 @@ impl App {
                     'w' => {
                         let (x, y) = (col as f32, num as f32);
 
-                        let tile = RenderObjectBuilder::new(mesh.clone())
+                        let tile = ModelBuilder::new(mesh.clone())
                             .color(Color::red())
                             .texture(texture.clone())
                             .build();
@@ -290,7 +290,7 @@ impl App {
                     k if (k % 2 == 0) => {
                         let color = Color::red();
 
-                        RenderObjectBuilder::new(triangle.clone())
+                        ModelBuilder::new(triangle.clone())
                             .color(color)
                             .texture(texture.clone())
                             .build()
@@ -298,7 +298,7 @@ impl App {
                     _ => {
                         let color = Color::white();
 
-                        RenderObjectBuilder::new(square.clone())
+                        ModelBuilder::new(square.clone())
                             .color(color)
                             .texture(texture.clone())
                             .build()
@@ -360,7 +360,7 @@ impl App {
 
         let mesh = Shapes::cube();
 
-        let instance = RenderObjectBuilder::new(mesh.clone())
+        let instance = ModelBuilder::new(mesh.clone())
             .color(Color::white())
             .texture(texture)
             .build();
@@ -384,7 +384,7 @@ impl App {
                     'w' => {
                         let (x, y) = (col as f32, num as f32);
 
-                        let instance = RenderObjectBuilder::new(mesh.clone())
+                        let instance = ModelBuilder::new(mesh.clone())
                             .color(Color::white())
                             .texture(texture.clone())
                             .build();
@@ -400,7 +400,7 @@ impl App {
         }
 
         let floor = Shapes::quad();
-        let instance = RenderObjectBuilder::new(floor)
+        let instance = ModelBuilder::new(floor)
             .texture(Texture::from_color(Color::black()))
             .build();
 
@@ -428,7 +428,7 @@ impl App {
 
             let i = i as f32;
 
-            let instance = RenderObjectBuilder::new(triangle.clone())
+            let instance = ModelBuilder::new(triangle.clone())
                 .color(color)
                 .texture(texture.clone())
                 .build();
@@ -465,7 +465,7 @@ impl App {
         let font = Font::new(size, &examples::asset("font.ttf"));
         let mesh = Shapes::quad();
 
-        let text = RenderObjectBuilder::new(mesh.clone())
+        let text = ModelBuilder::new(mesh.clone())
             .texture(font.texture())
             .build();
 
@@ -484,11 +484,11 @@ impl App {
         let bottom = [0., -1., 0.5];
 
         let line = Shapes::line(left, right);
-        let instance = RenderObjectBuilder::new(line).texture(texture.clone()).build();
+        let instance = ModelBuilder::new(line).texture(texture.clone()).build();
         self.uigraph.insert(SceneGraph::new_node().data(instance).build());
 
         let line = Shapes::line(bottom, top);
-        let instance = RenderObjectBuilder::new(line).texture(texture).build();
+        let instance = ModelBuilder::new(line).texture(texture).build();
         self.uigraph.insert(SceneGraph::new_node().data(instance).build());
     }
 }

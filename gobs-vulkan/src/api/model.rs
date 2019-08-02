@@ -3,7 +3,7 @@ use std::sync::Arc;
 
 use uuid::Uuid;
 
-use scene::model::RenderObject;
+use scene::model::Model;
 use scene::model::Vertex;
 
 use api::context::Context;
@@ -11,15 +11,15 @@ use api::context::Context;
 use backend::buffer::{Buffer, BufferUsage};
 use backend::image::{Image, ImageFormat, ImageLayout, ImageUsage};
 
-pub struct Model<V> {
+pub struct ModelCache<V> {
     pub vertex_buffer: Buffer<V>,
     pub index_buffer: Buffer<u32>,
     pub texture: Image,
     pub texture_id: Uuid
 }
 
-impl<V: Copy> Model<V> {
-    pub fn new(context: &Arc<Context>, model: &Arc<RenderObject>) -> Arc<Model<Vertex>> {
+impl<V: Copy> ModelCache<V> {
+    pub fn new(context: &Arc<Context>, model: &Arc<Model>) -> Arc<ModelCache<Vertex>> {
         let mesh = model.mesh();
         let vertices = mesh.vlist();
         let indices = mesh.ilist().as_ref().unwrap();
@@ -44,7 +44,7 @@ impl<V: Copy> Model<V> {
                                            texture_size[0] as u32,
                                            texture_size[1] as u32);
 
-        Arc::new(Model {
+        Arc::new(ModelCache {
             vertex_buffer,
             index_buffer,
             texture,

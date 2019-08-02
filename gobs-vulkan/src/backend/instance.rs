@@ -61,11 +61,12 @@ impl Instance {
             DebugReport::name().as_ptr(),
         ];
 
-        let validation =
-            CString::new("VK_LAYER_LUNARG_standard_validation").unwrap();
+        let validation = CString::new("VK_LAYER_LUNARG_standard_validation").unwrap();
+        //let debug_validation = CString::new("VK_LAYER_LUNARG_api_dump").unwrap();
 
         let layers = [
-            validation.as_ptr()
+            validation.as_ptr(),
+            //debug_validation.as_ptr()
         ];
 
         let instance_info = vk::InstanceCreateInfo {

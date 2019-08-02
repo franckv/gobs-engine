@@ -2,16 +2,16 @@ use std::sync::Arc;
 
 use model::{Color, Mesh, Texture};
 
-pub struct RenderObjectBuilder {
+pub struct ModelBuilder {
     mesh: Arc<Mesh>,
     color: Color,
     texture: Option<Arc<Texture>>,
     region: [f32; 4]
 }
 
-impl RenderObjectBuilder {
-    pub fn new(mesh: Arc<Mesh>) -> RenderObjectBuilder {
-        RenderObjectBuilder {
+impl ModelBuilder {
+    pub fn new(mesh: Arc<Mesh>) -> ModelBuilder {
+        ModelBuilder {
             mesh,
             color: Color::white(),
             texture: None,
@@ -19,25 +19,25 @@ impl RenderObjectBuilder {
         }
     }
 
-    pub fn color(mut self, color: Color) -> RenderObjectBuilder {
+    pub fn color(mut self, color: Color) -> ModelBuilder {
         self.color = color;
 
         self
     }
 
-    pub fn texture(mut self, texture: Arc<Texture>) -> RenderObjectBuilder {
+    pub fn texture(mut self, texture: Arc<Texture>) -> ModelBuilder {
         self.texture = Some(texture);
 
         self
     }
 
-    pub fn region(mut self, region: [f32; 4]) -> RenderObjectBuilder {
+    pub fn region(mut self, region: [f32; 4]) -> ModelBuilder {
         self.region = region;
 
         self
     }
 
-    pub fn atlas(self, i: usize, j: usize, tile_size: [usize; 2]) -> RenderObjectBuilder {
+    pub fn atlas(self, i: usize, j: usize, tile_size: [usize; 2]) -> ModelBuilder {
         let (ustep, vstep) = {
             let texture = self.texture.as_ref().unwrap();
             let img_size = texture.size();
@@ -51,22 +51,22 @@ impl RenderObjectBuilder {
         self.region([i * ustep, j * vstep, (i + 1.0) * ustep, (j + 1.0) * vstep])
     }
 
-    pub fn build(self) -> Arc<RenderObject> {
-        RenderObject::new(self.mesh.clone(), self.color, self.texture, self.region)
+    pub fn build(self) -> Arc<Model> {
+        Model::new(self.mesh.clone(), self.color, self.texture, self.region)
     }
 }
 
-pub struct RenderObject {
+pub struct Model {
     mesh: Arc<Mesh>,
     color: Color,
     texture: Option<Arc<Texture>>,
     region: [f32; 4]
 }
 
-impl RenderObject {
+impl Model {
     fn new(mesh: Arc<Mesh>, color: Color, texture: Option<Arc<Texture>>, region: [f32; 4])
-    -> Arc<RenderObject> {
-        Arc::new(RenderObject {
+    -> Arc<Model> {
+        Arc::new(Model {
             mesh,
             color,
             texture,
