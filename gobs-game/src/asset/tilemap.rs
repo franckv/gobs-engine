@@ -1,5 +1,7 @@
 use std::sync::Arc;
 
+use gobs_scene as scene;
+
 use scene::model::{Color, Mesh, Model, ModelBuilder, Shapes, Texture};
 
 pub struct Tile {

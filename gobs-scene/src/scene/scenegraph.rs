@@ -1,9 +1,9 @@
 use std::sync::Arc;
 
-use data::TreeGraph;
-use model::Model;
-use scene::camera::Camera;
-use scene::light::Light;
+use crate::data::TreeGraph;
+use crate::model::Model;
+use super::camera::Camera;
+use super::light::Light;
 
 pub type SceneGraph = TreeGraph<SceneData>;
 

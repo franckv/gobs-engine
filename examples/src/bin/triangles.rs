@@ -1,42 +1,25 @@
+use std::sync::Arc;
+
 #[macro_use]
 extern crate log;
-extern crate simplelog;
-extern crate time;
-extern crate winit;
-extern crate gobs_vulkan;
-extern crate gobs_scene;
-extern crate gobs_utils;
-
-use std::sync::Arc;
 
 use simplelog::{Config, LevelFilter, TermLogger};
 
-use gobs_vulkan as vulkan;
+use gobs_game as game;
 use gobs_scene as scene;
+use gobs_vulkan as render;
 use gobs_utils as utils;
 
-use vulkan::api as api;
-
-use api::app::{Application, Run};
-use api::context::Context;
-use api::model::ModelCache;
-
-use scene::{Camera, SceneGraph};
+use game::app::{Application, Run};
+use scene::Camera;
 use scene::model::{Color, Mesh, ModelBuilder,
                    Shapes, Texture, Transform, Vertex};
+use render::api::context::Context;
+use render::api::model::ModelCache;
 
 use utils::timer::Timer;
 
 const N_TRIANGLES: usize = 9;
-
-fn main() {
-    TermLogger::init(LevelFilter::Debug, Config::default()).unwrap();
-
-    debug!("Starting");
-    let mut engine = Application::new();
-    let app = App::new(&engine);
-    engine.run(app);
-}
 
 #[allow(dead_code)]
 struct App {
@@ -44,14 +27,11 @@ struct App {
     triangle_r: Option<Arc<ModelCache<Vertex>>>,
     triangle_b: Option<Arc<ModelCache<Vertex>>>,
     square: Option<Arc<ModelCache<Vertex>>>,
-    frame: usize,
-    graph: SceneGraph
+    frame: usize
 }
 
 impl Run for App {
     fn create(&mut self, engine: &mut Application) {
-        debug!("Creating App");
-
         let red = Texture::from_color(Color::red());
         let blue = Texture::from_color(Color::blue());
 
@@ -68,23 +48,15 @@ impl Run for App {
         self.triangle_r = Some(triangle_r);
         self.triangle_b = Some(triangle_b);
         self.square = Some(square);
-
-        debug!("App created");
     }
 
     fn update(&mut self, _delta: u64, engine: &mut Application) {
-        let mut timer = Timer::new();
-
         if !engine.renderer().new_frame().is_ok() {
             return;
         }
 
-        debug!("Wait: {}", timer.delta() / 1_000_000);
-
         let instances =
             self.draw_triangles(N_TRIANGLES);
-
-        debug!("Build scene: {}", timer.delta() / 1_000_000);
 
         let offset = self.frame as f32 / 10.;
 
@@ -96,15 +68,9 @@ impl Run for App {
 
         engine.renderer().update_view_proj(view_proj_transform.into());
 
-        debug!("Update view: {}", timer.delta() / 1_000_000);
-
         engine.renderer().draw_frame(instances);
 
-        debug!("Draw scene: {}", timer.delta() / 1_000_000);
-
         engine.renderer().submit_frame();
-
-        debug!("Submit scene: {}", timer.delta() / 1_000_000);
 
         self.frame += 1;
     }
@@ -112,7 +78,7 @@ impl Run for App {
     fn resize(&mut self, width: u32, height: u32, _engine: &mut Application) {
         info!("The window was resized to {}x{}", width, height);
         let scale = width as f32 / height as f32;
-        self.graph.camera_mut().resize(2. * scale, 2.);
+        self.camera.resize(4. * scale, 4.);
     }
 }
 
@@ -130,8 +96,7 @@ impl App {
             triangle_r: None,
             triangle_b: None,
             square: None,
-            frame: 0,
-            graph: SceneGraph::new()
+            frame: 0
         }
     }
 
@@ -194,4 +159,12 @@ impl App {
 
         instances
     }
+}
+
+fn main() {
+    TermLogger::init(LevelFilter::Debug, Config::default()).expect("error");
+
+    let mut engine = Application::new();
+    let app = App::new(&engine);
+    engine.run(app);
 }

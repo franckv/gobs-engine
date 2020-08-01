@@ -6,10 +6,10 @@ use ash::extensions::khr::Swapchain;
 use ash::version::DeviceV1_0;
 use ash::version::InstanceV1_0;
 
-use backend::instance::Instance;
-use backend::physical::PhysicalDevice;
-use backend::queue::QueueFamily;
-use backend::Wrap;
+use crate::backend::instance::Instance;
+use crate::backend::physical::PhysicalDevice;
+use crate::backend::queue::QueueFamily;
+use crate::backend::Wrap;
 
 pub struct Device {
     _instance: Arc<Instance>,

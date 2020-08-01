@@ -3,13 +3,15 @@ use std::sync::Arc;
 
 use uuid::Uuid;
 
+use gobs_scene as scene;
+
 use scene::model::Model;
 use scene::model::Vertex;
 
-use api::context::Context;
+use super::context::Context;
 
-use backend::buffer::{Buffer, BufferUsage};
-use backend::image::{Image, ImageFormat, ImageLayout, ImageUsage};
+use crate::backend::buffer::{Buffer, BufferUsage};
+use crate::backend::image::{Image, ImageFormat, ImageLayout, ImageUsage};
 
 pub struct ModelCache<V> {
     pub vertex_buffer: Buffer<V>,

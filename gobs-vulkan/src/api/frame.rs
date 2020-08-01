@@ -3,12 +3,12 @@ use std::sync::Arc;
 
 use uuid::Uuid;
 
-use api::context::Context;
+use super::context::Context;
 
-use backend::buffer::{Buffer, BufferUsage};
-use backend::command::CommandBuffer;
-use backend::device::Device;
-use backend::sync::{Fence, Semaphore};
+use crate::backend::buffer::{Buffer, BufferUsage};
+use crate::backend::command::CommandBuffer;
+use crate::backend::device::Device;
+use crate::backend::sync::{Fence, Semaphore};
 
 pub struct Frame<T, I> {
     device: Arc<Device>,

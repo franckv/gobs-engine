@@ -1,8 +1,5 @@
-extern crate winit;
-extern crate cgmath;
-
-extern crate gobs_render as render;
-extern crate gobs_scene as scene;
+#[macro_use]
+extern crate log;
 
 pub mod app;
 pub mod asset;

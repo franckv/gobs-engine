@@ -5,7 +5,7 @@ use image;
 use image::{ImageBuffer, GenericImageView, Pixel};
 use uuid::Uuid;
 
-use model::Color;
+use super::Color;
 
 pub struct Texture {
     id: Uuid,

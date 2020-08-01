@@ -1,15 +1,15 @@
 use std::sync::Arc;
 
-use api::context::Context;
+use super::context::Context;
 
-use backend::command::CommandBuffer;
-use backend::framebuffer::Framebuffer;
-use backend::image::{ColorSpace, Image, ImageFormat, ImageLayout, ImageUsage};
-use backend::physical::PhysicalDevice;
-use backend::renderpass::RenderPass;
-use backend::surface::{Surface, SurfaceFormat};
-use backend::swapchain::{PresentationMode, SwapChain};
-use backend::sync::Semaphore;
+use crate::backend::command::CommandBuffer;
+use crate::backend::framebuffer::Framebuffer;
+use crate::backend::image::{ColorSpace, Image, ImageFormat, ImageLayout, ImageUsage};
+use crate::backend::physical::PhysicalDevice;
+use crate::backend::renderpass::RenderPass;
+use crate::backend::surface::{Surface, SurfaceFormat};
+use crate::backend::swapchain::{PresentationMode, SwapChain};
+use crate::backend::sync::Semaphore;
 
 pub struct Display {
     context: Arc<Context>,

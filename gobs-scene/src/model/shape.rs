@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use cgmath::Point3;
 
-use model::{Mesh, MeshBuilder};
+use super::{Mesh, MeshBuilder};
 
 pub struct Shapes;
 

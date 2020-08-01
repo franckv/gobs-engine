@@ -4,19 +4,22 @@ use std::sync::Arc;
 
 use uuid::Uuid;
 
+use gobs_scene as scene;
+use gobs_utils as utils;
+
 use scene::model::Transform;
 use scene::model::Vertex;
 
-use api::context::Context;
-use api::display::Display;
-use api::frame::Frame;
-use api::instance::VertexInstance;
-use api::model::ModelCache;
+use super::context::Context;
+use super::display::Display;
+use super::frame::Frame;
+use super::instance::VertexInstance;
+use super::model::ModelCache;
 
-use backend::descriptor::{DescriptorSetLayout,
+use crate::backend::descriptor::{DescriptorSetLayout,
                           DescriptorSetPool, DescriptorSetResources};
-use backend::image::Sampler;
-use backend::pipeline::{Pipeline, Shader, PipelineLayout,
+use crate::backend::image::Sampler;
+use crate::backend::pipeline::{Pipeline, Shader, PipelineLayout,
                         PipelineLayoutBindingType, PipelineLayoutBindingStage,
                         PipelineLayoutBuilder, VertexAttributeFormat,
                         VertexLayoutBindingType, VertexLayoutBuilder};
@@ -27,7 +30,7 @@ macro_rules! offset_of {
     ($base: path, $field: ident) => {
         #[allow(unused_unsafe)]
         unsafe{
-            let b: $base = mem::uninitialized();
+            let b: $base = mem::zeroed();
             (&b.$field as *const _ as usize) - (&b as *const _ as usize)
         }
     }

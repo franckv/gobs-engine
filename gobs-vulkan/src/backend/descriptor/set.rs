@@ -5,10 +5,10 @@ use std::sync::Arc;
 use ash::vk;
 use ash::version::DeviceV1_0;
 
-use backend::buffer::Buffer;
-use backend::device::Device;
-use backend::image::{Image, Sampler};
-use backend::Wrap;
+use crate::backend::buffer::Buffer;
+use crate::backend::device::Device;
+use crate::backend::image::{Image, Sampler};
+use crate::backend::Wrap;
 
 enum ResourceInfo {
     Buffer(vk::DescriptorBufferInfo),

@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use model::{Color, Mesh, Texture};
+use super::{Color, Mesh, Texture};
 
 pub struct ModelBuilder {
     mesh: Arc<Mesh>,

@@ -7,9 +7,9 @@ use ash::util::Align;
 use ash::vk;
 use ash::version::DeviceV1_0;
 
-use backend::buffer::BufferUsage;
-use backend::device::Device;
-use backend::Wrap;
+use crate::backend::buffer::BufferUsage;
+use crate::backend::device::Device;
+use crate::backend::Wrap;
 
 pub struct Memory {
     device: Arc<Device>,

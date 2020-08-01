@@ -11,9 +11,9 @@ use ash::extensions::khr::XlibSurface;
 use ash::version::EntryV1_0;
 use ash::version::InstanceV1_0;
 
-use backend::physical::PhysicalDevice;
-use backend::queue::QueueFamily;
-use backend::surface::Surface;
+use crate::backend::physical::PhysicalDevice;
+use crate::backend::queue::QueueFamily;
+use crate::backend::surface::Surface;
 
 unsafe extern "system" fn debug_cb(_: vk::DebugReportFlagsEXT,
                                    _: vk::DebugReportObjectTypeEXT,
@@ -38,21 +38,16 @@ pub struct Instance {
 
 impl Instance {
     pub fn new(name: &str, version: u32) -> Arc<Self> {
-        let cname = CString::new(name).unwrap();
-        let pname = cname.as_ptr();
+        let app_name = CString::new(name).unwrap();
 
-        let vk_version = ash::vk_make_version
-        !(1, 0, 36);
+        let vk_version = vk::make_version(1, 0, 0);
 
-        let app_info = vk::ApplicationInfo {
-            p_application_name: pname,
-            s_type: vk::StructureType::APPLICATION_INFO,
-            p_next: ptr::null(),
-            application_version: version,
-            p_engine_name: pname,
-            engine_version: version,
-            api_version: vk_version,
-        };
+        let app_info = vk::ApplicationInfo::builder()
+            .application_name(&app_name)
+            .application_version(version)
+            .engine_name(&app_name)
+            .engine_version(version)
+            .api_version(vk_version);
 
         let extensions = [
             VkSurface::name().as_ptr(),
@@ -61,7 +56,8 @@ impl Instance {
             DebugReport::name().as_ptr(),
         ];
 
-        let validation = CString::new("VK_LAYER_LUNARG_standard_validation").unwrap();
+        //let validation = CString::new("VK_LAYER_LUNARG_standard_validation").unwrap();
+        let validation = CString::new("VK_LAYER_KHRONOS_validation").unwrap();
         //let debug_validation = CString::new("VK_LAYER_LUNARG_api_dump").unwrap();
 
         let layers = [
@@ -69,21 +65,16 @@ impl Instance {
             //debug_validation.as_ptr()
         ];
 
-        let instance_info = vk::InstanceCreateInfo {
-            s_type: vk::StructureType::INSTANCE_CREATE_INFO,
-            p_next: ptr::null(),
-            flags: Default::default(),
-            p_application_info: &app_info,
-            pp_enabled_layer_names: layers.as_ptr(),
-            enabled_layer_count: layers.len() as u32,
-            pp_enabled_extension_names: extensions.as_ptr(),
-            enabled_extension_count: extensions.len() as u32,
-        };
+        let instance_info = vk::InstanceCreateInfo::builder()
+            .application_info(&app_info)
+            .enabled_layer_names(&layers)
+            .enabled_extension_names(&extensions);
 
         let entry = ash::Entry::new().unwrap();
 
         let instance: ash::Instance = unsafe {
             debug!("Create instance");
+
 
             entry.create_instance(&instance_info, None).unwrap()
         };

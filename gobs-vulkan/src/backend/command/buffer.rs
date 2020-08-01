@@ -4,16 +4,16 @@ use std::sync::Arc;
 use ash::vk;
 use ash::version::DeviceV1_0;
 
-use backend::buffer::Buffer;
-use backend::command::CommandPool;
-use backend::descriptor::DescriptorSet;
-use backend::device::Device;
-use backend::framebuffer::Framebuffer;
-use backend::image::{Image, ImageLayout};
-use backend::pipeline::Pipeline;
-use backend::queue::Queue;
-use backend::sync::{Semaphore, Fence};
-use backend::Wrap;
+use crate::backend::buffer::Buffer;
+use crate::backend::command::CommandPool;
+use crate::backend::descriptor::DescriptorSet;
+use crate::backend::device::Device;
+use crate::backend::framebuffer::Framebuffer;
+use crate::backend::image::{Image, ImageLayout};
+use crate::backend::pipeline::Pipeline;
+use crate::backend::queue::Queue;
+use crate::backend::sync::{Semaphore, Fence};
+use crate::backend::Wrap;
 
 pub trait IndexType: Copy {
     fn get_index_type() -> vk::IndexType;

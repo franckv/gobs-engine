@@ -1,5 +1,3 @@
-extern crate glsl_to_spirv;
-
 use glsl_to_spirv::ShaderType;
 
 use std::env;
@@ -30,6 +28,6 @@ fn main() {
 
         let out = format!("assets/shaders/{}", filename);
 
-        fs::write(&out, &data);
+        fs::write(&out, &data).unwrap();
     }
 }

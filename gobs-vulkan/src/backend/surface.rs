@@ -2,21 +2,21 @@ use std;
 use std::ptr;
 use std::sync::Arc;
 
-use winit::Window;
+use winit::window::Window;
 #[cfg(all(unix, not(target_os = "android"), not(target_os = "macos")))]
-use winit::os::unix::WindowExt;
+use winit::platform::unix::WindowExtUnix;
 
 use ash::vk;
 #[cfg(all(unix, not(target_os = "android"), not(target_os = "macos")))]
 use ash::extensions::khr::XlibSurface;
 
-use backend::device::Device;
-use backend::image::{ColorSpace, ImageFormat};
-use backend::instance::Instance;
-use backend::physical::PhysicalDevice;
-use backend::queue::QueueFamily;
-use backend::swapchain::PresentationMode;
-use backend::Wrap;
+use crate::backend::device::Device;
+use crate::backend::image::{ColorSpace, ImageFormat};
+use crate::backend::instance::Instance;
+use crate::backend::physical::PhysicalDevice;
+use crate::backend::queue::QueueFamily;
+use crate::backend::swapchain::PresentationMode;
+use crate::backend::Wrap;
 
 #[derive(Copy, Clone, Debug)]
 pub struct SurfaceFormat {
@@ -50,8 +50,8 @@ impl Surface {
 
     #[cfg(all(unix, not(target_os = "android"), not(target_os = "macos")))]
     fn create_surface(instance: &Arc<Instance>, window: &Window) -> vk::SurfaceKHR {
-        let display = window.get_xlib_display().unwrap();
-        let xwindow = window.get_xlib_window().unwrap();
+        let display = window.xlib_display().unwrap();
+        let xwindow = window.xlib_window().unwrap();
 
         let window_info = vk::XlibSurfaceCreateInfoKHR {
             s_type: vk::StructureType::XLIB_SURFACE_CREATE_INFO_KHR,
@@ -73,7 +73,7 @@ impl Surface {
                             family: &QueueFamily) -> bool {
         unsafe {
             self.instance.surface_loader.get_physical_device_surface_support(
-            p_device.raw(), family.index, self.surface)
+            p_device.raw(), family.index, self.surface).unwrap()
         }
     }
 
@@ -131,13 +131,12 @@ impl Surface {
     }
 
     pub fn dpi(&self) -> f64 {
-        self.window.get_hidpi_factor()
+        self.window.scale_factor()
     }
 
     pub fn get_dimensions(&self) -> (u32, u32) {
-        let dim = self.window.get_inner_size().unwrap();
-        let dpi = self.window.get_hidpi_factor();
-        let dim = dim.to_physical(dpi);
+        let dim = self.window.inner_size();
+        let dpi = self.window.scale_factor();
 
         dim.into()
     }

@@ -4,8 +4,8 @@ use std::sync::Arc;
 use ash::vk;
 use ash::version::DeviceV1_0;
 
-use backend::device::Device;
-use backend::pipeline::PipelineLayout;
+use crate::backend::device::Device;
+use crate::backend::pipeline::PipelineLayout;
 
 pub struct DescriptorSetLayout {
     device: Arc<Device>,

@@ -1,7 +1,9 @@
 use std::sync::Arc;
 
 use utils::timer::Timer;
-use winit::{EventsLoop, WindowBuilder};
+use winit::dpi::LogicalSize;
+use winit::event_loop::EventLoop;
+use winit::window::WindowBuilder;
 
 use api::renderer::Renderer;
 use api::context::Context;
@@ -22,9 +24,9 @@ pub struct Application {
 
 impl Application {
     pub fn new() -> Application {
-        let events_loop = EventsLoop::new();
+        let events_loop = EventLoop::new();
         let window = WindowBuilder::new()
-            .with_dimensions((WIDTH, HEIGHT).into())
+            .with_inner_size(LogicalSize::new(WIDTH, HEIGHT))
             .with_title("Test")
             .with_resizable(false)
             .build(&events_loop).unwrap();

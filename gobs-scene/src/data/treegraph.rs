@@ -1,6 +1,6 @@
-use model::Transform;
-use scene::camera::Camera;
-use scene::light::{Light, LightBuilder};
+use crate::model::Transform;
+use crate::scene::camera::Camera;
+use crate::scene::light::{Light, LightBuilder};
 
 pub struct TreeNode<D> {
     data: Option<D>,

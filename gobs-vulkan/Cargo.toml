@@ -2,17 +2,17 @@
 name = "gobs-vulkan"
 version = "0.1.0"
 authors = ["franckv <franck.vdl@gmail.com>"]
+edition = "2018"
 
 [lib]
 name = "gobs_vulkan"
 path = "src/lib.rs"
 
 [dependencies]
-ash = "0.29"
+ash = "0.31"
 log = "0.4"
-simplelog = "0.6"
-timer = "0.1"
+simplelog = "0.8"
 uuid = { version = "0.7", features = ["v4"] }
-winit = "0.19"
+winit = "0.22"
 gobs-scene = {path = "../gobs-scene"}
 gobs-utils = {path = "../gobs-utils"}

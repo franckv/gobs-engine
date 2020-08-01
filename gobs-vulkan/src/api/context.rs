@@ -1,15 +1,15 @@
 use std::sync::Arc;
 
-use winit::Window;
+use winit::window::Window;
 
-use backend::command::{CommandBuffer, CommandPool};
-use backend::device::Device;
-use backend::instance::Instance;
-use backend::queue::Queue;
-use backend::renderpass::RenderPass;
-use backend::surface::Surface;
+use crate::backend::command::{CommandBuffer, CommandPool};
+use crate::backend::device::Device;
+use crate::backend::instance::Instance;
+use crate::backend::queue::Queue;
+use crate::backend::renderpass::RenderPass;
+use crate::backend::surface::Surface;
 
-use api::display::Display;
+use super::display::Display;
 
 pub struct Context {
     instance: Arc<Instance>,
