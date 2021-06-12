@@ -26,8 +26,10 @@ fn main() {
 
         let data: Vec<u8> = compiled.bytes().filter_map(|b| b.ok()).collect();
 
-        let out = format!("assets/shaders/{}", filename);
+        let path = "assets/shaders";
+        let out = format!("{}/{}", path, filename);
 
+        fs::create_dir_all(path).unwrap();
         fs::write(&out, &data).unwrap();
     }
 }
