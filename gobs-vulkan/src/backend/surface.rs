@@ -1,14 +1,9 @@
 use std;
-use std::ptr;
 use std::sync::Arc;
 
 use winit::window::Window;
-#[cfg(all(unix, not(target_os = "android"), not(target_os = "macos")))]
-use winit::platform::unix::WindowExtUnix;
 
 use ash::vk;
-#[cfg(all(unix, not(target_os = "android"), not(target_os = "macos")))]
-use ash::extensions::khr::XlibSurface;
 
 use crate::backend::device::Device;
 use crate::backend::image::{ColorSpace, ImageFormat};
@@ -39,34 +34,15 @@ pub struct Surface {
 
 impl Surface {
     pub fn new(instance: Arc<Instance>, window: Window) -> Arc<Self> {
-        let surface = Self::create_surface(&instance, &window);
+        let surface = unsafe {
+            ash_window::create_surface(&instance.entry, &instance.instance, &window, None).unwrap()
+        };
 
         Arc::new(Surface {
             instance: instance,
             window,
             surface,
         })
-    }
-
-    #[cfg(all(unix, not(target_os = "android"), not(target_os = "macos")))]
-    fn create_surface(instance: &Arc<Instance>, window: &Window) -> vk::SurfaceKHR {
-        let display = window.xlib_display().unwrap();
-        let xwindow = window.xlib_window().unwrap();
-
-        let window_info = vk::XlibSurfaceCreateInfoKHR {
-            s_type: vk::StructureType::XLIB_SURFACE_CREATE_INFO_KHR,
-            p_next: ptr::null(),
-            flags: Default::default(),
-            window: xwindow,
-            dpy: display as *mut vk::Display,
-        };
-
-        let surface_loader = XlibSurface::new(&instance.entry, &instance.instance);
-
-        unsafe {
-            debug!("Create surface");
-            surface_loader.create_xlib_surface(&window_info, None).unwrap()
-        }
     }
 
     pub fn family_supported(&self, p_device: &PhysicalDevice,
@@ -136,8 +112,7 @@ impl Surface {
 
     pub fn get_dimensions(&self) -> (u32, u32) {
         let dim = self.window.inner_size();
-        let dpi = self.window.scale_factor();
-
+        
         dim.into()
     }
 
