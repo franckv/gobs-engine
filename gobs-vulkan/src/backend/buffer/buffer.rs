@@ -43,6 +43,7 @@ impl Into<vk::MemoryPropertyFlags> for BufferUsage {
     }
 }
 
+/// Data buffer allocated in memory
 pub struct Buffer<T> {
     device: Arc<Device>,
     buffer: vk::Buffer,

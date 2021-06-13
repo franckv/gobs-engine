@@ -11,10 +11,10 @@ use api::context::Context;
 use api::handler::{Event, InputHandler};
 use api::input::InputMap;
 
-const WIDTH: u32 = 800;
+const WIDTH: u32 = 800; // TODO: hardcoded
 const HEIGHT: u32 = 600;
-const MAX_INSTANCES: usize = 81;
-const MAX_DRAWS: usize = 64;
+const MAX_INSTANCES: usize = 81; // TODO: hardcoded
+const MAX_DRAWS: usize = 64; // TODO: hardcoded
 
 pub struct Application {
     context: Arc<Context>,

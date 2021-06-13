@@ -25,6 +25,7 @@ impl IndexType for u32 {
     }
 }
 
+/// Store command to be executed by a device
 pub struct CommandBuffer {
     device: Arc<Device>,
     pool: Arc<CommandPool>,

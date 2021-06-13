@@ -114,6 +114,8 @@ impl Display {
     }
 
     fn resize(&mut self) {
+        debug!("Resize");
+        
         self.context.device_ref().wait();
 
         let dim = self.surface.get_extent(self.context.device_ref());

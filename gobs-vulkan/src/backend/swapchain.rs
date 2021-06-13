@@ -4,8 +4,6 @@ use std::sync::Arc;
 
 use ash::vk;
 use ash::extensions::khr::Swapchain as KhrSwapchain;
-use ash::version::DeviceV1_0;
-use ash::version::InstanceV1_0;
 
 use crate::backend::device::Device;
 use crate::backend::image::{Image, ImageUsage};
@@ -45,6 +43,7 @@ impl Into<vk::PresentModeKHR> for PresentationMode {
     }
 }
 
+/// Set of images that can be presented on a surface
 pub struct SwapChain {
     device: Arc<Device>,
     surface: Arc<Surface>,

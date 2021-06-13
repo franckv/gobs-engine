@@ -11,7 +11,7 @@ use crate::backend::pipeline::{Shader, VertexLayout};
 use crate::backend::renderpass::RenderPass;
 use crate::backend::Wrap;
 
-const WIDTH: u32 = 1400;
+const WIDTH: u32 = 1400; // TODO: hardcoded
 const HEIGHT: u32 = 1050;
 
 /*

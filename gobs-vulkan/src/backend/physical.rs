@@ -16,6 +16,7 @@ pub enum PhysicalDeviceType {
     Cpu,
 }
 
+/// A physical graphic card
 pub struct PhysicalDevice {
     p_device: vk::PhysicalDevice,
     pub name: String,

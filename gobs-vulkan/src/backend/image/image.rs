@@ -84,6 +84,7 @@ impl Into<vk::ImageAspectFlags> for ImageUsage {
     }
 }
 
+/// Image buffer allocated in memory
 pub struct Image {
     device: Arc<Device>,
     image: vk::Image,
@@ -113,7 +114,7 @@ impl Image {
             usage,
             width,
             height,
-            memory: Some(memory),
+            memory: Some(memory), // swapchain images don't need manual memory allocation
         }
     }
 
