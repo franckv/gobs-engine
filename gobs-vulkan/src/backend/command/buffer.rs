@@ -146,7 +146,7 @@ impl CommandBuffer {
             self.device.raw().cmd_bind_descriptor_sets(
                 self.command_buffer,
                 vk::PipelineBindPoint::GRAPHICS,
-                pipeline.layout, 0, &sets,
+                pipeline.layout.raw(), 0, &sets,
                 offsets.as_ref());
         }
     }

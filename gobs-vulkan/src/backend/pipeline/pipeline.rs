@@ -7,7 +7,7 @@ use ash::version::DeviceV1_0;
 
 use crate::backend::descriptor::DescriptorSetLayout;
 use crate::backend::device::Device;
-use crate::backend::pipeline::{Shader, VertexLayout};
+use crate::backend::pipeline::{Shader, VertexLayout, PipelineLayout};
 use crate::backend::renderpass::RenderPass;
 use crate::backend::Wrap;
 
@@ -41,7 +41,7 @@ impl PipelineBuilder {
 pub struct Pipeline {
     device: Arc<Device>,
     _renderpass: Arc<RenderPass>,
-    pub(crate) layout: vk::PipelineLayout,
+    pub(crate) layout: PipelineLayout,
     _descriptor_layout: Arc<DescriptorSetLayout>,
     pipeline: vk::Pipeline,
 }
@@ -191,7 +191,7 @@ impl Pipeline {
             blend_constants: [0., 0., 0., 0.],
         };
 
-        let layout = Self::get_layout(&device, &descriptor_layout);
+        let layout = PipelineLayout::new(device.clone(), &descriptor_layout);
 
         let op_state = vk::StencilOpState {
             fail_op: vk::StencilOp::KEEP,
@@ -233,7 +233,7 @@ impl Pipeline {
             p_color_blend_state: &color_blend_info,
             p_dynamic_state: &dynamic_info,
             p_tessellation_state: ptr::null(),
-            layout,
+            layout: layout.raw(),
             render_pass: renderpass.raw(),
             subpass,
             base_pipeline_handle: vk::Pipeline::null(),
@@ -250,26 +250,6 @@ impl Pipeline {
             layout,
             _descriptor_layout: descriptor_layout,
             pipeline,
-        }
-    }
-
-    fn get_layout(device: &Arc<Device>, descriptor_layout: &DescriptorSetLayout)
-                  -> vk::PipelineLayout {
-        let set_layout = [descriptor_layout.layout];
-
-        let layout_info = vk::PipelineLayoutCreateInfo {
-            s_type: vk::StructureType::PIPELINE_LAYOUT_CREATE_INFO,
-            p_next: ptr::null(),
-            flags: Default::default(),
-            set_layout_count: 1,
-            p_set_layouts: set_layout.as_ptr(),
-            push_constant_range_count: 0,
-            p_push_constant_ranges: ptr::null(),
-        };
-
-        unsafe {
-            device.raw().create_pipeline_layout(&layout_info,
-                                                None).unwrap()
         }
     }
 
@@ -322,7 +302,6 @@ impl Drop for Pipeline {
         trace!("Drop pipeline");
         unsafe {
             self.device.raw().destroy_pipeline(self.pipeline, None);
-            self.device.raw().destroy_pipeline_layout(self.layout, None);
         }
     }
 }
