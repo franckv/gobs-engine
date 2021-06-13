@@ -36,7 +36,7 @@ impl Application {
         let window = WindowBuilder::new()
             .with_inner_size(LogicalSize::new(WIDTH, HEIGHT))
             .with_title("Test")
-            .with_resizable(false)
+            .with_resizable(true)
             .build(&events_loop).unwrap();
 
         let input_handler = InputHandler::new(events_loop);

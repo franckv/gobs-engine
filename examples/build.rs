@@ -6,8 +6,6 @@ use std::fs;
 use std::process::Command;
 
 fn main() {
-    let out_dir = env::var("OUT_DIR").unwrap();
-
     for f in fs::read_dir("shaders").unwrap() {
         let f = f.unwrap();
         if !f.file_type().unwrap().is_file() {
