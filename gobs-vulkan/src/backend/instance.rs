@@ -49,6 +49,7 @@ unsafe extern "system" fn debug_cb(
     vk::FALSE
 }
 
+/// First object to create. Link to Vulkan runtime
 pub struct Instance {
     pub(crate) instance: ash::Instance,
     pub(crate) entry: ash::Entry,
@@ -160,6 +161,10 @@ impl Instance {
             Some(family) => Some(family.clone()),
             None => None
         }
+    }
+
+    pub(crate) fn raw(&self) -> &ash::Instance {
+        &self.instance
     }
 }
 

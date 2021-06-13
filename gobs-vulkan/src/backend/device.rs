@@ -11,12 +11,12 @@ use crate::backend::physical::PhysicalDevice;
 use crate::backend::queue::QueueFamily;
 use crate::backend::Wrap;
 
+/// Logical device
 pub struct Device {
-    _instance: Arc<Instance>,
+    instance: Arc<Instance>,
     device: ash::Device,
     pub(crate) p_device: PhysicalDevice,
     pub(crate) queue_family: QueueFamily,
-    pub(crate) swapchain_loader: Swapchain
 }
 
 impl Device {
@@ -60,15 +60,16 @@ impl Device {
                 .unwrap()
         };
 
-        let swapchain_loader = Swapchain::new(&instance.instance, &device);
-
         Arc::new(Device {
-            _instance: instance,
+            instance,
             device,
             p_device,
             queue_family,
-            swapchain_loader
         })
+    }
+
+    pub(crate) fn instance(&self) -> Arc<Instance> {
+        self.instance.clone()
     }
 
     pub fn wait(&self) {

@@ -3,6 +3,9 @@ use std::ptr;
 use std::sync::Arc;
 
 use ash::vk;
+use ash::extensions::khr::Swapchain as KhrSwapchain;
+use ash::version::DeviceV1_0;
+use ash::version::InstanceV1_0;
 
 use crate::backend::device::Device;
 use crate::backend::image::{Image, ImageUsage};
@@ -46,6 +49,7 @@ pub struct SwapChain {
     device: Arc<Device>,
     surface: Arc<Surface>,
     format: SurfaceFormat,
+    loader: KhrSwapchain,
     swapchain: vk::SwapchainKHR
 }
 
@@ -86,15 +90,17 @@ impl SwapChain {
             queue_family_index_count: 0,
         };
 
+        let loader = KhrSwapchain::new(device.instance().raw(), device.raw());
+
         let swapchain = unsafe {
-            device.swapchain_loader.create_swapchain(&swapchain_info,
-                                                         None).unwrap()
+            loader.create_swapchain(&swapchain_info, None).unwrap()
         };
 
         SwapChain {
             device,
             surface,
             format,
+            loader,
             swapchain
         }
     }
@@ -103,7 +109,7 @@ impl SwapChain {
         let extent = self.surface.get_extent(&self.device);
 
         unsafe {
-            let vk_images = self.device.swapchain_loader.get_swapchain_images(
+            let vk_images = self.loader.get_swapchain_images(
                 self.swapchain).unwrap();
 
             vk_images.iter().map(|&image| {
@@ -119,7 +125,7 @@ impl SwapChain {
 
     pub fn acquire_image(&mut self, signal: &Semaphore) -> Result<usize, ()> {
         unsafe {
-            match self.device.swapchain_loader.acquire_next_image(self.swapchain,
+            match self.loader.acquire_next_image(self.swapchain,
                                                      std::u64::MAX,
                                                      signal.raw(),
                                                      vk::Fence::null()) {
@@ -151,7 +157,7 @@ impl SwapChain {
         };
 
         unsafe {
-            match self.device.swapchain_loader.queue_present(queue.queue, &present_info) {
+            match self.loader.queue_present(queue.queue, &present_info) {
                 Ok(_) => Ok(()),
                 Err(vk::Result::SUBOPTIMAL_KHR) | Err(vk::Result::ERROR_OUT_OF_DATE_KHR) => {
                     Err(())
@@ -163,7 +169,7 @@ impl SwapChain {
 
     fn cleanup(&mut self) {
         unsafe {
-            self.device.swapchain_loader.destroy_swapchain(self.swapchain, None);
+            self.loader.destroy_swapchain(self.swapchain, None);
         }
     }
 }
