@@ -6,7 +6,6 @@ use ash::version::DeviceV1_0;
 
 use crate::backend::descriptor::{DescriptorSet, DescriptorSetLayout};
 use crate::backend::device::Device;
-use crate::backend::pipeline::PipelineLayout;
 use crate::backend::Wrap;
 
 pub struct DescriptorSetPool {
@@ -18,13 +17,12 @@ pub struct DescriptorSetPool {
 
 impl DescriptorSetPool {
     pub fn new(device: Arc<Device>,
-               layout: Arc<DescriptorSetLayout>,
-               pipeline_layout: &Arc<PipelineLayout>,
+               descriptor_layout: Arc<DescriptorSetLayout>,
                count: usize) -> Self {
         let pool_size: Vec<vk::DescriptorPoolSize> =
-            pipeline_layout.bindings.iter().map(|binding| {
+            descriptor_layout.bindings.iter().map(|binding| {
                 vk::DescriptorPoolSize {
-                    ty: binding.ty.into(),
+                    ty: binding.descriptor_type,
                     descriptor_count: count as u32,
                 }
             }).collect();
@@ -44,7 +42,7 @@ impl DescriptorSetPool {
         };
 
         let layouts: Vec<vk::DescriptorSetLayout> = (0..count).map(|_| {
-            layout.layout
+            descriptor_layout.layout
         }).collect();
 
         let descriptor_info = vk::DescriptorSetAllocateInfo {

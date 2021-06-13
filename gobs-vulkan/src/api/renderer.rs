@@ -16,12 +16,12 @@ use super::frame::Frame;
 use super::instance::VertexInstance;
 use super::model::ModelCache;
 
-use crate::backend::descriptor::{DescriptorSetLayout, DescriptorSetPool};
+use crate::backend::descriptor::{DescriptorSetLayout, DescriptorSetPool, 
+    DescriptorSetLayoutBuilder, DescriptorType, DescriptorStage};
 use crate::backend::image::Sampler;
-use crate::backend::pipeline::{Pipeline, Shader, PipelineLayout,
-                        PipelineLayoutBindingType, PipelineLayoutBindingStage,
-                        PipelineLayoutBuilder, VertexAttributeFormat,
-                        VertexLayoutBindingType, VertexLayoutBuilder};
+use crate::backend::pipeline::{Pipeline, Shader, 
+    VertexAttributeFormat, VertexLayoutBindingType, 
+                        VertexLayoutBuilder};
 
 use utils::timer::Timer;
 
@@ -40,7 +40,6 @@ pub struct Renderer {
     pub display: Display,
     pub descriptor_layout: Arc<DescriptorSetLayout>,
     pub descriptor_pool: DescriptorSetPool,
-    pub pipeline_layout: Arc<PipelineLayout>,
     pub pipeline: Pipeline,
     pub sampler: Sampler,
     pub frames: Vec<Frame<Transform, VertexInstance>>,
@@ -72,22 +71,18 @@ impl Renderer {
                        offset_of!(VertexInstance, matrix))
             .build();
 
-        let pipeline_layout = PipelineLayoutBuilder::new()
-            .binding(PipelineLayoutBindingType::Uniform,
-                     PipelineLayoutBindingStage::Vertex)
-            .binding(PipelineLayoutBindingType::ImageSampler,
-                     PipelineLayoutBindingStage::Fragment)
-            .build();
+        let descriptor_layout = DescriptorSetLayoutBuilder::new()
+            .binding(DescriptorType::Uniform,
+                DescriptorStage::Vertex)
+            .binding(DescriptorType::ImageSampler,
+                DescriptorStage::Fragment)
+            .build(context.device());
 
         let frame_count = display.image_count;
-
-        let descriptor_layout =
-            DescriptorSetLayout::new(context.device(), &pipeline_layout);
 
         let descriptor_pool =
             DescriptorSetPool::new(context.device(),
                                    descriptor_layout.clone(),
-                                   &pipeline_layout,
                                    frame_count * max_draws);
 
         let pipeline =
@@ -107,7 +102,6 @@ impl Renderer {
             display,
             descriptor_layout,
             descriptor_pool,
-            pipeline_layout,
             pipeline,
             sampler,
             frames,

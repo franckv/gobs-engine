@@ -49,9 +49,7 @@ impl DescriptorSetUpdates {
             range: (len * item_size) as u64,
         };
 
-        let idx = self.updates.len();
-
-        self.updates.push(ResourceInfo::Buffer(buffer_info));
+        self.updates.push(ResourceInfo::DynamicBuffer(buffer_info));
 
         self
     }
@@ -62,8 +60,6 @@ impl DescriptorSetUpdates {
             image_view: image.image_view,
             sampler: sampler.raw(),
         };
-
-        let idx = self.updates.len();
 
         self.updates.push(ResourceInfo::Image(image_info));
 
@@ -107,6 +103,7 @@ impl DescriptorSetUpdates {
     }
 }
 
+/// Bind resources to shaders
 pub struct DescriptorSet {
     device: Arc<Device>,
     set: vk::DescriptorSet

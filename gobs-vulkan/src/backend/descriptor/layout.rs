@@ -5,17 +5,94 @@ use ash::vk;
 use ash::version::DeviceV1_0;
 
 use crate::backend::device::Device;
-use crate::backend::pipeline::PipelineLayout;
+
+#[derive(Copy, Clone)]
+pub enum DescriptorType {
+    Uniform,
+    UniformDynamic,
+    ImageSampler,
+}
+
+impl Into<vk::DescriptorType> for DescriptorType {
+    fn into(self) -> vk::DescriptorType {
+        match self {
+            DescriptorType::Uniform =>
+                vk::DescriptorType::UNIFORM_BUFFER,
+            DescriptorType::UniformDynamic =>
+                vk::DescriptorType::UNIFORM_BUFFER_DYNAMIC,
+            DescriptorType::ImageSampler =>
+                vk::DescriptorType::COMBINED_IMAGE_SAMPLER,
+        }
+    }
+}
+
+#[derive(Copy, Clone)]
+pub enum DescriptorStage {
+    Vertex,
+    Fragment,
+    All
+}
+
+impl Into<vk::ShaderStageFlags> for DescriptorStage {
+    fn into(self) -> vk::ShaderStageFlags {
+        match self {
+            DescriptorStage::Vertex =>
+                vk::ShaderStageFlags::VERTEX,
+            DescriptorStage::Fragment =>
+                vk::ShaderStageFlags::FRAGMENT,
+            DescriptorStage::All =>
+                vk::ShaderStageFlags::VERTEX |
+                    vk::ShaderStageFlags::FRAGMENT
+        }
+    }
+}
+
+pub struct DescriptorSetLayoutBinding {
+    pub ty: DescriptorType,
+    pub stage: DescriptorStage
+}
+
+
+pub struct DescriptorSetLayoutBuilder {
+    bindings: Vec<DescriptorSetLayoutBinding>
+}
+
+impl DescriptorSetLayoutBuilder {
+    pub fn new() -> Self {
+        DescriptorSetLayoutBuilder {
+            bindings: Vec::new()
+        }
+    }
+
+    pub fn binding(mut self, ty: DescriptorType,
+                   stage: DescriptorStage) -> Self {
+        self.bindings.push(DescriptorSetLayoutBinding {
+            ty,
+            stage
+        });
+
+        self
+    }
+
+    pub fn build(mut self, device: Arc<Device>) -> Arc<DescriptorSetLayout> {
+        let mut bindings = Vec::new();
+        bindings.append(&mut self.bindings);
+
+        DescriptorSetLayout::new(device, bindings)
+    }
+}
+
 
 pub struct DescriptorSetLayout {
     device: Arc<Device>,
     pub(crate) layout: vk::DescriptorSetLayout,
+    pub bindings: Vec<vk::DescriptorSetLayoutBinding>
 }
 
 impl DescriptorSetLayout {
-    pub fn new(device: Arc<Device>, pipeline_layout: &PipelineLayout) -> Arc<Self> {
+    pub fn new(device: Arc<Device>, bindings: Vec<DescriptorSetLayoutBinding>) -> Arc<Self> {
         let bindings: Vec<vk::DescriptorSetLayoutBinding> =
-            pipeline_layout.bindings.iter().enumerate().
+            bindings.iter().enumerate().
                 map(|(idx, binding)| {
                     vk::DescriptorSetLayoutBinding {
                         binding: idx as u32,
@@ -42,6 +119,7 @@ impl DescriptorSetLayout {
         Arc::new(DescriptorSetLayout {
             device,
             layout,
+            bindings
         })
     }
 }
