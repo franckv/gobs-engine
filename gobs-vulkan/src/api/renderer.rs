@@ -16,8 +16,7 @@ use super::frame::Frame;
 use super::instance::VertexInstance;
 use super::model::ModelCache;
 
-use crate::backend::descriptor::{DescriptorSetLayout,
-                          DescriptorSetPool, DescriptorSetResources};
+use crate::backend::descriptor::{DescriptorSetLayout, DescriptorSetPool};
 use crate::backend::image::Sampler;
 use crate::backend::pipeline::{Pipeline, Shader, PipelineLayout,
                         PipelineLayoutBindingType, PipelineLayoutBindingStage,
@@ -271,11 +270,11 @@ impl Renderer {
         command_buffer.bind_vertex_buffer(0, &model.vertex_buffer);
         command_buffer.bind_index_buffer(&model.index_buffer);
 
-        let mut descriptor_set = self.descriptor_pool.next();
-        DescriptorSetResources::new(&mut descriptor_set)
+        let descriptor_set = self.descriptor_pool.next();
+        descriptor_set.start_update()
             .bind_buffer(&frame.view_proj_buffer, 0, 1)
             .bind_image(&model.texture, &self.sampler)
-            .update();
+            .end();
 
         command_buffer.bind_descriptor_set(descriptor_set, &self.pipeline,
                                            vec![]);

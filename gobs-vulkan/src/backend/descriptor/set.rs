@@ -16,30 +16,25 @@ enum ResourceInfo {
     Image(vk::DescriptorImageInfo)
 }
 
-pub struct DescriptorSetResources {
+/// List of updates to apply on a descriptor set
+pub struct DescriptorSetUpdates {
     device: Arc<Device>,
     set: vk::DescriptorSet,
-    infos: Vec<ResourceInfo>
+    updates: Vec<ResourceInfo>,
 }
 
-impl DescriptorSetResources {
-    pub fn new(set: &mut DescriptorSet) -> Self {
-        DescriptorSetResources {
-            device: set.device.clone(),
-            set: set.raw(),
-            infos: Vec::new(),
-        }
-    }
-
+impl DescriptorSetUpdates {
     pub fn bind_buffer<T: Copy>(mut self, buffer: &Buffer<T>,
                                 start: usize, len: usize) -> Self {
         let item_size = mem::size_of::<T>();
 
-        self.infos.push(ResourceInfo::Buffer(vk::DescriptorBufferInfo {
+        let buffer_info = vk::DescriptorBufferInfo {
             buffer: buffer.raw(),
             offset: (start * item_size) as u64,
             range: (len * item_size) as u64,
-        }));
+        };
+
+        self.updates.push(ResourceInfo::Buffer(buffer_info));
 
         self
     }
@@ -48,71 +43,63 @@ impl DescriptorSetResources {
                                 start: usize, len: usize) -> Self {
         let item_size = mem::size_of::<T>();
 
-        self.infos.push(ResourceInfo::DynamicBuffer(vk::DescriptorBufferInfo {
+        let buffer_info = vk::DescriptorBufferInfo {
             buffer: buffer.raw(),
             offset: (start * item_size) as u64,
             range: (len * item_size) as u64,
-        }));
+        };
+
+        let idx = self.updates.len();
+
+        self.updates.push(ResourceInfo::Buffer(buffer_info));
 
         self
     }
 
     pub fn bind_image(mut self, image: &Image, sampler: &Sampler) -> Self {
-        self.infos.push(ResourceInfo::Image(vk::DescriptorImageInfo {
+        let image_info = vk::DescriptorImageInfo {
             image_layout: vk::ImageLayout::SHADER_READ_ONLY_OPTIMAL,
             image_view: image.image_view,
             sampler: sampler.raw(),
-        }));
+        };
+
+        let idx = self.updates.len();
+
+        self.updates.push(ResourceInfo::Image(image_info));
 
         self
     }
 
-    pub fn update(self) {
+    pub fn end(self) {
         let mut updates = Vec::new();
 
-        for (idx, info) in self.infos.iter().enumerate() {
-            match info {
-                ResourceInfo::Buffer(buffer_info) =>
-                    updates.push(vk::WriteDescriptorSet {
-                        s_type: vk::StructureType::WRITE_DESCRIPTOR_SET,
-                        p_next: ptr::null(),
-                        dst_set: self.set,
-                        dst_binding: idx as u32,
-                        dst_array_element: 0,
-                        descriptor_type: vk::DescriptorType::UNIFORM_BUFFER,
-                        descriptor_count: 1,
-                        p_buffer_info: buffer_info,
-                        p_image_info: ptr::null(),
-                        p_texel_buffer_view: ptr::null(),
-                    }),
-                ResourceInfo::DynamicBuffer(buffer_info) =>
-                    updates.push(vk::WriteDescriptorSet {
-                        s_type: vk::StructureType::WRITE_DESCRIPTOR_SET,
-                        p_next: ptr::null(),
-                        dst_set: self.set,
-                        dst_binding: idx as u32,
-                        dst_array_element: 0,
-                        descriptor_type: vk::DescriptorType::UNIFORM_BUFFER_DYNAMIC,
-                        descriptor_count: 1,
-                        p_buffer_info: buffer_info,
-                        p_image_info: ptr::null(),
-                        p_texel_buffer_view: ptr::null(),
-                    }),
-                ResourceInfo::Image(image_info) =>
-                    updates.push(vk::WriteDescriptorSet {
-                        s_type: vk::StructureType::WRITE_DESCRIPTOR_SET,
-                        p_next: ptr::null(),
-                        dst_set: self.set,
-                        dst_binding: idx as u32,
-                        dst_array_element: 0,
-                        descriptor_type: vk::DescriptorType::COMBINED_IMAGE_SAMPLER,
-                        descriptor_count: 1,
-                        p_buffer_info: ptr::null(),
-                        p_image_info: image_info,
-                        p_texel_buffer_view: ptr::null(),
-                    })
-            }
+        for (idx, update) in self.updates.iter().enumerate() {
+            updates.push(vk::WriteDescriptorSet {
+                s_type: vk::StructureType::WRITE_DESCRIPTOR_SET,
+                p_next: ptr::null(),
+                dst_set: self.set,
+                dst_binding: idx as u32,
+                dst_array_element: 0,
+                descriptor_type: match update {
+                    ResourceInfo::Buffer(_) => vk::DescriptorType::UNIFORM_BUFFER,
+                    ResourceInfo::DynamicBuffer(_) => vk::DescriptorType::UNIFORM_BUFFER_DYNAMIC,
+                    ResourceInfo::Image(_) => vk::DescriptorType::COMBINED_IMAGE_SAMPLER
+                },
+                descriptor_count: 1,
+                p_buffer_info: match update {
+                    ResourceInfo::Buffer(buffer_info) => buffer_info,
+                    ResourceInfo::DynamicBuffer(buffer_info) => buffer_info,
+                    ResourceInfo::Image(_) => ptr::null()
+                },
+                p_image_info: match update {
+                    ResourceInfo::Buffer(_) => ptr::null(),
+                    ResourceInfo::DynamicBuffer(_) => ptr::null(),
+                    ResourceInfo::Image(image_info) => image_info
+                },
+                p_texel_buffer_view: ptr::null(),
+            });
         }
+
         unsafe {
             self.device.raw().update_descriptor_sets(updates.as_ref(),
                                                      &[]);
@@ -130,6 +117,14 @@ impl DescriptorSet {
         DescriptorSet {
             device,
             set,
+        }
+    }
+
+    pub fn start_update(&self) -> DescriptorSetUpdates {
+        DescriptorSetUpdates {
+            device: self.device.clone(),
+            set: self.raw(),
+            updates: Vec::new(),
         }
     }
 }
