@@ -30,20 +30,16 @@ impl Context {
 
         let family = instance.find_family(&p_device, &surface).unwrap();
 
-        let format = Display::get_surface_format(&surface,
-                                                 &p_device);
+        let format = Display::get_surface_format(&surface, &p_device);
 
-        let device = Device::new(instance.clone(),
-                                 p_device, family.clone());
+        let device = Device::new(instance.clone(), p_device, &family);
 
         let renderpass = RenderPass::new(
             device.clone(), format.format);
 
-        let queue = Queue::new(device.clone());
+        let queue = Queue::new(device.clone(), family);
 
-        let command_pool = CommandPool::new(
-            device.clone(),
-            &family);
+        let command_pool = CommandPool::new(device.clone(), &queue.family);
 
         let context = Arc::new(Context {
             instance,

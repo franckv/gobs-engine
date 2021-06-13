@@ -8,6 +8,7 @@ use crate::backend::queue::QueueFamily;
 use crate::backend::device::Device;
 use crate::backend::Wrap;
 
+/// Used to allocate new CommandBuffers
 pub struct CommandPool {
     device: Arc<Device>,
     pool: vk::CommandPool,

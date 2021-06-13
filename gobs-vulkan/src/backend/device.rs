@@ -16,16 +16,11 @@ pub struct Device {
     instance: Arc<Instance>,
     device: ash::Device,
     pub(crate) p_device: PhysicalDevice,
-    pub(crate) queue_family: QueueFamily,
 }
 
 impl Device {
-    pub fn queue_family(&self) -> &QueueFamily {
-        &self.queue_family
-    }
-
     pub fn new(instance: Arc<Instance>, p_device: PhysicalDevice,
-               queue_family: QueueFamily) -> Arc<Self> {
+               queue_family: &QueueFamily) -> Arc<Self> {
         let priorities = [1.0];
 
         let queue_info = vk::DeviceQueueCreateInfo {
@@ -64,7 +59,6 @@ impl Device {
             instance,
             device,
             p_device,
-            queue_family,
         })
     }
 

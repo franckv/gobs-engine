@@ -15,21 +15,24 @@ pub struct QueueFamily {
     pub(crate) transfer_bits: bool,
 }
 
+/// Queue of commands to be executed on device
 pub struct Queue {
     device: Arc<Device>,
     pub(crate) queue: vk::Queue,
+    pub(crate) family: QueueFamily,
 }
 
 impl Queue {
-    pub fn new(device: Arc<Device>) -> Self {
+    pub fn new(device: Arc<Device>, family: QueueFamily) -> Self {
         let queue = unsafe {
             debug!("Create queue");
-            device.raw().get_device_queue(device.queue_family.index, 0)
+            device.raw().get_device_queue(family.index, 0)
         };
 
         Queue {
             device,
             queue,
+            family
         }
     }
 
