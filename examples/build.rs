@@ -1,9 +1,7 @@
 use glsl_to_spirv::ShaderType;
 
-use std::env;
 use std::io::Read;
 use std::fs;
-use std::process::Command;
 
 fn main() {
     for f in fs::read_dir("shaders").unwrap() {
