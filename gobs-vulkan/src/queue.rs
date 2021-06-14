@@ -3,6 +3,8 @@ use std::sync::Arc;
 use ash::vk;
 use ash::version::DeviceV1_0;
 
+use log::debug;
+
 use crate::device::Device;
 use crate::Wrap;
 

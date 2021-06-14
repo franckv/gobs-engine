@@ -1,9 +1,8 @@
 use std::sync::Arc;
 
+use log::debug;
+
 use gobs_vulkan as backend;
-
-use super::context::Context;
-
 
 use backend::command::CommandBuffer;
 use backend::framebuffer::Framebuffer;
@@ -13,6 +12,8 @@ use backend::renderpass::RenderPass;
 use backend::surface::{Surface, SurfaceFormat};
 use backend::swapchain::{PresentationMode, SwapChain};
 use backend::sync::Semaphore;
+
+use super::context::Context;
 
 pub struct Display {
     context: Arc<Context>,

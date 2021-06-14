@@ -6,6 +6,8 @@ use ash::extensions::khr::Swapchain;
 use ash::version::DeviceV1_0;
 use ash::version::InstanceV1_0;
 
+use log::{debug, trace};
+
 use crate::instance::Instance;
 use crate::physical::PhysicalDevice;
 use crate::queue::QueueFamily;

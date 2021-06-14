@@ -1,12 +1,12 @@
 use std::sync::Arc;
 
-use gobs_utils as utils;
-use gobs_render as render;
-
+use log::debug;
 use winit::dpi::LogicalSize;
 use winit::event_loop::EventLoop;
 use winit::window::WindowBuilder;
 
+use gobs_utils as utils;
+use gobs_render as render;
 
 use render::renderer::Renderer;
 use render::context::Context;

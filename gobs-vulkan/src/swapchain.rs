@@ -5,6 +5,8 @@ use std::sync::Arc;
 use ash::vk;
 use ash::extensions::khr::Swapchain as KhrSwapchain;
 
+use log::trace;
+
 use crate::device::Device;
 use crate::image::{Image, ImageUsage};
 use crate::queue::Queue;

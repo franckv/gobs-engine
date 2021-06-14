@@ -9,7 +9,7 @@ use gobs_render as render;
 use game::app::{Application, Run};
 use scene::Camera;
 use scene::model::{Color, ModelBuilder, Shapes, Texture, Transform, Vertex};
-use render::context::Context;
+
 use render::model::ModelCache;
 
 struct App {
@@ -47,7 +47,7 @@ impl Run for App {
 }
 
 impl App {
-    pub fn new(engine: &Application) -> Self {
+    pub fn new(_engine: &Application) -> Self {
         let mut camera = Camera::new([0., 0., 0.]);
         camera.set_ortho(-10., 10.);
         camera.look_at([0., 0., -1.], [0., 1., 0.]);

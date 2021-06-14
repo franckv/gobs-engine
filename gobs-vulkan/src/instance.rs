@@ -12,6 +12,8 @@ use ash::extensions::khr::Win32Surface;
 use ash::version::EntryV1_0;
 use ash::version::InstanceV1_0;
 
+use log::{debug, error, trace};
+
 use crate::physical::PhysicalDevice;
 use crate::queue::QueueFamily;
 use crate::surface::Surface;

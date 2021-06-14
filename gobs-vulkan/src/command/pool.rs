@@ -4,6 +4,8 @@ use std::sync::Arc;
 use ash::vk;
 use ash::version::DeviceV1_0;
 
+use log::{debug, trace};
+
 use crate::queue::QueueFamily;
 use crate::device::Device;
 use crate::Wrap;

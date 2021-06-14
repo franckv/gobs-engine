@@ -1,9 +1,8 @@
 use std::sync::Arc;
 
-#[macro_use]
-extern crate log;
-
 use simplelog::{Config, LevelFilter, TermLogger};
+
+use log::{debug, info};
 
 use gobs_game as game;
 use gobs_scene as scene;

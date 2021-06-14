@@ -7,6 +7,8 @@ use std::path::Path;
 use ash::vk;
 use ash::version::DeviceV1_0;
 
+use log::trace;
+
 use crate::device::Device;
 use crate::Wrap;
 

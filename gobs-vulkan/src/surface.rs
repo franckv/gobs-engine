@@ -5,6 +5,8 @@ use winit::window::Window;
 
 use ash::vk;
 
+use log::trace;
+
 use crate::device::Device;
 use crate::image::{ColorSpace, ImageFormat};
 use crate::instance::Instance;

@@ -1,16 +1,17 @@
 use std::collections::HashMap;
 use std::sync::Arc;
 
+use log::debug;
 use uuid::Uuid;
 
 use gobs_vulkan as backend;
-
-use super::context::Context;
 
 use backend::buffer::{Buffer, BufferUsage};
 use backend::command::CommandBuffer;
 use backend::device::Device;
 use backend::sync::{Fence, Semaphore};
+
+use super::context::Context;
 
 pub struct Frame<T, I> {
     device: Arc<Device>,

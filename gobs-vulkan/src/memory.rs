@@ -7,6 +7,8 @@ use ash::util::Align;
 use ash::vk;
 use ash::version::DeviceV1_0;
 
+use log::trace;
+
 use crate::buffer::BufferUsage;
 use crate::device::Device;
 use crate::Wrap;

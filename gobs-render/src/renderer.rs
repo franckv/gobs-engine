@@ -2,6 +2,7 @@ use std::collections::HashMap;
 use std::mem;
 use std::sync::Arc;
 
+use log::debug;
 use uuid::Uuid;
 
 use gobs_scene as scene;

@@ -1,8 +1,9 @@
 use std::sync::Arc;
 
-use gobs_vulkan as backend;
-
+use log::info;
 use winit::window::Window;
+
+use gobs_vulkan as backend;
 
 use backend::command::{CommandBuffer, CommandPool};
 use backend::device::Device;
