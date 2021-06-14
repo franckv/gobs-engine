@@ -1,7 +1,7 @@
 use winit;
 use winit::event::{ElementState, KeyboardInput, VirtualKeyCode, WindowEvent};
 use winit::event_loop::{ControlFlow, EventLoop};
-use winit::platform::desktop::EventLoopExtDesktop;
+use winit::platform::run_return::EventLoopExtRunReturn;
 
 use crate::input::{Key,InputMap};
 

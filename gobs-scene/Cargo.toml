@@ -9,7 +9,7 @@ name = "gobs_scene"
 path = "src/lib.rs"
 
 [dependencies]
-cgmath = "0.17"
+cgmath = "0.18"
 image = "0.23"
 unicode-normalization = "0.1"
 rusttype = "0.9"

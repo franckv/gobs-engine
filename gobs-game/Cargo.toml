@@ -5,10 +5,10 @@ authors = ["franckv <franck.vdl@gmail.com>"]
 edition = "2018"
 
 [dependencies]
-cgmath = "0.17"
+cgmath = "0.18"
 log = "0.4"
-simplelog = "0.8"
-winit = "0.22"
+simplelog = "0.10"
+winit = "0.25"
 gobs-scene = {path = "../gobs-scene"}
 gobs-utils = {path = "../gobs-utils"}
 gobs-render = {path = "../gobs-render"}
