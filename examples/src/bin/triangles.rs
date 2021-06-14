@@ -7,15 +7,15 @@ use simplelog::{Config, LevelFilter, TermLogger};
 
 use gobs_game as game;
 use gobs_scene as scene;
-use gobs_vulkan as render;
+use gobs_render as render;
 use gobs_utils as utils;
 
 use game::app::{Application, Run};
 use scene::Camera;
 use scene::model::{Color, Mesh, ModelBuilder,
                    Shapes, Texture, Transform, Vertex};
-use render::api::context::Context;
-use render::api::model::ModelCache;
+use render::context::Context;
+use render::model::ModelCache;
 
 use utils::timer::Timer;
 

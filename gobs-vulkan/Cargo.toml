@@ -13,7 +13,4 @@ ash = "0.32"
 ash-window = "0.6"
 log = "0.4"
 simplelog = "0.8"
-uuid = { version = "0.7", features = ["v4"] }
 winit = "0.22"
-gobs-scene = {path = "../gobs-scene"}
-gobs-utils = {path = "../gobs-utils"}

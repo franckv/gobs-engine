@@ -1,25 +1,24 @@
 use std::sync::Arc;
 
 use gobs_utils as utils;
-use gobs_vulkan as render;
-
+use gobs_render as render;
 
 use winit::dpi::LogicalSize;
 use winit::event_loop::EventLoop;
 use winit::window::WindowBuilder;
 
 
-use render::api::renderer::Renderer;
-use render::api::context::Context;
+use render::renderer::Renderer;
+use render::context::Context;
 
 use utils::timer::Timer;
 
 use crate::input::{Event, InputHandler, InputMap};
 
-const WIDTH: u32 = 800;
+const WIDTH: u32 = 800; // TODO: hardcoded
 const HEIGHT: u32 = 600;
-const MAX_INSTANCES: usize = 81;
-const MAX_DRAWS: usize = 64;
+const MAX_INSTANCES: usize = 81; // TODO: hardcoded
+const MAX_DRAWS: usize = 64; // TODO: hardcoded
 
 pub struct Application {
     context: Arc<Context>,
@@ -41,8 +40,10 @@ impl Application {
 
         let input_handler = InputHandler::new(events_loop);
 
+        debug!("Create Context");
         let (context, display) = Context::new("Test", window);
 
+        debug!("Create Renderer");
         let renderer = Renderer::new(context.clone(), display, MAX_INSTANCES, MAX_DRAWS);
 
         Application {

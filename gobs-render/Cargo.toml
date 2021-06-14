@@ -1,14 +1,18 @@
 [package]
-name = "gobs-game"
+name = "gobs-render"
 version = "0.1.0"
 authors = ["franckv <franck.vdl@gmail.com>"]
 edition = "2018"
 
+[lib]
+name = "gobs_render"
+path = "src/lib.rs"
+
 [dependencies]
-cgmath = "0.17"
 log = "0.4"
 simplelog = "0.8"
+uuid = { version = "0.7", features = ["v4"] }
 winit = "0.22"
 gobs-scene = {path = "../gobs-scene"}
 gobs-utils = {path = "../gobs-utils"}
-gobs-render = {path = "../gobs-render"}
+gobs-vulkan = {path = "../gobs-vulkan"}

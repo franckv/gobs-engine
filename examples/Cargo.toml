@@ -11,7 +11,7 @@ glsl-to-spirv = "0.1.6"
 gobs-game = {path = "../gobs-game"}
 gobs-scene = {path = "../gobs-scene"}
 gobs-utils = {path = "../gobs-utils"}
-gobs-vulkan = {path = "../gobs-vulkan"}
+gobs-render = {path = "../gobs-render"}
 cgmath = "0.17"
 image = "0.23"
 log = "0.4"

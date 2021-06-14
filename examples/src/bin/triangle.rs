@@ -4,13 +4,13 @@ use simplelog::{Config, LevelFilter, TermLogger};
 
 use gobs_game as game;
 use gobs_scene as scene;
-use gobs_vulkan as render;
+use gobs_render as render;
 
 use game::app::{Application, Run};
 use scene::Camera;
 use scene::model::{Color, ModelBuilder, Shapes, Texture, Transform, Vertex};
-use render::api::context::Context;
-use render::api::model::ModelCache;
+use render::context::Context;
+use render::model::ModelCache;
 
 struct App {
     camera: Camera,
