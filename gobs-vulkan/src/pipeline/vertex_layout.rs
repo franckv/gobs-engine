@@ -64,6 +64,48 @@ pub struct VertexLayoutBinding {
     pub stride: usize
 }
 
+pub struct VertexLayout {
+    pub bindings: Vec<VertexLayoutBinding>
+}
+
+impl VertexLayout {
+    pub(crate) fn binding_description(&self) -> Vec<vk::VertexInputBindingDescription> {
+        let mut desc = Vec::new();
+
+        for binding in &self.bindings {
+            desc.push(
+            vk::VertexInputBindingDescription {
+                binding: binding.binding as u32,
+                stride: binding.stride as u32,
+                input_rate: binding.ty.into()
+            });
+        }
+
+        desc
+    }
+
+    pub(crate) fn attribute_description(&self)
+    -> Vec<vk::VertexInputAttributeDescription> {
+        let mut desc = Vec::new();
+
+        for binding in &self.bindings {
+            for attr in &binding.attributes {
+                for i in 0..attr.format.locations() {
+                    desc.push(vk::VertexInputAttributeDescription {
+                        binding: binding.binding as u32,
+                        location: (attr.location + i) as u32,
+                        format: attr.format.into(),
+                        offset: (attr.offset +
+                            i * attr.format.location_size()) as u32
+                    });
+                }
+            }
+        }
+
+        desc
+    }
+}
+
 pub struct VertexLayoutBuilder {
     bindings: Vec<VertexLayoutBinding>,
     index: usize,
@@ -112,8 +154,4 @@ impl VertexLayoutBuilder {
             bindings
         }
     }
-}
-
-pub struct VertexLayout {
-    pub bindings: Vec<VertexLayoutBinding>
 }

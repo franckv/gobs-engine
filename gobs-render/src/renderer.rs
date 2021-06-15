@@ -23,7 +23,7 @@ use backend::descriptor::{DescriptorSetLayout, DescriptorSetPool,
 use backend::image::Sampler;
 use backend::pipeline::{Pipeline, Shader, 
     VertexAttributeFormat, VertexLayoutBindingType, 
-                        VertexLayoutBuilder};
+                        VertexLayoutBuilder, Viewport, Rect2D, DynamicStateElem};
 
 use utils::timer::Timer;
 
@@ -87,12 +87,18 @@ impl Renderer {
                                    descriptor_layout.clone(),
                                    frame_count * max_draws);
 
-        let pipeline =
-            Pipeline::new(context.device(), vshader, fshader,
-                          vertex_layout,
-                          descriptor_layout.clone(),
-                          display.renderpass().clone(),
-                          0);
+        let (width, height) = display.dimensions();
+
+        let pipeline = Pipeline::builder(context.device())
+                    .renderpass(display.renderpass().clone())
+                    .vertex_shader("main", vshader)
+                    .fragment_shader("main", fshader)
+                    .vertex_layout(&vertex_layout)
+                    .viewports(vec![Viewport::new(0., 0., width as f32, height as f32)])
+                    .scissors(vec![Rect2D::new(0, 0, width, height)])
+                    .dynamic_states(&vec![DynamicStateElem::Viewport, DynamicStateElem::Scissor])
+                    .descriptor_layout(descriptor_layout.clone())
+                    .build();
 
         let sampler = Sampler::new(context.device());
 
