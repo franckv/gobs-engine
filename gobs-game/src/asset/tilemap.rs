@@ -5,12 +5,12 @@ use gobs_scene as scene;
 use scene::model::{Color, Mesh, Model, ModelBuilder, Shapes, Texture};
 
 pub struct Tile {
-    instance: Model
+    model: Model
 }
 
 impl Tile {
-    pub fn instance(&self) -> &Model {
-        &self.instance
+    pub fn model(&self) -> &Model {
+        &self.model
     }
 }
 
