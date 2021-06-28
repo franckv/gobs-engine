@@ -12,9 +12,9 @@ use gobs_utils as utils;
 use game::app::{Application, Run};
 use scene::Camera;
 use scene::model::{Color, Mesh, ModelBuilder,
-                   Shapes, Texture, Transform, Vertex};
+                   Shapes, Texture, Transform};
 use render::context::Context;
-use render::model::ModelCache;
+use render::instance::ModelInstance;
 
 use utils::timer::Timer;
 
@@ -23,9 +23,9 @@ const N_TRIANGLES: usize = 9;
 #[allow(dead_code)]
 struct App {
     camera: Camera,
-    triangle_r: Option<Arc<ModelCache<Vertex>>>,
-    triangle_b: Option<Arc<ModelCache<Vertex>>>,
-    square: Option<Arc<ModelCache<Vertex>>>,
+    triangle_r: Option<Arc<ModelInstance>>,
+    triangle_b: Option<Arc<ModelInstance>>,
+    square: Option<Arc<ModelInstance>>,
     frame: usize
 }
 
@@ -100,18 +100,18 @@ impl App {
     }
 
     fn build_model(context: &Arc<Context>, shape: Arc<Mesh>,
-                   texture: Arc<Texture>) -> Arc<ModelCache<Vertex>> {
+                   texture: Arc<Texture>) -> Arc<ModelInstance> {
         let object = ModelBuilder::new(shape)
             .texture(texture).build();
 
-        ModelCache::<Vertex>::new(context, &object)
+            ModelInstance::new(context, &object)
     }
 
-    fn draw_triangle(&self) -> Vec<(Arc<ModelCache<Vertex>>, Transform)> {
+    fn draw_triangle(&self) -> Vec<(Arc<ModelInstance>, Transform)> {
         vec![(self.triangle_r.as_ref().unwrap().clone(), Transform::new())]
     }
 
-    fn draw_triangles(&self, rows: usize) -> Vec<(Arc<ModelCache<Vertex>>, Transform)> {
+    fn draw_triangles(&self, rows: usize) -> Vec<(Arc<ModelInstance>, Transform)> {
         let mut timer = Timer::new();
 
         let offset = self.frame as f32;
@@ -140,7 +140,7 @@ impl App {
         let mut even = false;
 
         let instances = positions.iter().map(|position| {
-            let model = match even {
+            let instance = match even {
                 true => self.triangle_r.as_ref().unwrap().clone(),
                 false => self.triangle_b.as_ref().unwrap().clone(),
             };
@@ -149,7 +149,7 @@ impl App {
                 .transform(&Transform::rotation([1., 0., 0.], offset))
                 .translate(*position);
 
-            let instance = (model, transform);
+            let instance = (instance, transform);
 
             instance
         }).collect();

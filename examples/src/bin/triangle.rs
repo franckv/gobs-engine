@@ -8,22 +8,22 @@ use gobs_render as render;
 
 use game::app::{Application, Run};
 use scene::Camera;
-use scene::model::{Color, ModelBuilder, Shapes, Texture, Transform, Vertex};
+use scene::model::{Color, ModelBuilder, Shapes, Texture, Transform};
 
-use render::model::ModelCache;
+use render::instance::ModelInstance;
 
 struct App {
     camera: Camera,
-    triangle: Option<Arc<ModelCache<Vertex>>>,
+    triangle: Option<Arc<ModelInstance>>,
 }
 
 impl Run for App {
     fn create(&mut self, engine: &mut Application) {
         let texture = Texture::from_color(Color::red());
         let triangle = Shapes::triangle();
-        let instance = ModelBuilder::new(triangle).texture(texture).build();
+        let model = ModelBuilder::new(triangle).texture(texture).build();
 
-        self.triangle = Some(ModelCache::<Vertex>::new(&engine.renderer().context, &instance));
+        self.triangle = Some(ModelInstance::new(&engine.renderer().context, &model));
     }
 
     fn update(&mut self, _delta: u64, engine: &mut Application) {
@@ -59,7 +59,7 @@ impl App {
         }
     }
 
-    fn draw_triangle(&self) -> Vec<(Arc<ModelCache<Vertex>>, Transform)> {
+    fn draw_triangle(&self) -> Vec<(Arc<ModelInstance>, Transform)> {
         vec![(self.triangle.as_ref().unwrap().clone(), Transform::new())]
     }
 }

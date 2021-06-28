@@ -80,7 +80,7 @@ impl Camera {
     }
 
     pub fn look_at<V: Into<Vector3<f32>>>(&mut self, direction: V, up: V) {
-        self.view = Matrix4::look_at_dir(
+        self.view = Matrix4::look_to_rh(
             self.position.clone().into(), direction.into(), up.into());
     }
 

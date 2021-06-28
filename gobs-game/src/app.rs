@@ -21,7 +21,7 @@ const MAX_INSTANCES: usize = 81; // TODO: hardcoded
 const MAX_DRAWS: usize = 64; // TODO: hardcoded
 
 pub struct Application {
-    context: Arc<Context>,
+    _context: Arc<Context>,
     renderer: Renderer,
     input_handler: InputHandler
 }
@@ -41,13 +41,13 @@ impl Application {
         let input_handler = InputHandler::new(events_loop);
 
         debug!("Create Context");
-        let (context, display) = Context::new("Test", window);
+        let (_context, display) = Context::new("Test", window);
 
         debug!("Create Renderer");
-        let renderer = Renderer::new(context.clone(), display, MAX_INSTANCES, MAX_DRAWS);
+        let renderer = Renderer::new(_context.clone(), display, MAX_INSTANCES, MAX_DRAWS);
 
         Application {
-            context,
+            _context,
             renderer,
             input_handler
         }

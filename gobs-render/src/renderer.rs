@@ -15,7 +15,7 @@ use scene::model::Vertex;
 use super::context::Context;
 use super::display::Display;
 use super::frame::Frame;
-use super::model::ModelCache;
+use super::instance::ModelInstance;
 
 use backend::descriptor::{DescriptorSetLayout, DescriptorSetPool, 
     DescriptorSetLayoutBuilder, DescriptorType, DescriptorStage};
@@ -176,7 +176,7 @@ impl Renderer {
         self.current_frame = (self.current_frame + 1) % self.frames.len();
     }
 
-    pub fn draw_frame(&mut self, instances: Vec<(Arc<ModelCache<Vertex>>, Transform)>) {
+    pub fn draw_frame(&mut self, instances: Vec<(Arc<ModelInstance>, Transform)>) {
         let mut timer = Timer::new();
         debug_assert!(instances.len() <= self.max_instances);
 
@@ -215,8 +215,8 @@ impl Renderer {
     }
 
     /// group instances by texture
-    fn sort_instances(mut instances: Vec<(Arc<ModelCache<Vertex>>, Transform)>)
-                      -> HashMap<Uuid, Vec<(Arc<ModelCache<Vertex>>, Transform)>> {
+    fn sort_instances(mut instances: Vec<(Arc<ModelInstance>, Transform)>)
+                      -> HashMap<Uuid, Vec<(Arc<ModelInstance>, Transform)>> {
         let mut map = HashMap::new();
 
         for instance in instances.drain(..) {
@@ -257,7 +257,7 @@ impl Renderer {
         frame.dirty = false;
     }
 
-    fn draw_instances(&mut self, model: &Arc<ModelCache<Vertex>>, instance_count: usize) {
+    fn draw_instances(&mut self, model: &Arc<ModelInstance>, instance_count: usize) {
         let id = model.texture_id;
         let frame = &mut self.frames[self.current_frame];
         {

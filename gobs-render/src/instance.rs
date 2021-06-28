@@ -14,15 +14,15 @@ use super::context::Context;
 use backend::buffer::{Buffer, BufferUsage};
 use backend::image::{Image, ImageFormat, ImageLayout, ImageUsage};
 
-pub struct ModelCache<V> {
-    pub vertex_buffer: Buffer<V>,
+pub struct ModelInstance {
+    pub vertex_buffer: Buffer<Vertex>,
     pub index_buffer: Buffer<u32>,
     pub texture: Image,
     pub texture_id: Uuid
 }
 
-impl<V: Copy> ModelCache<V> {
-    pub fn new(context: &Arc<Context>, model: &Arc<Model>) -> Arc<ModelCache<Vertex>> {
+impl ModelInstance {
+    pub fn new(context: &Arc<Context>, model: &Arc<Model>) -> Arc<ModelInstance> {
         let mesh = model.mesh();
         let vertices = mesh.vlist();
         let indices = mesh.ilist().as_ref().unwrap();
@@ -47,7 +47,7 @@ impl<V: Copy> ModelCache<V> {
                                            texture_size[0] as u32,
                                            texture_size[1] as u32);
 
-        Arc::new(ModelCache {
+        Arc::new(ModelInstance {
             vertex_buffer,
             index_buffer,
             texture,
