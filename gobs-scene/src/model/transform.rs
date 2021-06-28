@@ -2,7 +2,7 @@ use cgmath::{Deg, Matrix, Matrix3, Matrix4, SquareMatrix, Vector3, Vector4};
 
 #[derive(Clone, Copy, Debug)]
 pub struct Transform {
-    matrix: Matrix4<f32>
+    pub matrix: Matrix4<f32>
 }
 
 impl Transform {

@@ -15,7 +15,6 @@ use scene::model::Vertex;
 use super::context::Context;
 use super::display::Display;
 use super::frame::Frame;
-use super::instance::VertexInstance;
 use super::model::ModelCache;
 
 use backend::descriptor::{DescriptorSetLayout, DescriptorSetPool, 
@@ -44,7 +43,7 @@ pub struct Renderer {
     pub descriptor_pool: DescriptorSetPool,
     pub pipeline: Pipeline,
     pub sampler: Sampler,
-    pub frames: Vec<Frame<Transform, VertexInstance>>,
+    pub frames: Vec<Frame>,
     pub current_frame: usize,
     pub current_texture: Uuid,
     pub max_instances: usize,
@@ -68,9 +67,9 @@ impl Renderer {
                        offset_of!(Vertex, normal))
             .attribute(VertexAttributeFormat::Vec2,
                        offset_of!(Vertex, tex_uv))
-            .binding::<VertexInstance>(VertexLayoutBindingType::Instance)
+            .binding::<Transform>(VertexLayoutBindingType::Instance)
             .attribute(VertexAttributeFormat::Mat4,
-                       offset_of!(VertexInstance, matrix))
+                       offset_of!(Transform, matrix))
             .build();
 
         let descriptor_layout = DescriptorSetLayoutBuilder::new()
@@ -191,11 +190,9 @@ impl Renderer {
         for id in instances.keys() {
             let instances = instances.get(&id).unwrap();
 
-            let transforms: Vec<VertexInstance> = {
+            let transforms: Vec<Transform> = {
                 instances.iter().map(|instance| {
-                    VertexInstance {
-                        matrix: instance.1.into()
-                    }
+                    instance.1.into()
                 }).collect()
             };
 
@@ -217,6 +214,7 @@ impl Renderer {
         debug!("Draw frame: {}", timer.delta() / 1_000_000);
     }
 
+    /// group instances by texture
     fn sort_instances(mut instances: Vec<(Arc<ModelCache<Vertex>>, Transform)>)
                       -> HashMap<Uuid, Vec<(Arc<ModelCache<Vertex>>, Transform)>> {
         let mut map = HashMap::new();
@@ -232,7 +230,7 @@ impl Renderer {
         map
     }
 
-    fn update_instances(&mut self, id: Uuid, transform: Vec<VertexInstance>) {
+    fn update_instances(&mut self, id: Uuid, transform: Vec<Transform>) {
         let frame = &mut self.frames[self.current_frame];
 
         frame.instance_buffer_mut(id).copy(&transform);

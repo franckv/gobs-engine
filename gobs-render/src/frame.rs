@@ -4,7 +4,10 @@ use std::sync::Arc;
 use log::debug;
 use uuid::Uuid;
 
+use gobs_scene as scene;
 use gobs_vulkan as backend;
+
+use scene::model::Transform;
 
 use backend::buffer::{Buffer, BufferUsage};
 use backend::command::CommandBuffer;
@@ -13,19 +16,19 @@ use backend::sync::{Fence, Semaphore};
 
 use super::context::Context;
 
-pub struct Frame<T, I> {
+pub struct Frame {
     device: Arc<Device>,
     pub wait_image: Semaphore,
     pub wait_command: Semaphore,
     pub submit_fence: Fence,
     pub command_buffer: CommandBuffer,
-    pub view_proj_buffer: Buffer<T>,
-    instance_buffers: HashMap<Uuid, Buffer<I>>,
+    pub view_proj_buffer: Buffer<Transform>,
+    instance_buffers: HashMap<Uuid, Buffer<Transform>>,
     pub dirty: bool,
     max_instances: usize
 }
 
-impl<T: Copy, I: Copy> Frame<T, I> {
+impl Frame {
     pub fn new(context: &Context, frame_count: usize,
                max_instances: usize) -> Vec<Self> {
         (0..frame_count).map(|_| {
@@ -49,7 +52,7 @@ impl<T: Copy, I: Copy> Frame<T, I> {
         }).collect()
     }
 
-    pub fn instance_buffer_mut(&mut self, id: Uuid) -> &mut Buffer<I> {
+    pub fn instance_buffer_mut(&mut self, id: Uuid) -> &mut Buffer<Transform> {
         debug!("Updating instance {}", id);
         if !self.instance_buffers.contains_key(&id) {
             let buffer = Buffer::new(self.max_instances,
@@ -60,7 +63,7 @@ impl<T: Copy, I: Copy> Frame<T, I> {
         self.instance_buffers.get_mut(&id).unwrap()
     }
 
-    pub fn instance_buffer(&self, id: &Uuid) -> &Buffer<I> {
+    pub fn instance_buffer(&self, id: &Uuid) -> &Buffer<Transform> {
         debug!("Using instance {}", id);
         &self.instance_buffers.get(id).unwrap()
     }
