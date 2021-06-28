@@ -12,13 +12,19 @@ use log::trace;
 use crate::device::Device;
 use crate::Wrap;
 
+pub enum ShaderType {
+    Vertex,
+    Fragment
+}
+
 pub struct Shader {
     device: Arc<Device>,
     shader: vk::ShaderModule,
+    pub ty: ShaderType
 }
 
 impl Shader {
-    pub fn from_file(filename: &str, device: Arc<Device>) -> Self {
+    pub fn from_file(filename: &str, device: Arc<Device>, ty: ShaderType) -> Self {
         let file = File::open(Path::new(filename)).unwrap();
 
         let data: Vec<u8> = file.bytes().filter_map(|b| b.ok()).collect();
@@ -38,6 +44,7 @@ impl Shader {
         Shader {
             device,
             shader,
+            ty
         }
     }
 }

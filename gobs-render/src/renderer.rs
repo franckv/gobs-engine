@@ -21,7 +21,7 @@ use super::model::ModelCache;
 use backend::descriptor::{DescriptorSetLayout, DescriptorSetPool, 
     DescriptorSetLayoutBuilder, DescriptorType, DescriptorStage};
 use backend::image::Sampler;
-use backend::pipeline::{Pipeline, Shader, 
+use backend::pipeline::{Pipeline, Shader, ShaderType,
     VertexAttributeFormat, VertexLayoutBindingType, 
                         VertexLayoutBuilder, Viewport, Rect2D, DynamicStateElem};
 
@@ -56,9 +56,9 @@ impl Renderer {
                display: Display,
                max_instances: usize, max_draws: usize) -> Self {
         let vshader = Shader::from_file("examples/assets/shaders/vert.spv",
-                                        context.device());
+                                        context.device(), ShaderType::Vertex);
         let fshader = Shader::from_file("examples/assets/shaders/frag.spv",
-                                        context.device());
+                                        context.device(), ShaderType::Fragment);
 
         let vertex_layout = VertexLayoutBuilder::new()
             .binding::<Vertex>(VertexLayoutBindingType::Vertex)

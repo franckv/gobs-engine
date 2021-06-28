@@ -9,7 +9,7 @@ use log::trace;
 
 use crate::descriptor::DescriptorSetLayout;
 use crate::device::Device;
-use crate::pipeline::{Shader, VertexLayout, PipelineLayout};
+use crate::pipeline::{Shader, ShaderType, VertexLayout, PipelineLayout};
 use crate::renderpass::RenderPass;
 use crate::Wrap;
 
@@ -127,6 +127,7 @@ impl DynamicStates {
     }
 }
 
+/// primitive topology
 struct InputAssemblyState;
 
 impl InputAssemblyState {
@@ -134,14 +135,9 @@ impl InputAssemblyState {
         InputAssemblyState
     }
 
-    fn info(&self) -> vk::PipelineInputAssemblyStateCreateInfo {
-        vk::PipelineInputAssemblyStateCreateInfo {
-            s_type: vk::StructureType::PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO,
-            p_next: ptr::null(),
-            flags: Default::default(),
-            topology: vk::PrimitiveTopology::TRIANGLE_LIST,
-            primitive_restart_enable: 0,
-        }
+    fn info(&self) -> vk::PipelineInputAssemblyStateCreateInfoBuilder {
+        vk::PipelineInputAssemblyStateCreateInfo::builder()
+        .topology(vk::PrimitiveTopology::TRIANGLE_LIST)
     }
 }
 
@@ -152,22 +148,12 @@ impl RasterizationState {
         RasterizationState
     }
 
-    fn info(&self) -> vk::PipelineRasterizationStateCreateInfo {
-        vk::PipelineRasterizationStateCreateInfo {
-            s_type: vk::StructureType::PIPELINE_RASTERIZATION_STATE_CREATE_INFO,
-            p_next: ptr::null(),
-            flags: Default::default(),
-            depth_clamp_enable: 0,
-            rasterizer_discard_enable: 0,
-            polygon_mode: vk::PolygonMode::FILL,
-            line_width: 1.,
-            cull_mode: vk::CullModeFlags::NONE,
-            front_face: vk::FrontFace::CLOCKWISE,
-            depth_bias_enable: 0,
-            depth_bias_constant_factor: 0.,
-            depth_bias_clamp: 0.,
-            depth_bias_slope_factor: 0.,
-        }
+    fn info(&self) -> vk::PipelineRasterizationStateCreateInfoBuilder {
+        vk::PipelineRasterizationStateCreateInfo::builder()
+        .line_width(1.)
+        .front_face(vk::FrontFace::CLOCKWISE)
+        .cull_mode(vk::CullModeFlags::NONE)
+        .polygon_mode(vk::PolygonMode::FILL)
     }
 }
 
@@ -178,70 +164,33 @@ impl MultisampleState {
         MultisampleState
     }
 
-    fn info(&self) -> vk::PipelineMultisampleStateCreateInfo {
-        vk::PipelineMultisampleStateCreateInfo {
-            s_type: vk::StructureType::PIPELINE_MULTISAMPLE_STATE_CREATE_INFO,
-            p_next: ptr::null(),
-            flags: Default::default(),
-            sample_shading_enable: 0,
-            rasterization_samples: vk::SampleCountFlags::TYPE_1,
-            min_sample_shading: 1.,
-            p_sample_mask: ptr::null(),
-            alpha_to_coverage_enable: 0,
-            alpha_to_one_enable: 0,
-        }
+    fn info(&self) -> vk::PipelineMultisampleStateCreateInfoBuilder {
+        vk::PipelineMultisampleStateCreateInfo::builder()
+        .rasterization_samples(vk::SampleCountFlags::TYPE_1)
     }
 }
 
-pub struct VertexStage {
+pub struct ShaderStage {
     entry: CString,
-    vshader: Shader
+    shader: Shader
 }
 
-impl VertexStage {
-    fn new(entry: &str, vshader: Shader) -> Self {
-        VertexStage {
+impl ShaderStage {
+    fn new(entry: &str, shader: Shader) -> Self {
+        ShaderStage {
             entry: CString::new(entry).unwrap(),
-            vshader
+            shader
         }
     }
 
-    fn info(&self) -> vk::PipelineShaderStageCreateInfo {
-        vk::PipelineShaderStageCreateInfo {
-            s_type: vk::StructureType::PIPELINE_SHADER_STAGE_CREATE_INFO,
-            p_next: ptr::null(),
-            flags: Default::default(),
-            stage: vk::ShaderStageFlags::VERTEX,
-            module: self.vshader.raw(),
-            p_name: self.entry.as_ptr(),
-            p_specialization_info: ptr::null(),
-        }
-    }
-}
-
-struct FragmentStage {
-    entry: CString,
-    fshader: Shader
-}
-
-impl FragmentStage {
-    fn new(entry: &str, fshader: Shader) -> Self {
-        FragmentStage {
-            entry: CString::new(entry).unwrap(),
-            fshader
-        }
-    }
-
-    fn info(&self) -> vk::PipelineShaderStageCreateInfo {
-        vk::PipelineShaderStageCreateInfo {
-            s_type: vk::StructureType::PIPELINE_SHADER_STAGE_CREATE_INFO,
-            p_next: ptr::null(),
-            flags: Default::default(),
-            stage: vk::ShaderStageFlags::FRAGMENT,
-            module: self.fshader.raw(),
-            p_name: self.entry.as_ptr(),
-            p_specialization_info: ptr::null(),
-        }
+    fn info(&self) -> vk::PipelineShaderStageCreateInfoBuilder {
+        vk::PipelineShaderStageCreateInfo::builder()
+        .stage(match self.shader.ty {
+            ShaderType::Vertex => vk::ShaderStageFlags::VERTEX,
+            ShaderType::Fragment => vk::ShaderStageFlags::FRAGMENT,
+        })
+        .module(self.shader.raw())
+        .name(&self.entry)
     }
 }
 
@@ -301,17 +250,16 @@ impl ColorBlendAttachmentState {
         ColorBlendAttachmentState
     }
 
-    fn info(&self) -> vk::PipelineColorBlendAttachmentState {
-        vk::PipelineColorBlendAttachmentState {
-            color_write_mask: vk::ColorComponentFlags::all(),
-            blend_enable: 0,
-            src_color_blend_factor: vk::BlendFactor::ONE,
-            dst_color_blend_factor: vk::BlendFactor::ZERO,
-            color_blend_op: vk::BlendOp::ADD,
-            src_alpha_blend_factor: vk::BlendFactor::ONE,
-            dst_alpha_blend_factor: vk::BlendFactor::ZERO,
-            alpha_blend_op: vk::BlendOp::ADD,
-        }
+    fn info(&self) -> vk::PipelineColorBlendAttachmentStateBuilder {
+        vk::PipelineColorBlendAttachmentState::builder()
+            .blend_enable(false)
+            .src_color_blend_factor(vk::BlendFactor::ONE)
+            .dst_color_blend_factor(vk::BlendFactor::ZERO)
+            .color_blend_op(vk::BlendOp::ADD)
+            .src_alpha_blend_factor(vk::BlendFactor::ONE)
+            .dst_alpha_blend_factor(vk::BlendFactor::ZERO)
+            .alpha_blend_op(vk::BlendOp::ADD)
+            .color_write_mask(vk::ColorComponentFlags::all())
     }
 }
 
@@ -322,7 +270,7 @@ struct ColorBlendState {
 impl ColorBlendState {
     fn new(attachment_state: ColorBlendAttachmentState) -> Self {
         ColorBlendState {
-            attachment_state: vec![attachment_state.info()]
+            attachment_state: vec![attachment_state.info().build()]
         }
     }
 
@@ -363,8 +311,8 @@ impl VertexInputState {
 pub struct PipelineBuilder {
     device: Option<Arc<Device>>,
     renderpass: Option<Arc<RenderPass>>,
-    vertex_stage: Option<VertexStage>,
-    fragment_stage: Option<FragmentStage>,
+    vertex_stage: Option<ShaderStage>,
+    fragment_stage: Option<ShaderStage>,
     vertex_input_state: Option<VertexInputState>,
     viewports: Option<Vec<Viewport>>,
     scissors: Option<Vec<Rect2D>>,
@@ -388,13 +336,13 @@ impl PipelineBuilder {
     }
 
     pub fn vertex_shader(mut self, entry: &str, vshader: Shader) -> Self {
-        self.vertex_stage = Some(VertexStage::new(entry, vshader));
+        self.vertex_stage = Some(ShaderStage::new(entry, vshader));
 
         self
     }
 
     pub fn fragment_shader(mut self, entry: &str, fshader: Shader) -> Self {
-        self.fragment_stage = Some(FragmentStage::new(entry, fshader));
+        self.fragment_stage = Some(ShaderStage::new(entry, fshader));
 
         self
     }
@@ -438,7 +386,7 @@ impl PipelineBuilder {
         let fragment_stage = self.fragment_stage.unwrap();
         let fragment_stage_info = fragment_stage.info();
 
-        let shader_stages = [vertex_stage_info, fragment_stage_info];
+        let shader_stages = [vertex_stage_info.build(), fragment_stage_info.build()];
 
         let vertex_input_state = self.vertex_input_state.unwrap();
         let vertex_input_state_info = vertex_input_state.info();       
