@@ -2,7 +2,6 @@ use std::collections::HashMap;
 use std::mem;
 use std::sync::Arc;
 
-use log::debug;
 use uuid::Uuid;
 
 use gobs_scene as scene;
@@ -204,14 +203,14 @@ impl Renderer {
                 self.draw_instances(&instances[0].0, instance_count);
             }
 
-            debug!("Draw instances {}: {}", id, timer.delta() / 1_000_000);
+            log::trace!("Draw instances {}: {}", id, timer.delta() / 1_000_000);
         }
 
         if self.frames[self.current_frame].dirty {
             self.end_frame();
         }
 
-        debug!("Draw frame: {}", timer.delta() / 1_000_000);
+        log::trace!("Draw frame: {}", timer.delta() / 1_000_000);
     }
 
     /// group instances by texture

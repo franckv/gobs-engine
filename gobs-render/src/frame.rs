@@ -1,7 +1,6 @@
 use std::collections::HashMap;
 use std::sync::Arc;
 
-use log::debug;
 use uuid::Uuid;
 
 use gobs_scene as scene;
@@ -53,7 +52,7 @@ impl Frame {
     }
 
     pub fn instance_buffer_mut(&mut self, id: Uuid) -> &mut Buffer<Transform> {
-        debug!("Updating instance {}", id);
+        log::trace!("Updating instance {}", id);
         if !self.instance_buffers.contains_key(&id) {
             let buffer = Buffer::new(self.max_instances,
                                      BufferUsage::Instance,
@@ -64,7 +63,7 @@ impl Frame {
     }
 
     pub fn instance_buffer(&self, id: &Uuid) -> &Buffer<Transform> {
-        debug!("Using instance {}", id);
+        log::trace!("Using instance {}", id);
         &self.instance_buffers.get(id).unwrap()
     }
 }

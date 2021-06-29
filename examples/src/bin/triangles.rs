@@ -2,8 +2,6 @@ use std::sync::Arc;
 
 use simplelog::{Config, LevelFilter, TermLogger};
 
-use log::{debug, info};
-
 use gobs_game as game;
 use gobs_scene as scene;
 use gobs_render as render;
@@ -66,16 +64,13 @@ impl Run for App {
             view_transform.transform(&proj_transform);
 
         engine.renderer().update_view_proj(view_proj_transform.into());
-
         engine.renderer().draw_frame(instances);
-
         engine.renderer().submit_frame();
 
         self.frame += 1;
     }
 
     fn resize(&mut self, width: u32, height: u32, _engine: &mut Application) {
-        info!("The window was resized to {}x{}", width, height);
         let scale = width as f32 / height as f32;
         self.camera.resize(4. * scale, 4.);
     }
@@ -83,12 +78,15 @@ impl Run for App {
 
 #[allow(dead_code)]
 impl App {
-    pub fn new(_engine: &Application) -> Self {
-        debug!("New App");
+    pub fn new(engine: &Application) -> Self {
         let mut camera = Camera::new([0., 0., 0.]);
         camera.set_ortho(-10., 10.);
         camera.look_at([0., 0., -1.], [0., 1., 0.]);
-        camera.resize(4. , 4.);
+
+        let dim = engine.dimensions();
+        let scale = dim.0 as f32 / dim.1 as f32;
+
+        camera.resize(4. * scale, 4.);
 
         App {
             camera,
@@ -121,7 +119,7 @@ impl App {
 
         let mut positions = Vec::new();
 
-        debug!("Triangles: {}", timer.delta() / 1_000_000);
+        log::debug!("Triangles: {}", timer.delta() / 1_000_000);
 
         for i in 0..rows {
             for j in 0..rows {
@@ -133,7 +131,7 @@ impl App {
             }
         }
 
-        debug!("Positions: {}", timer.delta() / 1_000_000);
+        log::debug!("Positions: {}", timer.delta() / 1_000_000);
 
         let scale = width / (2 * rows) as f32;
 
@@ -154,7 +152,7 @@ impl App {
             instance
         }).collect();
 
-        debug!("Instances: {}", timer.delta() / 1_000_000);
+        log::debug!("Instances: {}", timer.delta() / 1_000_000);
 
         instances
     }

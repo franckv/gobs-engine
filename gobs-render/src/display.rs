@@ -1,7 +1,5 @@
 use std::sync::Arc;
 
-use log::debug;
-
 use gobs_vulkan as backend;
 
 use backend::command::CommandBuffer;
@@ -109,6 +107,13 @@ impl Display {
         (self.width, self.height)
     }
 
+    pub fn resize(&mut self) {
+        let dim = self.surface.get_extent(self.context.device_ref());
+
+        self.width = dim.0;
+        self.height = dim.1;
+    }
+
     pub fn framebuffer(&self, idx: usize) -> &Framebuffer {
         &self.framebuffers[idx]
     }
@@ -117,15 +122,11 @@ impl Display {
         self.renderpass.clone()
     }
 
-    fn resize(&mut self) {
-        debug!("Resize");
-        
+    /// Recreate the swapchain for display
+    fn recreate(&mut self) {
         self.context.device_ref().wait();
 
-        let dim = self.surface.get_extent(self.context.device_ref());
-
-        self.width = dim.0;
-        self.height = dim.1;
+        self.resize();
 
         self.depth_buffer =
             Self::create_depth_buffer(&self.context, self.width, self.height);
@@ -181,7 +182,7 @@ impl Display {
                 Ok(index)
             },
             Err(_) => {
-                self.resize();
+                self.recreate();
                 Err(())
             }
         }
@@ -191,7 +192,7 @@ impl Display {
         match self.swapchain.present(idx, self.context.queue(), wait) {
             Ok(_) => Ok(()),
             Err(_) => {
-                self.resize();
+                self.recreate();
                 Err(())
             }
         }

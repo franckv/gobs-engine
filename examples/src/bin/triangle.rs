@@ -47,11 +47,15 @@ impl Run for App {
 }
 
 impl App {
-    pub fn new(_engine: &Application) -> Self {
+    pub fn new(engine: &Application) -> Self {
         let mut camera = Camera::new([0., 0., 0.]);
         camera.set_ortho(-10., 10.);
         camera.look_at([0., 0., -1.], [0., 1., 0.]);
-        camera.resize(4., 4.);
+
+        let dim = engine.dimensions();
+        let scale = dim.0 as f32 / dim.1 as f32;
+
+        camera.resize(2. * scale, 2.);
 
         App {
             camera,

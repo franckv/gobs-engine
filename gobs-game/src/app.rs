@@ -1,6 +1,5 @@
 use std::sync::Arc;
 
-use log::debug;
 use winit::dpi::LogicalSize;
 use winit::event_loop::EventLoop;
 use winit::window::WindowBuilder;
@@ -28,8 +27,6 @@ pub struct Application {
 
 impl Application {
     pub fn new() -> Application {
-        //let (events_loop, context, display) = context::init();
-
         let events_loop = EventLoop::new();
 
         let window = WindowBuilder::new()
@@ -40,10 +37,10 @@ impl Application {
 
         let input_handler = InputHandler::new(events_loop);
 
-        debug!("Create Context");
+        log::debug!("Create Context");
         let (_context, display) = Context::new("Test", window);
 
-        debug!("Create Renderer");
+        log::debug!("Create Renderer");
         let renderer = Renderer::new(_context.clone(), display, MAX_INSTANCES, MAX_DRAWS);
 
         Application {
@@ -66,6 +63,7 @@ impl Application {
     }
 
     pub fn run<R>(&mut self, mut runnable: R) where R: Run {
+        log::debug!("Create application");
         runnable.create(self);
 
         let mut running = true;
@@ -73,13 +71,15 @@ impl Application {
 
         while running {
             let delta = timer.delta();
-            debug!("FPS: {}", 1_000_000_000 / delta);
+            log::trace!("FPS: {}", 1_000_000_000 / delta);
 
             let event = self.input_handler.read_inputs();
 
             match event {
                 Event::Resize => {
+                    self.renderer.display.resize();
                     let (width, height) = self.renderer.display.dimensions();
+                    log::debug!("Resize to : {}/{}", width, height);
 
                     runnable.resize(width, height, self);
                 },
