@@ -1,4 +1,3 @@
-use std::ptr;
 use std::ffi::CString;
 use std::sync::Arc;
 
@@ -116,14 +115,9 @@ impl DynamicStates {
         }
     }
 
-    fn info(&self) -> vk::PipelineDynamicStateCreateInfo {
-        vk::PipelineDynamicStateCreateInfo {
-            s_type: vk::StructureType::PIPELINE_DYNAMIC_STATE_CREATE_INFO,
-            p_next: ptr::null(),
-            flags: Default::default(),
-            dynamic_state_count: self.dynamic_states.len() as u32,
-            p_dynamic_states: self.dynamic_states.as_ptr(),
-        }
+    fn info(&self) -> vk::PipelineDynamicStateCreateInfoBuilder {
+        vk::PipelineDynamicStateCreateInfo::builder()
+        .dynamic_states(&self.dynamic_states)
     }
 }
 
@@ -225,21 +219,17 @@ impl DepthStencilState {
         }
     }
 
-    fn info(&self) -> vk::PipelineDepthStencilStateCreateInfo {
-        vk::PipelineDepthStencilStateCreateInfo {
-            s_type: vk::StructureType::PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO,
-            p_next: ptr::null(),
-            flags: Default::default(),
-            depth_test_enable: 1,
-            depth_write_enable: 1,
-            depth_compare_op: vk::CompareOp::LESS,
-            depth_bounds_test_enable: 0,
-            min_depth_bounds: 0.,
-            max_depth_bounds: 1.,
-            stencil_test_enable: 0,
-            front: self.op_state,
-            back: self.op_state
-        }
+    fn info(&self) -> vk::PipelineDepthStencilStateCreateInfoBuilder {
+        vk::PipelineDepthStencilStateCreateInfo::builder()
+            .depth_test_enable(true)
+            .depth_write_enable(true)
+            .depth_compare_op(vk::CompareOp::LESS)
+            .depth_bounds_test_enable(false)
+            .min_depth_bounds(0.)
+            .max_depth_bounds(1.)
+            .stencil_test_enable(false)
+            .front(self.op_state)
+            .back(self.op_state)
     }
 }
 
@@ -294,16 +284,11 @@ impl VertexInputState {
         }
     }
 
-    fn info(&self) -> vk::PipelineVertexInputStateCreateInfo {
-        vk::PipelineVertexInputStateCreateInfo {
-            s_type: vk::StructureType::PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
-            p_next: ptr::null(),
-            flags: Default::default(),
-            vertex_binding_description_count: self.binding_desc.len() as u32,
-            p_vertex_binding_descriptions: self.binding_desc.as_ptr(),
-            vertex_attribute_description_count: self.attribute_desc.len() as u32,
-            p_vertex_attribute_descriptions: self.attribute_desc.as_ptr(),
-        }
+    fn info(&self) -> vk::PipelineVertexInputStateCreateInfoBuilder {
+
+        vk::PipelineVertexInputStateCreateInfo::builder()
+        .vertex_binding_descriptions(&self.binding_desc)
+        .vertex_attribute_descriptions(&self.attribute_desc)
     }
 }
 

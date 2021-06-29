@@ -1,4 +1,3 @@
-use std::ptr;
 use std::sync::Arc;
 
 use ash::vk;
@@ -20,15 +19,8 @@ impl PipelineLayout {
     pub fn new(device: Arc<Device>, _descriptor_layout: Arc<DescriptorSetLayout>) -> Self {
         let set_layout = [_descriptor_layout.layout];
 
-        let layout_info = vk::PipelineLayoutCreateInfo {
-            s_type: vk::StructureType::PIPELINE_LAYOUT_CREATE_INFO,
-            p_next: ptr::null(),
-            flags: Default::default(),
-            set_layout_count: 1,
-            p_set_layouts: set_layout.as_ptr(),
-            push_constant_range_count: 0,
-            p_push_constant_ranges: ptr::null(),
-        };
+        let layout_info = vk::PipelineLayoutCreateInfo::builder()
+            .set_layouts(&set_layout);
 
         unsafe {
             PipelineLayout {
