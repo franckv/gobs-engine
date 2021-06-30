@@ -33,29 +33,24 @@ impl Run for App {
 
         let instances = self.draw_triangle();
 
-        let transform = Transform::from_matrix(self.camera.combined());
-
-        engine.renderer().update_view_proj(transform.into());
-        engine.renderer().draw_frame(instances);
+        engine.renderer().draw_frame(instances, &self.camera);
         engine.renderer().submit_frame();
     }
 
     fn resize(&mut self, width: u32, height: u32, _engine: &mut Application) {
         let scale = width as f32 / height as f32;
-        self.camera.resize(2. * scale, 2.);
+        self.camera.resize(-scale, 1., scale, -1.);
     }
 }
 
 impl App {
     pub fn new(engine: &Application) -> Self {
-        let mut camera = Camera::new([0., 0., 0.]);
-        camera.set_ortho(-10., 10.);
-        camera.look_at([0., 0., -1.], [0., 1., 0.]);
-
         let dim = engine.dimensions();
         let scale = dim.0 as f32 / dim.1 as f32;
 
-        camera.resize(2. * scale, 2.);
+        let mut camera = Camera::ortho(-scale, 1., scale, -1.);
+
+        camera.look_at([0., 0., -1.], [0., 1., 0.]);
 
         App {
             camera,

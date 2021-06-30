@@ -1,6 +1,7 @@
 use cgmath::{Deg, Matrix4, SquareMatrix, Point3, Vector3};
 use cgmath::{ortho, perspective};
 
+#[derive(Copy, Clone, Debug, PartialEq)]
 enum ProjectionMode {
     ORTHO,
     PERSPECTIVE
@@ -11,21 +12,57 @@ pub struct Camera {
     projection: Matrix4<f32>,
     view: Matrix4<f32>,
     mode: ProjectionMode,
+    left: f32, top: f32, right: f32, bottom: f32,
+    aspect: f32,
     fov: f32,
     near: f32,
     far: f32
 }
 
 impl Camera {
-    pub fn new<P: Into<Point3<f32>>>(position: P) -> Camera {
+    pub fn ortho(left: f32, top: f32, right: f32, bottom: f32) -> Camera {
+        let near = -10.;
+        let far = 10.;
+
+        let correction = Self::correction();
+
+        let projection = correction * ortho(
+            left, right, bottom, top,
+            near, far
+        );
+
         Camera {
-            position: position.into(),
-            projection: Matrix4::identity(),
+            position: [0., 0., 0.].into(),
+            projection,
             view: Matrix4::identity(),
             mode: ProjectionMode::ORTHO,
+            left, top, right, bottom,
+            aspect: 1.,
             fov: 60.,
-            near: -10.,
-            far: 10.
+            near,
+            far
+        }
+    }
+
+    pub fn perspective(near: f32, far: f32, fov: f32, aspect: f32) -> Camera {
+        let correction = Self::correction();
+
+        let projection =
+            correction * perspective(Deg(fov), aspect, near, far);
+
+        Camera {
+            position: [0., 0., 0.].into(),
+            projection,
+            view: Matrix4::identity(),
+            mode: ProjectionMode::PERSPECTIVE,
+            left: -1.,
+            right: 1.,
+            bottom: -1.,
+            top: 1.,
+            aspect,
+            fov,
+            near,
+            far
         }
     }
 
@@ -33,7 +70,37 @@ impl Camera {
         self.position = position.into();
     }
 
-    fn get_correction() -> Matrix4<f32> {
+    pub fn set_aspect(&mut self, aspect: f32) {
+        self.aspect = aspect;
+
+        self.update_projection();
+    }
+
+    pub fn resize(&mut self, left: f32, top: f32, right: f32, bottom: f32) {
+        self.left = left;
+        self.right = right;
+        self.bottom = bottom;
+        self.top = top;
+
+        self.update_projection();
+    }
+
+    fn update_projection(&mut self) {
+        match self.mode {
+            ProjectionMode::ORTHO => {
+                self.projection = Self::correction() * ortho(
+                    self.left, self.right, self.bottom, self.top,
+                    self.near, self.far
+                );
+            },
+            ProjectionMode::PERSPECTIVE => {
+                self.projection =
+                    Self::correction() * perspective(Deg(self.fov), self.aspect, self.near, self.far);
+            }
+        }
+    }
+
+    fn correction() -> Matrix4<f32> {
         // vulkan use a different coord system than opengl
         // the ortho matrix needs to be corrected
         let mut correction = Matrix4::identity();
@@ -44,39 +111,8 @@ impl Camera {
         correction
     }
 
-    pub fn set_ortho(&mut self, near: f32, far: f32) {
-        self.mode = ProjectionMode::ORTHO;
-        self.near = near;
-        self.far = far;
-    }
-
-    pub fn set_perspective(&mut self, fov: f32, near: f32, far: f32) {
-        self.mode = ProjectionMode::PERSPECTIVE;
-        self.near = near;
-        self.far = far;
-        self.fov = fov;
-    }
-
-    pub fn resize(&mut self, width: f32, height: f32) {
-        let near = self.near;
-        let far = self.far;
-        let fov = self.fov;
-        let correction = Self::get_correction();
-
-        match self.mode {
-            ProjectionMode::ORTHO => {
-                self.projection = correction * ortho(
-                    -width / 2.0, width / 2.0,
-                    -height / 2.0, height / 2.0,
-                    near, far
-                );
-            },
-            ProjectionMode::PERSPECTIVE => {
-                let aspect = width / height;
-                self.projection =
-                    correction * perspective(Deg(fov), aspect, near, far);
-            }
-        }
+    pub fn transform(&mut self, transform: Matrix4<f32>) {
+        self.view = transform * self.view
     }
 
     pub fn look_at<V: Into<Vector3<f32>>>(&mut self, direction: V, up: V) {

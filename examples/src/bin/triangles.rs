@@ -55,16 +55,11 @@ impl Run for App {
         let instances =
             self.draw_triangles(N_TRIANGLES);
 
-        let offset = self.frame as f32 / 10.;
+        let view_transform = Transform::rotation([0., 1., 0.], 0.5);
 
-        let view_transform = Transform::rotation([0., 1., 0.], offset);
-        let proj_transform = Transform::from_matrix(self.camera.combined());
+        self.camera.transform(view_transform.into());
 
-        let view_proj_transform =
-            view_transform.transform(&proj_transform);
-
-        engine.renderer().update_view_proj(view_proj_transform.into());
-        engine.renderer().draw_frame(instances);
+        engine.renderer().draw_frame(instances, &self.camera);
         engine.renderer().submit_frame();
 
         self.frame += 1;
@@ -72,21 +67,19 @@ impl Run for App {
 
     fn resize(&mut self, width: u32, height: u32, _engine: &mut Application) {
         let scale = width as f32 / height as f32;
-        self.camera.resize(4. * scale, 4.);
+        self.camera.set_aspect(scale);
     }
 }
 
 #[allow(dead_code)]
 impl App {
     pub fn new(engine: &Application) -> Self {
-        let mut camera = Camera::new([0., 0., 0.]);
-        camera.set_ortho(-10., 10.);
-        camera.look_at([0., 0., -1.], [0., 1., 0.]);
-
         let dim = engine.dimensions();
         let scale = dim.0 as f32 / dim.1 as f32;
 
-        camera.resize(4. * scale, 4.);
+        let mut camera = Camera::ortho(-2. * scale, 2., 2. * scale, -2.);
+
+        camera.look_at([0., 0., -1.], [0., 1., 0.]);
 
         App {
             camera,

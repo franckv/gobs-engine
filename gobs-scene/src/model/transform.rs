@@ -64,6 +64,12 @@ impl From<Transform> for Matrix3<f32> {
     }
 }
 
+impl From<Transform> for Matrix4<f32> {
+    fn from(t: Transform) -> Matrix4<f32> {
+        t.matrix
+    }
+}
+
 impl From<Transform> for [[f32; 3]; 3] {
     fn from(t: Transform) -> [[f32; 3]; 3] {
         Matrix3::from_cols(
