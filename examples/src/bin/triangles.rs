@@ -77,7 +77,7 @@ impl App {
         let dim = engine.dimensions();
         let scale = dim.0 as f32 / dim.1 as f32;
 
-        let mut camera = Camera::ortho(-2. * scale, 2., 2. * scale, -2.);
+        let mut camera = Camera::ortho_fixed_height(4., scale);
 
         camera.look_at([0., 0., -1.], [0., 1., 0.]);
 

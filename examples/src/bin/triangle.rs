@@ -39,7 +39,7 @@ impl Run for App {
 
     fn resize(&mut self, width: u32, height: u32, _engine: &mut Application) {
         let scale = width as f32 / height as f32;
-        self.camera.resize(-scale, 1., scale, -1.);
+        self.camera.set_aspect(scale);
     }
 }
 
@@ -48,7 +48,7 @@ impl App {
         let dim = engine.dimensions();
         let scale = dim.0 as f32 / dim.1 as f32;
 
-        let mut camera = Camera::ortho(-scale, 1., scale, -1.);
+        let mut camera = Camera::ortho_fixed_height(2., scale);
 
         camera.look_at([0., 0., -1.], [0., 1., 0.]);
 
