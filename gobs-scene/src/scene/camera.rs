@@ -14,7 +14,8 @@ pub struct Camera {
     projection: Matrix4<f32>,
     view: Matrix4<f32>,
     mode: ProjectionMode,
-    left: f32, top: f32, right: f32, bottom: f32,
+    width: f32,
+    height: f32,
     aspect: f32,
     fov: f32,
     near: f32,
@@ -22,19 +23,19 @@ pub struct Camera {
 }
 
 impl Camera {
-    pub fn ortho(left: f32, top: f32, right: f32, bottom: f32) -> Self {
+    pub fn ortho(width: f32, height: f32) -> Self {
         let near = -10.;
         let far = 10.;
 
-        let projection = Self::ortho_projection(left, top, right, bottom,
-            near, far);
+        let projection = Self::ortho_projection(width, height, near, far);
 
         Camera {
             position: [0., 0., 0.].into(),
             projection,
             view: Matrix4::identity(),
             mode: ProjectionMode::Ortho,
-            left, top, right, bottom,
+            width,
+            height,
             aspect: 1.,
             fov: 60.,
             near,
@@ -49,20 +50,15 @@ impl Camera {
 
         let height = width / aspect;
 
-        let left = -width / 2.;
-        let right = width / 2.;
-        let top = height / 2.;
-        let bottom = -height / 2.;
-
-        let projection = Self::ortho_projection(left, top, right, bottom,
-            near, far);
+        let projection = Self::ortho_projection(width, height, near, far);
 
         Camera {
             position: [0., 0., 0.].into(),
             projection,
             view: Matrix4::identity(),
             mode: ProjectionMode::OrthoFixedWidth,
-            left, top, right, bottom,
+            width, 
+            height,
             aspect,
             fov,
             near,
@@ -77,20 +73,15 @@ impl Camera {
 
         let width = height * aspect;
 
-        let left = -width / 2.;
-        let right = width / 2.;
-        let top = height / 2.;
-        let bottom = -height / 2.;
-
-        let projection = Self::ortho_projection(left, top, right, bottom,
-            near, far);
+        let projection = Self::ortho_projection(width, height, near, far);
 
         Camera {
             position: [0., 0., 0.].into(),
             projection,
             view: Matrix4::identity(),
             mode: ProjectionMode::OrthoFixedHeight,
-            left, top, right, bottom,
+            width, 
+            height,
             aspect,
             fov,
             near,
@@ -109,10 +100,8 @@ impl Camera {
             projection,
             view: Matrix4::identity(),
             mode: ProjectionMode::Perspective,
-            left: -1.,
-            right: 1.,
-            bottom: -1.,
-            top: 1.,
+            width: 1.,
+            height: 1.,
             aspect,
             fov,
             near,
@@ -130,11 +119,9 @@ impl Camera {
         self.update();
     }
 
-    pub fn resize(&mut self, left: f32, top: f32, right: f32, bottom: f32) {
-        self.left = left;
-        self.right = right;
-        self.bottom = bottom;
-        self.top = top;
+    pub fn resize(&mut self, width: f32, height: f32) {
+        self.width = width;
+        self.height = height;
 
         self.update();
     }
@@ -143,7 +130,12 @@ impl Camera {
         Self::correction() * perspective(Deg(fov), aspect, near, far)
     }
 
-    fn ortho_projection(left: f32, top: f32, right: f32, bottom: f32, near: f32, far: f32) -> Matrix4<f32> {
+    fn ortho_projection(width: f32, height: f32, near: f32, far: f32) -> Matrix4<f32> {
+        let left = -width / 2.;
+        let right = width / 2.;
+        let top = height / 2.;
+        let bottom = -height / 2.;
+
         Self::correction() * ortho(
             left, right, bottom, top, near, far
         )
@@ -152,32 +144,21 @@ impl Camera {
     fn update(&mut self) {
         match self.mode {
             ProjectionMode::Ortho => {
-                self.projection = Self::ortho_projection(self.left, self.top, self.right, self.bottom,
-                    self.near, self.far);
+                self.projection = Self::ortho_projection(self.width, self.height, self.near, self.far);
             },
             ProjectionMode::Perspective => {
                 self.projection = Self::perspective_projection(self.fov, self.aspect, self.near, self.far);
             },
             ProjectionMode::OrthoFixedHeight => {
-                let height = (self.top - self.bottom).abs();
-                let width = height * self.aspect;
+                self.width = self.height * self.aspect;
 
-                self.left = -width / 2.;
-                self.right = width / 2.;
-
-                self.projection = Self::ortho_projection(self.left, self.top, self.right, self.bottom,
-                    self.near, self.far);
+                self.projection = Self::ortho_projection(self.width, self.height, self.near, self.far);
 
             },
             ProjectionMode::OrthoFixedWidth => {
-                let width = (self.right - self.left).abs();
-                let height = width / self.aspect;
+                self.height = self.width / self.aspect;
 
-                self.top = height / 2.;
-                self.bottom = -height / 2.;
-
-                self.projection = Self::ortho_projection(self.left, self.top, self.right, self.bottom,
-                    self.near, self.far);
+                self.projection = Self::ortho_projection(self.width, self.height, self.near, self.far);
 
             }
         }

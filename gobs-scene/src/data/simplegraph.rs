@@ -80,7 +80,7 @@ pub struct SimpleGraph<T> {
 impl<T> SimpleGraph<T> {
     pub fn new() -> SimpleGraph<T> {
         SimpleGraph {
-            camera: Camera::ortho(-1., 1., 1., -1.),
+            camera: Camera::ortho(1., 1.),
             light: LightBuilder::new().build(),
             root: SimpleNode::new(Node::new(None))
         }

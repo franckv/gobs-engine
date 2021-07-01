@@ -123,7 +123,7 @@ pub struct TreeGraph<D> {
 impl<D> TreeGraph<D> {
     pub fn new() -> TreeGraph<D> {
         TreeGraph {
-            camera: Camera::ortho(-1., 1., 1., -1.),
+            camera: Camera::ortho(1., 1.),
             light: LightBuilder::new().build(),
             root: TreeNode::default(),
             dirty: true
