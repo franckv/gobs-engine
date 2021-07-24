@@ -8,9 +8,9 @@ use gobs_render as render;
 use gobs_utils as utils;
 
 use game::app::{Application, Run};
-use scene::Camera;
 use scene::model::{Color, Mesh, ModelBuilder,
                    Shapes, Texture, Transform};
+use scene::SceneGraph;
 use render::context::Context;
 use render::instance::ModelInstance;
 
@@ -20,31 +20,13 @@ const N_TRIANGLES: usize = 9;
 
 #[allow(dead_code)]
 struct App {
-    camera: Camera,
-    triangle_r: Option<Arc<ModelInstance>>,
-    triangle_b: Option<Arc<ModelInstance>>,
-    square: Option<Arc<ModelInstance>>,
+    graph: SceneGraph<Arc<ModelInstance>>,
     frame: usize
 }
 
 impl Run for App {
     fn create(&mut self, engine: &mut Application) {
-        let red = Texture::from_color(Color::red());
-        let blue = Texture::from_color(Color::blue());
-
-        let triangle = Shapes::triangle();
-        let square = Shapes::quad();
-
-        let triangle_r = Self::build_model(&engine.renderer().context,
-                                           triangle.clone(), red.clone());
-        let triangle_b = Self::build_model(&engine.renderer().context,
-                                           triangle.clone(), blue.clone());
-        let square = Self::build_model(&engine.renderer().context,
-                                       square.clone(), blue.clone());
-
-        self.triangle_r = Some(triangle_r);
-        self.triangle_b = Some(triangle_b);
-        self.square = Some(square);
+        Self::draw_triangles(&mut self.graph, &engine.renderer().context, N_TRIANGLES);
     }
 
     fn update(&mut self, _delta: u64, engine: &mut Application) {
@@ -52,14 +34,19 @@ impl Run for App {
             return;
         }
 
-        let instances =
-            self.draw_triangles(N_TRIANGLES);
+        let model_transform = Transform::rotation([1., 0., 0.], 1.);
+
+        self.graph.foreach(|data, transform| {
+            data.transform_mut().transform(&model_transform);
+        });
+
+        self.graph.set_dirty();
 
         let view_transform = Transform::rotation([0., 1., 0.], 0.5);
 
-        self.camera.transform(view_transform.into());
+        self.graph.camera_mut().transform(view_transform.into());
 
-        engine.renderer().draw_frame(instances, &self.camera);
+        engine.renderer().draw_frame(&mut self.graph);
         engine.renderer().submit_frame();
 
         self.frame += 1;
@@ -67,25 +54,21 @@ impl Run for App {
 
     fn resize(&mut self, width: u32, height: u32, _engine: &mut Application) {
         let scale = width as f32 / height as f32;
-        self.camera.set_aspect(scale);
+        self.graph.camera_mut().set_aspect(scale);
     }
 }
 
 #[allow(dead_code)]
 impl App {
-    pub fn new(engine: &Application) -> Self {
-        let dim = engine.dimensions();
-        let scale = dim.0 as f32 / dim.1 as f32;
+    pub fn new(_engine: &Application) -> Self {
+        let mut graph = SceneGraph::new();
 
-        let mut camera = Camera::ortho_fixed_height(4., scale);
-
-        camera.look_at([0., 0., -1.], [0., 1., 0.]);
+        graph.camera_mut().set_mode(scene::scene::camera::ProjectionMode::OrthoFixedHeight);
+        graph.camera_mut().resize(4., 4.);
+        graph.camera_mut().look_at([0., 0., -1.], [0., 1., 0.]);
 
         App {
-            camera,
-            triangle_r: None,
-            triangle_b: None,
-            square: None,
+            graph,
             frame: 0
         }
     }
@@ -98,14 +81,16 @@ impl App {
             ModelInstance::new(context, &object)
     }
 
-    fn draw_triangle(&self) -> Vec<(Arc<ModelInstance>, Transform)> {
-        vec![(self.triangle_r.as_ref().unwrap().clone(), Transform::new())]
-    }
+    fn draw_triangles(graph: &mut SceneGraph<Arc<ModelInstance>>, context: &Arc<Context>, rows: usize) {
+        let red = Texture::from_color(Color::red());
+        let blue = Texture::from_color(Color::blue());
 
-    fn draw_triangles(&self, rows: usize) -> Vec<(Arc<ModelInstance>, Transform)> {
+        let triangle = Shapes::triangle();
+
+        let triangle_r = Self::build_model(context, triangle.clone(), red.clone());
+        let triangle_b = Self::build_model(context, triangle.clone(), blue.clone());
+
         let mut timer = Timer::new();
-
-        let offset = self.frame as f32;
 
         let width = 3.5;
         let step = width / (rows-1) as f32;
@@ -130,24 +115,21 @@ impl App {
 
         let mut even = false;
 
-        let instances = positions.iter().map(|position| {
+        for position in positions {
             let instance = match even {
-                true => self.triangle_r.as_ref().unwrap().clone(),
-                false => self.triangle_b.as_ref().unwrap().clone(),
+                true => triangle_r.clone(),
+                false => triangle_b.clone(),
             };
             even = !even;
+
             let transform = Transform::scaling(scale, scale, 1.)
-                .transform(&Transform::rotation([1., 0., 0.], offset))
-                .translate(*position);
+                .translate(position);
 
-            let instance = (instance, transform);
+            graph.insert(SceneGraph::new_node().data(instance).transform(transform).build());
 
-            instance
-        }).collect();
+        }
 
         log::debug!("Instances: {}", timer.delta() / 1_000_000);
-
-        instances
     }
 }
 

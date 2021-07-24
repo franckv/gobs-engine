@@ -2,13 +2,13 @@ use std::collections::HashMap;
 use std::mem;
 use std::sync::Arc;
 
+use scene::SceneGraph;
 use uuid::Uuid;
 
 use gobs_scene as scene;
 use gobs_utils as utils;
 use gobs_vulkan as backend;
 
-use scene::Camera;
 use scene::model::Transform;
 use scene::model::Vertex;
 
@@ -176,11 +176,23 @@ impl Renderer {
         self.current_frame = (self.current_frame + 1) % self.frames.len();
     }
 
-    pub fn draw_frame(&mut self, instances: Vec<(Arc<ModelInstance>, Transform)>, camera: &Camera) {
+    pub fn draw_frame(&mut self, graph: &mut SceneGraph<Arc<ModelInstance>>) {
         let mut timer = Timer::new();
+
+        let mut instances = Vec::<(Arc<ModelInstance>, Transform)>::new();
+
+        graph.foreach(|data, transform| {
+            match data.data() {
+                Some(d) => {
+                    instances.push((data.data().as_ref().unwrap().clone(), transform.clone()));
+                },
+                _ => ()
+            }
+        });
+
         debug_assert!(instances.len() <= self.max_instances);
 
-        let view_proj = vec![Transform::from_matrix(camera.combined())];
+        let view_proj = vec![Transform::from_matrix(graph.camera().combined())];
 
 
         self.frames[self.current_frame].view_proj_buffer.copy(&view_proj);

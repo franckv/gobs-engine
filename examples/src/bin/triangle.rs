@@ -7,14 +7,12 @@ use gobs_scene as scene;
 use gobs_render as render;
 
 use game::app::{Application, Run};
-use scene::Camera;
-use scene::model::{Color, ModelBuilder, Shapes, Texture, Transform};
-
+use scene::model::{Color, ModelBuilder, Shapes, Texture};
+use scene::SceneGraph;
 use render::instance::ModelInstance;
 
 struct App {
-    camera: Camera,
-    triangle: Option<Arc<ModelInstance>>,
+    graph: SceneGraph<Arc<ModelInstance>>
 }
 
 impl Run for App {
@@ -23,7 +21,9 @@ impl Run for App {
         let triangle = Shapes::triangle();
         let model = ModelBuilder::new(triangle).texture(texture).build();
 
-        self.triangle = Some(ModelInstance::new(&engine.renderer().context, &model));
+        let triangle = ModelInstance::new(&engine.renderer().context, &model);
+
+        self.graph.insert(SceneGraph::new_node().data(triangle).build());
     }
 
     fn update(&mut self, _delta: u64, engine: &mut Application) {
@@ -31,35 +31,27 @@ impl Run for App {
             return;
         }
 
-        let instances = self.draw_triangle();
-
-        engine.renderer().draw_frame(instances, &self.camera);
+        engine.renderer().draw_frame(&mut self.graph);
         engine.renderer().submit_frame();
     }
 
     fn resize(&mut self, width: u32, height: u32, _engine: &mut Application) {
         let scale = width as f32 / height as f32;
-        self.camera.set_aspect(scale);
+        self.graph.camera_mut().set_aspect(scale);
     }
 }
 
 impl App {
-    pub fn new(engine: &Application) -> Self {
-        let dim = engine.dimensions();
-        let scale = dim.0 as f32 / dim.1 as f32;
+    pub fn new(_engine: &Application) -> Self {
+        let mut graph = SceneGraph::new();
 
-        let mut camera = Camera::ortho_fixed_height(2., scale);
-
-        camera.look_at([0., 0., -1.], [0., 1., 0.]);
+        graph.camera_mut().set_mode(scene::scene::camera::ProjectionMode::OrthoFixedHeight);
+        graph.camera_mut().resize(2., 2.);
+        graph.camera_mut().look_at([0., 0., -1.], [0., 1., 0.]);
 
         App {
-            camera,
-            triangle: None
+            graph
         }
-    }
-
-    fn draw_triangle(&self) -> Vec<(Arc<ModelInstance>, Transform)> {
-        vec![(self.triangle.as_ref().unwrap().clone(), Transform::new())]
     }
 }
 

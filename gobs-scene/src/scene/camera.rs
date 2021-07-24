@@ -2,7 +2,7 @@ use cgmath::{Deg, Matrix4, SquareMatrix, Point3, Vector3};
 use cgmath::{ortho, perspective};
 
 #[derive(Copy, Clone, Debug, PartialEq)]
-enum ProjectionMode {
+pub enum ProjectionMode {
     Ortho,
     Perspective,
     OrthoFixedWidth,
@@ -107,6 +107,10 @@ impl Camera {
             near,
             far
         }
+    }
+
+    pub fn set_mode(&mut self, mode: ProjectionMode) {
+        self.mode = mode;
     }
 
     pub fn set_position<P: Into<Point3<f32>>>(&mut self, position: P) {
