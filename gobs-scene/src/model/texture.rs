@@ -2,10 +2,10 @@ use std::sync::Arc;
 use std::vec::Vec;
 
 use image;
-use image::{ImageBuffer, GenericImage, Pixel};
+use image::{ImageBuffer, GenericImageView, Pixel};
 use uuid::Uuid;
 
-use model::Color;
+use super::Color;
 
 pub struct Texture {
     id: Uuid,
@@ -19,7 +19,7 @@ impl Texture {
 
         let (width, height) = (img.width() as usize, img.height() as usize);
 
-        let img_data = img.to_rgba().into_raw();
+        let img_data = img.to_rgba8().into_raw();
 
         Self::from_raw(img_data, width, height)
     }

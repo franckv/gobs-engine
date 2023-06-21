@@ -1,6 +1,6 @@
-use model::Transform;
-use scene::camera::Camera;
-use scene::light::{Light, LightBuilder};
+use crate::model::Transform;
+use crate::scene::camera::Camera;
+use crate::scene::light::{Light, LightBuilder};
 
 pub struct TreeNode<D> {
     data: Option<D>,
@@ -123,7 +123,7 @@ pub struct TreeGraph<D> {
 impl<D> TreeGraph<D> {
     pub fn new() -> TreeGraph<D> {
         TreeGraph {
-            camera: Camera::new([0., 0., 0.]),
+            camera: Camera::ortho(1., 1.),
             light: LightBuilder::new().build(),
             root: TreeNode::default(),
             dirty: true
@@ -186,7 +186,7 @@ impl<D> TreeGraph<D> {
         let transform = node.cached_transform.as_ref().unwrap();
 
         if let Some(ref mut children) = node.children {
-            for mut child in children {
+            for child in children {
                 TreeGraph::visit(child, f, transform);
             }
         }

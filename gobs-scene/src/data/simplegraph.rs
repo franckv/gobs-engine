@@ -2,8 +2,8 @@ use std::sync::{Arc, RwLock};
 
 use cgmath::{Matrix4, SquareMatrix};
 
-use scene::camera::Camera;
-use scene::light::{Light, LightBuilder};
+use crate::scene::camera::Camera;
+use crate::scene::light::{Light, LightBuilder};
 
 type NodeRef<T> = Arc<RwLock<Node<T>>>;
 
@@ -80,7 +80,7 @@ pub struct SimpleGraph<T> {
 impl<T> SimpleGraph<T> {
     pub fn new() -> SimpleGraph<T> {
         SimpleGraph {
-            camera: Camera::new([0., 0., 0.]),
+            camera: Camera::ortho(1., 1.),
             light: LightBuilder::new().build(),
             root: SimpleNode::new(Node::new(None))
         }

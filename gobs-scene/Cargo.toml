@@ -2,14 +2,16 @@
 name = "gobs-scene"
 version = "0.1.0"
 authors = ["franckv <franck.vdl@gmail.com>"]
+edition = "2018"
 
 [lib]
 name = "gobs_scene"
 path = "src/lib.rs"
 
 [dependencies]
-cgmath = "0.16"
-image = "0.18"
+log = "0.4"
+cgmath = "0.18"
+image = "0.23"
 unicode-normalization = "0.1"
-rusttype = "0.5.2"
-uuid = { version = "0.6", features = ["v4"] }
+rusttype = "0.9"
+uuid = { version = "0.7", features = ["v4"] }

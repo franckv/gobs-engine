@@ -2,9 +2,13 @@
 name = "gobs-game"
 version = "0.1.0"
 authors = ["franckv <franck.vdl@gmail.com>"]
+edition = "2018"
 
 [dependencies]
-gobs-render = {path = "../gobs-render"}
+cgmath = "0.18"
+log = "0.4"
+simplelog = "0.10"
+winit = "0.25"
 gobs-scene = {path = "../gobs-scene"}
-cgmath = "0.16"
-winit = "0.18"
+gobs-utils = {path = "../gobs-utils"}
+gobs-render = {path = "../gobs-render"}

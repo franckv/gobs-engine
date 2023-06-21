@@ -2,7 +2,7 @@ use cgmath::{Deg, Matrix, Matrix3, Matrix4, SquareMatrix, Vector3, Vector4};
 
 #[derive(Clone, Copy, Debug)]
 pub struct Transform {
-    matrix: Matrix4<f32>
+    pub matrix: Matrix4<f32>
 }
 
 impl Transform {
@@ -61,6 +61,12 @@ impl From<Transform> for Matrix3<f32> {
             t.matrix.y.truncate(),
             t.matrix.z.truncate()
         )
+    }
+}
+
+impl From<Transform> for Matrix4<f32> {
+    fn from(t: Transform) -> Matrix4<f32> {
+        t.matrix
     }
 }
 

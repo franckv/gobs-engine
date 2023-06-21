@@ -2,7 +2,8 @@
 members = [
     "gobs-utils",
     "gobs-scene",
-    "gobs-render",
     "gobs-game",
+    "gobs-render",
+    "gobs-vulkan",
     "examples"
 ]

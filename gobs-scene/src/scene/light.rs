@@ -1,6 +1,6 @@
 use cgmath::{Point3, Vector3, Vector4};
 
-use model::Color;
+use crate::model::Color;
 
 pub struct LightBuilder {
     position: Vector4<f32>,

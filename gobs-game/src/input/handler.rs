@@ -1,9 +1,9 @@
 use winit;
-use winit::EventsLoop;
-use winit::Event::WindowEvent;
-use winit::{ElementState, KeyboardInput, VirtualKeyCode};
+use winit::event::{ElementState, KeyboardInput, VirtualKeyCode, WindowEvent};
+use winit::event_loop::{ControlFlow, EventLoop};
+use winit::platform::run_return::EventLoopExtRunReturn;
 
-use input::{Key,InputMap};
+use crate::input::{Key,InputMap};
 
 pub enum Event {
     Resize,
@@ -12,12 +12,12 @@ pub enum Event {
 }
 
 pub struct InputHandler {
-    events_loop: EventsLoop,
+    events_loop: EventLoop<()>,
     input_map: InputMap
 }
 
 impl InputHandler {
-    pub fn new(events_loop: EventsLoop) -> Self {
+    pub fn new(events_loop: EventLoop<()>) -> Self {
         InputHandler {
             events_loop: events_loop,
             input_map: InputMap::new()
@@ -35,12 +35,13 @@ impl InputHandler {
 
         input_map.reset();
 
-        self.events_loop.poll_events(|event| {
+        self.events_loop.run_return(|event, _, control_flow| {
+            *control_flow = ControlFlow::Exit;
             match event {
-                WindowEvent { event, .. } => match event {
-                    winit::WindowEvent::CloseRequested => status = Event::Close,
-                    winit::WindowEvent::Resized(_) => status = Event::Resize,
-                    winit::WindowEvent::KeyboardInput {
+                winit::event::Event::WindowEvent { event, .. } => match event {
+                    WindowEvent::CloseRequested => status = Event::Close,
+                    WindowEvent::Resized(_) => status = Event::Resize,
+                    WindowEvent::KeyboardInput {
                         input: KeyboardInput {
                             virtual_keycode: Some(key_code),
                             state, ..

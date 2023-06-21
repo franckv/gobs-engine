@@ -4,9 +4,9 @@ use std::fs::File;
 use std::sync::Arc;
 use unicode_normalization::UnicodeNormalization;
 
-use rusttype::{Font as RFont, FontCollection, Scale, point, Rect};
+use rusttype::{Font as RFont, Scale, point, Rect};
 
-use model::{Color, Mesh, MeshBuilder, RenderObject, RenderObjectBuilder, Texture, Transform};
+use super::{Color, Mesh, MeshBuilder, Model, ModelBuilder, Texture, Transform};
 
 const TEXTURE_SIZE: (usize, usize) = (1024, 1024);
 
@@ -31,9 +31,11 @@ impl Font {
         let mut v = Vec::new();
         f.read_to_end(&mut v).expect("Cannot read font");
 
-        let collection = FontCollection::from_bytes(v);
+        //let collection = FontCollection::from_bytes(v);
+        //let font = collection.unwrap().into_font().unwrap();
 
-        let font = collection.unwrap().into_font().unwrap();
+        let font = RFont::try_from_vec(v).unwrap();
+
         let scale = Scale {x: size as f32, y: size as f32};
 
         let (width, height) = TEXTURE_SIZE;
@@ -57,7 +59,7 @@ impl Font {
         self.texture.clone()
     }
 
-    pub fn layout(&self, text: &str) -> Vec<(Arc<RenderObject>, Transform)> {
+    pub fn layout(&self, text: &str) -> Vec<(Arc<Model>, Transform)> {
         let mut result = Vec::new();
 
         let mut translate = Transform::new();
@@ -75,7 +77,7 @@ impl Font {
 
                 let transform = character.transform.clone().transform(&translate);
 
-                let instance = RenderObjectBuilder::new(self.mesh.clone())
+                let instance = ModelBuilder::new(self.mesh.clone())
                     .texture(self.texture.clone())
                     .region(character.region)
                     .build();
@@ -132,7 +134,7 @@ impl Font {
 
         for c in 32u8..127u8 {
             let c = c as char;
-            let mut glyph = font.glyph(c).scaled(scale);
+            let glyph = font.glyph(c).scaled(scale);
             let advance = glyph.h_metrics().advance_width;
 
             let mut glyph = glyph.positioned(pos);

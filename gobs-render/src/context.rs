@@ -1,66 +1,87 @@
 use std::sync::Arc;
 
-use vulkano::device::{Device, DeviceExtensions, Queue};
-use vulkano::instance::{Instance, PhysicalDevice};
-use vulkano_win;
-use vulkano_win::VkSurfaceBuild;
-use winit::{EventsLoop, WindowBuilder};
+use log::info;
+use winit::window::Window;
 
-use display::Display;
+use gobs_vulkan as backend;
+
+use backend::command::{CommandBuffer, CommandPool};
+use backend::device::Device;
+use backend::instance::Instance;
+use backend::queue::Queue;
+use backend::renderpass::RenderPass;
+use backend::surface::Surface;
+
+use super::display::Display;
 
 pub struct Context {
+    instance: Arc<Instance>,
     device: Arc<Device>,
-    queue: Arc<Queue>
+    queue: Queue,
+    command_pool: Arc<CommandPool>,
 }
 
 impl Context {
-    fn new(device: Arc<Device>, queue: Arc<Queue>) -> Arc<Context> {
-        Arc::new(Context {
-            device: device,
-            queue: queue
-        })
+    pub fn new(name: &str, window: Window) -> (Arc<Self>, Display) {
+        let instance = Instance::new(name, 0);
+
+        let surface = Surface::new(instance.clone(), window);
+
+        let p_device = instance.find_adapter(&surface);
+
+        info!("Using adapter: {}", p_device.name);
+
+        let family = instance.find_family(&p_device, &surface).unwrap();
+
+        let format = Display::get_surface_format(&surface, &p_device);
+
+        let device = Device::new(instance.clone(), p_device, &family);
+
+        let renderpass = RenderPass::new(
+            device.clone(), format.format);
+
+        let queue = Queue::new(device.clone(), family);
+
+        let command_pool = CommandPool::new(device.clone(), queue.family());
+
+        let context = Arc::new(Context {
+            instance,
+            device,
+            queue,
+            command_pool
+        });
+
+        let display = Display::new(context.clone(),
+                                   surface.clone(),
+                                   format,
+                                   renderpass.clone());
+
+        (context, display)
     }
 
-    pub fn queue(&self) -> Arc<Queue> {
-        self.queue.clone()
+    pub fn command_pool(&self) -> Arc<CommandPool> { self.command_pool.clone() }
+
+    pub fn command_pool_ref(&self) -> &Arc<CommandPool> { &self.command_pool }
+
+    pub fn instance(&self) -> Arc<Instance> {
+        self.instance.clone()
     }
 
     pub fn device(&self) -> Arc<Device> {
         self.device.clone()
     }
-}
 
-pub fn init() -> (EventsLoop, Arc<Context>, Arc<Display>) {
-    let instance = {
-        let extensions = vulkano_win::required_extensions();
-        Instance::new(None, &extensions, None).expect("error")
-    };
+    pub fn device_ref(&self) -> &Arc<Device> {
+        &self.device
+    }
 
-    let events_loop = EventsLoop::new();
-    let surface = WindowBuilder::new().build_vk_surface(&events_loop, instance.clone()).unwrap();
+    pub fn queue(&self) -> &Queue {
+        &self.queue
+    }
 
-    let physical = PhysicalDevice::enumerate(&instance).next().expect("error");
-
-    info!("Using device: {} (type: {:?})", physical.name(), physical.ty());
-
-    let queue_family = physical.queue_families().find(|&q| {
-        q.supports_graphics() && surface.is_supported(q).unwrap_or(false)
-    }).expect("error");
-
-    let (device, mut queues) = {
-        let device_ext = DeviceExtensions {
-            khr_swapchain: true,
-            .. DeviceExtensions::none()
-        };
-        Device::new(physical, physical.supported_features(), &device_ext,
-                    [(queue_family, 0.5)].iter().cloned()).expect("error")
-    };
-
-    let queue = queues.next().unwrap();
-
-    let context = Context::new(device, queue);
-
-    let display = Display::new(surface);
-
-    (events_loop, context, display)
+    pub fn get_command_buffer(&self) -> CommandBuffer {
+        CommandBuffer::new(
+            self.device.clone(),
+            self.command_pool.clone())
+    }
 }
