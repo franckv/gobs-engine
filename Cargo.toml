@@ -7,3 +7,25 @@ members = [
     "gobs-vulkan",
     "examples"
 ]
+
+[workspace.package]
+authors = ["franckv <franck.vdl@gmail.com>"]
+edition = "2021"
+
+[workspace.dependencies]
+log = "0.4"
+simplelog = "0.12"
+image = "0.24"
+winit = "0.28"
+time = "0.3"
+uuid = { version = "1.3", features = ["v4"] }
+cgmath = "0.18"
+ash = { version = "0.37", features = ["linked", "debug"] }
+ash-window = "0.12"
+raw-window-handle = "0.5"
+rusttype = "0.9"
+unicode-normalization = "0.1"
+wgpu = "0.16"
+pollster = "0.3"
+bytemuck = {version="1.13", features = ["derive"]}
+anyhow = "1.0"

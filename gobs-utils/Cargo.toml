@@ -1,13 +1,13 @@
 [package]
 name = "gobs-utils"
 version = "0.1.0"
-authors = ["franckv <franck.vdl@gmail.com>"]
-edition = "2018"
+authors = { workspace = true }
+edition = { workspace = true }
 
 [lib]
 name = "gobs_utils"
 path = "src/lib.rs"
 
 [dependencies]
-cgmath = "0.18"
-time = "0.1"
+cgmath = { workspace = true }
+time = { workspace = true }

@@ -98,6 +98,6 @@ impl Application {
 
 pub trait Run: Sized {
     fn create(&mut self, _application: &mut Application) {}
-    fn update(&mut self, _delta: u64, _application: &mut Application) {}
+    fn update(&mut self, _delta: i128, _application: &mut Application) {}
     fn resize(&mut self, _width: u32, _height: u32, _application: &mut Application) {}
 }

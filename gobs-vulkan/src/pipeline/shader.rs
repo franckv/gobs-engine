@@ -5,7 +5,6 @@ use std::fs::File;
 use std::path::Path;
 
 use ash::vk;
-use ash::version::DeviceV1_0;
 
 use log::trace;
 

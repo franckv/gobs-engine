@@ -2,7 +2,6 @@ use std::ptr;
 use std::sync::Arc;
 
 use ash::vk;
-use ash::version::DeviceV1_0;
 
 use log::trace;
 
@@ -36,14 +35,11 @@ pub struct CommandBuffer {
 
 impl CommandBuffer {
     pub fn new(device: Arc<Device>, pool: Arc<CommandPool>) -> Self {
-        let buffer_info = vk::CommandBufferAllocateInfo {
-            s_type: vk::StructureType::COMMAND_BUFFER_ALLOCATE_INFO,
-            p_next: ptr::null(),
-            command_pool: pool.raw(),
-            command_buffer_count: 1,
-            level: vk::CommandBufferLevel::PRIMARY,
-        };
-
+        let buffer_info = vk::CommandBufferAllocateInfo::builder()
+            .command_buffer_count(1)
+            .command_pool(pool.raw())
+            .level(vk::CommandBufferLevel::PRIMARY);
+        
         let command_buffer = unsafe {
             device.raw().allocate_command_buffers(&buffer_info).unwrap()[0]
         };
@@ -56,12 +52,7 @@ impl CommandBuffer {
     }
 
     pub fn begin(&mut self) {
-        let begin_info = vk::CommandBufferBeginInfo {
-            s_type: vk::StructureType::COMMAND_BUFFER_BEGIN_INFO,
-            p_next: ptr::null(),
-            flags: Default::default(),
-            p_inheritance_info: ptr::null(),
-        };
+        let begin_info = vk::CommandBufferBeginInfo::default();
 
         unsafe {
             self.device.raw().begin_command_buffer(
@@ -86,21 +77,17 @@ impl CommandBuffer {
 
         let dim = framebuffer.dimensions();
 
-        let renderpass_info = vk::RenderPassBeginInfo {
-            s_type: vk::StructureType::RENDER_PASS_BEGIN_INFO,
-            p_next: ptr::null(),
-            render_pass: framebuffer.renderpass().raw(),
-            framebuffer: framebuffer.raw(),
-            render_area: vk::Rect2D {
+        let renderpass_info = vk::RenderPassBeginInfo::builder()
+            .render_pass(framebuffer.renderpass().raw())
+            .framebuffer(framebuffer.raw())
+            .render_area(vk::Rect2D {
                 offset: vk::Offset2D { x: 0, y: 0 },
                 extent: vk::Extent2D {
                     width: dim.0,
                     height: dim.1,
-                },
-            },
-            clear_value_count: clear_values.len() as u32,
-            p_clear_values: clear_values.as_ptr(),
-        };
+                }
+            })
+            .clear_values(&clear_values);
 
         unsafe {
             self.device.raw().cmd_begin_render_pass(
@@ -217,35 +204,26 @@ impl CommandBuffer {
 
     pub fn copy_buffer_to_image<T: Copy>(&self, src: &Buffer<T>, dst: &Image,
                                          width: u32, height: u32) {
-        let copy_info = vk::BufferImageCopy {
-            buffer_offset: 0,
-            buffer_row_length: 0,
-            buffer_image_height: 0,
-            image_subresource: vk::ImageSubresourceLayers {
-                aspect_mask: vk::ImageAspectFlags::COLOR,
-                mip_level: 0,
-                base_array_layer: 0,
-                layer_count: 1,
-            },
-            image_offset: vk::Offset3D {
-                x: 0,
-                y: 0,
-                z: 0,
-            },
-            image_extent: vk::Extent3D {
+
+        let image_subresource = vk::ImageSubresourceLayers::builder()
+            .aspect_mask(vk::ImageAspectFlags::COLOR)
+            .layer_count(1);
+
+        let copy_info = vk::BufferImageCopy::builder()
+            .image_subresource(*image_subresource)
+            .image_extent(vk::Extent3D {
                 width,
                 height,
                 depth: 1,
-            },
-        };
-
+            });
+        
         unsafe {
             self.device.raw().cmd_copy_buffer_to_image(
                 self.command_buffer,
                 src.raw(),
                 dst.raw(),
                 vk::ImageLayout::TRANSFER_DST_OPTIMAL,
-                &[copy_info]);
+                std::slice::from_ref(&copy_info));
         }
     }
 

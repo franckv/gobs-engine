@@ -2,7 +2,6 @@ use std::ffi::CString;
 use std::sync::Arc;
 
 use ash::vk;
-use ash::version::DeviceV1_0;
 
 use log::trace;
 
@@ -249,7 +248,7 @@ impl ColorBlendAttachmentState {
             .src_alpha_blend_factor(vk::BlendFactor::ONE)
             .dst_alpha_blend_factor(vk::BlendFactor::ZERO)
             .alpha_blend_op(vk::BlendOp::ADD)
-            .color_write_mask(vk::ColorComponentFlags::all())
+            .color_write_mask(vk::ColorComponentFlags::RGBA)
     }
 }
 

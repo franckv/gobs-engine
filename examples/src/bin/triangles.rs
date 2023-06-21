@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use simplelog::{Config, LevelFilter, TermLogger};
+use simplelog::{Config, LevelFilter, TermLogger, ColorChoice, TerminalMode};
 
 use gobs_game as game;
 use gobs_scene as scene;
@@ -29,7 +29,7 @@ impl Run for App {
         Self::draw_triangles(&mut self.graph, &engine.renderer().context, N_TRIANGLES);
     }
 
-    fn update(&mut self, _delta: u64, engine: &mut Application) {
+    fn update(&mut self, _delta: i128, engine: &mut Application) {
         if !engine.renderer().new_frame().is_ok() {
             return;
         }
@@ -134,7 +134,7 @@ impl App {
 }
 
 fn main() {
-    TermLogger::init(LevelFilter::Debug, Config::default()).expect("error");
+    TermLogger::init(LevelFilter::Debug, Config::default(), TerminalMode::Mixed, ColorChoice::Auto).expect("error");
 
     let mut engine = Application::new();
     let app = App::new(&engine);

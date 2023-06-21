@@ -1,7 +1,6 @@
 use std::ffi::CStr;
 
 use ash::vk;
-use ash::version::InstanceV1_0;
 
 use crate::instance::Instance;
 use crate::queue::QueueFamily;

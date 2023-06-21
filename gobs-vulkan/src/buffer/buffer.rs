@@ -4,7 +4,6 @@ use std::ptr;
 use std::sync::Arc;
 
 use ash::vk;
-use ash::version::DeviceV1_0;
 
 use log::trace;
 
@@ -78,16 +77,10 @@ impl<T: Copy> Buffer<T> {
 
         let size = count * mem::size_of::<T>();
 
-        let buffer_info = vk::BufferCreateInfo {
-            s_type: vk::StructureType::BUFFER_CREATE_INFO,
-            p_next: ptr::null(),
-            flags: Default::default(),
-            size: size as u64,
-            usage: usage_flags,
-            sharing_mode: vk::SharingMode::EXCLUSIVE,
-            queue_family_index_count: 0,
-            p_queue_family_indices: ptr::null(),
-        };
+        let buffer_info = vk::BufferCreateInfo::builder()
+            .size(size as u64)
+            .usage(usage_flags)
+            .sharing_mode(vk::SharingMode::EXCLUSIVE);
 
         let buffer = unsafe {
             device.raw().create_buffer(&buffer_info, None).unwrap()

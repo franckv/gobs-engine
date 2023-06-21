@@ -1,16 +1,17 @@
 [package]
 name = "gobs-vulkan"
 version = "0.1.0"
-authors = ["franckv <franck.vdl@gmail.com>"]
-edition = "2018"
+authors = { workspace = true }
+edition = { workspace = true }
 
 [lib]
 name = "gobs_vulkan"
 path = "src/lib.rs"
 
 [dependencies]
-ash = "0.32"
-ash-window = "0.6"
-log = "0.4"
-simplelog = "0.10"
-winit = "0.25"
+ash = { workspace = true }
+ash-window = { workspace = true }
+raw-window-handle = { workspace = true }
+log = { workspace = true }
+simplelog = { workspace = true }
+winit = { workspace = true }

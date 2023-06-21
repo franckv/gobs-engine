@@ -2,6 +2,7 @@ use std;
 use std::sync::Arc;
 
 use winit::window::Window;
+use raw_window_handle::{HasRawDisplayHandle, HasRawWindowHandle};
 
 use ash::vk;
 
@@ -37,7 +38,7 @@ pub struct Surface {
 impl Surface {
     pub fn new(instance: Arc<Instance>, window: Window) -> Arc<Self> {
         let surface = unsafe {
-            ash_window::create_surface(&instance.entry, &instance.instance, &window, None).unwrap()
+            ash_window::create_surface(&instance.entry, &instance.instance, window.raw_display_handle(), window.raw_window_handle(), None).unwrap()
         };
 
         Arc::new(Surface {

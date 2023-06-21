@@ -1,25 +1,25 @@
 use time;
 
 pub struct Timer {
-    last_tick: u64,
+    last_tick: time::OffsetDateTime,
 }
 
 impl Timer {
     pub fn new() -> Self {
         Timer {
-            last_tick: time::precise_time_ns()
+            last_tick: time::OffsetDateTime::now_utc()
         }
     }
 
-    pub fn delta(&mut self) -> u64 {
-        let tick = time::precise_time_ns();
+    pub fn delta(&mut self) -> i128 {
+        let tick = time::OffsetDateTime::now_utc();
         let delta = tick - self.last_tick;
         self.last_tick = tick;
 
-        delta
+        delta.whole_nanoseconds()
     }
 
     pub fn reset(&mut self) {
-        self.last_tick = time::precise_time_ns();
+        self.last_tick = time::OffsetDateTime::now_utc();
     }
 }

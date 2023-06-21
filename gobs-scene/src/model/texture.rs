@@ -26,7 +26,7 @@ impl Texture {
 
     pub fn from_color(color: Color) -> Arc<Self> {
         let c: [u8; 4] = color.into();
-        let pixel = image::Rgba::from_channels(c[0], c[1], c[2], c[3]);
+        let pixel = image::Rgba([c[0], c[1], c[2], c[3]]);
 
         let img = ImageBuffer::from_pixel(1, 1, pixel);
 

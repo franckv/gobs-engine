@@ -9,8 +9,6 @@ use ash::extensions::khr::Surface as VkSurface;
 use ash::extensions::khr::XlibSurface;
 #[cfg(target_os = "windows")]
 use ash::extensions::khr::Win32Surface;
-use ash::version::EntryV1_0;
-use ash::version::InstanceV1_0;
 
 use log::{debug, error, trace};
 
@@ -64,7 +62,7 @@ impl Instance {
     pub fn new(name: &str, version: u32) -> Arc<Self> {
         let app_name = CString::new(name).unwrap();
 
-        let vk_version = vk::make_version(1, 0, 0);
+        let vk_version = vk::make_api_version(0, 1, 0, 0);
 
         let app_info = vk::ApplicationInfo::builder()
             .application_name(&app_name)
@@ -96,7 +94,7 @@ impl Instance {
             .enabled_layer_names(&layers)
             .enabled_extension_names(&extensions);
 
-        let entry = unsafe {ash::Entry::new().unwrap()};
+        let entry = ash::Entry::linked();
 
         let instance: ash::Instance = unsafe {
             debug!("Create instance");
@@ -114,7 +112,11 @@ impl Instance {
                     | vk::DebugUtilsMessageSeverityFlagsEXT::WARNING
                     | vk::DebugUtilsMessageSeverityFlagsEXT::INFO,
             )
-            .message_type(vk::DebugUtilsMessageTypeFlagsEXT::all())
+            .message_type(
+                vk::DebugUtilsMessageTypeFlagsEXT::GENERAL
+                    | vk::DebugUtilsMessageTypeFlagsEXT::VALIDATION
+                    | vk::DebugUtilsMessageTypeFlagsEXT::PERFORMANCE
+            )
             .pfn_user_callback(Some(debug_cb));
 
         let debug_utils_loader = DebugUtils::new(&entry, &instance);
