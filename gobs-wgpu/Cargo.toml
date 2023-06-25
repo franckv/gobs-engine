@@ -1,0 +1,17 @@
+[package]
+name = "wgpu_test"
+version = "0.1.0"
+authors = { workspace = true }
+edition = { workspace = true }
+
+[dependencies]
+winit = { workspace = true }
+wgpu = { workspace = true }
+log = { workspace = true }
+simplelog = { workspace = true }
+pollster = { workspace = true }
+bytemuck = { workspace = true }
+image = { workspace = true }
+anyhow = { workspace = true }
+glam = { workspace = true }
+tobj = { workspace = true }
