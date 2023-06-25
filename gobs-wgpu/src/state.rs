@@ -1,5 +1,3 @@
-use std::time::Duration;
-
 use glam::{ Quat, Vec3 };
 use log::*;
 use winit::event::*;
@@ -222,13 +220,13 @@ impl State {
         }
     }
 
-    pub fn update(&mut self, dt: Duration) {
+    pub fn update(&mut self, dt: f32) {
         self.camera_controller.update_camera(&mut self.camera, dt);
         self.camera.update_view_proj();
 
         self.queue.write_buffer(&self.camera.buffer, 0, bytemuck::cast_slice(&[self.camera.uniform]));
         let old_position: Vec3 = self.light.uniform.position.into();
-        self.light.uniform.position = (Quat::from_axis_angle((0.0, 1.0, 0.0).into(), (60.0 * dt.as_secs_f32()).to_radians())
+        self.light.uniform.position = (Quat::from_axis_angle((0.0, 1.0, 0.0).into(), (60.0 * dt).to_radians())
             * old_position).into();
         self.queue.write_buffer(&self.light.buffer, 0, bytemuck::cast_slice(&[self.light.uniform]));
     }

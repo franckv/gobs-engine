@@ -1,5 +1,3 @@
-use std::time::Instant;
-
 use log::*;
 use simplelog::{CombinedLogger, ConfigBuilder, LevelFilter, TermLogger, ColorChoice, TerminalMode};
 use winit::event::*;
@@ -25,7 +23,7 @@ pub async fn run() {
     let window = WindowBuilder::new().build(&event_loop).unwrap();
 
     let mut state = State::new(window).await;
-    let mut last_render_time = Instant::now();
+    let mut timer = Timer::new();
 
     event_loop.run(move |event, _, control_flow| {
         match event {
@@ -59,10 +57,7 @@ pub async fn run() {
                 }
             }
             Event::RedrawRequested(window_id) if window_id == state.window().id() => {
-                let now = Instant::now();
-                let dt = now - last_render_time;
-                last_render_time = now;
-                state.update(dt);
+                state.update(timer.delta());
                 match state.render() {
                     Ok(_) => {},
                     Err(wgpu::SurfaceError::Lost) => state.resize(*state.size()),

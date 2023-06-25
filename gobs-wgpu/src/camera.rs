@@ -1,5 +1,4 @@
 use std::f32::consts::FRAC_PI_2;
-use std::time::Duration;
 
 use glam::{Mat4, Vec3};
 use log::*;
@@ -237,9 +236,7 @@ impl CameraController {
         };
     }
 
-    pub fn update_camera(&mut self, camera: &mut Camera, dt: Duration) {
-        let dt = dt.as_secs_f32();
-
+    pub fn update_camera(&mut self, camera: &mut Camera, dt: f32) {
         let (yaw_sin, yaw_cos) = camera.yaw.sin_cos();
         let forward = Vec3::new(yaw_cos, 0.0, yaw_sin).normalize();
         let right = Vec3::new(-yaw_sin, 0.0, yaw_cos).normalize();
