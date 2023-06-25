@@ -5,6 +5,7 @@ members = [
     "gobs-game",
     "gobs-render",
     "gobs-vulkan",
+    "gobs-wgpu",
     "examples"
 ]
 
@@ -20,6 +21,7 @@ winit = "0.28"
 time = "0.3"
 uuid = { version = "1.3", features = ["v4"] }
 cgmath = "0.18"
+glam = "0.24"
 ash = { version = "0.37", features = ["linked", "debug"] }
 ash-window = "0.12"
 raw-window-handle = "0.5"
@@ -27,5 +29,6 @@ rusttype = "0.9"
 unicode-normalization = "0.1"
 wgpu = "0.16"
 pollster = "0.3"
-bytemuck = {version="1.13", features = ["derive"]}
+bytemuck = { version="1.13", features = ["derive"] }
 anyhow = "1.0"
+tobj = { version = "3.2.1", features = ["async"] }
