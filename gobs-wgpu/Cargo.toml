@@ -15,3 +15,4 @@ image = { workspace = true }
 anyhow = { workspace = true }
 glam = { workspace = true }
 tobj = { workspace = true }
+gobs-utils = {path = "../gobs-utils"}

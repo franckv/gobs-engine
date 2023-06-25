@@ -6,6 +6,7 @@ pub struct Pipeline {
 
 #[derive(Default)]
 pub struct PipelineBuilder<'a> {
+    name: Option<&'a str>,
     device: Option<&'a wgpu::Device>,
     bind_layouts: Vec<&'a wgpu::BindGroupLayout>,
     color_format: Option<wgpu::TextureFormat>,
@@ -15,19 +16,20 @@ pub struct PipelineBuilder<'a> {
 }
 
 impl<'a> PipelineBuilder<'a> {
-    pub fn new(device: &'a wgpu::Device) -> Self {
+    pub fn new(device: &'a wgpu::Device, name: &'a str) -> Self {
         PipelineBuilder {
+            name: Some(name),
             device: Some(device),
             bind_layouts: Vec::new(),
             ..Default::default()
         }
     }
 
-    pub async fn shader(mut self, shader_path: &str) -> PipelineBuilder<'a> {
+    pub async fn shader(mut self, shader_path: &'a str) -> PipelineBuilder<'a> {
         let shader_txt = resource::load_string(shader_path).await.unwrap();
 
         let shader = wgpu::ShaderModuleDescriptor {
-            label: Some("Shader"),
+            label: Some(shader_path),
             source: wgpu::ShaderSource::Wgsl(shader_txt.into())
         };
 
@@ -116,7 +118,7 @@ impl<'a> PipelineBuilder<'a> {
 
         Pipeline {
             pipeline: device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
-                label: Some("Render Pipeline"),
+                label: Some(self.name.unwrap()),
                 layout: Some(&layout),
                 vertex: vertex_state,
                 fragment: Some(fragment_state),

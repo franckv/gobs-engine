@@ -1,6 +1,5 @@
 use std::marker::PhantomData;
 use std::mem;
-use std::ptr;
 use std::sync::Arc;
 
 use ash::vk;

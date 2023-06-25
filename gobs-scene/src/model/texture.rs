@@ -2,7 +2,7 @@ use std::sync::Arc;
 use std::vec::Vec;
 
 use image;
-use image::{ImageBuffer, GenericImageView, Pixel};
+use image::ImageBuffer;
 use uuid::Uuid;
 
 use super::Color;

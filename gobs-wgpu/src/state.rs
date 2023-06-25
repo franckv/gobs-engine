@@ -133,7 +133,7 @@ impl State {
 
         let clear_color = wgpu::Color::BLACK;
 
-        let render_pipeline = PipelineBuilder::new(&device)
+        let render_pipeline = PipelineBuilder::new(&device, "Render pipeline")
             .shader("../shaders/shader.wgsl").await
             .bind_layout(&obj_model.materials[0].layout)
             .bind_layout(&camera.layout)
@@ -144,7 +144,7 @@ impl State {
             .depth_format(Texture::DEPTH_FORMAT)
             .build();
 
-        let light_render_pipeline = PipelineBuilder::new(&device)
+        let light_render_pipeline = PipelineBuilder::new(&device, "Light pipeline")
             .shader("../shaders/light.wgsl").await
             .bind_layout(&camera.layout)
             .bind_layout(&light.layout)

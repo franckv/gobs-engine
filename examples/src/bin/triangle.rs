@@ -26,7 +26,7 @@ impl Run for App {
         self.graph.insert(SceneGraph::new_node().data(triangle).build());
     }
 
-    fn update(&mut self, _delta: i128, engine: &mut Application) {
+    fn update(&mut self, _delta: f32, engine: &mut Application) {
         if !engine.renderer().new_frame().is_ok() {
             return;
         }

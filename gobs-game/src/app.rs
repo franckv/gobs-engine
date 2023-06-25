@@ -1,5 +1,3 @@
-use std::sync::Arc;
-
 use winit::dpi::LogicalSize;
 use winit::event_loop::EventLoop;
 use winit::window::WindowBuilder;
@@ -20,7 +18,6 @@ const MAX_INSTANCES: usize = 81; // TODO: hardcoded
 const MAX_DRAWS: usize = 64; // TODO: hardcoded
 
 pub struct Application {
-    context: Arc<Context>,
     renderer: Renderer,
     input_handler: InputHandler
 }
@@ -41,10 +38,9 @@ impl Application {
         let (context, display) = Context::new("Test", window);
 
         log::debug!("Create Renderer");
-        let renderer = Renderer::new(context.clone(), display, MAX_INSTANCES, MAX_DRAWS);
+        let renderer = Renderer::new(context, display, MAX_INSTANCES, MAX_DRAWS);
 
         Application {
-            context,
             renderer,
             input_handler
         }
@@ -71,7 +67,7 @@ impl Application {
 
         while running {
             let delta = timer.delta();
-            log::trace!("FPS: {}", 1_000_000_000 / delta);
+            log::trace!("FPS: {}", 1.0 / delta);
 
             let event = self.input_handler.read_inputs();
 
@@ -98,6 +94,6 @@ impl Application {
 
 pub trait Run: Sized {
     fn create(&mut self, _application: &mut Application) {}
-    fn update(&mut self, _delta: i128, _application: &mut Application) {}
+    fn update(&mut self, _delta: f32, _application: &mut Application) {}
     fn resize(&mut self, _width: u32, _height: u32, _application: &mut Application) {}
 }

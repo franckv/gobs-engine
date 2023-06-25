@@ -183,7 +183,7 @@ impl Renderer {
 
         graph.foreach(|data, transform| {
             match data.data() {
-                Some(d) => {
+                Some(_) => {
                     instances.push((data.data().as_ref().unwrap().clone(), transform.clone()));
                 },
                 _ => ()
@@ -222,14 +222,14 @@ impl Renderer {
                 self.draw_instances(&instances[0].0, instance_count);
             }
 
-            log::trace!("Draw instances {}: {}", id, timer.delta() / 1_000_000);
+            log::trace!("Draw instances {}: {}", id, timer.delta());
         }
 
         if self.frames[self.current_frame].dirty {
             self.end_frame();
         }
 
-        log::trace!("Draw frame: {}", timer.delta() / 1_000_000);
+        log::trace!("Draw frame: {}", timer.delta());
     }
 
     /// group instances by texture

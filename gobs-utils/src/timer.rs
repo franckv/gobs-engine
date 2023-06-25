@@ -11,12 +11,12 @@ impl Timer {
         }
     }
 
-    pub fn delta(&mut self) -> i128 {
+    pub fn delta(&mut self) -> f32 {
         let tick = time::OffsetDateTime::now_utc();
         let delta = tick - self.last_tick;
         self.last_tick = tick;
 
-        delta.whole_nanoseconds()
+        delta.as_seconds_f32()
     }
 
     pub fn reset(&mut self) {

@@ -29,14 +29,14 @@ impl Run for App {
         Self::draw_triangles(&mut self.graph, &engine.renderer().context, N_TRIANGLES);
     }
 
-    fn update(&mut self, _delta: i128, engine: &mut Application) {
+    fn update(&mut self, _delta: f32, engine: &mut Application) {
         if !engine.renderer().new_frame().is_ok() {
             return;
         }
 
         let model_transform = Transform::rotation([1., 0., 0.], 1.);
 
-        self.graph.foreach(|data, transform| {
+        self.graph.foreach(|data, _transform| {
             data.transform_mut().transform(&model_transform);
         });
 
@@ -97,7 +97,7 @@ impl App {
 
         let mut positions = Vec::new();
 
-        log::debug!("Triangles: {}", timer.delta() / 1_000_000);
+        log::debug!("Triangles: {}", timer.delta());
 
         for i in 0..rows {
             for j in 0..rows {
@@ -109,7 +109,7 @@ impl App {
             }
         }
 
-        log::debug!("Positions: {}", timer.delta() / 1_000_000);
+        log::debug!("Positions: {}", timer.delta());
 
         let scale = width / (2 * rows) as f32;
 
@@ -129,7 +129,7 @@ impl App {
 
         }
 
-        log::debug!("Instances: {}", timer.delta() / 1_000_000);
+        log::debug!("Instances: {}", timer.delta());
     }
 }
 
