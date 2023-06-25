@@ -12,12 +12,11 @@ pub struct LightUniform {
 pub struct Light {
     pub buffer: wgpu::Buffer,
     pub uniform: LightUniform,
-    pub layout: wgpu::BindGroupLayout,
     pub bind_group: wgpu::BindGroup
 }
 
 impl Light {
-    pub fn new(device: &wgpu::Device) -> Self {
+    pub fn new(device: &wgpu::Device, layout: &wgpu::BindGroupLayout) -> Self {
         let uniform = LightUniform {
             position: [2.0, 2.0, 2.0],
             _padding: 0,
@@ -33,24 +32,8 @@ impl Light {
             }
         );
 
-        let layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-            entries: &[
-                wgpu::BindGroupLayoutEntry {
-                    binding: 0,
-                    visibility: wgpu::ShaderStages::VERTEX | wgpu::ShaderStages::FRAGMENT,
-                    ty: wgpu::BindingType::Buffer {
-                        ty: wgpu::BufferBindingType::Uniform,
-                        has_dynamic_offset: false,
-                        min_binding_size: None
-                    },
-                    count: None
-                }
-            ],
-            label: None
-        });
-
         let bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
-            layout: &layout,
+            layout,
             entries: &[
                 wgpu::BindGroupEntry {
                     binding: 0,
@@ -63,7 +46,6 @@ impl Light {
         Light {
             uniform,
             buffer,
-            layout,
             bind_group
         }
     }

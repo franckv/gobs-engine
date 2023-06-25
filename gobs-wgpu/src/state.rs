@@ -12,7 +12,7 @@ use crate::Light;
 use crate::resource;
 
 use crate::model::{ DrawLight, DrawModel, Model, ModelVertex, Texture, Vertex };
-use crate::pipeline::{ Pipeline, PipelineBuilder };
+use crate::pipeline::{ Generator, Pipeline, PipelineBuilder };
 
 const NUM_INSTANCES_PER_ROW: u32 = 10;
 const SPACE_BETWEEN: f32 = 3.0;
@@ -83,8 +83,15 @@ impl State {
 
         surface.configure(&device, &config);
 
+        let generator = Generator::new("../shaders/shader.wgsl").await;
+        let layouts = generator.bind_layouts(&device);
+
+        let generator_light = Generator::new("../shaders/light.wgsl").await;
+        let layouts_light = generator_light.bind_layouts(&device);
+
         let camera = Camera::new(
             &device,
+            &layouts[1],
             (0.0, 5.0, 10.0),
             (-90.0 as f32).to_radians(),
             (-20.0 as f32).to_radians(),
@@ -96,7 +103,7 @@ impl State {
 
         let camera_controller = CameraController::new(4.0, 0.4);
 
-        let light = Light::new(&device);
+        let light = Light::new(&device, &layouts[2]);
 
         let instances = (0..NUM_INSTANCES_PER_ROW).flat_map(|z| {
             (0..NUM_INSTANCES_PER_ROW).map(move |x| {
@@ -127,15 +134,13 @@ impl State {
 
         let depth_texture = Texture::create_depth_texture(&device, &config, "depth_texture");
 
-        let obj_model = resource::load_model("cube.obj", &device, &queue).await.unwrap();
+        let obj_model = resource::load_model("cube.obj", &device, &queue, &layouts[0]).await.unwrap();
 
         let clear_color = wgpu::Color::BLACK;
 
         let render_pipeline = PipelineBuilder::new(&device, "Render pipeline")
             .shader("../shaders/shader.wgsl").await
-            .bind_layout(&obj_model.materials[0].layout)
-            .bind_layout(&camera.layout)
-            .bind_layout(&light.layout)
+            .bind_layout(layouts.iter().collect::<Vec<_>>().as_slice())
             .vertex_layout(ModelVertex::desc())
             .vertex_layout(InstanceRaw::desc())
             .color_format(config.format)
@@ -144,8 +149,7 @@ impl State {
 
         let light_render_pipeline = PipelineBuilder::new(&device, "Light pipeline")
             .shader("../shaders/light.wgsl").await
-            .bind_layout(&camera.layout)
-            .bind_layout(&light.layout)
+            .bind_layout(layouts_light.iter().collect::<Vec<_>>().as_slice())
             .vertex_layout(ModelVertex::desc())
             .color_format(config.format)
             .depth_format(Texture::DEPTH_FORMAT)

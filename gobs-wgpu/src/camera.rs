@@ -8,6 +8,10 @@ use wgpu::util::DeviceExt;
 
 const SAFE_FRAC_PI_2: f32 = FRAC_PI_2 - 0.0001;
 
+pub enum ProjectionMode {
+    Perspective
+}
+
 pub struct Camera {
     pub position: Vec3,
     yaw: f32,
@@ -15,13 +19,13 @@ pub struct Camera {
     pub projection: Projection,
     pub buffer: wgpu::Buffer,
     pub uniform: CameraUniform,
-    pub layout: wgpu::BindGroupLayout,
     pub bind_group: wgpu::BindGroup
 }
 
 impl Camera {
     pub fn new<V: Into<Vec3>>(
         device: &wgpu::Device,
+        layout: &wgpu::BindGroupLayout,
         position: V,
         yaw: f32,
         pitch: f32,
@@ -47,25 +51,8 @@ impl Camera {
             }
         );
 
-        let layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-            entries: &[
-                wgpu::BindGroupLayoutEntry {
-                    binding: 0,
-                    visibility: wgpu::ShaderStages::VERTEX | wgpu::ShaderStages::FRAGMENT,
-                    ty: wgpu::BindingType::Buffer {
-                        ty: wgpu::BufferBindingType::Uniform,
-                        has_dynamic_offset: false,
-                        min_binding_size: None
-                    },
-                    count: None
-                }
-            ],
-            label: Some("camera_bind_group_layout")
-        });
-
-            
         let bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
-            layout: &layout,
+            layout,
             entries: &[
                 wgpu::BindGroupEntry {
                     binding: 0,
@@ -82,7 +69,6 @@ impl Camera {
             projection,
             buffer,
             uniform,
-            layout,
             bind_group
         }
     }

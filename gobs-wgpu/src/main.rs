@@ -14,7 +14,7 @@ pub async fn run() {
 
     let _ = CombinedLogger::init(
         vec![
-            TermLogger::new(LevelFilter::Info, config_other, TerminalMode::Mixed, ColorChoice::Auto),
+            TermLogger::new(LevelFilter::Warn, config_other, TerminalMode::Mixed, ColorChoice::Auto),
             TermLogger::new(LevelFilter::Info, config_self, TerminalMode::Mixed, ColorChoice::Auto)
         ]
     );

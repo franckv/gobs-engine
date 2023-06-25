@@ -40,7 +40,8 @@ pub async fn load_texture(
 pub async fn load_model(
     file_name: &str,
     device: &wgpu::Device,
-    queue: &wgpu::Queue) -> Result<Model> {
+    queue: &wgpu::Queue,
+    layout: &wgpu::BindGroupLayout) -> Result<Model> {
         let obj_text = load_string(file_name).await?;
         let obj_cursor = Cursor::new(obj_text);
         let mut obj_reader = BufReader::new(obj_cursor);
@@ -65,7 +66,7 @@ pub async fn load_model(
             let diffuse_texture = load_texture(&m.diffuse_texture, false, device, queue).await?;
             let normal_texture = load_texture(&m.normal_texture, true, device, queue).await?;
 
-            materials.push(Material::new(m.name, device, diffuse_texture, normal_texture));
+            materials.push(Material::new(m.name, device, layout, diffuse_texture, normal_texture));
         }
 
         let meshes = models.into_iter().map(|m| {
