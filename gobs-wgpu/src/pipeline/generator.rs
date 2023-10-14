@@ -61,6 +61,11 @@ impl Generator {
         }
     }
 
+    /// Define layout to bind resources (e.g. uniform buffers) to shader
+    /// Used in shader as follow:
+    ///     @group(0) @binding(0)
+    ///     var<uniform> camera: Camera;
+    /// Return a list of binding groups (@group)
     pub fn bind_layouts(&self, device: &wgpu::Device) -> Vec<wgpu::BindGroupLayout> {
         info!("Generate bind group layouts");
 

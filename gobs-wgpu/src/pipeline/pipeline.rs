@@ -1,5 +1,3 @@
-use log::*;
-
 use crate::resource;
 
 pub struct Pipeline {

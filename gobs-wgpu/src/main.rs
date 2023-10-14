@@ -31,7 +31,7 @@ pub async fn run() {
                 event: DeviceEvent::MouseMotion{ delta },
                 ..
             } => if state.mouse_pressed {
-                state.camera_controller.process_mouse(delta.0, delta.1)
+                state.mouse_input(delta.0, delta.1)
             }
             Event::WindowEvent {
                 ref event,
