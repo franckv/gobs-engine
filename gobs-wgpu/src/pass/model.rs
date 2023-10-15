@@ -1,12 +1,12 @@
 use wgpu::BindGroupLayout;
 
-use crate::Gfx;
-use crate::InstanceRaw;
-use crate::scene::Scene;
-use crate::pipeline::{ Generator, Pipeline, PipelineBuilder };
-use crate::model::{ Model, ModelVertex, Texture, Vertex };
 use crate::camera::CameraResource;
+use crate::model::InstanceRaw;
 use crate::light::LightResource;
+use crate::model::{ Model, ModelVertex, Texture, Vertex };
+use crate::pipeline::{ Generator, Pipeline, PipelineBuilder };
+use crate::render::Gfx;
+use crate::scene::Scene;
 
 const SHADER: &str = "../shaders/shader.wgsl";
 

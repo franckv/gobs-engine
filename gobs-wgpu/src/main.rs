@@ -1,6 +1,6 @@
 use simplelog::{CombinedLogger, ConfigBuilder, LevelFilter, TermLogger, ColorChoice, TerminalMode};
 
-use gobs_wgpu::Application;
+use gobs_wgpu::app::Application;
 
 fn main() {
     let config_other = ConfigBuilder::new().add_filter_ignore_str(module_path!()).build();

@@ -1,7 +1,7 @@
 use image::GenericImageView;
 use anyhow::*;
 
-use crate::Gfx;
+use crate::render::Gfx;
 
 pub struct Texture {
     pub texture: wgpu::Texture,

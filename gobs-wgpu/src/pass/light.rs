@@ -1,8 +1,8 @@
-use crate::Gfx;
-use crate::pipeline::{ Generator, Pipeline, PipelineBuilder };
-use crate::model::{ Model, ModelVertex, Texture, Vertex };
 use crate::camera::CameraResource;
 use crate::light::LightResource;
+use crate::model::{ Model, ModelVertex, Texture, Vertex };
+use crate::pipeline::{ Generator, Pipeline, PipelineBuilder };
+use crate::render::Gfx;
 
 const SHADER: &str = "../shaders/light.wgsl";
 

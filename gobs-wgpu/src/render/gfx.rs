@@ -2,11 +2,11 @@ use winit::window::Window;
 use wgpu::util::DeviceExt;
 
 use crate::camera::CameraResource;
+use crate::model::InstanceRaw;
 use crate::light::LightResource;
-use crate::scene::Scene;
 use crate::pass::{DrawLightPass, DrawModelPass};
-use crate::InstanceRaw;
 use crate::render::Display;
+use crate::scene::Scene;
 
 pub struct Gfx {
     display: Display,

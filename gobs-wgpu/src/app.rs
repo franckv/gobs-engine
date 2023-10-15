@@ -3,8 +3,8 @@ use winit::event::*;
 use winit::event_loop::*;
 use winit::window::{Window, WindowBuilder};
 
-use crate::Gfx;
-use crate::Input;
+use crate::input::Input;
+use crate::render::Gfx;
 use crate::scene::Scene;
 
 use gobs_utils::timer::Timer;

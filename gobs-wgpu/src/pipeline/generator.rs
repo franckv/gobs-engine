@@ -3,13 +3,9 @@ use itertools::Itertools;
 
 use log::*;
 use naga::front::wgsl::Frontend;
-use naga::Module;
-use naga::GlobalVariable;
-use naga::Handle;
-use naga::Type;
-use naga::TypeInner;
+use naga::{ Module, GlobalVariable, Handle, Type, TypeInner };
 
-use crate::Gfx;
+use crate::render::Gfx;
 use crate::resource;
 
 pub struct Generator {

@@ -1,17 +1,13 @@
 use glam::{ Quat, Vec3 };
 use log::*;
 
-use crate::Camera;
-use crate::CameraController;
-use crate::camera::CameraProjection;
-use crate::camera::CameraResource;
-use crate::Gfx;
-use crate::Instance;
-use crate::Light;
-use crate::light::LightResource;
+use crate::camera::{ Camera, CameraController, CameraProjection, CameraResource };
+use crate::render::Gfx;
+use crate::model::Instance;
+use crate::light::{ Light, LightResource };
+use crate::model::{ Model, Texture };
 use crate::pass::{ LightPass, ModelPass };
 use crate::resource;
-use crate::model::{ Model, Texture };
 
 const TILE_SIZE: f32 = 2.;
 
@@ -30,18 +26,6 @@ pub struct Scene {
 }
 
 impl Scene {
-    pub fn camera(&self) -> &Camera {
-        &self.camera
-    }
-
-    pub fn camera_controller(&self) -> &CameraController {
-        &self.camera_controller
-    }
-
-    pub fn light(&self) -> &Light {
-        &self.light
-    }
-
     pub fn instances(&self) -> &Vec<Instance> {
         &self.instances
     }
@@ -52,10 +36,6 @@ impl Scene {
 
     pub fn depth_texture(&self) -> &Texture {
         &self.depth_texture
-    }
-
-    pub fn obj_model(&self) -> &Model {
-        &self.obj_model
     }
 
     pub async fn new(gfx: &Gfx) -> Self {
