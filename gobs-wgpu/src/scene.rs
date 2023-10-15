@@ -5,35 +5,26 @@ use crate::CameraController;
 use crate::camera::CameraProjection;
 use crate::Gfx;
 use crate::Instance;
-use crate::InstanceRaw;
 use crate::Light;
-use crate::pipeline::{ Generator, Pipeline, PipelineBuilder };
+use crate::pass::{ LightPass, ModelPass };
 use crate::resource;
-use crate::model::{ Model, ModelVertex, Texture, Vertex };
+use crate::model::{ Model, Texture };
 
 const TILE_SIZE: f32 = 2.;
 
 pub struct Scene {
-    render_pipeline: Pipeline,
-    light_render_pipeline: Pipeline,
+    pub light_pass: LightPass,
+    pub model_pass: ModelPass,
     camera: Camera,
     pub camera_controller: CameraController,
     light: Light,
     instances: Vec<Instance>,
     instance_buffer: wgpu::Buffer,
     depth_texture: Texture,
-    obj_model: Model,
+    pub obj_model: Model,
 }
 
 impl Scene {
-    pub fn render_pipeline(&self) -> &Pipeline {
-        &self.render_pipeline
-    }
-
-    pub fn light_render_pipeline(&self) -> &Pipeline {
-        &self.light_render_pipeline
-    }
-
     pub fn camera(&self) -> &Camera {
         &self.camera
     }
@@ -63,13 +54,10 @@ impl Scene {
     }
 
     pub async fn new(gfx: &Gfx) -> Self {
-        let generator = Generator::new("../shaders/shader.wgsl").await;
-        let layouts = generator.bind_layouts(gfx);
+        let light_pass = LightPass::new(&gfx).await;
+        let model_pass = ModelPass::new(&gfx).await;
 
-        let generator_light = Generator::new("../shaders/light.wgsl").await;
-        let layouts_light = generator_light.bind_layouts(gfx);
-
-        let camera_resource = gfx.create_camera_resource(&layouts[1]);
+        let camera_resource = gfx.create_camera_resource(&model_pass.layouts[1]);
 
         let camera = Camera::new(
             camera_resource,
@@ -86,7 +74,7 @@ impl Scene {
 
         let camera_controller = CameraController::new(4.0, 0.4);
 
-        let light_resource = gfx.create_light_resource(&layouts[2]);
+        let light_resource = gfx.create_light_resource(&model_pass.layouts[2]);
         let light = Light::new(
             light_resource,
             (8.0, 2.0, 8.0),
@@ -99,28 +87,11 @@ impl Scene {
 
         let depth_texture = Texture::create_depth_texture(gfx, "depth_texture");
 
-        let obj_model = resource::load_model("cube.obj", gfx.device(), gfx.queue(), &layouts[0]).await.unwrap();
-
-        let render_pipeline = PipelineBuilder::new(gfx.device(), "Render pipeline")
-            .shader("../shaders/shader.wgsl").await
-            .bind_layout(layouts.iter().collect::<Vec<_>>().as_slice())
-            .vertex_layout(ModelVertex::desc())
-            .vertex_layout(InstanceRaw::desc())
-            .color_format(gfx.format().clone())
-            .depth_format(Texture::DEPTH_FORMAT)
-            .build();
-
-        let light_render_pipeline = PipelineBuilder::new(gfx.device(), "Light pipeline")
-            .shader("../shaders/light.wgsl").await
-            .bind_layout(layouts_light.iter().collect::<Vec<_>>().as_slice())
-            .vertex_layout(ModelVertex::desc())
-            .color_format(gfx.format().clone())
-            .depth_format(Texture::DEPTH_FORMAT)
-            .build();
+        let obj_model = resource::load_model("cube.obj", gfx.device(), gfx.queue(), &model_pass.layouts[0]).await.unwrap();
 
         Scene {
-            render_pipeline,
-            light_render_pipeline,
+            light_pass,
+            model_pass,
             camera,
             camera_controller,
             light,

@@ -4,7 +4,7 @@ use wgpu::util::DeviceExt;
 use crate::camera::CameraResource;
 use crate::light::LightResource;
 use crate::scene::Scene;
-use crate::model::{ DrawLight, DrawModel };
+use crate::pass::{DrawLightPass, DrawModelPass};
 use crate::InstanceRaw;
 use crate::render::Display;
 
@@ -125,16 +125,8 @@ impl Gfx {
                 })
             });
 
-            render_pass.set_pipeline(&scene.render_pipeline().pipeline);
-            render_pass.set_bind_group(1, &scene.camera().resource.bind_group, &[]);
-            render_pass.set_bind_group(2, &scene.light().resource.bind_group, &[]);
-            render_pass.set_vertex_buffer(1, scene.instance_buffer().slice(..));
-            render_pass.draw_model_instanced(&scene.obj_model(), 0..scene.instances().len() as _);
-
-            render_pass.set_pipeline(&scene.light_render_pipeline().pipeline);
-            render_pass.set_bind_group(0, &scene.camera().resource.bind_group, &[]);
-            render_pass.set_bind_group(1, &scene.light().resource.bind_group, &[]);
-            render_pass.draw_light_model(&scene.obj_model());
+            render_pass.draw_model_pass(&scene.model_pass, &scene.obj_model, &scene);
+            render_pass.draw_light_pass(&scene.light_pass, &scene.obj_model, &scene);
         }
 
         self.queue.submit(std::iter::once(encoder.finish()));

@@ -5,6 +5,7 @@ mod input;
 mod instance;
 mod light;
 mod model;
+mod pass;
 mod pipeline;
 mod resource;
 mod scene;
