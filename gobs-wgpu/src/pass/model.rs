@@ -5,6 +5,8 @@ use crate::InstanceRaw;
 use crate::scene::Scene;
 use crate::pipeline::{ Generator, Pipeline, PipelineBuilder };
 use crate::model::{ Model, ModelVertex, Texture, Vertex };
+use crate::camera::CameraResource;
+use crate::light::LightResource;
 
 const SHADER: &str = "../shaders/shader.wgsl";
 
@@ -35,14 +37,14 @@ impl ModelPass {
 }
 
 pub trait DrawModelPass<'a> {
-    fn draw_model_pass(&mut self, pass: &'a ModelPass, model: &'a Model, scene: &'a Scene);
+    fn draw_model_pass(&mut self, pass: &'a ModelPass, model: &'a Model, camera: &'a CameraResource, light: &'a LightResource, scene: &'a Scene);
 }
 
 impl <'a> DrawModelPass<'a> for wgpu::RenderPass<'a> {
-    fn draw_model_pass(&mut self, pass: &'a ModelPass, model: &'a Model, scene: &'a Scene) {
+    fn draw_model_pass(&mut self, pass: &'a ModelPass, model: &'a Model, camera: &'a CameraResource, light: &'a LightResource, scene: &'a Scene) {
         self.set_pipeline(&pass.pipeline.pipeline);
-        self.set_bind_group(1, &scene.camera().resource.bind_group, &[]);
-        self.set_bind_group(2, &scene.light().resource.bind_group, &[]);
+        self.set_bind_group(1, &camera.bind_group, &[]);
+        self.set_bind_group(2, &light.bind_group, &[]);
         self.set_vertex_buffer(1, scene.instance_buffer().slice(..));
         for mesh in &model.meshes {
             let material = &model.materials[mesh.material];

@@ -1,7 +1,8 @@
 use crate::Gfx;
-use crate::scene::Scene;
 use crate::pipeline::{ Generator, Pipeline, PipelineBuilder };
 use crate::model::{ Model, ModelVertex, Texture, Vertex };
+use crate::camera::CameraResource;
+use crate::light::LightResource;
 
 const SHADER: &str = "../shaders/light.wgsl";
 
@@ -29,14 +30,14 @@ impl LightPass {
 }
 
 pub trait DrawLightPass<'a> {
-    fn draw_light_pass(&mut self, pass: &'a LightPass, model: &'a Model, scene: &'a Scene);
+    fn draw_light_pass(&mut self, pass: &'a LightPass, model: &'a Model, camera: &'a CameraResource, light: &'a LightResource);
 }
 
 impl <'a> DrawLightPass<'a> for wgpu::RenderPass<'a> {
-    fn draw_light_pass(&mut self, pass: &'a LightPass, model: &'a Model, scene: &'a Scene) {
+    fn draw_light_pass(&mut self, pass: &'a LightPass, model: &'a Model, camera: &'a CameraResource, light: &'a LightResource) {
         self.set_pipeline(&pass.pipeline.pipeline);
-        self.set_bind_group(0, &scene.camera().resource.bind_group, &[]);
-        self.set_bind_group(1, &scene.light().resource.bind_group, &[]);
+        self.set_bind_group(0, &camera.bind_group, &[]);
+        self.set_bind_group(1, &light.bind_group, &[]);
         for mesh in &model.meshes {
             self.set_vertex_buffer(0, mesh.vertex_buffer.slice(..));
             self.set_index_buffer(mesh.index_buffer.slice(..), wgpu::IndexFormat::Uint32);

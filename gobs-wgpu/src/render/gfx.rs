@@ -125,8 +125,8 @@ impl Gfx {
                 })
             });
 
-            render_pass.draw_model_pass(&scene.model_pass, &scene.obj_model, &scene);
-            render_pass.draw_light_pass(&scene.light_pass, &scene.obj_model, &scene);
+            render_pass.draw_model_pass(&scene.model_pass, &scene.obj_model, &scene.camera_resource, &scene.light_resource, &scene);
+            render_pass.draw_light_pass(&scene.light_pass, &scene.obj_model, &scene.camera_resource, &scene.light_resource);
         }
 
         self.queue.submit(std::iter::once(encoder.finish()));

@@ -1,5 +1,8 @@
 use wgpu::util::DeviceExt;
 
+use crate::Gfx;
+use crate::Light;
+
 #[repr(C)]
 #[derive(Debug, Copy, Clone, bytemuck::Pod, bytemuck::Zeroable)]
 pub struct LightUniform {
@@ -50,8 +53,10 @@ impl LightResource {
         }
     }
 
-    pub fn update(&mut self, position: [f32; 3], colour: [f32; 3]) {
-        self.uniform.position = position;
-        self.uniform.colour = colour;
+    pub fn update(&mut self, gfx: &Gfx, light: &Light) {
+        self.uniform.position = light.position.into();
+        self.uniform.colour = light.colour.into();
+
+        gfx.queue().write_buffer(&self.buffer, 0, bytemuck::cast_slice(&[self.uniform]));
     }
 }

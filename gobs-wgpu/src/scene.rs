@@ -1,11 +1,14 @@
 use glam::{ Quat, Vec3 };
+use log::*;
 
 use crate::Camera;
 use crate::CameraController;
 use crate::camera::CameraProjection;
+use crate::camera::CameraResource;
 use crate::Gfx;
 use crate::Instance;
 use crate::Light;
+use crate::light::LightResource;
 use crate::pass::{ LightPass, ModelPass };
 use crate::resource;
 use crate::model::{ Model, Texture };
@@ -16,8 +19,10 @@ pub struct Scene {
     pub light_pass: LightPass,
     pub model_pass: ModelPass,
     camera: Camera,
+    pub camera_resource: CameraResource,
     pub camera_controller: CameraController,
     light: Light,
+    pub light_resource: LightResource,
     instances: Vec<Instance>,
     instance_buffer: wgpu::Buffer,
     depth_texture: Texture,
@@ -60,7 +65,6 @@ impl Scene {
         let camera_resource = gfx.create_camera_resource(&model_pass.layouts[1]);
 
         let camera = Camera::new(
-            camera_resource,
             (0.0, 5.0, 10.0),
             CameraProjection::new(
                 gfx.width(),
@@ -76,7 +80,6 @@ impl Scene {
 
         let light_resource = gfx.create_light_resource(&model_pass.layouts[2]);
         let light = Light::new(
-            light_resource,
             (8.0, 2.0, 8.0),
             (1., 1., 0.9));
 
@@ -93,8 +96,10 @@ impl Scene {
             light_pass,
             model_pass,
             camera,
+            camera_resource,
             camera_controller,
             light,
+            light_resource,
             instances,
             instance_buffer,
             depth_texture,
@@ -109,19 +114,18 @@ impl Scene {
 
     pub fn update(&mut self, gfx: &Gfx, dt: f32) {
         self.camera_controller.update_camera(&mut self.camera, dt);
-        self.camera.update_view_proj();
+        self.camera_resource.update(gfx, &self.camera);
 
         let old_position: Vec3 = self.light.position;
         let position: Vec3 = (Quat::from_axis_angle((0.0, 1.0, 0.0).into(), (60.0 * dt).to_radians())
             * old_position).into();
 
         self.light.update(position);
-
-        gfx.queue().write_buffer(&self.camera.resource.buffer, 0, bytemuck::cast_slice(&[self.camera.resource.uniform]));
-        gfx.queue().write_buffer(&self.light.resource.buffer, 0, bytemuck::cast_slice(&[self.light.resource.uniform]));
+        self.light_resource.update(&gfx, &self.light);
     }
 
     pub fn load_scene() -> Vec<Instance> {
+        info!("Load scene");
 
         let map = include_str!("../assets/map.dat");
 

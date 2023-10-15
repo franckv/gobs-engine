@@ -96,6 +96,7 @@ impl Generator {
                 label: Some(&label)
             };
 
+            info!("[{}] {}", i, label);
             gfx.create_bind_group_layout(&layout)
         }).collect::<Vec<_>>()
     }

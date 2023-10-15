@@ -1,7 +1,5 @@
 use glam::{Mat4, Vec3};
 
-use crate::camera::CameraResource;
-
 #[allow(dead_code)]
 pub enum ProjectionMode {
     Ortho,
@@ -37,7 +35,7 @@ impl CameraProjection {
         self.aspect = width as f32 / height as f32;
     }
 
-    pub fn calc_matrix(&self) -> Mat4 {
+    pub fn to_matrix(&self) -> Mat4 {
         Mat4::perspective_rh(self.fovy, self.aspect, self.znear, self.zfar)
     }
 }
@@ -49,41 +47,25 @@ pub struct Camera {
     pub yaw: f32,
     pub pitch: f32,
     pub projection: CameraProjection,
-    pub resource: CameraResource
 }
 
 impl Camera {
     pub fn new<V: Into<Vec3>>(
-        mut resource: CameraResource,
         position: V,
         projection: CameraProjection,
         yaw: f32,
         pitch: f32
     ) -> Self {
-        let position: Vec3 = position.into();
-        let view_position = position.extend(1.0).to_array();
-        let view_proj = (projection.calc_matrix() * Self::view_proj(position.into(), yaw.into(), pitch.into())).to_cols_array_2d();
-
-        resource.update(view_position, view_proj);
-
         Camera {
             position: position.into(),
             mode: ProjectionMode::Perspective,
             yaw: yaw.into(),
             pitch: pitch.into(),
-            projection,
-            resource
+            projection
         }
     }
 
-    pub fn update_view_proj(&mut self) {
-        let view_position = self.position.extend(1.0).to_array();
-        let view_proj = (self.projection.calc_matrix() * self.calc_matrix()).to_cols_array_2d();
-
-        self.resource.update(view_position, view_proj);
-    }
-
-    fn calc_matrix(&self) -> Mat4 {
+    pub fn to_matrix(&self) -> Mat4 {
         Self::view_proj(self.position, self.yaw, self.pitch)
     }
 

@@ -1,5 +1,8 @@
 use wgpu::util::DeviceExt;
 
+use crate::Gfx;
+use crate::Camera;
+
 #[repr(C)]
 #[derive(Debug, Copy, Clone, bytemuck::Pod, bytemuck::Zeroable)]
 pub struct CameraUniform {
@@ -48,8 +51,13 @@ impl CameraResource {
         }
     }
 
-    pub fn update(&mut self, view_position: [f32; 4], view_proj: [[f32; 4]; 4]) {
+    pub fn update(&mut self, gfx: &Gfx, camera: &Camera) {
+        let view_position = camera.position.extend(1.0).to_array();
+        let view_proj = (camera.projection.to_matrix() * camera.to_matrix()).to_cols_array_2d();
+
         self.uniform.view_position = view_position;
         self.uniform.view_proj = view_proj;
+
+        gfx.queue().write_buffer(&self.buffer, 0, bytemuck::cast_slice(&[self.uniform]));
     }
 }
