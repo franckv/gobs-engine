@@ -136,7 +136,7 @@ impl Scene {
         self.camera.projection.resize(width, height);
     }
 
-    pub fn update(&mut self, dt: f32) {
+    pub fn update(&mut self, gfx: &Gfx, dt: f32) {
         self.camera_controller.update_camera(&mut self.camera, dt);
         self.camera.update_view_proj();
 
@@ -145,6 +145,9 @@ impl Scene {
             * old_position).into();
 
         self.light.update(position);
+
+        gfx.queue().write_buffer(&self.camera.resource.buffer, 0, bytemuck::cast_slice(&[self.camera.resource.uniform]));
+        gfx.queue().write_buffer(&self.light.resource.buffer, 0, bytemuck::cast_slice(&[self.light.resource.uniform]));
     }
 
     pub fn load_scene() -> Vec<Instance> {
