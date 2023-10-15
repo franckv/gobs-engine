@@ -63,8 +63,8 @@ pub async fn load_model(
         for m in obj_materials? {
             info!("{}: Load material {}", file_name, m.name);
 
-            let diffuse_texture = load_texture(&m.diffuse_texture, false, device, queue).await?;
-            let normal_texture = load_texture(&m.normal_texture, true, device, queue).await?;
+            let diffuse_texture = load_texture(&m.diffuse_texture.unwrap(), false, device, queue).await?;
+            let normal_texture = load_texture(&m.normal_texture.unwrap(), true, device, queue).await?;
 
             materials.push(Material::new(m.name, device, layout, diffuse_texture, normal_texture));
         }

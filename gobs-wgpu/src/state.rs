@@ -12,7 +12,7 @@ pub struct State {
 }
 
 impl State {
-    pub async fn new(window: Window) -> Self {
+    pub async fn new(window: &Window) -> Self {
         info!("init state");
 
         let gfx = Gfx::new(window).await;
@@ -26,21 +26,17 @@ impl State {
         }
     }
 
-    pub fn window(&self) -> &Window {
-        &self.gfx.window()
+    pub fn redraw(&mut self) {
+        info!("redraw");
+
+        self.resize(self.gfx.width(), self.gfx.height())
     }
 
-    pub fn size(&self) -> &winit::dpi::PhysicalSize<u32> {
-        &self.gfx.size()
-    }
-
-    pub fn resize(&mut self, new_size: winit::dpi::PhysicalSize<u32>) {
+    pub fn resize(&mut self, width: u32, height: u32) {
         info!("resize");
 
-        if new_size.width > 0 && new_size.height > 0 {
-            self.gfx.resize(new_size);
-            self.scene.resize(&self.gfx, new_size);
-        }
+        self.gfx.resize(width, height);
+        self.scene.resize(&self.gfx, width, height);
     }
 
     pub fn input(&mut self, event: &WindowEvent) -> bool {

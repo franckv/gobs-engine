@@ -27,10 +27,10 @@ ash-window = "0.12"
 raw-window-handle = "0.5"
 rusttype = "0.9"
 unicode-normalization = "0.1"
-wgpu = "0.16"
+wgpu = "0.17"
 pollster = "0.3"
 bytemuck = { version="1.13", features = ["derive"] }
 anyhow = "1.0"
-tobj = { version = "3.2.1", features = ["async"] }
-naga = { version = "0.12" }
+tobj = { version = "4.0.0", features = ["async"] }
+naga = { version = "0.13" }
 itertools = { version = "0.11" }

@@ -1,25 +1,21 @@
 use winit::window::Window;
+use wgpu::util::DeviceExt;
 
 use crate::camera::CameraResource;
 use crate::light::LightResource;
 use crate::scene::Scene;
 use crate::model::{ DrawLight, DrawModel };
+use crate::InstanceRaw;
+use crate::render::Display;
 
 pub struct Gfx {
-    window: Window,
-    surface: wgpu::Surface,
+    display: Display,
     device: wgpu::Device,
     queue: wgpu::Queue,
-    config: wgpu::SurfaceConfiguration,
-    size: winit::dpi::PhysicalSize<u32>,
     clear_color: wgpu::Color,
 }
 
 impl Gfx {
-    pub fn window(&self) -> &Window {
-        &self.window
-    }
-
     pub fn device(&self) -> &wgpu::Device {
         &self.device
     }
@@ -28,20 +24,24 @@ impl Gfx {
         &self.queue
     }
 
-    pub fn config(&self) -> &wgpu::SurfaceConfiguration {
-        &self.config
+    pub fn format(&self) -> &wgpu::TextureFormat {
+        &self.display.format()
     }
 
-    pub fn size(&self) -> &winit::dpi::PhysicalSize<u32> {
-        &self.size
+    pub fn width(&self) -> u32 {
+        self.display.width()
     }
 
-    pub async fn new(window: Window) -> Self {
+    pub fn height(&self) -> u32 {
+        self.display.height()
+    }
+
+    pub async fn new(window: &Window) -> Self {
         let size = window.inner_size();
 
         let instance = wgpu::Instance::default();
 
-        let surface = unsafe {instance.create_surface(&window)}.unwrap();
+        let surface = unsafe {instance.create_surface(window)}.unwrap();
 
         let adapter = instance.request_adapter(
             &wgpu::RequestAdapterOptions {
@@ -79,30 +79,26 @@ impl Gfx {
 
         surface.configure(&device, &config);
 
+        let display = Display::new(surface, config, &device);
+
         let clear_color = wgpu::Color::BLACK;
 
         Gfx {
-            window,
-            surface,
+            display,
             device,
             queue,
-            config,
-            size,
             clear_color,
         }
     }
 
-    pub fn resize(&mut self, new_size: winit::dpi::PhysicalSize<u32>) {
-        self.size = new_size;
-        self.config.width = new_size.width;
-        self.config.height = new_size.height;
-        self.surface.configure(&self.device, &self.config);
+    pub fn resize(&mut self, width: u32, height: u32) {
+        self.display.resize(&self.device, width, height);
     }
 
     pub fn render(&mut self, scene: &Scene) -> Result<(), wgpu::SurfaceError> {
-        let output = self.surface.get_current_texture()?;
+        let texture = self.display.texture()?;
 
-        let view = output.texture.create_view(&wgpu::TextureViewDescriptor::default());
+        let view = texture.texture.create_view(&wgpu::TextureViewDescriptor::default());
 
         let mut encoder = self.device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
             label: Some("Encoder")
@@ -143,7 +139,7 @@ impl Gfx {
 
         self.queue.submit(std::iter::once(encoder.finish()));
 
-        output.present();
+        texture.present();
 
         Ok(())
     }
@@ -154,5 +150,19 @@ impl Gfx {
 
     pub fn create_light_resource(&self, layout: &wgpu::BindGroupLayout) -> LightResource {
         LightResource::new(&self.device, layout)
+    }
+
+    pub fn create_bind_group_layout(&self, layout: &wgpu::BindGroupLayoutDescriptor) -> wgpu::BindGroupLayout {
+        self.device.create_bind_group_layout(layout)
+    }
+
+    pub fn create_instance_buffer(&self, instance_data: &Vec<InstanceRaw>) -> wgpu::Buffer {
+        self.device.create_buffer_init(
+            &wgpu::util::BufferInitDescriptor {
+                label: Some("Instance Buffer"),
+                contents: bytemuck::cast_slice(instance_data),
+                usage: wgpu::BufferUsages::VERTEX
+            }
+        )
     }
 }

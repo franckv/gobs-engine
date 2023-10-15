@@ -1,5 +1,6 @@
+mod app;
 mod camera;
-mod gfx;
+mod render;
 mod instance;
 mod light;
 mod model;
@@ -8,9 +9,10 @@ mod resource;
 mod scene;
 mod state;
 
+pub use app::Application;
 pub use camera::Camera;
 pub use camera::CameraController;
-pub use gfx::Gfx;
+pub use render::Gfx;
 pub use instance::Instance;
 pub use instance::InstanceRaw;
 pub use light::Light;

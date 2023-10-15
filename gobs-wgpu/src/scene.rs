@@ -1,5 +1,4 @@
 use glam::{ Quat, Vec3 };
-use wgpu::util::DeviceExt;
 
 use crate::Camera;
 use crate::CameraController;
@@ -12,8 +11,7 @@ use crate::pipeline::{ Generator, Pipeline, PipelineBuilder };
 use crate::resource;
 use crate::model::{ Model, ModelVertex, Texture, Vertex };
 
-const NUM_INSTANCES_PER_ROW: u32 = 10;
-const SPACE_BETWEEN: f32 = 3.0;
+const TILE_SIZE: f32 = 2.;
 
 pub struct Scene {
     render_pipeline: Pipeline,
@@ -66,10 +64,10 @@ impl Scene {
 
     pub async fn new(gfx: &Gfx) -> Self {
         let generator = Generator::new("../shaders/shader.wgsl").await;
-        let layouts = generator.bind_layouts(gfx.device());
+        let layouts = generator.bind_layouts(gfx);
 
         let generator_light = Generator::new("../shaders/light.wgsl").await;
-        let layouts_light = generator_light.bind_layouts(gfx.device());
+        let layouts_light = generator_light.bind_layouts(gfx);
 
         let camera_resource = gfx.create_camera_resource(&layouts[1]);
 
@@ -77,8 +75,8 @@ impl Scene {
             camera_resource,
             (0.0, 5.0, 10.0),
             CameraProjection::new(
-                gfx.config().width,
-                gfx.config().height,
+                gfx.width(),
+                gfx.height(),
                 (45.0 as f32).to_radians(), 
                 0.1,
                 100.0
@@ -91,37 +89,15 @@ impl Scene {
         let light_resource = gfx.create_light_resource(&layouts[2]);
         let light = Light::new(
             light_resource,
-            (2.0, 2.0, 2.0),
+            (8.0, 2.0, 8.0),
             (1., 1., 0.9));
 
-        let instances = (0..NUM_INSTANCES_PER_ROW).flat_map(|z| {
-            (0..NUM_INSTANCES_PER_ROW).map(move |x| {
-                let x = SPACE_BETWEEN * (x as f32 - NUM_INSTANCES_PER_ROW as f32 / 2.0);
-                let z = SPACE_BETWEEN * (z as f32 - NUM_INSTANCES_PER_ROW as f32 / 2.0);
-
-                let position = Vec3 {x, y: 0.0, z };
-                let rotation = if position == Vec3::ZERO {
-                    Quat::from_axis_angle(Vec3::Z, 0.0)
-                } else {
-                    Quat::from_axis_angle(position.normalize(), (45.0 as f32).to_radians())
-                };
-
-                Instance {
-                    position, rotation
-                }
-            })
-        }).collect::<Vec<_>>();
+        let instances = Self::load_scene();
 
         let instance_data = instances.iter().map(Instance::to_raw).collect::<Vec<_>>();
-        let instance_buffer = gfx.device().create_buffer_init(
-            &wgpu::util::BufferInitDescriptor {
-                label: Some("Instance Buffer"),
-                contents: bytemuck::cast_slice(&instance_data),
-                usage: wgpu::BufferUsages::VERTEX
-            }
-        );
+        let instance_buffer = gfx.create_instance_buffer(&instance_data);
 
-        let depth_texture = Texture::create_depth_texture(gfx.device(), gfx.config(), "depth_texture");
+        let depth_texture = Texture::create_depth_texture(gfx, "depth_texture");
 
         let obj_model = resource::load_model("cube.obj", gfx.device(), gfx.queue(), &layouts[0]).await.unwrap();
 
@@ -130,7 +106,7 @@ impl Scene {
             .bind_layout(layouts.iter().collect::<Vec<_>>().as_slice())
             .vertex_layout(ModelVertex::desc())
             .vertex_layout(InstanceRaw::desc())
-            .color_format(gfx.config().format)
+            .color_format(gfx.format().clone())
             .depth_format(Texture::DEPTH_FORMAT)
             .build();
 
@@ -138,7 +114,7 @@ impl Scene {
             .shader("../shaders/light.wgsl").await
             .bind_layout(layouts_light.iter().collect::<Vec<_>>().as_slice())
             .vertex_layout(ModelVertex::desc())
-            .color_format(gfx.config().format)
+            .color_format(gfx.format().clone())
             .depth_format(Texture::DEPTH_FORMAT)
             .build();
 
@@ -155,9 +131,9 @@ impl Scene {
         }
     }
 
-    pub fn resize(&mut self, gfx: &Gfx, new_size: winit::dpi::PhysicalSize<u32>) {
-        self.depth_texture = Texture::create_depth_texture(gfx.device(), gfx.config(), "depth_texture");
-        self.camera.projection.resize(new_size.width, new_size.height);
+    pub fn resize(&mut self, gfx: &Gfx, width: u32, height: u32) {
+        self.depth_texture = Texture::create_depth_texture(gfx, "depth_texture");
+        self.camera.projection.resize(width, height);
     }
 
     pub fn update(&mut self, dt: f32) {
@@ -169,5 +145,36 @@ impl Scene {
             * old_position).into();
 
         self.light.update(position);
+    }
+
+    pub fn load_scene() -> Vec<Instance> {
+
+        let map = include_str!("../assets/map.dat");
+
+        let mut instances = Vec::new();
+
+        let (mut i, mut j) = (0., 0.);
+
+        for c in map.chars() {
+            match c {
+                'w' => {
+                    i += TILE_SIZE;
+                    let position = Vec3 {x: i - 32., y: 0.0, z: j - 32.};
+                    let rotation = Quat::from_axis_angle(Vec3::Z, 0.0);
+
+                    instances.push(Instance {
+                        position, rotation
+                    });
+                }, '.' | '@' => {
+                    i += TILE_SIZE;
+                }, '\n' => {
+                    j += TILE_SIZE;
+                    i = 0.;
+                },
+                _ => ()
+            }
+        };
+
+        instances
     }
 }

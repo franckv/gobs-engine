@@ -9,6 +9,7 @@ use naga::Handle;
 use naga::Type;
 use naga::TypeInner;
 
+use crate::Gfx;
 use crate::resource;
 
 pub struct Generator {
@@ -66,7 +67,7 @@ impl Generator {
     ///     @group(0) @binding(0)
     ///     var<uniform> camera: Camera;
     /// Return a list of binding groups (@group)
-    pub fn bind_layouts(&self, device: &wgpu::Device) -> Vec<wgpu::BindGroupLayout> {
+    pub fn bind_layouts(&self, gfx: &Gfx) -> Vec<wgpu::BindGroupLayout> {
         info!("Generate bind group layouts");
 
         let mut groups: HashMap<u32, Vec<&GlobalVariable>> = HashMap::new();
@@ -95,9 +96,7 @@ impl Generator {
                 label: Some(&label)
             };
 
-            error!("{:?}", layout);
-
-            device.create_bind_group_layout(&layout)
+            gfx.create_bind_group_layout(&layout)
         }).collect::<Vec<_>>()
     }
 
