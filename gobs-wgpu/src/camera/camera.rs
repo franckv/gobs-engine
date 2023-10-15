@@ -1,5 +1,6 @@
 use glam::{Mat4, Vec3};
 
+#[derive(Debug)]
 #[allow(dead_code)]
 pub enum ProjectionMode {
     Ortho,
@@ -8,6 +9,7 @@ pub enum ProjectionMode {
     OrthoFixedHeight,
 }
 
+#[derive(Debug)]
 pub struct CameraProjection {
     pub aspect: f32,
     pub fovy: f32,
@@ -40,6 +42,7 @@ impl CameraProjection {
     }
 }
 
+#[derive(Debug)]
 pub struct Camera {
     pub position: Vec3,
     #[allow(dead_code)]
