@@ -92,7 +92,9 @@ impl Gfx {
     }
 
     pub fn resize(&mut self, width: u32, height: u32) {
-        self.display.resize(&self.device, width, height);
+        if width > 0 && height > 0 {
+            self.display.resize(&self.device, width, height);
+        }
     }
 
     pub fn render(&mut self, scene: &Scene) -> Result<(), wgpu::SurfaceError> {
@@ -125,8 +127,21 @@ impl Gfx {
                 })
             });
 
-            render_pass.draw_model_pass(&scene.model_pass, &scene.obj_model, &scene.camera_resource, &scene.light_resource, &scene);
-            render_pass.draw_light_pass(&scene.light_pass, &scene.obj_model, &scene.camera_resource, &scene.light_resource);
+            for i in 0..scene.models.len() {
+                render_pass.draw_model_pass(
+                    &scene.model_pass, 
+                    &scene.models[i], 
+                    &scene.camera_resource, 
+                    &scene.light_resource, 
+                    &scene.instance_buffers[i], 
+                    scene.nodes.iter().filter(|n| n.model() == i).count() as _);
+            }
+            
+            render_pass.draw_light_pass(
+                &scene.light_pass, 
+                &scene.light_model, 
+                &scene.camera_resource, 
+                &scene.light_resource);
         }
 
         self.queue.submit(std::iter::once(encoder.finish()));

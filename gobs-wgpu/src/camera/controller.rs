@@ -9,6 +9,7 @@ use crate::camera::Camera;
 
 const SAFE_FRAC_PI_2: f32 = FRAC_PI_2 - 0.0001;
 
+#[derive(Debug)]
 pub struct CameraController {
     amount_left: f32,
     amount_right: f32,
@@ -20,7 +21,8 @@ pub struct CameraController {
     rotate_vertical: f32,
     scroll: f32,
     speed: f32,
-    sensitivity: f32
+    sensitivity: f32,
+    debug: bool
 }
 
 impl CameraController {
@@ -36,7 +38,8 @@ impl CameraController {
             rotate_vertical: 0.0,
             scroll: 0.0,
             speed,
-            sensitivity
+            sensitivity,
+            debug: false
         }
     }
 
@@ -68,6 +71,10 @@ impl CameraController {
             }
             VirtualKeyCode::LShift => {
                 self.amount_down = amount;
+                true
+            }
+            VirtualKeyCode::L => {
+                self.debug = true;
                 true
             }
             _ => false,
@@ -113,6 +120,11 @@ impl CameraController {
             camera.pitch = -SAFE_FRAC_PI_2;
         } else if camera.pitch > SAFE_FRAC_PI_2 {
             camera.pitch = SAFE_FRAC_PI_2;
+        }
+
+        if self.debug {
+            info!("{:?}", camera);
+            self.debug = false;
         }
     }
 }

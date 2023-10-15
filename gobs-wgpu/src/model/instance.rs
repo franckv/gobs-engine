@@ -2,6 +2,7 @@ use glam::{Quat, Mat3, Mat4, Vec3};
 
 use crate::model::Vertex;
 
+#[derive(Clone)]
 pub struct Instance {
     pub position: Vec3,
     pub rotation: Quat
