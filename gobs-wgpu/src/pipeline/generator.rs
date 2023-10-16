@@ -3,8 +3,9 @@ use std::collections::HashMap;
 
 use log::*;
 use naga::front::wgsl::Frontend;
-use naga::{GlobalVariable, Handle, Module, Type, TypeInner};
+use naga::{Binding, GlobalVariable, Handle, Module, Type, TypeInner};
 
+use crate::model::{InstanceRaw, ModelVertex};
 use crate::render::Gfx;
 use crate::resource;
 
@@ -20,6 +21,39 @@ impl Generator {
         let module = front.parse(&shader).unwrap();
 
         Generator { module }
+    }
+
+    fn lookup_type_format(&self, ty: &Handle<Type>) -> Option<(wgpu::VertexFormat, u64)> {
+        let ty = self.module.types.get_handle(*ty).unwrap();
+
+        if let Type {
+            inner: TypeInner::Vector { size, kind, width },
+            ..
+        } = ty
+        {
+            match kind {
+                naga::ScalarKind::Float => match size {
+                    naga::VectorSize::Bi => {
+                        if *width == 4 {
+                            return Some((wgpu::VertexFormat::Float32x2, 8));
+                        }
+                    }
+                    naga::VectorSize::Tri => {
+                        if *width == 4 {
+                            return Some((wgpu::VertexFormat::Float32x3, 12));
+                        }
+                    }
+                    naga::VectorSize::Quad => {
+                        if *width == 4 {
+                            return Some((wgpu::VertexFormat::Float32x4, 16));
+                        }
+                    }
+                },
+                _ => (),
+            }
+        }
+
+        None
     }
 
     fn lookup_type(&self, ty: &Handle<Type>) -> wgpu::BindingType {
@@ -52,6 +86,54 @@ impl Generator {
                 min_binding_size: None,
             },
         }
+    }
+
+    pub fn vertex_layout<'a>(
+        &'a self,
+        attributes: &'a Vec<wgpu::VertexAttribute>,
+        instance: bool,
+    ) -> wgpu::VertexBufferLayout {
+        wgpu::VertexBufferLayout {
+            array_stride: if instance {
+                std::mem::size_of::<InstanceRaw>() as wgpu::BufferAddress
+            } else {
+                std::mem::size_of::<ModelVertex>() as wgpu::BufferAddress
+            },
+            step_mode: if instance {
+                wgpu::VertexStepMode::Instance
+            } else {
+                wgpu::VertexStepMode::Vertex
+            },
+            attributes: &attributes.as_slice(),
+        }
+    }
+
+    pub fn vertex_layout_attributes(&self, name: &str) -> Vec<wgpu::VertexAttribute> {
+        let mut attributes: Vec<wgpu::VertexAttribute> = Vec::new();
+
+        let mut offset: u64 = 0;
+        for ty in self.module.types.iter() {
+            if let Some(n) = &ty.1.name {
+                if name == n {
+                    info!("found {}", n);
+                    if let TypeInner::Struct { members, .. } = &ty.1.inner {
+                        for member in members {
+                            if let Some(Binding::Location { location, .. }) = member.binding {
+                                let format = self.lookup_type_format(&member.ty).unwrap();
+                                attributes.push(wgpu::VertexAttribute {
+                                    format: format.0,
+                                    offset: offset as u64,
+                                    shader_location: location,
+                                });
+                                offset += format.1;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        attributes
     }
 
     /// Define layout to bind resources (e.g. uniform buffers) to shader

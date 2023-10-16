@@ -47,7 +47,7 @@ impl CameraController {
         info!("Process input {:?}", key);
 
         let amount = if state == ElementState::Pressed {
-            1.0
+            2.0
         } else {
             0.0
         };
