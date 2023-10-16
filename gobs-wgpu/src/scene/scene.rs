@@ -4,7 +4,7 @@ use log::*;
 use crate::camera::{ Camera, CameraController, CameraProjection, CameraResource };
 use crate::light::{ Light, LightResource };
 use crate::model::{ Instance, Model, Texture };
-use crate::pass::{ LightPass, ModelPass };
+use crate::shader::{ SolidShader, PhongShader };
 use crate::render::Gfx;
 use crate::resource;
 use crate::scene::Node;
@@ -16,8 +16,8 @@ const LIGHT: &str = "sphere.obj";
 const TILE_SIZE: f32 = 2.;
 
 pub struct Scene {
-    pub light_pass: LightPass,
-    pub model_pass: ModelPass,
+    pub solid_shader: SolidShader,
+    pub phong_shader: PhongShader,
     camera: Camera,
     pub camera_resource: CameraResource,
     pub camera_controller: CameraController,
@@ -36,10 +36,10 @@ impl Scene {
     }
 
     pub async fn new(gfx: &Gfx) -> Self {
-        let light_pass = LightPass::new(&gfx).await;
-        let model_pass = ModelPass::new(&gfx).await;
+        let solid_shader = SolidShader::new(&gfx).await;
+        let phong_shader = PhongShader::new(&gfx).await;
 
-        let camera_resource = gfx.create_camera_resource(&model_pass.layouts[1]);
+        let camera_resource = gfx.create_camera_resource(&phong_shader.layouts[0]);
 
         let camera = Camera::new(
             (0.0, 50.0, 50.0),
@@ -55,13 +55,13 @@ impl Scene {
 
         let camera_controller = CameraController::new(4.0, 0.4);
 
-        let light_resource = gfx.create_light_resource(&model_pass.layouts[2]);
+        let light_resource = gfx.create_light_resource(&phong_shader.layouts[1]);
         let light = Light::new(
             (8.0, 2.0, 8.0),
             (1., 1., 0.9));
 
-        let wall = resource::load_model(WALL, gfx.device(), gfx.queue(), &model_pass.layouts[0]).await.unwrap();
-        let tree = resource::load_model(TREE, gfx.device(), gfx.queue(), &model_pass.layouts[0]).await.unwrap();
+        let wall = resource::load_model(WALL, gfx.device(), gfx.queue(), &phong_shader.layouts[2]).await.unwrap();
+        let tree = resource::load_model(TREE, gfx.device(), gfx.queue(), &phong_shader.layouts[2]).await.unwrap();
         let mut models = Vec::new();
         models.push(wall);
         models.push(tree);
@@ -77,11 +77,11 @@ impl Scene {
 
         let depth_texture = Texture::create_depth_texture(gfx, "depth_texture");
 
-        let light_model = resource::load_model(LIGHT, gfx.device(), gfx.queue(), &model_pass.layouts[0]).await.unwrap();
+        let light_model = resource::load_model(LIGHT, gfx.device(), gfx.queue(), &phong_shader.layouts[2]).await.unwrap();
 
         Scene {
-            light_pass,
-            model_pass,
+            solid_shader,
+            phong_shader,
             camera,
             camera_resource,
             camera_controller,

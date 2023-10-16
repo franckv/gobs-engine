@@ -4,7 +4,7 @@ use wgpu::util::DeviceExt;
 use crate::camera::CameraResource;
 use crate::model::InstanceRaw;
 use crate::light::LightResource;
-use crate::pass::{DrawLightPass, DrawModelPass};
+use crate::shader::{ DrawSolid, DrawPhong };
 use crate::render::Display;
 use crate::scene::Scene;
 
@@ -128,8 +128,8 @@ impl Gfx {
             });
 
             for i in 0..scene.models.len() {
-                render_pass.draw_model_pass(
-                    &scene.model_pass, 
+                render_pass.draw_phong(
+                    &scene.phong_shader, 
                     &scene.models[i], 
                     &scene.camera_resource, 
                     &scene.light_resource, 
@@ -137,8 +137,8 @@ impl Gfx {
                     scene.nodes.iter().filter(|n| n.model() == i).count() as _);
             }
             
-            render_pass.draw_light_pass(
-                &scene.light_pass, 
+            render_pass.draw_solid(
+                &scene.solid_shader, 
                 &scene.light_model, 
                 &scene.camera_resource, 
                 &scene.light_resource);

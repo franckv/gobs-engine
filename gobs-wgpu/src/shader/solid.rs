@@ -6,11 +6,11 @@ use crate::render::Gfx;
 
 const SHADER: &str = "../shaders/light.wgsl";
 
-pub struct LightPass {
+pub struct SolidShader {
     pub pipeline: Pipeline,
 }
 
-impl LightPass {
+impl SolidShader {
     pub async fn new(gfx: &Gfx) -> Self {
         let generator = Generator::new(SHADER).await;
         let layouts = generator.bind_layouts(gfx);
@@ -23,19 +23,19 @@ impl LightPass {
             .depth_format(Texture::DEPTH_FORMAT)
             .build();
 
-        LightPass {
+        SolidShader {
             pipeline
         }    
     }
 }
 
-pub trait DrawLightPass<'a> {
-    fn draw_light_pass(&mut self, pass: &'a LightPass, model: &'a Model, camera: &'a CameraResource, light: &'a LightResource);
+pub trait DrawSolid<'a> {
+    fn draw_solid(&mut self, shader: &'a SolidShader, model: &'a Model, camera: &'a CameraResource, light: &'a LightResource);
 }
 
-impl <'a> DrawLightPass<'a> for wgpu::RenderPass<'a> {
-    fn draw_light_pass(&mut self, pass: &'a LightPass, model: &'a Model, camera: &'a CameraResource, light: &'a LightResource) {
-        self.set_pipeline(&pass.pipeline.pipeline);
+impl <'a> DrawSolid<'a> for wgpu::RenderPass<'a> {
+    fn draw_solid(&mut self, shader: &'a SolidShader, model: &'a Model, camera: &'a CameraResource, light: &'a LightResource) {
+        self.set_pipeline(&shader.pipeline.pipeline);
         self.set_bind_group(0, &camera.bind_group, &[]);
         self.set_bind_group(1, &light.bind_group, &[]);
         for mesh in &model.meshes {

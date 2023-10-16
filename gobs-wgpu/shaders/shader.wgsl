@@ -21,7 +21,7 @@ struct Camera {
     view_proj: mat4x4<f32>
 }
 
-@group(1) @binding(0)
+@group(0) @binding(0)
 var<uniform> camera: Camera;
 
 struct Light {
@@ -29,7 +29,7 @@ struct Light {
     color: vec3<f32>
 }
 
-@group(2) @binding(0)
+@group(1) @binding(0)
 var<uniform> light: Light;
 
 struct VertexOutput {
@@ -77,13 +77,13 @@ fn vs_main(model: VertexInput, instance: InstanceInput) -> VertexOutput {
     return out;
 }
 
-@group(0) @binding(0)
+@group(2) @binding(0)
 var t_diffuse: texture_2d<f32>;
-@group(0) @binding(1)
+@group(2) @binding(1)
 var s_diffuse: sampler;
-@group(0) @binding(2)
+@group(2) @binding(2)
 var t_normal: texture_2d<f32>;
-@group(0) @binding(3)
+@group(2) @binding(3)
 var s_normal: sampler;
 
 @fragment

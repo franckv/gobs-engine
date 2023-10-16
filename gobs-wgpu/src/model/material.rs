@@ -1,3 +1,4 @@
+use log::*;
 use crate::model::Texture;
 
 pub struct Material {
@@ -9,6 +10,7 @@ pub struct Material {
 
 impl Material {
     pub fn new(name: String, device: &wgpu::Device, layout: &wgpu::BindGroupLayout, diffuse_texture: Texture, normal_texture: Texture) -> Self {
+        info!("Create Material bind group");
         let bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
             layout,
             entries: &[

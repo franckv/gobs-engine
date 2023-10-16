@@ -1,3 +1,4 @@
+use log::*;
 use wgpu::util::DeviceExt;
 
 use crate::render::Gfx;
@@ -35,6 +36,7 @@ impl LightResource {
             }
         );
 
+        info!("Create Light bind group");
         let bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
             layout,
             entries: &[

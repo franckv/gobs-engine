@@ -4,7 +4,7 @@ mod render;
 mod input;
 mod light;
 mod model;
-mod pass;
+mod shader;
 mod pipeline;
 mod resource;
 mod scene;
