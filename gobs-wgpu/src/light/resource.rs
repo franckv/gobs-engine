@@ -1,8 +1,8 @@
 use log::*;
 use wgpu::util::DeviceExt;
 
-use crate::render::Gfx;
 use crate::light::Light;
+use crate::render::Gfx;
 
 #[repr(C)]
 #[derive(Debug, Copy, Clone, bytemuck::Pod, bytemuck::Zeroable)]
@@ -16,7 +16,7 @@ pub struct LightUniform {
 pub struct LightResource {
     pub uniform: LightUniform,
     pub buffer: wgpu::Buffer,
-    pub bind_group: wgpu::BindGroup
+    pub bind_group: wgpu::BindGroup,
 }
 
 impl LightResource {
@@ -28,30 +28,26 @@ impl LightResource {
             _padding2: 0,
         };
 
-        let buffer = device.create_buffer_init(
-            &wgpu::util::BufferInitDescriptor {
-                label: Some("Light Buffer"),
-                contents: bytemuck::cast_slice(&[uniform]),
-                usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST
-            }
-        );
+        let buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+            label: Some("Light Buffer"),
+            contents: bytemuck::cast_slice(&[uniform]),
+            usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+        });
 
         info!("Create Light bind group");
         let bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
             layout,
-            entries: &[
-                wgpu::BindGroupEntry {
-                    binding: 0,
-                    resource: buffer.as_entire_binding()
-                }
-            ],
-            label: None
+            entries: &[wgpu::BindGroupEntry {
+                binding: 0,
+                resource: buffer.as_entire_binding(),
+            }],
+            label: None,
         });
 
         LightResource {
             uniform,
             buffer,
-            bind_group
+            bind_group,
         }
     }
 
@@ -59,6 +55,7 @@ impl LightResource {
         self.uniform.position = light.position.into();
         self.uniform.colour = light.colour.into();
 
-        gfx.queue().write_buffer(&self.buffer, 0, bytemuck::cast_slice(&[self.uniform]));
+        gfx.queue()
+            .write_buffer(&self.buffer, 0, bytemuck::cast_slice(&[self.uniform]));
     }
 }

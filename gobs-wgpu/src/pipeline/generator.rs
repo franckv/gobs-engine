@@ -1,15 +1,15 @@
-use std::collections::HashMap;
 use itertools::Itertools;
+use std::collections::HashMap;
 
 use log::*;
 use naga::front::wgsl::Frontend;
-use naga::{ Module, GlobalVariable, Handle, Type, TypeInner };
+use naga::{GlobalVariable, Handle, Module, Type, TypeInner};
 
 use crate::render::Gfx;
 use crate::resource;
 
 pub struct Generator {
-    module: Module
+    module: Module,
 }
 
 impl Generator {
@@ -19,9 +19,7 @@ impl Generator {
         let mut front = Frontend::new();
         let module = front.parse(&shader).unwrap();
 
-        Generator {
-            module
-        }
+        Generator { module }
     }
 
     fn lookup_type(&self, ty: &Handle<Type>) -> wgpu::BindingType {
@@ -32,29 +30,27 @@ impl Generator {
                 members: _,
                 span: _,
             } => wgpu::BindingType::Buffer {
-                    ty: wgpu::BufferBindingType::Uniform,
-                    has_dynamic_offset: false,
-                    min_binding_size: None
+                ty: wgpu::BufferBindingType::Uniform,
+                has_dynamic_offset: false,
+                min_binding_size: None,
             },
             TypeInner::Image {
                 dim: _,
                 arrayed: _,
                 class: _,
             } => wgpu::BindingType::Texture {
-                    multisampled: false,
-                    view_dimension: wgpu::TextureViewDimension::D2,
-                    sample_type: wgpu::TextureSampleType::Float { filterable: true },
+                multisampled: false,
+                view_dimension: wgpu::TextureViewDimension::D2,
+                sample_type: wgpu::TextureSampleType::Float { filterable: true },
             },
-            TypeInner::Sampler {
-                comparison: _
-            } => wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
-            _ => {
-                wgpu::BindingType::Buffer {
-                    ty: wgpu::BufferBindingType::Uniform,
-                    has_dynamic_offset: false,
-                    min_binding_size: None
-                }
+            TypeInner::Sampler { comparison: _ } => {
+                wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering)
             }
+            _ => wgpu::BindingType::Buffer {
+                ty: wgpu::BufferBindingType::Uniform,
+                has_dynamic_offset: false,
+                min_binding_size: None,
+            },
         }
     }
 
@@ -80,25 +76,38 @@ impl Generator {
             }
         }
 
-        groups.keys().sorted().map(|i| {
-            let entries = groups.get(i).unwrap().iter().map(|var| {
-                self.bind_layout_entry(var)
-            }).collect::<Vec<_>>();
+        groups
+            .keys()
+            .sorted()
+            .map(|i| {
+                let entries = groups
+                    .get(i)
+                    .unwrap()
+                    .iter()
+                    .map(|var| self.bind_layout_entry(var))
+                    .collect::<Vec<_>>();
 
-            let label = format!("Bind group {}", i);
+                let label = format!("Bind group {}", i);
 
-            let layout = wgpu::BindGroupLayoutDescriptor {
-                entries: &(entries.as_slice()),
-                label: Some(&label)
-            };
+                let layout = wgpu::BindGroupLayoutDescriptor {
+                    entries: &(entries.as_slice()),
+                    label: Some(&label),
+                };
 
-            info!("[{}] {}", i, label);
-            gfx.create_bind_group_layout(&layout)
-        }).collect::<Vec<_>>()
+                info!("[{}] {}", i, label);
+                gfx.create_bind_group_layout(&layout)
+            })
+            .collect::<Vec<_>>()
     }
 
     fn bind_layout_entry(&self, var: &GlobalVariable) -> wgpu::BindGroupLayoutEntry {
-        let GlobalVariable { name: _, space: _, binding, ty, init: _ } = var;
+        let GlobalVariable {
+            name: _,
+            space: _,
+            binding,
+            ty,
+            init: _,
+        } = var;
 
         let ty = self.lookup_type(ty);
 

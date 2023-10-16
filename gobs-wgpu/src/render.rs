@@ -1,5 +1,5 @@
-mod gfx;
 mod display;
+mod gfx;
 
-pub use gfx::Gfx;
 pub use display::Display;
+pub use gfx::Gfx;

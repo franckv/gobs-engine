@@ -12,7 +12,7 @@ pub struct PipelineBuilder<'a> {
     color_format: Option<wgpu::TextureFormat>,
     depth_format: Option<wgpu::TextureFormat>,
     vertex_layouts: Vec<wgpu::VertexBufferLayout<'a>>,
-    shader: Option<wgpu::ShaderModuleDescriptor<'a>>
+    shader: Option<wgpu::ShaderModuleDescriptor<'a>>,
 }
 
 impl<'a> PipelineBuilder<'a> {
@@ -30,7 +30,7 @@ impl<'a> PipelineBuilder<'a> {
 
         let shader = wgpu::ShaderModuleDescriptor {
             label: Some(shader_path),
-            source: wgpu::ShaderSource::Wgsl(shader_txt.into())
+            source: wgpu::ShaderSource::Wgsl(shader_txt.into()),
         };
 
         self.shader = Some(shader);
@@ -68,17 +68,17 @@ impl<'a> PipelineBuilder<'a> {
         let layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
             label: Some("Render Pipeline Layout"),
             bind_group_layouts: &self.bind_layouts.as_slice(),
-            push_constant_ranges: &[]
+            push_constant_ranges: &[],
         });
 
         let shader = device.create_shader_module(self.shader.unwrap());
-    
+
         let vertex_state = wgpu::VertexState {
             module: &shader,
             entry_point: "vs_main",
-            buffers: self.vertex_layouts.as_slice()
+            buffers: self.vertex_layouts.as_slice(),
         };
-    
+
         let fragment_state = wgpu::FragmentState {
             module: &shader,
             entry_point: "fs_main",
@@ -86,12 +86,12 @@ impl<'a> PipelineBuilder<'a> {
                 format: self.color_format.unwrap(),
                 blend: Some(wgpu::BlendState {
                     alpha: wgpu::BlendComponent::REPLACE,
-                    color: wgpu::BlendComponent::REPLACE
+                    color: wgpu::BlendComponent::REPLACE,
                 }),
-                write_mask: wgpu::ColorWrites::ALL
-            })]
+                write_mask: wgpu::ColorWrites::ALL,
+            })],
         };
-    
+
         let primitive_state = wgpu::PrimitiveState {
             topology: wgpu::PrimitiveTopology::TriangleList,
             strip_index_format: None,
@@ -99,21 +99,21 @@ impl<'a> PipelineBuilder<'a> {
             cull_mode: Some(wgpu::Face::Back),
             polygon_mode: wgpu::PolygonMode::Fill,
             unclipped_depth: false,
-            conservative: false
+            conservative: false,
         };
-    
+
         let depth_stencil = self.depth_format.map(|format| wgpu::DepthStencilState {
             format,
             depth_write_enabled: true,
             depth_compare: wgpu::CompareFunction::Less,
             stencil: wgpu::StencilState::default(),
-            bias: wgpu::DepthBiasState::default()
+            bias: wgpu::DepthBiasState::default(),
         });
-    
+
         let multisample_state = wgpu::MultisampleState {
             count: 1,
             mask: !0,
-            alpha_to_coverage_enabled: false
+            alpha_to_coverage_enabled: false,
         };
 
         Pipeline {
@@ -125,8 +125,8 @@ impl<'a> PipelineBuilder<'a> {
                 primitive: primitive_state,
                 depth_stencil,
                 multisample: multisample_state,
-                multiview: None
-            })
+                multiview: None,
+            }),
         }
     }
 }

@@ -3,7 +3,6 @@ pub struct Display {
     pub config: wgpu::SurfaceConfiguration,
 }
 
-
 impl Display {
     pub fn format(&self) -> &wgpu::TextureFormat {
         &self.config.format
@@ -17,16 +16,14 @@ impl Display {
         self.config.height
     }
 
-    pub fn new(surface: wgpu::Surface, 
-        config: wgpu::SurfaceConfiguration, 
-        device: &wgpu::Device) -> Self {
-        
+    pub fn new(
+        surface: wgpu::Surface,
+        config: wgpu::SurfaceConfiguration,
+        device: &wgpu::Device,
+    ) -> Self {
         surface.configure(&device, &config);
 
-        Display {
-            surface,
-            config
-        }
+        Display { surface, config }
     }
 
     pub fn resize(&mut self, device: &wgpu::Device, width: u32, height: u32) {

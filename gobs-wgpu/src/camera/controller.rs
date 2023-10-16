@@ -2,8 +2,8 @@ use std::f32::consts::FRAC_PI_2;
 
 use glam::Vec3;
 use log::*;
-use winit::event::*;
 use winit::dpi::PhysicalPosition;
+use winit::event::*;
 
 use crate::camera::Camera;
 
@@ -22,7 +22,7 @@ pub struct CameraController {
     scroll: f32,
     speed: f32,
     sensitivity: f32,
-    debug: bool
+    debug: bool,
 }
 
 impl CameraController {
@@ -39,14 +39,18 @@ impl CameraController {
             scroll: 0.0,
             speed,
             sensitivity,
-            debug: false
+            debug: false,
         }
     }
 
-    pub fn process_keyboard(&mut self, key: VirtualKeyCode, state: ElementState) -> bool{
+    pub fn process_keyboard(&mut self, key: VirtualKeyCode, state: ElementState) -> bool {
         info!("Process input {:?}", key);
 
-        let amount = if state == ElementState::Pressed { 1.0 } else { 0.0 };
+        let amount = if state == ElementState::Pressed {
+            1.0
+        } else {
+            0.0
+        };
 
         match key {
             VirtualKeyCode::Z | VirtualKeyCode::Up => {
@@ -89,10 +93,7 @@ impl CameraController {
     pub fn process_scroll(&mut self, delta: &MouseScrollDelta) {
         self.scroll = match delta {
             MouseScrollDelta::LineDelta(_, scroll) => scroll * 100.0,
-            MouseScrollDelta::PixelDelta(PhysicalPosition {
-                y: scroll,
-                ..
-            }) => *scroll as f32
+            MouseScrollDelta::PixelDelta(PhysicalPosition { y: scroll, .. }) => *scroll as f32,
         };
     }
 

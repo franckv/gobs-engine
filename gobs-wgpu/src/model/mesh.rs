@@ -12,7 +12,7 @@ pub struct ModelVertex {
     pub tex_coords: [f32; 2],
     pub normal: [f32; 3],
     pub tangent: [f32; 3],
-    pub bitangent: [f32; 3]
+    pub bitangent: [f32; 3],
 }
 
 impl Vertex for ModelVertex {
@@ -24,29 +24,29 @@ impl Vertex for ModelVertex {
                 wgpu::VertexAttribute {
                     offset: 0,
                     shader_location: 0,
-                    format: wgpu::VertexFormat::Float32x3
+                    format: wgpu::VertexFormat::Float32x3,
                 },
                 wgpu::VertexAttribute {
                     offset: std::mem::size_of::<[f32; 3]>() as wgpu::BufferAddress,
                     shader_location: 1,
-                    format: wgpu::VertexFormat::Float32x2
+                    format: wgpu::VertexFormat::Float32x2,
                 },
                 wgpu::VertexAttribute {
                     offset: std::mem::size_of::<[f32; 5]>() as wgpu::BufferAddress,
                     shader_location: 2,
-                    format: wgpu::VertexFormat::Float32x3
+                    format: wgpu::VertexFormat::Float32x3,
                 },
                 wgpu::VertexAttribute {
                     offset: std::mem::size_of::<[f32; 8]>() as wgpu::BufferAddress,
                     shader_location: 3,
-                    format: wgpu::VertexFormat::Float32x3
+                    format: wgpu::VertexFormat::Float32x3,
                 },
                 wgpu::VertexAttribute {
                     offset: std::mem::size_of::<[f32; 11]>() as wgpu::BufferAddress,
                     shader_location: 4,
-                    format: wgpu::VertexFormat::Float32x3
-                }
-            ]
+                    format: wgpu::VertexFormat::Float32x3,
+                },
+            ],
         }
     }
 }
@@ -56,11 +56,18 @@ pub struct Mesh {
     pub vertex_buffer: wgpu::Buffer,
     pub index_buffer: wgpu::Buffer,
     pub num_elements: u32,
-    pub material: usize
+    pub material: usize,
 }
 
 impl Mesh {
-    pub fn new(device: &wgpu::Device, name: &str, vertices: &mut Vec<ModelVertex>, indices: &Vec<u32>, material: usize, calc_tangent: bool) -> Self {
+    pub fn new(
+        device: &wgpu::Device,
+        name: &str,
+        vertices: &mut Vec<ModelVertex>,
+        indices: &Vec<u32>,
+        material: usize,
+        calc_tangent: bool,
+    ) -> Self {
         if calc_tangent {
             Self::calc_tangent(vertices, indices);
         }
@@ -68,13 +75,13 @@ impl Mesh {
         let vertex_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some(&format!("{:?} Vertex Buffer", name)),
             contents: bytemuck::cast_slice(vertices),
-            usage: wgpu::BufferUsages::VERTEX
+            usage: wgpu::BufferUsages::VERTEX,
         });
 
         let index_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some(&format!("{:?} Index Buffer", name)),
             contents: bytemuck::cast_slice(indices),
-            usage: wgpu::BufferUsages::INDEX
+            usage: wgpu::BufferUsages::INDEX,
         });
 
         Mesh {
@@ -82,7 +89,7 @@ impl Mesh {
             vertex_buffer,
             index_buffer,
             num_elements: indices.len() as u32,
-            material
+            material,
         }
     }
 

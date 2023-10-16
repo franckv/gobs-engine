@@ -2,15 +2,12 @@ use crate::model::Instance;
 
 pub struct Node {
     transform: Instance,
-    model: usize
+    model: usize,
 }
 
 impl Node {
     pub fn new(transform: Instance, model: usize) -> Self {
-        Node {
-            transform,
-            model
-        }
+        Node { transform, model }
     }
 
     pub fn transform(&self) -> &Instance {

@@ -1,15 +1,15 @@
 use crate::camera::CameraResource;
-use crate::model::InstanceRaw;
 use crate::light::LightResource;
-use crate::model::{ Model, ModelVertex, Texture, Vertex };
-use crate::pipeline::{ Generator, Pipeline, PipelineBuilder };
+use crate::model::InstanceRaw;
+use crate::model::{Model, ModelVertex, Texture, Vertex};
+use crate::pipeline::{Generator, Pipeline, PipelineBuilder};
 use crate::render::Gfx;
 
 const SHADER: &str = "../shaders/shader.wgsl";
 
 pub struct PhongShader {
     pub pipeline: Pipeline,
-    pub layouts: Vec<wgpu::BindGroupLayout>
+    pub layouts: Vec<wgpu::BindGroupLayout>,
 }
 
 impl PhongShader {
@@ -18,7 +18,8 @@ impl PhongShader {
         let layouts = generator.bind_layouts(gfx);
 
         let pipeline = PipelineBuilder::new(gfx.device(), "Model pipeline")
-            .shader(SHADER).await
+            .shader(SHADER)
+            .await
             .bind_layout(layouts.iter().collect::<Vec<_>>().as_slice())
             .vertex_layout(ModelVertex::desc())
             .vertex_layout(InstanceRaw::desc())
@@ -26,19 +27,32 @@ impl PhongShader {
             .depth_format(Texture::DEPTH_FORMAT)
             .build();
 
-        PhongShader {
-            pipeline,
-            layouts
-        }    
+        PhongShader { pipeline, layouts }
     }
 }
 
 pub trait DrawPhong<'a> {
-    fn draw_phong(&mut self, shader: &'a PhongShader, model: &'a Model, camera: &'a CameraResource, light: &'a LightResource, instance_buffer: &'a wgpu::Buffer, instances: u32);
+    fn draw_phong(
+        &mut self,
+        shader: &'a PhongShader,
+        model: &'a Model,
+        camera: &'a CameraResource,
+        light: &'a LightResource,
+        instance_buffer: &'a wgpu::Buffer,
+        instances: u32,
+    );
 }
 
-impl <'a> DrawPhong<'a> for wgpu::RenderPass<'a> {
-    fn draw_phong(&mut self, shader: &'a PhongShader, model: &'a Model, camera: &'a CameraResource, light: &'a LightResource, instance_buffer: &'a wgpu::Buffer, instances: u32) {
+impl<'a> DrawPhong<'a> for wgpu::RenderPass<'a> {
+    fn draw_phong(
+        &mut self,
+        shader: &'a PhongShader,
+        model: &'a Model,
+        camera: &'a CameraResource,
+        light: &'a LightResource,
+        instance_buffer: &'a wgpu::Buffer,
+        instances: u32,
+    ) {
         self.set_pipeline(&shader.pipeline.pipeline);
         self.set_bind_group(0, &camera.bind_group, &[]);
         self.set_bind_group(1, &light.bind_group, &[]);

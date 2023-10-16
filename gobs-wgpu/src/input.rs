@@ -3,7 +3,7 @@ use winit::event::*;
 use crate::scene::Scene;
 
 pub struct Input {
-    pub mouse_pressed: bool
+    pub mouse_pressed: bool,
 }
 
 impl Input {
@@ -13,7 +13,7 @@ impl Input {
 
     pub fn new() -> Self {
         Input {
-            mouse_pressed: false
+            mouse_pressed: false,
         }
     }
 
@@ -40,7 +40,7 @@ impl Input {
                 self.mouse_pressed = *state == ElementState::Pressed;
                 true
             }
-            _ => false
+            _ => false,
         }
     }
 
