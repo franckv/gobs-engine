@@ -1,7 +1,10 @@
 use log::*;
 use winit;
 use winit::dpi::PhysicalPosition;
-use winit::event::{ElementState, KeyboardInput, VirtualKeyCode, WindowEvent, MouseScrollDelta, MouseButton, DeviceEvent};
+use winit::event::{
+    DeviceEvent, ElementState, KeyboardInput, MouseButton, MouseScrollDelta, VirtualKeyCode,
+    WindowEvent,
+};
 
 use crate::input::Key;
 
@@ -60,7 +63,9 @@ impl InputHandler {
                 WindowEvent::MouseWheel { delta, .. } => {
                     let delta = match delta {
                         MouseScrollDelta::LineDelta(_, scroll) => scroll * 100.0,
-                        MouseScrollDelta::PixelDelta(PhysicalPosition {y: scroll, ..}) => scroll as f32
+                        MouseScrollDelta::PixelDelta(PhysicalPosition { y: scroll, .. }) => {
+                            scroll as f32
+                        }
                     };
                     status = Event::MouseWheel(delta);
                 }
@@ -73,10 +78,13 @@ impl InputHandler {
                         ElementState::Pressed => Event::MousePressed,
                         ElementState::Released => Event::MouseReleased,
                     }
-                },
+                }
                 _ => (),
             },
-            winit::event::Event::DeviceEvent { event: DeviceEvent::MouseMotion { delta }, ..} => status = Event::MouseMotion(delta.0, delta.1),
+            winit::event::Event::DeviceEvent {
+                event: DeviceEvent::MouseMotion { delta },
+                ..
+            } => status = Event::MouseMotion(delta.0, delta.1),
             winit::event::Event::RedrawRequested(_) => status = Event::Redraw,
             winit::event::Event::MainEventsCleared {} => status = Event::Cleared,
             _ => (),
