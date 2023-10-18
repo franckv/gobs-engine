@@ -6,7 +6,7 @@ use winit::event::{
     WindowEvent,
 };
 
-use crate::input::{Input, Key};
+use crate::input::Input;
 
 #[derive(Debug, PartialEq)]
 pub enum Event {
@@ -21,7 +21,7 @@ pub enum Event {
 impl Event {
     pub fn new(event: winit::event::Event<'_, ()>) -> Self {
         let mut status = Event::Continue;
-    
+
         match event {
             winit::event::Event::WindowEvent { event, .. } => match event {
                 WindowEvent::CloseRequested => status = Event::Close,
@@ -42,10 +42,12 @@ impl Event {
                 } => match key_code {
                     VirtualKeyCode::Escape => status = Event::Close,
                     _ => {
-                        let key = Self::get_input_key(key_code);
+                        let key = key_code.into();
                         match state {
                             ElementState::Pressed => status = Event::Input(Input::KeyPressed(key)),
-                            ElementState::Released => status = Event::Input(Input::KeyReleased(key)),
+                            ElementState::Released => {
+                                status = Event::Input(Input::KeyReleased(key))
+                            }
                         }
                     }
                 },
@@ -78,50 +80,8 @@ impl Event {
             winit::event::Event::MainEventsCleared {} => status = Event::Cleared,
             _ => (),
         }
-    
+
         debug!("Status={:?}", status);
         status
-    }
-    
-    fn get_input_key(key_code: VirtualKeyCode) -> Key {
-        match key_code {
-            VirtualKeyCode::Left => Key::Left,
-            VirtualKeyCode::Right => Key::Right,
-            VirtualKeyCode::Up => Key::Up,
-            VirtualKeyCode::Down => Key::Down,
-            VirtualKeyCode::PageUp => Key::PageUp,
-            VirtualKeyCode::PageDown => Key::PageDown,
-            VirtualKeyCode::Return => Key::Return,
-            VirtualKeyCode::LShift => Key::LShift,
-            VirtualKeyCode::Space => Key::Space,
-            VirtualKeyCode::Tab => Key::Tab,
-            VirtualKeyCode::A => Key::A,
-            VirtualKeyCode::B => Key::B,
-            VirtualKeyCode::C => Key::C,
-            VirtualKeyCode::D => Key::D,
-            VirtualKeyCode::E => Key::E,
-            VirtualKeyCode::F => Key::F,
-            VirtualKeyCode::G => Key::G,
-            VirtualKeyCode::H => Key::H,
-            VirtualKeyCode::I => Key::I,
-            VirtualKeyCode::J => Key::J,
-            VirtualKeyCode::K => Key::K,
-            VirtualKeyCode::L => Key::L,
-            VirtualKeyCode::M => Key::M,
-            VirtualKeyCode::N => Key::N,
-            VirtualKeyCode::O => Key::O,
-            VirtualKeyCode::P => Key::P,
-            VirtualKeyCode::Q => Key::Q,
-            VirtualKeyCode::R => Key::R,
-            VirtualKeyCode::S => Key::S,
-            VirtualKeyCode::T => Key::T,
-            VirtualKeyCode::U => Key::U,
-            VirtualKeyCode::V => Key::V,
-            VirtualKeyCode::W => Key::W,
-            VirtualKeyCode::X => Key::X,
-            VirtualKeyCode::Y => Key::Y,
-            VirtualKeyCode::Z => Key::Z,
-            _ => Key::Unknown,
-        }
     }
 }
