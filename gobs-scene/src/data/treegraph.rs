@@ -8,7 +8,7 @@ pub struct TreeNode<D> {
     transform: Transform,
     model_transform: Transform,
     cached_transform: Option<Transform>,
-    cached_normal: Option<Transform>
+    cached_normal: Option<Transform>,
 }
 
 impl<D> TreeNode<D> {
@@ -16,7 +16,7 @@ impl<D> TreeNode<D> {
         match self.children {
             Some(ref mut vec) => {
                 vec.push(child);
-            },
+            }
             None => {
                 let mut vec = Vec::new();
                 vec.push(child);
@@ -34,7 +34,7 @@ impl<D> Default for TreeNode<D> {
             transform: Transform::new(),
             model_transform: Transform::new(),
             cached_transform: None,
-            cached_normal: None
+            cached_normal: None,
         }
     }
 }
@@ -43,7 +43,7 @@ pub struct NodeBuilder<D> {
     data: Option<D>,
     children: Option<Vec<TreeNode<D>>>,
     transform: Option<Transform>,
-    model_transform: Option<Transform>
+    model_transform: Option<Transform>,
 }
 
 impl<D> NodeBuilder<D> {
@@ -69,7 +69,7 @@ impl<D> NodeBuilder<D> {
         match self.children {
             Some(ref mut vec) => {
                 vec.push(child);
-            },
+            }
             None => {
                 let mut vec = Vec::new();
                 vec.push(child);
@@ -83,12 +83,12 @@ impl<D> NodeBuilder<D> {
     pub fn build(self) -> TreeNode<D> {
         let transform = match self.transform {
             Some(transform) => transform,
-            None => Transform::new()
+            None => Transform::new(),
         };
 
         let model_transform = match self.model_transform {
             Some(model_transform) => model_transform,
-            None => Transform::new()
+            None => Transform::new(),
         };
 
         TreeNode {
@@ -97,7 +97,7 @@ impl<D> NodeBuilder<D> {
             transform: transform,
             model_transform: model_transform,
             cached_transform: None,
-            cached_normal: None
+            cached_normal: None,
         }
     }
 }
@@ -108,7 +108,7 @@ impl<D> Default for NodeBuilder<D> {
             data: None,
             children: None,
             transform: None,
-            model_transform: None
+            model_transform: None,
         }
     }
 }
@@ -117,7 +117,7 @@ pub struct TreeGraph<D> {
     camera: Camera,
     light: Light,
     root: TreeNode<D>,
-    dirty: bool
+    dirty: bool,
 }
 
 impl<D> TreeGraph<D> {
@@ -126,7 +126,7 @@ impl<D> TreeGraph<D> {
             camera: Camera::ortho(1., 1.),
             light: LightBuilder::new().build(),
             root: TreeNode::default(),
-            dirty: true
+            dirty: true,
         }
     }
 
@@ -166,21 +166,26 @@ impl<D> TreeGraph<D> {
     }
 
     pub fn foreach<F>(&mut self, mut f: F)
-    where F: FnMut(&D, &Transform) {
+    where
+        F: FnMut(&D, &Transform),
+    {
         TreeGraph::visit(&mut self.root, &mut f, &Transform::new());
         self.dirty = false;
     }
 
     fn visit<F>(node: &mut TreeNode<D>, f: &mut F, parent_transform: &Transform)
-    where F: FnMut(&D, &Transform) {
+    where
+        F: FnMut(&D, &Transform),
+    {
         if node.cached_transform.is_none() {
-            node.cached_transform =
-                Some(node.model_transform.clone()
+            node.cached_transform = Some(
+                node.model_transform
+                    .clone()
                     .transform(&node.transform)
-                    .transform(&parent_transform));
+                    .transform(&parent_transform),
+            );
 
-            node.cached_normal =
-                Some(node.cached_transform.as_ref().unwrap().normal_transform());
+            node.cached_normal = Some(node.cached_transform.as_ref().unwrap().normal_transform());
         }
 
         let transform = node.cached_transform.as_ref().unwrap();
@@ -193,7 +198,7 @@ impl<D> TreeGraph<D> {
 
         match &node.data {
             Some(d) => f(d, transform),
-            _ => ()
+            _ => (),
         }
     }
 

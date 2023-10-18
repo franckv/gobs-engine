@@ -5,7 +5,7 @@ use crate::model::Color;
 pub struct LightBuilder {
     position: Vector4<f32>,
     color: Color,
-    ambient: Color
+    ambient: Color,
 }
 
 impl LightBuilder {
@@ -13,7 +13,7 @@ impl LightBuilder {
         LightBuilder {
             position: Vector4::unit_z(),
             color: Color::white(),
-            ambient: Color::new(0.1, 0.1, 0.1, 1.)
+            ambient: Color::new(0.1, 0.1, 0.1, 1.),
         }
     }
 
@@ -51,16 +51,15 @@ impl LightBuilder {
 pub struct Light {
     position: Vector4<f32>,
     color: Color,
-    ambient: Color
+    ambient: Color,
 }
-
 
 impl Light {
     fn new<V: Into<Vector4<f32>>>(position: V, color: Color, ambient: Color) -> Self {
         Light {
             position: position.into(),
             color: color,
-            ambient: ambient
+            ambient: ambient,
         }
     }
 

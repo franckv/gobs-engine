@@ -59,8 +59,8 @@ impl Shapes {
     }
 
     pub fn line<P: Into<Point3<f32>>>(a: P, b: P) -> Arc<Mesh> {
-        let a : Point3<f32> = a.into();
-        let b : Point3<f32> = b.into();
+        let a: Point3<f32> = a.into();
+        let b: Point3<f32> = b.into();
 
         let builder = MeshBuilder::new();
 
@@ -82,16 +82,15 @@ impl Shapes {
     pub fn cube() -> Arc<Mesh> {
         let builder = MeshBuilder::new();
 
-        let (top, bottom, left, right, front, back) =
-            (0.5, -0.5, -0.5, 0.5, 0.5, -0.5);
+        let (top, bottom, left, right, front, back) = (0.5, -0.5, -0.5, 0.5, 0.5, -0.5);
 
-/*
-            5 ----- 6
-        1 ----- 2   |
-        |   |   |   |
-        |   7 --|-- 8
-        3 ----- 4
-*/
+        /*
+                    5 ----- 6
+                1 ----- 2   |
+                |   |   |   |
+                |   7 --|-- 8
+                3 ----- 4
+        */
 
         let v1 = [left, top, front];
         let v2 = [right, top, front];
@@ -122,7 +121,6 @@ impl Shapes {
             .add_vertex(v3, n1, t3)
             .add_vertex(v2, n1, t2)
             .add_vertex(v1, n1, t1)
-
             // B
             .add_vertex(v8, n2, t3)
             .add_vertex(v7, n2, t4)
@@ -130,7 +128,6 @@ impl Shapes {
             .add_vertex(v8, n2, t3)
             .add_vertex(v5, n2, t2)
             .add_vertex(v6, n2, t1)
-
             // L
             .add_vertex(v7, n3, t3)
             .add_vertex(v3, n3, t4)
@@ -138,7 +135,6 @@ impl Shapes {
             .add_vertex(v7, n3, t3)
             .add_vertex(v1, n3, t2)
             .add_vertex(v5, n3, t1)
-
             // R
             .add_vertex(v4, n4, t3)
             .add_vertex(v8, n4, t4)
@@ -146,7 +142,6 @@ impl Shapes {
             .add_vertex(v4, n4, t3)
             .add_vertex(v6, n4, t2)
             .add_vertex(v2, n4, t1)
-
             // U
             .add_vertex(v1, n5, t3)
             .add_vertex(v2, n5, t4)
@@ -154,7 +149,6 @@ impl Shapes {
             .add_vertex(v1, n5, t3)
             .add_vertex(v6, n5, t2)
             .add_vertex(v5, n5, t1)
-
             //D
             .add_vertex(v7, n6, t3)
             .add_vertex(v8, n6, t4)
@@ -162,7 +156,6 @@ impl Shapes {
             .add_vertex(v7, n6, t3)
             .add_vertex(v4, n6, t2)
             .add_vertex(v3, n6, t1)
-
             .autoindex()
             .build()
     }

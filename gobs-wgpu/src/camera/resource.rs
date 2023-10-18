@@ -1,8 +1,10 @@
 use log::*;
 use wgpu::util::DeviceExt;
 
-use crate::camera::Camera;
+use gobs_scene as scene;
+
 use crate::render::Gfx;
+use scene::camera::Camera;
 
 #[repr(C)]
 #[derive(Debug, Copy, Clone, bytemuck::Pod, bytemuck::Zeroable)]

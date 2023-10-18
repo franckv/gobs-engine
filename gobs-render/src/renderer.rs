@@ -280,7 +280,7 @@ impl Renderer {
         let frame = &mut self.frames[self.current_frame];
         {
             let instance_buffer = &frame.instance_buffer(&id);
-            &mut frame.command_buffer.bind_vertex_buffer(1, instance_buffer);
+            let _ = &mut frame.command_buffer.bind_vertex_buffer(1, instance_buffer);
         }
 
         let command_buffer = &mut frame.command_buffer;

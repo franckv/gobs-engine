@@ -5,7 +5,7 @@ use gobs_scene as scene;
 use scene::model::{Color, Mesh, Model, ModelBuilder, Shapes, Texture};
 
 pub struct Tile {
-    model: Model
+    model: Model,
 }
 
 impl Tile {
@@ -18,7 +18,7 @@ pub struct TileMap {
     mesh: Arc<Mesh>,
     texture: Arc<Texture>,
     tile_size: [usize; 2],
-    size: [usize; 2]
+    size: [usize; 2],
 }
 
 impl TileMap {
@@ -34,19 +34,19 @@ impl TileMap {
             mesh: mesh,
             texture: texture,
             tile_size: tile_size,
-            size: size
+            size: size,
         }
     }
 
     pub fn build_tile(&self, i: usize, j: usize) -> Arc<Model> {
         ModelBuilder::new(self.mesh.clone())
-        .color(Color::white())
-        .texture(self.texture.clone())
-        .atlas(i, j, self.tile_size)
-        .build()
+            .color(Color::white())
+            .texture(self.texture.clone())
+            .atlas(i, j, self.tile_size)
+            .build()
     }
 
-    pub fn size(&self) -> [usize; 2]{
-            self.size
+    pub fn size(&self) -> [usize; 2] {
+        self.size
     }
 }

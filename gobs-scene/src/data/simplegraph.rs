@@ -13,9 +13,7 @@ pub struct SimpleNode<T> {
 
 impl<T> SimpleNode<T> {
     fn new(node: NodeRef<T>) -> Self {
-        SimpleNode {
-            node: node
-        }
+        SimpleNode { node: node }
     }
 
     pub fn insert(&mut self, data: T) -> SimpleNode<T> {
@@ -23,20 +21,15 @@ impl<T> SimpleNode<T> {
 
         self.node.write().unwrap().insert(child.clone());
 
-        SimpleNode {
-            node: child
-        }
+        SimpleNode { node: child }
     }
 
-    pub fn insert_with_transform(&mut self, data: T, transform: Matrix4<f32>)
-    -> SimpleNode<T> {
+    pub fn insert_with_transform(&mut self, data: T, transform: Matrix4<f32>) -> SimpleNode<T> {
         let child = Node::with_transform(Some(data), transform);
 
         self.node.write().unwrap().insert(child.clone());
 
-        SimpleNode {
-            node: child
-        }
+        SimpleNode { node: child }
     }
 }
 
@@ -44,7 +37,7 @@ struct Node<T> {
     data: Option<T>,
     transform: Matrix4<f32>,
     cached_transform: Option<Matrix4<f32>>,
-    children: Vec<NodeRef<T>>
+    children: Vec<NodeRef<T>>,
 }
 
 impl<T> Node<T> {
@@ -53,7 +46,7 @@ impl<T> Node<T> {
             data: data,
             transform: Matrix4::identity(),
             cached_transform: None,
-            children: Vec::new()
+            children: Vec::new(),
         }))
     }
 
@@ -62,7 +55,7 @@ impl<T> Node<T> {
             data: data,
             transform: transform,
             cached_transform: None,
-            children: Vec::new()
+            children: Vec::new(),
         }))
     }
 
@@ -74,7 +67,7 @@ impl<T> Node<T> {
 pub struct SimpleGraph<T> {
     camera: Camera,
     light: Light,
-    root: SimpleNode<T>
+    root: SimpleNode<T>,
 }
 
 impl<T> SimpleGraph<T> {
@@ -82,7 +75,7 @@ impl<T> SimpleGraph<T> {
         SimpleGraph {
             camera: Camera::ortho(1., 1.),
             light: LightBuilder::new().build(),
-            root: SimpleNode::new(Node::new(None))
+            root: SimpleNode::new(Node::new(None)),
         }
     }
 
@@ -106,22 +99,31 @@ impl<T> SimpleGraph<T> {
         &self.root
     }
 
-    pub fn insert<O>(&mut self, object: O) -> SimpleNode<T> where O: Into<T> {
+    pub fn insert<O>(&mut self, object: O) -> SimpleNode<T>
+    where
+        O: Into<T>,
+    {
         self.root.insert(object.into())
     }
 
-    pub fn insert_with_transform<O>(&mut self, object: O, transform: Matrix4<f32>)
-    -> SimpleNode<T> where O: Into<T> {
+    pub fn insert_with_transform<O>(&mut self, object: O, transform: Matrix4<f32>) -> SimpleNode<T>
+    where
+        O: Into<T>,
+    {
         self.root.insert_with_transform(object.into(), transform)
     }
 
     pub fn foreach<F>(&mut self, mut f: F)
-    where F: FnMut(&T, Matrix4<f32>) {
+    where
+        F: FnMut(&T, Matrix4<f32>),
+    {
         SimpleGraph::visit(&mut self.root.node, &mut f, Matrix4::identity());
     }
 
     fn visit<F>(node: &mut NodeRef<T>, f: &mut F, parent_transform: Matrix4<f32>)
-    where F: FnMut(&T, Matrix4<f32>) {
+    where
+        F: FnMut(&T, Matrix4<f32>),
+    {
         let mut node = node.write().unwrap();
 
         if node.cached_transform.is_none() {
@@ -136,7 +138,7 @@ impl<T> SimpleGraph<T> {
 
         match &node.data {
             Some(d) => f(d, transform),
-            _ => ()
+            _ => (),
         }
     }
 

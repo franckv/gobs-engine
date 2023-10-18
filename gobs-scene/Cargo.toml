@@ -11,6 +11,7 @@ path = "src/lib.rs"
 [dependencies]
 log = { workspace = true }
 cgmath = { workspace = true }
+glam = { workspace = true }
 image = { workspace = true }
 unicode-normalization = { workspace = true }
 rusttype = { workspace = true }

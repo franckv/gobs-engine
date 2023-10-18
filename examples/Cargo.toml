@@ -4,16 +4,15 @@ version = "0.1.0"
 authors = { workspace = true }
 edition = { workspace = true }
 
-[build-dependencies]
-glsl-to-spirv = "0.1.6"
-
 [dependencies]
-gobs-game = {path = "../gobs-game"}
-gobs-scene = {path = "../gobs-scene"}
-gobs-utils = {path = "../gobs-utils"}
-gobs-render = {path = "../gobs-render"}
+gobs-game = { path = "../gobs-game" }
+gobs-scene = { path = "../gobs-scene" }
+gobs-utils = { path = "../gobs-utils" }
+gobs-wgpu = { path = "../gobs-wgpu" }
 image = { workspace = true }
+glam = { workspace = true }
 log = { workspace = true }
 simplelog = { workspace = true }
 time = { workspace = true }
 winit = { workspace = true }
+wgpu = { workspace = true }

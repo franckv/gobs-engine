@@ -1,7 +1,11 @@
 use glam::{Quat, Vec3};
 use log::*;
 
-use crate::camera::{Camera, CameraController, CameraProjection, CameraResource};
+use gobs_scene as scene;
+
+use scene::camera::{Camera, CameraProjection};
+
+use crate::camera::CameraResource;
 use crate::light::{Light, LightResource};
 use crate::model::{Instance, Model, Texture};
 use crate::render::Gfx;
@@ -18,9 +22,8 @@ const TILE_SIZE: f32 = 2.;
 pub struct Scene {
     pub solid_shader: SolidShader,
     pub phong_shader: PhongShader,
-    camera: Camera,
+    pub camera: Camera,
     pub camera_resource: CameraResource,
-    pub camera_controller: CameraController,
     light: Light,
     pub light_resource: LightResource,
     depth_texture: Texture,
@@ -36,6 +39,8 @@ impl Scene {
     }
 
     pub async fn new(gfx: &Gfx) -> Self {
+        info!("New scene");
+
         let solid_shader = SolidShader::new(&gfx).await;
         let phong_shader = PhongShader::new(&gfx).await;
 
@@ -53,8 +58,6 @@ impl Scene {
             (-90.0 as f32).to_radians(),
             (-50.0 as f32).to_radians(),
         );
-
-        let camera_controller = CameraController::new(4.0, 0.4);
 
         let light_resource = gfx.create_light_resource(&phong_shader.layouts[1]);
         let light = Light::new((8.0, 2.0, 8.0), (1., 1., 0.9));
@@ -94,7 +97,6 @@ impl Scene {
             phong_shader,
             camera,
             camera_resource,
-            camera_controller,
             light,
             light_resource,
             depth_texture,
@@ -111,7 +113,6 @@ impl Scene {
     }
 
     pub fn update(&mut self, gfx: &Gfx, dt: f32) {
-        self.camera_controller.update_camera(&mut self.camera, dt);
         self.camera_resource.update(gfx, &self.camera);
 
         let old_position: Vec3 = self.light.position;

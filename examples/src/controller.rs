@@ -2,10 +2,13 @@ use std::f32::consts::FRAC_PI_2;
 
 use glam::Vec3;
 use log::*;
-use winit::dpi::PhysicalPosition;
-use winit::event::*;
 
-use crate::camera::Camera;
+use gobs_game as game;
+use gobs_scene as scene;
+
+use game::input::Key;
+
+use scene::camera::Camera;
 
 const SAFE_FRAC_PI_2: f32 = FRAC_PI_2 - 0.0001;
 
@@ -43,45 +46,40 @@ impl CameraController {
         }
     }
 
-    pub fn process_keyboard(&mut self, key: VirtualKeyCode, state: ElementState) -> bool {
-        info!("Process input {:?}", key);
+    pub fn key_pressed(&mut self, key: Key) {
+        self.key_event(key, true);
+    }
 
-        let amount = if state == ElementState::Pressed {
-            2.0
-        } else {
-            0.0
-        };
+    pub fn key_released(&mut self, key: Key) {
+        self.key_event(key, false);
+    }
+
+    fn key_event(&mut self, key: Key, pressed: bool) {
+        let amount = if pressed { 2.0 } else { 0.0 };
 
         match key {
-            VirtualKeyCode::Z | VirtualKeyCode::Up => {
+            Key::Z | Key::Up => {
                 self.amount_forward = amount;
-                true
             }
-            VirtualKeyCode::S | VirtualKeyCode::Down => {
+            Key::S | Key::Down => {
                 self.amount_backward = amount;
-                true
             }
-            VirtualKeyCode::Q | VirtualKeyCode::Left => {
+            Key::Q | Key::Left => {
                 self.amount_left = amount;
-                true
             }
-            VirtualKeyCode::D | VirtualKeyCode::Right => {
+            Key::D | Key::Right => {
                 self.amount_right = amount;
-                true
             }
-            VirtualKeyCode::Space => {
+            Key::Space => {
                 self.amount_up = amount;
-                true
             }
-            VirtualKeyCode::LShift => {
+            Key::LShift => {
                 self.amount_down = amount;
-                true
             }
-            VirtualKeyCode::L => {
+            Key::L => {
                 self.debug = true;
-                true
             }
-            _ => false,
+            _ => (),
         }
     }
 
@@ -90,11 +88,8 @@ impl CameraController {
         self.rotate_vertical = mouse_dy as f32;
     }
 
-    pub fn process_scroll(&mut self, delta: &MouseScrollDelta) {
-        self.scroll = match delta {
-            MouseScrollDelta::LineDelta(_, scroll) => scroll * 100.0,
-            MouseScrollDelta::PixelDelta(PhysicalPosition { y: scroll, .. }) => *scroll as f32,
-        };
+    pub fn process_scroll(&mut self, delta: f32) {
+        self.scroll = delta;
     }
 
     pub fn update_camera(&mut self, camera: &mut Camera, dt: f32) {

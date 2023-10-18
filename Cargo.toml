@@ -3,11 +3,10 @@ members = [
     "gobs-utils",
     "gobs-scene",
     "gobs-game",
-    "gobs-render",
-    "gobs-vulkan",
     "gobs-wgpu",
     "examples"
 ]
+resolver = "2"
 
 [workspace.package]
 authors = ["franckv <franck.vdl@gmail.com>"]

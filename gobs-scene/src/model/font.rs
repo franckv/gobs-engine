@@ -1,10 +1,10 @@
 use std::collections::HashMap;
-use std::io::Read;
 use std::fs::File;
+use std::io::Read;
 use std::sync::Arc;
 use unicode_normalization::UnicodeNormalization;
 
-use rusttype::{Font as RFont, Scale, point, Rect};
+use rusttype::{point, Font as RFont, Rect, Scale};
 
 use super::{Color, Mesh, MeshBuilder, Model, ModelBuilder, Texture, Transform};
 
@@ -12,17 +12,17 @@ const TEXTURE_SIZE: (usize, usize) = (1024, 1024);
 
 #[derive(Clone)]
 struct Character {
-    c: char,
+    _c: char,
     region: [f32; 4],
     transform: Transform,
     width: f32,
-    advance: f32
+    advance: f32,
 }
 
 pub struct Font {
     texture: Arc<Texture>,
     mesh: Arc<Mesh>,
-    cache: HashMap<char, Character>
+    cache: HashMap<char, Character>,
 }
 
 impl Font {
@@ -36,7 +36,10 @@ impl Font {
 
         let font = RFont::try_from_vec(v).unwrap();
 
-        let scale = Scale {x: size as f32, y: size as f32};
+        let scale = Scale {
+            x: size as f32,
+            y: size as f32,
+        };
 
         let (width, height) = TEXTURE_SIZE;
 
@@ -51,7 +54,7 @@ impl Font {
         Font {
             texture: texture,
             mesh: mesh,
-            cache: cache
+            cache: cache,
         }
     }
 
@@ -118,8 +121,13 @@ impl Font {
             .build()
     }
 
-    fn build_texture(font: &RFont, cache: &mut HashMap<char, Character>,
-        scale: Scale, width: usize, height: usize) -> Vec<u8> {
+    fn build_texture(
+        font: &RFont,
+        cache: &mut HashMap<char, Character>,
+        scale: Scale,
+        width: usize,
+        height: usize,
+    ) -> Vec<u8> {
         let mut image = vec![0u8; width * height * 4];
 
         let v_metrics = font.v_metrics(scale);
@@ -148,11 +156,11 @@ impl Font {
                     let rect = glyph.pixel_bounding_box().unwrap();
 
                     rect
-                },
+                }
                 None => Rect {
                     min: point(0, 0),
                     max: point(1, 1),
-                }
+                },
             };
 
             let character = {
@@ -167,14 +175,15 @@ impl Font {
                 let offset = ypos - (ymin + ymax) / 2.;
 
                 // resize mesh to fit bounding box and align on origin
-                let transform = Transform::scaling(xmax - xmin, ymax - ymin, 1.).translate([0., offset, 0.]);
+                let transform =
+                    Transform::scaling(xmax - xmin, ymax - ymin, 1.).translate([0., offset, 0.]);
 
                 Character {
-                    c: c,
+                    _c: c,
                     region: [xmin, ymin, xmax, ymax],
                     transform: transform,
                     width: xmax - xmin,
-                    advance: advance / width as f32
+                    advance: advance / width as f32,
                 }
             };
 
@@ -182,8 +191,8 @@ impl Font {
 
             glyph.draw(|x, y, v| {
                 let c = (255.0 * v) as u8;
-                let x = x as i32  + bb.min.x;
-                let y = y as i32  + bb.min.y;
+                let x = x as i32 + bb.min.x;
+                let y = y as i32 + bb.min.y;
 
                 if x >= 0 && x < width as i32 && y >= 0 && y < height as i32 {
                     let x = x as usize;

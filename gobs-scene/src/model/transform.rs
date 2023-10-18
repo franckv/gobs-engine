@@ -2,37 +2,35 @@ use cgmath::{Deg, Matrix, Matrix3, Matrix4, SquareMatrix, Vector3, Vector4};
 
 #[derive(Clone, Copy, Debug)]
 pub struct Transform {
-    pub matrix: Matrix4<f32>
+    pub matrix: Matrix4<f32>,
 }
 
 impl Transform {
     pub fn new() -> Self {
         Transform {
-            matrix: Matrix4::identity()
+            matrix: Matrix4::identity(),
         }
     }
 
     pub fn from_matrix(matrix: Matrix4<f32>) -> Self {
-        Transform {
-            matrix
-        }
+        Transform { matrix }
     }
 
     pub fn translation<V: Into<Vector3<f32>>>(v: V) -> Self {
         Transform {
-            matrix: Matrix4::from_translation(v.into())
+            matrix: Matrix4::from_translation(v.into()),
         }
     }
 
     pub fn scaling(scale_x: f32, scale_y: f32, scale_z: f32) -> Self {
         Transform {
-            matrix: Matrix4::from_diagonal(Vector4::new(scale_x, scale_y, scale_z, 1.))
+            matrix: Matrix4::from_diagonal(Vector4::new(scale_x, scale_y, scale_z, 1.)),
         }
     }
 
     pub fn rotation<V: Into<Vector3<f32>>>(axis: V, angle: f32) -> Self {
         Transform {
-            matrix: Matrix4::from_axis_angle(axis.into(), Deg(angle))
+            matrix: Matrix4::from_axis_angle(axis.into(), Deg(angle)),
         }
     }
 
@@ -49,7 +47,7 @@ impl Transform {
     pub fn normal_transform(&self) -> Transform {
         let mat: Matrix3<f32> = self.clone().into();
         Transform {
-            matrix: mat.invert().unwrap().transpose().into()
+            matrix: mat.invert().unwrap().transpose().into(),
         }
     }
 }
@@ -59,7 +57,7 @@ impl From<Transform> for Matrix3<f32> {
         Matrix3::from_cols(
             t.matrix.x.truncate(),
             t.matrix.y.truncate(),
-            t.matrix.z.truncate()
+            t.matrix.z.truncate(),
         )
     }
 }
@@ -75,8 +73,9 @@ impl From<Transform> for [[f32; 3]; 3] {
         Matrix3::from_cols(
             t.matrix.x.truncate(),
             t.matrix.y.truncate(),
-            t.matrix.z.truncate()
-        ).into()
+            t.matrix.z.truncate(),
+        )
+        .into()
     }
 }
 

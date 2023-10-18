@@ -13,7 +13,7 @@ pub struct Vertex {
 #[derive(Copy, Clone)]
 pub enum PrimitiveType {
     Triangle,
-    Line
+    Line,
 }
 
 pub struct MeshBuilder {
@@ -21,7 +21,7 @@ pub struct MeshBuilder {
     primitive_type: PrimitiveType,
     vlist: Vec<Vertex>,
     ilist: Vec<u32>,
-    autoindex: bool
+    autoindex: bool,
 }
 
 impl MeshBuilder {
@@ -31,13 +31,16 @@ impl MeshBuilder {
             primitive_type: PrimitiveType::Triangle,
             vlist: Vec::new(),
             ilist: Vec::new(),
-            autoindex: false
+            autoindex: false,
         }
     }
 
-    pub fn add_vertex(mut self, position: [f32; 3], normal: [f32; 3],
-                      tex_uv: [f32; 2]) -> Self {
-        let vertex = Vertex { position, normal, tex_uv };
+    pub fn add_vertex(mut self, position: [f32; 3], normal: [f32; 3], tex_uv: [f32; 2]) -> Self {
+        let vertex = Vertex {
+            position,
+            normal,
+            tex_uv,
+        };
 
         self.vlist.push(vertex);
 
@@ -68,10 +71,17 @@ impl MeshBuilder {
             let mut unique = HashMap::new();
             let mut idx = 0;
             for v in &self.vlist {
-                let key = format!("{}:{}:{}:{}:{}:{}:{}:{}",
-                                  v.position[0], v.position[1], v.position[2],
-                                  v.normal[0], v.normal[1], v.normal[2],
-                                  v.tex_uv[0], v.tex_uv[1]);
+                let key = format!(
+                    "{}:{}:{}:{}:{}:{}:{}:{}",
+                    v.position[0],
+                    v.position[1],
+                    v.position[2],
+                    v.normal[0],
+                    v.normal[1],
+                    v.normal[2],
+                    v.tex_uv[0],
+                    v.tex_uv[1]
+                );
 
                 if unique.contains_key(&key) {
                     let dup_idx = unique.get(&key).unwrap();
@@ -97,18 +107,21 @@ pub struct Mesh {
     id: Uuid,
     primitive_type: PrimitiveType,
     vlist: Vec<Vertex>,
-    ilist: Option<Vec<u32>>
+    ilist: Option<Vec<u32>>,
 }
 
 impl Mesh {
-    fn new(id: Uuid, primitive_type: PrimitiveType,
-           vlist: Vec<Vertex>,
-           ilist: Option<Vec<u32>>) -> Arc<Mesh> {
+    fn new(
+        id: Uuid,
+        primitive_type: PrimitiveType,
+        vlist: Vec<Vertex>,
+        ilist: Option<Vec<u32>>,
+    ) -> Arc<Mesh> {
         let mesh = Mesh {
             id,
             primitive_type,
             vlist,
-            ilist
+            ilist,
         };
 
         Arc::new(mesh)

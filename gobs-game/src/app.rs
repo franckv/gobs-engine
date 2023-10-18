@@ -1,25 +1,26 @@
+use log::*;
 use winit::dpi::LogicalSize;
-use winit::event_loop::EventLoop;
-use winit::window::WindowBuilder;
+use winit::event_loop::{ControlFlow, EventLoop};
+use winit::window::{Window, WindowBuilder};
 
 use gobs_utils as utils;
-use gobs_render as render;
-
-use render::renderer::Renderer;
-use render::context::Context;
+use gobs_wgpu as render;
 
 use utils::timer::Timer;
 
-use crate::input::{Event, InputHandler, InputMap};
+use crate::input::{Event, Input, InputHandler};
+
+use render::render::Gfx;
 
 const WIDTH: u32 = 800; // TODO: hardcoded
 const HEIGHT: u32 = 600;
-const MAX_INSTANCES: usize = 81; // TODO: hardcoded
-const MAX_DRAWS: usize = 64; // TODO: hardcoded
 
 pub struct Application {
-    renderer: Renderer,
-    input_handler: InputHandler
+    pub window: Window,
+    pub events_loop: EventLoop<()>,
+    pub gfx: Gfx,
+    input_handler: InputHandler,
+    mouse_pressed: bool,
 }
 
 impl Application {
@@ -30,70 +31,102 @@ impl Application {
             .with_inner_size(LogicalSize::new(WIDTH, HEIGHT))
             .with_title("Test")
             .with_resizable(true)
-            .build(&events_loop).unwrap();
+            .build(&events_loop)
+            .unwrap();
 
-        let input_handler = InputHandler::new(events_loop);
+        let input_handler = InputHandler::new();
 
-        log::debug!("Create Context");
-        let (context, display) = Context::new("Test", window);
-
-        log::debug!("Create Renderer");
-        let renderer = Renderer::new(context, display, MAX_INSTANCES, MAX_DRAWS);
+        log::debug!("Create Gfx");
+        let gfx = pollster::block_on(Gfx::new(&window));
 
         Application {
-            renderer,
-            input_handler
+            window,
+            events_loop,
+            gfx,
+            input_handler,
+            mouse_pressed: false,
         }
     }
 
-    pub fn renderer(&mut self) -> &mut Renderer {
-        &mut self.renderer
-    }
-
-    pub fn input_map(&self) -> &InputMap {
-        &self.input_handler.get_input_map()
+    pub fn renderer(&mut self) -> &mut Gfx {
+        &mut self.gfx
     }
 
     pub fn dimensions(&self) -> (u32, u32) {
-        self.renderer.display.dimensions()
+        (self.gfx.width(), self.gfx.height())
     }
 
-    pub fn run<R>(&mut self, mut runnable: R) where R: Run {
-        log::debug!("Create application");
-        runnable.create(self);
+    pub fn run<R>(self)
+    where
+        R: Run + 'static,
+    {
+        pollster::block_on(self.run_async::<R>());
+    }
 
-        let mut running = true;
+    async fn run_async<R>(mut self)
+    where
+        R: Run + 'static,
+    {
         let mut timer = Timer::new();
+        let mut runnable = R::create(&mut self.gfx).await;
 
-        while running {
-            let delta = timer.delta();
-            log::trace!("FPS: {}", 1.0 / delta);
-
-            let event = self.input_handler.read_inputs();
-
+        self.events_loop.run(move |event, _, control_flow| {
+            let event = self.input_handler.read_inputs(event);
             match event {
-                Event::Resize => {
-                    self.renderer.display.resize();
-                    let (width, height) = self.renderer.display.dimensions();
+                Event::Resize(width, height) => {
                     log::debug!("Resize to : {}/{}", width, height);
+                    self.gfx.resize(width, height);
 
-                    runnable.resize(width, height, self);
-                },
+                    runnable.resize(width, height, &mut self.gfx);
+                }
+                Event::KeyPressed(key) => {
+                    runnable.input(&mut self.gfx, Input::KeyPressed(key));
+                }
+                Event::KeyReleased(key) => {
+                    runnable.input(&mut self.gfx, Input::KeyReleased(key));
+                }
+                Event::MousePressed => self.mouse_pressed = true,
+                Event::MouseReleased => self.mouse_pressed = false,
+                Event::MouseWheel(delta) => {
+                    runnable.input(&mut self.gfx, Input::MouseWheel(delta));
+                }
+                Event::MouseMotion(dx, dy) => {
+                    if self.mouse_pressed {
+                        runnable.input(&mut self.gfx, Input::MouseMotion(dx, dy));
+                    }
+                }
                 Event::Close => {
-                    running = false;
-                },
-                Event::Continue => ()
+                    log::info!("Stopping");
+                    *control_flow = ControlFlow::Exit
+                }
+                Event::Redraw => {
+                    let delta = timer.delta();
+                    log::trace!("FPS: {}", 1.0 / delta);
+
+                    runnable.update(delta, &mut self.gfx);
+                    match runnable.render(&mut self.gfx) {
+                        Ok(_) => {}
+                        Err(wgpu::SurfaceError::Lost) => {
+                            self.gfx.resize(self.gfx.width(), self.gfx.height());
+                            runnable.resize(self.gfx.width(), self.gfx.height(), &mut self.gfx);
+                        }
+                        Err(e) => error!("{:?}", e),
+                    }
+                }
+                Event::Cleared => {
+                    self.window.request_redraw();
+                }
+                Event::Continue => (),
             }
-
-            runnable.update(delta, self);
-        }
-
-        self.renderer.context.device_ref().wait();
+        });
     }
 }
 
 pub trait Run: Sized {
-    fn create(&mut self, _application: &mut Application) {}
-    fn update(&mut self, _delta: f32, _application: &mut Application) {}
-    fn resize(&mut self, _width: u32, _height: u32, _application: &mut Application) {}
+    #[allow(async_fn_in_trait)]
+    async fn create(gfx: &mut Gfx) -> Self;
+    fn update(&mut self, delta: f32, gfx: &mut Gfx);
+    fn render(&mut self, gfx: &mut Gfx) -> Result<(), wgpu::SurfaceError>;
+    fn input(&mut self, gfx: &mut Gfx, input: Input);
+    fn resize(&mut self, width: u32, height: u32, gfx: &mut Gfx);
 }

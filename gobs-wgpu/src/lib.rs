@@ -1,10 +1,8 @@
-pub mod app;
 mod camera;
-mod input;
 mod light;
 mod model;
 mod pipeline;
-mod render;
+pub mod render;
 mod resource;
-mod scene;
+pub mod scene;
 mod shader;

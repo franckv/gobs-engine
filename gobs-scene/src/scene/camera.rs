@@ -1,12 +1,12 @@
-use cgmath::{Deg, Matrix4, SquareMatrix, Point3, Vector3};
 use cgmath::{ortho, perspective};
+use cgmath::{Deg, Matrix4, Point3, SquareMatrix, Vector3};
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum ProjectionMode {
     Ortho,
     Perspective,
     OrthoFixedWidth,
-    OrthoFixedHeight
+    OrthoFixedHeight,
 }
 
 pub struct Camera {
@@ -19,7 +19,7 @@ pub struct Camera {
     aspect: f32,
     fov: f32,
     near: f32,
-    far: f32
+    far: f32,
 }
 
 impl Camera {
@@ -39,7 +39,7 @@ impl Camera {
             aspect: 1.,
             fov: 60.,
             near,
-            far
+            far,
         }
     }
 
@@ -57,12 +57,12 @@ impl Camera {
             projection,
             view: Matrix4::identity(),
             mode: ProjectionMode::OrthoFixedWidth,
-            width, 
+            width,
             height,
             aspect,
             fov,
             near,
-            far
+            far,
         }
     }
 
@@ -80,20 +80,19 @@ impl Camera {
             projection,
             view: Matrix4::identity(),
             mode: ProjectionMode::OrthoFixedHeight,
-            width, 
+            width,
             height,
             aspect,
             fov,
             near,
-            far
+            far,
         }
     }
 
     pub fn perspective(near: f32, far: f32, fov: f32, aspect: f32) -> Self {
         let correction = Self::correction();
 
-        let projection =
-            correction * perspective(Deg(fov), aspect, near, far);
+        let projection = correction * perspective(Deg(fov), aspect, near, far);
 
         Camera {
             position: [0., 0., 0.].into(),
@@ -105,7 +104,7 @@ impl Camera {
             aspect,
             fov,
             near,
-            far
+            far,
         }
     }
 
@@ -140,30 +139,30 @@ impl Camera {
         let top = height / 2.;
         let bottom = -height / 2.;
 
-        Self::correction() * ortho(
-            left, right, bottom, top, near, far
-        )
+        Self::correction() * ortho(left, right, bottom, top, near, far)
     }
 
     fn update(&mut self) {
         match self.mode {
             ProjectionMode::Ortho => {
-                self.projection = Self::ortho_projection(self.width, self.height, self.near, self.far);
-            },
+                self.projection =
+                    Self::ortho_projection(self.width, self.height, self.near, self.far);
+            }
             ProjectionMode::Perspective => {
-                self.projection = Self::perspective_projection(self.fov, self.aspect, self.near, self.far);
-            },
+                self.projection =
+                    Self::perspective_projection(self.fov, self.aspect, self.near, self.far);
+            }
             ProjectionMode::OrthoFixedHeight => {
                 self.width = self.height * self.aspect;
 
-                self.projection = Self::ortho_projection(self.width, self.height, self.near, self.far);
-
-            },
+                self.projection =
+                    Self::ortho_projection(self.width, self.height, self.near, self.far);
+            }
             ProjectionMode::OrthoFixedWidth => {
                 self.height = self.width / self.aspect;
 
-                self.projection = Self::ortho_projection(self.width, self.height, self.near, self.far);
-
+                self.projection =
+                    Self::ortho_projection(self.width, self.height, self.near, self.far);
             }
         }
     }
@@ -184,8 +183,7 @@ impl Camera {
     }
 
     pub fn look_at<V: Into<Vector3<f32>>>(&mut self, direction: V, up: V) {
-        self.view = Matrix4::look_to_rh(
-            self.position.clone().into(), direction.into(), up.into());
+        self.view = Matrix4::look_to_rh(self.position.clone().into(), direction.into(), up.into());
     }
 
     pub fn combined(&self) -> Matrix4<f32> {

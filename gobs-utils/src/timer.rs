@@ -7,7 +7,7 @@ pub struct Timer {
 impl Timer {
     pub fn new() -> Self {
         Timer {
-            last_tick: time::OffsetDateTime::now_utc()
+            last_tick: time::OffsetDateTime::now_utc(),
         }
     }
 

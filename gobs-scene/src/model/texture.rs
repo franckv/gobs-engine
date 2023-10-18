@@ -10,7 +10,7 @@ use super::Color;
 pub struct Texture {
     id: Uuid,
     data: Vec<u8>,
-    size: [usize; 2]
+    size: [usize; 2],
 }
 
 impl Texture {
@@ -39,7 +39,7 @@ impl Texture {
         Arc::new(Texture {
             id: Uuid::new_v4(),
             data: data,
-            size: [width, height]
+            size: [width, height],
         })
     }
 

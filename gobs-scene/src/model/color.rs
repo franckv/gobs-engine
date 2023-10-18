@@ -8,31 +8,66 @@ pub struct Color {
 
 impl Color {
     pub fn new(r: f32, g: f32, b: f32, a: f32) -> Color {
-        Color {r: r, g: g, b: b, a: a}
+        Color {
+            r: r,
+            g: g,
+            b: b,
+            a: a,
+        }
     }
 
     pub fn white() -> Color {
-        Color {r: 1., g: 1., b: 1., a: 1.}
+        Color {
+            r: 1.,
+            g: 1.,
+            b: 1.,
+            a: 1.,
+        }
     }
 
     pub fn black() -> Color {
-        Color {r: 0., g: 0., b: 0., a: 1.}
+        Color {
+            r: 0.,
+            g: 0.,
+            b: 0.,
+            a: 1.,
+        }
     }
 
     pub fn red() -> Color {
-        Color {r: 1., g: 0., b: 0., a: 1.}
+        Color {
+            r: 1.,
+            g: 0.,
+            b: 0.,
+            a: 1.,
+        }
     }
 
     pub fn green() -> Color {
-        Color {r: 0., g: 1., b: 0., a: 1.}
+        Color {
+            r: 0.,
+            g: 1.,
+            b: 0.,
+            a: 1.,
+        }
     }
 
     pub fn blue() -> Color {
-        Color {r: 0., g: 0., b: 1., a: 1.}
+        Color {
+            r: 0.,
+            g: 0.,
+            b: 1.,
+            a: 1.,
+        }
     }
 
     pub fn yellow() -> Color {
-        Color {r: 1., g: 1., b: 0., a: 1.}
+        Color {
+            r: 1.,
+            g: 1.,
+            b: 0.,
+            a: 1.,
+        }
     }
 }
 

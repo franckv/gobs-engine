@@ -1,5 +1,5 @@
 [package]
-name = "gobs_wgpu"
+name = "gobs-wgpu"
 version = "0.1.0"
 authors = { workspace = true }
 edition = { workspace = true }
@@ -18,4 +18,5 @@ tobj = { workspace = true }
 naga = { workspace = true }
 itertools = { workspace = true }
 
-gobs-utils = {path = "../gobs-utils"}
+gobs-utils = { path = "../gobs-utils" }
+gobs-scene = { path = "../gobs-scene" }

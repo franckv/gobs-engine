@@ -1,19 +1,22 @@
-use std::ops::AddAssign;
 use cgmath::Point3;
+use std::ops::AddAssign;
 
 #[derive(Clone, Copy)]
 pub struct SphericalCoord<T> {
     r: T,
     theta: T,
-    phi: T
+    phi: T,
 }
 
-impl<T> SphericalCoord<T> where T: AddAssign + Clone {
+impl<T> SphericalCoord<T>
+where
+    T: AddAssign + Clone,
+{
     pub fn new(r: T, theta: T, phi: T) -> Self {
         SphericalCoord {
             r: r,
             theta: theta,
-            phi: phi
+            phi: phi,
         }
     }
 

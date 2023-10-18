@@ -6,7 +6,7 @@ pub struct ModelBuilder {
     mesh: Arc<Mesh>,
     color: Color,
     texture: Option<Arc<Texture>>,
-    region: [f32; 4]
+    region: [f32; 4],
 }
 
 impl ModelBuilder {
@@ -15,7 +15,7 @@ impl ModelBuilder {
             mesh,
             color: Color::white(),
             texture: None,
-            region: [0.0, 0.0, 1.0, 1.0]
+            region: [0.0, 0.0, 1.0, 1.0],
         }
     }
 
@@ -42,7 +42,10 @@ impl ModelBuilder {
             let texture = self.texture.as_ref().unwrap();
             let img_size = texture.size();
 
-            (tile_size[0] as f32 / img_size[0] as f32, tile_size[1] as f32 / img_size[1] as f32)
+            (
+                tile_size[0] as f32 / img_size[0] as f32,
+                tile_size[1] as f32 / img_size[1] as f32,
+            )
         };
 
         let i = i as f32;
@@ -60,17 +63,21 @@ pub struct Model {
     mesh: Arc<Mesh>,
     color: Color,
     texture: Option<Arc<Texture>>,
-    region: [f32; 4]
+    region: [f32; 4],
 }
 
 impl Model {
-    fn new(mesh: Arc<Mesh>, color: Color, texture: Option<Arc<Texture>>, region: [f32; 4])
-    -> Arc<Model> {
+    fn new(
+        mesh: Arc<Mesh>,
+        color: Color,
+        texture: Option<Arc<Texture>>,
+        region: [f32; 4],
+    ) -> Arc<Model> {
         Arc::new(Model {
             mesh,
             color,
             texture,
-            region
+            region,
         })
     }
 
