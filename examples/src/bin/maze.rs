@@ -46,13 +46,18 @@ impl Run for App {
             Input::KeyReleased(key) => {
                 self.camera_controller.key_released(key);
             }
+            Input::MousePressed => {
+                self.camera_controller.mouse_pressed();
+            }
+            Input::MouseReleased => {
+                self.camera_controller.mouse_released();
+            }
             Input::MouseWheel(delta) => {
-                self.camera_controller.process_scroll(delta);
+                self.camera_controller.mouse_scroll(delta);
             }
             Input::MouseMotion(dx, dy) => {
-                self.camera_controller.process_mouse(dx, dy);
+                self.camera_controller.mouse_drag(dx, dy);
             }
-            _ => (),
         }
     }
 
@@ -63,7 +68,7 @@ impl Run for App {
 
 fn main() {
     let config_other = ConfigBuilder::new().add_filter_ignore_str("gobs").build();
-    let config_self = ConfigBuilder::new().add_filter_allow_str("gobs").build();
+    let config_self = ConfigBuilder::new().add_filter_allow_str("gobs").add_filter_allow_str("examples").build();
 
     let _ = CombinedLogger::init(vec![
         TermLogger::new(

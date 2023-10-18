@@ -6,33 +6,22 @@ use winit::event::{
     WindowEvent,
 };
 
-use crate::input::Key;
+use crate::input::{Input, Key};
 
 #[derive(Debug, PartialEq)]
 pub enum Event {
     Resize(u32, u32),
-    KeyPressed(Key),
-    KeyReleased(Key),
-    MouseWheel(f32),
-    MouseMotion(f64, f64),
-    MousePressed,
-    MouseReleased,
+    Input(Input),
     Redraw,
     Cleared,
     Close,
     Continue,
 }
 
-pub struct InputHandler {}
-
-impl InputHandler {
-    pub fn new() -> Self {
-        InputHandler {}
-    }
-
-    pub fn read_inputs(&mut self, event: winit::event::Event<'_, ()>) -> Event {
+impl Event {
+    pub fn new(event: winit::event::Event<'_, ()>) -> Self {
         let mut status = Event::Continue;
-
+    
         match event {
             winit::event::Event::WindowEvent { event, .. } => match event {
                 WindowEvent::CloseRequested => status = Event::Close,
@@ -55,8 +44,8 @@ impl InputHandler {
                     _ => {
                         let key = Self::get_input_key(key_code);
                         match state {
-                            ElementState::Pressed => status = Event::KeyPressed(key),
-                            ElementState::Released => status = Event::KeyReleased(key),
+                            ElementState::Pressed => status = Event::Input(Input::KeyPressed(key)),
+                            ElementState::Released => status = Event::Input(Input::KeyReleased(key)),
                         }
                     }
                 },
@@ -67,7 +56,7 @@ impl InputHandler {
                             scroll as f32
                         }
                     };
-                    status = Event::MouseWheel(delta);
+                    status = Event::Input(Input::MouseWheel(delta));
                 }
                 WindowEvent::MouseInput {
                     button: MouseButton::Left,
@@ -75,8 +64,8 @@ impl InputHandler {
                     ..
                 } => {
                     status = match state {
-                        ElementState::Pressed => Event::MousePressed,
-                        ElementState::Released => Event::MouseReleased,
+                        ElementState::Pressed => Event::Input(Input::MousePressed),
+                        ElementState::Released => Event::Input(Input::MouseReleased),
                     }
                 }
                 _ => (),
@@ -84,16 +73,16 @@ impl InputHandler {
             winit::event::Event::DeviceEvent {
                 event: DeviceEvent::MouseMotion { delta },
                 ..
-            } => status = Event::MouseMotion(delta.0, delta.1),
+            } => status = Event::Input(Input::MouseMotion(delta.0, delta.1)),
             winit::event::Event::RedrawRequested(_) => status = Event::Redraw,
             winit::event::Event::MainEventsCleared {} => status = Event::Cleared,
             _ => (),
         }
-
+    
         debug!("Status={:?}", status);
         status
     }
-
+    
     fn get_input_key(key_code: VirtualKeyCode) -> Key {
         match key_code {
             VirtualKeyCode::Left => Key::Left,

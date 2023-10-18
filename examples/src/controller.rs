@@ -26,6 +26,7 @@ pub struct CameraController {
     speed: f32,
     sensitivity: f32,
     debug: bool,
+    mouse_pressed: bool,
 }
 
 impl CameraController {
@@ -43,7 +44,16 @@ impl CameraController {
             speed,
             sensitivity,
             debug: false,
+            mouse_pressed: false,
         }
+    }
+
+    pub fn mouse_pressed(&mut self) {
+        self.mouse_pressed = true;
+    }
+
+    pub fn mouse_released(&mut self) {
+        self.mouse_pressed = false;
     }
 
     pub fn key_pressed(&mut self, key: Key) {
@@ -83,12 +93,14 @@ impl CameraController {
         }
     }
 
-    pub fn process_mouse(&mut self, mouse_dx: f64, mouse_dy: f64) {
-        self.rotate_horizontal = mouse_dx as f32;
-        self.rotate_vertical = mouse_dy as f32;
+    pub fn mouse_drag(&mut self, mouse_dx: f64, mouse_dy: f64) {
+        if self.mouse_pressed {
+            self.rotate_horizontal = mouse_dx as f32;
+            self.rotate_vertical = mouse_dy as f32;
+        }
     }
 
-    pub fn process_scroll(&mut self, delta: f32) {
+    pub fn mouse_scroll(&mut self, delta: f32) {
         self.scroll = delta;
     }
 

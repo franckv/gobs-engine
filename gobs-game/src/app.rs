@@ -8,7 +8,7 @@ use gobs_wgpu as render;
 
 use utils::timer::Timer;
 
-use crate::input::{Event, Input, InputHandler};
+use crate::input::{Event, Input};
 
 use render::render::Gfx;
 
@@ -19,8 +19,6 @@ pub struct Application {
     pub window: Window,
     pub events_loop: EventLoop<()>,
     pub gfx: Gfx,
-    input_handler: InputHandler,
-    mouse_pressed: bool,
 }
 
 impl Application {
@@ -34,8 +32,6 @@ impl Application {
             .build(&events_loop)
             .unwrap();
 
-        let input_handler = InputHandler::new();
-
         log::debug!("Create Gfx");
         let gfx = pollster::block_on(Gfx::new(&window));
 
@@ -43,8 +39,6 @@ impl Application {
             window,
             events_loop,
             gfx,
-            input_handler,
-            mouse_pressed: false,
         }
     }
 
@@ -71,7 +65,7 @@ impl Application {
         let mut runnable = R::create(&mut self.gfx).await;
 
         self.events_loop.run(move |event, _, control_flow| {
-            let event = self.input_handler.read_inputs(event);
+            let event = Event::new(event);
             match event {
                 Event::Resize(width, height) => {
                     log::debug!("Resize to : {}/{}", width, height);
@@ -79,21 +73,8 @@ impl Application {
 
                     runnable.resize(width, height, &mut self.gfx);
                 }
-                Event::KeyPressed(key) => {
-                    runnable.input(&mut self.gfx, Input::KeyPressed(key));
-                }
-                Event::KeyReleased(key) => {
-                    runnable.input(&mut self.gfx, Input::KeyReleased(key));
-                }
-                Event::MousePressed => self.mouse_pressed = true,
-                Event::MouseReleased => self.mouse_pressed = false,
-                Event::MouseWheel(delta) => {
-                    runnable.input(&mut self.gfx, Input::MouseWheel(delta));
-                }
-                Event::MouseMotion(dx, dy) => {
-                    if self.mouse_pressed {
-                        runnable.input(&mut self.gfx, Input::MouseMotion(dx, dy));
-                    }
+                Event::Input(input) => {
+                    runnable.input(&mut self.gfx, input);
                 }
                 Event::Close => {
                     log::info!("Stopping");

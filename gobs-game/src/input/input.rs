@@ -39,6 +39,7 @@ pub enum Key {
     Unknown,
 }
 
+#[derive(Copy, Clone, Debug, PartialEq)]
 pub enum Input {
     KeyPressed(Key),
     KeyReleased(Key),
