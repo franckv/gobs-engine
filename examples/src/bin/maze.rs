@@ -1,7 +1,3 @@
-use simplelog::{
-    ColorChoice, CombinedLogger, ConfigBuilder, LevelFilter, TermLogger, TerminalMode,
-};
-
 use examples::CameraController;
 use gobs_game as game;
 use gobs_wgpu as render;
@@ -67,23 +63,7 @@ impl Run for App {
 }
 
 fn main() {
-    let config_other = ConfigBuilder::new().add_filter_ignore_str("gobs").build();
-    let config_self = ConfigBuilder::new().add_filter_allow_str("gobs").add_filter_allow_str("examples").build();
-
-    let _ = CombinedLogger::init(vec![
-        TermLogger::new(
-            LevelFilter::Warn,
-            config_other,
-            TerminalMode::Mixed,
-            ColorChoice::Auto,
-        ),
-        TermLogger::new(
-            LevelFilter::Info,
-            config_self,
-            TerminalMode::Mixed,
-            ColorChoice::Auto,
-        ),
-    ]);
+    examples::init_logger();
 
     Application::new().run::<App>();
 }
