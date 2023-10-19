@@ -1,5 +1,3 @@
-mod camera;
-mod light;
 pub mod model;
 mod pipeline;
 pub mod render;

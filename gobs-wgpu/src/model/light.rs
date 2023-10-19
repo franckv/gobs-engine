@@ -1,10 +1,7 @@
 use log::*;
 use wgpu::util::DeviceExt;
 
-use gobs_scene as scene;
-
 use crate::render::Gfx;
-use scene::light::Light;
 
 #[repr(C)]
 #[derive(Debug, Copy, Clone, bytemuck::Pod, bytemuck::Zeroable)]
@@ -53,9 +50,10 @@ impl LightResource {
         }
     }
 
-    pub fn update(&mut self, gfx: &Gfx, light: &Light) {
-        self.uniform.position = light.position.into();
-        self.uniform.colour = light.colour.into();
+    //pub fn update(&mut self, gfx: &Gfx, light: &Light) {
+    pub fn update(&mut self, gfx: &Gfx, position: [f32; 3], colour: [f32; 3]) {
+        self.uniform.position = position;
+        self.uniform.colour = colour;
 
         gfx.queue()
             .write_buffer(&self.buffer, 0, bytemuck::cast_slice(&[self.uniform]));

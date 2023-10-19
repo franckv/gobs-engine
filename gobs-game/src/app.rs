@@ -11,6 +11,7 @@ use utils::timer::Timer;
 use crate::input::{Event, Input};
 
 use render::render::Gfx;
+use render::render::RenderError;
 
 const WIDTH: u32 = 800; // TODO: hardcoded
 const HEIGHT: u32 = 600;
@@ -87,7 +88,7 @@ impl Application {
                     runnable.update(delta, &mut self.gfx);
                     match runnable.render(&mut self.gfx) {
                         Ok(_) => {}
-                        Err(wgpu::SurfaceError::Lost) => {
+                        Err(RenderError::Lost) => {
                             self.gfx.resize(self.gfx.width(), self.gfx.height());
                             runnable.resize(self.gfx.width(), self.gfx.height(), &mut self.gfx);
                         }
@@ -107,7 +108,7 @@ pub trait Run: Sized {
     #[allow(async_fn_in_trait)]
     async fn create(gfx: &mut Gfx) -> Self;
     fn update(&mut self, delta: f32, gfx: &mut Gfx);
-    fn render(&mut self, gfx: &mut Gfx) -> Result<(), wgpu::SurfaceError>;
+    fn render(&mut self, gfx: &mut Gfx) -> Result<(), RenderError>;
     fn input(&mut self, gfx: &mut Gfx, input: Input);
     fn resize(&mut self, width: u32, height: u32, gfx: &mut Gfx);
 }

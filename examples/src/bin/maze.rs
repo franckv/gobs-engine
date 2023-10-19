@@ -11,14 +11,12 @@ use game::{
     app::{Application, Run},
     input::Input,
 };
-use render::shader::ShaderType;
-use render::{
-    model::Instance,
-    render::Gfx,
-    scene::{Node, Scene},
-};
+use render::render::RenderError;
+use render::{render::Gfx, scene::Scene};
 use scene::camera::{Camera, CameraProjection};
 use scene::light::Light;
+use scene::model::Instance;
+use scene::node::Node;
 
 const WALL: &str = "cube.obj";
 const TREE: &str = "tree.obj";
@@ -48,14 +46,8 @@ impl Run for App {
         let light = Light::new((8.0, 2.0, 8.0), (1., 1., 0.9));
 
         let mut scene = Scene::new(gfx, camera, light).await;
-        scene
-            .load_model(gfx, WALL, ShaderType::Phong)
-            .await
-            .unwrap();
-        scene
-            .load_model(gfx, TREE, ShaderType::Phong)
-            .await
-            .unwrap();
+        scene.load_model(gfx, WALL).await.unwrap();
+        scene.load_model(gfx, TREE).await.unwrap();
         Self::load_scene(&mut scene);
 
         let camera_controller = CameraController::new(4.0, 0.4);
@@ -72,7 +64,7 @@ impl Run for App {
         self.scene.update(gfx, delta);
     }
 
-    fn render(&mut self, gfx: &mut Gfx) -> Result<(), wgpu::SurfaceError> {
+    fn render(&mut self, gfx: &mut Gfx) -> Result<(), RenderError> {
         gfx.render(&self.scene)
     }
 

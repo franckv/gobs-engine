@@ -1,5 +1,5 @@
-use crate::camera::CameraResource;
-use crate::light::LightResource;
+use crate::model::CameraResource;
+use crate::model::LightResource;
 use crate::model::{Model, Texture};
 use crate::pipeline::{Generator, Pipeline, PipelineBuilder};
 use crate::render::Gfx;

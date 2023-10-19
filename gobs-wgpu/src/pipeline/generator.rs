@@ -5,7 +5,8 @@ use log::*;
 use naga::front::wgsl::Frontend;
 use naga::{Binding, GlobalVariable, Handle, Module, Type, TypeInner};
 
-use crate::model::{InstanceRaw, ModelVertex};
+use crate::model::InstanceRaw;
+use crate::model::ModelVertex;
 use crate::render::Gfx;
 use crate::resource;
 

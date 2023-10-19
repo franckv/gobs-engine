@@ -6,14 +6,15 @@ use gobs_scene as scene;
 
 use scene::camera::Camera;
 use scene::light::Light;
+use scene::node::Node;
 
-use crate::camera::CameraResource;
-use crate::light::LightResource;
+use crate::model::CameraResource;
+use crate::model::InstanceRaw;
+use crate::model::LightResource;
 use crate::model::{Model, Texture};
 use crate::render::Gfx;
 use crate::resource;
-use crate::scene::Node;
-use crate::shader::{PhongShader, ShaderType, SolidShader};
+use crate::shader::{PhongShader, SolidShader};
 
 const LIGHT: &str = "sphere.obj";
 
@@ -79,7 +80,11 @@ impl Scene {
     }
 
     pub fn update(&mut self, gfx: &Gfx, dt: f32) {
-        self.camera_resource.update(gfx, &self.camera);
+        let view_position = self.camera.position.extend(1.0).to_array();
+        let view_proj =
+            (self.camera.projection.to_matrix() * self.camera.to_matrix()).to_cols_array_2d();
+
+        self.camera_resource.update(gfx, view_position, view_proj);
 
         let old_position: Vec3 = self.light.position;
         let position: Vec3 =
@@ -88,14 +93,15 @@ impl Scene {
                 .into();
 
         self.light.update(position);
-        self.light_resource.update(&gfx, &self.light);
+        self.light_resource
+            .update(&gfx, self.light.position.into(), self.light.colour.into());
 
         for i in 0..self.models.len() {
             let instance_data = self
                 .nodes
                 .iter()
                 .filter(|n| n.model() == i)
-                .map(|n| n.transform().to_raw())
+                .map(|n| InstanceRaw::new(n.transform().position, n.transform().rotation))
                 .collect::<Vec<_>>();
             if self.instance_buffers.len() <= i {
                 let instance_buffer = gfx.create_instance_buffer(&instance_data);
@@ -110,15 +116,8 @@ impl Scene {
         self.nodes.push(node);
     }
 
-    pub async fn load_model(&mut self, gfx: &Gfx, name: &str, ty: ShaderType) -> Result<()> {
-        let model = match ty {
-            ShaderType::Phong => {
-                resource::load_model(name, gfx, &self.phong_shader.layouts[2]).await
-            }
-            ShaderType::Solid => {
-                resource::load_model(name, gfx, &self.phong_shader.layouts[2]).await
-            }
-        };
+    pub async fn load_model(&mut self, gfx: &Gfx, name: &str) -> Result<()> {
+        let model = resource::load_model(name, gfx, &self.phong_shader.layouts[2]).await;
 
         self.models.push(model?);
 

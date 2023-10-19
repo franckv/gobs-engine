@@ -1,5 +1,5 @@
 mod simplegraph;
 mod treegraph;
 
-pub use self::simplegraph::SimpleGraph;
-pub use self::treegraph::TreeGraph;
+pub use simplegraph::SimpleGraph;
+pub use treegraph::TreeGraph;

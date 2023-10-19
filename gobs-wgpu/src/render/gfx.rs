@@ -1,12 +1,19 @@
 use wgpu::util::DeviceExt;
 use winit::window::Window;
 
-use crate::camera::CameraResource;
-use crate::light::LightResource;
-use crate::model::{InstanceRaw, ModelVertex};
+use crate::model::CameraResource;
+use crate::model::InstanceRaw;
+use crate::model::LightResource;
+use crate::model::ModelVertex;
 use crate::render::Display;
 use crate::scene::Scene;
 use crate::shader::{DrawPhong, DrawSolid};
+
+#[derive(Debug)]
+pub enum RenderError {
+    Lost,
+    Error,
+}
 
 pub struct Gfx {
     display: Display,
@@ -103,8 +110,12 @@ impl Gfx {
         }
     }
 
-    pub fn render(&mut self, scene: &Scene) -> Result<(), wgpu::SurfaceError> {
-        let texture = self.display.texture()?;
+    pub fn render(&mut self, scene: &Scene) -> Result<(), RenderError> {
+        let texture = match self.display.texture() {
+            Ok(texture) => texture,
+            Err(wgpu::SurfaceError::Lost) => return Err(RenderError::Lost),
+            Err(_) => return Err(RenderError::Error),
+        };
 
         let view = texture
             .texture
@@ -179,19 +190,21 @@ impl Gfx {
     }
 
     pub fn create_vertex_buffer(&self, vertices: &Vec<ModelVertex>) -> wgpu::Buffer {
-        self.device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-            label: Some("Vertex Buffer"),
-            contents: bytemuck::cast_slice(vertices),
-            usage: wgpu::BufferUsages::VERTEX,
-        })
+        self.device
+            .create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                label: Some("Vertex Buffer"),
+                contents: bytemuck::cast_slice(vertices),
+                usage: wgpu::BufferUsages::VERTEX,
+            })
     }
 
     pub fn create_index_buffer(&self, indices: &Vec<u32>) -> wgpu::Buffer {
-        self.device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-            label: Some("Index Buffer"),
-            contents: bytemuck::cast_slice(indices),
-            usage: wgpu::BufferUsages::INDEX,
-        })
+        self.device
+            .create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                label: Some("Index Buffer"),
+                contents: bytemuck::cast_slice(indices),
+                usage: wgpu::BufferUsages::INDEX,
+            })
     }
 
     pub fn create_instance_buffer(&self, instance_data: &Vec<InstanceRaw>) -> wgpu::Buffer {
@@ -203,7 +216,12 @@ impl Gfx {
             })
     }
 
-    pub fn update_instance_buffer(&self, instance_buffer: &wgpu::Buffer, instance_data: &Vec<InstanceRaw>) {
-        self.queue.write_buffer(instance_buffer, 0, bytemuck::cast_slice(instance_data))
+    pub fn update_instance_buffer(
+        &self,
+        instance_buffer: &wgpu::Buffer,
+        instance_data: &Vec<InstanceRaw>,
+    ) {
+        self.queue
+            .write_buffer(instance_buffer, 0, bytemuck::cast_slice(instance_data))
     }
 }

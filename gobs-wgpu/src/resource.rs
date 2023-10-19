@@ -4,7 +4,8 @@ use std::io::{BufReader, Cursor};
 use anyhow::Result;
 use log::*;
 
-use crate::model::{Material, Mesh, Model, ModelVertex, Texture};
+use crate::model::ModelVertex;
+use crate::model::{Material, Mesh, Model, Texture};
 use crate::render::Gfx;
 
 pub async fn load_string(file_name: &str) -> Result<String> {

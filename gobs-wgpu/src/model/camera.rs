@@ -1,10 +1,7 @@
 use log::*;
 use wgpu::util::DeviceExt;
 
-use gobs_scene as scene;
-
 use crate::render::Gfx;
-use scene::camera::Camera;
 
 #[repr(C)]
 #[derive(Debug, Copy, Clone, bytemuck::Pod, bytemuck::Zeroable)]
@@ -49,10 +46,8 @@ impl CameraResource {
         }
     }
 
-    pub fn update(&mut self, gfx: &Gfx, camera: &Camera) {
-        let view_position = camera.position.extend(1.0).to_array();
-        let view_proj = (camera.projection.to_matrix() * camera.to_matrix()).to_cols_array_2d();
-
+    pub fn update(&mut self, gfx: &Gfx, view_position: [f32; 4], view_proj: [[f32; 4]; 4]) {
+        //    pub fn update(&mut self, gfx: &Gfx, camera: &Camera) {
         self.uniform.view_position = view_position;
         self.uniform.view_proj = view_proj;
 
