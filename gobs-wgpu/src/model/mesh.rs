@@ -1,5 +1,6 @@
 use glam::{Vec2, Vec3};
-use wgpu::util::DeviceExt;
+
+use crate::render::Gfx;
 
 #[repr(C)]
 #[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable)]
@@ -21,7 +22,7 @@ pub struct Mesh {
 
 impl Mesh {
     pub fn new(
-        device: &wgpu::Device,
+        gfx: &Gfx,
         name: &str,
         vertices: &mut Vec<ModelVertex>,
         indices: &Vec<u32>,
@@ -32,17 +33,8 @@ impl Mesh {
             Self::calc_tangent(vertices, indices);
         }
 
-        let vertex_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-            label: Some(&format!("{:?} Vertex Buffer", name)),
-            contents: bytemuck::cast_slice(vertices),
-            usage: wgpu::BufferUsages::VERTEX,
-        });
-
-        let index_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-            label: Some(&format!("{:?} Index Buffer", name)),
-            contents: bytemuck::cast_slice(indices),
-            usage: wgpu::BufferUsages::INDEX,
-        });
+        let vertex_buffer = gfx.create_vertex_buffer(vertices);
+        let index_buffer = gfx.create_index_buffer(indices);
 
         Mesh {
             name: name.to_string(),

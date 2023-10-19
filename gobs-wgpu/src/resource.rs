@@ -116,7 +116,7 @@ pub async fn load_model(
             );
 
             Mesh::new(
-                gfx.device(),
+                gfx,
                 file_name,
                 &mut vertices,
                 &m.mesh.indices,

@@ -3,7 +3,7 @@ use winit::window::Window;
 
 use crate::camera::CameraResource;
 use crate::light::LightResource;
-use crate::model::InstanceRaw;
+use crate::model::{InstanceRaw, ModelVertex};
 use crate::render::Display;
 use crate::scene::Scene;
 use crate::shader::{DrawPhong, DrawSolid};
@@ -176,6 +176,22 @@ impl Gfx {
         layout: &wgpu::BindGroupLayoutDescriptor,
     ) -> wgpu::BindGroupLayout {
         self.device.create_bind_group_layout(layout)
+    }
+
+    pub fn create_vertex_buffer(&self, vertices: &Vec<ModelVertex>) -> wgpu::Buffer {
+        self.device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+            label: Some("Vertex Buffer"),
+            contents: bytemuck::cast_slice(vertices),
+            usage: wgpu::BufferUsages::VERTEX,
+        })
+    }
+
+    pub fn create_index_buffer(&self, indices: &Vec<u32>) -> wgpu::Buffer {
+        self.device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+            label: Some("Index Buffer"),
+            contents: bytemuck::cast_slice(indices),
+            usage: wgpu::BufferUsages::INDEX,
+        })
     }
 
     pub fn create_instance_buffer(&self, instance_data: &Vec<InstanceRaw>) -> wgpu::Buffer {
