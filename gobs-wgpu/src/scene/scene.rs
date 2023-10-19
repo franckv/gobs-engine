@@ -1,23 +1,21 @@
+use anyhow::Result;
 use glam::{Quat, Vec3};
 use log::*;
 
 use gobs_scene as scene;
 
-use scene::camera::{Camera, CameraProjection};
+use scene::camera::Camera;
+use scene::light::Light;
 
 use crate::camera::CameraResource;
-use crate::light::{Light, LightResource};
-use crate::model::{Instance, Model, Texture};
+use crate::light::LightResource;
+use crate::model::{Model, Texture};
 use crate::render::Gfx;
 use crate::resource;
 use crate::scene::Node;
-use crate::shader::{PhongShader, SolidShader};
+use crate::shader::{PhongShader, ShaderType, SolidShader};
 
-const MAP: &str = include_str!("../../assets/dungeon.map");
-const WALL: &str = "cube.obj";
-const TREE: &str = "tree.obj";
 const LIGHT: &str = "sphere.obj";
-const TILE_SIZE: f32 = 2.;
 
 pub struct Scene {
     pub solid_shader: SolidShader,
@@ -38,7 +36,7 @@ impl Scene {
         &self.depth_texture
     }
 
-    pub async fn new(gfx: &Gfx) -> Self {
+    pub async fn new(gfx: &Gfx, camera: Camera, light: Light) -> Self {
         info!("New scene");
 
         let solid_shader = SolidShader::new(&gfx).await;
@@ -46,51 +44,19 @@ impl Scene {
 
         let camera_resource = gfx.create_camera_resource(&phong_shader.layouts[0]);
 
-        let camera = Camera::new(
-            (0.0, 50.0, 50.0),
-            CameraProjection::new(
-                gfx.width(),
-                gfx.height(),
-                (45.0 as f32).to_radians(),
-                0.1,
-                150.0,
-            ),
-            (-90.0 as f32).to_radians(),
-            (-50.0 as f32).to_radians(),
-        );
-
         let light_resource = gfx.create_light_resource(&phong_shader.layouts[1]);
-        let light = Light::new((8.0, 2.0, 8.0), (1., 1., 0.9));
 
-        let wall = resource::load_model(WALL, gfx, &phong_shader.layouts[2])
-            .await
-            .unwrap();
-        let tree = resource::load_model(TREE, gfx, &phong_shader.layouts[2])
-            .await
-            .unwrap();
-        let mut models = Vec::new();
-        models.push(wall);
-        models.push(tree);
+        let models = Vec::new();
 
-        let nodes: Vec<Node> = Self::load_scene();
+        let nodes = Vec::new();
 
-        let mut instance_buffers = Vec::new();
-        for i in 0..models.len() {
-            let instance_data = nodes
-                .iter()
-                .filter(|n| n.model() == i)
-                .map(|n| n.transform().to_raw())
-                .collect::<Vec<_>>();
-            let instance_buffer = gfx.create_instance_buffer(&instance_data);
-            instance_buffers.push(instance_buffer);
-        }
+        let instance_buffers = Vec::new();
 
         let depth_texture = Texture::create_depth_texture(gfx, "depth_texture");
 
-        let light_model =
-            resource::load_model(LIGHT, gfx, &phong_shader.layouts[2])
-                .await
-                .unwrap();
+        let light_model = resource::load_model(LIGHT, gfx, &phong_shader.layouts[2])
+            .await
+            .unwrap();
 
         Scene {
             solid_shader,
@@ -123,52 +89,39 @@ impl Scene {
 
         self.light.update(position);
         self.light_resource.update(&gfx, &self.light);
-    }
 
-    pub fn load_scene() -> Vec<Node> {
-        info!("Load scene");
-
-        let mut nodes = Vec::new();
-
-        let (mut i, mut j) = (0., 0.);
-
-        for c in MAP.chars() {
-            match c {
-                'w' => {
-                    i += TILE_SIZE;
-                    let position = Vec3 {
-                        x: i - 32.,
-                        y: 0.0,
-                        z: j - 32.,
-                    };
-                    let rotation = Quat::from_axis_angle(Vec3::Z, 0.0);
-                    let node = Node::new(Instance { position, rotation }, 0);
-
-                    nodes.push(node);
-                }
-                't' => {
-                    i += TILE_SIZE;
-                    let position = Vec3 {
-                        x: i - 32.,
-                        y: 0.0,
-                        z: j - 32.,
-                    };
-                    let rotation = Quat::from_axis_angle(Vec3::Z, 0.0);
-                    let node = Node::new(Instance { position, rotation }, 1);
-
-                    nodes.push(node);
-                }
-                '.' | '@' => {
-                    i += TILE_SIZE;
-                }
-                '\n' => {
-                    j += TILE_SIZE;
-                    i = 0.;
-                }
-                _ => (),
+        for i in 0..self.models.len() {
+            let instance_data = self
+                .nodes
+                .iter()
+                .filter(|n| n.model() == i)
+                .map(|n| n.transform().to_raw())
+                .collect::<Vec<_>>();
+            if self.instance_buffers.len() <= i {
+                let instance_buffer = gfx.create_instance_buffer(&instance_data);
+                self.instance_buffers.push(instance_buffer);
+            } else {
+                gfx.update_instance_buffer(&self.instance_buffers[i], &instance_data);
             }
         }
+    }
 
-        nodes
+    pub fn add_node(&mut self, node: Node) {
+        self.nodes.push(node);
+    }
+
+    pub async fn load_model(&mut self, gfx: &Gfx, name: &str, ty: ShaderType) -> Result<()> {
+        let model = match ty {
+            ShaderType::Phong => {
+                resource::load_model(name, gfx, &self.phong_shader.layouts[2]).await
+            }
+            ShaderType::Solid => {
+                resource::load_model(name, gfx, &self.phong_shader.layouts[2]).await
+            }
+        };
+
+        self.models.push(model?);
+
+        Ok(())
     }
 }

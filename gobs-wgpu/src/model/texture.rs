@@ -53,12 +53,7 @@ impl Texture {
         }
     }
 
-    pub fn from_bytes(
-        gfx: &Gfx,
-        bytes: &[u8],
-        label: &str,
-        is_normal_map: bool,
-    ) -> Result<Self> {
+    pub fn from_bytes(gfx: &Gfx, bytes: &[u8], label: &str, is_normal_map: bool) -> Result<Self> {
         let img = image::load_from_memory(bytes)?;
         Self::from_image(gfx, &img, Some(label), is_normal_map)
     }

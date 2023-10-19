@@ -183,7 +183,11 @@ impl Gfx {
             .create_buffer_init(&wgpu::util::BufferInitDescriptor {
                 label: Some("Instance Buffer"),
                 contents: bytemuck::cast_slice(instance_data),
-                usage: wgpu::BufferUsages::VERTEX,
+                usage: wgpu::BufferUsages::VERTEX | wgpu::BufferUsages::COPY_DST,
             })
+    }
+
+    pub fn update_instance_buffer(&self, instance_buffer: &wgpu::Buffer, instance_data: &Vec<InstanceRaw>) {
+        self.queue.write_buffer(instance_buffer, 0, bytemuck::cast_slice(instance_data))
     }
 }

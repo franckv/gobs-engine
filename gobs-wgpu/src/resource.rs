@@ -29,11 +29,7 @@ pub async fn load_binary(file_name: &str) -> Result<Vec<u8>> {
     Ok(data)
 }
 
-pub async fn load_texture(
-    file_name: &str,
-    is_normal_map: bool,
-    gfx: &Gfx,
-) -> Result<Texture> {
+pub async fn load_texture(file_name: &str, is_normal_map: bool, gfx: &Gfx) -> Result<Texture> {
     let data = load_binary(file_name).await?;
     Texture::from_bytes(gfx, &data, file_name, is_normal_map)
 }

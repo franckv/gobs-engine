@@ -1,8 +1,8 @@
 mod camera;
 mod light;
-mod model;
+pub mod model;
 mod pipeline;
 pub mod render;
 mod resource;
 pub mod scene;
-mod shader;
+pub mod shader;
