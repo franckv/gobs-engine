@@ -62,10 +62,10 @@ impl Scene {
         let light_resource = gfx.create_light_resource(&phong_shader.layouts[1]);
         let light = Light::new((8.0, 2.0, 8.0), (1., 1., 0.9));
 
-        let wall = resource::load_model(WALL, gfx.device(), gfx.queue(), &phong_shader.layouts[2])
+        let wall = resource::load_model(WALL, gfx, &phong_shader.layouts[2])
             .await
             .unwrap();
-        let tree = resource::load_model(TREE, gfx.device(), gfx.queue(), &phong_shader.layouts[2])
+        let tree = resource::load_model(TREE, gfx, &phong_shader.layouts[2])
             .await
             .unwrap();
         let mut models = Vec::new();
@@ -88,7 +88,7 @@ impl Scene {
         let depth_texture = Texture::create_depth_texture(gfx, "depth_texture");
 
         let light_model =
-            resource::load_model(LIGHT, gfx.device(), gfx.queue(), &phong_shader.layouts[2])
+            resource::load_model(LIGHT, gfx, &phong_shader.layouts[2])
                 .await
                 .unwrap();
 

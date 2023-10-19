@@ -54,19 +54,17 @@ impl Texture {
     }
 
     pub fn from_bytes(
-        device: &wgpu::Device,
-        queue: &wgpu::Queue,
+        gfx: &Gfx,
         bytes: &[u8],
         label: &str,
         is_normal_map: bool,
     ) -> Result<Self> {
         let img = image::load_from_memory(bytes)?;
-        Self::from_image(device, queue, &img, Some(label), is_normal_map)
+        Self::from_image(gfx, &img, Some(label), is_normal_map)
     }
 
     pub fn from_image(
-        device: &wgpu::Device,
-        queue: &wgpu::Queue,
+        gfx: &Gfx,
         img: &image::DynamicImage,
         label: Option<&str>,
         is_normal_map: bool,
@@ -86,7 +84,7 @@ impl Texture {
             wgpu::TextureFormat::Rgba8UnormSrgb
         };
 
-        let texture = device.create_texture(&wgpu::TextureDescriptor {
+        let texture = gfx.device().create_texture(&wgpu::TextureDescriptor {
             label,
             size,
             mip_level_count: 1,
@@ -97,7 +95,7 @@ impl Texture {
             view_formats: &[],
         });
 
-        queue.write_texture(
+        gfx.queue().write_texture(
             wgpu::ImageCopyTexture {
                 aspect: wgpu::TextureAspect::All,
                 texture: &texture,
@@ -114,7 +112,7 @@ impl Texture {
         );
 
         let view = texture.create_view(&wgpu::TextureViewDescriptor::default());
-        let sampler = device.create_sampler(&wgpu::SamplerDescriptor {
+        let sampler = gfx.device().create_sampler(&wgpu::SamplerDescriptor {
             address_mode_u: wgpu::AddressMode::ClampToEdge,
             address_mode_v: wgpu::AddressMode::ClampToEdge,
             address_mode_w: wgpu::AddressMode::ClampToEdge,

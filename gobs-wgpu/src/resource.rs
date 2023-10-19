@@ -5,6 +5,7 @@ use anyhow::Result;
 use log::*;
 
 use crate::model::{Material, Mesh, Model, ModelVertex, Texture};
+use crate::render::Gfx;
 
 pub async fn load_string(file_name: &str) -> Result<String> {
     let current_dir = env::current_dir()?;
@@ -31,17 +32,15 @@ pub async fn load_binary(file_name: &str) -> Result<Vec<u8>> {
 pub async fn load_texture(
     file_name: &str,
     is_normal_map: bool,
-    device: &wgpu::Device,
-    queue: &wgpu::Queue,
+    gfx: &Gfx,
 ) -> Result<Texture> {
     let data = load_binary(file_name).await?;
-    Texture::from_bytes(device, queue, &data, file_name, is_normal_map)
+    Texture::from_bytes(gfx, &data, file_name, is_normal_map)
 }
 
 pub async fn load_model(
     file_name: &str,
-    device: &wgpu::Device,
-    queue: &wgpu::Queue,
+    gfx: &Gfx,
     layout: &wgpu::BindGroupLayout,
 ) -> Result<Model> {
     let obj_text = load_string(file_name).await?;
@@ -68,23 +67,23 @@ pub async fn load_model(
 
         let diffuse_texture = {
             if let Some(texture_name) = &m.diffuse_texture {
-                load_texture(texture_name, false, device, queue).await?
+                load_texture(texture_name, false, gfx).await?
             } else {
-                load_texture("cube-diffuse.jpg", false, device, queue).await?
+                load_texture("cube-diffuse.jpg", false, gfx).await?
             }
         };
 
         let normal_texture = {
             if let Some(texture_name) = &m.normal_texture {
-                load_texture(texture_name, true, device, queue).await?
+                load_texture(texture_name, true, gfx).await?
             } else {
-                load_texture("cube-normal.png", true, device, queue).await?
+                load_texture("cube-normal.png", true, gfx).await?
             }
         };
 
         materials.push(Material::new(
             m.name,
-            device,
+            gfx,
             layout,
             diffuse_texture,
             normal_texture,
@@ -121,7 +120,7 @@ pub async fn load_model(
             );
 
             Mesh::new(
-                device,
+                gfx.device(),
                 file_name,
                 &mut vertices,
                 &m.mesh.indices,
