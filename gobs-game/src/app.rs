@@ -88,7 +88,7 @@ impl Application {
                     runnable.update(delta, &mut self.gfx);
                     match runnable.render(&mut self.gfx) {
                         Ok(_) => {}
-                        Err(RenderError::Lost) => {
+                        Err(RenderError::Lost | RenderError::Outdated) => {
                             self.gfx.resize(self.gfx.width(), self.gfx.height());
                             runnable.resize(self.gfx.width(), self.gfx.height(), &mut self.gfx);
                         }

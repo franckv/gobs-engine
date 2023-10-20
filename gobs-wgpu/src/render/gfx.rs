@@ -12,6 +12,7 @@ use crate::shader::{DrawPhong, DrawSolid};
 #[derive(Debug)]
 pub enum RenderError {
     Lost,
+    Outdated,
     Error,
 }
 
@@ -114,6 +115,7 @@ impl Gfx {
         let texture = match self.display.texture() {
             Ok(texture) => texture,
             Err(wgpu::SurfaceError::Lost) => return Err(RenderError::Lost),
+            Err(wgpu::SurfaceError::Outdated) => return Err(RenderError::Outdated),
             Err(_) => return Err(RenderError::Error),
         };
 
