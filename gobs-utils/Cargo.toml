@@ -9,5 +9,4 @@ name = "gobs_utils"
 path = "src/lib.rs"
 
 [dependencies]
-cgmath = { workspace = true }
 time = { workspace = true }
