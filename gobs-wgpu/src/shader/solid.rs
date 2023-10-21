@@ -4,6 +4,8 @@ use crate::model::{Model, Texture};
 use crate::pipeline::{Generator, Pipeline, PipelineBuilder};
 use crate::render::Gfx;
 
+use super::ShaderDraw;
+
 const SHADER: &str = "../shaders/light.wgsl";
 
 pub struct SolidShader {
@@ -31,31 +33,24 @@ impl SolidShader {
     }
 }
 
-pub trait DrawSolid<'a> {
+impl<'a, 'b> ShaderDraw<'a, 'b> for SolidShader
+where
+    'a: 'b,
+{
     fn draw(
-        &mut self,
-        shader: &'a SolidShader,
-        model: &'a Model,
-        camera: &'a CameraResource,
-        light: &'a LightResource,
-    );
-}
-
-impl<'a> DrawSolid<'a> for wgpu::RenderPass<'a> {
-    fn draw(
-        &mut self,
-        shader: &'a SolidShader,
+        &'a self,
+        render_pass: &mut wgpu::RenderPass<'b>,
         model: &'a Model,
         camera: &'a CameraResource,
         light: &'a LightResource,
     ) {
-        self.set_pipeline(&shader.pipeline.pipeline);
-        self.set_bind_group(0, &camera.bind_group, &[]);
-        self.set_bind_group(1, &light.bind_group, &[]);
+        render_pass.set_pipeline(&self.pipeline.pipeline);
+        render_pass.set_bind_group(0, &camera.bind_group, &[]);
+        render_pass.set_bind_group(1, &light.bind_group, &[]);
         for mesh in &model.meshes {
-            self.set_vertex_buffer(0, mesh.vertex_buffer.slice(..));
-            self.set_index_buffer(mesh.index_buffer.slice(..), wgpu::IndexFormat::Uint32);
-            self.draw_indexed(0..mesh.num_elements, 0, 0..1);
+            render_pass.set_vertex_buffer(0, mesh.vertex_buffer.slice(..));
+            render_pass.set_index_buffer(mesh.index_buffer.slice(..), wgpu::IndexFormat::Uint32);
+            render_pass.draw_indexed(0..mesh.num_elements, 0, 0..1);
         }
     }
 }

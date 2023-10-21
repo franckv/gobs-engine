@@ -93,7 +93,7 @@ impl Generator {
         &'a self,
         attributes: &'a Vec<wgpu::VertexAttribute>,
         instance: bool,
-    ) -> wgpu::VertexBufferLayout {
+    ) -> wgpu::VertexBufferLayout<'a> {
         wgpu::VertexBufferLayout {
             array_stride: if instance {
                 std::mem::size_of::<InstanceRaw>() as wgpu::BufferAddress

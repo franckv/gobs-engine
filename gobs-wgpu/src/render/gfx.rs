@@ -7,7 +7,7 @@ use crate::model::LightResource;
 use crate::model::ModelVertex;
 use crate::model::{Model, Texture};
 use crate::render::Display;
-use crate::shader::{DrawPhong, DrawSolid};
+use crate::shader::ShaderDraw;
 use crate::shader::{PhongShader, SolidShader};
 
 #[derive(Debug)]
@@ -163,8 +163,8 @@ impl Gfx {
             });
 
             for i in 0..models.len() {
-                DrawPhong::draw(&mut render_pass,
-                    phong_shader,
+                phong_shader.draw_instanced(
+                    &mut render_pass,
                     &models[i],
                     camera_resource,
                     light_resource,
@@ -173,8 +173,13 @@ impl Gfx {
                 );
             }
 
-            DrawSolid::draw(&mut render_pass, solid_shader, light_model, camera_resource, light_resource)
-        }
+            solid_shader.draw(
+                &mut render_pass,
+                light_model,
+                camera_resource,
+                light_resource,
+            );
+        };
 
         self.queue.submit(std::iter::once(encoder.finish()));
 
@@ -191,9 +196,9 @@ impl Gfx {
         LightResource::new(&self.device, layout)
     }
 
-    pub fn create_bind_group_layout(
+    pub fn create_bind_group_layout<'a>(
         &self,
-        layout: &wgpu::BindGroupLayoutDescriptor,
+        layout: &wgpu::BindGroupLayoutDescriptor<'a>,
     ) -> wgpu::BindGroupLayout {
         self.device.create_bind_group_layout(layout)
     }
