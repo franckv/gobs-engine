@@ -163,7 +163,7 @@ impl Gfx {
             });
 
             for i in 0..models.len() {
-                render_pass.draw_phong(
+                DrawPhong::draw(&mut render_pass,
                     phong_shader,
                     &models[i],
                     camera_resource,
@@ -173,7 +173,7 @@ impl Gfx {
                 );
             }
 
-            render_pass.draw_solid(solid_shader, light_model, camera_resource, light_resource);
+            DrawSolid::draw(&mut render_pass, solid_shader, light_model, camera_resource, light_resource)
         }
 
         self.queue.submit(std::iter::once(encoder.finish()));

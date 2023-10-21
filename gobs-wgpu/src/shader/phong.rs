@@ -37,7 +37,7 @@ impl PhongShader {
 }
 
 pub trait DrawPhong<'a> {
-    fn draw_phong(
+    fn draw(
         &mut self,
         shader: &'a PhongShader,
         model: &'a Model,
@@ -49,7 +49,7 @@ pub trait DrawPhong<'a> {
 }
 
 impl<'a> DrawPhong<'a> for wgpu::RenderPass<'a> {
-    fn draw_phong(
+    fn draw(
         &mut self,
         shader: &'a PhongShader,
         model: &'a Model,

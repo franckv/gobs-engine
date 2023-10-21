@@ -32,7 +32,7 @@ impl SolidShader {
 }
 
 pub trait DrawSolid<'a> {
-    fn draw_solid(
+    fn draw(
         &mut self,
         shader: &'a SolidShader,
         model: &'a Model,
@@ -42,7 +42,7 @@ pub trait DrawSolid<'a> {
 }
 
 impl<'a> DrawSolid<'a> for wgpu::RenderPass<'a> {
-    fn draw_solid(
+    fn draw(
         &mut self,
         shader: &'a SolidShader,
         model: &'a Model,
