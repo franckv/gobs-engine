@@ -60,9 +60,77 @@ pub async fn load_model(
     )
     .await?;
 
+    let materials = load_material(gfx, file_name, obj_materials?, layout).await?;
+
+    let meshes = load_mesh(gfx, file_name, models).await;
+
+    info!(
+        "{}: {} meshes / {} materials loaded",
+        file_name,
+        meshes.len(),
+        materials.len()
+    );
+
+    Ok(Model {
+        id: Uuid::new_v4(),
+        scale,
+        meshes,
+        materials,
+    })
+}
+
+async fn load_mesh(gfx: &Gfx, name: &str, models: Vec<tobj::Model>) -> Vec<Mesh> {
+    models
+        .into_iter()
+        .map(|m| {
+            let mut vertices = (0..m.mesh.positions.len() / 3)
+                .map(|i| ModelVertex {
+                    position: [
+                        m.mesh.positions[i * 3],
+                        m.mesh.positions[i * 3 + 1],
+                        m.mesh.positions[i * 3 + 2],
+                    ],
+                    tex_coords: [m.mesh.texcoords[i * 2], m.mesh.texcoords[i * 2 + 1]],
+                    normal: [
+                        m.mesh.normals[i * 3],
+                        m.mesh.normals[i * 3 + 1],
+                        m.mesh.normals[i * 3 + 2],
+                    ],
+                    tangent: [0.0; 3],
+                    bitangent: [0.0; 3],
+                })
+                .collect::<Vec<_>>();
+
+            info!(
+                "{}: Load mesh {} ({} vertices / {} indices)",
+                name,
+                m.name,
+                vertices.len(),
+                m.mesh.indices.len()
+            );
+
+            Mesh::new(
+                gfx,
+                name,
+                &mut vertices,
+                &m.mesh.indices,
+                m.mesh.material_id.unwrap_or(0),
+                true,
+            )
+        })
+        .collect::<Vec<_>>()
+}
+
+async fn load_material(
+    gfx: &Gfx,
+    name: &str,
+    obj_materials: Vec<tobj::Material>,
+    layout: &wgpu::BindGroupLayout,
+) -> Result<Vec<Material>> {
     let mut materials = Vec::new();
-    for m in obj_materials? {
-        info!("{}: Load material {}", file_name, m.name);
+
+    for m in obj_materials {
+        info!("{}: Load material {}", name, m.name);
 
         let diffuse_texture = {
             if let Some(texture_name) = &m.diffuse_texture {
@@ -89,57 +157,5 @@ pub async fn load_model(
         ));
     }
 
-    let meshes = models
-        .into_iter()
-        .map(|m| {
-            let mut vertices = (0..m.mesh.positions.len() / 3)
-                .map(|i| ModelVertex {
-                    position: [
-                        m.mesh.positions[i * 3],
-                        m.mesh.positions[i * 3 + 1],
-                        m.mesh.positions[i * 3 + 2],
-                    ],
-                    tex_coords: [m.mesh.texcoords[i * 2], m.mesh.texcoords[i * 2 + 1]],
-                    normal: [
-                        m.mesh.normals[i * 3],
-                        m.mesh.normals[i * 3 + 1],
-                        m.mesh.normals[i * 3 + 2],
-                    ],
-                    tangent: [0.0; 3],
-                    bitangent: [0.0; 3],
-                })
-                .collect::<Vec<_>>();
-
-            info!(
-                "{}: Load mesh {} ({} vertices / {} indices)",
-                file_name,
-                m.name,
-                vertices.len(),
-                m.mesh.indices.len()
-            );
-
-            Mesh::new(
-                gfx,
-                file_name,
-                &mut vertices,
-                &m.mesh.indices,
-                m.mesh.material_id.unwrap_or(0),
-                true,
-            )
-        })
-        .collect::<Vec<_>>();
-
-    info!(
-        "{}: {} meshes / {} materials loaded",
-        file_name,
-        meshes.len(),
-        materials.len()
-    );
-
-    Ok(Model {
-        id: Uuid::new_v4(),
-        scale,
-        meshes,
-        materials,
-    })
+    Ok(materials)
 }
