@@ -122,7 +122,7 @@ impl Gfx {
         phong_shader: &PhongShader,
         models: &Vec<Model>,
         instance_buffers: &Vec<wgpu::Buffer>,
-        instance_count: &Vec<usize>
+        instance_count: &Vec<usize>,
     ) -> Result<(), RenderError> {
         let texture = match self.display.texture() {
             Ok(texture) => texture,

@@ -125,8 +125,10 @@ impl Scene {
     }
 
     pub fn render(&self, gfx: &Gfx) -> Result<(), RenderError> {
-        let instance_count = (0..self.models.len()).map(|i| self.nodes.iter().filter(|n| n.model() == i).count()).collect();
-        
+        let instance_count = (0..self.models.len())
+            .map(|i| self.nodes.iter().filter(|n| n.model() == i).count())
+            .collect();
+
         gfx.render(
             &self.depth_texture,
             &self.camera_resource,
@@ -136,7 +138,7 @@ impl Scene {
             &self.phong_shader,
             &self.models,
             &self.instance_buffers,
-            &instance_count
+            &instance_count,
         )
     }
 }
