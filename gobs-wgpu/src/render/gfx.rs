@@ -2,10 +2,10 @@ use wgpu::util::DeviceExt;
 use winit::window::Window;
 
 use crate::model::CameraResource;
-use crate::model::InstanceRaw;
 use crate::model::LightResource;
-use crate::model::ModelVertex;
 use crate::render::Display;
+use crate::shader_data::InstanceData;
+use crate::shader_data::ModelVertex;
 
 #[derive(Debug)]
 pub enum RenderError {
@@ -138,11 +138,18 @@ impl Gfx {
             })
     }
 
-    pub fn create_instance_buffer(&self, instance_data: &Vec<InstanceRaw>) -> wgpu::Buffer {
+    pub fn create_instance_buffer(&self, instance_data: &Vec<InstanceData>) -> wgpu::Buffer {
+        let bytes = instance_data
+            .iter()
+            .map(|d| d.raw())
+            .flat_map(|s| s.iter())
+            .copied()
+            .collect::<Vec<u8>>();
+
         self.device
             .create_buffer_init(&wgpu::util::BufferInitDescriptor {
                 label: Some("Instance Buffer"),
-                contents: bytemuck::cast_slice(instance_data),
+                contents: bytes.as_slice(),
                 usage: wgpu::BufferUsages::VERTEX | wgpu::BufferUsages::COPY_DST,
             })
     }
@@ -150,9 +157,15 @@ impl Gfx {
     pub fn update_instance_buffer(
         &self,
         instance_buffer: &wgpu::Buffer,
-        instance_data: &Vec<InstanceRaw>,
+        instance_data: &Vec<InstanceData>,
     ) {
+        let bytes = instance_data
+            .iter()
+            .map(|d| d.raw())
+            .flat_map(|s| s.iter())
+            .copied()
+            .collect::<Vec<u8>>();
         self.queue
-            .write_buffer(instance_buffer, 0, bytemuck::cast_slice(instance_data))
+            .write_buffer(instance_buffer, 0, bytes.as_slice())
     }
 }

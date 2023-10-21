@@ -33,3 +33,4 @@ anyhow = "1.0"
 tobj = { version = "4.0.0", features = ["async"] }
 naga = { version = "0.13" }
 itertools = { version = "0.11" }
+bitflags = "2.4.1"

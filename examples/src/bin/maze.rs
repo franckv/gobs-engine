@@ -10,10 +10,13 @@ use game::{
     app::{Application, Run},
     input::Input,
 };
-use scene::{camera::{Camera, CameraProjection}, ShaderType, RenderError};
 use scene::light::Light;
 use scene::scene::Scene;
 use scene::Gfx;
+use scene::{
+    camera::{Camera, CameraProjection},
+    RenderError, ShaderType,
+};
 use uuid::Uuid;
 
 const LIGHT: &str = "sphere.obj";
@@ -25,6 +28,7 @@ const TILE_SIZE: f32 = 2.;
 struct App {
     camera_controller: CameraController,
     scene: Scene,
+    light_model: Uuid,
 }
 
 impl Run for App {
@@ -43,28 +47,35 @@ impl Run for App {
         );
 
         let light = Light::new((8.0, 2.0, 8.0), (1., 1., 0.9));
+        let light_position = light.position;
 
         let mut scene = Scene::new(gfx, camera, light).await;
         let wall_model = scene
-            .load_model(gfx, WALL, ShaderType::Phong)
+            .load_model(gfx, WALL, ShaderType::Phong, 1.)
             .await
             .unwrap();
         scene
-            .load_model(gfx, TREE, ShaderType::Phong)
+            .load_model(gfx, TREE, ShaderType::Phong, 1.)
             .await
             .unwrap();
         Self::load_scene(&mut scene, wall_model);
 
-        scene
-            .load_model(gfx, LIGHT, ShaderType::Solid)
+        let light_model = scene
+            .load_model(gfx, LIGHT, ShaderType::Solid, 0.3)
             .await
             .unwrap();
+        scene.add_node(
+            light_position,
+            Quat::from_axis_angle(Vec3::Z, 0.0),
+            light_model,
+        );
 
         let camera_controller = CameraController::new(4.0, 0.4);
 
         App {
             camera_controller,
             scene,
+            light_model,
         }
     }
 
@@ -79,6 +90,12 @@ impl Run for App {
                 .into();
 
         self.scene.light.update(position);
+
+        for node in &mut self.scene.nodes {
+            if node.model() == self.light_model {
+                node.set_transform(position, node.transform().rotation);
+            }
+        }
 
         self.scene.update(gfx);
     }

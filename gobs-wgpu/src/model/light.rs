@@ -1,16 +1,7 @@
 use log::*;
 use wgpu::util::DeviceExt;
 
-use crate::render::Gfx;
-
-#[repr(C)]
-#[derive(Debug, Copy, Clone, bytemuck::Pod, bytemuck::Zeroable)]
-pub struct LightUniform {
-    pub position: [f32; 3],
-    pub _padding: u32,
-    pub colour: [f32; 3],
-    pub _padding2: u32,
-}
+use crate::{render::Gfx, shader_data::LightUniform};
 
 pub struct LightResource {
     pub uniform: LightUniform,

@@ -7,13 +7,13 @@ use gobs_wgpu as render;
 use render::render::RenderError;
 use render::shader::Shader;
 use render::shader::ShaderType;
+use render::shader_data::InstanceData;
 use uuid::Uuid;
 
 use crate::camera::Camera;
 use crate::light::Light;
 use crate::node::Node;
 use render::model::CameraResource;
-use render::model::InstanceRaw;
 use render::model::LightResource;
 use render::model::{Model, Texture};
 use render::render::Batch;
@@ -94,7 +94,15 @@ impl Scene {
                 .nodes
                 .iter()
                 .filter(|n| n.model() == model.model.id)
-                .map(|n| InstanceRaw::new(n.transform().position, n.transform().rotation))
+                .map(|n| {
+                    InstanceData::new(
+                        model.shader.instance_flags(),
+                        n.transform().position,
+                        n.transform().rotation,
+                        model.model.scale,
+                    )
+                    .unwrap()
+                })
                 .collect::<Vec<_>>();
 
             match &model.instance_buffer {
@@ -114,8 +122,14 @@ impl Scene {
         self.nodes.push(node);
     }
 
-    pub async fn load_model(&mut self, gfx: &Gfx, name: &str, shader: ShaderType) -> Result<Uuid> {
-        let model = resource::load_model(name, gfx, &self.phong_shader.layouts()[2]).await?;
+    pub async fn load_model(
+        &mut self,
+        gfx: &Gfx,
+        name: &str,
+        shader: ShaderType,
+        scale: f32,
+    ) -> Result<Uuid> {
+        let model = resource::load_model(name, gfx, &self.phong_shader.layouts()[2], scale).await?;
         let id = model.id;
 
         let model_instance = ModelInstance {
@@ -147,7 +161,12 @@ impl Scene {
                     );
                 }
                 ShaderType::Solid => {
-                    batch = batch.draw(&model.model, &self.solid_shader);
+                    batch = batch.draw_indexed(
+                        &model.model,
+                        &self.solid_shader,
+                        model.instance_buffer.as_ref().unwrap(),
+                        model.instance_count,
+                    );
                 }
             };
         }

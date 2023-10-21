@@ -18,5 +18,6 @@ tobj = { workspace = true }
 naga = { workspace = true }
 itertools = { workspace = true }
 uuid = { workspace = true }
+bitflags = { workspace = true }
 
 gobs-utils = { path = "../gobs-utils" }

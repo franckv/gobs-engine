@@ -5,10 +5,10 @@ use log::*;
 use naga::front::wgsl::Frontend;
 use naga::{Binding, GlobalVariable, Handle, Module, Type, TypeInner};
 
-use crate::model::InstanceRaw;
-use crate::model::ModelVertex;
 use crate::render::Gfx;
 use crate::resource;
+use crate::shader_data::ModelVertex;
+use crate::shader_data::{InstanceData, InstanceFlag};
 
 pub struct Generator {
     module: Module,
@@ -93,10 +93,11 @@ impl Generator {
         &'a self,
         attributes: &'a Vec<wgpu::VertexAttribute>,
         instance: bool,
+        flags: InstanceFlag,
     ) -> wgpu::VertexBufferLayout<'a> {
         wgpu::VertexBufferLayout {
             array_stride: if instance {
-                std::mem::size_of::<InstanceRaw>() as wgpu::BufferAddress
+                InstanceData::size(flags) as wgpu::BufferAddress
             } else {
                 std::mem::size_of::<ModelVertex>() as wgpu::BufferAddress
             },

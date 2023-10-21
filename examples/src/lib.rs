@@ -8,9 +8,7 @@ pub use controller::CameraController;
 
 pub fn init_logger() {
     let config_other = ConfigBuilder::new().add_filter_ignore_str("gobs").build();
-    let config_self = ConfigBuilder::new()
-        .add_filter_allow_str("gobs")
-        .build();
+    let config_self = ConfigBuilder::new().add_filter_allow_str("gobs").build();
 
     let _ = CombinedLogger::init(vec![
         TermLogger::new(

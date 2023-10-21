@@ -4,11 +4,23 @@ mod solid;
 pub use phong::PhongShader;
 pub use solid::SolidShader;
 
-use crate::model::{CameraResource, LightResource, Model};
+use crate::{
+    model::{CameraResource, LightResource, Model},
+    shader_data::InstanceFlag,
+};
 
 pub enum ShaderType {
     Phong,
     Solid,
+}
+
+impl ShaderType {
+    pub fn instance_flags(&self) -> InstanceFlag {
+        match self {
+            ShaderType::Phong => InstanceFlag::MN,
+            ShaderType::Solid => InstanceFlag::MODEL,
+        }
+    }
 }
 
 pub enum Shader {

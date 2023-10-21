@@ -158,11 +158,13 @@ impl<'a> Batch<'a> {
                             item.instances_count as _,
                         );
                     }
-                    Shader::Solid(shader) => shader.draw(
+                    Shader::Solid(shader) => shader.draw_instanced(
                         &mut render_pass,
                         item.model,
                         self.camera_resource,
                         self.light_resource,
+                        item.instances_buffer.unwrap(),
+                        item.instances_count as _,
                     ),
                 }
             }

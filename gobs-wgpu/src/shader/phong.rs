@@ -6,8 +6,9 @@ use crate::render::Gfx;
 
 use crate::shader::Shader;
 use crate::shader::ShaderDraw;
+use crate::shader_data::InstanceFlag;
 
-const SHADER: &str = "../shaders/shader.wgsl";
+const SHADER: &str = "../shaders/phong.wgsl";
 
 pub struct PhongShader {
     pub pipeline: Pipeline,
@@ -20,10 +21,10 @@ impl PhongShader {
         let layouts = generator.bind_layouts(gfx);
 
         let vertex_attributes = generator.vertex_layout_attributes("VertexInput");
-        let vertex_layout = generator.vertex_layout(&vertex_attributes, false);
+        let vertex_layout = generator.vertex_layout(&vertex_attributes, false, InstanceFlag::MN);
 
         let instance_attributes = generator.vertex_layout_attributes("InstanceInput");
-        let instance_layout = generator.vertex_layout(&instance_attributes, true);
+        let instance_layout = generator.vertex_layout(&instance_attributes, true, InstanceFlag::MN);
 
         let pipeline = PipelineBuilder::new(gfx.device(), "Model pipeline")
             .shader(SHADER)

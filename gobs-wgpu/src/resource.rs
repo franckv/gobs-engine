@@ -5,9 +5,9 @@ use anyhow::Result;
 use log::*;
 use uuid::Uuid;
 
-use crate::model::ModelVertex;
 use crate::model::{Material, Mesh, Model, Texture};
 use crate::render::Gfx;
+use crate::shader_data::ModelVertex;
 
 pub async fn load_string(file_name: &str) -> Result<String> {
     let current_dir = env::current_dir()?;
@@ -40,6 +40,7 @@ pub async fn load_model(
     file_name: &str,
     gfx: &Gfx,
     layout: &wgpu::BindGroupLayout,
+    scale: f32,
 ) -> Result<Model> {
     let obj_text = load_string(file_name).await?;
     let obj_cursor = Cursor::new(obj_text);
@@ -137,6 +138,7 @@ pub async fn load_model(
 
     Ok(Model {
         id: Uuid::new_v4(),
+        scale,
         meshes,
         materials,
     })

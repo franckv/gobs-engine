@@ -7,10 +7,13 @@ use game::{
     app::{Application, Run},
     input::Input,
 };
-use scene::{camera::{Camera, CameraProjection}, ShaderType, RenderError};
 use scene::light::Light;
 use scene::scene::Scene;
 use scene::Gfx;
+use scene::{
+    camera::{Camera, CameraProjection},
+    RenderError, ShaderType,
+};
 
 const CUBE: &str = "cube.obj";
 
@@ -37,13 +40,17 @@ impl Run for App {
         let light = Light::new((8.0, 2.0, 8.0), (1., 1., 0.9));
 
         let mut scene = Scene::new(gfx, camera, light).await;
-        
+
         let cube = scene
-            .load_model(gfx, CUBE, ShaderType::Phong)
+            .load_model(gfx, CUBE, ShaderType::Phong, 1.0)
             .await
             .unwrap();
 
-        scene.add_node(scene.light.position, Quat::from_axis_angle(Vec3::Z, 0.0), cube);
+        scene.add_node(
+            scene.light.position,
+            Quat::from_axis_angle(Vec3::Z, 0.0),
+            cube,
+        );
 
         let camera_controller = CameraController::new(4.0, 0.4);
 

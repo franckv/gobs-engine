@@ -4,6 +4,7 @@ use crate::model::{Material, Mesh};
 
 pub struct Model {
     pub id: Uuid,
+    pub scale: f32,
     pub meshes: Vec<Mesh>,
     pub materials: Vec<Material>,
 }

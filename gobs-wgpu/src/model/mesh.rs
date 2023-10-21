@@ -1,7 +1,7 @@
 use glam::{Vec2, Vec3};
 
-use crate::model::ModelVertex;
 use crate::render::Gfx;
+use crate::shader_data::ModelVertex;
 
 pub struct Mesh {
     pub name: String,
