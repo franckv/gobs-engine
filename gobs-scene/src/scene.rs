@@ -2,19 +2,19 @@ use anyhow::Result;
 use glam::{Quat, Vec3};
 use log::*;
 
-use gobs_scene as scene;
+use gobs_wgpu as render;
+use render::render::RenderError;
 
-use scene::camera::Camera;
-use scene::light::Light;
-use scene::node::Node;
-
-use crate::model::CameraResource;
-use crate::model::InstanceRaw;
-use crate::model::LightResource;
-use crate::model::{Model, Texture};
-use crate::render::Gfx;
-use crate::resource;
-use crate::shader::{PhongShader, SolidShader};
+use crate::camera::Camera;
+use crate::light::Light;
+use crate::node::Node;
+use render::model::CameraResource;
+use render::model::InstanceRaw;
+use render::model::LightResource;
+use render::model::{Model, Texture};
+use render::render::Gfx;
+use render::resource;
+use render::shader::{PhongShader, SolidShader};
 
 const LIGHT: &str = "sphere.obj";
 
@@ -22,8 +22,8 @@ pub struct Scene {
     pub solid_shader: SolidShader,
     pub phong_shader: PhongShader,
     pub camera: Camera,
+    pub light: Light,
     pub camera_resource: CameraResource,
-    light: Light,
     pub light_resource: LightResource,
     depth_texture: Texture,
     pub light_model: Model,
@@ -63,8 +63,8 @@ impl Scene {
             solid_shader,
             phong_shader,
             camera,
-            camera_resource,
             light,
+            camera_resource,
             light_resource,
             depth_texture,
             light_model,
@@ -122,5 +122,21 @@ impl Scene {
         self.models.push(model?);
 
         Ok(())
+    }
+
+    pub fn render(&self, gfx: &Gfx) -> Result<(), RenderError> {
+        let instance_count = (0..self.models.len()).map(|i| self.nodes.iter().filter(|n| n.model() == i).count()).collect();
+        
+        gfx.render(
+            &self.depth_texture,
+            &self.camera_resource,
+            &self.light_resource,
+            &self.light_model,
+            &self.solid_shader,
+            &self.phong_shader,
+            &self.models,
+            &self.instance_buffers,
+            &instance_count
+        )
     }
 }

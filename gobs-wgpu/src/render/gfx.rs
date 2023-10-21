@@ -5,9 +5,10 @@ use crate::model::CameraResource;
 use crate::model::InstanceRaw;
 use crate::model::LightResource;
 use crate::model::ModelVertex;
+use crate::model::{Model, Texture};
 use crate::render::Display;
-use crate::scene::Scene;
 use crate::shader::{DrawPhong, DrawSolid};
+use crate::shader::{PhongShader, SolidShader};
 
 #[derive(Debug)]
 pub enum RenderError {
@@ -111,7 +112,18 @@ impl Gfx {
         }
     }
 
-    pub fn render(&mut self, scene: &Scene) -> Result<(), RenderError> {
+    pub fn render(
+        &self,
+        depth_texture: &Texture,
+        camera_resource: &CameraResource,
+        light_resource: &LightResource,
+        light_model: &Model,
+        solid_shader: &SolidShader,
+        phong_shader: &PhongShader,
+        models: &Vec<Model>,
+        instance_buffers: &Vec<wgpu::Buffer>,
+        instance_count: &Vec<usize>
+    ) -> Result<(), RenderError> {
         let texture = match self.display.texture() {
             Ok(texture) => texture,
             Err(wgpu::SurfaceError::Lost) => return Err(RenderError::Lost),
@@ -141,7 +153,7 @@ impl Gfx {
                     },
                 })],
                 depth_stencil_attachment: Some(wgpu::RenderPassDepthStencilAttachment {
-                    view: &scene.depth_texture().view,
+                    view: &depth_texture.view,
                     depth_ops: Some(wgpu::Operations {
                         load: wgpu::LoadOp::Clear(1.0),
                         store: true,
@@ -150,23 +162,18 @@ impl Gfx {
                 }),
             });
 
-            for i in 0..scene.models.len() {
+            for i in 0..models.len() {
                 render_pass.draw_phong(
-                    &scene.phong_shader,
-                    &scene.models[i],
-                    &scene.camera_resource,
-                    &scene.light_resource,
-                    &scene.instance_buffers[i],
-                    scene.nodes.iter().filter(|n| n.model() == i).count() as _,
+                    phong_shader,
+                    &models[i],
+                    camera_resource,
+                    light_resource,
+                    &instance_buffers[i],
+                    instance_count[i] as _,
                 );
             }
 
-            render_pass.draw_solid(
-                &scene.solid_shader,
-                &scene.light_model,
-                &scene.camera_resource,
-                &scene.light_resource,
-            );
+            render_pass.draw_solid(solid_shader, light_model, camera_resource, light_resource);
         }
 
         self.queue.submit(std::iter::once(encoder.finish()));

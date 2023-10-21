@@ -11,12 +11,13 @@ use game::{
     app::{Application, Run},
     input::Input,
 };
+use render::render::Gfx;
 use render::render::RenderError;
-use render::{render::Gfx, scene::Scene};
 use scene::camera::{Camera, CameraProjection};
 use scene::light::Light;
 use scene::model::Instance;
 use scene::node::Node;
+use scene::scene::Scene;
 
 const WALL: &str = "cube.obj";
 const TREE: &str = "tree.obj";
@@ -65,7 +66,7 @@ impl Run for App {
     }
 
     fn render(&mut self, gfx: &mut Gfx) -> Result<(), RenderError> {
-        gfx.render(&self.scene)
+        self.scene.render(gfx)
     }
 
     fn input(&mut self, _gfx: &mut Gfx, input: Input) {

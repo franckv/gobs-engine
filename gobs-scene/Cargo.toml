@@ -9,6 +9,7 @@ name = "gobs_scene"
 path = "src/lib.rs"
 
 [dependencies]
+anyhow = { workspace = true }
 log = { workspace = true }
 cgmath = { workspace = true }
 glam = { workspace = true }
@@ -18,3 +19,5 @@ rusttype = { workspace = true }
 uuid = { workspace = true }
 wgpu = { workspace = true }
 bytemuck = { workspace = true }
+
+gobs-wgpu = { path = "../gobs-wgpu" }
