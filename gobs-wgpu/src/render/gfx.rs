@@ -5,10 +5,7 @@ use crate::model::CameraResource;
 use crate::model::InstanceRaw;
 use crate::model::LightResource;
 use crate::model::ModelVertex;
-use crate::model::{Model, Texture};
 use crate::render::Display;
-use crate::shader::ShaderDraw;
-use crate::shader::{PhongShader, SolidShader};
 
 #[derive(Debug)]
 pub enum RenderError {
@@ -18,10 +15,9 @@ pub enum RenderError {
 }
 
 pub struct Gfx {
-    display: Display,
+    pub(crate) display: Display,
     device: wgpu::Device,
     queue: wgpu::Queue,
-    clear_color: wgpu::Color,
 }
 
 impl Gfx {
@@ -96,13 +92,10 @@ impl Gfx {
 
         let display = Display::new(surface, config, &device);
 
-        let clear_color = wgpu::Color::BLACK;
-
         Gfx {
             display,
             device,
             queue,
-            clear_color,
         }
     }
 
@@ -110,82 +103,6 @@ impl Gfx {
         if width > 0 && height > 0 {
             self.display.resize(&self.device, width, height);
         }
-    }
-
-    pub fn render(
-        &self,
-        depth_texture: &Texture,
-        camera_resource: &CameraResource,
-        light_resource: &LightResource,
-        light_model: &Model,
-        solid_shader: &SolidShader,
-        phong_shader: &PhongShader,
-        models: &Vec<Model>,
-        instance_buffers: &Vec<wgpu::Buffer>,
-        instance_count: &Vec<usize>,
-    ) -> Result<(), RenderError> {
-        let texture = match self.display.texture() {
-            Ok(texture) => texture,
-            Err(wgpu::SurfaceError::Lost) => return Err(RenderError::Lost),
-            Err(wgpu::SurfaceError::Outdated) => return Err(RenderError::Outdated),
-            Err(_) => return Err(RenderError::Error),
-        };
-
-        let view = texture
-            .texture
-            .create_view(&wgpu::TextureViewDescriptor::default());
-
-        let mut encoder = self
-            .device
-            .create_command_encoder(&wgpu::CommandEncoderDescriptor {
-                label: Some("Encoder"),
-            });
-
-        {
-            let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
-                label: Some("Render Pass"),
-                color_attachments: &[Some(wgpu::RenderPassColorAttachment {
-                    view: &view,
-                    resolve_target: None,
-                    ops: wgpu::Operations {
-                        load: wgpu::LoadOp::Clear(self.clear_color),
-                        store: true,
-                    },
-                })],
-                depth_stencil_attachment: Some(wgpu::RenderPassDepthStencilAttachment {
-                    view: &depth_texture.view,
-                    depth_ops: Some(wgpu::Operations {
-                        load: wgpu::LoadOp::Clear(1.0),
-                        store: true,
-                    }),
-                    stencil_ops: None,
-                }),
-            });
-
-            for i in 0..models.len() {
-                phong_shader.draw_instanced(
-                    &mut render_pass,
-                    &models[i],
-                    camera_resource,
-                    light_resource,
-                    &instance_buffers[i],
-                    instance_count[i] as _,
-                );
-            }
-
-            solid_shader.draw(
-                &mut render_pass,
-                light_model,
-                camera_resource,
-                light_resource,
-            );
-        };
-
-        self.queue.submit(std::iter::once(encoder.finish()));
-
-        texture.present();
-
-        Ok(())
     }
 
     pub fn create_camera_resource(&self, layout: &wgpu::BindGroupLayout) -> CameraResource {

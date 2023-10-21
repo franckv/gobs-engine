@@ -4,16 +4,18 @@ use crate::model::{Model, Texture};
 use crate::pipeline::{Generator, Pipeline, PipelineBuilder};
 use crate::render::Gfx;
 
-use super::ShaderDraw;
+use crate::shader::Shader;
+use crate::shader::ShaderDraw;
 
 const SHADER: &str = "../shaders/light.wgsl";
 
 pub struct SolidShader {
     pub pipeline: Pipeline,
+    pub layouts: Vec<wgpu::BindGroupLayout>,
 }
 
 impl SolidShader {
-    pub async fn new(gfx: &Gfx) -> Self {
+    pub async fn new(gfx: &Gfx) -> Shader {
         let generator = Generator::new(SHADER).await;
         let layouts = generator.bind_layouts(gfx);
 
@@ -29,7 +31,7 @@ impl SolidShader {
             .depth_format(Texture::DEPTH_FORMAT)
             .build();
 
-        SolidShader { pipeline }
+        Shader::Solid(SolidShader { pipeline, layouts })
     }
 }
 

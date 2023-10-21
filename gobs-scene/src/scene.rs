@@ -4,6 +4,7 @@ use log::*;
 
 use gobs_wgpu as render;
 use render::render::RenderError;
+use render::shader::Shader;
 
 use crate::camera::Camera;
 use crate::light::Light;
@@ -12,6 +13,7 @@ use render::model::CameraResource;
 use render::model::InstanceRaw;
 use render::model::LightResource;
 use render::model::{Model, Texture};
+use render::render::Batch;
 use render::render::Gfx;
 use render::resource;
 use render::shader::{PhongShader, SolidShader};
@@ -19,8 +21,8 @@ use render::shader::{PhongShader, SolidShader};
 const LIGHT: &str = "sphere.obj";
 
 pub struct Scene {
-    pub solid_shader: SolidShader,
-    pub phong_shader: PhongShader,
+    pub solid_shader: Shader,
+    pub phong_shader: Shader,
     pub camera: Camera,
     pub light: Light,
     pub camera_resource: CameraResource,
@@ -43,9 +45,9 @@ impl Scene {
         let solid_shader = SolidShader::new(&gfx).await;
         let phong_shader = PhongShader::new(&gfx).await;
 
-        let camera_resource = gfx.create_camera_resource(&phong_shader.layouts[0]);
+        let camera_resource = gfx.create_camera_resource(&phong_shader.layouts()[0]);
 
-        let light_resource = gfx.create_light_resource(&phong_shader.layouts[1]);
+        let light_resource = gfx.create_light_resource(&phong_shader.layouts()[1]);
 
         let models = Vec::new();
 
@@ -55,7 +57,7 @@ impl Scene {
 
         let depth_texture = Texture::create_depth_texture(gfx, "depth_texture");
 
-        let light_model = resource::load_model(LIGHT, gfx, &phong_shader.layouts[2])
+        let light_model = resource::load_model(LIGHT, gfx, &phong_shader.layouts()[2])
             .await
             .unwrap();
 
@@ -117,7 +119,7 @@ impl Scene {
     }
 
     pub async fn load_model(&mut self, gfx: &Gfx, name: &str) -> Result<()> {
-        let model = resource::load_model(name, gfx, &self.phong_shader.layouts[2]).await;
+        let model = resource::load_model(name, gfx, &self.phong_shader.layouts()[2]).await;
 
         self.models.push(model?);
 
@@ -125,20 +127,22 @@ impl Scene {
     }
 
     pub fn render(&self, gfx: &Gfx) -> Result<(), RenderError> {
-        let instance_count = (0..self.models.len())
-            .map(|i| self.nodes.iter().filter(|n| n.model() == i).count())
-            .collect();
+        let mut batch = Batch::begin(gfx)
+            .depth_texture(&self.depth_texture)
+            .camera_resource(&self.camera_resource)
+            .light_resource(&self.light_resource)
+            .draw(&self.light_model, &self.solid_shader);
 
-        gfx.render(
-            &self.depth_texture,
-            &self.camera_resource,
-            &self.light_resource,
-            &self.light_model,
-            &self.solid_shader,
-            &self.phong_shader,
-            &self.models,
-            &self.instance_buffers,
-            &instance_count,
-        )
+        for i in 0..self.models.len() {
+            let instances_count = self.nodes.iter().filter(|n| n.model() == i).count();
+            batch = batch.draw_indexed(
+                &self.models[i],
+                &self.phong_shader,
+                &self.instance_buffers[i],
+                instances_count,
+            )
+        }
+
+        batch.finish().render()
     }
 }

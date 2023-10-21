@@ -4,7 +4,8 @@ use crate::model::{Model, Texture};
 use crate::pipeline::{Generator, Pipeline, PipelineBuilder};
 use crate::render::Gfx;
 
-use super::ShaderDraw;
+use crate::shader::Shader;
+use crate::shader::ShaderDraw;
 
 const SHADER: &str = "../shaders/shader.wgsl";
 
@@ -14,7 +15,7 @@ pub struct PhongShader {
 }
 
 impl PhongShader {
-    pub async fn new(gfx: &Gfx) -> Self {
+    pub async fn new(gfx: &Gfx) -> Shader {
         let generator = Generator::new(SHADER).await;
         let layouts = generator.bind_layouts(gfx);
 
@@ -34,7 +35,7 @@ impl PhongShader {
             .depth_format(Texture::DEPTH_FORMAT)
             .build();
 
-        PhongShader { pipeline, layouts }
+        Shader::Phong(PhongShader { pipeline, layouts })
     }
 }
 
@@ -49,7 +50,7 @@ where
         camera: &'a CameraResource,
         light: &'a LightResource,
         instance_buffer: &'a wgpu::Buffer,
-        instances: u32,
+        instances: usize,
     ) {
         render_pass.set_pipeline(&self.pipeline.pipeline);
         render_pass.set_bind_group(0, &camera.bind_group, &[]);
@@ -60,7 +61,7 @@ where
             render_pass.set_vertex_buffer(0, mesh.vertex_buffer.slice(..));
             render_pass.set_index_buffer(mesh.index_buffer.slice(..), wgpu::IndexFormat::Uint32);
             render_pass.set_bind_group(2, &material.bind_group, &[]);
-            render_pass.draw_indexed(0..mesh.num_elements, 0, 0..instances);
+            render_pass.draw_indexed(0..mesh.num_elements, 0, 0..instances as _);
         }
     }
 }
