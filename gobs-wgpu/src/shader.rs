@@ -6,6 +6,11 @@ pub use solid::SolidShader;
 
 use crate::model::{CameraResource, LightResource, Model};
 
+pub enum ShaderType {
+    Phong,
+    Solid,
+}
+
 pub enum Shader {
     Phong(PhongShader),
     Solid(SolidShader),

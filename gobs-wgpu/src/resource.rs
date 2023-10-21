@@ -3,6 +3,7 @@ use std::io::{BufReader, Cursor};
 
 use anyhow::Result;
 use log::*;
+use uuid::Uuid;
 
 use crate::model::ModelVertex;
 use crate::model::{Material, Mesh, Model, Texture};
@@ -134,5 +135,9 @@ pub async fn load_model(
         materials.len()
     );
 
-    Ok(Model { meshes, materials })
+    Ok(Model {
+        id: Uuid::new_v4(),
+        meshes,
+        materials,
+    })
 }

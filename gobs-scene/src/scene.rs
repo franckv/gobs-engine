@@ -1,10 +1,11 @@
 use anyhow::Result;
-use glam::{Quat, Vec3};
 use log::*;
 
 use gobs_wgpu as render;
 use render::render::RenderError;
 use render::shader::Shader;
+use render::shader::ShaderType;
+use uuid::Uuid;
 
 use crate::camera::Camera;
 use crate::light::Light;
@@ -18,7 +19,12 @@ use render::render::Gfx;
 use render::resource;
 use render::shader::{PhongShader, SolidShader};
 
-const LIGHT: &str = "sphere.obj";
+struct ModelInstance {
+    model: Model,
+    shader: ShaderType,
+    instance_buffer: Option<wgpu::Buffer>,
+    instance_count: usize,
+}
 
 pub struct Scene {
     pub solid_shader: Shader,
@@ -28,10 +34,8 @@ pub struct Scene {
     pub camera_resource: CameraResource,
     pub light_resource: LightResource,
     depth_texture: Texture,
-    pub light_model: Model,
     pub nodes: Vec<Node>,
-    pub models: Vec<Model>,
-    pub instance_buffers: Vec<wgpu::Buffer>,
+    models: Vec<ModelInstance>,
 }
 
 impl Scene {
@@ -53,13 +57,7 @@ impl Scene {
 
         let nodes = Vec::new();
 
-        let instance_buffers = Vec::new();
-
         let depth_texture = Texture::create_depth_texture(gfx, "depth_texture");
-
-        let light_model = resource::load_model(LIGHT, gfx, &phong_shader.layouts()[2])
-            .await
-            .unwrap();
 
         Scene {
             solid_shader,
@@ -69,10 +67,8 @@ impl Scene {
             camera_resource,
             light_resource,
             depth_texture,
-            light_model,
             nodes,
             models,
-            instance_buffers,
         }
     }
 
@@ -81,36 +77,33 @@ impl Scene {
         self.camera.projection.resize(width, height);
     }
 
-    pub fn update(&mut self, gfx: &Gfx, dt: f32) {
+    pub fn update(&mut self, gfx: &Gfx) {
         let view_position = self.camera.position.extend(1.0).to_array();
         let view_proj =
             (self.camera.projection.to_matrix() * self.camera.to_matrix()).to_cols_array_2d();
 
         self.camera_resource.update(gfx, view_position, view_proj);
 
-        let old_position: Vec3 = self.light.position;
-        let position: Vec3 =
-            (Quat::from_axis_angle((0.0, 1.0, 0.0).into(), (60.0 * dt).to_radians())
-                * old_position)
-                .into();
-
-        self.light.update(position);
         self.light_resource
             .update(&gfx, self.light.position.into(), self.light.colour.into());
 
-        for i in 0..self.models.len() {
+        for model in &mut self.models {
             let instance_data = self
                 .nodes
                 .iter()
-                .filter(|n| n.model() == i)
+                .filter(|n| n.model() == model.model.id)
                 .map(|n| InstanceRaw::new(n.transform().position, n.transform().rotation))
                 .collect::<Vec<_>>();
-            if self.instance_buffers.len() <= i {
-                let instance_buffer = gfx.create_instance_buffer(&instance_data);
-                self.instance_buffers.push(instance_buffer);
-            } else {
-                gfx.update_instance_buffer(&self.instance_buffers[i], &instance_data);
+
+            match &model.instance_buffer {
+                Some(instance_buffer) => {
+                    gfx.update_instance_buffer(&instance_buffer, &instance_data);
+                }
+                None => {
+                    model.instance_buffer = Some(gfx.create_instance_buffer(&instance_data));
+                }
             }
+            model.instance_count = instance_data.len();
         }
     }
 
@@ -118,29 +111,42 @@ impl Scene {
         self.nodes.push(node);
     }
 
-    pub async fn load_model(&mut self, gfx: &Gfx, name: &str) -> Result<()> {
-        let model = resource::load_model(name, gfx, &self.phong_shader.layouts()[2]).await;
+    pub async fn load_model(&mut self, gfx: &Gfx, name: &str, shader: ShaderType) -> Result<Uuid> {
+        let model = resource::load_model(name, gfx, &self.phong_shader.layouts()[2]).await?;
+        let id = model.id;
 
-        self.models.push(model?);
+        let model_instance = ModelInstance {
+            model,
+            shader,
+            instance_buffer: None,
+            instance_count: 0,
+        };
 
-        Ok(())
+        self.models.push(model_instance);
+
+        Ok(id)
     }
 
     pub fn render(&self, gfx: &Gfx) -> Result<(), RenderError> {
         let mut batch = Batch::begin(gfx)
             .depth_texture(&self.depth_texture)
             .camera_resource(&self.camera_resource)
-            .light_resource(&self.light_resource)
-            .draw(&self.light_model, &self.solid_shader);
+            .light_resource(&self.light_resource);
 
-        for i in 0..self.models.len() {
-            let instances_count = self.nodes.iter().filter(|n| n.model() == i).count();
-            batch = batch.draw_indexed(
-                &self.models[i],
-                &self.phong_shader,
-                &self.instance_buffers[i],
-                instances_count,
-            )
+        for model in &self.models {
+            match model.shader {
+                ShaderType::Phong => {
+                    batch = batch.draw_indexed(
+                        &model.model,
+                        &self.phong_shader,
+                        model.instance_buffer.as_ref().unwrap(),
+                        model.instance_count,
+                    );
+                }
+                ShaderType::Solid => {
+                    batch = batch.draw(&model.model, &self.solid_shader);
+                }
+            };
         }
 
         batch.finish().render()

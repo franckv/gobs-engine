@@ -12,3 +12,4 @@ gobs-wgpu = { path = "../gobs-wgpu" }
 glam = { workspace = true }
 log = { workspace = true }
 simplelog = { workspace = true }
+uuid = { workspace = true }

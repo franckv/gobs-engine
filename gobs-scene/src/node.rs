@@ -1,12 +1,14 @@
+use uuid::Uuid;
+
 use crate::model::Instance;
 
 pub struct Node {
     transform: Instance,
-    model: usize,
+    model: Uuid,
 }
 
 impl Node {
-    pub fn new(transform: Instance, model: usize) -> Self {
+    pub fn new(transform: Instance, model: Uuid) -> Self {
         Node { transform, model }
     }
 
@@ -14,7 +16,7 @@ impl Node {
         &self.transform
     }
 
-    pub fn model(&self) -> usize {
+    pub fn model(&self) -> Uuid {
         self.model
     }
 }
