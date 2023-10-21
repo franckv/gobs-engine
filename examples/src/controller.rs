@@ -95,8 +95,8 @@ impl CameraController {
 
     pub fn mouse_drag(&mut self, mouse_dx: f64, mouse_dy: f64) {
         if self.mouse_pressed {
-            self.rotate_horizontal = mouse_dx as f32;
-            self.rotate_vertical = mouse_dy as f32;
+            self.rotate_horizontal = -mouse_dx as f32;
+            self.rotate_vertical = -mouse_dy as f32;
         }
     }
 
