@@ -131,7 +131,7 @@ impl CameraController {
         }
 
         if self.debug {
-            info!("{:?}", camera);
+            warn!("{:?}", camera);
             self.debug = false;
         }
     }

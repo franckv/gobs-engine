@@ -1,4 +1,6 @@
 use anyhow::Result;
+use glam::Quat;
+use glam::Vec3;
 use log::*;
 
 use gobs_wgpu as render;
@@ -107,7 +109,8 @@ impl Scene {
         }
     }
 
-    pub fn add_node(&mut self, node: Node) {
+    pub fn add_node(&mut self, position: Vec3, rotation: Quat, model: Uuid) {
+        let node = Node::new(position, rotation, model);
         self.nodes.push(node);
     }
 

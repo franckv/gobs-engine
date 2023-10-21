@@ -1,8 +1,5 @@
-use log::*;
-
-use glam::{Quat, Vec3};
-
 use examples::CameraController;
+use glam::{Quat, Vec3};
 use gobs_game as game;
 use gobs_scene as scene;
 
@@ -14,13 +11,8 @@ use scene::{camera::{Camera, CameraProjection}, ShaderType, RenderError};
 use scene::light::Light;
 use scene::scene::Scene;
 use scene::Gfx;
-use uuid::Uuid;
 
-const LIGHT: &str = "sphere.obj";
-const WALL: &str = "cube.obj";
-const TREE: &str = "tree.obj";
-const MAP: &str = include_str!("../../assets/dungeon.map");
-const TILE_SIZE: f32 = 2.;
+const CUBE: &str = "cube.obj";
 
 struct App {
     camera_controller: CameraController,
@@ -30,7 +22,7 @@ struct App {
 impl Run for App {
     async fn create(gfx: &mut Gfx) -> Self {
         let camera = Camera::new(
-            (0.0, 50.0, 50.0),
+            (3.0, 4.0, 5.0),
             CameraProjection::new(
                 gfx.width(),
                 gfx.height(),
@@ -38,27 +30,20 @@ impl Run for App {
                 0.1,
                 150.0,
             ),
-            (-90.0 as f32).to_radians(),
-            (-50.0 as f32).to_radians(),
+            (30.0 as f32).to_radians(),
+            (-20.0 as f32).to_radians(),
         );
 
         let light = Light::new((8.0, 2.0, 8.0), (1., 1., 0.9));
 
         let mut scene = Scene::new(gfx, camera, light).await;
-        let wall_model = scene
-            .load_model(gfx, WALL, ShaderType::Phong)
+        
+        let cube = scene
+            .load_model(gfx, CUBE, ShaderType::Phong)
             .await
             .unwrap();
-        scene
-            .load_model(gfx, TREE, ShaderType::Phong)
-            .await
-            .unwrap();
-        Self::load_scene(&mut scene, wall_model);
 
-        scene
-            .load_model(gfx, LIGHT, ShaderType::Solid)
-            .await
-            .unwrap();
+        scene.add_node(scene.light.position, Quat::from_axis_angle(Vec3::Z, 0.0), cube);
 
         let camera_controller = CameraController::new(4.0, 0.4);
 
@@ -71,14 +56,6 @@ impl Run for App {
     fn update(&mut self, delta: f32, gfx: &mut Gfx) {
         self.camera_controller
             .update_camera(&mut self.scene.camera, delta);
-
-        let old_position: Vec3 = self.scene.light.position;
-        let position: Vec3 =
-            (Quat::from_axis_angle((0.0, 1.0, 0.0).into(), (10. * delta).to_radians())
-                * old_position)
-                .into();
-
-        self.scene.light.update(position);
 
         self.scene.update(gfx);
     }
@@ -115,48 +92,6 @@ impl Run for App {
     }
 }
 
-impl App {
-    pub fn load_scene(scene: &mut Scene, wall_model: Uuid) {
-        info!("Load scene");
-
-        let (mut i, mut j) = (0., 0.);
-
-        for c in MAP.chars() {
-            match c {
-                'w' => {
-                    i += TILE_SIZE;
-                    let position = Vec3 {
-                        x: i - 32.,
-                        y: 0.0,
-                        z: j - 32.,
-                    };
-                    let rotation = Quat::from_axis_angle(Vec3::Z, 0.0);
-
-                    scene.add_node(position, rotation, wall_model);
-                }
-                't' => {
-                    i += TILE_SIZE;
-                    let position = Vec3 {
-                        x: i - 32.,
-                        y: 0.0,
-                        z: j - 32.,
-                    };
-                    let rotation = Quat::from_axis_angle(Vec3::Z, 0.0);
-
-                    scene.add_node(position, rotation, wall_model);
-                }
-                '.' | '@' => {
-                    i += TILE_SIZE;
-                }
-                '\n' => {
-                    j += TILE_SIZE;
-                    i = 0.;
-                }
-                _ => (),
-            }
-        }
-    }
-}
 fn main() {
     examples::init_logger();
 
