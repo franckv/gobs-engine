@@ -3,15 +3,15 @@ use winit::dpi::LogicalSize;
 use winit::event_loop::{ControlFlow, EventLoop};
 use winit::window::{Window, WindowBuilder};
 
+use gobs_scene as scene;
 use gobs_utils as utils;
-use gobs_wgpu as render;
 
 use utils::timer::Timer;
 
 use crate::input::{Event, Input};
 
-use render::render::Gfx;
-use render::render::RenderError;
+use scene::Gfx;
+use scene::RenderError;
 
 const WIDTH: u32 = 800; // TODO: hardcoded
 const HEIGHT: u32 = 600;

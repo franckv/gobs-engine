@@ -12,4 +12,3 @@ winit = { workspace = true }
 wgpu = { workspace = true }
 gobs-scene = { path = "../gobs-scene" }
 gobs-utils = { path = "../gobs-utils" }
-gobs-wgpu = { path = "../gobs-wgpu" }

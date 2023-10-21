@@ -5,19 +5,17 @@ use glam::{Quat, Vec3};
 use examples::CameraController;
 use gobs_game as game;
 use gobs_scene as scene;
-use gobs_wgpu as render;
 
 use game::{
     app::{Application, Run},
     input::Input,
 };
-use render::render::RenderError;
-use render::{render::Gfx, shader::ShaderType};
-use scene::camera::{Camera, CameraProjection};
+use scene::{camera::{Camera, CameraProjection}, ShaderType, RenderError};
 use scene::light::Light;
 use scene::model::Instance;
 use scene::node::Node;
 use scene::scene::Scene;
+use scene::Gfx;
 use uuid::Uuid;
 
 const LIGHT: &str = "sphere.obj";

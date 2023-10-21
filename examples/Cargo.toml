@@ -8,7 +8,6 @@ edition = { workspace = true }
 gobs-game = { path = "../gobs-game" }
 gobs-scene = { path = "../gobs-scene" }
 gobs-utils = { path = "../gobs-utils" }
-gobs-wgpu = { path = "../gobs-wgpu" }
 glam = { workspace = true }
 log = { workspace = true }
 simplelog = { workspace = true }
