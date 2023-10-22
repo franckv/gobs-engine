@@ -1,21 +1,24 @@
 use glam::{Quat, Vec3};
 use uuid::Uuid;
 
-use crate::model::Instance;
+pub struct Transform {
+    pub position: Vec3,
+    pub rotation: Quat,
+}
 
 pub struct Node {
-    transform: Instance,
+    transform: Transform,
     model: Uuid,
 }
 
 impl Node {
     pub fn new(position: Vec3, rotation: Quat, model: Uuid) -> Self {
-        let transform = Instance { position, rotation };
+        let transform = Transform { position, rotation };
 
         Node { transform, model }
     }
 
-    pub fn transform(&self) -> &Instance {
+    pub fn transform(&self) -> &Transform {
         &self.transform
     }
 
