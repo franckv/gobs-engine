@@ -132,7 +132,7 @@ impl Scene {
             instance_buffer: None,
             instance_count: 0,
         };
-        
+
         self.models.push(model_instance);
 
         id

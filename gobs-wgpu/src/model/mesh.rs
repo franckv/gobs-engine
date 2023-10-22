@@ -43,7 +43,7 @@ impl MeshBuilder {
 
     pub fn add_vertex_PTN(mut self, position: Vec3, texture: Vec2, normal: Vec3) -> Self {
         assert!(self.flags == VertexFlag::PTN);
-        
+
         let vertex = VertexData::VertexPTN(VertexPTN {
             position: position.into(),
             tex_coords: texture.into(),

@@ -6,7 +6,7 @@ pub struct ModelBuilder {
     id: Uuid,
     scale: f32,
     meshes: Vec<Mesh>,
-    materials: Vec<Material>
+    materials: Vec<Material>,
 }
 
 impl ModelBuilder {
@@ -15,7 +15,7 @@ impl ModelBuilder {
             id: Uuid::new_v4(),
             scale: 1.,
             meshes: Vec::new(),
-            materials: Vec::new()
+            materials: Vec::new(),
         }
     }
 
@@ -37,13 +37,13 @@ impl ModelBuilder {
 
         self
     }
-    
+
     pub fn build(self) -> Model {
         Model {
             id: self.id,
             scale: self.scale,
             meshes: self.meshes,
-            materials: self.materials
+            materials: self.materials,
         }
     }
 }

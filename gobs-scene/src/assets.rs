@@ -93,7 +93,9 @@ async fn load_mesh(gfx: &Gfx, shader_type: ShaderType, models: Vec<tobj::Model>)
                     ShaderType::Solid => mesh = mesh.add_vertex_P(position.into()),
                 }
             }
-            mesh.material(m.mesh.material_id.unwrap_or(0)).add_indices(&m.mesh.indices).build(gfx)
+            mesh.material(m.mesh.material_id.unwrap_or(0))
+                .add_indices(&m.mesh.indices)
+                .build(gfx)
         })
         .collect::<Vec<_>>()
 }

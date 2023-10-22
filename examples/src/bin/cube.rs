@@ -1,5 +1,5 @@
 use examples::CameraController;
-use glam::{Quat, Vec3};
+use glam::Quat;
 use gobs_game as game;
 use gobs_scene as scene;
 
@@ -25,7 +25,7 @@ struct App {
 impl Run for App {
     async fn create(gfx: &mut Gfx) -> Self {
         let camera = Camera::new(
-            (3.0, 4.0, 5.0),
+            (-2., 2., 5.0),
             CameraProjection::new(
                 gfx.width(),
                 gfx.height(),
@@ -33,8 +33,8 @@ impl Run for App {
                 0.1,
                 150.0,
             ),
-            (30.0 as f32).to_radians(),
-            (-20.0 as f32).to_radians(),
+            (-65. as f32).to_radians(),
+            (-20. as f32).to_radians(),
         );
 
         let light = Light::new((8.0, 2.0, 8.0), (1., 1., 0.9));
@@ -46,11 +46,7 @@ impl Run for App {
             .await
             .unwrap();
 
-        scene.add_node(
-            scene.light.position,
-            Quat::from_axis_angle(Vec3::Z, 0.0),
-            cube,
-        );
+        scene.add_node([0., 0., 0.].into(), Quat::IDENTITY, cube);
 
         let camera_controller = CameraController::new(4.0, 0.4);
 
