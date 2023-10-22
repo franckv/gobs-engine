@@ -8,19 +8,13 @@ use gobs_utils as utils;
 use gobs_wgpu as render;
 
 use render::model::{Material, Mesh, MeshBuilder, Model, Texture};
-use render::shader::ShaderType;
+use render::shader::{Shader, ShaderBindGroup, ShaderType};
 use render::shader_data::VertexFlag;
 use utils::load::{self, AssetType};
 
 use crate::Gfx;
 
-pub async fn load_model(
-    file_name: &str,
-    gfx: &Gfx,
-    shader_type: ShaderType,
-    layout: &wgpu::BindGroupLayout,
-    scale: f32,
-) -> Result<Model> {
+pub async fn load_model(file_name: &str, gfx: &Gfx, shader: &Shader, scale: f32) -> Result<Model> {
     let obj_text = load::load_string(file_name, AssetType::MODEL).await?;
     let obj_cursor = Cursor::new(obj_text);
     let mut obj_reader = BufReader::new(obj_cursor);
@@ -39,9 +33,20 @@ pub async fn load_model(
     )
     .await?;
 
-    let materials = load_material(gfx, file_name, obj_materials?, layout).await?;
+    let materials = match shader.ty() {
+        ShaderType::Phong => {
+            load_material(
+                gfx,
+                file_name,
+                obj_materials?,
+                shader.layout(ShaderBindGroup::Material),
+            )
+            .await?
+        }
+        ShaderType::Solid => Vec::new(),
+    };
 
-    let meshes = load_mesh(gfx, shader_type, models).await;
+    let meshes = load_mesh(gfx, shader.ty(), models).await;
 
     info!(
         "{}: {} meshes / {} materials loaded",

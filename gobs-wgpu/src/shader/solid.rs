@@ -10,12 +10,14 @@ use crate::shader::ShaderType;
 use crate::shader_data::InstanceFlag;
 use crate::shader_data::VertexFlag;
 
+use super::ShaderBindGroup;
+
 const SHADER: &str = "solid.wgsl";
 
 pub struct SolidShader {
     pub ty: ShaderType,
     pub pipeline: Pipeline,
-    pub layouts: Vec<wgpu::BindGroupLayout>,
+    layouts: Vec<wgpu::BindGroupLayout>,
 }
 
 impl SolidShader {
@@ -72,6 +74,24 @@ where
             render_pass.set_vertex_buffer(0, mesh.vertex_buffer.slice(..));
             render_pass.set_index_buffer(mesh.index_buffer.slice(..), wgpu::IndexFormat::Uint32);
             render_pass.draw_indexed(0..mesh.num_elements as _, 0, 0..instances as _);
+        }
+    }
+
+    fn draw(
+        &'a self,
+        _render_pass: &mut wgpu::RenderPass<'b>,
+        _model: &'a Model,
+        _camera: &'a CameraResource,
+        _light: &'a LightResource,
+    ) {
+        todo!()
+    }
+
+    fn layout(&self, id: ShaderBindGroup) -> &wgpu::BindGroupLayout {
+        match id {
+            ShaderBindGroup::Camera => &self.layouts[0],
+            ShaderBindGroup::Light => &self.layouts[1],
+            ShaderBindGroup::Material => &self.layouts[2],
         }
     }
 }

@@ -7,6 +7,7 @@ use gobs_wgpu as render;
 
 use render::render::RenderError;
 use render::shader::Shader;
+use render::shader::ShaderBindGroup;
 use render::shader::ShaderType;
 use render::shader_data::InstanceData;
 use uuid::Uuid;
@@ -52,9 +53,10 @@ impl Scene {
         let solid_shader = SolidShader::new(&gfx).await;
         let phong_shader = PhongShader::new(&gfx).await;
 
-        let camera_resource = gfx.create_camera_resource(&phong_shader.layouts()[0]);
+        let camera_resource =
+            gfx.create_camera_resource(phong_shader.layout(ShaderBindGroup::Camera));
 
-        let light_resource = gfx.create_light_resource(&phong_shader.layouts()[1]);
+        let light_resource = gfx.create_light_resource(phong_shader.layout(ShaderBindGroup::Light));
 
         let models = Vec::new();
 
@@ -142,13 +144,16 @@ impl Scene {
         &mut self,
         gfx: &Gfx,
         name: &str,
-        shader: ShaderType,
+        shader_type: ShaderType,
         scale: f32,
     ) -> Result<Uuid> {
-        let model =
-            assets::load_model(name, gfx, shader, &self.phong_shader.layouts()[2], scale).await?;
+        let shader = match shader_type {
+            ShaderType::Phong => &self.phong_shader,
+            ShaderType::Solid => &self.solid_shader,
+        };
+        let model = assets::load_model(name, gfx, shader, scale).await?;
 
-        let id = self.add_model(model, shader);
+        let id = self.add_model(model, shader_type);
 
         Ok(id)
     }

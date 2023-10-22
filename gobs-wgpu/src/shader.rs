@@ -9,6 +9,12 @@ use crate::{
     shader_data::{InstanceFlag, VertexFlag},
 };
 
+pub enum ShaderBindGroup {
+    Camera,
+    Light,
+    Material,
+}
+
 #[derive(Copy, Clone)]
 pub enum ShaderType {
     Phong,
@@ -37,10 +43,17 @@ pub enum Shader {
 }
 
 impl Shader {
-    pub fn layouts(&self) -> &Vec<wgpu::BindGroupLayout> {
+    pub fn ty(&self) -> ShaderType {
         match self {
-            Shader::Phong(shader) => &shader.layouts,
-            Shader::Solid(shader) => &shader.layouts,
+            Shader::Phong(_) => ShaderType::Phong,
+            Shader::Solid(_) => ShaderType::Solid,
+        }
+    }
+
+    pub fn layout(&self, id: ShaderBindGroup) -> &wgpu::BindGroupLayout {
+        match self {
+            Shader::Phong(shader) => shader.layout(id),
+            Shader::Solid(shader) => shader.layout(id),
         }
     }
 }
@@ -56,8 +69,7 @@ where
         model: &'a Model,
         camera: &'a CameraResource,
         light: &'a LightResource,
-    ) {
-    }
+    );
 
     fn draw_instanced(
         &'a self,
@@ -67,6 +79,7 @@ where
         light: &'a LightResource,
         instance_buffer: &'a wgpu::Buffer,
         instances: usize,
-    ) {
-    }
+    );
+
+    fn layout(&self, id: ShaderBindGroup) -> &wgpu::BindGroupLayout;
 }

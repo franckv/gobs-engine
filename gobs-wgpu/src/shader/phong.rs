@@ -9,6 +9,7 @@ use crate::shader::ShaderDraw;
 use crate::shader_data::InstanceFlag;
 use crate::shader_data::VertexFlag;
 
+use super::ShaderBindGroup;
 use super::ShaderType;
 
 const SHADER: &str = "phong.wgsl";
@@ -75,6 +76,24 @@ where
             render_pass.set_index_buffer(mesh.index_buffer.slice(..), wgpu::IndexFormat::Uint32);
             render_pass.set_bind_group(2, &material.bind_group, &[]);
             render_pass.draw_indexed(0..mesh.num_elements as _, 0, 0..instances as _);
+        }
+    }
+
+    fn draw(
+        &'a self,
+        _render_pass: &mut wgpu::RenderPass<'b>,
+        _model: &'a Model,
+        _camera: &'a CameraResource,
+        _light: &'a LightResource,
+    ) {
+        todo!()
+    }
+
+    fn layout(&self, id: ShaderBindGroup) -> &wgpu::BindGroupLayout {
+        match id {
+            ShaderBindGroup::Camera => &self.layouts[0],
+            ShaderBindGroup::Light => &self.layouts[1],
+            ShaderBindGroup::Material => &self.layouts[2],
         }
     }
 }

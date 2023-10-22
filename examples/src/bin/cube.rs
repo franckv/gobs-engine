@@ -50,7 +50,7 @@ impl Run for App {
                     .await
                     .normal_texture("cube-normal.png", gfx)
                     .await
-                    .build(gfx, &scene.phong_shader.layouts()[2]),
+                    .build(gfx, &scene.phong_shader),
             )
             .build();
 

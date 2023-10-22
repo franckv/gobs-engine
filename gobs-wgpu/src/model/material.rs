@@ -1,4 +1,7 @@
-use crate::model::Texture;
+use crate::{
+    model::Texture,
+    shader::{Shader, ShaderBindGroup},
+};
 use log::*;
 use uuid::Uuid;
 
@@ -31,11 +34,11 @@ impl MaterialBuilder {
         self
     }
 
-    pub fn build(self, gfx: &Gfx, layout: &wgpu::BindGroupLayout) -> Material {
+    pub fn build(self, gfx: &Gfx, shader: &Shader) -> Material {
         Material::new(
             self.name,
             gfx,
-            layout,
+            shader.layout(ShaderBindGroup::Material),
             self.diffuse_texture.unwrap(),
             self.normal_texture.unwrap(),
         )
