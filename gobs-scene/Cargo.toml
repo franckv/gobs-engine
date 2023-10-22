@@ -10,16 +10,12 @@ path = "src/lib.rs"
 
 [dependencies]
 anyhow = { workspace = true }
-log = { workspace = true }
-cgmath = { workspace = true }
+bytemuck = { workspace = true }
 glam = { workspace = true }
+gobs-utils = { path = "../gobs-utils" }
+gobs-wgpu = { path = "../gobs-wgpu" }
 image = { workspace = true }
-unicode-normalization = { workspace = true }
-rusttype = { workspace = true }
+log = { workspace = true }
+tobj = { workspace = true }
 uuid = { workspace = true }
 wgpu = { workspace = true }
-bytemuck = { workspace = true }
-tobj = { workspace = true }
-
-gobs-wgpu = { path = "../gobs-wgpu" }
-gobs-utils = { path = "../gobs-utils" }

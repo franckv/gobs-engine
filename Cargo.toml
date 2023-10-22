@@ -1,11 +1,11 @@
 [workspace]
 members = [
-    "gobs-utils",
-    "gobs-scene",
-    "gobs-game",
-    "gobs-wgpu",
     "examples"
-]
+,
+    "gobs-game",
+    "gobs-scene",
+    "gobs-utils",
+    "gobs-wgpu"]
 resolver = "2"
 
 [workspace.package]
@@ -13,24 +13,20 @@ authors = ["franckv <franck.vdl@gmail.com>"]
 edition = "2021"
 
 [workspace.dependencies]
-log = "0.4"
-simplelog = "0.12"
-image = "0.24"
-winit = "0.28"
-time = "0.3"
-uuid = { version = "1.3", features = ["v4"] }
-cgmath = "0.18"
-glam = "0.24"
-ash = { version = "0.37", features = ["linked", "debug"] }
-ash-window = "0.12"
-raw-window-handle = "0.5"
-rusttype = "0.9"
-unicode-normalization = "0.1"
-wgpu = "0.17"
-pollster = "0.3"
-bytemuck = { version="1.13", features = ["derive"] }
 anyhow = "1.0"
-tobj = { version = "4.0.0", features = ["async"] }
-naga = { version = "0.13" }
-itertools = { version = "0.11" }
 bitflags = "2.4.1"
+bytemuck = { version = "1.13", features = ["derive"] }
+glam = "0.24"
+image = "0.24"
+itertools = { version = "0.11" }
+log = "0.4"
+naga = { version = "0.13" }
+pollster = "0.3"
+rusttype = "0.9"
+simplelog = "0.12"
+time = "0.3"
+tobj = { version = "4.0.0", features = ["async"] }
+unicode-normalization = "0.1"
+uuid = { version = "1.3", features = ["v4"] }
+winit = "0.28"
+wgpu = "0.17"

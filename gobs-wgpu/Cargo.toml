@@ -5,18 +5,16 @@ authors = { workspace = true }
 edition = { workspace = true }
 
 [dependencies]
-winit = { workspace = true }
-wgpu = { workspace = true }
-log = { workspace = true }
-simplelog = { workspace = true }
-pollster = { workspace = true }
-bytemuck = { workspace = true }
-image = { workspace = true }
 anyhow = { workspace = true }
-glam = { workspace = true }
-naga = { workspace = true }
-itertools = { workspace = true }
-uuid = { workspace = true }
 bitflags = { workspace = true }
+bytemuck = { workspace = true }
+glam = { workspace = true }
 
 gobs-utils = { path = "../gobs-utils" }
+image = { workspace = true }
+itertools = { workspace = true }
+log = { workspace = true }
+naga = { workspace = true }
+uuid = { workspace = true }
+wgpu = { workspace = true }
+winit = { workspace = true }
