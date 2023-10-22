@@ -16,6 +16,7 @@ pub struct MeshBuilder {
     flags: VertexFlag,
 }
 
+#[allow(non_snake_case)]
 impl MeshBuilder {
     pub fn new(name: &str, flags: VertexFlag) -> Self {
         MeshBuilder {
@@ -29,6 +30,8 @@ impl MeshBuilder {
     }
 
     pub fn add_vertex_P(mut self, position: Vec3) -> Self {
+        assert!(self.flags == VertexFlag::POSITION);
+
         let vertex = VertexData::VertexP(VertexP {
             position: position.into(),
         });
@@ -39,6 +42,8 @@ impl MeshBuilder {
     }
 
     pub fn add_vertex_PTN(mut self, position: Vec3, texture: Vec2, normal: Vec3) -> Self {
+        assert!(self.flags == VertexFlag::PTN);
+        
         let vertex = VertexData::VertexPTN(VertexPTN {
             position: position.into(),
             tex_coords: texture.into(),
@@ -174,6 +179,7 @@ impl MeshBuilder {
         );
 
         Mesh {
+            id: self.id,
             name: self.name,
             vertex_buffer,
             index_buffer,
@@ -184,6 +190,7 @@ impl MeshBuilder {
 }
 
 pub struct Mesh {
+    pub id: Uuid,
     pub name: String,
     pub vertex_buffer: wgpu::Buffer,
     pub index_buffer: wgpu::Buffer,
