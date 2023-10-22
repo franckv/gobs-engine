@@ -1,5 +1,5 @@
 use examples::CameraController;
-use glam::Quat;
+use glam::{Quat, Vec3};
 use gobs_game as game;
 use gobs_scene as scene;
 
@@ -57,8 +57,18 @@ impl Run for App {
     }
 
     fn update(&mut self, delta: f32, gfx: &mut Gfx) {
+        let angular_speed = 40.;
+
         self.camera_controller
             .update_camera(&mut self.scene.camera, delta);
+
+        let old_position: Vec3 = self.scene.light.position;
+        let position: Vec3 =
+            (Quat::from_axis_angle((0.0, 1.0, 0.0).into(), (angular_speed * delta).to_radians())
+                * old_position)
+                .into();
+
+        self.scene.light.update(position);
 
         self.scene.update(gfx);
     }

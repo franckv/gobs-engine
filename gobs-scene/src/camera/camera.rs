@@ -1,3 +1,5 @@
+use core::fmt;
+
 use glam::{Mat4, Vec3};
 
 #[derive(Debug)]
@@ -72,5 +74,17 @@ impl Camera {
         let dir = Vec3::new(cos_pitch * cos_yaw, sin_pitch, cos_pitch * sin_yaw).normalize();
 
         Mat4::look_to_rh(position, dir, Vec3::Y)
+    }
+}
+
+impl fmt::Display for Camera {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(
+            f,
+            "Position={} Yaw={}° Pitch={}°",
+            self.position,
+            self.yaw.to_degrees(),
+            self.pitch.to_degrees()
+        )
     }
 }

@@ -1,5 +1,5 @@
 use examples::CameraController;
-use glam::Quat;
+use glam::{Quat, Vec3};
 use gobs_game as game;
 use gobs_scene as scene;
 
@@ -31,15 +31,15 @@ impl Run for App {
                 0.1,
                 150.0,
             ),
-            (-50. as f32).to_radians(),
-            (-33. as f32).to_radians(),
+            (-45. as f32).to_radians(),
+            (-34. as f32).to_radians(),
         );
 
         let light = Light::new((0., 0., 10.), (1., 1., 0.9));
 
         let mut scene = Scene::new(gfx, camera, light).await;
 
-        let triangle = ModelBuilder::new()
+        let cube = ModelBuilder::new()
             .add_mesh(
                 scene::shape::Shapes::cube(gfx, ShaderType::Phong.vertex_flags()),
                 0,
@@ -54,7 +54,7 @@ impl Run for App {
             )
             .build();
 
-        let id = scene.add_model(triangle, ShaderType::Phong);
+        let id = scene.add_model(cube, ShaderType::Phong);
 
         scene.add_node([0., 0., 0.].into(), Quat::IDENTITY, id);
 
@@ -67,8 +67,18 @@ impl Run for App {
     }
 
     fn update(&mut self, delta: f32, gfx: &mut Gfx) {
+        let angular_speed = 40.;
+
         self.camera_controller
             .update_camera(&mut self.scene.camera, delta);
+
+        let old_position: Vec3 = self.scene.light.position;
+        let position: Vec3 =
+            (Quat::from_axis_angle((0.0, 1.0, 0.0).into(), (angular_speed * delta).to_radians())
+                * old_position)
+                .into();
+
+        self.scene.light.update(position);
 
         self.scene.update(gfx);
     }
