@@ -1,7 +1,10 @@
 use anyhow::*;
 use image::GenericImageView;
 
+use gobs_utils as utils;
+
 use crate::render::Gfx;
+use utils::load::{self, AssetType};
 
 pub struct Texture {
     pub texture: wgpu::Texture,
@@ -11,6 +14,11 @@ pub struct Texture {
 
 impl Texture {
     pub const DEPTH_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Depth32Float;
+
+    pub async fn load_texture(file_name: &str, is_normal_map: bool, gfx: &Gfx) -> Result<Texture> {
+        let data = load::load_binary(file_name, AssetType::IMAGE).await?;
+        Texture::from_bytes(gfx, &data, file_name, is_normal_map)
+    }
 
     pub fn create_depth_texture(gfx: &Gfx, label: &str) -> Self {
         let size = wgpu::Extent3d {

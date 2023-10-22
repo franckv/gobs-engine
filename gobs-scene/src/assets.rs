@@ -14,11 +14,6 @@ use utils::load::{self, AssetType};
 
 use crate::Gfx;
 
-pub async fn load_texture(file_name: &str, is_normal_map: bool, gfx: &Gfx) -> Result<Texture> {
-    let data = load::load_binary(file_name, AssetType::IMAGE).await?;
-    Texture::from_bytes(gfx, &data, file_name, is_normal_map)
-}
-
 pub async fn load_model(
     file_name: &str,
     gfx: &Gfx,
@@ -113,17 +108,17 @@ async fn load_material(
 
         let diffuse_texture = {
             if let Some(texture_name) = &m.diffuse_texture {
-                load_texture(texture_name, false, gfx).await?
+                Texture::load_texture(texture_name, false, gfx).await?
             } else {
-                load_texture("cube-diffuse.jpg", false, gfx).await?
+                Texture::load_texture("cube-diffuse.jpg", false, gfx).await?
             }
         };
 
         let normal_texture = {
             if let Some(texture_name) = &m.normal_texture {
-                load_texture(texture_name, true, gfx).await?
+                Texture::load_texture(texture_name, true, gfx).await?
             } else {
-                load_texture("cube-normal.png", true, gfx).await?
+                Texture::load_texture("cube-normal.png", true, gfx).await?
             }
         };
 
