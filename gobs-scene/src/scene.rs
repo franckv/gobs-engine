@@ -123,6 +123,21 @@ impl Scene {
         self.nodes.push(node);
     }
 
+    pub fn add_model(&mut self, model: Model, shader: ShaderType) -> Uuid {
+        let id = model.id;
+
+        let model_instance = ModelInstance {
+            model,
+            shader,
+            instance_buffer: None,
+            instance_count: 0,
+        };
+        
+        self.models.push(model_instance);
+
+        id
+    }
+
     pub async fn load_model(
         &mut self,
         gfx: &Gfx,
@@ -132,16 +147,8 @@ impl Scene {
     ) -> Result<Uuid> {
         let model =
             assets::load_model(name, gfx, shader, &self.phong_shader.layouts()[2], scale).await?;
-        let id = model.id;
 
-        let model_instance = ModelInstance {
-            model,
-            shader,
-            instance_buffer: None,
-            instance_count: 0,
-        };
-
-        self.models.push(model_instance);
+        let id = self.add_model(model, shader);
 
         Ok(id)
     }

@@ -3,9 +3,11 @@ pub mod camera;
 pub mod light;
 pub mod node;
 pub mod scene;
+pub mod shape;
 
 use gobs_wgpu as render;
 
+pub use render::model::{Mesh, MeshBuilder, Model, ModelBuilder};
 pub use render::render::Gfx;
 pub use render::render::RenderError;
 pub use render::shader::ShaderType;

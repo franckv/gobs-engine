@@ -6,7 +6,7 @@ pub use solid::SolidShader;
 
 use crate::{
     model::{CameraResource, LightResource, Model},
-    shader_data::InstanceFlag,
+    shader_data::{InstanceFlag, VertexFlag},
 };
 
 #[derive(Copy, Clone)]
@@ -20,6 +20,13 @@ impl ShaderType {
         match self {
             ShaderType::Phong => InstanceFlag::MN,
             ShaderType::Solid => InstanceFlag::MODEL,
+        }
+    }
+
+    pub fn vertex_flags(&self) -> VertexFlag {
+        match self {
+            ShaderType::Phong => VertexFlag::PTN,
+            ShaderType::Solid => VertexFlag::POSITION,
         }
     }
 }
