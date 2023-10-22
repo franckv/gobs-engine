@@ -9,4 +9,6 @@ name = "gobs_utils"
 path = "src/lib.rs"
 
 [dependencies]
+log = { workspace = true }
 time = { workspace = true }
+anyhow = { workspace = true }

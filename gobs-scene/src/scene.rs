@@ -4,12 +4,14 @@ use glam::Vec3;
 use log::*;
 
 use gobs_wgpu as render;
+
 use render::render::RenderError;
 use render::shader::Shader;
 use render::shader::ShaderType;
 use render::shader_data::InstanceData;
 use uuid::Uuid;
 
+use crate::assets;
 use crate::camera::Camera;
 use crate::light::Light;
 use crate::node::Node;
@@ -18,7 +20,6 @@ use render::model::LightResource;
 use render::model::{Model, Texture};
 use render::render::Batch;
 use render::render::Gfx;
-use render::resource;
 use render::shader::{PhongShader, SolidShader};
 
 struct ModelInstance {
@@ -130,7 +131,7 @@ impl Scene {
         scale: f32,
     ) -> Result<Uuid> {
         let model =
-            resource::load_model(name, gfx, shader, &self.phong_shader.layouts()[2], scale).await?;
+            assets::load_model(name, gfx, shader, &self.phong_shader.layouts()[2], scale).await?;
         let id = model.id;
 
         let model_instance = ModelInstance {

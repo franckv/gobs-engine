@@ -19,5 +19,7 @@ rusttype = { workspace = true }
 uuid = { workspace = true }
 wgpu = { workspace = true }
 bytemuck = { workspace = true }
+tobj = { workspace = true }
 
 gobs-wgpu = { path = "../gobs-wgpu" }
+gobs-utils = { path = "../gobs-utils" }

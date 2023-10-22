@@ -5,10 +5,12 @@ use log::*;
 use naga::front::wgsl::Frontend;
 use naga::{Binding, GlobalVariable, Handle, Module, Type, TypeInner};
 
+use gobs_utils as utils;
+
 use crate::render::Gfx;
-use crate::resource::{self, AssetType};
 use crate::shader_data::{InstanceData, InstanceFlag};
 use crate::shader_data::{VertexData, VertexFlag};
+use utils::load::{self, AssetType};
 
 pub struct Generator {
     module: Module,
@@ -16,7 +18,7 @@ pub struct Generator {
 
 impl Generator {
     pub async fn new(shader_path: &str) -> Self {
-        let shader = resource::load_string(shader_path, AssetType::SHADER)
+        let shader = load::load_string(shader_path, AssetType::SHADER)
             .await
             .unwrap();
 
