@@ -50,7 +50,7 @@ impl Run for App {
 
         scene.add_node([0., 0., 0.].into(), Quat::IDENTITY, id);
 
-        let camera_controller = CameraController::new(4.0, 0.4);
+        let camera_controller = CameraController::new(3.0, 0.4);
 
         App {
             camera_controller,

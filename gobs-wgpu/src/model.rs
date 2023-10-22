@@ -7,7 +7,7 @@ mod texture;
 
 pub use camera::CameraResource;
 pub use light::LightResource;
-pub use material::Material;
+pub use material::{Material, MaterialBuilder};
 pub use mesh::{Mesh, MeshBuilder};
 pub use model::{Model, ModelBuilder};
 pub use texture::Texture;

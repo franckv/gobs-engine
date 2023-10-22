@@ -70,7 +70,7 @@ impl Run for App {
             light_model,
         );
 
-        let camera_controller = CameraController::new(4.0, 0.4);
+        let camera_controller = CameraController::new(3.0, 0.4);
 
         App {
             camera_controller,

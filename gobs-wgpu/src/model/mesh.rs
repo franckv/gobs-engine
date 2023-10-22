@@ -8,7 +8,6 @@ use crate::render::Gfx;
 use crate::shader_data::{VertexData, VertexFlag, VertexP, VertexPTN};
 
 pub struct MeshBuilder {
-    id: Uuid,
     name: String,
     vertices: Vec<VertexData>,
     indices: Vec<u32>,
@@ -20,7 +19,6 @@ pub struct MeshBuilder {
 impl MeshBuilder {
     pub fn new(name: &str, flags: VertexFlag) -> Self {
         MeshBuilder {
-            id: Uuid::new_v4(),
             name: name.to_string(),
             vertices: Vec::new(),
             indices: Vec::new(),
@@ -179,7 +177,7 @@ impl MeshBuilder {
         );
 
         Mesh {
-            id: self.id,
+            id: Uuid::new_v4(),
             name: self.name,
             vertex_buffer,
             index_buffer,

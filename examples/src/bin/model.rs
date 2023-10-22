@@ -7,13 +7,15 @@ use game::{
     app::{Application, Run},
     input::Input,
 };
+use scene::light::Light;
+use scene::scene::Scene;
 use scene::Gfx;
 use scene::{
     camera::{Camera, CameraProjection},
     RenderError, ShaderType,
 };
-use scene::{light::Light, ModelBuilder};
-use scene::{scene::Scene, MaterialBuilder};
+
+const CUBE: &str = "cube.obj";
 
 struct App {
     camera_controller: CameraController,
@@ -23,7 +25,7 @@ struct App {
 impl Run for App {
     async fn create(gfx: &mut Gfx) -> Self {
         let camera = Camera::new(
-            (-2., 2., 2.),
+            (-2., 2., 5.0),
             CameraProjection::new(
                 gfx.width(),
                 gfx.height(),
@@ -31,32 +33,20 @@ impl Run for App {
                 0.1,
                 150.0,
             ),
-            (-50. as f32).to_radians(),
-            (-33. as f32).to_radians(),
+            (-65. as f32).to_radians(),
+            (-20. as f32).to_radians(),
         );
 
-        let light = Light::new((0., 0., 10.), (1., 1., 0.9));
+        let light = Light::new((8.0, 2.0, 8.0), (1., 1., 0.9));
 
         let mut scene = Scene::new(gfx, camera, light).await;
 
-        let triangle = ModelBuilder::new()
-            .add_mesh(
-                scene::shape::Shapes::cube(gfx, ShaderType::Phong.vertex_flags()),
-                0,
-            )
-            .add_material(
-                MaterialBuilder::new("diffuse")
-                    .diffuse_texture("cube-diffuse.jpg", gfx)
-                    .await
-                    .normal_texture("cube-normal.png", gfx)
-                    .await
-                    .build(gfx, &scene.phong_shader.layouts()[2]),
-            )
-            .build();
+        let cube = scene
+            .load_model(gfx, CUBE, ShaderType::Phong, 1.0)
+            .await
+            .unwrap();
 
-        let id = scene.add_model(triangle, ShaderType::Phong);
-
-        scene.add_node([0., 0., 0.].into(), Quat::IDENTITY, id);
+        scene.add_node([0., 0., 0.].into(), Quat::IDENTITY, cube);
 
         let camera_controller = CameraController::new(3.0, 0.4);
 

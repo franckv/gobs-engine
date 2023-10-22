@@ -1,9 +1,49 @@
 use crate::model::Texture;
 use log::*;
+use uuid::Uuid;
 
 use crate::render::Gfx;
 
+pub struct MaterialBuilder {
+    name: String,
+    diffuse_texture: Option<Texture>,
+    normal_texture: Option<Texture>,
+}
+
+impl MaterialBuilder {
+    pub fn new(name: &str) -> Self {
+        MaterialBuilder {
+            name: name.to_string(),
+            diffuse_texture: None,
+            normal_texture: None,
+        }
+    }
+
+    pub async fn diffuse_texture(mut self, file: &str, gfx: &Gfx) -> Self {
+        self.diffuse_texture = Some(Texture::load_texture(file, false, gfx).await.unwrap());
+
+        self
+    }
+
+    pub async fn normal_texture(mut self, file: &str, gfx: &Gfx) -> Self {
+        self.normal_texture = Some(Texture::load_texture(file, true, gfx).await.unwrap());
+
+        self
+    }
+
+    pub fn build(self, gfx: &Gfx, layout: &wgpu::BindGroupLayout) -> Material {
+        Material::new(
+            self.name,
+            gfx,
+            layout,
+            self.diffuse_texture.unwrap(),
+            self.normal_texture.unwrap(),
+        )
+    }
+}
+
 pub struct Material {
+    pub id: Uuid,
     pub name: String,
     pub diffuse_texture: Texture,
     pub normal_texture: Texture,
@@ -43,6 +83,7 @@ impl Material {
         });
 
         Material {
+            id: Uuid::new_v4(),
             name,
             diffuse_texture,
             normal_texture,
