@@ -25,14 +25,9 @@ fn main() {
         }
     }
 
-    debug!("=> target = {:?}", target);
-    debug!("=> project = {:?}", project_dir);
-
     for dir in ["shaders", "assets"] {
         let src_path = PathBuf::from(&project_dir).join(dir);
         let dst_path = PathBuf::from(&target).join(dir);
-
-        debug!("Copy {:?} to {:?}", src_path, dst_path);
 
         let _ = fs::create_dir_all(&dst_path);
 
