@@ -129,7 +129,8 @@ impl Scene {
         shader: ShaderType,
         scale: f32,
     ) -> Result<Uuid> {
-        let model = resource::load_model(name, gfx, &self.phong_shader.layouts()[2], scale).await?;
+        let model =
+            resource::load_model(name, gfx, shader, &self.phong_shader.layouts()[2], scale).await?;
         let id = model.id;
 
         let model_instance = ModelInstance {

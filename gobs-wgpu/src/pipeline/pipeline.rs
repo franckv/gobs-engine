@@ -1,4 +1,4 @@
-use crate::resource;
+use crate::resource::{self, AssetType};
 
 pub struct Pipeline {
     pub pipeline: wgpu::RenderPipeline,
@@ -26,7 +26,9 @@ impl<'a> PipelineBuilder<'a> {
     }
 
     pub async fn shader(mut self, shader_path: &'a str) -> PipelineBuilder<'a> {
-        let shader_txt = resource::load_string(shader_path).await.unwrap();
+        let shader_txt = resource::load_string(shader_path, AssetType::SHADER)
+            .await
+            .unwrap();
 
         let shader = wgpu::ShaderModuleDescriptor {
             label: Some(shader_path),

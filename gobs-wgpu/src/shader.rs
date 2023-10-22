@@ -9,6 +9,7 @@ use crate::{
     shader_data::InstanceFlag,
 };
 
+#[derive(Copy, Clone)]
 pub enum ShaderType {
     Phong,
     Solid,

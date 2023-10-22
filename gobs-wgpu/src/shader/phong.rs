@@ -7,10 +7,14 @@ use crate::render::Gfx;
 use crate::shader::Shader;
 use crate::shader::ShaderDraw;
 use crate::shader_data::InstanceFlag;
+use crate::shader_data::VertexFlag;
 
-const SHADER: &str = "../shaders/phong.wgsl";
+use super::ShaderType;
+
+const SHADER: &str = "phong.wgsl";
 
 pub struct PhongShader {
+    pub ty: ShaderType,
     pub pipeline: Pipeline,
     pub layouts: Vec<wgpu::BindGroupLayout>,
 }
@@ -19,12 +23,16 @@ impl PhongShader {
     pub async fn new(gfx: &Gfx) -> Shader {
         let generator = Generator::new(SHADER).await;
         let layouts = generator.bind_layouts(gfx);
+        let instance_flags = InstanceFlag::MN;
+        let vertex_flags = VertexFlag::PTN;
 
         let vertex_attributes = generator.vertex_layout_attributes("VertexInput");
-        let vertex_layout = generator.vertex_layout(&vertex_attributes, false, InstanceFlag::MN);
+        let vertex_layout =
+            generator.vertex_layout(&vertex_attributes, false, instance_flags, vertex_flags);
 
         let instance_attributes = generator.vertex_layout_attributes("InstanceInput");
-        let instance_layout = generator.vertex_layout(&instance_attributes, true, InstanceFlag::MN);
+        let instance_layout =
+            generator.vertex_layout(&instance_attributes, true, instance_flags, vertex_flags);
 
         let pipeline = PipelineBuilder::new(gfx.device(), "Model pipeline")
             .shader(SHADER)
@@ -36,7 +44,11 @@ impl PhongShader {
             .depth_format(Texture::DEPTH_FORMAT)
             .build();
 
-        Shader::Phong(PhongShader { pipeline, layouts })
+        Shader::Phong(PhongShader {
+            ty: ShaderType::Phong,
+            pipeline,
+            layouts,
+        })
     }
 }
 

@@ -1,7 +1,7 @@
 use glam::{Vec2, Vec3};
 
 use crate::render::Gfx;
-use crate::shader_data::ModelVertex;
+use crate::shader_data::VertexData;
 
 pub struct Mesh {
     pub name: String,
@@ -15,7 +15,7 @@ impl Mesh {
     pub fn new(
         gfx: &Gfx,
         name: &str,
-        vertices: &mut Vec<ModelVertex>,
+        vertices: &mut Vec<VertexData>,
         indices: &Vec<u32>,
         material: usize,
         calc_tangent: bool,
@@ -36,7 +36,7 @@ impl Mesh {
         }
     }
 
-    fn calc_tangent(vertices: &mut Vec<ModelVertex>, indices: &Vec<u32>) {
+    fn calc_tangent(vertices: &mut Vec<VertexData>, indices: &Vec<u32>) {
         let mut triangles_included = vec![0; vertices.len()];
 
         for c in indices.chunks(3) {
@@ -44,13 +44,13 @@ impl Mesh {
             let v1 = vertices[c[1] as usize];
             let v2 = vertices[c[2] as usize];
 
-            let pos0: Vec3 = v0.position.into();
-            let pos1: Vec3 = v1.position.into();
-            let pos2: Vec3 = v2.position.into();
+            let pos0: Vec3 = v0.position();
+            let pos1: Vec3 = v1.position();
+            let pos2: Vec3 = v2.position();
 
-            let uv0: Vec2 = v0.tex_coords.into();
-            let uv1: Vec2 = v1.tex_coords.into();
-            let uv2: Vec2 = v2.tex_coords.into();
+            let uv0: Vec2 = v0.tex_coords();
+            let uv1: Vec2 = v1.tex_coords();
+            let uv2: Vec2 = v2.tex_coords();
 
             let delta_pos1 = pos1 - pos0;
             let delta_pos2 = pos2 - pos0;
@@ -61,12 +61,12 @@ impl Mesh {
             let tangent = (delta_pos1 * delta_uv2.y - delta_pos2 * delta_uv1.y) * r;
             let bitangent = (delta_pos2 * delta_uv1.x - delta_pos1 * delta_uv2.x) * -r;
 
-            vertices[c[0] as usize].tangent = (tangent + Vec3::from(v0.tangent)).into();
-            vertices[c[1] as usize].tangent = (tangent + Vec3::from(v1.tangent)).into();
-            vertices[c[2] as usize].tangent = (tangent + Vec3::from(v2.tangent)).into();
-            vertices[c[0] as usize].bitangent = (bitangent + Vec3::from(v0.bitangent)).into();
-            vertices[c[1] as usize].bitangent = (bitangent + Vec3::from(v1.bitangent)).into();
-            vertices[c[2] as usize].bitangent = (bitangent + Vec3::from(v2.bitangent)).into();
+            vertices[c[0] as usize].set_tangent(tangent + Vec3::from(v0.tangent()));
+            vertices[c[1] as usize].set_tangent(tangent + Vec3::from(v1.tangent()));
+            vertices[c[2] as usize].set_tangent(tangent + Vec3::from(v2.tangent()));
+            vertices[c[0] as usize].set_bitangent(bitangent + Vec3::from(v0.bitangent()));
+            vertices[c[1] as usize].set_bitangent(bitangent + Vec3::from(v1.bitangent()));
+            vertices[c[2] as usize].set_bitangent(bitangent + Vec3::from(v2.bitangent()));
 
             triangles_included[c[0] as usize] += 1;
             triangles_included[c[1] as usize] += 1;
@@ -76,8 +76,8 @@ impl Mesh {
         for (i, n) in triangles_included.into_iter().enumerate() {
             let denom = 1.0 / n as f32;
             let v = &mut vertices[i];
-            v.tangent = (Vec3::from(v.tangent) * denom).into();
-            v.bitangent = (Vec3::from(v.bitangent) * denom).into();
+            v.set_tangent(Vec3::from(v.tangent()) * denom);
+            v.set_bitangent(Vec3::from(v.bitangent()) * denom);
         }
     }
 }

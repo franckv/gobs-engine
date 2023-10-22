@@ -5,7 +5,7 @@ use crate::model::CameraResource;
 use crate::model::LightResource;
 use crate::render::Display;
 use crate::shader_data::InstanceData;
-use crate::shader_data::ModelVertex;
+use crate::shader_data::VertexData;
 
 #[derive(Debug)]
 pub enum RenderError {
@@ -120,11 +120,18 @@ impl Gfx {
         self.device.create_bind_group_layout(layout)
     }
 
-    pub fn create_vertex_buffer(&self, vertices: &Vec<ModelVertex>) -> wgpu::Buffer {
+    pub fn create_vertex_buffer(&self, vertex_data: &Vec<VertexData>) -> wgpu::Buffer {
+        let bytes = vertex_data
+            .iter()
+            .map(|v| v.raw())
+            .flat_map(|s| s.iter())
+            .copied()
+            .collect::<Vec<u8>>();
+
         self.device
             .create_buffer_init(&wgpu::util::BufferInitDescriptor {
                 label: Some("Vertex Buffer"),
-                contents: bytemuck::cast_slice(vertices),
+                contents: bytes.as_slice(),
                 usage: wgpu::BufferUsages::VERTEX,
             })
     }
@@ -165,6 +172,7 @@ impl Gfx {
             .flat_map(|s| s.iter())
             .copied()
             .collect::<Vec<u8>>();
+
         self.queue
             .write_buffer(instance_buffer, 0, bytes.as_slice())
     }

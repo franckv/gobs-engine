@@ -6,9 +6,9 @@ use naga::front::wgsl::Frontend;
 use naga::{Binding, GlobalVariable, Handle, Module, Type, TypeInner};
 
 use crate::render::Gfx;
-use crate::resource;
-use crate::shader_data::ModelVertex;
+use crate::resource::{self, AssetType};
 use crate::shader_data::{InstanceData, InstanceFlag};
+use crate::shader_data::{VertexData, VertexFlag};
 
 pub struct Generator {
     module: Module,
@@ -16,7 +16,9 @@ pub struct Generator {
 
 impl Generator {
     pub async fn new(shader_path: &str) -> Self {
-        let shader = resource::load_string(shader_path).await.unwrap();
+        let shader = resource::load_string(shader_path, AssetType::SHADER)
+            .await
+            .unwrap();
 
         let mut front = Frontend::new();
         let module = front.parse(&shader).unwrap();
@@ -93,13 +95,14 @@ impl Generator {
         &'a self,
         attributes: &'a Vec<wgpu::VertexAttribute>,
         instance: bool,
-        flags: InstanceFlag,
+        instance_flags: InstanceFlag,
+        vertex_flags: VertexFlag,
     ) -> wgpu::VertexBufferLayout<'a> {
         wgpu::VertexBufferLayout {
             array_stride: if instance {
-                InstanceData::size(flags) as wgpu::BufferAddress
+                InstanceData::size(instance_flags) as wgpu::BufferAddress
             } else {
-                std::mem::size_of::<ModelVertex>() as wgpu::BufferAddress
+                VertexData::size(vertex_flags) as wgpu::BufferAddress
             },
             step_mode: if instance {
                 wgpu::VertexStepMode::Instance

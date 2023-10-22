@@ -6,11 +6,14 @@ use crate::render::Gfx;
 
 use crate::shader::Shader;
 use crate::shader::ShaderDraw;
+use crate::shader::ShaderType;
 use crate::shader_data::InstanceFlag;
+use crate::shader_data::VertexFlag;
 
-const SHADER: &str = "../shaders/solid.wgsl";
+const SHADER: &str = "solid.wgsl";
 
 pub struct SolidShader {
+    pub ty: ShaderType,
     pub pipeline: Pipeline,
     pub layouts: Vec<wgpu::BindGroupLayout>,
 }
@@ -19,13 +22,16 @@ impl SolidShader {
     pub async fn new(gfx: &Gfx) -> Shader {
         let generator = Generator::new(SHADER).await;
         let layouts = generator.bind_layouts(gfx);
+        let instance_flags = InstanceFlag::MODEL;
+        let vertex_flags = VertexFlag::POSITION;
 
         let vertex_attributes = generator.vertex_layout_attributes("VertexInput");
-        let vertex_layout = generator.vertex_layout(&vertex_attributes, false, InstanceFlag::MODEL);
+        let vertex_layout =
+            generator.vertex_layout(&vertex_attributes, false, instance_flags, vertex_flags);
 
         let instance_attributes = generator.vertex_layout_attributes("InstanceInput");
         let instance_layout =
-            generator.vertex_layout(&instance_attributes, true, InstanceFlag::MODEL);
+            generator.vertex_layout(&instance_attributes, true, instance_flags, vertex_flags);
 
         let pipeline = PipelineBuilder::new(gfx.device(), "Light pipeline")
             .shader(SHADER)
@@ -37,7 +43,11 @@ impl SolidShader {
             .depth_format(Texture::DEPTH_FORMAT)
             .build();
 
-        Shader::Solid(SolidShader { pipeline, layouts })
+        Shader::Solid(SolidShader {
+            ty: ShaderType::Solid,
+            pipeline,
+            layouts,
+        })
     }
 }
 
