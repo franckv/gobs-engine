@@ -7,9 +7,9 @@ use uuid::Uuid;
 use gobs_utils as utils;
 use gobs_wgpu as render;
 
-use render::model::{Material, Mesh, Model, Texture};
+use render::model::{Material, Mesh, MeshBuilder, Model, Texture};
 use render::shader::ShaderType;
-use render::shader_data::{VertexData, VertexP, VertexPTN};
+use render::shader_data::VertexFlag;
 use utils::load::{self, AssetType};
 
 use crate::Gfx;
@@ -46,7 +46,7 @@ pub async fn load_model(
 
     let materials = load_material(gfx, file_name, obj_materials?, layout).await?;
 
-    let meshes = load_mesh(gfx, file_name, shader_type, models).await;
+    let meshes = load_mesh(gfx, shader_type, models).await;
 
     info!(
         "{}: {} meshes / {} materials loaded",
@@ -63,58 +63,37 @@ pub async fn load_model(
     })
 }
 
-async fn load_mesh(
-    gfx: &Gfx,
-    name: &str,
-    shader_type: ShaderType,
-    models: Vec<tobj::Model>,
-) -> Vec<Mesh> {
+async fn load_mesh(gfx: &Gfx, shader_type: ShaderType, models: Vec<tobj::Model>) -> Vec<Mesh> {
     models
         .into_iter()
         .map(|m| {
-            let mut vertices = (0..m.mesh.positions.len() / 3)
-                .map(|i| match shader_type {
-                    ShaderType::Phong => VertexData::VertexPTN(VertexPTN {
-                        position: [
-                            m.mesh.positions[i * 3],
-                            m.mesh.positions[i * 3 + 1],
-                            m.mesh.positions[i * 3 + 2],
-                        ],
-                        tex_coords: [m.mesh.texcoords[i * 2], m.mesh.texcoords[i * 2 + 1]],
-                        normal: [
-                            m.mesh.normals[i * 3],
-                            m.mesh.normals[i * 3 + 1],
-                            m.mesh.normals[i * 3 + 2],
-                        ],
-                        tangent: [0.0; 3],
-                        bitangent: [0.0; 3],
-                    }),
-                    ShaderType::Solid => VertexData::VertexP(VertexP {
-                        position: [
-                            m.mesh.positions[i * 3],
-                            m.mesh.positions[i * 3 + 1],
-                            m.mesh.positions[i * 3 + 2],
-                        ],
-                    }),
-                })
-                .collect::<Vec<_>>();
+            let flags = match shader_type {
+                ShaderType::Phong => VertexFlag::PTN,
+                ShaderType::Solid => VertexFlag::POSITION,
+            };
 
-            info!(
-                "{}: Load mesh {} ({} vertices / {} indices)",
-                name,
-                m.name,
-                vertices.len(),
-                m.mesh.indices.len()
-            );
+            let mut mesh = MeshBuilder::new(&m.name, flags);
 
-            Mesh::new(
-                gfx,
-                name,
-                &mut vertices,
-                &m.mesh.indices,
-                m.mesh.material_id.unwrap_or(0),
-                true,
-            )
+            for i in 0..m.mesh.positions.len() / 3 {
+                let position = [
+                    m.mesh.positions[i * 3],
+                    m.mesh.positions[i * 3 + 1],
+                    m.mesh.positions[i * 3 + 2],
+                ];
+                let texture = [m.mesh.texcoords[i * 2], m.mesh.texcoords[i * 2 + 1]];
+                let normal = [
+                    m.mesh.normals[i * 3],
+                    m.mesh.normals[i * 3 + 1],
+                    m.mesh.normals[i * 3 + 2],
+                ];
+                match shader_type {
+                    ShaderType::Phong => {
+                        mesh = mesh.add_vertex_PTN(position.into(), texture.into(), normal.into())
+                    }
+                    ShaderType::Solid => mesh = mesh.add_vertex_P(position.into()),
+                }
+            }
+            mesh.material(m.mesh.material_id.unwrap_or(0)).add_indices(&m.mesh.indices).build(gfx)
         })
         .collect::<Vec<_>>()
 }

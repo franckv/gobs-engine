@@ -8,6 +8,6 @@ mod texture;
 pub use camera::CameraResource;
 pub use light::LightResource;
 pub use material::Material;
-pub use mesh::Mesh;
+pub use mesh::{Mesh, MeshBuilder};
 pub use model::Model;
 pub use texture::Texture;

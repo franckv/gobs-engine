@@ -71,7 +71,7 @@ where
         for mesh in &model.meshes {
             render_pass.set_vertex_buffer(0, mesh.vertex_buffer.slice(..));
             render_pass.set_index_buffer(mesh.index_buffer.slice(..), wgpu::IndexFormat::Uint32);
-            render_pass.draw_indexed(0..mesh.num_elements, 0, 0..instances as _);
+            render_pass.draw_indexed(0..mesh.num_elements as _, 0, 0..instances as _);
         }
     }
 }
