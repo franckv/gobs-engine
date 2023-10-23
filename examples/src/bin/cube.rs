@@ -35,21 +35,20 @@ impl Run for App {
             (-34. as f32).to_radians(),
         );
 
-        let light = Light::new((0., 0., 10.), (1., 1., 0.9));
+        let light = Light::new((10., 0., 7.), (1., 1., 0.9));
 
         let mut scene = Scene::new(gfx, camera, light).await;
 
         let cube = ModelBuilder::new()
             .add_mesh(
-                //scene::shape::Shapes::cube(gfx, ShaderType::Phong.vertex_flags()),
-                scene::shape::Shapes::cube_tiled(gfx, ShaderType::Phong.vertex_flags(), 3, 2, 3, 3, 2, 2, 2, 1),
+                scene::shape::Shapes::cube(gfx, ShaderType::Phong.vertex_flags()),
                 0,
             )
             .add_material(
                 MaterialBuilder::new("diffuse")
-                    .diffuse_texture(gfx, "tileset.png")
+                    .diffuse_texture(gfx, examples::WALL_TEXTURE)
                     .await
-                    .normal_texture(gfx, "cube-normal.png")
+                    .normal_texture(gfx, examples::WALL_TEXTURE_N)
                     .await
                     .build(gfx, &scene.phong_shader),
             )
@@ -74,6 +73,7 @@ impl Run for App {
             .update_camera(&mut self.scene.camera, delta);
 
         let rot_delta = Quat::from_axis_angle((0.0, 1.0, 0.0).into(), (angular_speed * delta).to_radians());
+        let rot_delta_model = Quat::from_axis_angle((0.0, 1.0, 0.0).into(), (0.1 * angular_speed * delta).to_radians());
 
         let old_position: Vec3 = self.scene.light.position;
         let position: Vec3 =
@@ -84,7 +84,7 @@ impl Run for App {
 
         for node in &mut self.scene.nodes {
             let old_rotation = node.transform().rotation;
-            let rotation = -rot_delta * old_rotation;
+            let rotation = rot_delta_model * old_rotation;
             node.set_transform(node.transform().position, rotation);
         }
 

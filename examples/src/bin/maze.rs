@@ -19,10 +19,6 @@ use scene::{
 };
 use uuid::Uuid;
 
-const LIGHT: &str = "sphere.obj";
-const MAP: &str = include_str!("../../assets/dungeon.map");
-const TILE_SIZE: f32 = 1.;
-
 struct App {
     camera_controller: CameraController,
     scene: Scene,
@@ -51,15 +47,14 @@ impl Run for App {
 
         let wall_model = ModelBuilder::new()
             .add_mesh(
-                //scene::shape::Shapes::cube(gfx, ShaderType::Phong.vertex_flags()),
-                scene::shape::Shapes::cube_tiled(gfx, ShaderType::Phong.vertex_flags(), 3, 2, 2, 2, 3, 3, 2, 1),
+                scene::shape::Shapes::cube(gfx, ShaderType::Phong.vertex_flags()),
                 0,
             )
             .add_material(
                 MaterialBuilder::new("diffuse")
-                    .diffuse_texture(gfx, "tileset.png")
+                    .diffuse_texture(gfx, examples::WALL_TEXTURE)
                     .await
-                    .normal_texture(gfx, "cube-normal.png")
+                    .normal_texture(gfx, examples::WALL_TEXTURE_N)
                     .await
                     .build(gfx, &scene.phong_shader),
             )
@@ -70,7 +65,7 @@ impl Run for App {
         Self::load_scene(&mut scene, id);
 
         let light_model = scene
-            .load_model(gfx, LIGHT, ShaderType::Solid, 0.3)
+            .load_model(gfx, examples::LIGHT, ShaderType::Solid, 0.3)
             .await
             .unwrap();
         scene.add_node(
@@ -151,10 +146,10 @@ impl App {
 
         let (mut i, mut j) = (0., 0.);
 
-        for c in MAP.chars() {
+        for c in examples::MAP.chars() {
             match c {
                 'w' => {
-                    i += TILE_SIZE;
+                    i += examples::TILE_SIZE;
                     let position = Vec3 {
                         x: i - offset,
                         y: 0.0,
@@ -165,7 +160,7 @@ impl App {
                     scene.add_node(position, rotation, wall_model);
                 }
                 't' => {
-                    i += TILE_SIZE;
+                    i += examples::TILE_SIZE;
                     let position = Vec3 {
                         x: i - offset,
                         y: 0.0,
@@ -176,10 +171,10 @@ impl App {
                     scene.add_node(position, rotation, wall_model);
                 }
                 '.' | '@' => {
-                    i += TILE_SIZE;
+                    i += examples::TILE_SIZE;
                 }
                 '\n' => {
-                    j += TILE_SIZE;
+                    j += examples::TILE_SIZE;
                     i = 0.;
                 }
                 _ => (),

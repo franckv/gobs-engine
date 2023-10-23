@@ -15,8 +15,6 @@ use scene::{
     RenderError, ShaderType,
 };
 
-const CUBE: &str = "cube.obj";
-
 struct App {
     camera_controller: CameraController,
     scene: Scene,
@@ -42,7 +40,7 @@ impl Run for App {
         let mut scene = Scene::new(gfx, camera, light).await;
 
         let cube = scene
-            .load_model(gfx, CUBE, ShaderType::Phong, 1.0)
+            .load_model(gfx, examples::CUBE, ShaderType::Phong, 1.0)
             .await
             .unwrap();
 
