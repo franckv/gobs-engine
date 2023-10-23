@@ -1,5 +1,5 @@
 use anyhow::*;
-use image::GenericImageView;
+use image::{DynamicImage, GenericImageView, ImageBuffer};
 
 use gobs_utils as utils;
 
@@ -15,7 +15,7 @@ pub struct Texture {
 impl Texture {
     pub const DEPTH_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Depth32Float;
 
-    pub async fn load_texture(file_name: &str, is_normal_map: bool, gfx: &Gfx) -> Result<Texture> {
+    pub async fn load_texture(gfx: &Gfx, file_name: &str, is_normal_map: bool) -> Result<Self> {
         let data = load::load_binary(file_name, AssetType::IMAGE).await?;
         Texture::from_bytes(gfx, &data, file_name, is_normal_map)
     }
@@ -59,6 +59,16 @@ impl Texture {
             view,
             sampler,
         }
+    }
+
+    pub fn from_color(gfx: &Gfx, c: [u8; 4], is_normal_map: bool) -> Result<Self> {
+        let pixel = image::Rgba([c[0], c[1], c[2], c[3]]);
+
+        let img = ImageBuffer::from_pixel(1, 1, pixel);
+
+        let img_color = DynamicImage::ImageRgba8(img);
+
+        Self::from_image(gfx, &img_color, Some("Color texture"), is_normal_map)
     }
 
     pub fn from_bytes(gfx: &Gfx, bytes: &[u8], label: &str, is_normal_map: bool) -> Result<Self> {

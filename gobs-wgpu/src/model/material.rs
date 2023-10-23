@@ -22,25 +22,41 @@ impl MaterialBuilder {
         }
     }
 
-    pub async fn diffuse_texture(mut self, file: &str, gfx: &Gfx) -> Self {
-        self.diffuse_texture = Some(Texture::load_texture(file, false, gfx).await.unwrap());
+    pub async fn diffuse_color(mut self, gfx: &Gfx, color: [u8; 4]) -> Self {
+        self.diffuse_texture = Some(Texture::from_color(gfx, color, false).unwrap());
 
         self
     }
 
-    pub async fn normal_texture(mut self, file: &str, gfx: &Gfx) -> Self {
-        self.normal_texture = Some(Texture::load_texture(file, true, gfx).await.unwrap());
+    pub async fn diffuse_texture(mut self, gfx: &Gfx, file: &str) -> Self {
+        self.diffuse_texture = Some(Texture::load_texture(gfx, file, false).await.unwrap());
+
+        self
+    }
+
+    pub async fn normal_texture(mut self, gfx: &Gfx, file: &str) -> Self {
+        self.normal_texture = Some(Texture::load_texture(gfx, file, true).await.unwrap());
 
         self
     }
 
     pub fn build(self, gfx: &Gfx, shader: &Shader) -> Material {
+        let diffuse_texture = match self.diffuse_texture {
+            Some(diffuse_texture) => diffuse_texture,
+            None => Texture::from_color(gfx, [255, 255, 255, 1], false).unwrap(),
+        };
+
+        let normal_texture = match self.normal_texture {
+            Some(normal_texture) => normal_texture,
+            None => Texture::from_color(gfx, [0, 0, 0, 1], true).unwrap(),
+        };
+
         Material::new(
             self.name,
             gfx,
             shader.layout(ShaderBindGroup::Material),
-            self.diffuse_texture.unwrap(),
-            self.normal_texture.unwrap(),
+            diffuse_texture,
+            normal_texture,
         )
     }
 }

@@ -46,9 +46,9 @@ impl Run for App {
             )
             .add_material(
                 MaterialBuilder::new("diffuse")
-                    .diffuse_texture("cube-diffuse.jpg", gfx)
+                    .diffuse_texture(gfx, "cube-diffuse.jpg")
                     .await
-                    .normal_texture("cube-normal.png", gfx)
+                    .normal_texture(gfx, "cube-normal.png")
                     .await
                     .build(gfx, &scene.phong_shader),
             )

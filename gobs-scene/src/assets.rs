@@ -113,17 +113,17 @@ async fn load_material(
 
         let diffuse_texture = {
             if let Some(texture_name) = &m.diffuse_texture {
-                Texture::load_texture(texture_name, false, gfx).await?
+                Texture::load_texture(gfx, texture_name, false).await?
             } else {
-                Texture::load_texture("cube-diffuse.jpg", false, gfx).await?
+                Texture::load_texture(gfx, "cube-diffuse.jpg", false).await?
             }
         };
 
         let normal_texture = {
             if let Some(texture_name) = &m.normal_texture {
-                Texture::load_texture(texture_name, true, gfx).await?
+                Texture::load_texture(gfx, texture_name, true).await?
             } else {
-                Texture::load_texture("cube-normal.png", true, gfx).await?
+                Texture::load_texture(gfx, "cube-normal.png", true).await?
             }
         };
 
