@@ -41,12 +41,13 @@ impl Run for App {
 
         let cube = ModelBuilder::new()
             .add_mesh(
-                scene::shape::Shapes::cube(gfx, ShaderType::Phong.vertex_flags()),
+                //scene::shape::Shapes::cube(gfx, ShaderType::Phong.vertex_flags()),
+                scene::shape::Shapes::cube_tiled(gfx, ShaderType::Phong.vertex_flags(), 3, 2, 3, 3, 2, 2, 2, 1),
                 0,
             )
             .add_material(
                 MaterialBuilder::new("diffuse")
-                    .diffuse_texture(gfx, "cube-diffuse.jpg")
+                    .diffuse_texture(gfx, "tileset.png")
                     .await
                     .normal_texture(gfx, "cube-normal.png")
                     .await
@@ -72,13 +73,20 @@ impl Run for App {
         self.camera_controller
             .update_camera(&mut self.scene.camera, delta);
 
+        let rot_delta = Quat::from_axis_angle((0.0, 1.0, 0.0).into(), (angular_speed * delta).to_radians());
+
         let old_position: Vec3 = self.scene.light.position;
         let position: Vec3 =
-            (Quat::from_axis_angle((0.0, 1.0, 0.0).into(), (angular_speed * delta).to_radians())
-                * old_position)
+            (rot_delta * old_position)
                 .into();
-
+        
         self.scene.light.update(position);
+
+        for node in &mut self.scene.nodes {
+            let old_rotation = node.transform().rotation;
+            let rotation = -rot_delta * old_rotation;
+            node.set_transform(node.transform().position, rotation);
+        }
 
         self.scene.update(gfx);
     }

@@ -6,8 +6,6 @@ use crate::render::Gfx;
 
 use crate::shader::Shader;
 use crate::shader::ShaderDraw;
-use crate::shader_data::InstanceFlag;
-use crate::shader_data::VertexFlag;
 
 use super::ShaderBindGroup;
 use super::ShaderType;
@@ -24,8 +22,8 @@ impl PhongShader {
     pub async fn new(gfx: &Gfx) -> Shader {
         let generator = Generator::new(SHADER).await;
         let layouts = generator.bind_layouts(gfx);
-        let instance_flags = InstanceFlag::MN;
-        let vertex_flags = VertexFlag::PTN;
+        let instance_flags = ShaderType::Phong.instance_flags();
+        let vertex_flags = ShaderType::Phong.vertex_flags();
 
         let vertex_attributes = generator.vertex_layout_attributes("VertexInput");
         let vertex_layout =

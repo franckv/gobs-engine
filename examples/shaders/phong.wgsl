@@ -15,6 +15,8 @@ struct InstanceInput {
     @location(9) normal_matrix_0: vec3<f32>,
     @location(10) normal_matrix_1: vec3<f32>,
     @location(11) normal_matrix_2: vec3<f32>,
+
+    @location(12) texture_map: vec4<f32>
 }
 
 struct Camera {
@@ -56,6 +58,15 @@ fn vs_main(model: VertexInput, instance: InstanceInput) -> VertexOutput {
         instance.normal_matrix_2
     );
 
+    let u_start = instance.texture_map.x;
+    let u_size = instance.texture_map.y;
+    let v_start = instance.texture_map.z;
+    let v_size = instance.texture_map.w;
+
+    let tex_coords = vec2<f32>(
+        (u_start + model.tex_coords.x)/u_size, 
+        (v_start + model.tex_coords.y)/v_size);
+
     let world_normal = normalize(normal_matrix * model.normal);
     let world_tangent = normalize(normal_matrix * model.tangent);
     let world_bitangent = normalize(normal_matrix * model.bitangent);
@@ -70,7 +81,7 @@ fn vs_main(model: VertexInput, instance: InstanceInput) -> VertexOutput {
     var out: VertexOutput;
 
     out.clip_position = camera.view_proj * world_position;
-    out.tex_coords = model.tex_coords;
+    out.tex_coords = tex_coords;
     out.tangent_position = tangent_matrix * world_position.xyz;
     out.tangent_view_position = tangent_matrix * camera.view_pos.xyz;
     out.tangent_light_position = tangent_matrix * light.position;

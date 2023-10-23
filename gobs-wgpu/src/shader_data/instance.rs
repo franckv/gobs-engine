@@ -1,17 +1,20 @@
 use bitflags::bitflags;
-use glam::{Mat3, Mat4, Quat, Vec3};
+use glam::{Mat3, Mat4, Quat, Vec3, Vec4};
 
 bitflags! {
     #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
     pub struct InstanceFlag: u32 {
         const MODEL = 1;
         const NORMAL = 1 << 1;
+        const TEXTURE = 1 << 2;
 
         const MN = InstanceFlag::MODEL.bits() | InstanceFlag::NORMAL.bits();
+        const MNT = InstanceFlag::MODEL.bits() | InstanceFlag::NORMAL.bits() | InstanceFlag::TEXTURE.bits();
     }
 }
 
 pub enum InstanceData {
+    InstanceMNT(InstanceMNT),
     InstanceMN(InstanceMN),
     InstanceM(InstanceM),
 }
@@ -21,6 +24,7 @@ impl InstanceData {
         flags: InstanceFlag,
         position: Vec3,
         rotation: Quat,
+        texture_map: Vec4,
         scale: f32,
     ) -> Result<Self, ()> {
         match flags {
@@ -30,6 +34,12 @@ impl InstanceData {
             InstanceFlag::MN => Ok(InstanceData::InstanceMN(InstanceMN::new(
                 position, rotation, scale,
             ))),
+            InstanceFlag::MNT => Ok(InstanceData::InstanceMNT(InstanceMNT::new(
+                position,
+                rotation,
+                texture_map,
+                scale,
+            ))),
             _ => Err(()),
         }
     }
@@ -38,12 +48,14 @@ impl InstanceData {
         match flags {
             InstanceFlag::MODEL => std::mem::size_of::<InstanceM>(),
             InstanceFlag::MN => std::mem::size_of::<InstanceMN>(),
+            InstanceFlag::MNT => std::mem::size_of::<InstanceMNT>(),
             _ => 0,
         }
     }
 
     pub fn raw(&self) -> &[u8] {
         match self {
+            InstanceData::InstanceMNT(data) => bytemuck::bytes_of(data),
             InstanceData::InstanceMN(data) => bytemuck::bytes_of(data),
             InstanceData::InstanceM(data) => bytemuck::bytes_of(data),
         }
@@ -82,6 +94,27 @@ impl InstanceM {
                 * Mat4::from_quat(rotation)
                 * Mat4::from_scale(Vec3::splat(scale)))
             .to_cols_array_2d(),
+        }
+    }
+}
+
+#[repr(C)]
+#[derive(Debug, Copy, Clone, bytemuck::Pod, bytemuck::Zeroable)]
+pub struct InstanceMNT {
+    model: [[f32; 4]; 4],
+    normal: [[f32; 3]; 3],
+    texture_map: [f32; 4],
+}
+
+impl InstanceMNT {
+    fn new(position: Vec3, rotation: Quat, texture_map: Vec4, scale: f32) -> Self {
+        InstanceMNT {
+            model: (Mat4::from_translation(position)
+                * Mat4::from_quat(rotation)
+                * Mat4::from_scale(Vec3::splat(scale)))
+            .to_cols_array_2d(),
+            normal: Mat3::from_quat(rotation).to_cols_array_2d(),
+            texture_map: texture_map.into(),
         }
     }
 }

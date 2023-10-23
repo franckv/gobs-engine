@@ -7,8 +7,6 @@ use crate::render::Gfx;
 use crate::shader::Shader;
 use crate::shader::ShaderDraw;
 use crate::shader::ShaderType;
-use crate::shader_data::InstanceFlag;
-use crate::shader_data::VertexFlag;
 
 use super::ShaderBindGroup;
 
@@ -24,8 +22,8 @@ impl SolidShader {
     pub async fn new(gfx: &Gfx) -> Shader {
         let generator = Generator::new(SHADER).await;
         let layouts = generator.bind_layouts(gfx);
-        let instance_flags = InstanceFlag::MODEL;
-        let vertex_flags = VertexFlag::POSITION;
+        let instance_flags = ShaderType::Solid.instance_flags();
+        let vertex_flags = ShaderType::Solid.vertex_flags();
 
         let vertex_attributes = generator.vertex_layout_attributes("VertexInput");
         let vertex_layout =

@@ -102,6 +102,7 @@ impl Scene {
                         model.shader.instance_flags(),
                         n.transform().position,
                         n.transform().rotation,
+                        [0., 1., 0., 1.].into(),
                         model.model.scale,
                     )
                     .unwrap()

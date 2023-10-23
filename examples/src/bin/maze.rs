@@ -10,7 +10,7 @@ use game::{
     app::{Application, Run},
     input::Input,
 };
-use scene::light::Light;
+use scene::{light::Light, MaterialBuilder, ModelBuilder};
 use scene::scene::Scene;
 use scene::Gfx;
 use scene::{
@@ -20,10 +20,8 @@ use scene::{
 use uuid::Uuid;
 
 const LIGHT: &str = "sphere.obj";
-const WALL: &str = "cube.obj";
-const TREE: &str = "tree.obj";
 const MAP: &str = include_str!("../../assets/dungeon.map");
-const TILE_SIZE: f32 = 2.;
+const TILE_SIZE: f32 = 1.;
 
 struct App {
     camera_controller: CameraController,
@@ -34,7 +32,7 @@ struct App {
 impl Run for App {
     async fn create(gfx: &mut Gfx) -> Self {
         let camera = Camera::new(
-            (0.0, 50.0, 50.0),
+            (0.0, 25.0, 25.0),
             CameraProjection::new(
                 gfx.width(),
                 gfx.height(),
@@ -50,15 +48,26 @@ impl Run for App {
         let light_position = light.position;
 
         let mut scene = Scene::new(gfx, camera, light).await;
-        let wall_model = scene
-            .load_model(gfx, WALL, ShaderType::Phong, 1.)
-            .await
-            .unwrap();
-        scene
-            .load_model(gfx, TREE, ShaderType::Phong, 1.)
-            .await
-            .unwrap();
-        Self::load_scene(&mut scene, wall_model);
+
+        let wall_model = ModelBuilder::new()
+            .add_mesh(
+                //scene::shape::Shapes::cube(gfx, ShaderType::Phong.vertex_flags()),
+                scene::shape::Shapes::cube_tiled(gfx, ShaderType::Phong.vertex_flags(), 3, 2, 2, 2, 3, 3, 2, 1),
+                0,
+            )
+            .add_material(
+                MaterialBuilder::new("diffuse")
+                    .diffuse_texture(gfx, "tileset.png")
+                    .await
+                    .normal_texture(gfx, "cube-normal.png")
+                    .await
+                    .build(gfx, &scene.phong_shader),
+            )
+            .build();
+        
+        let id = scene.add_model(wall_model, ShaderType::Phong);
+
+        Self::load_scene(&mut scene, id);
 
         let light_model = scene
             .load_model(gfx, LIGHT, ShaderType::Solid, 0.3)
@@ -138,6 +147,8 @@ impl App {
     pub fn load_scene(scene: &mut Scene, wall_model: Uuid) {
         info!("Load scene");
 
+        let offset = 16.;
+
         let (mut i, mut j) = (0., 0.);
 
         for c in MAP.chars() {
@@ -145,9 +156,9 @@ impl App {
                 'w' => {
                     i += TILE_SIZE;
                     let position = Vec3 {
-                        x: i - 32.,
+                        x: i - offset,
                         y: 0.0,
-                        z: j - 32.,
+                        z: j - offset,
                     };
                     let rotation = Quat::from_axis_angle(Vec3::Z, 0.0);
 
@@ -156,9 +167,9 @@ impl App {
                 't' => {
                     i += TILE_SIZE;
                     let position = Vec3 {
-                        x: i - 32.,
+                        x: i - offset,
                         y: 0.0,
-                        z: j - 32.,
+                        z: j - offset,
                     };
                     let rotation = Quat::from_axis_angle(Vec3::Z, 0.0);
 

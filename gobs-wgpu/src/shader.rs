@@ -24,7 +24,7 @@ pub enum ShaderType {
 impl ShaderType {
     pub fn instance_flags(&self) -> InstanceFlag {
         match self {
-            ShaderType::Phong => InstanceFlag::MN,
+            ShaderType::Phong => InstanceFlag::MNT,
             ShaderType::Solid => InstanceFlag::MODEL,
         }
     }
