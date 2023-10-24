@@ -5,10 +5,9 @@ use crate::pipeline::{Generator, Pipeline, PipelineBuilder};
 use crate::render::Gfx;
 
 use crate::shader::Shader;
+use crate::shader::ShaderBindGroup;
 use crate::shader::ShaderDraw;
 use crate::shader::ShaderType;
-
-use super::ShaderBindGroup;
 
 const SHADER: &str = "solid.wgsl";
 

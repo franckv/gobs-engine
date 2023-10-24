@@ -5,7 +5,7 @@ use log::{error, info};
 use uuid::Uuid;
 
 use crate::render::Gfx;
-use crate::shader_data::{VertexData, VertexFlag, VertexP, VertexPTN};
+use crate::shader_data::{VertexData, VertexFlag};
 
 pub struct MeshBuilder {
     name: String,
@@ -28,11 +28,7 @@ impl MeshBuilder {
     }
 
     pub fn add_vertex_P(mut self, position: Vec3) -> Self {
-        assert!(self.flags == VertexFlag::POSITION);
-
-        let vertex = VertexData::VertexP(VertexP {
-            position: position.into(),
-        });
+        let vertex = VertexData::new(self.flags).position(position).build();
 
         self.vertices.push(vertex);
 
@@ -40,15 +36,13 @@ impl MeshBuilder {
     }
 
     pub fn add_vertex_PTN(mut self, position: Vec3, texture: Vec2, normal: Vec3) -> Self {
-        assert!(self.flags == VertexFlag::PTN);
-
-        let vertex = VertexData::VertexPTN(VertexPTN {
-            position: position.into(),
-            tex_coords: texture.into(),
-            normal: normal.into(),
-            tangent: Vec3::splat(0.).into(),
-            bitangent: Vec3::splat(0.).into(),
-        });
+        let vertex = VertexData::new(self.flags)
+            .position(position)
+            .texture(texture)
+            .normal(normal)
+            .tangent(Vec3::splat(0.))
+            .bitangent(Vec3::splat(0.))
+            .build();
 
         self.vertices.push(vertex);
 
@@ -82,7 +76,7 @@ impl MeshBuilder {
             .vertices
             .into_iter()
             .filter(|v| {
-                let key = format!("{}:{}:{}", v.position(), v.tex_coords(), v.normal());
+                let key = format!("{}:{}:{}", v.position(), v.texture(), v.normal());
                 if unique.contains_key(&key) {
                     let idx = unique.get(&key).unwrap();
                     self.indices.push(*idx);
@@ -118,17 +112,17 @@ impl MeshBuilder {
         let mut triangles_included = vec![0; self.vertices.len()];
 
         for c in self.indices.chunks(3) {
-            let v0 = self.vertices[c[0] as usize];
-            let v1 = self.vertices[c[1] as usize];
-            let v2 = self.vertices[c[2] as usize];
+            let v0 = self.vertices[c[0] as usize].clone();
+            let v1 = self.vertices[c[1] as usize].clone();
+            let v2 = self.vertices[c[2] as usize].clone();
 
-            let pos0: Vec3 = v0.position();
-            let pos1: Vec3 = v1.position();
-            let pos2: Vec3 = v2.position();
+            let pos0 = v0.position();
+            let pos1 = v1.position();
+            let pos2 = v2.position();
 
-            let uv0: Vec2 = v0.tex_coords();
-            let uv1: Vec2 = v1.tex_coords();
-            let uv2: Vec2 = v2.tex_coords();
+            let uv0: Vec2 = v0.texture();
+            let uv1: Vec2 = v1.texture();
+            let uv2: Vec2 = v2.texture();
 
             let delta_pos1 = pos1 - pos0;
             let delta_pos2 = pos2 - pos0;

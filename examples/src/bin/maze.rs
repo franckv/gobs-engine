@@ -10,13 +10,13 @@ use game::{
     app::{Application, Run},
     input::Input,
 };
-use scene::{light::Light, MaterialBuilder, ModelBuilder};
 use scene::scene::Scene;
 use scene::Gfx;
 use scene::{
     camera::{Camera, CameraProjection},
     RenderError, ShaderType,
 };
+use scene::{light::Light, MaterialBuilder, ModelBuilder};
 use uuid::Uuid;
 
 struct App {
@@ -59,7 +59,7 @@ impl Run for App {
                     .build(gfx, &scene.phong_shader),
             )
             .build();
-        
+
         let id = scene.add_model(wall_model, ShaderType::Phong);
 
         Self::load_scene(&mut scene, id);

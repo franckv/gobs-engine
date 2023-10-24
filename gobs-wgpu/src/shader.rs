@@ -24,14 +24,14 @@ pub enum ShaderType {
 impl ShaderType {
     pub fn instance_flags(&self) -> InstanceFlag {
         match self {
-            ShaderType::Phong => InstanceFlag::MNT,
+            ShaderType::Phong => InstanceFlag::MODEL | InstanceFlag::NORMAL,
             ShaderType::Solid => InstanceFlag::MODEL,
         }
     }
 
     pub fn vertex_flags(&self) -> VertexFlag {
         match self {
-            ShaderType::Phong => VertexFlag::PTN,
+            ShaderType::Phong => VertexFlag::POSITION | VertexFlag::TEXTURE | VertexFlag::NORMAL,
             ShaderType::Solid => VertexFlag::POSITION,
         }
     }

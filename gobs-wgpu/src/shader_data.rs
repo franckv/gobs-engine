@@ -6,4 +6,4 @@ mod vertex;
 pub(crate) use camera::CameraUniform;
 pub use instance::{InstanceData, InstanceFlag};
 pub(crate) use light::LightUniform;
-pub use vertex::{VertexData, VertexFlag, VertexP, VertexPTN};
+pub use vertex::{VertexData, VertexFlag};

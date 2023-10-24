@@ -124,8 +124,7 @@ impl Gfx {
         let bytes = vertex_data
             .iter()
             .map(|v| v.raw())
-            .flat_map(|s| s.iter())
-            .copied()
+            .flat_map(|s| s)
             .collect::<Vec<u8>>();
 
         self.device
@@ -149,8 +148,7 @@ impl Gfx {
         let bytes = instance_data
             .iter()
             .map(|d| d.raw())
-            .flat_map(|s| s.iter())
-            .copied()
+            .flat_map(|s| s)
             .collect::<Vec<u8>>();
 
         self.device
@@ -169,8 +167,7 @@ impl Gfx {
         let bytes = instance_data
             .iter()
             .map(|d| d.raw())
-            .flat_map(|s| s.iter())
-            .copied()
+            .flat_map(|s| s)
             .collect::<Vec<u8>>();
 
         self.queue

@@ -29,23 +29,14 @@ impl Shapes {
 
         let ti = [1, 2, 3];
 
-        match flags {
-            VertexFlag::POSITION => {
-                for i in 0..vi.len() {
-                    builder = builder.add_vertex_P(v[vi[i] - 1].into())
-                }
-            }
-            VertexFlag::PTN => {
-                for i in 0..vi.len() {
-                    builder = builder.add_vertex_PTN(
-                        v[vi[i] - 1].into(),
-                        t[ti[i] - 1].into(),
-                        n[ni[i] - 1].into(),
-                    )
-                }
-            }
-            _ => todo!("triangle"),
+        for i in 0..vi.len() {
+            builder = builder.add_vertex_PTN(
+                v[vi[i] - 1].into(),
+                t[ti[i] - 1].into(),
+                n[ni[i] - 1].into(),
+            )
         }
+
         builder.build(gfx)
     }
 
@@ -71,23 +62,14 @@ impl Shapes {
 
         let ti = [1, 3, 4, 4, 2, 1];
 
-        match flags {
-            VertexFlag::POSITION => {
-                for i in 0..vi.len() {
-                    builder = builder.add_vertex_P(v[vi[i] - 1].into())
-                }
-            }
-            VertexFlag::PTN => {
-                for i in 0..vi.len() {
-                    builder = builder.add_vertex_PTN(
-                        v[vi[i] - 1].into(),
-                        t[ti[i] - 1].into(),
-                        n[ni[i] - 1].into(),
-                    )
-                }
-            }
-            _ => todo!("quad"),
+        for i in 0..vi.len() {
+            builder = builder.add_vertex_PTN(
+                v[vi[i] - 1].into(),
+                t[ti[i] - 1].into(),
+                n[ni[i] - 1].into(),
+            )
         }
+
         builder.build(gfx)
     }
 
@@ -137,23 +119,14 @@ impl Shapes {
             1, 3, 4, 2, 3, 2, 1,
         ];
 
-        match flags {
-            VertexFlag::POSITION => {
-                for i in 0..vi.len() {
-                    builder = builder.add_vertex_P(v[vi[i] - 1].into())
-                }
-            }
-            VertexFlag::PTN => {
-                for i in 0..vi.len() {
-                    builder = builder.add_vertex_PTN(
-                        v[vi[i] - 1].into(),
-                        t[ti[i] - 1].into(),
-                        n[ni[i] - 1].into(),
-                    )
-                }
-            }
-            _ => todo!("cube"),
+        for i in 0..vi.len() {
+            builder = builder.add_vertex_PTN(
+                v[vi[i] - 1].into(),
+                t[ti[i] - 1].into(),
+                n[ni[i] - 1].into(),
+            )
         }
+
         builder.build(gfx)
     }
 
@@ -174,12 +147,12 @@ impl Shapes {
         let (top, bottom, left, right, front, back) = (0.5, -0.5, -0.5, 0.5, 0.5, -0.5);
 
         let pos = [
-            [(f-1) % cols, (f-1) / cols], // F
-            [(b-1) % cols, (b-1) / cols], // B
-            [(l-1) % cols, (l-1) / cols], // L
-            [(r-1) % cols, (r-1) / cols], // R
-            [(u-1) % cols, (u-1) / cols], // U
-            [(d-1) % cols, (d-1) / cols], // D
+            [(f - 1) % cols, (f - 1) / cols], // F
+            [(b - 1) % cols, (b - 1) / cols], // B
+            [(l - 1) % cols, (l - 1) / cols], // L
+            [(r - 1) % cols, (r - 1) / cols], // R
+            [(u - 1) % cols, (u - 1) / cols], // U
+            [(d - 1) % cols, (d - 1) / cols], // D
         ];
 
         let v = [
@@ -231,28 +204,16 @@ impl Shapes {
             3, 4, 2, 3, 2, 1, // D
         ];
 
-        match flags {
-            VertexFlag::POSITION => {
-                for i in 0..vi.len() {
-                    builder = builder.add_vertex_P(v[vi[i] - 1].into())
-                }
-            }
-            VertexFlag::PTN => {
-                for i in 0..vi.len() {
-                    let tex = t[ti[i] - 1];
-                    let tex_mapped = [
-                        (tex[0] + pos[i / 6][0] as f32) / (cols as f32),
-                        (tex[1] + pos[i / 6][1] as f32) / (rows as f32),
-                    ];
-                    builder = builder.add_vertex_PTN(
-                        v[vi[i] - 1].into(),
-                        tex_mapped.into(),
-                        n[ni[i] - 1].into(),
-                    )
-                }
-            }
-            _ => todo!("cube"),
+        for i in 0..vi.len() {
+            let tex = t[ti[i] - 1];
+            let tex_mapped = [
+                (tex[0] + pos[i / 6][0] as f32) / (cols as f32),
+                (tex[1] + pos[i / 6][1] as f32) / (rows as f32),
+            ];
+            builder =
+                builder.add_vertex_PTN(v[vi[i] - 1].into(), tex_mapped.into(), n[ni[i] - 1].into())
         }
+
         builder.build(gfx)
     }
 }

@@ -98,14 +98,14 @@ impl Scene {
                 .iter()
                 .filter(|n| n.model() == model.model.id)
                 .map(|n| {
-                    InstanceData::new(
-                        model.shader.instance_flags(),
-                        n.transform().position,
-                        n.transform().rotation,
-                        [0., 1., 0., 1.].into(),
-                        model.model.scale,
-                    )
-                    .unwrap()
+                    InstanceData::new(model.shader.instance_flags())
+                        .model_transform(
+                            n.transform().position,
+                            n.transform().rotation,
+                            model.model.scale,
+                        )
+                        .normal_rot(n.transform().rotation)
+                        .build()
                 })
                 .collect::<Vec<_>>();
 

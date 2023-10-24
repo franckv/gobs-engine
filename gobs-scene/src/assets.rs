@@ -68,7 +68,9 @@ async fn load_mesh(gfx: &Gfx, shader_type: ShaderType, models: Vec<tobj::Model>)
         .into_iter()
         .map(|m| {
             let flags = match shader_type {
-                ShaderType::Phong => VertexFlag::PTN,
+                ShaderType::Phong => {
+                    VertexFlag::POSITION | VertexFlag::TEXTURE | VertexFlag::NORMAL
+                }
                 ShaderType::Solid => VertexFlag::POSITION,
             };
 

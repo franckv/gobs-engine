@@ -10,8 +10,8 @@ pub const MAP: &str = include_str!("../assets/dungeon.map");
 pub const CUBE: &str = "cube.obj";
 pub const LIGHT: &str = "sphere.obj";
 pub const TILE_SIZE: f32 = 1.;
-pub const WALL_TEXTURE: &str = "bricks.png";
-pub const WALL_TEXTURE_N: &str = "bricks_n.png";
+pub const WALL_TEXTURE: &str = "stone.png";
+pub const WALL_TEXTURE_N: &str = "stone_n.png";
 
 pub fn init_logger() {
     let config_other = ConfigBuilder::new().add_filter_ignore_str("gobs").build();

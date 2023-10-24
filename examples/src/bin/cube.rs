@@ -72,14 +72,16 @@ impl Run for App {
         self.camera_controller
             .update_camera(&mut self.scene.camera, delta);
 
-        let rot_delta = Quat::from_axis_angle((0.0, 1.0, 0.0).into(), (angular_speed * delta).to_radians());
-        let rot_delta_model = Quat::from_axis_angle((0.0, 1.0, 0.0).into(), (0.1 * angular_speed * delta).to_radians());
+        let rot_delta =
+            Quat::from_axis_angle((0.0, 1.0, 0.0).into(), (angular_speed * delta).to_radians());
+        let rot_delta_model = Quat::from_axis_angle(
+            (0.0, 1.0, 0.0).into(),
+            (0.1 * angular_speed * delta).to_radians(),
+        );
 
         let old_position: Vec3 = self.scene.light.position;
-        let position: Vec3 =
-            (rot_delta * old_position)
-                .into();
-        
+        let position: Vec3 = (rot_delta * old_position).into();
+
         self.scene.light.update(position);
 
         for node in &mut self.scene.nodes {

@@ -5,17 +5,16 @@ use crate::pipeline::{Generator, Pipeline, PipelineBuilder};
 use crate::render::Gfx;
 
 use crate::shader::Shader;
+use crate::shader::ShaderBindGroup;
 use crate::shader::ShaderDraw;
-
-use super::ShaderBindGroup;
-use super::ShaderType;
+use crate::shader::ShaderType;
 
 const SHADER: &str = "phong.wgsl";
 
 pub struct PhongShader {
     pub ty: ShaderType,
     pub pipeline: Pipeline,
-    pub layouts: Vec<wgpu::BindGroupLayout>,
+    layouts: Vec<wgpu::BindGroupLayout>,
 }
 
 impl PhongShader {

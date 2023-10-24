@@ -7,128 +7,140 @@ bitflags! {
         const POSITION = 1;
         const TEXTURE = 1 << 1;
         const NORMAL = 1 << 2;
-
-        const PT = VertexFlag::POSITION.bits() | VertexFlag::TEXTURE.bits();
-        const PTN = VertexFlag::POSITION.bits() | VertexFlag::TEXTURE.bits() | VertexFlag::NORMAL.bits();
     }
 }
 
-#[derive(Clone, Copy)]
-pub enum VertexData {
-    VertexP(VertexP),
-    VertexPT(VertexPT),
-    VertexPTN(VertexPTN),
+pub struct VertexDataBuilder {
+    flags: VertexFlag,
+    pub position: Option<Vec3>,
+    pub texture: Option<Vec2>,
+    pub normal: Option<Vec3>,
+    pub tangent: Option<Vec3>,
+    pub bitangent: Option<Vec3>,
+}
+
+impl VertexDataBuilder {
+    pub fn position(mut self, position: Vec3) -> Self {
+        self.position = Some(position);
+
+        self
+    }
+
+    pub fn texture(mut self, texture: Vec2) -> Self {
+        self.texture = Some(texture);
+
+        self
+    }
+
+    pub fn normal(mut self, normal: Vec3) -> Self {
+        self.normal = Some(normal);
+
+        self
+    }
+
+    pub fn tangent(mut self, tangent: Vec3) -> Self {
+        self.tangent = Some(tangent);
+
+        self
+    }
+
+    pub fn bitangent(mut self, bitangent: Vec3) -> Self {
+        self.bitangent = Some(bitangent);
+
+        self
+    }
+
+    pub fn build(self) -> VertexData {
+        VertexData {
+            flags: self.flags,
+            position: self.position.unwrap_or(Vec3::splat(0.)),
+            texture: self.texture.unwrap_or(Vec2::splat(0.)),
+            normal: self.normal.unwrap_or(Vec3::splat(0.)),
+            tangent: self.tangent.unwrap_or(Vec3::splat(0.)),
+            bitangent: self.bitangent.unwrap_or(Vec3::splat(0.)),
+        }
+    }
+}
+
+#[derive(Clone)]
+pub struct VertexData {
+    flags: VertexFlag,
+    pub position: Vec3,
+    pub texture: Vec2,
+    pub normal: Vec3,
+    pub tangent: Vec3,
+    pub bitangent: Vec3,
 }
 
 impl VertexData {
-    pub fn new(flags: VertexFlag, position: Vec3) -> Result<Self, ()> {
-        match flags {
-            VertexFlag::POSITION => Ok(VertexData::VertexP(VertexP::new(position))),
-            _ => Err(()),
-        }
-    }
-
-    pub fn size(flags: VertexFlag) -> usize {
-        match flags {
-            VertexFlag::POSITION => std::mem::size_of::<VertexP>(),
-            VertexFlag::PT => std::mem::size_of::<VertexPT>(),
-            VertexFlag::PTN => std::mem::size_of::<VertexPTN>(),
-            _ => 0,
-        }
-    }
-
-    pub fn raw(&self) -> &[u8] {
-        match self {
-            VertexData::VertexP(data) => bytemuck::bytes_of(data),
-            VertexData::VertexPT(data) => bytemuck::bytes_of(data),
-            VertexData::VertexPTN(data) => bytemuck::bytes_of(data),
+    pub fn new(flags: VertexFlag) -> VertexDataBuilder {
+        VertexDataBuilder {
+            flags,
+            position: None,
+            texture: None,
+            normal: None,
+            tangent: None,
+            bitangent: None,
         }
     }
 
     pub fn position(&self) -> Vec3 {
-        match self {
-            VertexData::VertexP(data) => data.position.into(),
-            VertexData::VertexPT(data) => data.position.into(),
-            VertexData::VertexPTN(data) => data.position.into(),
-        }
+        self.position
     }
 
-    pub fn tex_coords(&self) -> Vec2 {
-        match self {
-            VertexData::VertexP(_) => Vec2::splat(0.),
-            VertexData::VertexPT(data) => data.tex_coords.into(),
-            VertexData::VertexPTN(data) => data.tex_coords.into(),
-        }
+    pub fn texture(&self) -> Vec2 {
+        self.texture
     }
 
     pub fn normal(&self) -> Vec3 {
-        match self {
-            VertexData::VertexP(_) => Vec3::splat(0.),
-            VertexData::VertexPT(_) => Vec3::splat(0.),
-            VertexData::VertexPTN(data) => data.normal.into(),
-        }
+        self.normal
     }
 
     pub fn tangent(&self) -> Vec3 {
-        match self {
-            VertexData::VertexP(_) => Vec3::splat(0.),
-            VertexData::VertexPT(_) => Vec3::splat(0.),
-            VertexData::VertexPTN(data) => data.tangent.into(),
-        }
-    }
-
-    pub fn set_tangent(&mut self, tangent: Vec3) {
-        match self {
-            VertexData::VertexP(_) => (),
-            VertexData::VertexPT(_) => (),
-            VertexData::VertexPTN(data) => data.tangent = tangent.into(),
-        }
+        self.tangent
     }
 
     pub fn bitangent(&self) -> Vec3 {
-        match self {
-            VertexData::VertexP(_) => Vec3::splat(0.),
-            VertexData::VertexPT(_) => Vec3::splat(0.),
-            VertexData::VertexPTN(data) => data.bitangent.into(),
-        }
+        self.bitangent
+    }
+
+    pub fn set_tangent(&mut self, tangent: Vec3) {
+        self.tangent = tangent
     }
 
     pub fn set_bitangent(&mut self, bitangent: Vec3) {
-        match self {
-            VertexData::VertexP(_) => (),
-            VertexData::VertexPT(_) => (),
-            VertexData::VertexPTN(data) => data.bitangent = bitangent.into(),
-        }
+        self.bitangent = bitangent
     }
-}
 
-#[repr(C)]
-#[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable)]
-pub struct VertexP {
-    pub position: [f32; 3],
-}
+    pub fn raw(&self) -> Vec<u8> {
+        let mut data: Vec<u8> = Vec::new();
 
-impl VertexP {
-    fn new(position: Vec3) -> Self {
-        VertexP {
-            position: position.into(),
-        }
+        if self.flags.contains(VertexFlag::POSITION) {
+            data.extend_from_slice(bytemuck::cast_slice(&self.position.to_array()));
+        };
+
+        if self.flags.contains(VertexFlag::TEXTURE) {
+            data.extend_from_slice(bytemuck::cast_slice(&self.texture.to_array()));
+        };
+
+        if self.flags.contains(VertexFlag::NORMAL) {
+            data.extend_from_slice(bytemuck::cast_slice(&self.normal.to_array()));
+            data.extend_from_slice(bytemuck::cast_slice(&self.tangent.to_array()));
+            data.extend_from_slice(bytemuck::cast_slice(&self.bitangent.to_array()));
+        };
+
+        data
     }
-}
 
-#[repr(C)]
-#[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable)]
-pub struct VertexPT {
-    pub position: [f32; 3],
-    pub tex_coords: [f32; 2],
-}
-
-#[repr(C)]
-#[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable)]
-pub struct VertexPTN {
-    pub position: [f32; 3],
-    pub tex_coords: [f32; 2],
-    pub normal: [f32; 3],
-    pub tangent: [f32; 3],
-    pub bitangent: [f32; 3],
+    pub fn size(flags: VertexFlag) -> usize {
+        flags
+            .iter()
+            .map(|bit| match bit {
+                VertexFlag::POSITION => std::mem::size_of::<Vec3>(),
+                VertexFlag::TEXTURE => std::mem::size_of::<Vec2>(),
+                VertexFlag::NORMAL => 3 * std::mem::size_of::<Vec3>(),
+                _ => unimplemented!(),
+            })
+            .sum()
+    }
 }
