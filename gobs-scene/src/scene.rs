@@ -5,6 +5,7 @@ use log::*;
 
 use gobs_wgpu as render;
 
+use render::model::ModelInstance;
 use render::render::RenderError;
 use render::shader::Shader;
 use render::shader::ShaderBindGroup;
@@ -22,13 +23,6 @@ use render::model::{Model, Texture};
 use render::render::Batch;
 use render::render::Gfx;
 use render::shader::{PhongShader, SolidShader};
-
-struct ModelInstance {
-    model: Model,
-    shader: ShaderType,
-    instance_buffer: Option<wgpu::Buffer>,
-    instance_count: usize,
-}
 
 pub struct Scene {
     pub solid_shader: Shader,

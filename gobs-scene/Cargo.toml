@@ -18,4 +18,3 @@ image = { workspace = true }
 log = { workspace = true }
 tobj = { workspace = true }
 uuid = { workspace = true }
-wgpu = { workspace = true }

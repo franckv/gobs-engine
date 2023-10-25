@@ -34,15 +34,7 @@ pub async fn load_model(file_name: &str, gfx: &Gfx, shader: &Shader, scale: f32)
     .await?;
 
     let materials = match shader.ty() {
-        ShaderType::Phong => {
-            load_material(
-                gfx,
-                file_name,
-                obj_materials?,
-                shader.layout(ShaderBindGroup::Material),
-            )
-            .await?
-        }
+        ShaderType::Phong => load_material(gfx, file_name, obj_materials?, shader).await?,
         ShaderType::Solid => Vec::new(),
     };
 
@@ -106,7 +98,7 @@ async fn load_material(
     gfx: &Gfx,
     name: &str,
     obj_materials: Vec<tobj::Material>,
-    layout: &wgpu::BindGroupLayout,
+    shader: &Shader,
 ) -> Result<Vec<Material>> {
     let mut materials = Vec::new();
 
@@ -132,7 +124,7 @@ async fn load_material(
         materials.push(Material::new(
             m.name,
             gfx,
-            layout,
+            shader.layout(ShaderBindGroup::Material),
             diffuse_texture,
             normal_texture,
         ));
