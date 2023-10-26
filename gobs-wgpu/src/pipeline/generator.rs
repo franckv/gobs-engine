@@ -56,6 +56,18 @@ impl Generator {
                 },
                 _ => (),
             }
+        } else if let Type {
+            inner:
+                TypeInner::Scalar {
+                    kind: naga::ScalarKind::Float,
+                    width,
+                },
+            ..
+        } = ty
+        {
+            if *width == 4 {
+                return Some((wgpu::VertexFormat::Float32, 4));
+            }
         }
 
         None

@@ -49,6 +49,27 @@ impl MeshBuilder {
         self
     }
 
+    pub fn add_vertex_PTNI(
+        mut self,
+        position: Vec3,
+        texture: Vec2,
+        normal: Vec3,
+        index: f32,
+    ) -> Self {
+        let vertex = VertexData::new(self.flags)
+            .position(position)
+            .texture(texture)
+            .normal(normal)
+            .tangent(Vec3::splat(0.))
+            .bitangent(Vec3::splat(0.))
+            .index(index)
+            .build();
+
+        self.vertices.push(vertex);
+
+        self
+    }
+
     pub fn add_indices(mut self, indices: &Vec<u32>) -> Self {
         self.indices.extend(indices);
 

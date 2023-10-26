@@ -10,5 +10,6 @@ path = "src/lib.rs"
 
 [dependencies]
 anyhow = { workspace = true }
+image = { workspace = true }
 log = { workspace = true }
 time = { workspace = true }

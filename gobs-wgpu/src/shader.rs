@@ -31,7 +31,9 @@ impl ShaderType {
 
     pub fn vertex_flags(&self) -> VertexFlag {
         match self {
-            ShaderType::Phong => VertexFlag::POSITION | VertexFlag::TEXTURE | VertexFlag::NORMAL,
+            ShaderType::Phong => {
+                VertexFlag::POSITION | VertexFlag::TEXTURE | VertexFlag::NORMAL | VertexFlag::INDEX
+            }
             ShaderType::Solid => VertexFlag::POSITION,
         }
     }

@@ -144,6 +144,15 @@ impl Gfx {
             })
     }
 
+    pub fn create_atlas_buffer(&self, atlas: &Vec<f32>) -> wgpu::Buffer {
+        self.device
+            .create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                label: Some("Atlas Buffer"),
+                contents: bytemuck::cast_slice(atlas),
+                usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+            })
+    }
+
     pub fn create_instance_buffer(&self, instance_data: &Vec<InstanceData>) -> wgpu::Buffer {
         let bytes = instance_data
             .iter()

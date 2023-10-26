@@ -7,6 +7,7 @@ bitflags! {
         const POSITION = 1;
         const TEXTURE = 1 << 1;
         const NORMAL = 1 << 2;
+        const INDEX = 1 << 3;
     }
 }
 
@@ -17,6 +18,7 @@ pub struct VertexDataBuilder {
     pub normal: Option<Vec3>,
     pub tangent: Option<Vec3>,
     pub bitangent: Option<Vec3>,
+    pub index: Option<f32>,
 }
 
 impl VertexDataBuilder {
@@ -50,6 +52,12 @@ impl VertexDataBuilder {
         self
     }
 
+    pub fn index(mut self, index: f32) -> Self {
+        self.index = Some(index);
+
+        self
+    }
+
     pub fn build(self) -> VertexData {
         VertexData {
             flags: self.flags,
@@ -58,6 +66,7 @@ impl VertexDataBuilder {
             normal: self.normal.unwrap_or(Vec3::splat(0.)),
             tangent: self.tangent.unwrap_or(Vec3::splat(0.)),
             bitangent: self.bitangent.unwrap_or(Vec3::splat(0.)),
+            index: self.index.unwrap_or(1.),
         }
     }
 }
@@ -70,6 +79,7 @@ pub struct VertexData {
     pub normal: Vec3,
     pub tangent: Vec3,
     pub bitangent: Vec3,
+    pub index: f32,
 }
 
 impl VertexData {
@@ -81,6 +91,7 @@ impl VertexData {
             normal: None,
             tangent: None,
             bitangent: None,
+            index: None,
         }
     }
 
@@ -102,6 +113,10 @@ impl VertexData {
 
     pub fn bitangent(&self) -> Vec3 {
         self.bitangent
+    }
+
+    pub fn index(&self) -> f32 {
+        self.index
     }
 
     pub fn set_tangent(&mut self, tangent: Vec3) {
@@ -129,6 +144,10 @@ impl VertexData {
             data.extend_from_slice(bytemuck::cast_slice(&self.bitangent.to_array()));
         };
 
+        if self.flags.contains(VertexFlag::INDEX) {
+            data.extend_from_slice(bytemuck::cast_slice(&[self.index]));
+        };
+
         data
     }
 
@@ -139,6 +158,7 @@ impl VertexData {
                 VertexFlag::POSITION => std::mem::size_of::<Vec3>(),
                 VertexFlag::TEXTURE => std::mem::size_of::<Vec2>(),
                 VertexFlag::NORMAL => 3 * std::mem::size_of::<Vec3>(),
+                VertexFlag::INDEX => std::mem::size_of::<f32>(),
                 _ => unimplemented!(),
             })
             .sum()

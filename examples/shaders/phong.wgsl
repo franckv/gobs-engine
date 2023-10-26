@@ -3,18 +3,19 @@ struct VertexInput {
     @location(1) tex_coords: vec2<f32>,
     @location(2) normal: vec3<f32>,
     @location(3) tangent: vec3<f32>,
-    @location(4) bitangent: vec3<f32>
+    @location(4) bitangent: vec3<f32>,
+    @location(5) index: f32,
 }
 
 struct InstanceInput {
-    @location(5) model_matrix_0: vec4<f32>,
-    @location(6) model_matrix_1: vec4<f32>,
-    @location(7) model_matrix_2: vec4<f32>,
-    @location(8) model_matrix_3: vec4<f32>,
+    @location(6) model_matrix_0: vec4<f32>,
+    @location(7) model_matrix_1: vec4<f32>,
+    @location(8) model_matrix_2: vec4<f32>,
+    @location(9) model_matrix_3: vec4<f32>,
     
-    @location(9) normal_matrix_0: vec3<f32>,
-    @location(10) normal_matrix_1: vec3<f32>,
-    @location(11) normal_matrix_2: vec3<f32>,
+    @location(10) normal_matrix_0: vec3<f32>,
+    @location(11) normal_matrix_1: vec3<f32>,
+    @location(12) normal_matrix_2: vec3<f32>,
 }
 
 struct Camera {
@@ -33,12 +34,24 @@ struct Light {
 @group(1) @binding(0)
 var<uniform> light: Light;
 
+@group(2) @binding(0)
+var t_diffuse: texture_2d<f32>;
+@group(2) @binding(1)
+var s_diffuse: sampler;
+@group(2) @binding(2)
+var t_normal: texture_2d<f32>;
+@group(2) @binding(3)
+var s_normal: sampler;
+@group(2) @binding(4)
+var<uniform> atlas: vec4<f32>;
+
 struct VertexOutput {
     @builtin(position) clip_position: vec4<f32>,
     @location(0) tex_coords: vec2<f32>,
-    @location(1) tangent_position: vec3<f32>,
-    @location(2) tangent_light_position: vec3<f32>,
-    @location(3) tangent_view_position: vec3<f32>
+    @location(1) ntex_coords: vec2<f32>,
+    @location(2) tangent_position: vec3<f32>,
+    @location(3) tangent_light_position: vec3<f32>,
+    @location(4) tangent_view_position: vec3<f32>
 };
 
 @vertex
@@ -67,10 +80,19 @@ fn vs_main(model: VertexInput, instance: InstanceInput) -> VertexOutput {
 
     let world_position = model_matrix * vec4<f32>(model.position, 1.0);
 
+    let d_cols = u32(model.index - 1.0) % u32(atlas.x);
+    let d_rows = u32(model.index - 1.0) / u32(atlas.x);
+
+    let d_u = (f32(d_cols) + model.tex_coords.x) / atlas.x;
+    let d_v = (f32(d_rows) + model.tex_coords.y) / atlas.y;
+
+    let tex_coords = vec2<f32>(d_u, d_v);
+
     var out: VertexOutput;
 
     out.clip_position = camera.view_proj * world_position;
-    out.tex_coords = model.tex_coords;
+    out.tex_coords = tex_coords;
+    out.ntex_coords = model.tex_coords;
     out.tangent_position = tangent_matrix * world_position.xyz;
     out.tangent_view_position = tangent_matrix * camera.view_pos.xyz;
     out.tangent_light_position = tangent_matrix * light.position;
@@ -78,19 +100,10 @@ fn vs_main(model: VertexInput, instance: InstanceInput) -> VertexOutput {
     return out;
 }
 
-@group(2) @binding(0)
-var t_diffuse: texture_2d<f32>;
-@group(2) @binding(1)
-var s_diffuse: sampler;
-@group(2) @binding(2)
-var t_normal: texture_2d<f32>;
-@group(2) @binding(3)
-var s_normal: sampler;
-
 @fragment
 fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
     let object_color: vec4<f32> = textureSample(t_diffuse, s_diffuse, in.tex_coords);
-    let object_normal: vec4<f32> = textureSample(t_normal, s_normal, in.tex_coords);
+    let object_normal: vec4<f32> = textureSample(t_normal, s_normal, in.ntex_coords);
 
     let ambient_strength = 0.1;
     let ambient_color = light.color * ambient_strength;

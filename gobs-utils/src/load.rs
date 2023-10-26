@@ -3,6 +3,7 @@ use std::io::{Error, ErrorKind};
 use std::path::PathBuf;
 
 use anyhow::Result;
+use image::DynamicImage;
 use log::info;
 
 pub enum AssetType {
@@ -43,4 +44,11 @@ pub async fn load_binary(file_name: &str, ty: AssetType) -> Result<Vec<u8>> {
     let data = std::fs::read(path)?;
 
     Ok(data)
+}
+
+pub async fn load_image(file_name: &str, ty: AssetType) -> Result<DynamicImage> {
+    let bytes = load_binary(file_name, ty).await?;
+    let img = image::load_from_memory(&bytes)?;
+
+    Ok(img)
 }

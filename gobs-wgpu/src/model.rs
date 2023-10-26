@@ -1,3 +1,4 @@
+pub mod atlas;
 mod camera;
 mod light;
 mod material;
@@ -12,4 +13,4 @@ pub use material::{Material, MaterialBuilder};
 pub use mesh::{Mesh, MeshBuilder};
 pub use model::{Model, ModelBuilder};
 pub use model_instance::ModelInstance;
-pub use texture::Texture;
+pub use texture::{Texture, TextureType};

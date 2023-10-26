@@ -30,10 +30,11 @@ impl Shapes {
         let ti = [1, 2, 3];
 
         for i in 0..vi.len() {
-            builder = builder.add_vertex_PTN(
+            builder = builder.add_vertex_PTNI(
                 v[vi[i] - 1].into(),
                 t[ti[i] - 1].into(),
                 n[ni[i] - 1].into(),
+                1.0,
             )
         }
 
@@ -63,17 +64,18 @@ impl Shapes {
         let ti = [1, 3, 4, 4, 2, 1];
 
         for i in 0..vi.len() {
-            builder = builder.add_vertex_PTN(
+            builder = builder.add_vertex_PTNI(
                 v[vi[i] - 1].into(),
                 t[ti[i] - 1].into(),
                 n[ni[i] - 1].into(),
+                1.0,
             )
         }
 
         builder.build(gfx)
     }
 
-    pub fn cube(gfx: &Gfx, flags: VertexFlag) -> Mesh {
+    pub fn cube(gfx: &Gfx, flags: VertexFlag, index: &[u32]) -> Mesh {
         let mut builder = MeshBuilder::new("cube", flags);
 
         let (top, bottom, left, right, front, back) = (0.5, -0.5, -0.5, 0.5, 0.5, -0.5);
@@ -120,10 +122,11 @@ impl Shapes {
         ];
 
         for i in 0..vi.len() {
-            builder = builder.add_vertex_PTN(
+            builder = builder.add_vertex_PTNI(
                 v[vi[i] - 1].into(),
                 t[ti[i] - 1].into(),
                 n[ni[i] - 1].into(),
+                index[(i / index.len()) % index.len()] as f32,
             )
         }
 
@@ -210,8 +213,12 @@ impl Shapes {
                 (tex[0] + pos[i / 6][0] as f32) / (cols as f32),
                 (tex[1] + pos[i / 6][1] as f32) / (rows as f32),
             ];
-            builder =
-                builder.add_vertex_PTN(v[vi[i] - 1].into(), tex_mapped.into(), n[ni[i] - 1].into())
+            builder = builder.add_vertex_PTNI(
+                v[vi[i] - 1].into(),
+                tex_mapped.into(),
+                n[ni[i] - 1].into(),
+                1.0,
+            )
         }
 
         builder.build(gfx)

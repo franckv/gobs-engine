@@ -47,14 +47,18 @@ impl Run for App {
 
         let wall_model = ModelBuilder::new()
             .add_mesh(
-                scene::shape::Shapes::cube(gfx, ShaderType::Phong.vertex_flags()),
+                scene::shape::Shapes::cube(
+                    gfx,
+                    ShaderType::Phong.vertex_flags(),
+                    &[5, 5, 5, 5, 6, 4],
+                ),
                 0,
             )
             .add_material(
                 MaterialBuilder::new("diffuse")
-                    .diffuse_texture(gfx, examples::WALL_TEXTURE)
+                    .diffuse_texture(gfx, examples::WALL_TEXTURE, 3, 2)
                     .await
-                    .normal_texture(gfx, examples::WALL_TEXTURE_N)
+                    .normal_texture(gfx, examples::WALL_TEXTURE_N, 1, 1)
                     .await
                     .build(gfx, &scene.phong_shader),
             )

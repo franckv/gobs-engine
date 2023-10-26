@@ -6,6 +6,7 @@ use log::*;
 use gobs_wgpu as render;
 
 use render::model::ModelInstance;
+use render::model::TextureType;
 use render::render::RenderError;
 use render::shader::Shader;
 use render::shader::ShaderBindGroup;
@@ -56,7 +57,16 @@ impl Scene {
 
         let nodes = Vec::new();
 
-        let depth_texture = Texture::create_depth_texture(gfx, "depth_texture");
+        let depth_texture = Texture::new(
+            gfx,
+            "depth_texture",
+            TextureType::DEPTH,
+            gfx.width(),
+            gfx.height(),
+            1,
+            1,
+            None,
+        );
 
         Scene {
             solid_shader,
@@ -72,7 +82,16 @@ impl Scene {
     }
 
     pub fn resize(&mut self, gfx: &Gfx, width: u32, height: u32) {
-        self.depth_texture = Texture::create_depth_texture(gfx, "depth_texture");
+        self.depth_texture = Texture::new(
+            gfx,
+            "depth_texture",
+            TextureType::DEPTH,
+            gfx.width(),
+            gfx.height(),
+            1,
+            1,
+            None,
+        );
         self.camera.projection.resize(width, height);
     }
 

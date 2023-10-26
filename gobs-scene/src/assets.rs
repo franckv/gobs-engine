@@ -9,7 +9,6 @@ use gobs_wgpu as render;
 
 use render::model::{Material, Mesh, MeshBuilder, Model, Texture};
 use render::shader::{Shader, ShaderBindGroup, ShaderType};
-use render::shader_data::VertexFlag;
 use utils::load::{self, AssetType};
 
 use crate::Gfx;
@@ -59,14 +58,7 @@ async fn load_mesh(gfx: &Gfx, shader_type: ShaderType, models: Vec<tobj::Model>)
     models
         .into_iter()
         .map(|m| {
-            let flags = match shader_type {
-                ShaderType::Phong => {
-                    VertexFlag::POSITION | VertexFlag::TEXTURE | VertexFlag::NORMAL
-                }
-                ShaderType::Solid => VertexFlag::POSITION,
-            };
-
-            let mut mesh = MeshBuilder::new(&m.name, flags);
+            let mut mesh = MeshBuilder::new(&m.name, shader_type.vertex_flags());
 
             for i in 0..m.mesh.positions.len() / 3 {
                 let position = [
@@ -82,7 +74,8 @@ async fn load_mesh(gfx: &Gfx, shader_type: ShaderType, models: Vec<tobj::Model>)
                 ];
                 match shader_type {
                     ShaderType::Phong => {
-                        mesh = mesh.add_vertex_PTN(position.into(), texture.into(), normal.into())
+                        mesh =
+                            mesh.add_vertex_PTNI(position.into(), texture.into(), normal.into(), 1.)
                     }
                     ShaderType::Solid => mesh = mesh.add_vertex_P(position.into()),
                 }
@@ -107,17 +100,17 @@ async fn load_material(
 
         let diffuse_texture = {
             if let Some(texture_name) = &m.diffuse_texture {
-                Texture::load_texture(gfx, texture_name, false).await?
+                Texture::load_texture(gfx, texture_name, 1, 1, false).await?
             } else {
-                Texture::load_texture(gfx, "cube-diffuse.jpg", false).await?
+                Texture::load_texture(gfx, "cube-diffuse.jpg", 1, 1, false).await?
             }
         };
 
         let normal_texture = {
             if let Some(texture_name) = &m.normal_texture {
-                Texture::load_texture(gfx, texture_name, true).await?
+                Texture::load_texture(gfx, texture_name, 1, 1, true).await?
             } else {
-                Texture::load_texture(gfx, "cube-normal.png", true).await?
+                Texture::load_texture(gfx, "cube-normal.png", 1, 1, true).await?
             }
         };
 
