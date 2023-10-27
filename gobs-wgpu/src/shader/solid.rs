@@ -31,8 +31,8 @@ impl SolidShader {
     pub async fn new(gfx: &Gfx) -> Shader {
         let generator = Generator::new(SHADER).await;
         let layouts = generator.bind_layouts(gfx);
-        let instance_flags = ShaderType::Solid.instance_flags();
-        let vertex_flags = ShaderType::Solid.vertex_flags();
+        let instance_flags = Self::instance_flags();
+        let vertex_flags = Self::vertex_flags();
 
         let vertex_attributes = generator.vertex_layout_attributes("VertexInput");
         let vertex_layout =
