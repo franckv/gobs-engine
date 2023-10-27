@@ -107,9 +107,9 @@ impl Texture {
                 TextureType::DEPTH => Some(wgpu::CompareFunction::LessEqual),
                 _ => Default::default(),
             },
-            lod_min_clamp: 0.0,
+            lod_min_clamp: 0.,
             lod_max_clamp: match ty {
-                TextureType::DEPTH => 100.0,
+                TextureType::DEPTH => 100.,
                 _ => 32.,
             },
             ..Default::default()

@@ -136,7 +136,7 @@ impl MeshBuilder {
             let delta_uv1 = uv1 - uv0;
             let delta_uv2 = uv2 - uv0;
 
-            let r = 1.0 / (delta_uv1.x * delta_uv2.y - delta_uv1.y * delta_uv2.x);
+            let r = 1. / (delta_uv1.x * delta_uv2.y - delta_uv1.y * delta_uv2.x);
             let tangent = (delta_pos1 * delta_uv2.y - delta_pos2 * delta_uv1.y) * r;
             let bitangent = (delta_pos2 * delta_uv1.x - delta_pos1 * delta_uv2.x) * -r;
 
@@ -153,7 +153,7 @@ impl MeshBuilder {
         }
 
         for (i, n) in triangles_included.into_iter().enumerate() {
-            let denom = 1.0 / n as f32;
+            let denom = 1. / n as f32;
             let v = &mut self.vertices[i];
             v.set_tangent(Vec3::from(v.tangent()) * denom);
             v.set_bitangent(Vec3::from(v.bitangent()) * denom);

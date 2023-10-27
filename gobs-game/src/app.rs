@@ -83,7 +83,7 @@ impl Application {
                 }
                 Event::Redraw => {
                     let delta = timer.delta();
-                    log::trace!("FPS: {}", 1.0 / delta);
+                    log::trace!("FPS: {}", 1. / delta);
 
                     runnable.update(delta, &mut self.gfx);
                     match runnable.render(&mut self.gfx) {

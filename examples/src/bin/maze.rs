@@ -34,10 +34,10 @@ impl Run for App {
                 gfx.height(),
                 (45. as f32).to_radians(),
                 0.1,
-                150.0,
+                150.,
             ),
             (-90. as f32).to_radians(),
-            (-50. as f32).to_radians(),
+            (0. as f32).to_radians(),
         );
 
         let light = Light::new((8., 2., 8.), (1., 1., 0.9));
@@ -115,7 +115,7 @@ impl Run for App {
 
         let old_position: Vec3 = self.scene.light.position;
         let position: Vec3 =
-            (Quat::from_axis_angle((0.0, 1.0, 0.0).into(), (angular_speed * delta).to_radians())
+            (Quat::from_axis_angle((0., 1., 0.).into(), (angular_speed * delta).to_radians())
                 * old_position)
                 .into();
 
@@ -170,7 +170,9 @@ impl App {
 
         let (mut i, mut j) = (0., 0.);
 
-        let (mut pos_x, mut pos_y, mut pos_z) = (0., 0., 0.);
+        let (mut pos_x, pos_y, mut pos_z) = (0., 0., 0.);
+
+        let rotation = Quat::from_axis_angle(Vec3::Z, 0.);
 
         for c in examples::MAP.chars() {
             match c {
@@ -178,10 +180,9 @@ impl App {
                     i += examples::TILE_SIZE;
                     let mut position = Vec3 {
                         x: i - offset,
-                        y: 0.0,
+                        y: 0.,
                         z: j - offset,
                     };
-                    let rotation = Quat::from_axis_angle(Vec3::Z, 0.0);
 
                     scene.add_node(position, rotation, wall_model);
                     position.y = -examples::TILE_SIZE;
@@ -194,7 +195,6 @@ impl App {
                         y: -examples::TILE_SIZE,
                         z: j - offset,
                     };
-                    let rotation = Quat::from_axis_angle(Vec3::Z, 0.0);
                     (pos_x, pos_z) = (position.x, position.z);
                     scene.add_node(position, rotation, floor_model);
                 }
@@ -205,7 +205,6 @@ impl App {
                         y: -examples::TILE_SIZE,
                         z: j - offset,
                     };
-                    let rotation = Quat::from_axis_angle(Vec3::Z, 0.0);
                     scene.add_node(position, rotation, floor_model);
                 }
                 '\n' => {

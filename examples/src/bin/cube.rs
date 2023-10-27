@@ -27,9 +27,9 @@ impl Run for App {
             CameraProjection::new(
                 gfx.width(),
                 gfx.height(),
-                (45.0 as f32).to_radians(),
+                (45. as f32).to_radians(),
                 0.1,
-                150.0,
+                150.,
             ),
             (-45. as f32).to_radians(),
             (-34. as f32).to_radians(),
@@ -64,7 +64,7 @@ impl Run for App {
 
         scene.add_node([0., 0., 0.].into(), Quat::IDENTITY, id);
 
-        let camera_controller = CameraController::new(3.0, 0.4);
+        let camera_controller = CameraController::new(3., 0.4);
 
         App {
             camera_controller,
@@ -79,9 +79,9 @@ impl Run for App {
             .update_camera(&mut self.scene.camera, delta);
 
         let rot_delta =
-            Quat::from_axis_angle((0.0, 1.0, 0.0).into(), (angular_speed * delta).to_radians());
+            Quat::from_axis_angle((0., 1., 0.).into(), (angular_speed * delta).to_radians());
         let rot_delta_model = Quat::from_axis_angle(
-            (0.0, 1.0, 0.0).into(),
+            (0., 1., 0.).into(),
             (0.1 * angular_speed * delta).to_radians(),
         );
 

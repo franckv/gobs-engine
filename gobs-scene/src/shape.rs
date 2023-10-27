@@ -6,6 +6,10 @@ use render::{
     render::Gfx,
     shader_data::VertexFlag,
 };
+
+const T_MIN: f32 = 0.01;
+const T_MAX: f32 = 1. - T_MIN;
+
 pub struct Shapes;
 
 impl Shapes {
@@ -22,7 +26,7 @@ impl Shapes {
 
         let n = [[0., 0., 1.]];
 
-        let t = [[0., 1.], [1., 1.], [0.5, 0.]];
+        let t = [[T_MIN, T_MAX], [T_MAX, T_MAX], [(T_MIN + T_MAX) / 2., T_MIN]];
 
         let vi = [1, 2, 3];
 
@@ -56,7 +60,7 @@ impl Shapes {
 
         let n = [[0., 0., 1.]];
 
-        let t = [[0., 0.], [1., 0.], [0., 1.], [1., 1.]];
+        let t = [[T_MIN, T_MIN], [T_MAX, T_MIN], [T_MIN, T_MAX], [T_MAX, T_MAX]];
 
         let vi = [1, 3, 4, 4, 2, 1];
 
@@ -101,7 +105,7 @@ impl Shapes {
             [0., -1., 0.],
         ];
 
-        let t = [[0., 0.], [1., 0.], [0., 1.], [1., 1.]];
+        let t = [[T_MIN, T_MIN], [T_MAX, T_MIN], [T_MIN, T_MAX], [T_MAX, T_MAX]];
 
         let vi = [
             3, 4, 2, 3, 2, 1, // F
@@ -195,7 +199,7 @@ impl Shapes {
             [0., -1., 0.],
         ];
 
-        let t = [[0., 0.], [1., 0.], [0., 1.], [1., 1.]];
+        let t = [[T_MIN, T_MIN], [T_MAX, T_MIN], [T_MIN, T_MAX], [T_MAX, T_MAX]];
 
         let vi = [
             3, 4, 2, 3, 2, 1, // F

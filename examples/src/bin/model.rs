@@ -23,30 +23,30 @@ struct App {
 impl Run for App {
     async fn create(gfx: &mut Gfx) -> Self {
         let camera = Camera::new(
-            (-2., 2., 5.0),
+            (-2., 2., 5.),
             CameraProjection::new(
                 gfx.width(),
                 gfx.height(),
-                (45.0 as f32).to_radians(),
+                (45. as f32).to_radians(),
                 0.1,
-                150.0,
+                150.,
             ),
             (-65. as f32).to_radians(),
             (-20. as f32).to_radians(),
         );
 
-        let light = Light::new((8.0, 2.0, 8.0), (1., 1., 0.9));
+        let light = Light::new((8., 2., 8.), (1., 1., 0.9));
 
         let mut scene = Scene::new(gfx, camera, light).await;
 
         let cube = scene
-            .load_model(gfx, examples::CUBE, ShaderType::Phong, 1.0)
+            .load_model(gfx, examples::CUBE, ShaderType::Phong, 1.)
             .await
             .unwrap();
 
         scene.add_node([0., 0., 0.].into(), Quat::IDENTITY, cube);
 
-        let camera_controller = CameraController::new(3.0, 0.4);
+        let camera_controller = CameraController::new(3., 0.4);
 
         App {
             camera_controller,
@@ -62,7 +62,7 @@ impl Run for App {
 
         let old_position: Vec3 = self.scene.light.position;
         let position: Vec3 =
-            (Quat::from_axis_angle((0.0, 1.0, 0.0).into(), (angular_speed * delta).to_radians())
+            (Quat::from_axis_angle((0., 1., 0.).into(), (angular_speed * delta).to_radians())
                 * old_position)
                 .into();
 

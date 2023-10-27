@@ -92,7 +92,7 @@ impl Scene {
     }
 
     pub fn update(&mut self, gfx: &Gfx) {
-        let view_position = self.camera.position.extend(1.0).to_array();
+        let view_position = self.camera.position.extend(1.).to_array();
         let view_proj =
             (self.camera.projection.to_matrix() * self.camera.to_matrix()).to_cols_array_2d();
 

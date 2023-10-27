@@ -12,9 +12,9 @@ pub struct LightResource {
 impl LightResource {
     pub fn new(device: &wgpu::Device, layout: &wgpu::BindGroupLayout) -> Self {
         let uniform = LightUniform {
-            position: [2.0, 2.0, 2.0],
+            position: [2., 2., 2.],
             _padding: 0,
-            colour: [1.0, 1.0, 1.0],
+            colour: [1., 1., 1.],
             _padding2: 0,
         };
 

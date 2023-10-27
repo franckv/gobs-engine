@@ -53,7 +53,7 @@ impl Event {
                 },
                 WindowEvent::MouseWheel { delta, .. } => {
                     let delta = match delta {
-                        MouseScrollDelta::LineDelta(_, scroll) => scroll * 100.0,
+                        MouseScrollDelta::LineDelta(_, scroll) => scroll * 100.,
                         MouseScrollDelta::PixelDelta(PhysicalPosition { y: scroll, .. }) => {
                             scroll as f32
                         }

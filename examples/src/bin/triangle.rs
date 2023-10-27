@@ -27,12 +27,12 @@ impl Run for App {
             CameraProjection::new(
                 gfx.width(),
                 gfx.height(),
-                (45.0 as f32).to_radians(),
+                (45. as f32).to_radians(),
                 0.1,
-                150.0,
+                150.,
             ),
-            (-90.0 as f32).to_radians(),
-            (0.0 as f32).to_radians(),
+            (-90. as f32).to_radians(),
+            (0. as f32).to_radians(),
         );
 
         let light = Light::new((0., 0., 10.), (1., 0., 0.));
@@ -50,7 +50,7 @@ impl Run for App {
 
         scene.add_node([0., 0., 0.].into(), Quat::IDENTITY, id);
 
-        let camera_controller = CameraController::new(3.0, 0.4);
+        let camera_controller = CameraController::new(3., 0.4);
 
         App {
             camera_controller,
