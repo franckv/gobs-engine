@@ -12,3 +12,6 @@ gobs-utils = { path = "../gobs-utils" }
 log = { workspace = true }
 simplelog = { workspace = true }
 uuid = { workspace = true }
+
+[build-dependencies]
+fs_extra = { workspace = true }

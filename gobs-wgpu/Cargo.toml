@@ -9,7 +9,6 @@ anyhow = { workspace = true }
 bitflags = { workspace = true }
 bytemuck = { workspace = true }
 glam = { workspace = true }
-
 gobs-utils = { path = "../gobs-utils" }
 image = { workspace = true }
 itertools = { workspace = true }
@@ -18,3 +17,6 @@ naga = { workspace = true }
 uuid = { workspace = true }
 wgpu = { workspace = true }
 winit = { workspace = true }
+
+[build-dependencies]
+fs_extra = { workspace = true }

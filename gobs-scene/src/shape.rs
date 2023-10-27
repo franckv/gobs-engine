@@ -26,7 +26,11 @@ impl Shapes {
 
         let n = [[0., 0., 1.]];
 
-        let t = [[T_MIN, T_MAX], [T_MAX, T_MAX], [(T_MIN + T_MAX) / 2., T_MIN]];
+        let t = [
+            [T_MIN, T_MAX],
+            [T_MAX, T_MAX],
+            [(T_MIN + T_MAX) / 2., T_MIN],
+        ];
 
         let vi = [1, 2, 3];
 
@@ -60,7 +64,12 @@ impl Shapes {
 
         let n = [[0., 0., 1.]];
 
-        let t = [[T_MIN, T_MIN], [T_MAX, T_MIN], [T_MIN, T_MAX], [T_MAX, T_MAX]];
+        let t = [
+            [T_MIN, T_MIN],
+            [T_MAX, T_MIN],
+            [T_MIN, T_MAX],
+            [T_MAX, T_MAX],
+        ];
 
         let vi = [1, 3, 4, 4, 2, 1];
 
@@ -105,7 +114,12 @@ impl Shapes {
             [0., -1., 0.],
         ];
 
-        let t = [[T_MIN, T_MIN], [T_MAX, T_MIN], [T_MIN, T_MAX], [T_MAX, T_MAX]];
+        let t = [
+            [T_MIN, T_MIN],
+            [T_MAX, T_MIN],
+            [T_MIN, T_MAX],
+            [T_MAX, T_MAX],
+        ];
 
         let vi = [
             3, 4, 2, 3, 2, 1, // F

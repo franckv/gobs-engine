@@ -15,7 +15,7 @@ fn main() {
     let out_dir = env::var("OUT_DIR").unwrap();
     let profile = env::var("PROFILE").unwrap();
 
-    println!("cargo:rerun-if-changed=assets/");
+    println!("cargo:rerun-if-changed=shaders/");
 
     let mut target = PathBuf::from(out_dir);
 
@@ -32,5 +32,5 @@ fn main() {
     let mut copy_options = CopyOptions::new();
     copy_options.overwrite = true;
 
-    copy("assets", target, &copy_options).unwrap();
+    copy("shaders", target, &copy_options).unwrap();
 }
