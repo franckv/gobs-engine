@@ -80,11 +80,11 @@ fn vs_main(model: VertexInput, instance: InstanceInput) -> VertexOutput {
 
     let world_position = model_matrix * vec4<f32>(model.position, 1.0);
 
-    let d_cols = u32(model.index - 1.0) % u32(atlas.x);
-    let d_rows = u32(model.index - 1.0) / u32(atlas.x);
+    let d_cols = (model.index - 1.0) % atlas.x;
+    let d_rows = trunc((model.index - 1.0) / atlas.x);
 
-    let d_u = (f32(d_cols) + model.tex_coords.x) / atlas.x;
-    let d_v = (f32(d_rows) + model.tex_coords.y) / atlas.y;
+    let d_u = (d_cols + model.tex_coords.x) / atlas.x;
+    let d_v = (d_rows + model.tex_coords.y) / atlas.y;
 
     let tex_coords = vec2<f32>(d_u, d_v);
 
