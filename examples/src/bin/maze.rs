@@ -50,23 +50,41 @@ impl Run for App {
                 scene::shape::Shapes::cube(
                     gfx,
                     ShaderType::Phong.vertex_flags(),
+                    3,
+                    2,
                     &[5, 5, 5, 5, 6, 4],
                 ),
                 0,
             )
             .add_material(
                 MaterialBuilder::new("diffuse")
-                    .diffuse_texture(gfx, examples::WALL_TEXTURE, 3, 2)
+                    .diffuse_texture(gfx, examples::WALL_TEXTURE)
                     .await
-                    .normal_texture(gfx, examples::WALL_TEXTURE_N, 1, 1)
+                    .normal_texture(gfx, examples::WALL_TEXTURE_N)
                     .await
                     .build(gfx, &scene.phong_shader),
             )
             .build();
 
-        let id = scene.add_model(wall_model, ShaderType::Phong);
+        let floor_model = ModelBuilder::new()
+            .add_mesh(
+                scene::shape::Shapes::cube(gfx, ShaderType::Phong.vertex_flags(), 3, 2, &[4]),
+                0,
+            )
+            .add_material(
+                MaterialBuilder::new("diffuse")
+                    .diffuse_texture(gfx, examples::WALL_TEXTURE)
+                    .await
+                    .normal_texture(gfx, examples::WALL_TEXTURE_N)
+                    .await
+                    .build(gfx, &scene.phong_shader),
+            )
+            .build();
 
-        Self::load_scene(&mut scene, id);
+        let wall_id = scene.add_model(wall_model, ShaderType::Phong);
+        let floor_id = scene.add_model(floor_model, ShaderType::Phong);
+
+        Self::load_scene(&mut scene, wall_id, floor_id);
 
         let light_model = scene
             .load_model(gfx, examples::LIGHT, ShaderType::Solid, 0.3)
@@ -143,7 +161,7 @@ impl Run for App {
 }
 
 impl App {
-    pub fn load_scene(scene: &mut Scene, wall_model: Uuid) {
+    pub fn load_scene(scene: &mut Scene, wall_model: Uuid, floor_model: Uuid) {
         info!("Load scene");
 
         let offset = 16.;
@@ -154,7 +172,7 @@ impl App {
             match c {
                 'w' => {
                     i += examples::TILE_SIZE;
-                    let position = Vec3 {
+                    let mut position = Vec3 {
                         x: i - offset,
                         y: 0.0,
                         z: j - offset,
@@ -162,20 +180,28 @@ impl App {
                     let rotation = Quat::from_axis_angle(Vec3::Z, 0.0);
 
                     scene.add_node(position, rotation, wall_model);
-                }
-                't' => {
-                    i += examples::TILE_SIZE;
-                    let position = Vec3 {
-                        x: i - offset,
-                        y: 0.0,
-                        z: j - offset,
-                    };
-                    let rotation = Quat::from_axis_angle(Vec3::Z, 0.0);
-
-                    scene.add_node(position, rotation, wall_model);
+                    position.y = -examples::TILE_SIZE;
+                    scene.add_node(position, rotation, floor_model);
                 }
                 '.' | '@' => {
                     i += examples::TILE_SIZE;
+                    let position = Vec3 {
+                        x: i - offset,
+                        y: -examples::TILE_SIZE,
+                        z: j - offset,
+                    };
+                    let rotation = Quat::from_axis_angle(Vec3::Z, 0.0);
+                    scene.add_node(position, rotation, floor_model);
+                }
+                ' ' => {
+                    i += examples::TILE_SIZE;
+                    let position = Vec3 {
+                        x: i - offset,
+                        y: -examples::TILE_SIZE,
+                        z: j - offset,
+                    };
+                    let rotation = Quat::from_axis_angle(Vec3::Z, 0.0);
+                    scene.add_node(position, rotation, floor_model);
                 }
                 '\n' => {
                     j += examples::TILE_SIZE;

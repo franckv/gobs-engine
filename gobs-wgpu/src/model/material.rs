@@ -7,8 +7,6 @@ use uuid::Uuid;
 
 use crate::render::Gfx;
 
-use super::atlas;
-
 pub struct MaterialBuilder {
     name: String,
     diffuse_texture: Option<Texture>,
@@ -30,28 +28,14 @@ impl MaterialBuilder {
         self
     }
 
-    pub async fn diffuse_texture(mut self, gfx: &Gfx, file: &str, cols: u32, rows: u32) -> Self {
-        self.diffuse_texture = Some(
-            Texture::load_texture(gfx, file, cols, rows, false)
-                .await
-                .unwrap(),
-        );
+    pub async fn diffuse_texture(mut self, gfx: &Gfx, file: &str) -> Self {
+        self.diffuse_texture = Some(Texture::load_texture(gfx, file, false).await.unwrap());
 
         self
     }
 
-    pub async fn diffuse_atlas(mut self, gfx: &Gfx, files: &[&str], cols: u32) -> Self {
-        self.diffuse_texture = Some(atlas::load_atlas(gfx, files, cols, false).await.unwrap());
-
-        self
-    }
-
-    pub async fn normal_texture(mut self, gfx: &Gfx, file: &str, cols: u32, rows: u32) -> Self {
-        self.normal_texture = Some(
-            Texture::load_texture(gfx, file, cols, rows, true)
-                .await
-                .unwrap(),
-        );
+    pub async fn normal_texture(mut self, gfx: &Gfx, file: &str) -> Self {
+        self.normal_texture = Some(Texture::load_texture(gfx, file, true).await.unwrap());
 
         self
     }
@@ -83,7 +67,6 @@ pub struct Material {
     pub diffuse_texture: Texture,
     pub normal_texture: Texture,
     pub bind_group: wgpu::BindGroup,
-    pub atlas_buffer: wgpu::Buffer,
 }
 
 impl Material {
@@ -95,15 +78,6 @@ impl Material {
         normal_texture: Texture,
     ) -> Self {
         info!("Create Material bind group");
-
-        let atlas = vec![
-            diffuse_texture.cols as f32,
-            diffuse_texture.rows as f32,
-            normal_texture.cols as f32,
-            normal_texture.rows as f32,
-        ];
-
-        let atlas_buffer = gfx.create_atlas_buffer(&atlas);
 
         let bind_group = gfx.device().create_bind_group(&wgpu::BindGroupDescriptor {
             layout,
@@ -124,12 +98,6 @@ impl Material {
                     binding: 3,
                     resource: wgpu::BindingResource::Sampler(&normal_texture.sampler),
                 },
-                wgpu::BindGroupEntry {
-                    binding: 4,
-                    resource: wgpu::BindingResource::Buffer(
-                        atlas_buffer.as_entire_buffer_binding(),
-                    ),
-                },
             ],
             label: None,
         });
@@ -139,7 +107,6 @@ impl Material {
             name,
             diffuse_texture,
             normal_texture,
-            atlas_buffer,
             bind_group,
         }
     }

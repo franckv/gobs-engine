@@ -39,8 +39,6 @@ impl TextureType {
 pub struct Texture {
     pub width: u32,
     pub height: u32,
-    pub cols: u32,
-    pub rows: u32,
     pub texture: wgpu::Texture,
     pub view: wgpu::TextureView,
     pub sampler: wgpu::Sampler,
@@ -53,8 +51,6 @@ impl Texture {
         ty: TextureType,
         width: u32,
         height: u32,
-        cols: u32,
-        rows: u32,
         img: Option<&image::DynamicImage>,
     ) -> Self {
         let size = wgpu::Extent3d {
@@ -122,8 +118,6 @@ impl Texture {
         Self {
             width: gfx.width(),
             height: gfx.height(),
-            cols,
-            rows,
             texture,
             view,
             sampler,
@@ -132,13 +126,7 @@ impl Texture {
 
     pub const DEPTH_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Depth32Float;
 
-    pub async fn load_texture(
-        gfx: &Gfx,
-        file_name: &str,
-        cols: u32,
-        rows: u32,
-        is_normal_map: bool,
-    ) -> Result<Self> {
+    pub async fn load_texture(gfx: &Gfx, file_name: &str, is_normal_map: bool) -> Result<Self> {
         let img = load::load_image(file_name, AssetType::IMAGE).await?;
 
         let ty = match is_normal_map {
@@ -152,8 +140,6 @@ impl Texture {
             ty,
             img.dimensions().0,
             img.dimensions().1,
-            cols,
-            rows,
             Some(&img),
         ))
     }
@@ -176,8 +162,6 @@ impl Texture {
             ty,
             img_color.dimensions().0,
             img_color.dimensions().1,
-            1,
-            1,
             Some(&img_color),
         )
     }

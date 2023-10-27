@@ -8,6 +8,8 @@ use crate::shader::Shader;
 use crate::shader::ShaderBindGroup;
 use crate::shader::ShaderDraw;
 use crate::shader::ShaderType;
+use crate::shader_data::InstanceFlag;
+use crate::shader_data::VertexFlag;
 
 const SHADER: &str = "phong.wgsl";
 
@@ -18,6 +20,14 @@ pub struct PhongShader {
 }
 
 impl PhongShader {
+    pub fn instance_flags() -> InstanceFlag {
+        InstanceFlag::MODEL | InstanceFlag::NORMAL
+    }
+
+    pub fn vertex_flags() -> VertexFlag {
+        VertexFlag::POSITION | VertexFlag::TEXTURE | VertexFlag::NORMAL
+    }
+
     pub async fn new(gfx: &Gfx) -> Shader {
         let generator = Generator::new(SHADER).await;
         let layouts = generator.bind_layouts(gfx);

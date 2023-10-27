@@ -24,17 +24,15 @@ pub enum ShaderType {
 impl ShaderType {
     pub fn instance_flags(&self) -> InstanceFlag {
         match self {
-            ShaderType::Phong => InstanceFlag::MODEL | InstanceFlag::NORMAL,
-            ShaderType::Solid => InstanceFlag::MODEL,
+            ShaderType::Phong => PhongShader::instance_flags(),
+            ShaderType::Solid => SolidShader::instance_flags(),
         }
     }
 
     pub fn vertex_flags(&self) -> VertexFlag {
         match self {
-            ShaderType::Phong => {
-                VertexFlag::POSITION | VertexFlag::TEXTURE | VertexFlag::NORMAL | VertexFlag::INDEX
-            }
-            ShaderType::Solid => VertexFlag::POSITION,
+            ShaderType::Phong => PhongShader::vertex_flags(),
+            ShaderType::Solid => SolidShader::vertex_flags(),
         }
     }
 }

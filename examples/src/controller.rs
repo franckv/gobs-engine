@@ -20,6 +20,8 @@ pub struct CameraController {
     amount_backward: f32,
     amount_up: f32,
     amount_down: f32,
+    fov_up: f32,
+    fov_down: f32,
     rotate_horizontal: f32,
     rotate_vertical: f32,
     scroll: f32,
@@ -38,6 +40,8 @@ impl CameraController {
             amount_backward: 0.0,
             amount_up: 0.0,
             amount_down: 0.0,
+            fov_up: 0.0,
+            fov_down: 0.0,
             rotate_horizontal: 0.0,
             rotate_vertical: 0.0,
             scroll: 0.0,
@@ -89,6 +93,12 @@ impl CameraController {
             Key::L => {
                 self.debug = true;
             }
+            Key::PageUp => {
+                self.fov_up = amount;
+            }
+            Key::PageDown => {
+                self.fov_down = amount;
+            }
             _ => (),
         }
     }
@@ -123,6 +133,8 @@ impl CameraController {
 
         self.rotate_horizontal = 0.0;
         self.rotate_vertical = 0.0;
+
+        camera.projection.fovy += (self.fov_up - self.fov_down) * dt;
 
         if camera.pitch < -SAFE_FRAC_PI_2 {
             camera.pitch = -SAFE_FRAC_PI_2;

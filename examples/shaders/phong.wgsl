@@ -1,34 +1,33 @@
 struct VertexInput {
-    @location(0) position: vec3<f32>,
-    @location(1) tex_coords: vec2<f32>,
-    @location(2) normal: vec3<f32>,
-    @location(3) tangent: vec3<f32>,
-    @location(4) bitangent: vec3<f32>,
-    @location(5) index: f32,
+    @location(0) position: vec3f,
+    @location(1) tex_coords: vec2f,
+    @location(2) normal: vec3f,
+    @location(3) tangent: vec3f,
+    @location(4) bitangent: vec3f,
 }
 
 struct InstanceInput {
-    @location(6) model_matrix_0: vec4<f32>,
-    @location(7) model_matrix_1: vec4<f32>,
-    @location(8) model_matrix_2: vec4<f32>,
-    @location(9) model_matrix_3: vec4<f32>,
+    @location(5) model_matrix_0: vec4f,
+    @location(6) model_matrix_1: vec4f,
+    @location(7) model_matrix_2: vec4f,
+    @location(8) model_matrix_3: vec4f,
     
-    @location(10) normal_matrix_0: vec3<f32>,
-    @location(11) normal_matrix_1: vec3<f32>,
-    @location(12) normal_matrix_2: vec3<f32>,
+    @location(9) normal_matrix_0: vec3f,
+    @location(10) normal_matrix_1: vec3f,
+    @location(11) normal_matrix_2: vec3f,
 }
 
 struct Camera {
-    view_pos: vec4<f32>,
-    view_proj: mat4x4<f32>
+    view_pos: vec4f,
+    view_proj: mat4x4f
 }
 
 @group(0) @binding(0)
 var<uniform> camera: Camera;
 
 struct Light {
-    position: vec3<f32>,
-    color: vec3<f32>
+    position: vec3f,
+    color: vec3f
 }
 
 @group(1) @binding(0)
@@ -42,56 +41,39 @@ var s_diffuse: sampler;
 var t_normal: texture_2d<f32>;
 @group(2) @binding(3)
 var s_normal: sampler;
-@group(2) @binding(4)
-var<uniform> atlas: vec4<f32>;
 
 struct VertexOutput {
-    @builtin(position) clip_position: vec4<f32>,
-    @location(0) tex_coords: vec2<f32>,
-    @location(1) ntex_coords: vec2<f32>,
-    @location(2) tangent_position: vec3<f32>,
-    @location(3) tangent_light_position: vec3<f32>,
-    @location(4) tangent_view_position: vec3<f32>
+    @builtin(position) clip_position: vec4f,
+    @location(0) tex_coords: vec2f,
+    @location(1) ntex_coords: vec2f,
+    @location(2) tangent_position: vec3f,
+    @location(3) tangent_light_position: vec3f,
+    @location(4) tangent_view_position: vec3f
 };
 
 @vertex
 fn vs_main(model: VertexInput, instance: InstanceInput) -> VertexOutput {
-    let model_matrix = mat4x4<f32>(
+    let model_matrix = mat4x4f(
         instance.model_matrix_0,
         instance.model_matrix_1,
         instance.model_matrix_2,
         instance.model_matrix_3
     );
 
-    let normal_matrix = mat3x3<f32>(
+    let normal_matrix = mat3x3f(
         instance.normal_matrix_0,
         instance.normal_matrix_1,
         instance.normal_matrix_2
     );
 
-    let world_normal = normalize(normal_matrix * model.normal);
-    let world_tangent = normalize(normal_matrix * model.tangent);
-    let world_bitangent = normalize(normal_matrix * model.bitangent);
-    let tangent_matrix = transpose(mat3x3<f32>(
-        world_tangent,
-        world_bitangent,
-        world_normal
-    ));
+    let tangent_matrix = tangent_matrix(normal_matrix, model.normal, model.tangent, model.bitangent);
 
-    let world_position = model_matrix * vec4<f32>(model.position, 1.0);
-
-    let d_cols = (model.index - 1.0) % atlas.x;
-    let d_rows = trunc((model.index - 1.0) / atlas.x);
-
-    let d_u = (d_cols + model.tex_coords.x) / atlas.x;
-    let d_v = (d_rows + model.tex_coords.y) / atlas.y;
-
-    let tex_coords = vec2<f32>(d_u, d_v);
+    let world_position = model_matrix * vec4f(model.position, 1.0);
 
     var out: VertexOutput;
 
     out.clip_position = camera.view_proj * world_position;
-    out.tex_coords = tex_coords;
+    out.tex_coords = model.tex_coords;
     out.ntex_coords = model.tex_coords;
     out.tangent_position = tangent_matrix * world_position.xyz;
     out.tangent_view_position = tangent_matrix * camera.view_pos.xyz;
@@ -100,10 +82,31 @@ fn vs_main(model: VertexInput, instance: InstanceInput) -> VertexOutput {
     return out;
 }
 
+fn tangent_matrix(normal_matrix: mat3x3f, normal: vec3f, tangent: vec3f, bitangent: vec3f) -> mat3x3f {
+    let world_normal = normalize(normal_matrix * normal);
+    let world_tangent = normalize(normal_matrix * tangent);
+    let world_bitangent = normalize(normal_matrix * bitangent);
+    return transpose(mat3x3f(
+        world_tangent,
+        world_bitangent,
+        world_normal
+    ));
+}
+
+fn tex_map(tex_coords: vec2f, cols: f32, rows: f32, index: f32) -> vec2f {
+    let col = (index - 1.0) % cols;
+    let row = trunc((index - 1.0) / cols);
+
+    let u = (col + tex_coords.x) / cols;
+    let v = (row + tex_coords.y) / rows;
+
+    return vec2f(u, v);
+}
+
 @fragment
-fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
-    let object_color: vec4<f32> = textureSample(t_diffuse, s_diffuse, in.tex_coords);
-    let object_normal: vec4<f32> = textureSample(t_normal, s_normal, in.ntex_coords);
+fn fs_main(in: VertexOutput) -> @location(0) vec4f {
+    let object_color: vec4f = textureSample(t_diffuse, s_diffuse, in.tex_coords);
+    let object_normal: vec4f = textureSample(t_normal, s_normal, in.ntex_coords);
 
     let ambient_strength = 0.1;
     let ambient_color = light.color * ambient_strength;
@@ -121,5 +124,5 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
 
     let result = (ambient_color + diffuse_color + specular_color) * object_color.xyz;
 
-    return vec4<f32>(result, object_color.a);
+    return vec4f(result, object_color.a);
 }

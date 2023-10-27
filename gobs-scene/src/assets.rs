@@ -74,8 +74,7 @@ async fn load_mesh(gfx: &Gfx, shader_type: ShaderType, models: Vec<tobj::Model>)
                 ];
                 match shader_type {
                     ShaderType::Phong => {
-                        mesh =
-                            mesh.add_vertex_PTNI(position.into(), texture.into(), normal.into(), 1.)
+                        mesh = mesh.add_vertex_PTN(position.into(), texture.into(), normal.into())
                     }
                     ShaderType::Solid => mesh = mesh.add_vertex_P(position.into()),
                 }
@@ -100,17 +99,17 @@ async fn load_material(
 
         let diffuse_texture = {
             if let Some(texture_name) = &m.diffuse_texture {
-                Texture::load_texture(gfx, texture_name, 1, 1, false).await?
+                Texture::load_texture(gfx, texture_name, false).await?
             } else {
-                Texture::load_texture(gfx, "cube-diffuse.jpg", 1, 1, false).await?
+                Texture::load_texture(gfx, "cube-diffuse.jpg", false).await?
             }
         };
 
         let normal_texture = {
             if let Some(texture_name) = &m.normal_texture {
-                Texture::load_texture(gfx, texture_name, 1, 1, true).await?
+                Texture::load_texture(gfx, texture_name, true).await?
             } else {
-                Texture::load_texture(gfx, "cube-normal.png", 1, 1, true).await?
+                Texture::load_texture(gfx, "cube-normal.png", true).await?
             }
         };
 

@@ -44,15 +44,17 @@ impl Run for App {
                 scene::shape::Shapes::cube(
                     gfx,
                     ShaderType::Phong.vertex_flags(),
+                    3,
+                    2,
                     &[5, 5, 5, 5, 6, 4],
                 ),
                 0,
             )
             .add_material(
                 MaterialBuilder::new("diffuse")
-                    .diffuse_texture(gfx, examples::WALL_TEXTURE, 3, 2)
+                    .diffuse_texture(gfx, examples::WALL_TEXTURE)
                     .await
-                    .normal_texture(gfx, examples::WALL_TEXTURE_N, 1, 1)
+                    .normal_texture(gfx, examples::WALL_TEXTURE_N)
                     .await
                     .build(gfx, &scene.phong_shader),
             )

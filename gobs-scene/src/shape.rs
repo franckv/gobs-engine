@@ -1,3 +1,4 @@
+use glam::Vec2;
 use gobs_wgpu as render;
 
 use render::{
@@ -64,18 +65,17 @@ impl Shapes {
         let ti = [1, 3, 4, 4, 2, 1];
 
         for i in 0..vi.len() {
-            builder = builder.add_vertex_PTNI(
+            builder = builder.add_vertex_PTN(
                 v[vi[i] - 1].into(),
                 t[ti[i] - 1].into(),
                 n[ni[i] - 1].into(),
-                1.0,
             )
         }
 
         builder.build(gfx)
     }
 
-    pub fn cube(gfx: &Gfx, flags: VertexFlag, index: &[u32]) -> Mesh {
+    pub fn cube(gfx: &Gfx, flags: VertexFlag, cols: u32, rows: u32, index: &[u32]) -> Mesh {
         let mut builder = MeshBuilder::new("cube", flags);
 
         let (top, bottom, left, right, front, back) = (0.5, -0.5, -0.5, 0.5, 0.5, -0.5);
@@ -122,15 +122,30 @@ impl Shapes {
         ];
 
         for i in 0..vi.len() {
-            builder = builder.add_vertex_PTNI(
+            builder = builder.add_vertex_PTN(
                 v[vi[i] - 1].into(),
-                t[ti[i] - 1].into(),
+                //t[ti[i] - 1].into(),
+                Self::tex_map(
+                    t[ti[i] - 1].into(),
+                    cols,
+                    rows,
+                    index[(i / index.len()) % index.len()],
+                ),
                 n[ni[i] - 1].into(),
-                index[(i / index.len()) % index.len()] as f32,
             )
         }
 
         builder.build(gfx)
+    }
+
+    fn tex_map(tex_coords: Vec2, cols: u32, rows: u32, index: u32) -> Vec2 {
+        let col = ((index - 1) % cols) as f32;
+        let row = ((index - 1) / cols) as f32;
+
+        let u = (col + tex_coords.x) / cols as f32;
+        let v = (row + tex_coords.y) / rows as f32;
+
+        Vec2::new(u, v)
     }
 
     pub fn cube_tiled(
