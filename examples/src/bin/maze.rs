@@ -28,19 +28,19 @@ struct App {
 impl Run for App {
     async fn create(gfx: &mut Gfx) -> Self {
         let camera = Camera::new(
-            (0.0, 25.0, 25.0),
+            (0., 0., 0.),
             CameraProjection::new(
                 gfx.width(),
                 gfx.height(),
-                (45.0 as f32).to_radians(),
+                (45. as f32).to_radians(),
                 0.1,
                 150.0,
             ),
-            (-90.0 as f32).to_radians(),
-            (-50.0 as f32).to_radians(),
+            (-90. as f32).to_radians(),
+            (-50. as f32).to_radians(),
         );
 
-        let light = Light::new((8.0, 2.0, 8.0), (1., 1., 0.9));
+        let light = Light::new((8., 2., 8.), (1., 1., 0.9));
         let light_position = light.position;
 
         let mut scene = Scene::new(gfx, camera, light).await;
@@ -84,7 +84,9 @@ impl Run for App {
         let wall_id = scene.add_model(wall_model, ShaderType::Phong);
         let floor_id = scene.add_model(floor_model, ShaderType::Phong);
 
-        Self::load_scene(&mut scene, wall_id, floor_id);
+        let (pos_x, pos_y, pos_z) = Self::load_scene(&mut scene, wall_id, floor_id);
+
+        scene.camera.position = (pos_x, pos_y, pos_z).into();
 
         let light_model = scene
             .load_model(gfx, examples::LIGHT, ShaderType::Solid, 0.3)
@@ -92,11 +94,11 @@ impl Run for App {
             .unwrap();
         scene.add_node(
             light_position,
-            Quat::from_axis_angle(Vec3::Z, 0.0),
+            Quat::from_axis_angle(Vec3::Z, 0.),
             light_model,
         );
 
-        let camera_controller = CameraController::new(3.0, 0.4);
+        let camera_controller = CameraController::new(3., 0.4);
 
         App {
             camera_controller,
@@ -161,12 +163,14 @@ impl Run for App {
 }
 
 impl App {
-    pub fn load_scene(scene: &mut Scene, wall_model: Uuid, floor_model: Uuid) {
+    pub fn load_scene(scene: &mut Scene, wall_model: Uuid, floor_model: Uuid) -> (f32, f32, f32) {
         info!("Load scene");
 
         let offset = 16.;
 
         let (mut i, mut j) = (0., 0.);
+
+        let (mut pos_x, mut pos_y, mut pos_z) = (0., 0., 0.);
 
         for c in examples::MAP.chars() {
             match c {
@@ -183,7 +187,7 @@ impl App {
                     position.y = -examples::TILE_SIZE;
                     scene.add_node(position, rotation, floor_model);
                 }
-                '.' | '@' => {
+                '@' => {
                     i += examples::TILE_SIZE;
                     let position = Vec3 {
                         x: i - offset,
@@ -191,9 +195,10 @@ impl App {
                         z: j - offset,
                     };
                     let rotation = Quat::from_axis_angle(Vec3::Z, 0.0);
+                    (pos_x, pos_z) = (position.x, position.z);
                     scene.add_node(position, rotation, floor_model);
                 }
-                ' ' => {
+                '.' => {
                     i += examples::TILE_SIZE;
                     let position = Vec3 {
                         x: i - offset,
@@ -210,6 +215,8 @@ impl App {
                 _ => (),
             }
         }
+
+        (pos_x, pos_y, pos_z)
     }
 }
 fn main() {
