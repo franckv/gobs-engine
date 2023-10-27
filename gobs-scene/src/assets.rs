@@ -74,7 +74,12 @@ async fn load_mesh(gfx: &Gfx, shader_type: ShaderType, models: Vec<tobj::Model>)
                 ];
                 match shader_type {
                     ShaderType::Phong => {
-                        mesh = mesh.add_vertex_PTN(position.into(), texture.into(), normal.into())
+                        mesh = mesh.add_vertex_PTN(
+                            position.into(),
+                            texture.into(),
+                            normal.into(),
+                            texture.into(),
+                        )
                     }
                     ShaderType::Solid => mesh = mesh.add_vertex_P(position.into()),
                 }

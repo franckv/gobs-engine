@@ -31,11 +31,11 @@ impl Shapes {
         let ti = [1, 2, 3];
 
         for i in 0..vi.len() {
-            builder = builder.add_vertex_PTNI(
+            builder = builder.add_vertex_PTN(
                 v[vi[i] - 1].into(),
                 t[ti[i] - 1].into(),
                 n[ni[i] - 1].into(),
-                1.0,
+                t[ti[i] - 1].into(),
             )
         }
 
@@ -69,6 +69,7 @@ impl Shapes {
                 v[vi[i] - 1].into(),
                 t[ti[i] - 1].into(),
                 n[ni[i] - 1].into(),
+                t[ti[i] - 1].into(),
             )
         }
 
@@ -132,6 +133,7 @@ impl Shapes {
                     index[(i / index.len()) % index.len()],
                 ),
                 n[ni[i] - 1].into(),
+                t[ti[i] - 1].into(),
             )
         }
 
@@ -228,11 +230,11 @@ impl Shapes {
                 (tex[0] + pos[i / 6][0] as f32) / (cols as f32),
                 (tex[1] + pos[i / 6][1] as f32) / (rows as f32),
             ];
-            builder = builder.add_vertex_PTNI(
+            builder = builder.add_vertex_PTN(
                 v[vi[i] - 1].into(),
                 tex_mapped.into(),
                 n[ni[i] - 1].into(),
-                1.0,
+                tex_mapped.into(),
             )
         }
 

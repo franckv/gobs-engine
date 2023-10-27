@@ -7,7 +7,6 @@ bitflags! {
         const POSITION = 1;
         const TEXTURE = 1 << 1;
         const NORMAL = 1 << 2;
-        const INDEX = 1 << 3;
     }
 }
 
@@ -16,6 +15,7 @@ pub struct VertexDataBuilder {
     pub position: Option<Vec3>,
     pub texture: Option<Vec2>,
     pub normal: Option<Vec3>,
+    pub normal_texture: Option<Vec2>,
     pub tangent: Option<Vec3>,
     pub bitangent: Option<Vec3>,
     pub index: Option<f32>,
@@ -36,6 +36,12 @@ impl VertexDataBuilder {
 
     pub fn normal(mut self, normal: Vec3) -> Self {
         self.normal = Some(normal);
+
+        self
+    }
+
+    pub fn normal_texture(mut self, normal_texture: Vec2) -> Self {
+        self.normal_texture = Some(normal_texture);
 
         self
     }
@@ -64,6 +70,7 @@ impl VertexDataBuilder {
             position: self.position.unwrap_or(Vec3::splat(0.)),
             texture: self.texture.unwrap_or(Vec2::splat(0.)),
             normal: self.normal.unwrap_or(Vec3::splat(0.)),
+            normal_texture: self.normal_texture.unwrap_or(Vec2::splat(0.)),
             tangent: self.tangent.unwrap_or(Vec3::splat(0.)),
             bitangent: self.bitangent.unwrap_or(Vec3::splat(0.)),
             index: self.index.unwrap_or(1.),
@@ -77,6 +84,7 @@ pub struct VertexData {
     pub position: Vec3,
     pub texture: Vec2,
     pub normal: Vec3,
+    pub normal_texture: Vec2,
     pub tangent: Vec3,
     pub bitangent: Vec3,
     pub index: f32,
@@ -89,6 +97,7 @@ impl VertexData {
             position: None,
             texture: None,
             normal: None,
+            normal_texture: None,
             tangent: None,
             bitangent: None,
             index: None,
@@ -101,6 +110,10 @@ impl VertexData {
 
     pub fn texture(&self) -> Vec2 {
         self.texture
+    }
+
+    pub fn normal_texture(&self) -> Vec2 {
+        self.normal_texture
     }
 
     pub fn normal(&self) -> Vec3 {
@@ -140,12 +153,9 @@ impl VertexData {
 
         if self.flags.contains(VertexFlag::NORMAL) {
             data.extend_from_slice(bytemuck::cast_slice(&self.normal.to_array()));
+            data.extend_from_slice(bytemuck::cast_slice(&self.normal_texture.to_array()));
             data.extend_from_slice(bytemuck::cast_slice(&self.tangent.to_array()));
             data.extend_from_slice(bytemuck::cast_slice(&self.bitangent.to_array()));
-        };
-
-        if self.flags.contains(VertexFlag::INDEX) {
-            data.extend_from_slice(bytemuck::cast_slice(&[self.index]));
         };
 
         data
@@ -157,8 +167,7 @@ impl VertexData {
             .map(|bit| match bit {
                 VertexFlag::POSITION => std::mem::size_of::<Vec3>(),
                 VertexFlag::TEXTURE => std::mem::size_of::<Vec2>(),
-                VertexFlag::NORMAL => 3 * std::mem::size_of::<Vec3>(),
-                VertexFlag::INDEX => std::mem::size_of::<f32>(),
+                VertexFlag::NORMAL => 3 * std::mem::size_of::<Vec3>() + std::mem::size_of::<Vec2>(),
                 _ => unimplemented!(),
             })
             .sum()

@@ -35,34 +35,20 @@ impl MeshBuilder {
         self
     }
 
-    pub fn add_vertex_PTN(mut self, position: Vec3, texture: Vec2, normal: Vec3) -> Self {
-        let vertex = VertexData::new(self.flags)
-            .position(position)
-            .texture(texture)
-            .normal(normal)
-            .tangent(Vec3::splat(0.))
-            .bitangent(Vec3::splat(0.))
-            .build();
-
-        self.vertices.push(vertex);
-
-        self
-    }
-
-    pub fn add_vertex_PTNI(
+    pub fn add_vertex_PTN(
         mut self,
         position: Vec3,
         texture: Vec2,
         normal: Vec3,
-        index: f32,
+        normal_texture: Vec2,
     ) -> Self {
         let vertex = VertexData::new(self.flags)
             .position(position)
             .texture(texture)
+            .normal_texture(normal_texture)
             .normal(normal)
             .tangent(Vec3::splat(0.))
             .bitangent(Vec3::splat(0.))
-            .index(index)
             .build();
 
         self.vertices.push(vertex);
