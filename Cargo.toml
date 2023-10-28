@@ -1,11 +1,5 @@
 [workspace]
-members = [
-    "examples"
-,
-    "gobs-game",
-    "gobs-scene",
-    "gobs-utils",
-    "gobs-wgpu"]
+members = ["examples", "gobs-game", "gobs-scene", "gobs-utils", "gobs-wgpu"]
 resolver = "2"
 
 [workspace.package]
