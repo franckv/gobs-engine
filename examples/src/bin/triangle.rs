@@ -46,9 +46,12 @@ impl Run for App {
             )
             .build();
 
-        let id = scene.add_model(triangle, scene.solid_shader.clone());
-
-        scene.add_node([0., 0., 0.].into(), Quat::IDENTITY, id);
+        scene.add_node(
+            [0., 0., 0.].into(),
+            Quat::IDENTITY,
+            triangle,
+            scene.solid_shader.clone(),
+        );
 
         let camera_controller = CameraController::new(3., 0.4);
 

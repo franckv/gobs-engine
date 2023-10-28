@@ -29,12 +29,12 @@ impl ModelBuilder {
         self
     }
 
-    pub fn build(self) -> Model {
-        Model {
+    pub fn build(self) -> Arc<Model> {
+        Arc::new(Model {
             id: Uuid::new_v4(),
             scale: self.scale,
             meshes: self.meshes,
-        }
+        })
     }
 }
 

@@ -1,5 +1,7 @@
+use std::sync::Arc;
+
 use glam::{Quat, Vec3};
-use uuid::Uuid;
+use gobs_wgpu::model::Model;
 
 pub struct Transform {
     pub position: Vec3,
@@ -8,11 +10,11 @@ pub struct Transform {
 
 pub struct Node {
     transform: Transform,
-    model: Uuid,
+    model: Arc<Model>,
 }
 
 impl Node {
-    pub fn new(position: Vec3, rotation: Quat, model: Uuid) -> Self {
+    pub fn new(position: Vec3, rotation: Quat, model: Arc<Model>) -> Self {
         let transform = Transform { position, rotation };
 
         Node { transform, model }
@@ -22,8 +24,8 @@ impl Node {
         &self.transform
     }
 
-    pub fn model(&self) -> Uuid {
-        self.model
+    pub fn model(&self) -> Arc<Model> {
+        self.model.clone()
     }
 
     pub fn set_transform(&mut self, position: Vec3, rotation: Quat) {

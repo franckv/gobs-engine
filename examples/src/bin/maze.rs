@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use log::*;
 
 use glam::{Quat, Vec3};
@@ -10,19 +12,18 @@ use game::{
     app::{Application, Run},
     input::Input,
 };
-use scene::scene::Scene;
 use scene::Gfx;
 use scene::{
     camera::{Camera, CameraProjection},
     RenderError,
 };
 use scene::{light::Light, MaterialBuilder, ModelBuilder};
-use uuid::Uuid;
+use scene::{scene::Scene, Model};
 
 struct App {
     camera_controller: CameraController,
     scene: Scene,
-    light_model: Uuid,
+    light_model: Arc<Model>,
 }
 
 impl Run for App {
@@ -72,10 +73,7 @@ impl Run for App {
             )
             .build();
 
-        let wall_id = scene.add_model(wall_model, scene.phong_shader.clone());
-        let floor_id = scene.add_model(floor_model, scene.phong_shader.clone());
-
-        let (pos_x, pos_y, pos_z) = Self::load_scene(&mut scene, wall_id, floor_id);
+        let (pos_x, pos_y, pos_z) = Self::load_scene(&mut scene, wall_model, floor_model);
 
         scene.camera.position = (pos_x, pos_y, pos_z).into();
 
@@ -83,10 +81,12 @@ impl Run for App {
             .load_model(gfx, examples::LIGHT, scene.solid_shader.clone(), 0.3)
             .await
             .unwrap();
+
         scene.add_node(
             light_position,
             Quat::from_axis_angle(Vec3::Z, 0.),
-            light_model,
+            light_model.clone(),
+            scene.solid_shader.clone(),
         );
 
         let camera_controller = CameraController::new(3., 0.4);
@@ -113,7 +113,7 @@ impl Run for App {
         self.scene.light.update(position);
 
         for node in &mut self.scene.nodes {
-            if node.model() == self.light_model {
+            if node.model().id == self.light_model.id {
                 node.set_transform(position, node.transform().rotation);
             }
         }
@@ -154,7 +154,11 @@ impl Run for App {
 }
 
 impl App {
-    pub fn load_scene(scene: &mut Scene, wall_model: Uuid, floor_model: Uuid) -> (f32, f32, f32) {
+    pub fn load_scene(
+        scene: &mut Scene,
+        wall_model: Arc<Model>,
+        floor_model: Arc<Model>,
+    ) -> (f32, f32, f32) {
         info!("Load scene");
 
         let offset = 16.;
@@ -175,9 +179,19 @@ impl App {
                         z: j - offset,
                     };
 
-                    scene.add_node(position, rotation, wall_model);
+                    scene.add_node(
+                        position,
+                        rotation,
+                        wall_model.clone(),
+                        scene.phong_shader.clone(),
+                    );
                     position.y = -examples::TILE_SIZE;
-                    scene.add_node(position, rotation, floor_model);
+                    scene.add_node(
+                        position,
+                        rotation,
+                        floor_model.clone(),
+                        scene.phong_shader.clone(),
+                    );
                 }
                 '@' => {
                     i += examples::TILE_SIZE;
@@ -187,7 +201,12 @@ impl App {
                         z: j - offset,
                     };
                     (pos_x, pos_z) = (position.x, position.z);
-                    scene.add_node(position, rotation, floor_model);
+                    scene.add_node(
+                        position,
+                        rotation,
+                        floor_model.clone(),
+                        scene.phong_shader.clone(),
+                    );
                 }
                 '.' => {
                     i += examples::TILE_SIZE;
@@ -196,7 +215,12 @@ impl App {
                         y: -examples::TILE_SIZE,
                         z: j - offset,
                     };
-                    scene.add_node(position, rotation, floor_model);
+                    scene.add_node(
+                        position,
+                        rotation,
+                        floor_model.clone(),
+                        scene.phong_shader.clone(),
+                    );
                 }
                 '\n' => {
                     j += examples::TILE_SIZE;

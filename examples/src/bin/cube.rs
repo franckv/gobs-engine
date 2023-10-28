@@ -59,9 +59,12 @@ impl Run for App {
             )
             .build();
 
-        let id = scene.add_model(cube, scene.phong_shader.clone());
-
-        scene.add_node([0., 0., 0.].into(), Quat::IDENTITY, id);
+        scene.add_node(
+            [0., 0., 0.].into(),
+            Quat::IDENTITY,
+            cube,
+            scene.phong_shader.clone(),
+        );
 
         let camera_controller = CameraController::new(3., 0.4);
 

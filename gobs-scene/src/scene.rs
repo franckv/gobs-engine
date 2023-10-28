@@ -14,7 +14,6 @@ use render::shader::Shader;
 use render::shader::ShaderBindGroup;
 use render::shader::ShaderType;
 use render::shader_data::InstanceData;
-use uuid::Uuid;
 
 use crate::assets;
 use crate::camera::Camera;
@@ -106,7 +105,7 @@ impl Scene {
             let instance_data = self
                 .nodes
                 .iter()
-                .filter(|n| n.model() == model.model.id)
+                .filter(|n| n.model().id == model.model.id)
                 .map(|n| {
                     InstanceData::new(model.shader.instance_flags())
                         .model_transform(
@@ -131,24 +130,27 @@ impl Scene {
         }
     }
 
-    pub fn add_node(&mut self, position: Vec3, rotation: Quat, model: Uuid) {
+    pub fn add_node(
+        &mut self,
+        position: Vec3,
+        rotation: Quat,
+        model: Arc<Model>,
+        shader: Arc<Shader>,
+    ) {
+        let exist = self.models.iter().find(|m| m.model.id == model.id);
+
+        if exist.is_none() {
+            let model_instance = ModelInstance {
+                model: model.clone(),
+                shader,
+                instance_buffer: None,
+                instance_count: 0,
+            };
+
+            self.models.push(model_instance);
+        };
         let node = Node::new(position, rotation, model);
         self.nodes.push(node);
-    }
-
-    pub fn add_model(&mut self, model: Model, shader: Arc<Shader>) -> Uuid {
-        let id = model.id;
-
-        let model_instance = ModelInstance {
-            model,
-            shader,
-            instance_buffer: None,
-            instance_count: 0,
-        };
-
-        self.models.push(model_instance);
-
-        id
     }
 
     pub async fn load_model(
@@ -157,12 +159,10 @@ impl Scene {
         name: &str,
         shader: Arc<Shader>,
         scale: f32,
-    ) -> Result<Uuid> {
+    ) -> Result<Arc<Model>> {
         let model = assets::load_model(name, gfx, shader.clone(), scale).await?;
 
-        let id = self.add_model(model, shader);
-
-        Ok(id)
+        Ok(model)
     }
 
     pub fn render(&self, gfx: &Gfx) -> Result<(), RenderError> {

@@ -19,7 +19,7 @@ pub async fn load_model(
     gfx: &Gfx,
     shader: Arc<Shader>,
     scale: f32,
-) -> Result<Model> {
+) -> Result<Arc<Model>> {
     let obj_text = load::load_string(file_name, AssetType::MODEL).await?;
     let obj_cursor = Cursor::new(obj_text);
     let mut obj_reader = BufReader::new(obj_cursor);
@@ -52,11 +52,11 @@ pub async fn load_model(
         materials.len()
     );
 
-    Ok(Model {
+    Ok(Arc::new(Model {
         id: Uuid::new_v4(),
         scale,
         meshes,
-    })
+    }))
 }
 
 async fn load_mesh(
