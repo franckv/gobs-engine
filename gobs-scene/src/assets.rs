@@ -1,4 +1,5 @@
 use std::io::{BufReader, Cursor};
+use std::sync::Arc;
 
 use anyhow::Result;
 use log::*;
@@ -37,7 +38,7 @@ pub async fn load_model(file_name: &str, gfx: &Gfx, shader: &Shader, scale: f32)
         ShaderType::Solid => Vec::new(),
     };
 
-    let meshes = load_mesh(gfx, shader.ty(), models).await;
+    let meshes = load_mesh(gfx, shader.ty(), models, &materials).await;
 
     info!(
         "{}: {} meshes / {} materials loaded",
@@ -50,11 +51,15 @@ pub async fn load_model(file_name: &str, gfx: &Gfx, shader: &Shader, scale: f32)
         id: Uuid::new_v4(),
         scale,
         meshes,
-        materials,
     })
 }
 
-async fn load_mesh(gfx: &Gfx, shader_type: ShaderType, models: Vec<tobj::Model>) -> Vec<Mesh> {
+async fn load_mesh(
+    gfx: &Gfx,
+    shader_type: ShaderType,
+    models: Vec<tobj::Model>,
+    materials: &Vec<Arc<Material>>,
+) -> Vec<(Arc<Mesh>, Option<Arc<Material>>)> {
     models
         .into_iter()
         .map(|m| {
@@ -84,9 +89,14 @@ async fn load_mesh(gfx: &Gfx, shader_type: ShaderType, models: Vec<tobj::Model>)
                     ShaderType::Solid => mesh = mesh.add_vertex_P(position.into()),
                 }
             }
-            mesh.material(m.mesh.material_id.unwrap_or(0))
-                .add_indices(&m.mesh.indices)
-                .build(gfx)
+            let material_id = m.mesh.material_id.unwrap_or(0);
+            let material = if materials.len() > material_id {
+                Some(materials[material_id].clone())
+            } else {
+                None
+            };
+
+            (mesh.add_indices(&m.mesh.indices).build(gfx), material)
         })
         .collect::<Vec<_>>()
 }
@@ -96,7 +106,7 @@ async fn load_material(
     name: &str,
     obj_materials: Vec<tobj::Material>,
     shader: &Shader,
-) -> Result<Vec<Material>> {
+) -> Result<Vec<Arc<Material>>> {
     let mut materials = Vec::new();
 
     for m in obj_materials {

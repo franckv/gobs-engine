@@ -39,6 +39,13 @@ impl Run for App {
 
         let mut scene = Scene::new(gfx, camera, light).await;
 
+        let material = MaterialBuilder::new("diffuse")
+            .diffuse_texture(gfx, examples::WALL_TEXTURE)
+            .await
+            .normal_texture(gfx, examples::WALL_TEXTURE_N)
+            .await
+            .build(gfx, &scene.phong_shader);
+
         let cube = ModelBuilder::new()
             .add_mesh(
                 scene::shape::Shapes::cube(
@@ -48,15 +55,7 @@ impl Run for App {
                     2,
                     &[5, 5, 5, 5, 6, 4],
                 ),
-                0,
-            )
-            .add_material(
-                MaterialBuilder::new("diffuse")
-                    .diffuse_texture(gfx, examples::WALL_TEXTURE)
-                    .await
-                    .normal_texture(gfx, examples::WALL_TEXTURE_N)
-                    .await
-                    .build(gfx, &scene.phong_shader),
+                Some(material),
             )
             .build();
 

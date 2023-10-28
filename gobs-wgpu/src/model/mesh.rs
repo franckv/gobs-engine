@@ -1,8 +1,8 @@
 use std::collections::HashMap;
+use std::sync::Arc;
 
 use glam::{Vec2, Vec3};
 use log::{error, info};
-use uuid::Uuid;
 
 use crate::render::Gfx;
 use crate::shader_data::{VertexData, VertexFlag};
@@ -11,7 +11,6 @@ pub struct MeshBuilder {
     name: String,
     vertices: Vec<VertexData>,
     indices: Vec<u32>,
-    material: usize,
     flags: VertexFlag,
 }
 
@@ -22,7 +21,6 @@ impl MeshBuilder {
             name: name.to_string(),
             vertices: Vec::new(),
             indices: Vec::new(),
-            material: 0,
             flags,
         }
     }
@@ -58,12 +56,6 @@ impl MeshBuilder {
 
     pub fn add_indices(mut self, indices: &Vec<u32>) -> Self {
         self.indices.extend(indices);
-
-        self
-    }
-
-    pub fn material(mut self, material: usize) -> Self {
-        self.material = material;
 
         self
     }
@@ -162,7 +154,7 @@ impl MeshBuilder {
         self
     }
 
-    pub fn build(mut self, gfx: &Gfx) -> Mesh {
+    pub fn build(mut self, gfx: &Gfx) -> Arc<Mesh> {
         self = self.autoindex();
         self = self.update_tangent();
 
@@ -177,22 +169,18 @@ impl MeshBuilder {
             self.indices.len()
         );
 
-        Mesh {
-            id: Uuid::new_v4(),
+        Arc::new(Mesh {
             name: self.name,
             vertex_buffer,
             index_buffer,
             num_elements,
-            material: self.material,
-        }
+        })
     }
 }
 
 pub struct Mesh {
-    pub id: Uuid,
     pub name: String,
     pub vertex_buffer: wgpu::Buffer,
     pub index_buffer: wgpu::Buffer,
     pub num_elements: usize,
-    pub material: usize,
 }

@@ -1,11 +1,12 @@
+use std::sync::Arc;
+
 use uuid::Uuid;
 
 use crate::model::{Material, Mesh};
 
 pub struct ModelBuilder {
     scale: f32,
-    meshes: Vec<Mesh>,
-    materials: Vec<Material>,
+    meshes: Vec<(Arc<Mesh>, Option<Arc<Material>>)>,
 }
 
 impl ModelBuilder {
@@ -13,7 +14,6 @@ impl ModelBuilder {
         ModelBuilder {
             scale: 1.,
             meshes: Vec::new(),
-            materials: Vec::new(),
         }
     }
 
@@ -23,15 +23,8 @@ impl ModelBuilder {
         self
     }
 
-    pub fn add_mesh(mut self, mut mesh: Mesh, material: usize) -> Self {
-        mesh.material = material;
-        self.meshes.push(mesh);
-
-        self
-    }
-
-    pub fn add_material(mut self, material: Material) -> Self {
-        self.materials.push(material);
+    pub fn add_mesh(mut self, mesh: Arc<Mesh>, material: Option<Arc<Material>>) -> Self {
+        self.meshes.push((mesh, material));
 
         self
     }
@@ -41,7 +34,6 @@ impl ModelBuilder {
             id: Uuid::new_v4(),
             scale: self.scale,
             meshes: self.meshes,
-            materials: self.materials,
         }
     }
 }
@@ -49,6 +41,5 @@ impl ModelBuilder {
 pub struct Model {
     pub id: Uuid,
     pub scale: f32,
-    pub meshes: Vec<Mesh>,
-    pub materials: Vec<Material>,
+    pub meshes: Vec<(Arc<Mesh>, Option<Arc<Material>>)>,
 }

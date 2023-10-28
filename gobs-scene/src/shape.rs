@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use glam::Vec2;
 use gobs_wgpu as render;
 
@@ -13,7 +15,7 @@ const T_MAX: f32 = 1. - T_MIN;
 pub struct Shapes;
 
 impl Shapes {
-    pub fn triangle(gfx: &Gfx, flags: VertexFlag) -> Mesh {
+    pub fn triangle(gfx: &Gfx, flags: VertexFlag) -> Arc<Mesh> {
         let mut builder = MeshBuilder::new("triangle", flags);
 
         let (top, bottom, left, right) = (0.5, -0.5, -0.5, 0.5);
@@ -50,7 +52,7 @@ impl Shapes {
         builder.build(gfx)
     }
 
-    pub fn quad(gfx: &Gfx, flags: VertexFlag) -> Mesh {
+    pub fn quad(gfx: &Gfx, flags: VertexFlag) -> Arc<Mesh> {
         let mut builder = MeshBuilder::new("quad", flags);
 
         let (top, bottom, left, right) = (0.5, -0.5, -0.5, 0.5);
@@ -89,7 +91,7 @@ impl Shapes {
         builder.build(gfx)
     }
 
-    pub fn cube(gfx: &Gfx, flags: VertexFlag, cols: u32, rows: u32, index: &[u32]) -> Mesh {
+    pub fn cube(gfx: &Gfx, flags: VertexFlag, cols: u32, rows: u32, index: &[u32]) -> Arc<Mesh> {
         let mut builder = MeshBuilder::new("cube", flags);
 
         let (top, bottom, left, right, front, back) = (0.5, -0.5, -0.5, 0.5, 0.5, -0.5);

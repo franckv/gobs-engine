@@ -1,9 +1,10 @@
+use std::sync::Arc;
+
 use crate::{
     model::Texture,
     shader::{Shader, ShaderBindGroup},
 };
 use log::*;
-use uuid::Uuid;
 
 use crate::render::Gfx;
 
@@ -40,7 +41,7 @@ impl MaterialBuilder {
         self
     }
 
-    pub fn build(self, gfx: &Gfx, shader: &Shader) -> Material {
+    pub fn build(self, gfx: &Gfx, shader: &Shader) -> Arc<Material> {
         let diffuse_texture = match self.diffuse_texture {
             Some(diffuse_texture) => diffuse_texture,
             None => Texture::from_color(gfx, [255, 255, 255, 1], false),
@@ -62,7 +63,6 @@ impl MaterialBuilder {
 }
 
 pub struct Material {
-    pub id: Uuid,
     pub name: String,
     pub diffuse_texture: Texture,
     pub normal_texture: Texture,
@@ -76,7 +76,7 @@ impl Material {
         layout: &wgpu::BindGroupLayout,
         diffuse_texture: Texture,
         normal_texture: Texture,
-    ) -> Self {
+    ) -> Arc<Self> {
         info!("Create Material bind group");
 
         let bind_group = gfx.device().create_bind_group(&wgpu::BindGroupDescriptor {
@@ -102,12 +102,11 @@ impl Material {
             label: None,
         });
 
-        Material {
-            id: Uuid::new_v4(),
+        Arc::new(Material {
             name,
             diffuse_texture,
             normal_texture,
             bind_group,
-        }
+        })
     }
 }

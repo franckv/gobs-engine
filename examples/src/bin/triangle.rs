@@ -42,7 +42,7 @@ impl Run for App {
         let triangle = ModelBuilder::new()
             .add_mesh(
                 scene::shape::Shapes::triangle(gfx, ShaderType::Solid.vertex_flags()),
-                0,
+                None,
             )
             .build();
 

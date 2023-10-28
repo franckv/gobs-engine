@@ -45,6 +45,13 @@ impl Run for App {
 
         let mut scene = Scene::new(gfx, camera, light).await;
 
+        let material = MaterialBuilder::new("diffuse")
+            .diffuse_texture(gfx, examples::WALL_TEXTURE)
+            .await
+            .normal_texture(gfx, examples::WALL_TEXTURE_N)
+            .await
+            .build(gfx, &scene.phong_shader);
+
         let wall_model = ModelBuilder::new()
             .add_mesh(
                 scene::shape::Shapes::cube(
@@ -54,30 +61,14 @@ impl Run for App {
                     2,
                     &[5, 5, 5, 5, 6, 4],
                 ),
-                0,
-            )
-            .add_material(
-                MaterialBuilder::new("diffuse")
-                    .diffuse_texture(gfx, examples::WALL_TEXTURE)
-                    .await
-                    .normal_texture(gfx, examples::WALL_TEXTURE_N)
-                    .await
-                    .build(gfx, &scene.phong_shader),
+                Some(material.clone()),
             )
             .build();
 
         let floor_model = ModelBuilder::new()
             .add_mesh(
                 scene::shape::Shapes::cube(gfx, ShaderType::Phong.vertex_flags(), 3, 2, &[4]),
-                0,
-            )
-            .add_material(
-                MaterialBuilder::new("diffuse")
-                    .diffuse_texture(gfx, examples::WALL_TEXTURE)
-                    .await
-                    .normal_texture(gfx, examples::WALL_TEXTURE_N)
-                    .await
-                    .build(gfx, &scene.phong_shader),
+                Some(material),
             )
             .build();
 
