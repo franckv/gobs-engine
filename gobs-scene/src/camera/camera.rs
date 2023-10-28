@@ -81,10 +81,11 @@ impl fmt::Display for Camera {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(
             f,
-            "Position={} Yaw={}° Pitch={}°",
+            "Position={} Yaw={}° Pitch={}° Fov={}°",
             self.position,
             self.yaw.to_degrees(),
-            self.pitch.to_degrees()
+            self.pitch.to_degrees(),
+            self.projection.fovy.to_degrees(),
         )
     }
 }
