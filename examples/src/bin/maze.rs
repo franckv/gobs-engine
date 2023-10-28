@@ -14,7 +14,7 @@ use scene::scene::Scene;
 use scene::Gfx;
 use scene::{
     camera::{Camera, CameraProjection},
-    RenderError, ShaderType,
+    RenderError,
 };
 use scene::{light::Light, MaterialBuilder, ModelBuilder};
 use uuid::Uuid;
@@ -56,7 +56,7 @@ impl Run for App {
             .add_mesh(
                 scene::shape::Shapes::cube(
                     gfx,
-                    ShaderType::Phong.vertex_flags(),
+                    scene.phong_shader.vertex_flags(),
                     3,
                     2,
                     &[5, 5, 5, 5, 6, 4],
@@ -67,20 +67,20 @@ impl Run for App {
 
         let floor_model = ModelBuilder::new()
             .add_mesh(
-                scene::shape::Shapes::cube(gfx, ShaderType::Phong.vertex_flags(), 3, 2, &[4]),
+                scene::shape::Shapes::cube(gfx, scene.phong_shader.vertex_flags(), 3, 2, &[4]),
                 Some(material),
             )
             .build();
 
-        let wall_id = scene.add_model(wall_model, ShaderType::Phong);
-        let floor_id = scene.add_model(floor_model, ShaderType::Phong);
+        let wall_id = scene.add_model(wall_model, scene.phong_shader.clone());
+        let floor_id = scene.add_model(floor_model, scene.phong_shader.clone());
 
         let (pos_x, pos_y, pos_z) = Self::load_scene(&mut scene, wall_id, floor_id);
 
         scene.camera.position = (pos_x, pos_y, pos_z).into();
 
         let light_model = scene
-            .load_model(gfx, examples::LIGHT, ShaderType::Solid, 0.3)
+            .load_model(gfx, examples::LIGHT, scene.solid_shader.clone(), 0.3)
             .await
             .unwrap();
         scene.add_node(

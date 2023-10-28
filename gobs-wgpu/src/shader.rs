@@ -1,11 +1,14 @@
 mod phong;
 mod solid;
 
+use std::sync::Arc;
+
 pub use phong::PhongShader;
 pub use solid::SolidShader;
 
 use crate::{
     model::{CameraResource, LightResource, Model},
+    render::Gfx,
     shader_data::{InstanceFlag, VertexFlag},
 };
 
@@ -21,28 +24,33 @@ pub enum ShaderType {
     Solid,
 }
 
-impl ShaderType {
-    pub fn instance_flags(&self) -> InstanceFlag {
-        match self {
-            ShaderType::Phong => PhongShader::instance_flags(),
-            ShaderType::Solid => SolidShader::instance_flags(),
-        }
-    }
-
-    pub fn vertex_flags(&self) -> VertexFlag {
-        match self {
-            ShaderType::Phong => PhongShader::vertex_flags(),
-            ShaderType::Solid => SolidShader::vertex_flags(),
-        }
-    }
-}
-
 pub enum Shader {
     Phong(PhongShader),
     Solid(SolidShader),
 }
 
 impl Shader {
+    pub async fn new(gfx: &Gfx, ty: ShaderType) -> Arc<Self> {
+        match ty {
+            ShaderType::Phong => PhongShader::new(gfx).await,
+            ShaderType::Solid => SolidShader::new(gfx).await,
+        }
+    }
+
+    pub fn instance_flags(&self) -> InstanceFlag {
+        match self {
+            Shader::Phong(_) => PhongShader::instance_flags(),
+            Shader::Solid(_) => SolidShader::instance_flags(),
+        }
+    }
+
+    pub fn vertex_flags(&self) -> VertexFlag {
+        match self {
+            Shader::Phong(_) => PhongShader::vertex_flags(),
+            Shader::Solid(_) => SolidShader::vertex_flags(),
+        }
+    }
+
     pub fn ty(&self) -> ShaderType {
         match self {
             Shader::Phong(_) => ShaderType::Phong,
@@ -63,6 +71,10 @@ pub trait ShaderDraw<'a, 'b>
 where
     'a: 'b,
 {
+    fn instance_flags() -> InstanceFlag;
+
+    fn vertex_flags() -> VertexFlag;
+
     fn draw(
         &'a self,
         render_pass: &mut wgpu::RenderPass<'b>,

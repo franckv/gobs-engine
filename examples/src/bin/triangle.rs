@@ -11,7 +11,7 @@ use scene::scene::Scene;
 use scene::Gfx;
 use scene::{
     camera::{Camera, CameraProjection},
-    RenderError, ShaderType,
+    RenderError,
 };
 use scene::{light::Light, ModelBuilder};
 
@@ -41,12 +41,12 @@ impl Run for App {
 
         let triangle = ModelBuilder::new()
             .add_mesh(
-                scene::shape::Shapes::triangle(gfx, ShaderType::Solid.vertex_flags()),
+                scene::shape::Shapes::triangle(gfx, scene.solid_shader.vertex_flags()),
                 None,
             )
             .build();
 
-        let id = scene.add_model(triangle, ShaderType::Solid);
+        let id = scene.add_model(triangle, scene.solid_shader.clone());
 
         scene.add_node([0., 0., 0.].into(), Quat::IDENTITY, id);
 

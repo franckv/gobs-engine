@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use anyhow::Result;
 use glam::Quat;
 use glam::Vec3;
@@ -23,15 +25,14 @@ use render::model::LightResource;
 use render::model::{Model, Texture};
 use render::render::Batch;
 use render::render::Gfx;
-use render::shader::{PhongShader, SolidShader};
 
 pub struct Scene {
-    pub solid_shader: Shader,
-    pub phong_shader: Shader,
     pub camera: Camera,
     pub light: Light,
     pub camera_resource: CameraResource,
     pub light_resource: LightResource,
+    pub phong_shader: Arc<Shader>,
+    pub solid_shader: Arc<Shader>,
     depth_texture: Texture,
     pub nodes: Vec<Node>,
     models: Vec<ModelInstance>,
@@ -45,8 +46,8 @@ impl Scene {
     pub async fn new(gfx: &Gfx, camera: Camera, light: Light) -> Self {
         info!("New scene");
 
-        let solid_shader = SolidShader::new(&gfx).await;
-        let phong_shader = PhongShader::new(&gfx).await;
+        let phong_shader = Shader::new(gfx, ShaderType::Phong).await;
+        let solid_shader = Shader::new(gfx, ShaderType::Solid).await;
 
         let camera_resource =
             gfx.create_camera_resource(phong_shader.layout(ShaderBindGroup::Camera));
@@ -67,12 +68,12 @@ impl Scene {
         );
 
         Scene {
-            solid_shader,
-            phong_shader,
             camera,
             light,
             camera_resource,
             light_resource,
+            phong_shader,
+            solid_shader,
             depth_texture,
             nodes,
             models,
@@ -135,7 +136,7 @@ impl Scene {
         self.nodes.push(node);
     }
 
-    pub fn add_model(&mut self, model: Model, shader: ShaderType) -> Uuid {
+    pub fn add_model(&mut self, model: Model, shader: Arc<Shader>) -> Uuid {
         let id = model.id;
 
         let model_instance = ModelInstance {
@@ -154,16 +155,12 @@ impl Scene {
         &mut self,
         gfx: &Gfx,
         name: &str,
-        shader_type: ShaderType,
+        shader: Arc<Shader>,
         scale: f32,
     ) -> Result<Uuid> {
-        let shader = match shader_type {
-            ShaderType::Phong => &self.phong_shader,
-            ShaderType::Solid => &self.solid_shader,
-        };
-        let model = assets::load_model(name, gfx, shader, scale).await?;
+        let model = assets::load_model(name, gfx, shader.clone(), scale).await?;
 
-        let id = self.add_model(model, shader_type);
+        let id = self.add_model(model, shader);
 
         Ok(id)
     }
@@ -174,25 +171,13 @@ impl Scene {
             .camera_resource(&self.camera_resource)
             .light_resource(&self.light_resource);
 
-        for model in &self.models {
-            match model.shader {
-                ShaderType::Phong => {
-                    batch = batch.draw_indexed(
-                        &model.model,
-                        &self.phong_shader,
-                        model.instance_buffer.as_ref().unwrap(),
-                        model.instance_count,
-                    );
-                }
-                ShaderType::Solid => {
-                    batch = batch.draw_indexed(
-                        &model.model,
-                        &self.solid_shader,
-                        model.instance_buffer.as_ref().unwrap(),
-                        model.instance_count,
-                    );
-                }
-            };
+        for instance in &self.models {
+            batch = batch.draw_indexed(
+                &instance.model,
+                &instance.shader,
+                instance.instance_buffer.as_ref().unwrap(),
+                instance.instance_count,
+            );
         }
 
         batch.finish().render()

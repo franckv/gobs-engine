@@ -12,7 +12,7 @@ use scene::scene::Scene;
 use scene::Gfx;
 use scene::{
     camera::{Camera, CameraProjection},
-    RenderError, ShaderType,
+    RenderError,
 };
 
 struct App {
@@ -40,7 +40,7 @@ impl Run for App {
         let mut scene = Scene::new(gfx, camera, light).await;
 
         let cube = scene
-            .load_model(gfx, examples::CUBE, ShaderType::Phong, 1.)
+            .load_model(gfx, examples::CUBE, scene.phong_shader.clone(), 1.)
             .await
             .unwrap();
 

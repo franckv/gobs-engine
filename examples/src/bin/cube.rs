@@ -10,7 +10,7 @@ use game::{
 use scene::Gfx;
 use scene::{
     camera::{Camera, CameraProjection},
-    RenderError, ShaderType,
+    RenderError,
 };
 use scene::{light::Light, ModelBuilder};
 use scene::{scene::Scene, MaterialBuilder};
@@ -50,7 +50,7 @@ impl Run for App {
             .add_mesh(
                 scene::shape::Shapes::cube(
                     gfx,
-                    ShaderType::Phong.vertex_flags(),
+                    scene.phong_shader.vertex_flags(),
                     3,
                     2,
                     &[5, 5, 5, 5, 6, 4],
@@ -59,7 +59,7 @@ impl Run for App {
             )
             .build();
 
-        let id = scene.add_model(cube, ShaderType::Phong);
+        let id = scene.add_model(cube, scene.phong_shader.clone());
 
         scene.add_node([0., 0., 0.].into(), Quat::IDENTITY, id);
 

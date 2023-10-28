@@ -14,7 +14,12 @@ use utils::load::{self, AssetType};
 
 use crate::Gfx;
 
-pub async fn load_model(file_name: &str, gfx: &Gfx, shader: &Shader, scale: f32) -> Result<Model> {
+pub async fn load_model(
+    file_name: &str,
+    gfx: &Gfx,
+    shader: Arc<Shader>,
+    scale: f32,
+) -> Result<Model> {
     let obj_text = load::load_string(file_name, AssetType::MODEL).await?;
     let obj_cursor = Cursor::new(obj_text);
     let mut obj_reader = BufReader::new(obj_cursor);
@@ -34,11 +39,11 @@ pub async fn load_model(file_name: &str, gfx: &Gfx, shader: &Shader, scale: f32)
     .await?;
 
     let materials = match shader.ty() {
-        ShaderType::Phong => load_material(gfx, file_name, obj_materials?, shader).await?,
+        ShaderType::Phong => load_material(gfx, file_name, obj_materials?, shader.clone()).await?,
         ShaderType::Solid => Vec::new(),
     };
 
-    let meshes = load_mesh(gfx, shader.ty(), models, &materials).await;
+    let meshes = load_mesh(gfx, shader, models, &materials).await;
 
     info!(
         "{}: {} meshes / {} materials loaded",
@@ -56,14 +61,14 @@ pub async fn load_model(file_name: &str, gfx: &Gfx, shader: &Shader, scale: f32)
 
 async fn load_mesh(
     gfx: &Gfx,
-    shader_type: ShaderType,
+    shader: Arc<Shader>,
     models: Vec<tobj::Model>,
     materials: &Vec<Arc<Material>>,
 ) -> Vec<(Arc<Mesh>, Option<Arc<Material>>)> {
     models
         .into_iter()
         .map(|m| {
-            let mut mesh = MeshBuilder::new(&m.name, shader_type.vertex_flags());
+            let mut mesh = MeshBuilder::new(&m.name, shader.vertex_flags());
 
             for i in 0..m.mesh.positions.len() / 3 {
                 let position = [
@@ -77,7 +82,7 @@ async fn load_mesh(
                     m.mesh.normals[i * 3 + 1],
                     m.mesh.normals[i * 3 + 2],
                 ];
-                match shader_type {
+                match shader.ty() {
                     ShaderType::Phong => {
                         mesh = mesh.add_vertex_PTN(
                             position.into(),
@@ -105,7 +110,7 @@ async fn load_material(
     gfx: &Gfx,
     name: &str,
     obj_materials: Vec<tobj::Material>,
-    shader: &Shader,
+    shader: Arc<Shader>,
 ) -> Result<Vec<Arc<Material>>> {
     let mut materials = Vec::new();
 

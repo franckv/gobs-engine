@@ -10,4 +10,3 @@ use gobs_wgpu as render;
 pub use render::model::{Material, MaterialBuilder, Mesh, MeshBuilder, Model, ModelBuilder};
 pub use render::render::Gfx;
 pub use render::render::RenderError;
-pub use render::shader::ShaderType;

@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use crate::model::CameraResource;
 use crate::model::LightResource;
 use crate::model::{Model, Texture};
@@ -20,15 +22,7 @@ pub struct PhongShader {
 }
 
 impl PhongShader {
-    pub fn instance_flags() -> InstanceFlag {
-        InstanceFlag::MODEL | InstanceFlag::NORMAL
-    }
-
-    pub fn vertex_flags() -> VertexFlag {
-        VertexFlag::POSITION | VertexFlag::TEXTURE | VertexFlag::NORMAL
-    }
-
-    pub async fn new(gfx: &Gfx) -> Shader {
+    pub async fn new(gfx: &Gfx) -> Arc<Shader> {
         let generator = Generator::new(SHADER).await;
         let layouts = generator.bind_layouts(gfx);
         let instance_flags = Self::instance_flags();
@@ -52,11 +46,11 @@ impl PhongShader {
             .depth_format(Texture::DEPTH_FORMAT)
             .build();
 
-        Shader::Phong(PhongShader {
+        Arc::new(Shader::Phong(PhongShader {
             ty: ShaderType::Phong,
             pipeline,
             layouts,
-        })
+        }))
     }
 }
 
@@ -64,6 +58,14 @@ impl<'a, 'b> ShaderDraw<'a, 'b> for PhongShader
 where
     'a: 'b,
 {
+    fn instance_flags() -> InstanceFlag {
+        InstanceFlag::MODEL | InstanceFlag::NORMAL
+    }
+
+    fn vertex_flags() -> VertexFlag {
+        VertexFlag::POSITION | VertexFlag::TEXTURE | VertexFlag::NORMAL
+    }
+
     fn draw_instanced(
         &'a self,
         render_pass: &mut wgpu::RenderPass<'b>,

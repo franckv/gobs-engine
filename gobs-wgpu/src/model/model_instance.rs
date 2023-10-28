@@ -1,8 +1,10 @@
-use crate::{model::Model, shader::ShaderType};
+use std::sync::Arc;
+
+use crate::{model::Model, shader::Shader};
 
 pub struct ModelInstance {
     pub model: Model,
-    pub shader: ShaderType,
+    pub shader: Arc<Shader>,
     pub instance_buffer: Option<wgpu::Buffer>,
     pub instance_count: usize,
 }
