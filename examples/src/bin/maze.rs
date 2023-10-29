@@ -154,7 +154,7 @@ impl Run for App {
 }
 
 impl App {
-    pub fn load_scene(
+    fn load_scene(
         scene: &mut Scene,
         wall_model: Arc<Model>,
         floor_model: Arc<Model>,

@@ -63,7 +63,7 @@ impl Scene {
             TextureType::DEPTH,
             gfx.width(),
             gfx.height(),
-            None,
+            &[],
         );
 
         Scene {
@@ -86,7 +86,7 @@ impl Scene {
             TextureType::DEPTH,
             gfx.width(),
             gfx.height(),
-            None,
+            &[],
         );
         self.camera.projection.resize(width, height);
     }

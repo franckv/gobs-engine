@@ -61,6 +61,6 @@ pub async fn load_atlas(
         ty,
         img.dimensions().0,
         img.dimensions().1,
-        Some(img),
+        &img.to_rgba8(),
     ))
 }

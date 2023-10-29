@@ -51,7 +51,7 @@ impl Texture {
         ty: TextureType,
         width: u32,
         height: u32,
-        img: Option<&image::DynamicImage>,
+        img: &[u8],
     ) -> Self {
         let size = wgpu::Extent3d {
             width,
@@ -72,8 +72,7 @@ impl Texture {
 
         let texture = gfx.device().create_texture(&desc);
 
-        if let Some(img) = img {
-            let rgba = img.to_rgba8();
+        if img.len() > 0 {
             gfx.queue().write_texture(
                 wgpu::ImageCopyTexture {
                     aspect: wgpu::TextureAspect::All,
@@ -81,7 +80,7 @@ impl Texture {
                     mip_level: 0,
                     origin: wgpu::Origin3d::ZERO,
                 },
-                &rgba,
+                img,
                 wgpu::ImageDataLayout {
                     offset: 0,
                     bytes_per_row: Some(4 * width),
@@ -140,7 +139,7 @@ impl Texture {
             ty,
             img.dimensions().0,
             img.dimensions().1,
-            Some(&img),
+            &img.to_rgba8(),
         ))
     }
 
@@ -162,7 +161,7 @@ impl Texture {
             ty,
             img_color.dimensions().0,
             img_color.dimensions().1,
-            Some(&img_color),
+            &img_color.to_rgba8(),
         )
     }
 }
