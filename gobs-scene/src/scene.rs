@@ -109,7 +109,7 @@ impl Scene {
                 .map(|n| {
                     InstanceData::new(model.shader.instance_flags())
                         .model_transform(
-                            n.transform().position,
+                            n.transform().translation,
                             n.transform().rotation,
                             model.model.scale,
                         )

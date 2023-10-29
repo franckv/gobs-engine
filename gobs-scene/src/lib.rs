@@ -4,6 +4,7 @@ pub mod light;
 pub mod node;
 pub mod scene;
 pub mod shape;
+pub mod transform;
 
 use gobs_wgpu as render;
 

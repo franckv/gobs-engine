@@ -3,10 +3,7 @@ use std::sync::Arc;
 use glam::{Quat, Vec3};
 use gobs_wgpu::model::Model;
 
-pub struct Transform {
-    pub position: Vec3,
-    pub rotation: Quat,
-}
+use crate::transform::Transform;
 
 pub struct Node {
     transform: Transform,
@@ -14,8 +11,11 @@ pub struct Node {
 }
 
 impl Node {
-    pub fn new(position: Vec3, rotation: Quat, model: Arc<Model>) -> Self {
-        let transform = Transform { position, rotation };
+    pub fn new(translation: Vec3, rotation: Quat, model: Arc<Model>) -> Self {
+        let transform = Transform {
+            translation,
+            rotation,
+        };
 
         Node { transform, model }
     }
@@ -28,8 +28,8 @@ impl Node {
         self.model.clone()
     }
 
-    pub fn set_transform(&mut self, position: Vec3, rotation: Quat) {
-        self.transform.position = position;
+    pub fn set_transform(&mut self, translation: Vec3, rotation: Quat) {
+        self.transform.translation = translation;
         self.transform.rotation = rotation;
     }
 }

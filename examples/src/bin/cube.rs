@@ -95,7 +95,7 @@ impl Run for App {
         for node in &mut self.scene.nodes {
             let old_rotation = node.transform().rotation;
             let rotation = rot_delta_model * old_rotation;
-            node.set_transform(node.transform().position, rotation);
+            node.set_transform(node.transform().translation, rotation);
         }
 
         self.scene.update(gfx);
