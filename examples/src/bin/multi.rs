@@ -7,13 +7,13 @@ use game::{
     app::{Application, Run},
     input::Input,
 };
-use scene::{scene::Scene, MaterialBuilder};
 use scene::Gfx;
 use scene::{
     camera::{Camera, CameraProjection},
     RenderError,
 };
 use scene::{light::Light, ModelBuilder};
+use scene::{scene::Scene, MaterialBuilder};
 
 struct App {
     camera_controller: CameraController,
@@ -46,7 +46,13 @@ impl Run for App {
 
         let triangle = ModelBuilder::new()
             .add_mesh(
-                scene::shape::Shapes::triangle(gfx, scene.solid_shader.vertex_flags()),
+                scene::shape::Shapes::triangle(
+                    gfx,
+                    scene.solid_shader.vertex_flags(),
+                    [1., 0., 0.],
+                    [0., 1., 0.],
+                    [0., 0., 1.],
+                ),
                 None,
             )
             .build();

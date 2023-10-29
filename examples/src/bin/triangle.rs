@@ -35,13 +35,19 @@ impl Run for App {
             (0. as f32).to_radians(),
         );
 
-        let light = Light::new((0., 0., 10.), (1., 0., 0.));
+        let light = Light::new((0., 0., 10.), (1., 1., 1.));
 
         let mut scene = Scene::new(gfx, camera, light).await;
 
         let triangle = ModelBuilder::new()
             .add_mesh(
-                scene::shape::Shapes::triangle(gfx, scene.solid_shader.vertex_flags()),
+                scene::shape::Shapes::triangle(
+                    gfx,
+                    scene.solid_shader.vertex_flags(),
+                    [1., 0., 0.],
+                    [0., 1., 0.],
+                    [0., 0., 1.],
+                ),
                 None,
             )
             .build();

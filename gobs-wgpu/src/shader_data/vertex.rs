@@ -5,14 +5,16 @@ bitflags! {
     #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
     pub struct VertexFlag: u32 {
         const POSITION = 1;
-        const TEXTURE = 1 << 1;
-        const NORMAL = 1 << 2;
+        const COLOR = 1 << 1;
+        const TEXTURE = 1 << 2;
+        const NORMAL = 1 << 3;
     }
 }
 
 pub struct VertexDataBuilder {
     flags: VertexFlag,
     pub position: Option<Vec3>,
+    pub color: Option<Vec3>,
     pub texture: Option<Vec2>,
     pub normal: Option<Vec3>,
     pub normal_texture: Option<Vec2>,
@@ -24,6 +26,12 @@ pub struct VertexDataBuilder {
 impl VertexDataBuilder {
     pub fn position(mut self, position: Vec3) -> Self {
         self.position = Some(position);
+
+        self
+    }
+
+    pub fn color(mut self, color: Vec3) -> Self {
+        self.color = Some(color);
 
         self
     }
@@ -68,6 +76,7 @@ impl VertexDataBuilder {
         VertexData {
             flags: self.flags,
             position: self.position.unwrap_or(Vec3::splat(0.)),
+            color: self.color.unwrap_or(Vec3::splat(1.)),
             texture: self.texture.unwrap_or(Vec2::splat(0.)),
             normal: self.normal.unwrap_or(Vec3::splat(0.)),
             normal_texture: self.normal_texture.unwrap_or(Vec2::splat(0.)),
@@ -82,6 +91,7 @@ impl VertexDataBuilder {
 pub struct VertexData {
     flags: VertexFlag,
     pub position: Vec3,
+    pub color: Vec3,
     pub texture: Vec2,
     pub normal: Vec3,
     pub normal_texture: Vec2,
@@ -95,6 +105,7 @@ impl VertexData {
         VertexDataBuilder {
             flags,
             position: None,
+            color: None,
             texture: None,
             normal: None,
             normal_texture: None,
@@ -106,6 +117,10 @@ impl VertexData {
 
     pub fn position(&self) -> Vec3 {
         self.position
+    }
+
+    pub fn color(&self) -> Vec3 {
+        self.color
     }
 
     pub fn texture(&self) -> Vec2 {
@@ -147,6 +162,10 @@ impl VertexData {
             data.extend_from_slice(bytemuck::cast_slice(&self.position.to_array()));
         };
 
+        if self.flags.contains(VertexFlag::COLOR) {
+            data.extend_from_slice(bytemuck::cast_slice(&self.color.to_array()));
+        };
+
         if self.flags.contains(VertexFlag::TEXTURE) {
             data.extend_from_slice(bytemuck::cast_slice(&self.texture.to_array()));
         };
@@ -166,6 +185,7 @@ impl VertexData {
             .iter()
             .map(|bit| match bit {
                 VertexFlag::POSITION => std::mem::size_of::<Vec3>(),
+                VertexFlag::COLOR => std::mem::size_of::<Vec3>(),
                 VertexFlag::TEXTURE => std::mem::size_of::<Vec2>(),
                 VertexFlag::NORMAL => 3 * std::mem::size_of::<Vec3>() + std::mem::size_of::<Vec2>(),
                 _ => unimplemented!(),

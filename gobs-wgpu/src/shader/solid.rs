@@ -63,7 +63,7 @@ where
     }
 
     fn vertex_flags() -> VertexFlag {
-        VertexFlag::POSITION
+        VertexFlag::POSITION | VertexFlag::COLOR
     }
 
     fn draw_instanced(

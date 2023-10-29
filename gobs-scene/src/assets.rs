@@ -76,6 +76,11 @@ async fn load_mesh(
                     m.mesh.positions[i * 3 + 1],
                     m.mesh.positions[i * 3 + 2],
                 ];
+                let color: [f32; 3] = [
+                    *(m.mesh.vertex_color.get(i * 3).unwrap_or(&1.)),
+                    *(m.mesh.vertex_color.get(i * 3 + 1).unwrap_or(&1.)),
+                    *(m.mesh.vertex_color.get(i * 3 + 2).unwrap_or(&1.)),
+                ];
                 let texture = [m.mesh.texcoords[i * 2], m.mesh.texcoords[i * 2 + 1]];
                 let normal = [
                     m.mesh.normals[i * 3],
@@ -91,7 +96,7 @@ async fn load_mesh(
                             texture.into(),
                         )
                     }
-                    ShaderType::Solid => mesh = mesh.add_vertex_P(position.into()),
+                    ShaderType::Solid => mesh = mesh.add_vertex_PC(position.into(), color.into()),
                 }
             }
             let material_id = m.mesh.material_id.unwrap_or(0);

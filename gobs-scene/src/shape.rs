@@ -15,7 +15,13 @@ const T_MAX: f32 = 1. - T_MIN;
 pub struct Shapes;
 
 impl Shapes {
-    pub fn triangle(gfx: &Gfx, flags: VertexFlag) -> Arc<Mesh> {
+    pub fn triangle(
+        gfx: &Gfx,
+        flags: VertexFlag,
+        color1: [f32; 3],
+        color2: [f32; 3],
+        color3: [f32; 3],
+    ) -> Arc<Mesh> {
         let mut builder = MeshBuilder::new("triangle", flags);
 
         let (top, bottom, left, right) = (0.5, -0.5, -0.5, 0.5);
@@ -25,6 +31,8 @@ impl Shapes {
             [right, bottom, 0.],
             [(left + right) / 2., top, 0.],
         ];
+
+        let c = [color1, color2, color3];
 
         let n = [[0., 0., 1.]];
 
@@ -36,13 +44,16 @@ impl Shapes {
 
         let vi = [1, 2, 3];
 
+        let ci = [1, 2, 3];
+
         let ni = [1, 1, 1];
 
         let ti = [1, 2, 3];
 
         for i in 0..vi.len() {
-            builder = builder.add_vertex_PTN(
+            builder = builder.add_vertex_PCTN(
                 v[vi[i] - 1].into(),
+                c[ci[i] - 1].into(),
                 t[ti[i] - 1].into(),
                 n[ni[i] - 1].into(),
                 t[ti[i] - 1].into(),

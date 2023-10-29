@@ -33,6 +33,17 @@ impl MeshBuilder {
         self
     }
 
+    pub fn add_vertex_PC(mut self, position: Vec3, color: Vec3) -> Self {
+        let vertex = VertexData::new(self.flags)
+            .position(position)
+            .color(color)
+            .build();
+
+        self.vertices.push(vertex);
+
+        self
+    }
+
     pub fn add_vertex_PTN(
         mut self,
         position: Vec3,
@@ -42,6 +53,29 @@ impl MeshBuilder {
     ) -> Self {
         let vertex = VertexData::new(self.flags)
             .position(position)
+            .texture(texture)
+            .normal_texture(normal_texture)
+            .normal(normal)
+            .tangent(Vec3::splat(0.))
+            .bitangent(Vec3::splat(0.))
+            .build();
+
+        self.vertices.push(vertex);
+
+        self
+    }
+
+    pub fn add_vertex_PCTN(
+        mut self,
+        position: Vec3,
+        color: Vec3,
+        texture: Vec2,
+        normal: Vec3,
+        normal_texture: Vec2,
+    ) -> Self {
+        let vertex = VertexData::new(self.flags)
+            .position(position)
+            .color(color)
             .texture(texture)
             .normal_texture(normal_texture)
             .normal(normal)
