@@ -8,7 +8,7 @@ use gobs_scene as scene;
 
 use game::input::Key;
 
-use scene::camera::Camera;
+use scene::camera::{Camera, ProjectionMode};
 
 const SAFE_FRAC_PI_2: f32 = FRAC_PI_2 - 0.0001;
 
@@ -134,7 +134,9 @@ impl CameraController {
         self.rotate_horizontal = 0.;
         self.rotate_vertical = 0.;
 
-        camera.projection.fovy += (self.fov_up - self.fov_down) * dt;
+        if let ProjectionMode::Perspective(projection) = &mut camera.mode {
+            projection.fovy += (self.fov_up - self.fov_down) * dt;
+        }
 
         if camera.pitch < -SAFE_FRAC_PI_2 {
             camera.pitch = -SAFE_FRAC_PI_2;

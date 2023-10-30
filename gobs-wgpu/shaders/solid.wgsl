@@ -1,6 +1,6 @@
 struct VertexInput {
     @location(0) position: vec3f,
-    @location(1) color: vec3f
+    @location(1) color: vec4f
 }
 
 struct InstanceInput {
@@ -28,7 +28,7 @@ var<uniform> light: Light;
 
 struct VertexOutput {
     @builtin(position) clip_position: vec4f,
-    @location(0) color: vec3f
+    @location(0) color: vec4f
 };
 
 @vertex
@@ -52,6 +52,6 @@ fn vs_main(model: VertexInput, instance: InstanceInput) -> VertexOutput {
 
 @fragment
 fn fs_main(in: VertexOutput) -> @location(0) vec4f {
-    let color = light.color * in.color;
-    return vec4f(color, 1.0);
+    let color = light.color * in.color.xyz;
+    return vec4f(color, in.color.w);
 }

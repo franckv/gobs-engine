@@ -78,13 +78,15 @@ impl Gfx {
             .find(|f| f.is_srgb())
             .unwrap_or(surface_caps.formats[0]);
 
+        let alpha_mode = surface_caps.alpha_modes[0];
+
         let config = wgpu::SurfaceConfiguration {
             usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
             format: surface_format,
             width: size.width,
             height: size.height,
             present_mode: surface_caps.present_modes[0],
-            alpha_mode: surface_caps.alpha_modes[0],
+            alpha_mode,
             view_formats: vec![],
         };
 

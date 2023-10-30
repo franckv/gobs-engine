@@ -1,5 +1,5 @@
 use bitflags::bitflags;
-use glam::{Vec2, Vec3};
+use glam::{Vec2, Vec3, Vec4};
 
 bitflags! {
     #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -14,7 +14,7 @@ bitflags! {
 pub struct VertexDataBuilder {
     flags: VertexFlag,
     pub position: Option<Vec3>,
-    pub color: Option<Vec3>,
+    pub color: Option<Vec4>,
     pub texture: Option<Vec2>,
     pub normal: Option<Vec3>,
     pub normal_texture: Option<Vec2>,
@@ -30,7 +30,7 @@ impl VertexDataBuilder {
         self
     }
 
-    pub fn color(mut self, color: Vec3) -> Self {
+    pub fn color(mut self, color: Vec4) -> Self {
         self.color = Some(color);
 
         self
@@ -76,7 +76,7 @@ impl VertexDataBuilder {
         VertexData {
             flags: self.flags,
             position: self.position.unwrap_or(Vec3::splat(0.)),
-            color: self.color.unwrap_or(Vec3::splat(1.)),
+            color: self.color.unwrap_or(Vec4::splat(1.)),
             texture: self.texture.unwrap_or(Vec2::splat(0.)),
             normal: self.normal.unwrap_or(Vec3::splat(0.)),
             normal_texture: self.normal_texture.unwrap_or(Vec2::splat(0.)),
@@ -91,7 +91,7 @@ impl VertexDataBuilder {
 pub struct VertexData {
     flags: VertexFlag,
     pub position: Vec3,
-    pub color: Vec3,
+    pub color: Vec4,
     pub texture: Vec2,
     pub normal: Vec3,
     pub normal_texture: Vec2,
@@ -119,7 +119,7 @@ impl VertexData {
         self.position
     }
 
-    pub fn color(&self) -> Vec3 {
+    pub fn color(&self) -> Vec4 {
         self.color
     }
 
@@ -185,7 +185,7 @@ impl VertexData {
             .iter()
             .map(|bit| match bit {
                 VertexFlag::POSITION => std::mem::size_of::<Vec3>(),
-                VertexFlag::COLOR => std::mem::size_of::<Vec3>(),
+                VertexFlag::COLOR => std::mem::size_of::<Vec4>(),
                 VertexFlag::TEXTURE => std::mem::size_of::<Vec2>(),
                 VertexFlag::NORMAL => 3 * std::mem::size_of::<Vec3>() + std::mem::size_of::<Vec2>(),
                 _ => unimplemented!(),

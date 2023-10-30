@@ -1,4 +1,3 @@
 mod camera;
 
-pub use camera::Camera;
-pub use camera::CameraProjection;
+pub use camera::{Camera, ProjectionMode};

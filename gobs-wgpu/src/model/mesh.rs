@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::sync::Arc;
 
-use glam::{Vec2, Vec3};
+use glam::{Vec2, Vec3, Vec4};
 use log::{error, info};
 
 use crate::render::Gfx;
@@ -33,7 +33,7 @@ impl MeshBuilder {
         self
     }
 
-    pub fn add_vertex_PC(mut self, position: Vec3, color: Vec3) -> Self {
+    pub fn add_vertex_PC(mut self, position: Vec3, color: Vec4) -> Self {
         let vertex = VertexData::new(self.flags)
             .position(position)
             .color(color)
@@ -68,7 +68,7 @@ impl MeshBuilder {
     pub fn add_vertex_PCTN(
         mut self,
         position: Vec3,
-        color: Vec3,
+        color: Vec4,
         texture: Vec2,
         normal: Vec3,
         normal_texture: Vec2,

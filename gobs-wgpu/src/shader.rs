@@ -1,10 +1,12 @@
 mod phong;
 mod solid;
+mod ui;
 
 use std::sync::Arc;
 
 pub use phong::PhongShader;
 pub use solid::SolidShader;
+pub use ui::UIShader;
 
 use crate::{
     model::{CameraResource, LightResource, Model},
@@ -22,11 +24,13 @@ pub enum ShaderBindGroup {
 pub enum ShaderType {
     Phong,
     Solid,
+    UI,
 }
 
 pub enum Shader {
     Phong(PhongShader),
     Solid(SolidShader),
+    UI(UIShader),
 }
 
 impl Shader {
@@ -34,6 +38,7 @@ impl Shader {
         match ty {
             ShaderType::Phong => PhongShader::new(gfx).await,
             ShaderType::Solid => SolidShader::new(gfx).await,
+            ShaderType::UI => UIShader::new(gfx).await,
         }
     }
 
@@ -41,6 +46,7 @@ impl Shader {
         match self {
             Shader::Phong(_) => PhongShader::instance_flags(),
             Shader::Solid(_) => SolidShader::instance_flags(),
+            Shader::UI(_) => UIShader::instance_flags(),
         }
     }
 
@@ -48,6 +54,7 @@ impl Shader {
         match self {
             Shader::Phong(_) => PhongShader::vertex_flags(),
             Shader::Solid(_) => SolidShader::vertex_flags(),
+            Shader::UI(_) => UIShader::vertex_flags(),
         }
     }
 
@@ -55,6 +62,7 @@ impl Shader {
         match self {
             Shader::Phong(_) => ShaderType::Phong,
             Shader::Solid(_) => ShaderType::Solid,
+            Shader::UI(_) => ShaderType::UI,
         }
     }
 
@@ -62,6 +70,7 @@ impl Shader {
         match self {
             Shader::Phong(shader) => shader.layout(id),
             Shader::Solid(shader) => shader.layout(id),
+            Shader::UI(shader) => shader.layout(id),
         }
     }
 }

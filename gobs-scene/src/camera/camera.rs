@@ -5,87 +5,156 @@ use glam::{Mat4, Vec3};
 #[derive(Debug)]
 #[allow(dead_code)]
 pub enum ProjectionMode {
-    Ortho,
-    Perspective,
-    OrthoFixedWidth,
-    OrthoFixedHeight,
+    Ortho(OrthoProjection),
+    Perspective(PerspectiveProjection),
 }
 
 #[derive(Debug)]
-pub struct CameraProjection {
+pub struct PerspectiveProjection {
     pub aspect: f32,
     pub fovy: f32,
-    pub znear: f32,
-    pub zfar: f32,
+    pub near: f32,
+    pub far: f32,
 }
 
-impl CameraProjection {
-    pub fn new(width: u32, height: u32, fovy: f32, znear: f32, zfar: f32) -> Self {
-        Self {
-            aspect: width as f32 / height as f32,
-            fovy,
-            znear,
-            zfar,
-        }
-    }
-
-    pub fn resize(&mut self, width: u32, height: u32) {
-        self.aspect = width as f32 / height as f32;
-    }
-
-    pub fn to_matrix(&self) -> Mat4 {
-        Mat4::perspective_rh(self.fovy, self.aspect, self.znear, self.zfar)
-    }
+#[derive(Debug)]
+pub struct OrthoProjection {
+    pub width: f32,
+    pub height: f32,
+    pub near: f32,
+    pub far: f32,
 }
 
 #[derive(Debug)]
 pub struct Camera {
     pub position: Vec3,
-    #[allow(dead_code)]
-    mode: ProjectionMode,
+    pub mode: ProjectionMode,
     pub yaw: f32,
     pub pitch: f32,
-    pub projection: CameraProjection,
+    pub up: Vec3,
 }
 
 impl Camera {
-    pub fn new<V: Into<Vec3>>(
+    pub fn perspective<V: Into<Vec3>>(
         position: V,
-        projection: CameraProjection,
+        aspect: f32,
+        fovy: f32,
+        near: f32,
+        far: f32,
         yaw: f32,
         pitch: f32,
+        up: Vec3,
     ) -> Self {
+        let projection = PerspectiveProjection {
+            aspect,
+            fovy,
+            near,
+            far,
+        };
+
         Camera {
             position: position.into(),
-            mode: ProjectionMode::Perspective,
+            mode: ProjectionMode::Perspective(projection),
             yaw: yaw.into(),
             pitch: pitch.into(),
-            projection,
+            up,
         }
     }
 
-    pub fn to_matrix(&self) -> Mat4 {
-        Self::view_proj(self.position, self.yaw, self.pitch)
+    pub fn ortho<V: Into<Vec3>>(
+        position: V,
+        width: f32,
+        height: f32,
+        near: f32,
+        far: f32,
+        yaw: f32,
+        pitch: f32,
+        up: Vec3,
+    ) -> Self {
+        let projection = OrthoProjection {
+            width,
+            height,
+            near,
+            far,
+        };
+
+        Camera {
+            position: position.into(),
+            mode: ProjectionMode::Ortho(projection),
+            yaw: yaw.into(),
+            pitch: pitch.into(),
+            up,
+        }
     }
 
-    fn view_proj(position: Vec3, yaw: f32, pitch: f32) -> Mat4 {
-        let (sin_pitch, cos_pitch) = pitch.sin_cos();
-        let (sin_yaw, cos_yaw) = yaw.sin_cos();
+    pub fn view_proj(&self) -> Mat4 {
+        self.proj_matrix() * self.view_matrix()
+    }
+
+    pub fn view_matrix(&self) -> Mat4 {
+        let (sin_pitch, cos_pitch) = self.pitch.sin_cos();
+        let (sin_yaw, cos_yaw) = self.yaw.sin_cos();
         let dir = Vec3::new(cos_pitch * cos_yaw, sin_pitch, cos_pitch * sin_yaw).normalize();
 
-        Mat4::look_to_rh(position, dir, Vec3::Y)
+        Mat4::look_to_rh(self.position, dir, self.up)
+    }
+
+    pub fn proj_matrix(&self) -> Mat4 {
+        match &self.mode {
+            ProjectionMode::Ortho(projection) => Mat4::orthographic_rh(
+                -projection.width / 2.,
+                projection.width / 2.,
+                -projection.height / 2.,
+                projection.height / 2.,
+                projection.near,
+                projection.far,
+            ),
+            ProjectionMode::Perspective(projection) => Mat4::perspective_rh(
+                projection.fovy,
+                projection.aspect,
+                projection.near,
+                projection.far,
+            ),
+        }
+    }
+
+    pub fn resize(&mut self, width: u32, height: u32) {
+        match &mut self.mode {
+            ProjectionMode::Ortho(projection) => {
+                projection.width = width as f32;
+                projection.height = height as f32;
+            }
+            ProjectionMode::Perspective(projection) => {
+                projection.aspect = width as f32 / height as f32;
+            }
+        }
     }
 }
 
 impl fmt::Display for Camera {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(
-            f,
-            "Position={} Yaw={}° Pitch={}° Fov={}°",
-            self.position,
-            self.yaw.to_degrees(),
-            self.pitch.to_degrees(),
-            self.projection.fovy.to_degrees(),
-        )
+        match &self.mode {
+            ProjectionMode::Ortho(projection) => {
+                write!(
+                    f,
+                    "Position={} Yaw={}° Pitch={}° Size={}/{}",
+                    self.position,
+                    self.yaw.to_degrees(),
+                    self.pitch.to_degrees(),
+                    projection.width,
+                    projection.height,
+                )
+            }
+            ProjectionMode::Perspective(projection) => {
+                write!(
+                    f,
+                    "Position={} Yaw={}° Pitch={}° Fov={}°",
+                    self.position,
+                    self.yaw.to_degrees(),
+                    self.pitch.to_degrees(),
+                    projection.fovy.to_degrees(),
+                )
+            }
+        }
     }
 }

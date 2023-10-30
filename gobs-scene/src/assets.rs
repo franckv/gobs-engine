@@ -40,6 +40,7 @@ pub async fn load_model(
 
     let materials = match shader.ty() {
         ShaderType::Phong => load_material(gfx, file_name, obj_materials?, shader.clone()).await?,
+        ShaderType::UI => load_material(gfx, file_name, obj_materials?, shader.clone()).await?,
         ShaderType::Solid => Vec::new(),
     };
 
@@ -76,10 +77,11 @@ async fn load_mesh(
                     m.mesh.positions[i * 3 + 1],
                     m.mesh.positions[i * 3 + 2],
                 ];
-                let color: [f32; 3] = [
+                let color = [
                     *(m.mesh.vertex_color.get(i * 3).unwrap_or(&1.)),
                     *(m.mesh.vertex_color.get(i * 3 + 1).unwrap_or(&1.)),
                     *(m.mesh.vertex_color.get(i * 3 + 2).unwrap_or(&1.)),
+                    1.,
                 ];
                 let texture = [m.mesh.texcoords[i * 2], m.mesh.texcoords[i * 2 + 1]];
                 let normal = [
@@ -89,6 +91,14 @@ async fn load_mesh(
                 ];
                 match shader.ty() {
                     ShaderType::Phong => {
+                        mesh = mesh.add_vertex_PTN(
+                            position.into(),
+                            texture.into(),
+                            normal.into(),
+                            texture.into(),
+                        )
+                    }
+                    ShaderType::UI => {
                         mesh = mesh.add_vertex_PTN(
                             position.into(),
                             texture.into(),

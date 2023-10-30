@@ -18,9 +18,9 @@ impl Shapes {
     pub fn triangle(
         gfx: &Gfx,
         flags: VertexFlag,
-        color1: [f32; 3],
-        color2: [f32; 3],
-        color3: [f32; 3],
+        color1: [f32; 4],
+        color2: [f32; 4],
+        color3: [f32; 4],
     ) -> Arc<Mesh> {
         let mut builder = MeshBuilder::new("triangle", flags);
 

@@ -29,6 +29,12 @@ impl MaterialBuilder {
         self
     }
 
+    pub async fn diffuse_texture_t(mut self, texture: Texture) -> Self {
+        self.diffuse_texture = Some(texture);
+
+        self
+    }
+
     pub async fn diffuse_texture(mut self, gfx: &Gfx, file: &str) -> Self {
         self.diffuse_texture = Some(Texture::load_texture(gfx, file, false).await.unwrap());
 

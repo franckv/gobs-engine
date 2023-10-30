@@ -15,6 +15,7 @@ pub struct PipelineBuilder<'a> {
     depth_format: Option<wgpu::TextureFormat>,
     vertex_layouts: Vec<wgpu::VertexBufferLayout<'a>>,
     shader: Option<wgpu::ShaderModuleDescriptor<'a>>,
+    culling: bool,
 }
 
 impl<'a> PipelineBuilder<'a> {
@@ -23,6 +24,7 @@ impl<'a> PipelineBuilder<'a> {
             name: Some(name),
             device: Some(device),
             bind_layouts: Vec::new(),
+            culling: true,
             ..Default::default()
         }
     }
@@ -66,6 +68,12 @@ impl<'a> PipelineBuilder<'a> {
         self
     }
 
+    pub fn culling(mut self, culling: bool) -> Self {
+        self.culling = culling;
+
+        self
+    }
+
     pub fn build(self) -> Pipeline {
         let device = self.device.unwrap();
 
@@ -100,7 +108,11 @@ impl<'a> PipelineBuilder<'a> {
             topology: wgpu::PrimitiveTopology::TriangleList,
             strip_index_format: None,
             front_face: wgpu::FrontFace::Ccw,
-            cull_mode: Some(wgpu::Face::Back),
+            cull_mode: if self.culling {
+                Some(wgpu::Face::Back)
+            } else {
+                None
+            },
             polygon_mode: wgpu::PolygonMode::Fill,
             unclipped_depth: false,
             conservative: false,

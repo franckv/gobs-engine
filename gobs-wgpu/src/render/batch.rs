@@ -150,17 +150,23 @@ impl<'a> Batch<'a> {
 
             for item in &self.items {
                 match item.shader {
-                    Shader::Phong(shader) => {
-                        shader.draw_instanced(
-                            &mut render_pass,
-                            item.model,
-                            self.camera_resource,
-                            self.light_resource,
-                            item.instances_buffer.unwrap(),
-                            item.instances_count as _,
-                        );
-                    }
+                    Shader::Phong(shader) => shader.draw_instanced(
+                        &mut render_pass,
+                        item.model,
+                        self.camera_resource,
+                        self.light_resource,
+                        item.instances_buffer.unwrap(),
+                        item.instances_count as _,
+                    ),
                     Shader::Solid(shader) => shader.draw_instanced(
+                        &mut render_pass,
+                        item.model,
+                        self.camera_resource,
+                        self.light_resource,
+                        item.instances_buffer.unwrap(),
+                        item.instances_count as _,
+                    ),
+                    Shader::UI(shader) => shader.draw_instanced(
                         &mut render_pass,
                         item.model,
                         self.camera_resource,

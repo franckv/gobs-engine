@@ -10,10 +10,7 @@ use game::{
 use scene::light::Light;
 use scene::scene::Scene;
 use scene::Gfx;
-use scene::{
-    camera::{Camera, CameraProjection},
-    RenderError,
-};
+use scene::{camera::Camera, RenderError};
 
 struct App {
     camera_controller: CameraController,
@@ -22,17 +19,15 @@ struct App {
 
 impl Run for App {
     async fn create(gfx: &mut Gfx) -> Self {
-        let camera = Camera::new(
+        let camera = Camera::perspective(
             (-2., 2., 5.),
-            CameraProjection::new(
-                gfx.width(),
-                gfx.height(),
-                (45. as f32).to_radians(),
-                0.1,
-                150.,
-            ),
+            gfx.width() as f32 / gfx.height() as f32,
+            (45. as f32).to_radians(),
+            0.1,
+            150.,
             (-65. as f32).to_radians(),
             (-20. as f32).to_radians(),
+            Vec3::Y,
         );
 
         let light = Light::new((8., 2., 8.), (1., 1., 0.9));

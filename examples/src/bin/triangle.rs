@@ -1,5 +1,5 @@
 use examples::CameraController;
-use glam::Quat;
+use glam::{Quat, Vec3};
 use gobs_game as game;
 use gobs_scene as scene;
 
@@ -9,10 +9,7 @@ use game::{
 };
 use scene::scene::Scene;
 use scene::Gfx;
-use scene::{
-    camera::{Camera, CameraProjection},
-    RenderError,
-};
+use scene::{camera::Camera, RenderError};
 use scene::{light::Light, ModelBuilder};
 
 struct App {
@@ -22,17 +19,15 @@ struct App {
 
 impl Run for App {
     async fn create(gfx: &mut Gfx) -> Self {
-        let camera = Camera::new(
-            (0., 0., 2.),
-            CameraProjection::new(
-                gfx.width(),
-                gfx.height(),
-                (45. as f32).to_radians(),
-                0.1,
-                150.,
-            ),
+        let camera = Camera::ortho(
+            (0., 0., 100.),
+            gfx.width() as f32,
+            gfx.height() as f32,
+            0.1,
+            1000.,
             (-90. as f32).to_radians(),
             (0. as f32).to_radians(),
+            Vec3::Y,
         );
 
         let light = Light::new((0., 0., 10.), (1., 1., 1.));
@@ -40,13 +35,14 @@ impl Run for App {
         let mut scene = Scene::new(gfx, camera, light).await;
 
         let triangle = ModelBuilder::new()
+            .scale(1000.)
             .add_mesh(
                 scene::shape::Shapes::triangle(
                     gfx,
                     scene.solid_shader.vertex_flags(),
-                    [1., 0., 0.],
-                    [0., 1., 0.],
-                    [0., 0., 1.],
+                    [1., 0., 0., 0.],
+                    [0., 1., 0., 0.],
+                    [0., 0., 1., 0.],
                 ),
                 None,
             )

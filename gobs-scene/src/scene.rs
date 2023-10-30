@@ -32,6 +32,7 @@ pub struct Scene {
     pub light_resource: LightResource,
     pub phong_shader: Arc<Shader>,
     pub solid_shader: Arc<Shader>,
+    pub ui_shader: Arc<Shader>,
     depth_texture: Texture,
     pub nodes: Vec<Node>,
     models: Vec<ModelInstance>,
@@ -47,6 +48,7 @@ impl Scene {
 
         let phong_shader = Shader::new(gfx, ShaderType::Phong).await;
         let solid_shader = Shader::new(gfx, ShaderType::Solid).await;
+        let ui_shader = Shader::new(gfx, ShaderType::UI).await;
 
         let camera_resource =
             gfx.create_camera_resource(phong_shader.layout(ShaderBindGroup::Camera));
@@ -73,6 +75,7 @@ impl Scene {
             light_resource,
             phong_shader,
             solid_shader,
+            ui_shader,
             depth_texture,
             nodes,
             models,
@@ -88,13 +91,12 @@ impl Scene {
             gfx.height(),
             &[],
         );
-        self.camera.projection.resize(width, height);
+        self.camera.resize(width, height);
     }
 
     pub fn update(&mut self, gfx: &Gfx) {
         let view_position = self.camera.position.extend(1.).to_array();
-        let view_proj =
-            (self.camera.projection.to_matrix() * self.camera.to_matrix()).to_cols_array_2d();
+        let view_proj = self.camera.view_proj().to_cols_array_2d();
 
         self.camera_resource.update(gfx, view_position, view_proj);
 
