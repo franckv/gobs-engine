@@ -35,14 +35,14 @@ impl Run for App {
         let mut scene = Scene::new(gfx, camera, light).await;
 
         let triangle = ModelBuilder::new()
-            .scale(1000.)
+            .scale(500.)
             .add_mesh(
                 scene::shape::Shapes::triangle(
                     gfx,
                     scene.solid_shader.vertex_flags(),
-                    [1., 0., 0., 0.],
-                    [0., 1., 0., 0.],
-                    [0., 0., 1., 0.],
+                    [1., 0., 0., 1.],
+                    [0., 1., 0., 1.],
+                    [0., 0., 1., 1.],
                 ),
                 None,
             )
