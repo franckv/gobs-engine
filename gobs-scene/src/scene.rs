@@ -160,7 +160,7 @@ impl Scene {
         gfx: &Gfx,
         name: &str,
         shader: Arc<Shader>,
-        scale: f32,
+        scale: Vec3,
     ) -> Result<Arc<Model>> {
         let model = assets::load_model(name, gfx, shader.clone(), scale).await?;
 

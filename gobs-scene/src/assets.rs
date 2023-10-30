@@ -2,6 +2,7 @@ use std::io::{BufReader, Cursor};
 use std::sync::Arc;
 
 use anyhow::Result;
+use glam::Vec3;
 use log::*;
 use uuid::Uuid;
 
@@ -18,7 +19,7 @@ pub async fn load_model(
     file_name: &str,
     gfx: &Gfx,
     shader: Arc<Shader>,
-    scale: f32,
+    scale: Vec3,
 ) -> Result<Arc<Model>> {
     let obj_text = load::load_string(file_name, AssetType::MODEL).await?;
     let obj_cursor = Cursor::new(obj_text);

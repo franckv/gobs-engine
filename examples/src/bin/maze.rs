@@ -73,7 +73,7 @@ impl Run for App {
         scene.camera.position = (pos_x, pos_y, pos_z).into();
 
         let light_model = scene
-            .load_model(gfx, examples::LIGHT, scene.solid_shader.clone(), 0.3)
+            .load_model(gfx, examples::LIGHT, scene.solid_shader.clone(), Vec3::splat(0.3))
             .await
             .unwrap();
 

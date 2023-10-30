@@ -91,10 +91,14 @@ impl Camera {
         self.proj_matrix() * self.view_matrix()
     }
 
-    pub fn view_matrix(&self) -> Mat4 {
+    pub fn dir(&self) -> Vec3 {
         let (sin_pitch, cos_pitch) = self.pitch.sin_cos();
         let (sin_yaw, cos_yaw) = self.yaw.sin_cos();
-        let dir = Vec3::new(cos_pitch * cos_yaw, sin_pitch, cos_pitch * sin_yaw).normalize();
+        Vec3::new(cos_pitch * cos_yaw, sin_pitch, cos_pitch * sin_yaw).normalize()
+    }
+
+    pub fn view_matrix(&self) -> Mat4 {
+        let dir = self.dir();
 
         Mat4::look_to_rh(self.position, dir, self.up)
     }
@@ -137,22 +141,24 @@ impl fmt::Display for Camera {
             ProjectionMode::Ortho(projection) => {
                 write!(
                     f,
-                    "Position={} Yaw={}° Pitch={}° Size={}/{}",
+                    "Position={} Yaw={}° Pitch={}° Size={}/{} dir={}",
                     self.position,
                     self.yaw.to_degrees(),
                     self.pitch.to_degrees(),
                     projection.width,
                     projection.height,
+                    self.dir(),
                 )
             }
             ProjectionMode::Perspective(projection) => {
                 write!(
                     f,
-                    "Position={} Yaw={}° Pitch={}° Fov={}°",
+                    "Position={} Yaw={}° Pitch={}° Fov={}° dir={}",
                     self.position,
                     self.yaw.to_degrees(),
                     self.pitch.to_degrees(),
                     projection.fovy.to_degrees(),
+                    self.dir(),
                 )
             }
         }

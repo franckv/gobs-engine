@@ -1,23 +1,24 @@
 use std::sync::Arc;
 
+use glam::Vec3;
 use uuid::Uuid;
 
 use crate::model::{Material, Mesh};
 
 pub struct ModelBuilder {
-    scale: f32,
+    scale: Vec3,
     meshes: Vec<(Arc<Mesh>, Option<Arc<Material>>)>,
 }
 
 impl ModelBuilder {
     pub fn new() -> Self {
         ModelBuilder {
-            scale: 1.,
+            scale: Vec3::splat(1.),
             meshes: Vec::new(),
         }
     }
 
-    pub fn scale(mut self, scale: f32) -> Self {
+    pub fn scale(mut self, scale: Vec3) -> Self {
         self.scale = scale;
 
         self
@@ -40,6 +41,6 @@ impl ModelBuilder {
 
 pub struct Model {
     pub id: Uuid,
-    pub scale: f32,
+    pub scale: Vec3,
     pub meshes: Vec<(Arc<Mesh>, Option<Arc<Material>>)>,
 }

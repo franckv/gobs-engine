@@ -96,10 +96,7 @@ impl<'a> PipelineBuilder<'a> {
             entry_point: "fs_main",
             targets: &[Some(wgpu::ColorTargetState {
                 format: self.color_format.unwrap(),
-                blend: Some(wgpu::BlendState {
-                    alpha: wgpu::BlendComponent::REPLACE,
-                    color: wgpu::BlendComponent::REPLACE,
-                }),
+                blend: Some(wgpu::BlendState::ALPHA_BLENDING),
                 write_mask: wgpu::ColorWrites::ALL,
             })],
         };

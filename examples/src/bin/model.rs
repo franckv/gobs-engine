@@ -35,7 +35,7 @@ impl Run for App {
         let mut scene = Scene::new(gfx, camera, light).await;
 
         let cube = scene
-            .load_model(gfx, examples::CUBE, scene.phong_shader.clone(), 1.)
+            .load_model(gfx, examples::CUBE, scene.phong_shader.clone(), Vec3::splat(1.))
             .await
             .unwrap();
 

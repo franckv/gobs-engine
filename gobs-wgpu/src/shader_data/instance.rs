@@ -24,11 +24,11 @@ impl InstanceDataBuilder {
         self
     }
 
-    pub fn model_transform(self, position: Vec3, rotation: Quat, scale: f32) -> Self {
+    pub fn model_transform(self, position: Vec3, rotation: Quat, scale: Vec3) -> Self {
         self.model(
             Mat4::from_translation(position)
                 * Mat4::from_quat(rotation)
-                * Mat4::from_scale(Vec3::splat(scale)),
+                * Mat4::from_scale(scale),
         )
     }
 

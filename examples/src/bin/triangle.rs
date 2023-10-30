@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use examples::CameraController;
 use glam::{Quat, Vec3};
 use gobs_game as game;
@@ -20,11 +22,11 @@ struct App {
 impl Run for App {
     async fn create(gfx: &mut Gfx) -> Self {
         let camera = Camera::ortho(
-            (0., 0., 100.),
+            (0., 0., 10.),
             gfx.width() as f32,
             gfx.height() as f32,
             0.1,
-            1000.,
+            100.,
             (-90. as f32).to_radians(),
             (0. as f32).to_radians(),
             Vec3::Y,
@@ -34,15 +36,15 @@ impl Run for App {
 
         let mut scene = Scene::new(gfx, camera, light).await;
 
-        let triangle = ModelBuilder::new()
-            .scale(500.)
+        let triangle: Arc<scene::Model> = ModelBuilder::new()
+            .scale(Vec3::new(300., 300., 1.))
             .add_mesh(
                 scene::shape::Shapes::triangle(
                     gfx,
                     scene.solid_shader.vertex_flags(),
-                    [1., 0., 0., 1.],
-                    [0., 1., 0., 1.],
-                    [0., 0., 1., 1.],
+                    [1., 0., 0., 0.5],
+                    [0., 1., 0., 0.5],
+                    [0., 0., 1., 0.5],
                 ),
                 None,
             )

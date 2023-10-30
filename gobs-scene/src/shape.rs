@@ -91,8 +91,9 @@ impl Shapes {
         let ti = [1, 3, 4, 4, 2, 1];
 
         for i in 0..vi.len() {
-            builder = builder.add_vertex_PTN(
+            builder = builder.add_vertex_PCTN(
                 v[vi[i] - 1].into(),
+                [1., 1., 1., 1.].into(),
                 t[ti[i] - 1].into(),
                 n[ni[i] - 1].into(),
                 t[ti[i] - 1].into(),
