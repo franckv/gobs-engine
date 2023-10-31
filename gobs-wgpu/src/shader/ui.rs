@@ -45,6 +45,7 @@ impl UIShader {
             .color_format(gfx.format().clone())
             .depth_format(Texture::DEPTH_FORMAT)
             .culling(false)
+            .depth(false)
             .build();
 
         Arc::new(Shader::UI(UIShader {

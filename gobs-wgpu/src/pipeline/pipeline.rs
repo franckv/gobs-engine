@@ -16,6 +16,7 @@ pub struct PipelineBuilder<'a> {
     vertex_layouts: Vec<wgpu::VertexBufferLayout<'a>>,
     shader: Option<wgpu::ShaderModuleDescriptor<'a>>,
     culling: bool,
+    depth: bool,
 }
 
 impl<'a> PipelineBuilder<'a> {
@@ -25,6 +26,7 @@ impl<'a> PipelineBuilder<'a> {
             device: Some(device),
             bind_layouts: Vec::new(),
             culling: true,
+            depth: true,
             ..Default::default()
         }
     }
@@ -58,6 +60,12 @@ impl<'a> PipelineBuilder<'a> {
 
     pub fn color_format(mut self, color_format: wgpu::TextureFormat) -> Self {
         self.color_format = Some(color_format);
+
+        self
+    }
+
+    pub fn depth(mut self, depth: bool) -> Self {
+        self.depth = depth;
 
         self
     }
@@ -117,7 +125,7 @@ impl<'a> PipelineBuilder<'a> {
 
         let depth_stencil = self.depth_format.map(|format| wgpu::DepthStencilState {
             format,
-            depth_write_enabled: true,
+            depth_write_enabled: self.depth,
             depth_compare: wgpu::CompareFunction::Less,
             stencil: wgpu::StencilState::default(),
             bias: wgpu::DepthBiasState::default(),

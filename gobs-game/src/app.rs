@@ -13,8 +13,8 @@ use crate::input::{Event, Input};
 use scene::Gfx;
 use scene::RenderError;
 
-const WIDTH: u32 = 800; // TODO: hardcoded
-const HEIGHT: u32 = 600;
+const WIDTH: u32 = 1920; // TODO: hardcoded
+const HEIGHT: u32 = 1080;
 
 pub struct Application {
     pub window: Window,
