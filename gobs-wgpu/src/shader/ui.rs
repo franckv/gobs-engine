@@ -65,7 +65,7 @@ where
     }
 
     fn vertex_flags() -> VertexFlag {
-        VertexFlag::POSITION | VertexFlag::TEXTURE | VertexFlag::NORMAL
+        VertexFlag::POSITION | VertexFlag::COLOR | VertexFlag::TEXTURE | VertexFlag::NORMAL
     }
 
     fn draw_instanced(

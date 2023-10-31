@@ -1,21 +1,22 @@
 struct VertexInput {
     @location(0) position: vec3f,
-    @location(1) tex_coords: vec2f,
-    @location(2) normal: vec3f,
-    @location(3) n_tex_coords: vec2f,
-    @location(4) tangent: vec3f,
-    @location(5) bitangent: vec3f,
+    @location(1) color: vec4f,
+    @location(2) tex_coords: vec2f,
+    @location(3) normal: vec3f,
+    @location(4) n_tex_coords: vec2f,
+    @location(5) tangent: vec3f,
+    @location(6) bitangent: vec3f,
 }
 
 struct InstanceInput {
-    @location(6) model_matrix_0: vec4f,
-    @location(7) model_matrix_1: vec4f,
-    @location(8) model_matrix_2: vec4f,
-    @location(9) model_matrix_3: vec4f,
+    @location(7) model_matrix_0: vec4f,
+    @location(8) model_matrix_1: vec4f,
+    @location(9) model_matrix_2: vec4f,
+    @location(10) model_matrix_3: vec4f,
     
-    @location(10) normal_matrix_0: vec3f,
-    @location(11) normal_matrix_1: vec3f,
-    @location(12) normal_matrix_2: vec3f,
+    @location(11) normal_matrix_0: vec3f,
+    @location(12) normal_matrix_1: vec3f,
+    @location(13) normal_matrix_2: vec3f,
 }
 
 struct Camera {
@@ -47,9 +48,10 @@ struct VertexOutput {
     @builtin(position) clip_position: vec4f,
     @location(0) tex_coords: vec2f,
     @location(1) n_tex_coords: vec2f,
-    @location(2) tangent_position: vec3f,
-    @location(3) tangent_light_position: vec3f,
-    @location(4) tangent_view_position: vec3f
+    @location(2) color: vec4f,
+    @location(3) tangent_position: vec3f,
+    @location(4) tangent_light_position: vec3f,
+    @location(5) tangent_view_position: vec3f
 };
 
 @vertex
@@ -76,6 +78,7 @@ fn vs_main(model: VertexInput, instance: InstanceInput) -> VertexOutput {
     out.clip_position = camera.view_proj * world_position;
     out.tex_coords = model.tex_coords;
     out.n_tex_coords = model.n_tex_coords;
+    out.color = model.color;
     out.tangent_position = tangent_matrix * world_position.xyz;
     out.tangent_view_position = tangent_matrix * camera.view_pos.xyz;
     out.tangent_light_position = tangent_matrix * light.position;
@@ -123,7 +126,8 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4f {
     let specular_strength = pow(max(dot(tangent_normal, half_dir), 0.0), 32.0);
     let specular_color = specular_strength * light.color;
 
-    let result = (ambient_color + diffuse_color + specular_color) * object_color.xyz;
+    let result = (ambient_color + diffuse_color + specular_color) * object_color.xyz * in.color.xyz;
 
-    return vec4f(result, object_color.a);
+
+    return vec4f(result, in.color.a);
 }
