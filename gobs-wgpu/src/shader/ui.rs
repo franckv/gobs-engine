@@ -61,11 +61,11 @@ where
     'a: 'b,
 {
     fn instance_flags() -> InstanceFlag {
-        InstanceFlag::MODEL | InstanceFlag::NORMAL
+        InstanceFlag::MODEL
     }
 
     fn vertex_flags() -> VertexFlag {
-        VertexFlag::POSITION | VertexFlag::COLOR | VertexFlag::TEXTURE | VertexFlag::NORMAL
+        VertexFlag::POSITION | VertexFlag::COLOR | VertexFlag::TEXTURE
     }
 
     fn draw_instanced(
