@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use std::sync::Arc;
 
 use glam::{Vec2, Vec3, Vec4};
-use log::{error, info};
+use log::info;
 
 use crate::render::Gfx;
 use crate::shader::Shader;
@@ -96,11 +96,6 @@ impl MeshBuilder {
     fn update_tangent(mut self) -> Self {
         info!("Calculating tangents for {} indices", self.indices.len());
 
-        if self.indices.len() % 3 != 0 {
-            error!("Vertices number shoud be multiple of 3");
-            return self;
-        }
-
         let mut triangles_included = vec![0; self.vertices.len()];
 
         for c in self.indices.chunks(3) {
@@ -149,6 +144,9 @@ impl MeshBuilder {
 
     pub fn build(mut self) -> Arc<Mesh> {
         self = self.autoindex();
+
+        assert_eq!(self.indices.len() % 3, 0);
+
         self = self.update_tangent();
 
         info!(
