@@ -115,12 +115,43 @@ impl Texture {
         });
 
         Self {
-            width: gfx.width(),
-            height: gfx.height(),
+            width,
+            height,
             texture,
             view,
             sampler,
         }
+    }
+
+    // TODO: Texture dimensions (width/height) cannot be updated immutably
+    pub fn patch_texture(&self, gfx: &Gfx, start_x: u32, start_y: u32, width: u32, height: u32, img: &[u8]) {
+        let size = wgpu::Extent3d {
+            width,
+            height,
+            depth_or_array_layers: 1,
+        };
+
+        let origin = wgpu::Origin3d {
+            x: start_x,
+            y: start_y,
+            z: 0
+        };
+
+        gfx.queue().write_texture(
+            wgpu::ImageCopyTexture {
+                aspect: wgpu::TextureAspect::All,
+                texture: &self.texture,
+                mip_level: 0,
+                origin,
+            },
+            img,
+            wgpu::ImageDataLayout {
+                offset: 0,
+                bytes_per_row: Some(4 * width),
+                rows_per_image: Some(height),
+            },
+            size,
+        );
     }
 
     pub const DEPTH_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Depth32Float;

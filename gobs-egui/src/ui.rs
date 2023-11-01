@@ -9,7 +9,7 @@ use glam::{Vec2, Vec3, Vec4};
 use gobs_game::input::Input;
 use gobs_wgpu as render;
 
-use log::{info, warn};
+use log::info;
 use render::{
     model::{Material, MaterialBuilder, MeshBuilder, Model, ModelBuilder, Texture, TextureType},
     render::Gfx,
@@ -112,9 +112,13 @@ impl UIRenderer {
     async fn update_textures(&mut self, gfx: &Gfx, output: &FullOutput) {
         for (id, img) in &output.textures_delta.set {
             info!("New texture {:?}", id);
-            let texture = self.decode_texture(gfx, img).await;
-
-            if !self.font_texture.contains_key(id) {
+            if let Some(_) = img.pos {
+                info!("Patching texture");
+                self.patch_texture(gfx, self.font_texture.get(id).cloned().expect("Cannot update unallocated texture"), img)
+                    .await;
+            } else {
+                info!("Allocate new texture");
+                let texture = self.decode_texture(gfx, img).await;
                 self.font_texture.insert(*id, texture);
             }
         }
@@ -135,9 +139,6 @@ impl UIRenderer {
                 let pixels = font.srgba_pixels(None).collect::<Vec<_>>();
                 let bytes: &[u8] = bytemuck::cast_slice(pixels.as_slice());
 
-                if let Some(pos) = img.pos {
-                    warn!("Texture patching not supported: {:?}", pos);
-                }
                 let texture = Texture::new(
                     &gfx,
                     "egui",
@@ -151,6 +152,22 @@ impl UIRenderer {
                     .diffuse_texture_t(texture)
                     .await
                     .build(gfx)
+            }
+        }
+    }
+
+    async fn patch_texture(&self, gfx: &Gfx, material: Arc<Material>, img: &ImageDelta) {
+        match &img.image {
+            egui::ImageData::Color(_) => todo!(),
+            egui::ImageData::Font(font) => {
+                let pixels = font.srgba_pixels(None).collect::<Vec<_>>();
+                let bytes: &[u8] = bytemuck::cast_slice(pixels.as_slice());
+
+                let pos = img.pos.expect("Can only patch texture with start position");
+
+                material
+                    .diffuse_texture
+                    .patch_texture(gfx, pos[0] as u32, pos[1] as u32, font.width() as u32, font.height() as u32, bytes);
             }
         }
     }
