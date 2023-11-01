@@ -1,13 +1,15 @@
-use std::sync::Arc;
+use std::{collections::HashMap, sync::Arc};
 
 use egui::{
-    epaint::Primitive, Context, Event, FullOutput, Modifiers, PointerButton, RawInput, Rect, Rgba,
+    epaint::{ImageDelta, Primitive},
+    Context, Event, FullOutput, Modifiers, PointerButton, RawInput, Rect, Rgba, TextureId,
 };
 use glam::{Vec2, Vec3, Vec4};
 
 use gobs_game::input::Input;
 use gobs_wgpu as render;
 
+use log::{info, warn};
 use render::{
     model::{Material, MaterialBuilder, MeshBuilder, Model, ModelBuilder, Texture, TextureType},
     render::Gfx,
@@ -19,7 +21,7 @@ pub struct UIRenderer {
     width: f32,
     height: f32,
     shader: Arc<Shader>,
-    font_texture: Option<Arc<Material>>,
+    font_texture: HashMap<TextureId, Arc<Material>>,
     input: Vec<Input>,
     mouse_position: (f32, f32),
 }
@@ -35,7 +37,7 @@ impl UIRenderer {
             width,
             height,
             shader,
-            font_texture: None,
+            font_texture: HashMap::new(),
             input: Vec::new(),
             mouse_position: (0., 0.),
         }
@@ -49,11 +51,15 @@ impl UIRenderer {
 
         let output = self.ctx.run(input, callback);
 
-        if self.font_texture.is_none() {
-            self.font_texture = Some(pollster::block_on(Self::load_texture(gfx, &output)));
-        }
+        pollster::block_on(self.update_textures(gfx, &output));
 
-        self.load_models(gfx, &self.ctx, self.shader.clone(), output)
+        let to_remove = output.textures_delta.free.clone();
+
+        let models = self.load_models(gfx, &self.ctx, self.shader.clone(), output);
+
+        self.cleanup_textures(to_remove);
+
+        models
     }
 
     pub fn resize(&mut self, width: u32, height: u32) {
@@ -103,33 +109,50 @@ impl UIRenderer {
         self.input.push(input);
     }
 
-    async fn load_texture(gfx: &Gfx, output: &FullOutput) -> Arc<Material> {
-        let mut textures: Vec<Texture> = output
-            .textures_delta
-            .set
-            .iter()
-            .map(|(_, img)| match &img.image {
-                egui::ImageData::Color(_) => todo!(),
-                egui::ImageData::Font(font) => {
-                    let pixels = font.srgba_pixels(None).collect::<Vec<_>>();
-                    let bytes: &[u8] = bytemuck::cast_slice(pixels.as_slice());
+    async fn update_textures(&mut self, gfx: &Gfx, output: &FullOutput) {
+        for (id, img) in &output.textures_delta.set {
+            info!("New texture {:?}", id);
+            let texture = self.decode_texture(gfx, img).await;
 
-                    Texture::new(
-                        &gfx,
-                        "egui",
-                        TextureType::IMAGE,
-                        img.image.width() as u32,
-                        img.image.height() as u32,
-                        bytes,
-                    )
+            if !self.font_texture.contains_key(id) {
+                self.font_texture.insert(*id, texture);
+            }
+        }
+    }
+
+    fn cleanup_textures(&mut self, to_remove: Vec<TextureId>) {
+        for id in &to_remove {
+            info!("Remove texture {:?}", id);
+
+            self.font_texture.remove(id);
+        }
+    }
+
+    async fn decode_texture(&self, gfx: &Gfx, img: &ImageDelta) -> Arc<Material> {
+        match &img.image {
+            egui::ImageData::Color(_) => todo!(),
+            egui::ImageData::Font(font) => {
+                let pixels = font.srgba_pixels(None).collect::<Vec<_>>();
+                let bytes: &[u8] = bytemuck::cast_slice(pixels.as_slice());
+
+                if let Some(pos) = img.pos {
+                    warn!("Texture patching not supported: {:?}", pos);
                 }
-            })
-            .collect();
+                let texture = Texture::new(
+                    &gfx,
+                    "egui",
+                    TextureType::IMAGE,
+                    img.image.width() as u32,
+                    img.image.height() as u32,
+                    bytes,
+                );
 
-        MaterialBuilder::new("diffuse")
-            .diffuse_texture_t(textures.remove(0))
-            .await
-            .build(gfx)
+                MaterialBuilder::new("diffuse")
+                    .diffuse_texture_t(texture)
+                    .await
+                    .build(gfx)
+            }
+        }
     }
 
     fn load_models(
@@ -165,9 +188,8 @@ impl UIRenderer {
                 }
 
                 let mesh = mesh.build();
-
                 let model = ModelBuilder::new()
-                    .add_mesh(mesh, self.font_texture.clone())
+                    .add_mesh(mesh, self.font_texture.get(&m.texture_id).cloned())
                     .build(gfx, shader.clone());
 
                 models.push(model);
