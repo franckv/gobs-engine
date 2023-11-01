@@ -7,25 +7,18 @@ use log::*;
 
 use gobs_wgpu as render;
 
-use render::model::ModelInstance;
-use render::model::TextureType;
+use render::model::{
+    InstanceData, InstanceFlag, Model, ModelInstance, Texture, TextureType, VertexFlag,
+};
 use render::pipeline::PipelineFlag;
-use render::render::RenderError;
-use render::shader::Shader;
-use render::shader::ShaderBindGroup;
-use render::shader_data::InstanceData;
-use render::shader_data::InstanceFlag;
-use render::shader_data::VertexFlag;
+use render::render::{Batch, Gfx, RenderError};
+use render::resources::{CameraResource, LightResource};
+use render::shader::{Shader, ShaderBindGroup};
 
 use crate::assets;
 use crate::camera::Camera;
 use crate::light::Light;
 use crate::node::Node;
-use render::model::CameraResource;
-use render::model::LightResource;
-use render::model::{Model, Texture};
-use render::render::Batch;
-use render::render::Gfx;
 
 pub struct Scene {
     pub camera: Camera,

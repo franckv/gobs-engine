@@ -1,6 +1,7 @@
-use crate::model::{CameraResource, LightResource, Model, Texture};
+use crate::model::{Model, Texture};
 use crate::render::Gfx;
 use crate::render::RenderError;
+use crate::resources::{CameraResource, LightResource};
 
 pub struct BatchItem<'a> {
     model: &'a Model,

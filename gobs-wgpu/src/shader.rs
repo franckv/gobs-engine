@@ -1,10 +1,10 @@
 use std::sync::Arc;
 
 use crate::{
-    model::{CameraResource, LightResource, Model, Texture},
+    model::{InstanceFlag, Model, Texture, VertexFlag},
     pipeline::{Generator, Pipeline, PipelineBuilder, PipelineFlag},
     render::Gfx,
-    shader_data::{InstanceFlag, VertexFlag},
+    resources::{CameraResource, LightResource},
 };
 
 pub enum ShaderBindGroup {

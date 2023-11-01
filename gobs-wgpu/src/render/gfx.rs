@@ -1,12 +1,9 @@
 use wgpu::util::DeviceExt;
 use winit::window::Window;
 
-use crate::model::CameraResource;
-use crate::model::LightResource;
+use crate::model::{InstanceData, VertexData, VertexFlag};
 use crate::render::Display;
-use crate::shader_data::InstanceData;
-use crate::shader_data::VertexData;
-use crate::shader_data::VertexFlag;
+use crate::resources::{CameraResource, LightResource};
 
 #[derive(Debug)]
 pub enum RenderError {

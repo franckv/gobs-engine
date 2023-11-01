@@ -4,10 +4,9 @@ use glam::Vec3;
 use uuid::Uuid;
 
 use crate::{
-    model::{Material, Mesh},
+    model::{Material, Mesh, VertexFlag},
     render::Gfx,
     shader::{Shader, ShaderBindGroup},
-    shader_data::VertexFlag,
 };
 
 pub struct ModelBuilder {
