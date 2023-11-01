@@ -5,7 +5,10 @@ authors = { workspace = true }
 edition = { workspace = true }
 
 [dependencies]
+bytemuck = { workspace = true }
+egui = { workspace = true }
 glam = { workspace = true }
+gobs-egui = { path = "../gobs-egui" }
 gobs-game = { path = "../gobs-game" }
 gobs-scene = { path = "../gobs-scene" }
 gobs-utils = { path = "../gobs-utils" }

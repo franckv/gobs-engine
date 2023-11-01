@@ -104,8 +104,8 @@ impl Application {
     }
 }
 
+#[allow(async_fn_in_trait)]
 pub trait Run: Sized {
-    #[allow(async_fn_in_trait)]
     async fn create(gfx: &mut Gfx) -> Self;
     fn update(&mut self, delta: f32, gfx: &mut Gfx);
     fn render(&mut self, gfx: &mut Gfx) -> Result<(), RenderError>;

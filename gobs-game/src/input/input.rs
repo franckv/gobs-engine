@@ -91,6 +91,7 @@ impl From<VirtualKeyCode> for Key {
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum Input {
+    CursorMoved(f64, f64),
     KeyPressed(Key),
     KeyReleased(Key),
     MouseWheel(f32),

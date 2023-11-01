@@ -95,6 +95,7 @@ impl Run for App {
             Input::MouseMotion(dx, dy) => {
                 self.camera_controller.mouse_drag(dx, dy);
             }
+            _ => (),
         }
     }
 

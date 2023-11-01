@@ -51,6 +51,9 @@ impl Event {
                         }
                     }
                 },
+                WindowEvent::CursorMoved { position, .. } => {
+                    status = Event::Input(Input::CursorMoved(position.x, position.y));
+                }
                 WindowEvent::MouseWheel { delta, .. } => {
                     let delta = match delta {
                         MouseScrollDelta::LineDelta(_, scroll) => scroll * 100.,

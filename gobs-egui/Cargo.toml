@@ -1,0 +1,16 @@
+[package]
+name = "gobs-egui"
+version = "0.1.0"
+authors = { workspace = true }
+edition = { workspace = true }
+
+[dependencies]
+bytemuck = { workspace = true }
+gobs-game = { path = "../gobs-game" }
+gobs-wgpu = { path = "../gobs-wgpu" }
+log = { workspace = true }
+eframe = { workspace = true }
+egui = { workspace = true }
+egui_extras = { workspace = true }
+glam = { workspace = true }
+pollster = { workspace = true }
