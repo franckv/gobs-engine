@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use examples::CameraController;
 use glam::{Quat, Vec3};
 use gobs_game as game;
@@ -7,14 +9,15 @@ use game::{
     app::{Application, Run},
     input::Input,
 };
-use scene::Gfx;
 use scene::{camera::Camera, RenderError};
 use scene::{light::Light, ModelBuilder};
 use scene::{scene::Scene, MaterialBuilder};
+use scene::{Gfx, Model};
 
 struct App {
     camera_controller: CameraController,
     scene: Scene,
+    light_model: Arc<Model>,
 }
 
 impl Run for App {
@@ -30,7 +33,8 @@ impl Run for App {
             Vec3::Y,
         );
 
-        let light = Light::new((8., 2., 8.), (1., 1., 0.9));
+        let light = Light::new((4., 2., 4.), (1., 1., 0.9));
+        let light_position = light.position;
 
         let mut scene = Scene::new(gfx, camera, light).await;
 
@@ -69,6 +73,22 @@ impl Run for App {
             )
             .build(gfx, scene.phong_shader.clone());
 
+        let light_model = scene
+            .load_model(
+                gfx,
+                examples::LIGHT,
+                scene.solid_shader.clone(),
+                Vec3::splat(0.3),
+            )
+            .await
+            .unwrap();
+
+        scene.add_node(
+            light_position,
+            Quat::from_axis_angle(Vec3::Z, 0.),
+            light_model.clone(),
+        );
+
         scene.add_node([0., 0., 0.].into(), Quat::IDENTITY, model);
 
         scene.add_node([-3., 0., -3.].into(), Quat::IDENTITY, triangle);
@@ -80,6 +100,7 @@ impl Run for App {
         App {
             camera_controller,
             scene,
+            light_model,
         }
     }
 
@@ -96,6 +117,12 @@ impl Run for App {
                 .into();
 
         self.scene.light.update(position);
+
+        for node in &mut self.scene.nodes {
+            if node.model().id == self.light_model.id {
+                node.set_transform(position, node.transform().rotation);
+            }
+        }
 
         self.scene.update(gfx);
     }

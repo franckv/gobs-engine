@@ -9,7 +9,7 @@ use gobs_utils as utils;
 use gobs_wgpu as render;
 
 use render::model::{Material, Mesh, MeshBuilder, Model, ModelBuilder, Texture};
-use render::shader::{Shader, ShaderType};
+use render::shader::Shader;
 use utils::load::{self, AssetType};
 
 use crate::Gfx;
@@ -38,11 +38,7 @@ pub async fn load_model(
     )
     .await?;
 
-    let materials = match shader.ty() {
-        ShaderType::Phong => load_material(gfx, file_name, obj_materials?).await?,
-        ShaderType::UI => load_material(gfx, file_name, obj_materials?).await?,
-        ShaderType::Solid => Vec::new(),
-    };
+    let materials = load_material(gfx, file_name, obj_materials?).await?;
 
     let meshes = load_mesh(models, &materials).await;
 

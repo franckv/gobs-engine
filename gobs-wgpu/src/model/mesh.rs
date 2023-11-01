@@ -172,7 +172,7 @@ pub struct Mesh {
 
 impl Mesh {
     pub fn create_buffers(&self, gfx: &Gfx, shader: Arc<Shader>) -> (wgpu::Buffer, wgpu::Buffer) {
-        let vertex_buffer = gfx.create_vertex_buffer(&self.vertices, shader.vertex_flags());
+        let vertex_buffer = gfx.create_vertex_buffer(&self.vertices, shader.vertex_flags);
         let index_buffer = gfx.create_index_buffer(&self.indices);
 
         (vertex_buffer, index_buffer)

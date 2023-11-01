@@ -9,11 +9,13 @@ use gobs_wgpu as render;
 
 use render::model::ModelInstance;
 use render::model::TextureType;
+use render::pipeline::PipelineFlag;
 use render::render::RenderError;
 use render::shader::Shader;
 use render::shader::ShaderBindGroup;
-use render::shader::ShaderType;
 use render::shader_data::InstanceData;
+use render::shader_data::InstanceFlag;
+use render::shader_data::VertexFlag;
 
 use crate::assets;
 use crate::camera::Camera;
@@ -46,9 +48,35 @@ impl Scene {
     pub async fn new(gfx: &Gfx, camera: Camera, light: Light) -> Self {
         info!("New scene");
 
-        let phong_shader = Shader::new(gfx, ShaderType::Phong).await;
-        let solid_shader = Shader::new(gfx, ShaderType::Solid).await;
-        let ui_shader = Shader::new(gfx, ShaderType::UI).await;
+        let phong_shader = Shader::new(
+            gfx,
+            "Phong",
+            "phong.wgsl",
+            VertexFlag::POSITION | VertexFlag::TEXTURE | VertexFlag::NORMAL,
+            InstanceFlag::MODEL | InstanceFlag::NORMAL,
+            PipelineFlag::CULLING | PipelineFlag::DEPTH,
+        )
+        .await;
+
+        let solid_shader = Shader::new(
+            gfx,
+            "Solid",
+            "solid.wgsl",
+            VertexFlag::POSITION | VertexFlag::COLOR,
+            InstanceFlag::MODEL,
+            PipelineFlag::CULLING | PipelineFlag::DEPTH,
+        )
+        .await;
+
+        let ui_shader = Shader::new(
+            gfx,
+            "UI",
+            "ui.wgsl",
+            VertexFlag::POSITION | VertexFlag::COLOR | VertexFlag::TEXTURE,
+            InstanceFlag::MODEL,
+            PipelineFlag::empty(),
+        )
+        .await;
 
         let camera_resource =
             gfx.create_camera_resource(phong_shader.layout(ShaderBindGroup::Camera));
@@ -109,7 +137,7 @@ impl Scene {
                 .iter()
                 .filter(|n| n.model().id == model.model.id)
                 .map(|n| {
-                    InstanceData::new(model.model.shader.instance_flags())
+                    InstanceData::new(model.model.shader.instance_flags)
                         .model_transform(
                             n.transform().translation,
                             n.transform().rotation,

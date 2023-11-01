@@ -17,6 +17,3 @@ naga = { workspace = true }
 uuid = { workspace = true }
 wgpu = { workspace = true }
 winit = { workspace = true }
-
-[build-dependencies]
-fs_extra = { workspace = true }

@@ -1,6 +1,22 @@
+use bitflags::bitflags;
+
 use gobs_utils as utils;
 
 use utils::load::{self, AssetType};
+
+bitflags! {
+    #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+    pub struct PipelineFlag: u32 {
+        const CULLING = 1;
+        const DEPTH = 1 << 1;
+    }
+}
+
+impl Default for PipelineFlag {
+    fn default() -> Self {
+        PipelineFlag::CULLING | PipelineFlag::DEPTH
+    }
+}
 
 pub struct Pipeline {
     pub pipeline: wgpu::RenderPipeline,
@@ -15,18 +31,16 @@ pub struct PipelineBuilder<'a> {
     depth_format: Option<wgpu::TextureFormat>,
     vertex_layouts: Vec<wgpu::VertexBufferLayout<'a>>,
     shader: Option<wgpu::ShaderModuleDescriptor<'a>>,
-    culling: bool,
-    depth: bool,
+    flags: PipelineFlag,
 }
 
 impl<'a> PipelineBuilder<'a> {
-    pub fn new(device: &'a wgpu::Device, name: &'a str) -> Self {
+    pub fn new(device: &'a wgpu::Device, name: &'a str, flags: PipelineFlag) -> Self {
         PipelineBuilder {
             name: Some(name),
             device: Some(device),
             bind_layouts: Vec::new(),
-            culling: true,
-            depth: true,
+            flags,
             ..Default::default()
         }
     }
@@ -64,20 +78,8 @@ impl<'a> PipelineBuilder<'a> {
         self
     }
 
-    pub fn depth(mut self, depth: bool) -> Self {
-        self.depth = depth;
-
-        self
-    }
-
     pub fn depth_format(mut self, depth_format: wgpu::TextureFormat) -> Self {
         self.depth_format = Some(depth_format);
-
-        self
-    }
-
-    pub fn culling(mut self, culling: bool) -> Self {
-        self.culling = culling;
 
         self
     }
@@ -113,7 +115,7 @@ impl<'a> PipelineBuilder<'a> {
             topology: wgpu::PrimitiveTopology::TriangleList,
             strip_index_format: None,
             front_face: wgpu::FrontFace::Ccw,
-            cull_mode: if self.culling {
+            cull_mode: if self.flags.contains(PipelineFlag::CULLING) {
                 Some(wgpu::Face::Back)
             } else {
                 None
@@ -125,7 +127,7 @@ impl<'a> PipelineBuilder<'a> {
 
         let depth_stencil = self.depth_format.map(|format| wgpu::DepthStencilState {
             format,
-            depth_write_enabled: self.depth,
+            depth_write_enabled: self.flags.contains(PipelineFlag::DEPTH),
             depth_compare: wgpu::CompareFunction::Less,
             stencil: wgpu::StencilState::default(),
             bias: wgpu::DepthBiasState::default(),

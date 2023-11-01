@@ -7,6 +7,7 @@ use crate::{
     model::{Material, Mesh},
     render::Gfx,
     shader::{Shader, ShaderBindGroup},
+    shader_data::VertexFlag,
 };
 
 pub struct ModelBuilder {
@@ -47,7 +48,11 @@ impl ModelBuilder {
             .map(|(mesh, material)| {
                 let bind_group = match material {
                     Some(material) => {
-                        Some(material.bind_group(gfx, shader.layout(ShaderBindGroup::Material)))
+                        if shader.vertex_flags.contains(VertexFlag::TEXTURE) {
+                            Some(material.bind_group(gfx, shader.layout(ShaderBindGroup::Material)))
+                        } else {
+                            None
+                        }
                     }
                     None => None,
                 };
