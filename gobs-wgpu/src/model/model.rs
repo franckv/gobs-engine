@@ -65,7 +65,6 @@ impl ModelBuilder {
         Arc::new(Model {
             id: Uuid::new_v4(),
             scale: self.scale,
-            meshes: self.meshes,
             shader,
             mesh_data,
         })
@@ -82,7 +81,6 @@ pub struct MeshData {
 pub struct Model {
     pub id: Uuid,
     pub scale: Vec3,
-    pub meshes: Vec<(Arc<Mesh>, Option<Arc<Material>>)>,
     pub shader: Arc<Shader>,
     pub mesh_data: Vec<MeshData>,
 }
