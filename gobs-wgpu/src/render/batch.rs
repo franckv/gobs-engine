@@ -7,7 +7,6 @@ use crate::render::Gfx;
 use crate::render::RenderError;
 
 pub struct BatchItem<'a> {
-    shader: &'a Shader,
     model: &'a Model,
     instances_buffer: Option<&'a wgpu::Buffer>,
     instances_count: usize,
@@ -50,10 +49,9 @@ impl<'a> BatchBuilder<'a> {
         self
     }
 
-    pub fn draw(mut self, model: &'a Model, shader: &'a Shader) -> Self {
+    pub fn draw(mut self, model: &'a Model) -> Self {
         let item = BatchItem {
             model,
-            shader,
             instances_buffer: None,
             instances_count: 0,
         };
@@ -66,13 +64,11 @@ impl<'a> BatchBuilder<'a> {
     pub fn draw_indexed(
         mut self,
         model: &'a Model,
-        shader: &'a Shader,
         instances_buffer: &'a wgpu::Buffer,
         instances_count: usize,
     ) -> Self {
         let item = BatchItem {
             model,
-            shader,
             instances_buffer: Some(instances_buffer),
             instances_count,
         };
@@ -149,7 +145,7 @@ impl<'a> Batch<'a> {
             });
 
             for item in &self.items {
-                match item.shader {
+                match item.model.shader.as_ref() {
                     Shader::Phong(shader) => shader.draw_instanced(
                         &mut render_pass,
                         item.model,

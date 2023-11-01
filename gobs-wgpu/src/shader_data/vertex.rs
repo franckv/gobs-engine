@@ -12,7 +12,6 @@ bitflags! {
 }
 
 pub struct VertexDataBuilder {
-    flags: VertexFlag,
     pub position: Option<Vec3>,
     pub color: Option<Vec4>,
     pub texture: Option<Vec2>,
@@ -74,7 +73,6 @@ impl VertexDataBuilder {
 
     pub fn build(self) -> VertexData {
         VertexData {
-            flags: self.flags,
             position: self.position.unwrap_or(Vec3::splat(0.)),
             color: self.color.unwrap_or(Vec4::splat(1.)),
             texture: self.texture.unwrap_or(Vec2::splat(0.)),
@@ -89,7 +87,6 @@ impl VertexDataBuilder {
 
 #[derive(Clone)]
 pub struct VertexData {
-    flags: VertexFlag,
     pub position: Vec3,
     pub color: Vec4,
     pub texture: Vec2,
@@ -101,9 +98,8 @@ pub struct VertexData {
 }
 
 impl VertexData {
-    pub fn new(flags: VertexFlag) -> VertexDataBuilder {
+    pub fn new() -> VertexDataBuilder {
         VertexDataBuilder {
-            flags,
             position: None,
             color: None,
             texture: None,
@@ -155,22 +151,22 @@ impl VertexData {
         self.bitangent = bitangent
     }
 
-    pub fn raw(&self) -> Vec<u8> {
+    pub fn raw(&self, flags: VertexFlag) -> Vec<u8> {
         let mut data: Vec<u8> = Vec::new();
 
-        if self.flags.contains(VertexFlag::POSITION) {
+        if flags.contains(VertexFlag::POSITION) {
             data.extend_from_slice(bytemuck::cast_slice(&self.position.to_array()));
         };
 
-        if self.flags.contains(VertexFlag::COLOR) {
+        if flags.contains(VertexFlag::COLOR) {
             data.extend_from_slice(bytemuck::cast_slice(&self.color.to_array()));
         };
 
-        if self.flags.contains(VertexFlag::TEXTURE) {
+        if flags.contains(VertexFlag::TEXTURE) {
             data.extend_from_slice(bytemuck::cast_slice(&self.texture.to_array()));
         };
 
-        if self.flags.contains(VertexFlag::NORMAL) {
+        if flags.contains(VertexFlag::NORMAL) {
             data.extend_from_slice(bytemuck::cast_slice(&self.normal.to_array()));
             data.extend_from_slice(bytemuck::cast_slice(&self.normal_texture.to_array()));
             data.extend_from_slice(bytemuck::cast_slice(&self.tangent.to_array()));

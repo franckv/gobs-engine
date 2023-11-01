@@ -35,63 +35,45 @@ impl Run for App {
         let mut scene = Scene::new(gfx, camera, light).await;
 
         let model = scene
-            .load_model(gfx, examples::CUBE, scene.phong_shader.clone(), Vec3::splat(1.))
+            .load_model(
+                gfx,
+                examples::CUBE,
+                scene.phong_shader.clone(),
+                Vec3::splat(1.),
+            )
             .await
             .unwrap();
 
         let triangle = ModelBuilder::new()
             .add_mesh(
                 scene::shape::Shapes::triangle(
-                    gfx,
-                    scene.solid_shader.vertex_flags(),
                     [1., 0., 0., 1.],
                     [0., 1., 0., 1.],
                     [0., 0., 1., 1.],
                 ),
                 None,
             )
-            .build();
+            .build(gfx, scene.solid_shader.clone());
 
         let material = MaterialBuilder::new("diffuse")
             .diffuse_texture(gfx, examples::WALL_TEXTURE)
             .await
             .normal_texture(gfx, examples::WALL_TEXTURE_N)
             .await
-            .build(gfx, &scene.phong_shader);
+            .build(gfx);
 
         let cube = ModelBuilder::new()
             .add_mesh(
-                scene::shape::Shapes::cube(
-                    gfx,
-                    scene.phong_shader.vertex_flags(),
-                    3,
-                    2,
-                    &[5, 5, 5, 5, 6, 4],
-                ),
+                scene::shape::Shapes::cube(3, 2, &[5, 5, 5, 5, 6, 4]),
                 Some(material),
             )
-            .build();
+            .build(gfx, scene.phong_shader.clone());
 
-        scene.add_node(
-            [0., 0., 0.].into(),
-            Quat::IDENTITY,
-            model,
-            scene.phong_shader.clone(),
-        );
+        scene.add_node([0., 0., 0.].into(), Quat::IDENTITY, model);
 
-        scene.add_node(
-            [-3., 0., -3.].into(),
-            Quat::IDENTITY,
-            triangle,
-            scene.solid_shader.clone(),
-        );
+        scene.add_node([-3., 0., -3.].into(), Quat::IDENTITY, triangle);
 
-        scene.add_node(
-            [5., 0., 0.].into(),
-            Quat::IDENTITY,
-            cube,
-            scene.phong_shader.clone(),
-        );
+        scene.add_node([5., 0., 0.].into(), Quat::IDENTITY, cube);
 
         let camera_controller = CameraController::new(3., 0.4);
 

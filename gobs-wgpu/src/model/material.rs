@@ -1,9 +1,6 @@
 use std::sync::Arc;
 
-use crate::{
-    model::Texture,
-    shader::{Shader, ShaderBindGroup},
-};
+use crate::model::Texture;
 use log::*;
 
 use crate::render::Gfx;
@@ -47,7 +44,7 @@ impl MaterialBuilder {
         self
     }
 
-    pub fn build(self, gfx: &Gfx, shader: &Shader) -> Arc<Material> {
+    pub fn build(self, gfx: &Gfx) -> Arc<Material> {
         let diffuse_texture = match self.diffuse_texture {
             Some(diffuse_texture) => diffuse_texture,
             None => Texture::from_color(gfx, [255, 255, 255, 1], false),
@@ -58,13 +55,7 @@ impl MaterialBuilder {
             None => Texture::from_color(gfx, [0, 0, 0, 1], true),
         };
 
-        Material::new(
-            self.name,
-            gfx,
-            shader.layout(ShaderBindGroup::Material),
-            diffuse_texture,
-            normal_texture,
-        )
+        Material::new(self.name, diffuse_texture, normal_texture)
     }
 }
 
@@ -72,47 +63,41 @@ pub struct Material {
     pub name: String,
     pub diffuse_texture: Texture,
     pub normal_texture: Texture,
-    pub bind_group: wgpu::BindGroup,
 }
 
 impl Material {
-    pub fn new(
-        name: String,
-        gfx: &Gfx,
-        layout: &wgpu::BindGroupLayout,
-        diffuse_texture: Texture,
-        normal_texture: Texture,
-    ) -> Arc<Self> {
+    pub fn new(name: String, diffuse_texture: Texture, normal_texture: Texture) -> Arc<Self> {
         info!("Create Material bind group");
-
-        let bind_group = gfx.device().create_bind_group(&wgpu::BindGroupDescriptor {
-            layout,
-            entries: &[
-                wgpu::BindGroupEntry {
-                    binding: 0,
-                    resource: wgpu::BindingResource::TextureView(&diffuse_texture.view),
-                },
-                wgpu::BindGroupEntry {
-                    binding: 1,
-                    resource: wgpu::BindingResource::Sampler(&diffuse_texture.sampler),
-                },
-                wgpu::BindGroupEntry {
-                    binding: 2,
-                    resource: wgpu::BindingResource::TextureView(&normal_texture.view),
-                },
-                wgpu::BindGroupEntry {
-                    binding: 3,
-                    resource: wgpu::BindingResource::Sampler(&normal_texture.sampler),
-                },
-            ],
-            label: None,
-        });
 
         Arc::new(Material {
             name,
             diffuse_texture,
             normal_texture,
-            bind_group,
+        })
+    }
+
+    pub fn bind_group(&self, gfx: &Gfx, layout: &wgpu::BindGroupLayout) -> wgpu::BindGroup {
+        gfx.device().create_bind_group(&wgpu::BindGroupDescriptor {
+            layout,
+            entries: &[
+                wgpu::BindGroupEntry {
+                    binding: 0,
+                    resource: wgpu::BindingResource::TextureView(&self.diffuse_texture.view),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 1,
+                    resource: wgpu::BindingResource::Sampler(&self.diffuse_texture.sampler),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 2,
+                    resource: wgpu::BindingResource::TextureView(&self.normal_texture.view),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 3,
+                    resource: wgpu::BindingResource::Sampler(&self.normal_texture.sampler),
+                },
+            ],
+            label: None,
         })
     }
 }

@@ -4,13 +4,12 @@ use std::sync::Arc;
 use anyhow::Result;
 use glam::Vec3;
 use log::*;
-use uuid::Uuid;
 
 use gobs_utils as utils;
 use gobs_wgpu as render;
 
-use render::model::{Material, Mesh, MeshBuilder, Model, Texture};
-use render::shader::{Shader, ShaderBindGroup, ShaderType};
+use render::model::{Material, Mesh, MeshBuilder, Model, ModelBuilder, Texture};
+use render::shader::{Shader, ShaderType};
 use utils::load::{self, AssetType};
 
 use crate::Gfx;
@@ -40,12 +39,12 @@ pub async fn load_model(
     .await?;
 
     let materials = match shader.ty() {
-        ShaderType::Phong => load_material(gfx, file_name, obj_materials?, shader.clone()).await?,
-        ShaderType::UI => load_material(gfx, file_name, obj_materials?, shader.clone()).await?,
+        ShaderType::Phong => load_material(gfx, file_name, obj_materials?).await?,
+        ShaderType::UI => load_material(gfx, file_name, obj_materials?).await?,
         ShaderType::Solid => Vec::new(),
     };
 
-    let meshes = load_mesh(gfx, shader, models, &materials).await;
+    let meshes = load_mesh(models, &materials).await;
 
     info!(
         "{}: {} meshes / {} materials loaded",
@@ -54,23 +53,22 @@ pub async fn load_model(
         materials.len()
     );
 
-    Ok(Arc::new(Model {
-        id: Uuid::new_v4(),
-        scale,
-        meshes,
-    }))
+    let model = ModelBuilder::new()
+        .scale(scale)
+        .meshes(meshes)
+        .build(gfx, shader);
+
+    Ok(model)
 }
 
 async fn load_mesh(
-    gfx: &Gfx,
-    shader: Arc<Shader>,
     models: Vec<tobj::Model>,
     materials: &Vec<Arc<Material>>,
 ) -> Vec<(Arc<Mesh>, Option<Arc<Material>>)> {
     models
         .into_iter()
         .map(|m| {
-            let mut mesh = MeshBuilder::new(&m.name, shader.vertex_flags());
+            let mut mesh = MeshBuilder::new(&m.name);
 
             for i in 0..m.mesh.positions.len() / 3 {
                 let position = [
@@ -90,26 +88,15 @@ async fn load_mesh(
                     m.mesh.normals[i * 3 + 1],
                     m.mesh.normals[i * 3 + 2],
                 ];
-                match shader.ty() {
-                    ShaderType::Phong => {
-                        mesh = mesh.add_vertex_PTN(
-                            position.into(),
-                            texture.into(),
-                            normal.into(),
-                            texture.into(),
-                        )
-                    }
-                    ShaderType::UI => {
-                        mesh = mesh.add_vertex_PTN(
-                            position.into(),
-                            texture.into(),
-                            normal.into(),
-                            texture.into(),
-                        )
-                    }
-                    ShaderType::Solid => mesh = mesh.add_vertex_PC(position.into(), color.into()),
-                }
+                mesh = mesh.add_vertex(
+                    position.into(),
+                    color.into(),
+                    texture.into(),
+                    normal.into(),
+                    texture.into(),
+                )
             }
+
             let material_id = m.mesh.material_id.unwrap_or(0);
             let material = if materials.len() > material_id {
                 Some(materials[material_id].clone())
@@ -117,7 +104,7 @@ async fn load_mesh(
                 None
             };
 
-            (mesh.add_indices(&m.mesh.indices).build(gfx), material)
+            (mesh.add_indices(&m.mesh.indices).build(), material)
         })
         .collect::<Vec<_>>()
 }
@@ -126,7 +113,6 @@ async fn load_material(
     gfx: &Gfx,
     name: &str,
     obj_materials: Vec<tobj::Material>,
-    shader: Arc<Shader>,
 ) -> Result<Vec<Arc<Material>>> {
     let mut materials = Vec::new();
 
@@ -149,13 +135,7 @@ async fn load_material(
             }
         };
 
-        materials.push(Material::new(
-            m.name,
-            gfx,
-            shader.layout(ShaderBindGroup::Material),
-            diffuse_texture,
-            normal_texture,
-        ));
+        materials.push(Material::new(m.name, diffuse_texture, normal_texture));
     }
 
     Ok(materials)

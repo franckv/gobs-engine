@@ -1,13 +1,9 @@
 use std::sync::Arc;
 
-use glam::Vec2;
+use glam::{Vec2, Vec4};
 use gobs_wgpu as render;
 
-use render::{
-    model::{Mesh, MeshBuilder},
-    render::Gfx,
-    shader_data::VertexFlag,
-};
+use render::model::{Mesh, MeshBuilder};
 
 const T_MIN: f32 = 0.01;
 const T_MAX: f32 = 1. - T_MIN;
@@ -15,14 +11,8 @@ const T_MAX: f32 = 1. - T_MIN;
 pub struct Shapes;
 
 impl Shapes {
-    pub fn triangle(
-        gfx: &Gfx,
-        flags: VertexFlag,
-        color1: [f32; 4],
-        color2: [f32; 4],
-        color3: [f32; 4],
-    ) -> Arc<Mesh> {
-        let mut builder = MeshBuilder::new("triangle", flags);
+    pub fn triangle(color1: [f32; 4], color2: [f32; 4], color3: [f32; 4]) -> Arc<Mesh> {
+        let mut builder = MeshBuilder::new("triangle");
 
         let (top, bottom, left, right) = (0.5, -0.5, -0.5, 0.5);
 
@@ -51,7 +41,7 @@ impl Shapes {
         let ti = [1, 2, 3];
 
         for i in 0..vi.len() {
-            builder = builder.add_vertex_PCTN(
+            builder = builder.add_vertex(
                 v[vi[i] - 1].into(),
                 c[ci[i] - 1].into(),
                 t[ti[i] - 1].into(),
@@ -60,11 +50,11 @@ impl Shapes {
             )
         }
 
-        builder.build(gfx)
+        builder.build()
     }
 
-    pub fn quad(gfx: &Gfx, flags: VertexFlag) -> Arc<Mesh> {
-        let mut builder = MeshBuilder::new("quad", flags);
+    pub fn quad() -> Arc<Mesh> {
+        let mut builder = MeshBuilder::new("quad");
 
         let (top, bottom, left, right) = (0.5, -0.5, -0.5, 0.5);
 
@@ -91,7 +81,7 @@ impl Shapes {
         let ti = [1, 3, 4, 4, 2, 1];
 
         for i in 0..vi.len() {
-            builder = builder.add_vertex_PCTN(
+            builder = builder.add_vertex(
                 v[vi[i] - 1].into(),
                 [1., 1., 1., 1.].into(),
                 t[ti[i] - 1].into(),
@@ -100,11 +90,11 @@ impl Shapes {
             )
         }
 
-        builder.build(gfx)
+        builder.build()
     }
 
-    pub fn cube(gfx: &Gfx, flags: VertexFlag, cols: u32, rows: u32, index: &[u32]) -> Arc<Mesh> {
-        let mut builder = MeshBuilder::new("cube", flags);
+    pub fn cube(cols: u32, rows: u32, index: &[u32]) -> Arc<Mesh> {
+        let mut builder = MeshBuilder::new("cube");
 
         let (top, bottom, left, right, front, back) = (0.5, -0.5, -0.5, 0.5, 0.5, -0.5);
 
@@ -155,9 +145,9 @@ impl Shapes {
         ];
 
         for i in 0..vi.len() {
-            builder = builder.add_vertex_PTN(
+            builder = builder.add_vertex(
                 v[vi[i] - 1].into(),
-                //t[ti[i] - 1].into(),
+                Vec4::new(1., 1., 1., 1.),
                 Self::tex_map(
                     t[ti[i] - 1].into(),
                     cols,
@@ -169,7 +159,7 @@ impl Shapes {
             )
         }
 
-        builder.build(gfx)
+        builder.build()
     }
 
     fn tex_map(tex_coords: Vec2, cols: u32, rows: u32, index: u32) -> Vec2 {

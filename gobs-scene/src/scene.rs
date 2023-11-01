@@ -109,7 +109,7 @@ impl Scene {
                 .iter()
                 .filter(|n| n.model().id == model.model.id)
                 .map(|n| {
-                    InstanceData::new(model.shader.instance_flags())
+                    InstanceData::new(model.model.shader.instance_flags())
                         .model_transform(
                             n.transform().translation,
                             n.transform().rotation,
@@ -132,19 +132,12 @@ impl Scene {
         }
     }
 
-    pub fn add_node(
-        &mut self,
-        position: Vec3,
-        rotation: Quat,
-        model: Arc<Model>,
-        shader: Arc<Shader>,
-    ) {
+    pub fn add_node(&mut self, position: Vec3, rotation: Quat, model: Arc<Model>) {
         let exist = self.models.iter().find(|m| m.model.id == model.id);
 
         if exist.is_none() {
             let model_instance = ModelInstance {
                 model: model.clone(),
-                shader,
                 instance_buffer: None,
                 instance_count: 0,
             };
@@ -176,7 +169,6 @@ impl Scene {
         for instance in &self.models {
             batch = batch.draw_indexed(
                 &instance.model,
-                &instance.shader,
                 instance.instance_buffer.as_ref().unwrap(),
                 instance.instance_count,
             );

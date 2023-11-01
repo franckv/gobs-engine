@@ -6,6 +6,7 @@ use crate::model::LightResource;
 use crate::render::Display;
 use crate::shader_data::InstanceData;
 use crate::shader_data::VertexData;
+use crate::shader_data::VertexFlag;
 
 #[derive(Debug)]
 pub enum RenderError {
@@ -122,10 +123,14 @@ impl Gfx {
         self.device.create_bind_group_layout(layout)
     }
 
-    pub fn create_vertex_buffer(&self, vertex_data: &Vec<VertexData>) -> wgpu::Buffer {
+    pub fn create_vertex_buffer(
+        &self,
+        vertex_data: &Vec<VertexData>,
+        flags: VertexFlag,
+    ) -> wgpu::Buffer {
         let bytes = vertex_data
             .iter()
-            .map(|v| v.raw())
+            .map(|v| v.raw(flags))
             .flat_map(|s| s)
             .collect::<Vec<u8>>();
 

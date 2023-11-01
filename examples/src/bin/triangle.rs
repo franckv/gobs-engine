@@ -40,22 +40,15 @@ impl Run for App {
             .scale(Vec3::new(300., 300., 1.))
             .add_mesh(
                 scene::shape::Shapes::triangle(
-                    gfx,
-                    scene.solid_shader.vertex_flags(),
                     [1., 0., 0., 0.5],
                     [0., 1., 0., 0.5],
                     [0., 0., 1., 0.5],
                 ),
                 None,
             )
-            .build();
+            .build(gfx, scene.solid_shader.clone());
 
-        scene.add_node(
-            [0., 0., 0.].into(),
-            Quat::IDENTITY,
-            triangle,
-            scene.solid_shader.clone(),
-        );
+        scene.add_node([0., 0., 0.].into(), Quat::IDENTITY, triangle);
 
         let camera_controller = CameraController::new(3., 0.4);
 

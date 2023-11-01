@@ -5,67 +5,26 @@ use glam::{Vec2, Vec3, Vec4};
 use log::{error, info};
 
 use crate::render::Gfx;
-use crate::shader_data::{VertexData, VertexFlag};
+use crate::shader::Shader;
+use crate::shader_data::VertexData;
 
 pub struct MeshBuilder {
     name: String,
     vertices: Vec<VertexData>,
     indices: Vec<u32>,
-    flags: VertexFlag,
 }
 
 #[allow(non_snake_case)]
 impl MeshBuilder {
-    pub fn new(name: &str, flags: VertexFlag) -> Self {
+    pub fn new(name: &str) -> Self {
         MeshBuilder {
             name: name.to_string(),
             vertices: Vec::new(),
             indices: Vec::new(),
-            flags,
         }
     }
 
-    pub fn add_vertex_P(mut self, position: Vec3) -> Self {
-        let vertex = VertexData::new(self.flags).position(position).build();
-
-        self.vertices.push(vertex);
-
-        self
-    }
-
-    pub fn add_vertex_PC(mut self, position: Vec3, color: Vec4) -> Self {
-        let vertex = VertexData::new(self.flags)
-            .position(position)
-            .color(color)
-            .build();
-
-        self.vertices.push(vertex);
-
-        self
-    }
-
-    pub fn add_vertex_PTN(
-        mut self,
-        position: Vec3,
-        texture: Vec2,
-        normal: Vec3,
-        normal_texture: Vec2,
-    ) -> Self {
-        let vertex = VertexData::new(self.flags)
-            .position(position)
-            .texture(texture)
-            .normal_texture(normal_texture)
-            .normal(normal)
-            .tangent(Vec3::splat(0.))
-            .bitangent(Vec3::splat(0.))
-            .build();
-
-        self.vertices.push(vertex);
-
-        self
-    }
-
-    pub fn add_vertex_PCTN(
+    pub fn add_vertex(
         mut self,
         position: Vec3,
         color: Vec4,
@@ -73,7 +32,7 @@ impl MeshBuilder {
         normal: Vec3,
         normal_texture: Vec2,
     ) -> Self {
-        let vertex = VertexData::new(self.flags)
+        let vertex = VertexData::new()
             .position(position)
             .color(color)
             .texture(texture)
@@ -188,13 +147,9 @@ impl MeshBuilder {
         self
     }
 
-    pub fn build(mut self, gfx: &Gfx) -> Arc<Mesh> {
+    pub fn build(mut self) -> Arc<Mesh> {
         self = self.autoindex();
         self = self.update_tangent();
-
-        let vertex_buffer = gfx.create_vertex_buffer(&self.vertices);
-        let index_buffer = gfx.create_index_buffer(&self.indices);
-        let num_elements = self.indices.len();
 
         info!(
             "Load mesh {} ({} vertices / {} indices)",
@@ -205,16 +160,23 @@ impl MeshBuilder {
 
         Arc::new(Mesh {
             name: self.name,
-            vertex_buffer,
-            index_buffer,
-            num_elements,
+            vertices: self.vertices,
+            indices: self.indices,
         })
     }
 }
 
 pub struct Mesh {
     pub name: String,
-    pub vertex_buffer: wgpu::Buffer,
-    pub index_buffer: wgpu::Buffer,
-    pub num_elements: usize,
+    pub vertices: Vec<VertexData>,
+    pub indices: Vec<u32>,
+}
+
+impl Mesh {
+    pub fn create_buffers(&self, gfx: &Gfx, shader: Arc<Shader>) -> (wgpu::Buffer, wgpu::Buffer) {
+        let vertex_buffer = gfx.create_vertex_buffer(&self.vertices, shader.vertex_flags());
+        let index_buffer = gfx.create_index_buffer(&self.indices);
+
+        (vertex_buffer, index_buffer)
+    }
 }
