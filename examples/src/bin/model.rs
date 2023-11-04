@@ -12,6 +12,8 @@ use scene::scene::Scene;
 use scene::Gfx;
 use scene::{camera::Camera, RenderError};
 
+const MODEL_LAYER: &str = "model";
+
 struct App {
     camera_controller: CameraController,
     scene: Scene,
@@ -41,7 +43,7 @@ impl Run for App {
             .await
             .unwrap();
 
-        scene.add_node("main", [0., 0., 0.].into(), Quat::IDENTITY, cube);
+        scene.add_node(MODEL_LAYER, [0., 0., 0.].into(), Quat::IDENTITY, cube);
 
         let camera_controller = CameraController::new(3., 0.4);
 

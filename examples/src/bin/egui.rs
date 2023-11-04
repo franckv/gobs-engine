@@ -13,6 +13,8 @@ use scene::scene::Scene;
 use scene::Gfx;
 use scene::{camera::Camera, RenderError};
 
+const UI_LAYER: &str = "ui";
+
 struct App {
     scene: Scene,
     ui: UIRenderer,
@@ -53,11 +55,11 @@ impl Run for App {
             });
         });
 
-        self.scene.layer_mut("ui").nodes.clear();
+        self.scene.layer_mut(UI_LAYER).nodes.clear();
 
         models.into_iter().for_each(|m| {
             self.scene
-                .add_node("ui", [0., 0., 0.].into(), Quat::IDENTITY, m);
+                .add_node(UI_LAYER, [0., 0., 0.].into(), Quat::IDENTITY, m);
         });
 
         self.scene.update(gfx);

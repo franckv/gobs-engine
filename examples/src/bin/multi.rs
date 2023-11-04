@@ -14,6 +14,11 @@ use scene::{light::Light, ModelBuilder};
 use scene::{scene::Scene, MaterialBuilder};
 use scene::{Gfx, Model};
 
+const CUBE_LAYER: &str = "cube";
+const TRIANGLE_LAYER: &str = "triangle";
+const MODEL_LAYER: &str = "model";
+const LIGHT_LAYER: &str = "light";
+
 struct App {
     camera_controller: CameraController,
     scene: Scene,
@@ -77,17 +82,22 @@ impl Run for App {
             .unwrap();
 
         scene.add_node(
-            "light",
+            LIGHT_LAYER,
             light_position,
             Quat::from_axis_angle(Vec3::Z, 0.),
             light_model.clone(),
         );
 
-        scene.add_node("main", [0., 0., 0.].into(), Quat::IDENTITY, model);
+        scene.add_node(MODEL_LAYER, [0., 0., 0.].into(), Quat::IDENTITY, model);
 
-        scene.add_node("main", [-3., 0., -3.].into(), Quat::IDENTITY, triangle);
+        scene.add_node(
+            TRIANGLE_LAYER,
+            [-3., 0., -3.].into(),
+            Quat::IDENTITY,
+            triangle,
+        );
 
-        scene.add_node("main", [5., 0., 0.].into(), Quat::IDENTITY, cube);
+        scene.add_node(CUBE_LAYER, [5., 0., 0.].into(), Quat::IDENTITY, cube);
 
         let camera_controller = CameraController::new(3., 0.4);
 
@@ -112,7 +122,7 @@ impl Run for App {
 
         self.scene.light.update(position);
 
-        for node in &mut self.scene.layer_mut("light").nodes {
+        for node in &mut self.scene.layer_mut(LIGHT_LAYER).nodes {
             if node.model().id == self.light_model.id {
                 node.set_transform(position, node.transform().rotation);
             }
@@ -127,9 +137,13 @@ impl Run for App {
 
     fn input(&mut self, _gfx: &mut Gfx, input: Input) {
         match input {
-            Input::KeyPressed(key) => {
-                self.camera_controller.key_pressed(key);
-            }
+            Input::KeyPressed(key) => match key {
+                game::input::Key::T => self.scene.toggle_layer(TRIANGLE_LAYER),
+                game::input::Key::M => self.scene.toggle_layer(MODEL_LAYER),
+                game::input::Key::C => self.scene.toggle_layer(CUBE_LAYER),
+                game::input::Key::L => self.scene.toggle_layer(LIGHT_LAYER),
+                _ => self.camera_controller.key_pressed(key),
+            },
             Input::KeyReleased(key) => {
                 self.camera_controller.key_released(key);
             }

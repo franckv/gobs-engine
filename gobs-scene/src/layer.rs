@@ -13,6 +13,7 @@ use crate::data::Node;
 
 pub struct Layer {
     pub name: String,
+    pub visible: bool,
     pub nodes: Vec<Node<Arc<Model>>>,
     models: Vec<ModelInstance>,
 }
@@ -21,6 +22,7 @@ impl Layer {
     pub fn new(name: &str) -> Self {
         Layer {
             name: name.to_string(),
+            visible: true,
             nodes: Vec::new(),
             models: Vec::new(),
         }

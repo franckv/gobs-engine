@@ -14,6 +14,8 @@ use scene::Gfx;
 use scene::{camera::Camera, RenderError};
 use scene::{light::Light, ModelBuilder};
 
+const TRIANGLE_LAYER: &str = "triangle";
+
 struct App {
     camera_controller: CameraController,
     scene: Scene,
@@ -50,7 +52,12 @@ impl Run for App {
             )
             .build(gfx, solid_shader);
 
-        scene.add_node("main", [0., 0., 0.].into(), Quat::IDENTITY, triangle);
+        scene.add_node(
+            TRIANGLE_LAYER,
+            [0., 0., 0.].into(),
+            Quat::IDENTITY,
+            triangle,
+        );
 
         let camera_controller = CameraController::new(3., 0.4);
 

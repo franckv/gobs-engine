@@ -96,7 +96,9 @@ impl Scene {
             .update(gfx, self.light.position.into(), self.light.colour.into());
 
         for layer in &mut self.layers {
-            layer.update(gfx);
+            if layer.visible {
+                layer.update(gfx);
+            }
         }
     }
 
@@ -110,6 +112,10 @@ impl Scene {
         let model = assets::load_model(name, gfx, shader.clone(), scale).await?;
 
         Ok(model)
+    }
+
+    pub fn toggle_layer(&mut self, layer_name: &str) {
+        self.layer_mut(layer_name).visible = !self.layer_mut(layer_name).visible;
     }
 
     pub fn add_node(
@@ -130,7 +136,9 @@ impl Scene {
             .light_resource(&self.light_resource);
 
         for layer in &self.layers {
-            batch = layer.render(batch);
+            if layer.visible {
+                batch = layer.render(batch);
+            }
         }
 
         batch.finish().render()
