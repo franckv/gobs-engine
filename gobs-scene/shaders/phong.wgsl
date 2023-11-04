@@ -109,21 +109,21 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4f {
     let object_color: vec4f = textureSample(t_diffuse, s_diffuse, in.tex_coords);
     let object_normal: vec4f = textureSample(t_normal, s_normal, in.n_tex_coords);
 
-    let ambient_strength = 0.1;
-    let ambient_color = light.color * ambient_strength;
+    return phong_reflection(in.tangent_position, object_color, object_normal, in.tangent_light_position, light.color, in.tangent_view_position);
+}
 
+fn phong_reflection(object_position: vec3f, object_color: vec4f, object_normal: vec4f, light_position: vec3f, light_color: vec3f,  view_position: vec3f) -> vec4f {
     let tangent_normal = object_normal.xyz * 2.0 - 1.0;
-    let light_dir = normalize(in.tangent_light_position - in.tangent_position);
-    let view_dir = normalize(in.tangent_view_position - in.tangent_position);
+    
+    let light_dir = normalize(light_position - object_position);
+    let view_dir = normalize(view_position - object_position);
     let half_dir = normalize(view_dir + light_dir);
 
+    let ambient_strength = 0.1;
     let diffuse_strength = max(dot(tangent_normal, light_dir), 0.0);
-    let diffuse_color = light.color * diffuse_strength;
-
     let specular_strength = pow(max(dot(tangent_normal, half_dir), 0.0), 32.0);
-    let specular_color = specular_strength * light.color;
 
-    let result = (ambient_color + diffuse_color + specular_color) * object_color.xyz;
+    let result = (ambient_strength + diffuse_strength + specular_strength) * light_color * object_color.xyz;
 
     return vec4f(result, object_color.a);
 }
