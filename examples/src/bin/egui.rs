@@ -53,10 +53,11 @@ impl Run for App {
             });
         });
 
-        self.scene.nodes.clear();
+        self.scene.layer_mut("ui").nodes.clear();
 
         models.into_iter().for_each(|m| {
-            self.scene.add_node([0., 0., 0.].into(), Quat::IDENTITY, m);
+            self.scene
+                .add_node("ui", [0., 0., 0.].into(), Quat::IDENTITY, m);
         });
 
         self.scene.update(gfx);

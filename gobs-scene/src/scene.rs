@@ -1,20 +1,19 @@
 use std::sync::Arc;
 
 use anyhow::Result;
-use glam::Quat;
-use glam::Vec3;
+use glam::{Quat, Vec3};
 use log::*;
 
 use gobs_wgpu as render;
 
-use render::model::{InstanceData, Model, ModelInstance, Texture, TextureType};
+use render::model::{Model, Texture, TextureType};
 use render::render::{Batch, Gfx, RenderError};
 use render::resources::{CameraResource, LightResource};
 use render::shader::{Shader, ShaderBindGroup};
 
 use crate::assets;
 use crate::camera::Camera;
-use crate::data::Node;
+use crate::layer::Layer;
 use crate::light::Light;
 
 pub struct Scene {
@@ -23,13 +22,26 @@ pub struct Scene {
     pub camera_resource: CameraResource,
     pub light_resource: LightResource,
     depth_texture: Texture,
-    pub nodes: Vec<Node<Arc<Model>>>,
-    models: Vec<ModelInstance>,
+    layers: Vec<Layer>,
 }
 
 impl Scene {
     pub fn depth_texture(&self) -> &Texture {
         &self.depth_texture
+    }
+
+    pub fn layer_mut(&mut self, layer_name: &str) -> &mut Layer {
+        let exists = self.layers.iter().find(|l| l.name.eq(layer_name)).is_some();
+
+        if exists {
+            self.layers
+                .iter_mut()
+                .find(|l| l.name.eq(layer_name))
+                .expect("Layer exists")
+        } else {
+            self.layers.push(Layer::new(layer_name));
+            self.layers.last_mut().unwrap()
+        }
     }
 
     pub async fn new(gfx: &Gfx, camera: Camera, light: Light, default_shader: Arc<Shader>) -> Self {
@@ -41,9 +53,7 @@ impl Scene {
         let light_resource =
             gfx.create_light_resource(default_shader.layout(ShaderBindGroup::Light));
 
-        let models = Vec::new();
-
-        let nodes = Vec::new();
+        let layers = Vec::new();
 
         let depth_texture = Texture::new(
             gfx,
@@ -60,8 +70,7 @@ impl Scene {
             camera_resource,
             light_resource,
             depth_texture,
-            nodes,
-            models,
+            layers,
         }
     }
 
@@ -84,51 +93,11 @@ impl Scene {
         self.camera_resource.update(gfx, view_position, view_proj);
 
         self.light_resource
-            .update(&gfx, self.light.position.into(), self.light.colour.into());
+            .update(gfx, self.light.position.into(), self.light.colour.into());
 
-        for model in &mut self.models {
-            let instance_data = self
-                .nodes
-                .iter()
-                .filter(|n| n.model().id == model.model.id)
-                .map(|n| {
-                    InstanceData::new(model.model.shader.instance_flags)
-                        .model_transform(
-                            n.transform().translation,
-                            n.transform().rotation,
-                            model.model.scale,
-                        )
-                        .normal_rot(n.transform().rotation)
-                        .build()
-                })
-                .collect::<Vec<_>>();
-
-            match &model.instance_buffer {
-                Some(instance_buffer) => {
-                    gfx.update_instance_buffer(&instance_buffer, &instance_data);
-                }
-                None => {
-                    model.instance_buffer = Some(gfx.create_instance_buffer(&instance_data));
-                }
-            }
-            model.instance_count = instance_data.len();
+        for layer in &mut self.layers {
+            layer.update(gfx);
         }
-    }
-
-    pub fn add_node(&mut self, position: Vec3, rotation: Quat, model: Arc<Model>) {
-        let exist = self.models.iter().find(|m| m.model.id == model.id);
-
-        if exist.is_none() {
-            let model_instance = ModelInstance {
-                model: model.clone(),
-                instance_buffer: None,
-                instance_count: 0,
-            };
-
-            self.models.push(model_instance);
-        };
-        let node = Node::new(position, rotation, model);
-        self.nodes.push(node);
     }
 
     pub async fn load_model(
@@ -143,18 +112,25 @@ impl Scene {
         Ok(model)
     }
 
+    pub fn add_node(
+        &mut self,
+        layer_name: &str,
+        position: Vec3,
+        rotation: Quat,
+        model: Arc<Model>,
+    ) {
+        let layer = self.layer_mut(layer_name);
+        layer.add_node(position, rotation, model.clone());
+    }
+
     pub fn render(&self, gfx: &Gfx) -> Result<(), RenderError> {
         let mut batch = Batch::begin(gfx)
             .depth_texture(&self.depth_texture)
             .camera_resource(&self.camera_resource)
             .light_resource(&self.light_resource);
 
-        for instance in &self.models {
-            batch = batch.draw_indexed(
-                &instance.model,
-                instance.instance_buffer.as_ref().unwrap(),
-                instance.instance_count,
-            );
+        for layer in &self.layers {
+            batch = layer.render(batch);
         }
 
         batch.finish().render()

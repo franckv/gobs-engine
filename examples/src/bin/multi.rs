@@ -77,16 +77,17 @@ impl Run for App {
             .unwrap();
 
         scene.add_node(
+            "light",
             light_position,
             Quat::from_axis_angle(Vec3::Z, 0.),
             light_model.clone(),
         );
 
-        scene.add_node([0., 0., 0.].into(), Quat::IDENTITY, model);
+        scene.add_node("main", [0., 0., 0.].into(), Quat::IDENTITY, model);
 
-        scene.add_node([-3., 0., -3.].into(), Quat::IDENTITY, triangle);
+        scene.add_node("main", [-3., 0., -3.].into(), Quat::IDENTITY, triangle);
 
-        scene.add_node([5., 0., 0.].into(), Quat::IDENTITY, cube);
+        scene.add_node("main", [5., 0., 0.].into(), Quat::IDENTITY, cube);
 
         let camera_controller = CameraController::new(3., 0.4);
 
@@ -111,7 +112,7 @@ impl Run for App {
 
         self.scene.light.update(position);
 
-        for node in &mut self.scene.nodes {
+        for node in &mut self.scene.layer_mut("light").nodes {
             if node.model().id == self.light_model.id {
                 node.set_transform(position, node.transform().rotation);
             }

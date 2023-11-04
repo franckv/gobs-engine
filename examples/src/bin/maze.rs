@@ -72,6 +72,7 @@ impl Run for App {
             .unwrap();
 
         scene.add_node(
+            "main",
             light_position,
             Quat::from_axis_angle(Vec3::Z, 0.),
             light_model.clone(),
@@ -100,7 +101,7 @@ impl Run for App {
 
         self.scene.light.update(position);
 
-        for node in &mut self.scene.nodes {
+        for node in &mut self.scene.layer_mut("main").nodes {
             if node.model().id == self.light_model.id {
                 node.set_transform(position, node.transform().rotation);
             }
@@ -168,9 +169,9 @@ impl App {
                         z: j - offset,
                     };
 
-                    scene.add_node(position, rotation, wall_model.clone());
+                    scene.add_node("main", position, rotation, wall_model.clone());
                     position.y = -examples::TILE_SIZE;
-                    scene.add_node(position, rotation, floor_model.clone());
+                    scene.add_node("main", position, rotation, floor_model.clone());
                 }
                 '@' => {
                     i += examples::TILE_SIZE;
@@ -180,7 +181,7 @@ impl App {
                         z: j - offset,
                     };
                     (pos_x, pos_z) = (position.x, position.z);
-                    scene.add_node(position, rotation, floor_model.clone());
+                    scene.add_node("main", position, rotation, floor_model.clone());
                 }
                 '.' => {
                     i += examples::TILE_SIZE;
@@ -189,7 +190,7 @@ impl App {
                         y: -examples::TILE_SIZE,
                         z: j - offset,
                     };
-                    scene.add_node(position, rotation, floor_model.clone());
+                    scene.add_node("main", position, rotation, floor_model.clone());
                 }
                 '\n' => {
                     j += examples::TILE_SIZE;

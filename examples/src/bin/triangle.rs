@@ -50,7 +50,7 @@ impl Run for App {
             )
             .build(gfx, solid_shader);
 
-        scene.add_node([0., 0., 0.].into(), Quat::IDENTITY, triangle);
+        scene.add_node("main", [0., 0., 0.].into(), Quat::IDENTITY, triangle);
 
         let camera_controller = CameraController::new(3., 0.4);
 

@@ -50,7 +50,7 @@ impl Run for App {
             )
             .build(gfx, shader);
 
-        scene.add_node([0., 0., 0.].into(), Quat::IDENTITY, cube);
+        scene.add_node("main", [0., 0., 0.].into(), Quat::IDENTITY, cube);
 
         let camera_controller = CameraController::new(3., 0.4);
 
@@ -78,7 +78,7 @@ impl Run for App {
 
         self.scene.light.update(position);
 
-        for node in &mut self.scene.nodes {
+        for node in &mut self.scene.layer_mut("main").nodes {
             let old_rotation = node.transform().rotation;
             let rotation = rot_delta_model * old_rotation;
             node.set_transform(node.transform().translation, rotation);
