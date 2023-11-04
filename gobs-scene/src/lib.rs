@@ -1,7 +1,8 @@
 pub mod assets;
 pub mod camera;
+pub mod data;
+pub mod layer;
 pub mod light;
-pub mod node;
 pub mod scene;
 pub mod shape;
 pub mod transform;

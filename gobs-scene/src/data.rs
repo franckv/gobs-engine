@@ -1,5 +1,3 @@
-mod simplegraph;
-mod treegraph;
+mod node;
 
-pub use simplegraph::SimpleGraph;
-pub use treegraph::TreeGraph;
+pub use node::Node;

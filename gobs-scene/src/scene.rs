@@ -18,7 +18,7 @@ use render::shader::{Shader, ShaderBindGroup};
 use crate::assets;
 use crate::camera::Camera;
 use crate::light::Light;
-use crate::node::Node;
+use crate::data::Node;
 
 pub struct Scene {
     pub camera: Camera,
@@ -29,7 +29,7 @@ pub struct Scene {
     pub solid_shader: Arc<Shader>,
     pub ui_shader: Arc<Shader>,
     depth_texture: Texture,
-    pub nodes: Vec<Node>,
+    pub nodes: Vec<Node<Arc<Model>>>,
     models: Vec<ModelInstance>,
 }
 

@@ -1,17 +1,14 @@
-use std::sync::Arc;
-
 use glam::{Quat, Vec3};
-use gobs_wgpu::model::Model;
 
 use crate::transform::Transform;
 
-pub struct Node {
+pub struct Node<D> {
     transform: Transform,
-    model: Arc<Model>,
+    model: D,
 }
 
-impl Node {
-    pub fn new(translation: Vec3, rotation: Quat, model: Arc<Model>) -> Self {
+impl<D> Node<D> where D: Clone {
+    pub fn new(translation: Vec3, rotation: Quat, model: D) -> Self {
         let transform = Transform {
             translation,
             rotation,
@@ -24,7 +21,7 @@ impl Node {
         &self.transform
     }
 
-    pub fn model(&self) -> Arc<Model> {
+    pub fn model(&self) -> D {
         self.model.clone()
     }
 
