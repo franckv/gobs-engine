@@ -36,15 +36,13 @@ impl Run for App {
         let light = Light::new((4., 2., 4.), (1., 1., 0.9));
         let light_position = light.position;
 
-        let mut scene = Scene::new(gfx, camera, light).await;
+        let phong_shader = examples::phong_shader(gfx).await;
+        let solid_shader = examples::solid_shader(gfx).await;
+
+        let mut scene = Scene::new(gfx, camera, light, phong_shader.clone()).await;
 
         let model = scene
-            .load_model(
-                gfx,
-                examples::CUBE,
-                scene.phong_shader.clone(),
-                Vec3::splat(1.),
-            )
+            .load_model(gfx, examples::CUBE, phong_shader.clone(), Vec3::splat(1.))
             .await
             .unwrap();
 
@@ -57,7 +55,7 @@ impl Run for App {
                 ),
                 None,
             )
-            .build(gfx, scene.solid_shader.clone());
+            .build(gfx, solid_shader.clone());
 
         let material = MaterialBuilder::new("diffuse")
             .diffuse_texture(gfx, examples::WALL_TEXTURE)
@@ -71,15 +69,10 @@ impl Run for App {
                 scene::shape::Shapes::cube(3, 2, &[5, 5, 5, 5, 6, 4]),
                 Some(material),
             )
-            .build(gfx, scene.phong_shader.clone());
+            .build(gfx, phong_shader);
 
         let light_model = scene
-            .load_model(
-                gfx,
-                examples::LIGHT,
-                scene.solid_shader.clone(),
-                Vec3::splat(0.3),
-            )
+            .load_model(gfx, examples::LIGHT, solid_shader, Vec3::splat(0.3))
             .await
             .unwrap();
 

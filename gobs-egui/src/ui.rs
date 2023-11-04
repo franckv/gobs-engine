@@ -114,8 +114,15 @@ impl UIRenderer {
             info!("New texture {:?}", id);
             if let Some(_) = img.pos {
                 info!("Patching texture");
-                self.patch_texture(gfx, self.font_texture.get(id).cloned().expect("Cannot update unallocated texture"), img)
-                    .await;
+                self.patch_texture(
+                    gfx,
+                    self.font_texture
+                        .get(id)
+                        .cloned()
+                        .expect("Cannot update unallocated texture"),
+                    img,
+                )
+                .await;
             } else {
                 info!("Allocate new texture");
                 let texture = self.decode_texture(gfx, img).await;
@@ -165,9 +172,14 @@ impl UIRenderer {
 
                 let pos = img.pos.expect("Can only patch texture with start position");
 
-                material
-                    .diffuse_texture
-                    .patch_texture(gfx, pos[0] as u32, pos[1] as u32, font.width() as u32, font.height() as u32, bytes);
+                material.diffuse_texture.patch_texture(
+                    gfx,
+                    pos[0] as u32,
+                    pos[1] as u32,
+                    font.width() as u32,
+                    font.height() as u32,
+                    bytes,
+                );
             }
         }
     }

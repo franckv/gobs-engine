@@ -1,4 +1,1 @@
-
-pub struct Layer {
-    
-}
+pub struct Layer {}

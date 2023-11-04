@@ -32,15 +32,12 @@ impl Run for App {
 
         let light = Light::new((8., 2., 8.), (1., 1., 0.9));
 
-        let mut scene = Scene::new(gfx, camera, light).await;
+        let shader = examples::phong_shader(gfx).await;
+
+        let mut scene = Scene::new(gfx, camera, light, shader.clone()).await;
 
         let cube = scene
-            .load_model(
-                gfx,
-                examples::CUBE,
-                scene.phong_shader.clone(),
-                Vec3::splat(1.),
-            )
+            .load_model(gfx, examples::CUBE, shader, Vec3::splat(1.))
             .await
             .unwrap();
 

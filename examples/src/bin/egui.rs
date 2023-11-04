@@ -34,10 +34,11 @@ impl Run for App {
         );
 
         let light = Light::new((0., 0., 10.), (1., 1., 1.));
+        let shader = examples::ui_shader(gfx).await;
 
-        let scene = Scene::new(gfx, camera, light).await;
+        let scene = Scene::new(gfx, camera, light, shader.clone()).await;
 
-        let ui = UIRenderer::new(width, height, scene.ui_shader.clone());
+        let ui = UIRenderer::new(width, height, shader);
 
         App { scene, ui }
     }

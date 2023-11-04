@@ -124,7 +124,15 @@ impl Texture {
     }
 
     // TODO: Texture dimensions (width/height) cannot be updated immutably
-    pub fn patch_texture(&self, gfx: &Gfx, start_x: u32, start_y: u32, width: u32, height: u32, img: &[u8]) {
+    pub fn patch_texture(
+        &self,
+        gfx: &Gfx,
+        start_x: u32,
+        start_y: u32,
+        width: u32,
+        height: u32,
+        img: &[u8],
+    ) {
         let size = wgpu::Extent3d {
             width,
             height,
@@ -134,7 +142,7 @@ impl Texture {
         let origin = wgpu::Origin3d {
             x: start_x,
             y: start_y,
-            z: 0
+            z: 0,
         };
 
         gfx.queue().write_texture(

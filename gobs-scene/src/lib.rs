@@ -10,7 +10,9 @@ pub mod transform;
 use gobs_wgpu as render;
 
 pub use render::model::{
-    Material, MaterialBuilder, Mesh, MeshBuilder, Model, ModelBuilder, Texture, TextureType,
+    InstanceFlag, Material, MaterialBuilder, Mesh, MeshBuilder, Model, ModelBuilder, Texture,
+    TextureType, VertexFlag,
 };
+pub use render::pipeline::PipelineFlag;
 pub use render::render::{Gfx, RenderError};
 pub use render::shader::Shader;

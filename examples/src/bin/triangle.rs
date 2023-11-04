@@ -34,7 +34,9 @@ impl Run for App {
 
         let light = Light::new((0., 0., 10.), (1., 1., 1.));
 
-        let mut scene = Scene::new(gfx, camera, light).await;
+        let solid_shader = examples::solid_shader(gfx).await;
+
+        let mut scene = Scene::new(gfx, camera, light, solid_shader.clone()).await;
 
         let triangle: Arc<scene::Model> = ModelBuilder::new()
             .scale(Vec3::new(300., 300., 1.))
@@ -46,7 +48,7 @@ impl Run for App {
                 ),
                 None,
             )
-            .build(gfx, scene.solid_shader.clone());
+            .build(gfx, solid_shader);
 
         scene.add_node([0., 0., 0.].into(), Quat::IDENTITY, triangle);
 

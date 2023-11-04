@@ -7,27 +7,21 @@ use log::*;
 
 use gobs_wgpu as render;
 
-use render::model::{
-    InstanceData, InstanceFlag, Model, ModelInstance, Texture, TextureType, VertexFlag,
-};
-use render::pipeline::PipelineFlag;
+use render::model::{InstanceData, Model, ModelInstance, Texture, TextureType};
 use render::render::{Batch, Gfx, RenderError};
 use render::resources::{CameraResource, LightResource};
 use render::shader::{Shader, ShaderBindGroup};
 
 use crate::assets;
 use crate::camera::Camera;
-use crate::light::Light;
 use crate::data::Node;
+use crate::light::Light;
 
 pub struct Scene {
     pub camera: Camera,
     pub light: Light,
     pub camera_resource: CameraResource,
     pub light_resource: LightResource,
-    pub phong_shader: Arc<Shader>,
-    pub solid_shader: Arc<Shader>,
-    pub ui_shader: Arc<Shader>,
     depth_texture: Texture,
     pub nodes: Vec<Node<Arc<Model>>>,
     models: Vec<ModelInstance>,
@@ -38,43 +32,14 @@ impl Scene {
         &self.depth_texture
     }
 
-    pub async fn new(gfx: &Gfx, camera: Camera, light: Light) -> Self {
+    pub async fn new(gfx: &Gfx, camera: Camera, light: Light, default_shader: Arc<Shader>) -> Self {
         info!("New scene");
 
-        let phong_shader = Shader::new(
-            gfx,
-            "Phong",
-            "phong.wgsl",
-            VertexFlag::POSITION | VertexFlag::TEXTURE | VertexFlag::NORMAL,
-            InstanceFlag::MODEL | InstanceFlag::NORMAL,
-            PipelineFlag::CULLING | PipelineFlag::DEPTH,
-        )
-        .await;
-
-        let solid_shader = Shader::new(
-            gfx,
-            "Solid",
-            "solid.wgsl",
-            VertexFlag::POSITION | VertexFlag::COLOR,
-            InstanceFlag::MODEL,
-            PipelineFlag::CULLING | PipelineFlag::DEPTH,
-        )
-        .await;
-
-        let ui_shader = Shader::new(
-            gfx,
-            "UI",
-            "ui.wgsl",
-            VertexFlag::POSITION | VertexFlag::COLOR | VertexFlag::TEXTURE,
-            InstanceFlag::MODEL,
-            PipelineFlag::empty(),
-        )
-        .await;
-
         let camera_resource =
-            gfx.create_camera_resource(phong_shader.layout(ShaderBindGroup::Camera));
+            gfx.create_camera_resource(default_shader.layout(ShaderBindGroup::Camera));
 
-        let light_resource = gfx.create_light_resource(phong_shader.layout(ShaderBindGroup::Light));
+        let light_resource =
+            gfx.create_light_resource(default_shader.layout(ShaderBindGroup::Light));
 
         let models = Vec::new();
 
@@ -94,9 +59,6 @@ impl Scene {
             light,
             camera_resource,
             light_resource,
-            phong_shader,
-            solid_shader,
-            ui_shader,
             depth_texture,
             nodes,
             models,

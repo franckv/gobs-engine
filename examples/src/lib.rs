@@ -1,5 +1,10 @@
 mod controller;
 
+use std::sync::Arc;
+
+use gobs_scene as scene;
+
+use scene::{Gfx, InstanceFlag, PipelineFlag, Shader, VertexFlag};
 use simplelog::{
     ColorChoice, CombinedLogger, ConfigBuilder, LevelFilter, TermLogger, TerminalMode,
 };
@@ -35,4 +40,40 @@ pub fn init_logger() {
             ColorChoice::Auto,
         ),
     ]);
+}
+
+pub async fn ui_shader(gfx: &Gfx) -> Arc<Shader> {
+    Shader::new(
+        gfx,
+        "UI",
+        "ui.wgsl",
+        VertexFlag::POSITION | VertexFlag::COLOR | VertexFlag::TEXTURE,
+        InstanceFlag::MODEL,
+        PipelineFlag::empty(),
+    )
+    .await
+}
+
+pub async fn phong_shader(gfx: &Gfx) -> Arc<Shader> {
+    Shader::new(
+        gfx,
+        "Phong",
+        "phong.wgsl",
+        VertexFlag::POSITION | VertexFlag::TEXTURE | VertexFlag::NORMAL,
+        InstanceFlag::MODEL | InstanceFlag::NORMAL,
+        PipelineFlag::CULLING | PipelineFlag::DEPTH,
+    )
+    .await
+}
+
+pub async fn solid_shader(gfx: &Gfx) -> Arc<Shader> {
+    Shader::new(
+        gfx,
+        "Solid",
+        "solid.wgsl",
+        VertexFlag::POSITION | VertexFlag::COLOR,
+        InstanceFlag::MODEL,
+        PipelineFlag::CULLING | PipelineFlag::DEPTH,
+    )
+    .await
 }

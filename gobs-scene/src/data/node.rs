@@ -7,7 +7,10 @@ pub struct Node<D> {
     model: D,
 }
 
-impl<D> Node<D> where D: Clone {
+impl<D> Node<D>
+where
+    D: Clone,
+{
     pub fn new(translation: Vec3, rotation: Quat, model: D) -> Self {
         let transform = Transform {
             translation,
