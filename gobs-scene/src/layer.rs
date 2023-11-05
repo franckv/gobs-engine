@@ -28,7 +28,7 @@ impl Layer {
         }
     }
 
-    pub fn add_node(&mut self, position: Vec3, rotation: Quat, model: Arc<Model>) {
+    pub fn add_node(&mut self, position: Vec3, rotation: Quat, scale: Vec3, model: Arc<Model>) {
         let exist = self.models.iter().find(|m| m.model.id == model.id);
 
         if exist.is_none() {
@@ -40,7 +40,7 @@ impl Layer {
 
             self.models.push(model_instance);
         };
-        let node = Node::new(position, rotation, model);
+        let node = Node::new(position, rotation, scale, model);
         self.nodes.push(node);
     }
 
@@ -55,7 +55,7 @@ impl Layer {
                         .model_transform(
                             n.transform().translation,
                             n.transform().rotation,
-                            model.model.scale,
+                            n.transform().scale,
                         )
                         .normal_rot(n.transform().rotation)
                         .build()

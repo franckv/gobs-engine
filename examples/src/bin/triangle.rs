@@ -41,7 +41,6 @@ impl Run for App {
         let mut scene = Scene::new(gfx, camera, light, solid_shader.clone()).await;
 
         let triangle: Arc<scene::Model> = ModelBuilder::new()
-            .scale(Vec3::new(300., 300., 1.))
             .add_mesh(
                 scene::shape::Shapes::triangle(
                     [1., 0., 0., 0.5],
@@ -56,6 +55,7 @@ impl Run for App {
             TRIANGLE_LAYER,
             [0., 0., 0.].into(),
             Quat::IDENTITY,
+            [300., 300., 1.].into(),
             triangle,
         );
 

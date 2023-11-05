@@ -71,7 +71,7 @@ impl Run for App {
         scene.camera.position = (pos_x, pos_y, pos_z).into();
 
         let light_model = scene
-            .load_model(gfx, examples::LIGHT, solid_shader, Vec3::splat(0.3))
+            .load_model(gfx, examples::LIGHT, solid_shader)
             .await
             .unwrap();
 
@@ -79,6 +79,7 @@ impl Run for App {
             LIGHT_LAYER,
             light_position,
             Quat::from_axis_angle(Vec3::Z, 0.),
+            Vec3::splat(0.3),
             light_model.clone(),
         );
 
@@ -107,7 +108,7 @@ impl Run for App {
 
         for node in &mut self.scene.layer_mut(LIGHT_LAYER).nodes {
             if node.model().id == self.light_model.id {
-                node.set_transform(position, node.transform().rotation);
+                node.set_transform(position, node.transform().rotation, node.transform().scale);
             }
         }
 
@@ -173,9 +174,21 @@ impl App {
                         z: j - offset,
                     };
 
-                    scene.add_node(WALL_LAYER, position, rotation, wall_model.clone());
+                    scene.add_node(
+                        WALL_LAYER,
+                        position,
+                        rotation,
+                        Vec3::ONE,
+                        wall_model.clone(),
+                    );
                     position.y = -examples::TILE_SIZE;
-                    scene.add_node(FLOOR_LAYER, position, rotation, floor_model.clone());
+                    scene.add_node(
+                        FLOOR_LAYER,
+                        position,
+                        rotation,
+                        Vec3::ONE,
+                        floor_model.clone(),
+                    );
                 }
                 '@' => {
                     i += examples::TILE_SIZE;
@@ -185,7 +198,13 @@ impl App {
                         z: j - offset,
                     };
                     (pos_x, pos_z) = (position.x, position.z);
-                    scene.add_node(FLOOR_LAYER, position, rotation, floor_model.clone());
+                    scene.add_node(
+                        FLOOR_LAYER,
+                        position,
+                        rotation,
+                        Vec3::ONE,
+                        floor_model.clone(),
+                    );
                 }
                 '.' => {
                     i += examples::TILE_SIZE;
@@ -194,7 +213,13 @@ impl App {
                         y: -examples::TILE_SIZE,
                         z: j - offset,
                     };
-                    scene.add_node(FLOOR_LAYER, position, rotation, floor_model.clone());
+                    scene.add_node(
+                        FLOOR_LAYER,
+                        position,
+                        rotation,
+                        Vec3::ONE,
+                        floor_model.clone(),
+                    );
                 }
                 '\n' => {
                     j += examples::TILE_SIZE;

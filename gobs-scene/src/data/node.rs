@@ -11,10 +11,11 @@ impl<D> Node<D>
 where
     D: Clone,
 {
-    pub fn new(translation: Vec3, rotation: Quat, model: D) -> Self {
+    pub fn new(translation: Vec3, rotation: Quat, scale: Vec3, model: D) -> Self {
         let transform = Transform {
             translation,
             rotation,
+            scale,
         };
 
         Node { transform, model }
@@ -28,8 +29,9 @@ where
         self.model.clone()
     }
 
-    pub fn set_transform(&mut self, translation: Vec3, rotation: Quat) {
+    pub fn set_transform(&mut self, translation: Vec3, rotation: Quat, scale: Vec3) {
         self.transform.translation = translation;
         self.transform.rotation = rotation;
+        self.transform.scale = scale;
     }
 }

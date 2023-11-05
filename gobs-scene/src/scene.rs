@@ -107,9 +107,8 @@ impl Scene {
         gfx: &Gfx,
         name: &str,
         shader: Arc<Shader>,
-        scale: Vec3,
     ) -> Result<Arc<Model>> {
-        let model = assets::load_model(name, gfx, shader.clone(), scale).await?;
+        let model = assets::load_model(name, gfx, shader.clone()).await?;
 
         Ok(model)
     }
@@ -123,10 +122,11 @@ impl Scene {
         layer_name: &str,
         position: Vec3,
         rotation: Quat,
+        scale: Vec3,
         model: Arc<Model>,
     ) {
         let layer = self.layer_mut(layer_name);
-        layer.add_node(position, rotation, model.clone());
+        layer.add_node(position, rotation, scale, model.clone());
     }
 
     pub fn render(&self, gfx: &Gfx) -> Result<(), RenderError> {

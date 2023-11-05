@@ -2,7 +2,6 @@ use std::io::{BufReader, Cursor};
 use std::sync::Arc;
 
 use anyhow::Result;
-use glam::Vec3;
 use log::*;
 
 use gobs_utils as utils;
@@ -14,12 +13,7 @@ use utils::load::{self, AssetType};
 
 use crate::Gfx;
 
-pub async fn load_model(
-    file_name: &str,
-    gfx: &Gfx,
-    shader: Arc<Shader>,
-    scale: Vec3,
-) -> Result<Arc<Model>> {
+pub async fn load_model(file_name: &str, gfx: &Gfx, shader: Arc<Shader>) -> Result<Arc<Model>> {
     let obj_text = load::load_string(file_name, AssetType::MODEL).await?;
     let obj_cursor = Cursor::new(obj_text);
     let mut obj_reader = BufReader::new(obj_cursor);
@@ -49,10 +43,7 @@ pub async fn load_model(
         materials.len()
     );
 
-    let model = ModelBuilder::new()
-        .scale(scale)
-        .meshes(meshes)
-        .build(gfx, shader);
+    let model = ModelBuilder::new().meshes(meshes).build(gfx, shader);
 
     Ok(model)
 }

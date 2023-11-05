@@ -47,7 +47,7 @@ impl Run for App {
         let mut scene = Scene::new(gfx, camera, light, phong_shader.clone()).await;
 
         let model = scene
-            .load_model(gfx, examples::CUBE, phong_shader.clone(), Vec3::splat(1.))
+            .load_model(gfx, examples::CUBE, phong_shader.clone())
             .await
             .unwrap();
 
@@ -77,7 +77,7 @@ impl Run for App {
             .build(gfx, phong_shader);
 
         let light_model = scene
-            .load_model(gfx, examples::LIGHT, solid_shader, Vec3::splat(0.3))
+            .load_model(gfx, examples::LIGHT, solid_shader)
             .await
             .unwrap();
 
@@ -85,19 +85,33 @@ impl Run for App {
             LIGHT_LAYER,
             light_position,
             Quat::from_axis_angle(Vec3::Z, 0.),
+            Vec3::splat(0.3),
             light_model.clone(),
         );
 
-        scene.add_node(MODEL_LAYER, [0., 0., 0.].into(), Quat::IDENTITY, model);
+        scene.add_node(
+            MODEL_LAYER,
+            [0., 0., 0.].into(),
+            Quat::IDENTITY,
+            Vec3::ONE,
+            model,
+        );
 
         scene.add_node(
             TRIANGLE_LAYER,
             [-3., 0., -3.].into(),
             Quat::IDENTITY,
+            Vec3::ONE,
             triangle,
         );
 
-        scene.add_node(CUBE_LAYER, [5., 0., 0.].into(), Quat::IDENTITY, cube);
+        scene.add_node(
+            CUBE_LAYER,
+            [5., 0., 0.].into(),
+            Quat::IDENTITY,
+            Vec3::ONE,
+            cube,
+        );
 
         let camera_controller = CameraController::new(3., 0.4);
 
@@ -124,7 +138,7 @@ impl Run for App {
 
         for node in &mut self.scene.layer_mut(LIGHT_LAYER).nodes {
             if node.model().id == self.light_model.id {
-                node.set_transform(position, node.transform().rotation);
+                node.set_transform(position, node.transform().rotation, node.transform().scale);
             }
         }
 

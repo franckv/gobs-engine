@@ -38,12 +38,15 @@ impl Run for App {
 
         let mut scene = Scene::new(gfx, camera, light, shader.clone()).await;
 
-        let cube = scene
-            .load_model(gfx, examples::CUBE, shader, Vec3::splat(1.))
-            .await
-            .unwrap();
+        let cube = scene.load_model(gfx, examples::CUBE, shader).await.unwrap();
 
-        scene.add_node(MODEL_LAYER, [0., 0., 0.].into(), Quat::IDENTITY, cube);
+        scene.add_node(
+            MODEL_LAYER,
+            [0., 0., 0.].into(),
+            Quat::IDENTITY,
+            Vec3::ONE,
+            cube,
+        );
 
         let camera_controller = CameraController::new(3., 0.4);
 

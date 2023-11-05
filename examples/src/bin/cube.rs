@@ -52,7 +52,7 @@ impl Run for App {
             )
             .build(gfx, shader);
 
-        scene.add_node(CUBE_LAYER, [0., 0., 0.].into(), Quat::IDENTITY, cube);
+        scene.add_node(CUBE_LAYER, Vec3::ZERO, Quat::IDENTITY, Vec3::ONE, cube);
 
         let camera_controller = CameraController::new(3., 0.4);
 
@@ -83,7 +83,11 @@ impl Run for App {
         for node in &mut self.scene.layer_mut(CUBE_LAYER).nodes {
             let old_rotation = node.transform().rotation;
             let rotation = rot_delta_model * old_rotation;
-            node.set_transform(node.transform().translation, rotation);
+            node.set_transform(
+                node.transform().translation,
+                rotation,
+                node.transform().scale,
+            );
         }
 
         self.scene.update(gfx);

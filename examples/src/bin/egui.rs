@@ -59,7 +59,7 @@ impl Run for App {
 
         models.into_iter().for_each(|m| {
             self.scene
-                .add_node(UI_LAYER, [0., 0., 0.].into(), Quat::IDENTITY, m);
+                .add_node(UI_LAYER, [0., 0., 0.].into(), Quat::IDENTITY, Vec3::ONE, m);
         });
 
         self.scene.update(gfx);
