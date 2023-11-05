@@ -81,13 +81,7 @@ impl Run for App {
         self.scene.light.update(position);
 
         for node in &mut self.scene.layer_mut(CUBE_LAYER).nodes {
-            let old_rotation = node.transform().rotation;
-            let rotation = rot_delta_model * old_rotation;
-            node.set_transform(
-                node.transform().translation,
-                rotation,
-                node.transform().scale,
-            );
+            node.rotate(rot_delta_model);
         }
 
         self.scene.update(gfx);

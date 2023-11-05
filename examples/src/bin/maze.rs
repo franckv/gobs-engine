@@ -108,7 +108,7 @@ impl Run for App {
 
         for node in &mut self.scene.layer_mut(LIGHT_LAYER).nodes {
             if node.model().id == self.light_model.id {
-                node.set_transform(position, node.transform().rotation, node.transform().scale);
+                node.move_to_position(position);
             }
         }
 

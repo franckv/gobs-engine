@@ -29,9 +29,11 @@ where
         self.model.clone()
     }
 
-    pub fn set_transform(&mut self, translation: Vec3, rotation: Quat, scale: Vec3) {
-        self.transform.translation = translation;
-        self.transform.rotation = rotation;
-        self.transform.scale = scale;
+    pub fn move_to_position(&mut self, position: Vec3) {
+        self.transform.translation = position
+    }
+
+    pub fn rotate(&mut self, rotation: Quat) {
+        self.transform.rotation = rotation * self.transform.rotation
     }
 }
