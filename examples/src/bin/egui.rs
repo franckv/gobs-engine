@@ -73,8 +73,8 @@ impl Run for App {
         self.ui.input(input);
     }
 
-    fn resize(&mut self, width: u32, height: u32, gfx: &Gfx) {
-        self.scene.resize(gfx, width, height);
+    fn resize(&mut self, width: u32, height: u32, _gfx: &Gfx) {
+        self.scene.resize(width, height);
         self.scene.camera.position = [width as f32 / 2., height as f32 / 2., -1.].into();
         self.ui.resize(width, height);
     }

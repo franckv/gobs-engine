@@ -3,16 +3,9 @@ use std::sync::RwLock;
 use wgpu::util::DeviceExt;
 use winit::window::Window;
 
+use crate::context::Display;
 use crate::model::{InstanceData, VertexData, VertexFlag};
-use crate::render::Display;
 use crate::resources::{CameraResource, LightResource};
-
-#[derive(Debug)]
-pub enum RenderError {
-    Lost,
-    Outdated,
-    Error,
-}
 
 pub struct Gfx {
     pub(crate) display: RwLock<Display>,
@@ -53,6 +46,7 @@ impl Gfx {
                 power_preference: wgpu::PowerPreference::default(),
                 compatible_surface: Some(&surface),
                 force_fallback_adapter: false,
+                
             })
             .await
             .unwrap();
@@ -60,7 +54,7 @@ impl Gfx {
         let (device, queue) = adapter
             .request_device(
                 &wgpu::DeviceDescriptor {
-                    features: wgpu::Features::empty(),
+                    features: wgpu::Features::POLYGON_MODE_LINE,
                     limits: wgpu::Limits::default(),
                     label: None,
                 },

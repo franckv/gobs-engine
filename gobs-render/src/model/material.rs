@@ -3,7 +3,7 @@ use std::sync::Arc;
 use crate::model::Texture;
 use log::*;
 
-use crate::render::Gfx;
+use crate::context::Gfx;
 
 pub struct MaterialBuilder {
     name: String,

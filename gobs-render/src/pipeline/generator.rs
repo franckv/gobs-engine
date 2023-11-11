@@ -7,8 +7,8 @@ use naga::{Binding, GlobalVariable, Handle, Module, Type, TypeInner};
 
 use gobs_utils as utils;
 
+use crate::context::Gfx;
 use crate::model::{InstanceData, InstanceFlag, VertexData, VertexFlag};
-use crate::render::Gfx;
 use utils::load::{self, AssetType};
 
 pub struct Generator {

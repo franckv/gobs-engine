@@ -3,8 +3,8 @@ use std::sync::Arc;
 use uuid::Uuid;
 
 use crate::{
+    context::Gfx,
     model::{Material, Mesh, VertexFlag},
-    render::Gfx,
     shader::{Shader, ShaderBindGroup},
 };
 

@@ -4,8 +4,8 @@ use std::sync::Arc;
 use glam::{Vec2, Vec3, Vec4};
 use log::info;
 
+use crate::context::Gfx;
 use crate::model::VertexData;
-use crate::render::Gfx;
 use crate::shader::Shader;
 
 pub struct MeshBuilder {

@@ -11,8 +11,8 @@ use gobs_render as render;
 
 use log::info;
 use render::{
+    context::Gfx,
     model::{Material, MaterialBuilder, MeshBuilder, Model, ModelBuilder, Texture, TextureType},
-    render::Gfx,
     shader::Shader,
 };
 

@@ -101,8 +101,8 @@ impl Run for App {
         }
     }
 
-    fn resize(&mut self, width: u32, height: u32, gfx: &Gfx) {
-        self.scene.resize(gfx, width, height)
+    fn resize(&mut self, width: u32, height: u32, _gfx: &Gfx) {
+        self.scene.resize(width, height)
     }
 }
 

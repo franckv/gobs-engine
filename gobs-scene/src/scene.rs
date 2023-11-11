@@ -6,8 +6,10 @@ use log::*;
 
 use gobs_render as render;
 
-use render::model::{Model, Texture, TextureType};
-use render::render::{Batch, Gfx, RenderError};
+use render::context::Gfx;
+use render::graph::batch::Batch;
+use render::graph::graph::{RenderError, RenderGraph};
+use render::model::Model;
 use render::resources::{CameraResource, LightResource};
 use render::shader::{Shader, ShaderBindGroup};
 
@@ -17,19 +19,15 @@ use crate::layer::Layer;
 use crate::light::Light;
 
 pub struct Scene {
+    pub render_graph: RenderGraph,
     pub camera: Camera,
     pub light: Light,
     pub camera_resource: CameraResource,
     pub light_resource: LightResource,
-    depth_texture: Texture,
     layers: Vec<Layer>,
 }
 
 impl Scene {
-    pub fn depth_texture(&self) -> &Texture {
-        &self.depth_texture
-    }
-
     pub fn layer_mut(&mut self, layer_name: &str) -> &mut Layer {
         let exists = self.layers.iter().find(|l| l.name.eq(layer_name)).is_some();
 
@@ -55,34 +53,19 @@ impl Scene {
 
         let layers = Vec::new();
 
-        let depth_texture = Texture::new(
-            gfx,
-            "depth_texture",
-            TextureType::DEPTH,
-            gfx.width(),
-            gfx.height(),
-            &[],
-        );
+        let render_graph = RenderGraph::new("graph", gfx);
 
         Scene {
+            render_graph,
             camera,
             light,
             camera_resource,
             light_resource,
-            depth_texture,
             layers,
         }
     }
 
-    pub fn resize(&mut self, gfx: &Gfx, width: u32, height: u32) {
-        self.depth_texture = Texture::new(
-            gfx,
-            "depth_texture",
-            TextureType::DEPTH,
-            gfx.width(),
-            gfx.height(),
-            &[],
-        );
+    pub fn resize(&mut self, width: u32, height: u32) {
         self.camera.resize(width, height);
     }
 
@@ -129,9 +112,8 @@ impl Scene {
         layer.add_node(position, rotation, scale, model.clone());
     }
 
-    pub fn render(&self, gfx: &Gfx) -> Result<(), RenderError> {
-        let mut batch = Batch::begin(gfx)
-            .depth_texture(&self.depth_texture)
+    pub fn render(&mut self, gfx: &Gfx) -> Result<(), RenderError> {
+        let mut batch = Batch::begin()
             .camera_resource(&self.camera_resource)
             .light_resource(&self.light_resource);
 
@@ -141,6 +123,6 @@ impl Scene {
             }
         }
 
-        batch.finish().render()
+        self.render_graph.execute(gfx, batch.finish())
     }
 }

@@ -1,9 +1,9 @@
 use std::sync::Arc;
 
 use crate::{
+    context::Gfx,
     model::{InstanceFlag, Model, Texture, VertexFlag},
     pipeline::{Generator, Pipeline, PipelineBuilder, PipelineFlag},
-    render::Gfx,
     resources::{CameraResource, LightResource},
 };
 
@@ -14,6 +14,7 @@ pub enum ShaderBindGroup {
 }
 
 pub struct Shader {
+    pub name: String,
     pub pipeline: Pipeline,
     layouts: Vec<wgpu::BindGroupLayout>,
     pub vertex_flags: VertexFlag,
@@ -52,6 +53,7 @@ impl Shader {
             .build();
 
         Arc::new(Shader {
+            name: name.to_string(),
             pipeline,
             layouts,
             vertex_flags,
@@ -83,6 +85,7 @@ impl Shader {
     ) where
         'a: 'b,
     {
+        render_pass.insert_debug_marker(&format!("Using shader: {}, pipeline: {}", &self.name, &self.pipeline.name));
         render_pass.set_pipeline(&self.pipeline.pipeline);
         render_pass.set_bind_group(0, &camera.bind_group, &[]);
         render_pass.set_bind_group(1, &light.bind_group, &[]);

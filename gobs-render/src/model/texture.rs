@@ -3,7 +3,7 @@ use image::{DynamicImage, GenericImageView, ImageBuffer};
 
 use gobs_utils as utils;
 
-use crate::render::Gfx;
+use crate::context::Gfx;
 use utils::load::{self, AssetType};
 
 pub enum TextureType {

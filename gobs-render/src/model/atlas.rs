@@ -5,8 +5,8 @@ use gobs_utils as utils;
 
 use utils::load::{self, AssetType};
 
+use crate::context::Gfx;
 use crate::model::{Texture, TextureType};
-use crate::render::Gfx;
 
 pub async fn load_atlas(
     gfx: &Gfx,

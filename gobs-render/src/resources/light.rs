@@ -1,7 +1,7 @@
 use log::*;
 use wgpu::util::DeviceExt;
 
-use crate::render::Gfx;
+use crate::context::Gfx;
 
 #[repr(C)]
 #[derive(Debug, Copy, Clone, bytemuck::Pod, bytemuck::Zeroable)]

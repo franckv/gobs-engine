@@ -5,8 +5,9 @@ use glam::{Quat, Vec3};
 use gobs_render as render;
 
 use render::{
+    context::Gfx,
+    graph::batch::BatchBuilder,
     model::{InstanceData, Model, ModelInstance},
-    render::{BatchBuilder, Gfx},
 };
 
 use crate::data::Node;
