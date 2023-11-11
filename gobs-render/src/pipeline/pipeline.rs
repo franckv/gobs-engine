@@ -10,6 +10,7 @@ bitflags! {
         const CULLING = 1;
         const DEPTH = 1 << 1;
         const LINE = 1 << 2;
+        const ALPHA = 1 << 3;
     }
 }
 
@@ -108,7 +109,11 @@ impl<'a> PipelineBuilder<'a> {
             entry_point: "fs_main",
             targets: &[Some(wgpu::ColorTargetState {
                 format: self.color_format.unwrap(),
-                blend: Some(wgpu::BlendState::ALPHA_BLENDING),
+                blend: if self.flags.contains(PipelineFlag::ALPHA) {
+                    Some(wgpu::BlendState::ALPHA_BLENDING)
+                } else {
+                    None
+                },
                 write_mask: wgpu::ColorWrites::ALL,
             })],
         };

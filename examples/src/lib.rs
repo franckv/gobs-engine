@@ -49,7 +49,7 @@ pub async fn ui_shader(gfx: &Gfx) -> Arc<Shader> {
         "ui.wgsl",
         VertexFlag::POSITION | VertexFlag::COLOR | VertexFlag::TEXTURE,
         InstanceFlag::MODEL,
-        PipelineFlag::empty(),
+        PipelineFlag::ALPHA,
     )
     .await
 }
