@@ -75,6 +75,10 @@ impl Scene {
         self.camera.resize(width, height);
     }
 
+    pub fn toggle_pass(&mut self, pass_name: &str) {
+        self.render_graph.toggle_pass(pass_name);
+    }
+
     pub fn update(&mut self, gfx: &Gfx) {
         let view_position = self.camera.position.extend(1.).to_array();
         let view_proj = self.camera.view_proj().to_cols_array_2d();

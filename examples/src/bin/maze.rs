@@ -45,8 +45,10 @@ impl Run for App {
 
         let phong_shader = examples::phong_shader(gfx).await;
         let solid_shader = examples::solid_shader(gfx).await;
+        let wire_shader = examples::wire_shader(gfx).await;
 
-        let mut scene = Scene::new(gfx, camera, light, phong_shader.clone(), &[]).await;
+        let mut scene = Scene::new(gfx, camera, light, phong_shader.clone(), &[wire_shader.clone()]).await;
+        scene.toggle_pass(&wire_shader.name);
 
         let material = MaterialBuilder::new("diffuse")
             .diffuse_texture(gfx, examples::WALL_TEXTURE)
@@ -121,9 +123,10 @@ impl Run for App {
 
     fn input(&mut self, _gfx: &Gfx, input: Input) {
         match input {
-            Input::KeyPressed(key) => {
-                self.camera_controller.key_pressed(key);
-            }
+            Input::KeyPressed(key) => match key {
+                game::input::Key::W => self.scene.toggle_pass(examples::WIRE_PASS),
+                _ => self.camera_controller.key_pressed(key),
+            },
             Input::KeyReleased(key) => {
                 self.camera_controller.key_released(key);
             }

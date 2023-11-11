@@ -80,9 +80,10 @@ impl Run for App {
 
     fn input(&mut self, _gfx: &Gfx, input: Input) {
         match input {
-            Input::KeyPressed(key) => {
-                self.camera_controller.key_pressed(key);
-            }
+            Input::KeyPressed(key) => match key {
+                game::input::Key::W => self.scene.toggle_pass(examples::WIRE_PASS),
+                _ => self.camera_controller.key_pressed(key),
+            },
             Input::KeyReleased(key) => {
                 self.camera_controller.key_released(key);
             }

@@ -35,7 +35,7 @@ impl RenderGraph {
         let mut passes = vec![RenderPass::new("Forward Pass", true)];
         for shader in shaders {
             passes.push(RenderPass::with_shader(
-                "Shader pass",
+                &shader.name,
                 shader.clone(),
                 false,
             ));
@@ -46,6 +46,14 @@ impl RenderGraph {
             resource_manager: ResourceManager::new(),
             passes,
             depth_texture,
+        }
+    }
+
+    pub fn toggle_pass(&mut self, pass_name: &str) {
+        for pass in &mut self.passes {
+            if pass.name == pass_name {
+                pass.toggle();
+            }
         }
     }
 

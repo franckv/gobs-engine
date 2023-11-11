@@ -9,9 +9,10 @@ use crate::{
 };
 
 pub struct RenderPass {
-    name: String,
+    pub name: String,
     shader: Option<Arc<Shader>>,
     clear: bool,
+    enabled: bool,
 }
 
 impl RenderPass {
@@ -20,6 +21,7 @@ impl RenderPass {
             name: name.to_string(),
             shader: None,
             clear,
+            enabled: true
         }
     }
 
@@ -28,7 +30,12 @@ impl RenderPass {
             name: name.to_string(),
             shader: Some(shader),
             clear,
+            enabled: true
         }
+    }
+
+    pub fn toggle(&mut self) {
+        self.enabled = !self.enabled;
     }
 
     pub fn prepare(&self, gfx: &Gfx, resource_manager: &mut ResourceManager, batch: &Batch<'_>) {
@@ -62,6 +69,10 @@ impl RenderPass {
         depth: &wgpu::TextureView,
         batch: &Batch<'_>,
     ) {
+        if !self.enabled {
+            return
+        }
+        
         self.prepare(gfx, resource_manager, batch);
 
         let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {

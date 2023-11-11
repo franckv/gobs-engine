@@ -17,6 +17,7 @@ pub const LIGHT: &str = "sphere.obj";
 pub const TILE_SIZE: f32 = 1.;
 pub const WALL_TEXTURE: &str = "tileset.png";
 pub const WALL_TEXTURE_N: &str = "stone_n.png";
+pub const WIRE_PASS: &str = "Wire";
 
 pub fn init_logger() {
     let config_other = ConfigBuilder::new()
@@ -81,7 +82,7 @@ pub async fn solid_shader(gfx: &Gfx) -> Arc<Shader> {
 pub async fn wire_shader(gfx: &Gfx) -> Arc<Shader> {
     Shader::new(
         gfx,
-        "Wire",
+        WIRE_PASS,
         "wire.wgsl",
         VertexFlag::POSITION,
         InstanceFlag::MODEL,

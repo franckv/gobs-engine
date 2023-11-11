@@ -43,8 +43,10 @@ impl Run for App {
 
         let phong_shader = examples::phong_shader(gfx).await;
         let solid_shader = examples::solid_shader(gfx).await;
+        let wire_shader = examples::wire_shader(gfx).await;
 
-        let mut scene = Scene::new(gfx, camera, light, phong_shader.clone(), &[]).await;
+        let mut scene = Scene::new(gfx, camera, light, phong_shader.clone(), &[wire_shader.clone()]).await;
+        scene.toggle_pass(&wire_shader.name);
 
         let model = scene
             .load_model(gfx, examples::CUBE, phong_shader.clone())
@@ -156,6 +158,7 @@ impl Run for App {
                 game::input::Key::M => self.scene.toggle_layer(MODEL_LAYER),
                 game::input::Key::C => self.scene.toggle_layer(CUBE_LAYER),
                 game::input::Key::L => self.scene.toggle_layer(LIGHT_LAYER),
+                game::input::Key::W => self.scene.toggle_pass(examples::WIRE_PASS),
                 _ => self.camera_controller.key_pressed(key),
             },
             Input::KeyReleased(key) => {
