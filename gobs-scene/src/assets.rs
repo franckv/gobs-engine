@@ -4,8 +4,8 @@ use std::sync::Arc;
 use anyhow::Result;
 use log::*;
 
-use gobs_utils as utils;
 use gobs_render as render;
+use gobs_utils as utils;
 
 use render::model::{Material, Mesh, MeshBuilder, Model, ModelBuilder, Texture};
 use render::shader::Shader;

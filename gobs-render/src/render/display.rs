@@ -4,8 +4,8 @@ pub struct Display {
 }
 
 impl Display {
-    pub fn format(&self) -> &wgpu::TextureFormat {
-        &self.config.format
+    pub fn format(&self) -> wgpu::TextureFormat {
+        self.config.format
     }
 
     pub fn width(&self) -> u32 {

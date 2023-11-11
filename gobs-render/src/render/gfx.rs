@@ -1,3 +1,5 @@
+use std::sync::RwLock;
+
 use wgpu::util::DeviceExt;
 use winit::window::Window;
 
@@ -13,7 +15,7 @@ pub enum RenderError {
 }
 
 pub struct Gfx {
-    pub(crate) display: Display,
+    pub(crate) display: RwLock<Display>,
     device: wgpu::Device,
     queue: wgpu::Queue,
 }
@@ -27,16 +29,16 @@ impl Gfx {
         &self.queue
     }
 
-    pub fn format(&self) -> &wgpu::TextureFormat {
-        &self.display.format()
+    pub fn format(&self) -> wgpu::TextureFormat {
+        self.display.read().unwrap().format()
     }
 
     pub fn width(&self) -> u32 {
-        self.display.width()
+        self.display.read().unwrap().width()
     }
 
     pub fn height(&self) -> u32 {
-        self.display.height()
+        self.display.read().unwrap().height()
     }
 
     pub async fn new(window: &Window) -> Self {
@@ -93,15 +95,18 @@ impl Gfx {
         let display = Display::new(surface, config, &device);
 
         Gfx {
-            display,
+            display: RwLock::new(display),
             device,
             queue,
         }
     }
 
-    pub fn resize(&mut self, width: u32, height: u32) {
+    pub fn resize(&self, width: u32, height: u32) {
         if width > 0 && height > 0 {
-            self.display.resize(&self.device, width, height);
+            self.display
+                .write()
+                .unwrap()
+                .resize(&self.device, width, height);
         }
     }
 

@@ -28,7 +28,7 @@ struct App {
 }
 
 impl Run for App {
-    async fn create(gfx: &mut Gfx) -> Self {
+    async fn create(gfx: &Gfx) -> Self {
         let camera = Camera::perspective(
             (0., 0., 0.),
             gfx.width() as f32 / gfx.height() as f32,
@@ -92,7 +92,7 @@ impl Run for App {
         }
     }
 
-    fn update(&mut self, delta: f32, gfx: &mut Gfx) {
+    fn update(&mut self, delta: f32, gfx: &Gfx) {
         let angular_speed = 40.;
 
         self.camera_controller
@@ -115,11 +115,11 @@ impl Run for App {
         self.scene.update(gfx);
     }
 
-    fn render(&mut self, gfx: &mut Gfx) -> Result<(), RenderError> {
+    fn render(&mut self, gfx: &Gfx) -> Result<(), RenderError> {
         self.scene.render(gfx)
     }
 
-    fn input(&mut self, _gfx: &mut Gfx, input: Input) {
+    fn input(&mut self, _gfx: &Gfx, input: Input) {
         match input {
             Input::KeyPressed(key) => {
                 self.camera_controller.key_pressed(key);
@@ -143,7 +143,7 @@ impl Run for App {
         }
     }
 
-    fn resize(&mut self, width: u32, height: u32, gfx: &mut Gfx) {
+    fn resize(&mut self, width: u32, height: u32, gfx: &Gfx) {
         self.scene.resize(gfx, width, height)
     }
 }

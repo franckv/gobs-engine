@@ -100,7 +100,7 @@ impl<'a> Batch<'a> {
     }
 
     pub fn render(&self) -> Result<(), RenderError> {
-        let texture = match self.gfx.display.texture() {
+        let texture = match self.gfx.display.read().unwrap().texture() {
             Ok(texture) => texture,
             Err(wgpu::SurfaceError::Lost) => return Err(RenderError::Lost),
             Err(wgpu::SurfaceError::Outdated) => return Err(RenderError::Outdated),

@@ -106,9 +106,9 @@ impl Application {
 
 #[allow(async_fn_in_trait)]
 pub trait Run: Sized {
-    async fn create(gfx: &mut Gfx) -> Self;
-    fn update(&mut self, delta: f32, gfx: &mut Gfx);
-    fn render(&mut self, gfx: &mut Gfx) -> Result<(), RenderError>;
-    fn input(&mut self, gfx: &mut Gfx, input: Input);
-    fn resize(&mut self, width: u32, height: u32, gfx: &mut Gfx);
+    async fn create(gfx: &Gfx) -> Self;
+    fn update(&mut self, delta: f32, gfx: &Gfx);
+    fn render(&mut self, gfx: &Gfx) -> Result<(), RenderError>;
+    fn input(&mut self, gfx: &Gfx, input: Input);
+    fn resize(&mut self, width: u32, height: u32, gfx: &Gfx);
 }
