@@ -9,6 +9,7 @@ bitflags! {
     pub struct PipelineFlag: u32 {
         const CULLING = 1;
         const DEPTH = 1 << 1;
+        const LINE = 1 << 2;
     }
 }
 
@@ -19,6 +20,7 @@ impl Default for PipelineFlag {
 }
 
 pub struct Pipeline {
+    pub name: String,
     pub pipeline: wgpu::RenderPipeline,
 }
 
@@ -120,7 +122,11 @@ impl<'a> PipelineBuilder<'a> {
             } else {
                 None
             },
-            polygon_mode: wgpu::PolygonMode::Fill,
+            polygon_mode: if self.flags.contains(PipelineFlag::LINE) {
+                wgpu::PolygonMode::Line
+            } else {
+                wgpu::PolygonMode::Fill
+            },
             unclipped_depth: false,
             conservative: false,
         };
@@ -140,6 +146,7 @@ impl<'a> PipelineBuilder<'a> {
         };
 
         Pipeline {
+            name: self.name.unwrap().to_string(),
             pipeline: device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
                 label: Some(self.name.unwrap()),
                 layout: Some(&layout),

@@ -77,3 +77,16 @@ pub async fn solid_shader(gfx: &Gfx) -> Arc<Shader> {
     )
     .await
 }
+
+
+pub async fn wire_shader(gfx: &Gfx) -> Arc<Shader> {
+    Shader::new(
+        gfx,
+        "Wire",
+        "wire.wgsl",
+        VertexFlag::POSITION,
+        InstanceFlag::MODEL,
+        PipelineFlag::CULLING | PipelineFlag::DEPTH | PipelineFlag::LINE,
+    )
+    .await
+}
