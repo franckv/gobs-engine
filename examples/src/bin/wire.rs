@@ -36,11 +36,11 @@ impl Run for App {
 
         let shader = examples::wire_shader(gfx).await;
 
-        let mut scene = Scene::new(gfx, camera, light, shader.clone()).await;
+        let mut scene = Scene::new(gfx, camera, light, shader.clone(), &[]).await;
 
         let cube = ModelBuilder::new()
             .add_mesh(scene::shape::Shapes::cube(3, 2, &[1]), None)
-            .build(gfx, shader);
+            .build(shader);
 
         scene.add_node(CUBE_LAYER, Vec3::ZERO, Quat::IDENTITY, Vec3::ONE, cube);
 

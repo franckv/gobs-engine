@@ -49,5 +49,5 @@ fn vs_main(model: VertexInput, instance: InstanceInput) -> VertexOutput {
 
 @fragment
 fn fs_main(in: VertexOutput) -> @location(0) vec4f {
-    return vec4f(0., 0.5, 0., 1.);
+    return vec4f(0., 0.5, 0., 0.5);
 }

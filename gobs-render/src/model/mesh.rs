@@ -3,10 +3,9 @@ use std::sync::Arc;
 
 use glam::{Vec2, Vec3, Vec4};
 use log::info;
+use uuid::Uuid;
 
-use crate::context::Gfx;
 use crate::model::VertexData;
-use crate::shader::Shader;
 
 pub struct MeshBuilder {
     name: String,
@@ -157,6 +156,7 @@ impl MeshBuilder {
         );
 
         Arc::new(Mesh {
+            id: Uuid::new_v4(),
             name: self.name,
             vertices: self.vertices,
             indices: self.indices,
@@ -164,17 +164,11 @@ impl MeshBuilder {
     }
 }
 
+pub type MeshId = Uuid;
+
 pub struct Mesh {
+    pub id: Uuid,
     pub name: String,
     pub vertices: Vec<VertexData>,
     pub indices: Vec<u32>,
-}
-
-impl Mesh {
-    pub fn create_buffers(&self, gfx: &Gfx, shader: Arc<Shader>) -> (wgpu::Buffer, wgpu::Buffer) {
-        let vertex_buffer = gfx.create_vertex_buffer(&self.vertices, shader.vertex_flags);
-        let index_buffer = gfx.create_index_buffer(&self.indices);
-
-        (vertex_buffer, index_buffer)
-    }
 }

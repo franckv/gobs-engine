@@ -2,6 +2,7 @@ use std::sync::Arc;
 
 use crate::model::Texture;
 use log::*;
+use uuid::Uuid;
 
 use crate::context::Gfx;
 
@@ -59,7 +60,10 @@ impl MaterialBuilder {
     }
 }
 
+pub type MaterialId = Uuid;
+
 pub struct Material {
+    pub id: MaterialId,
     pub name: String,
     pub diffuse_texture: Texture,
     pub normal_texture: Texture,
@@ -70,34 +74,10 @@ impl Material {
         info!("Create Material bind group");
 
         Arc::new(Material {
+            id: Uuid::new_v4(),
             name,
             diffuse_texture,
             normal_texture,
-        })
-    }
-
-    pub fn bind_group(&self, gfx: &Gfx, layout: &wgpu::BindGroupLayout) -> wgpu::BindGroup {
-        gfx.device().create_bind_group(&wgpu::BindGroupDescriptor {
-            layout,
-            entries: &[
-                wgpu::BindGroupEntry {
-                    binding: 0,
-                    resource: wgpu::BindingResource::TextureView(&self.diffuse_texture.view),
-                },
-                wgpu::BindGroupEntry {
-                    binding: 1,
-                    resource: wgpu::BindingResource::Sampler(&self.diffuse_texture.sampler),
-                },
-                wgpu::BindGroupEntry {
-                    binding: 2,
-                    resource: wgpu::BindingResource::TextureView(&self.normal_texture.view),
-                },
-                wgpu::BindGroupEntry {
-                    binding: 3,
-                    resource: wgpu::BindingResource::Sampler(&self.normal_texture.sampler),
-                },
-            ],
-            label: None,
         })
     }
 }

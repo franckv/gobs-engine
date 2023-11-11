@@ -42,7 +42,13 @@ impl Scene {
         }
     }
 
-    pub async fn new(gfx: &Gfx, camera: Camera, light: Light, default_shader: Arc<Shader>) -> Self {
+    pub async fn new(
+        gfx: &Gfx,
+        camera: Camera,
+        light: Light,
+        default_shader: Arc<Shader>,
+        shaders: &[Arc<Shader>],
+    ) -> Self {
         info!("New scene");
 
         let camera_resource =
@@ -53,7 +59,7 @@ impl Scene {
 
         let layers = Vec::new();
 
-        let render_graph = RenderGraph::new("graph", gfx);
+        let render_graph = RenderGraph::new("graph", gfx, shaders);
 
         Scene {
             render_graph,

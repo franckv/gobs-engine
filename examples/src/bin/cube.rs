@@ -35,8 +35,9 @@ impl Run for App {
         let light = Light::new((10., 0., 7.), (1., 1., 0.9));
 
         let shader = examples::phong_shader(gfx).await;
+        let wire = examples::wire_shader(gfx).await;
 
-        let mut scene = Scene::new(gfx, camera, light, shader.clone()).await;
+        let mut scene = Scene::new(gfx, camera, light, shader.clone(), &[wire]).await;
 
         let material = MaterialBuilder::new("diffuse")
             .diffuse_texture(gfx, examples::WALL_TEXTURE)
@@ -50,7 +51,7 @@ impl Run for App {
                 scene::shape::Shapes::cube(3, 2, &[5, 5, 5, 5, 6, 4]),
                 Some(material),
             )
-            .build(gfx, shader);
+            .build(shader);
 
         scene.add_node(CUBE_LAYER, Vec3::ZERO, Quat::IDENTITY, Vec3::ONE, cube);
 

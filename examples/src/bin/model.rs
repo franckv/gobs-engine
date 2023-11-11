@@ -36,7 +36,7 @@ impl Run for App {
 
         let shader = examples::phong_shader(gfx).await;
 
-        let mut scene = Scene::new(gfx, camera, light, shader.clone()).await;
+        let mut scene = Scene::new(gfx, camera, light, shader.clone(), &[]).await;
 
         let cube = scene.load_model(gfx, examples::CUBE, shader).await.unwrap();
 

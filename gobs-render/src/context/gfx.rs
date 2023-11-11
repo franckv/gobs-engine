@@ -46,7 +46,6 @@ impl Gfx {
                 power_preference: wgpu::PowerPreference::default(),
                 compatible_surface: Some(&surface),
                 force_fallback_adapter: false,
-                
             })
             .await
             .unwrap();

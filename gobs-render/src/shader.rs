@@ -1,10 +1,11 @@
 use std::sync::Arc;
 
+use uuid::Uuid;
+
 use crate::{
     context::Gfx,
-    model::{InstanceFlag, Model, Texture, VertexFlag},
+    model::{InstanceFlag, Texture, VertexFlag},
     pipeline::{Generator, Pipeline, PipelineBuilder, PipelineFlag},
-    resources::{CameraResource, LightResource},
 };
 
 pub enum ShaderBindGroup {
@@ -13,7 +14,10 @@ pub enum ShaderBindGroup {
     Material,
 }
 
+pub type ShaderId = Uuid;
+
 pub struct Shader {
+    pub id: ShaderId,
     pub name: String,
     pub pipeline: Pipeline,
     layouts: Vec<wgpu::BindGroupLayout>,
@@ -53,6 +57,7 @@ impl Shader {
             .build();
 
         Arc::new(Shader {
+            id: Uuid::new_v4(),
             name: name.to_string(),
             pipeline,
             layouts,
@@ -60,44 +65,6 @@ impl Shader {
             instance_flags,
             pipeline_flags,
         })
-    }
-
-    pub fn draw<'a, 'b>(
-        &'a self,
-        _render_pass: &mut wgpu::RenderPass<'b>,
-        _model: &'a Model,
-        _camera: &'a CameraResource,
-        _light: &'a LightResource,
-    ) where
-        'a: 'b,
-    {
-        todo!()
-    }
-
-    pub fn draw_instanced<'a, 'b>(
-        &'a self,
-        render_pass: &mut wgpu::RenderPass<'b>,
-        model: &'a Model,
-        camera: &'a CameraResource,
-        light: &'a LightResource,
-        instance_buffer: &'a wgpu::Buffer,
-        instances: usize,
-    ) where
-        'a: 'b,
-    {
-        render_pass.insert_debug_marker(&format!("Using shader: {}, pipeline: {}", &self.name, &self.pipeline.name));
-        render_pass.set_pipeline(&self.pipeline.pipeline);
-        render_pass.set_bind_group(0, &camera.bind_group, &[]);
-        render_pass.set_bind_group(1, &light.bind_group, &[]);
-        render_pass.set_vertex_buffer(1, instance_buffer.slice(..));
-        for mesh in &model.mesh_data {
-            render_pass.set_vertex_buffer(0, mesh.vertex_buffer.slice(..));
-            render_pass.set_index_buffer(mesh.index_buffer.slice(..), wgpu::IndexFormat::Uint32);
-            if let Some(bind_group) = &mesh.bind_group {
-                render_pass.set_bind_group(2, &bind_group, &[]);
-            }
-            render_pass.draw_indexed(0..mesh.num_elements as _, 0, 0..instances as _);
-        }
     }
 
     pub fn layout(&self, id: ShaderBindGroup) -> &wgpu::BindGroupLayout {

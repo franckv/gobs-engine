@@ -38,7 +38,7 @@ impl Run for App {
 
         let solid_shader = examples::solid_shader(gfx).await;
 
-        let mut scene = Scene::new(gfx, camera, light, solid_shader.clone()).await;
+        let mut scene = Scene::new(gfx, camera, light, solid_shader.clone(), &[]).await;
 
         let triangle: Arc<scene::Model> = ModelBuilder::new()
             .add_mesh(
@@ -49,7 +49,7 @@ impl Run for App {
                 ),
                 None,
             )
-            .build(gfx, solid_shader);
+            .build(solid_shader);
 
         scene.add_node(
             TRIANGLE_LAYER,

@@ -43,7 +43,7 @@ pub async fn load_model(file_name: &str, gfx: &Gfx, shader: Arc<Shader>) -> Resu
         materials.len()
     );
 
-    let model = ModelBuilder::new().meshes(meshes).build(gfx, shader);
+    let model = ModelBuilder::new().meshes(meshes).build(shader);
 
     Ok(model)
 }

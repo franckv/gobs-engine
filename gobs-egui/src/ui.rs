@@ -55,7 +55,7 @@ impl UIRenderer {
 
         let to_remove = output.textures_delta.free.clone();
 
-        let models = self.load_models(gfx, &self.ctx, self.shader.clone(), output);
+        let models = self.load_models(&self.ctx, self.shader.clone(), output);
 
         self.cleanup_textures(to_remove);
 
@@ -186,7 +186,6 @@ impl UIRenderer {
 
     fn load_models(
         &self,
-        gfx: &Gfx,
         ctx: &Context,
         shader: Arc<Shader>,
         output: FullOutput,
@@ -219,7 +218,7 @@ impl UIRenderer {
                 let mesh = mesh.build();
                 let model = ModelBuilder::new()
                     .add_mesh(mesh, self.font_texture.get(&m.texture_id).cloned())
-                    .build(gfx, shader.clone());
+                    .build(shader.clone());
 
                 models.push(model);
             }

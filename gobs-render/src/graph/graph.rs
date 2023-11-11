@@ -1,7 +1,11 @@
+use std::sync::Arc;
+
 use crate::context::Gfx;
 use crate::graph::batch::Batch;
 use crate::graph::pass::RenderPass;
 use crate::model::{Texture, TextureType};
+use crate::resources::ResourceManager;
+use crate::shader::Shader;
 
 #[derive(Debug)]
 pub enum RenderError {
@@ -12,12 +16,13 @@ pub enum RenderError {
 
 pub struct RenderGraph {
     name: String,
+    resource_manager: ResourceManager,
     passes: Vec<RenderPass>,
     depth_texture: Texture,
 }
 
 impl RenderGraph {
-    pub fn new(name: &str, gfx: &Gfx) -> Self {
+    pub fn new(name: &str, gfx: &Gfx, shaders: &[Arc<Shader>]) -> Self {
         let depth_texture = Texture::new(
             gfx,
             "depth_texture",
@@ -27,10 +32,18 @@ impl RenderGraph {
             &[],
         );
 
-        let passes = vec![RenderPass::new("Forward Pass")];
+        let mut passes = vec![RenderPass::new("Forward Pass", true)];
+        for shader in shaders {
+            passes.push(RenderPass::with_shader(
+                "Shader pass",
+                shader.clone(),
+                false,
+            ));
+        }
 
         RenderGraph {
             name: name.to_string(),
+            resource_manager: ResourceManager::new(),
             passes,
             depth_texture,
         }
@@ -67,7 +80,9 @@ impl RenderGraph {
 
         for pass in &self.passes {
             pass.render(
+                gfx,
                 &mut encoder,
+                &mut self.resource_manager,
                 &surface_view,
                 &self.depth_texture.view,
                 &batch,

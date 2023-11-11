@@ -44,7 +44,7 @@ impl Run for App {
         let phong_shader = examples::phong_shader(gfx).await;
         let solid_shader = examples::solid_shader(gfx).await;
 
-        let mut scene = Scene::new(gfx, camera, light, phong_shader.clone()).await;
+        let mut scene = Scene::new(gfx, camera, light, phong_shader.clone(), &[]).await;
 
         let model = scene
             .load_model(gfx, examples::CUBE, phong_shader.clone())
@@ -60,7 +60,7 @@ impl Run for App {
                 ),
                 None,
             )
-            .build(gfx, solid_shader.clone());
+            .build(solid_shader.clone());
 
         let material = MaterialBuilder::new("diffuse")
             .diffuse_texture(gfx, examples::WALL_TEXTURE)
@@ -74,7 +74,7 @@ impl Run for App {
                 scene::shape::Shapes::cube(3, 2, &[5, 5, 5, 5, 6, 4]),
                 Some(material),
             )
-            .build(gfx, phong_shader);
+            .build(phong_shader);
 
         let light_model = scene
             .load_model(gfx, examples::LIGHT, solid_shader)
