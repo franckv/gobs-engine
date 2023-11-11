@@ -3,9 +3,9 @@ members = [
     "examples",
     "gobs-egui",
     "gobs-game",
+    "gobs-render",
     "gobs-scene",
     "gobs-utils",
-    "gobs-wgpu",
 ]
 resolver = "2"
 

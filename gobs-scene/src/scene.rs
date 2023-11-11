@@ -4,7 +4,7 @@ use anyhow::Result;
 use glam::{Quat, Vec3};
 use log::*;
 
-use gobs_wgpu as render;
+use gobs_render as render;
 
 use render::model::{Model, Texture, TextureType};
 use render::render::{Batch, Gfx, RenderError};

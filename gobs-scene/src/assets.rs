@@ -5,7 +5,7 @@ use anyhow::Result;
 use log::*;
 
 use gobs_utils as utils;
-use gobs_wgpu as render;
+use gobs_render as render;
 
 use render::model::{Material, Mesh, MeshBuilder, Model, ModelBuilder, Texture};
 use render::shader::Shader;

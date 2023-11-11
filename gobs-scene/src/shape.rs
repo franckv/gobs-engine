@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use glam::{Vec2, Vec4};
-use gobs_wgpu as render;
+use gobs_render as render;
 
 use render::model::{Mesh, MeshBuilder};
 

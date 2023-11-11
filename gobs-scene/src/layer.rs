@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use glam::{Quat, Vec3};
 
-use gobs_wgpu as render;
+use gobs_render as render;
 
 use render::{
     model::{InstanceData, Model, ModelInstance},

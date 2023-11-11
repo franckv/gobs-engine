@@ -7,7 +7,7 @@ use egui::{
 use glam::{Vec2, Vec3, Vec4};
 
 use gobs_game::input::Input;
-use gobs_wgpu as render;
+use gobs_render as render;
 
 use log::info;
 use render::{

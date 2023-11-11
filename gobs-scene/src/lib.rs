@@ -7,7 +7,7 @@ pub mod scene;
 pub mod shape;
 pub mod transform;
 
-use gobs_wgpu as render;
+use gobs_render as render;
 
 pub use render::model::{
     InstanceFlag, Material, MaterialBuilder, Mesh, MeshBuilder, Model, ModelBuilder, Texture,

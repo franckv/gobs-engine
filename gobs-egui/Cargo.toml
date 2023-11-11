@@ -7,7 +7,7 @@ edition = { workspace = true }
 [dependencies]
 bytemuck = { workspace = true }
 gobs-game = { path = "../gobs-game" }
-gobs-wgpu = { path = "../gobs-wgpu" }
+gobs-render = { path = "../gobs-render" }
 log = { workspace = true }
 eframe = { workspace = true }
 egui = { workspace = true }
