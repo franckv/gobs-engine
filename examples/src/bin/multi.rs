@@ -80,7 +80,7 @@ impl Run for App {
 
         let cube = ModelBuilder::new()
             .add_mesh(
-                scene::shape::Shapes::cube(3, 2, &[5, 5, 5, 5, 6, 4]),
+                scene::shape::Shapes::cube(1, 1, &[1]),
                 Some(material),
             )
             .build(phong_shader);

@@ -57,22 +57,29 @@ impl Run for App {
         .await;
         scene.toggle_pass(&wire_shader.name);
 
-        let material = MaterialBuilder::new("diffuse")
+        let wall_material = MaterialBuilder::new("diffuse")
             .diffuse_texture(gfx, examples::WALL_TEXTURE)
             .await
             .normal_texture(gfx, examples::WALL_TEXTURE_N)
             .await
             .build(gfx);
 
+        let floor_material = MaterialBuilder::new("diffuse")
+            .diffuse_texture(gfx, examples::FLOOR_TEXTURE)
+            .await
+            .normal_texture(gfx, examples::FLOOR_TEXTURE_N)
+            .await
+            .build(gfx);
+
         let wall_model = ModelBuilder::new()
             .add_mesh(
-                scene::shape::Shapes::cube(3, 2, &[5, 5, 5, 5, 6, 4]),
-                Some(material.clone()),
+                scene::shape::Shapes::cube(1, 1, &[1]),
+                Some(wall_material.clone()),
             )
             .build(phong_shader.clone());
 
         let floor_model = ModelBuilder::new()
-            .add_mesh(scene::shape::Shapes::cube(3, 2, &[4]), Some(material))
+            .add_mesh(scene::shape::Shapes::cube(3, 2, &[4]), Some(floor_material))
             .build(phong_shader);
 
         let (pos_x, pos_y, pos_z) = Self::load_scene(&mut scene, wall_model, floor_model);

@@ -15,8 +15,10 @@ pub const MAP: &str = include_str!("../assets/dungeon.map");
 pub const CUBE: &str = "cube.obj";
 pub const LIGHT: &str = "sphere.obj";
 pub const TILE_SIZE: f32 = 1.;
-pub const WALL_TEXTURE: &str = "tileset.png";
-pub const WALL_TEXTURE_N: &str = "stone_n.png";
+pub const WALL_TEXTURE: &str = "wall.png";
+pub const WALL_TEXTURE_N: &str = "wall_n.png";
+pub const FLOOR_TEXTURE: &str = "floor.png";
+pub const FLOOR_TEXTURE_N: &str = "floor_n.png";
 pub const WIRE_PASS: &str = "Wire";
 
 pub fn init_logger() {
@@ -29,7 +31,7 @@ pub fn init_logger() {
 
     let _ = CombinedLogger::init(vec![
         TermLogger::new(
-            LevelFilter::Warn,
+            LevelFilter::Info,
             config_other,
             TerminalMode::Mixed,
             ColorChoice::Auto,

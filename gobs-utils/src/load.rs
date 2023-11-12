@@ -19,8 +19,8 @@ pub fn get_asset_dir(file_name: &str, ty: AssetType) -> Result<PathBuf> {
         .ok_or(Error::from(ErrorKind::NotFound))?;
     let path = match ty {
         AssetType::SHADER => current_dir.join("shaders"),
-        AssetType::MODEL => current_dir.join("assets"),
-        AssetType::IMAGE => current_dir.join("assets"),
+        AssetType::MODEL => current_dir.join("assets/models"),
+        AssetType::IMAGE => current_dir.join("assets/textures"),
     };
 
     Ok(path.join(file_name))
