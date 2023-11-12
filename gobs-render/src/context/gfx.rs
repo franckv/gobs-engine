@@ -4,7 +4,7 @@ use wgpu::util::DeviceExt;
 use winit::window::Window;
 
 use crate::context::Display;
-use crate::model::{InstanceData, VertexData, VertexFlag};
+use crate::model::{InstanceData, InstanceFlag, VertexData, VertexFlag};
 use crate::resources::{CameraResource, LightResource};
 
 pub struct Gfx {
@@ -155,10 +155,14 @@ impl Gfx {
             })
     }
 
-    pub fn create_instance_buffer(&self, instance_data: &Vec<InstanceData>) -> wgpu::Buffer {
+    pub fn create_instance_buffer(
+        &self,
+        instance_data: &Vec<InstanceData>,
+        flags: InstanceFlag,
+    ) -> wgpu::Buffer {
         let bytes = instance_data
             .iter()
-            .map(|d| d.raw())
+            .map(|d| d.raw(flags))
             .flat_map(|s| s)
             .collect::<Vec<u8>>();
 
@@ -174,10 +178,11 @@ impl Gfx {
         &self,
         instance_buffer: &wgpu::Buffer,
         instance_data: &Vec<InstanceData>,
+        flags: InstanceFlag,
     ) {
         let bytes = instance_data
             .iter()
-            .map(|d| d.raw())
+            .map(|d| d.raw(flags))
             .flat_map(|s| s)
             .collect::<Vec<u8>>();
 

@@ -46,7 +46,7 @@ impl RenderPass {
             };
 
             if let Some(instance_data) = item.instances {
-                resource_manager.update_instance_data(gfx, item.model.clone(), instance_data);
+                resource_manager.update_instance_data(gfx, &item.model, shader, instance_data);
             }
 
             for (mesh, material) in &item.model.meshes {
@@ -120,7 +120,7 @@ impl RenderPass {
             render_pass.set_bind_group(0, &batch.camera_resource.bind_group, &[]);
             render_pass.set_bind_group(1, &batch.light_resource.bind_group, &[]);
 
-            let model_instance = resource_manager.instance_data(item.model.clone());
+            let model_instance = resource_manager.instance_data(&item.model, shader);
 
             render_pass.set_vertex_buffer(1, model_instance.instance_buffer.slice(..));
             for (mesh, material) in &item.model.meshes {

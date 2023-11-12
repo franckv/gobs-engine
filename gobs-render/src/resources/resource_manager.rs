@@ -1,5 +1,4 @@
 use std::collections::HashMap;
-use std::sync::Arc;
 
 use crate::model::{InstanceData, Model, ModelId};
 use crate::resources::mesh::MeshData;
@@ -13,7 +12,7 @@ use crate::{
 pub struct ResourceManager {
     mesh_buffers: HashMap<(MeshId, ShaderId), MeshData>,
     material_bind_groups: HashMap<MaterialId, wgpu::BindGroup>,
-    instance_buffers: HashMap<ModelId, ModelInstance>,
+    instance_buffers: HashMap<(ModelId, ShaderId), ModelInstance>,
 }
 
 impl ResourceManager {
@@ -28,29 +27,38 @@ impl ResourceManager {
     pub fn update_instance_data(
         &mut self,
         gfx: &Gfx,
-        model: Arc<Model>,
+        model: &Model,
+        shader: &Shader,
         instances: &Vec<InstanceData>,
     ) {
-        if !self.instance_buffers.contains_key(&model.id) {
-            let instance_buffer = gfx.create_instance_buffer(instances);
+        let key = (model.id, shader.id);
+
+        if !self.instance_buffers.contains_key(&key) {
+            let instance_buffer = gfx.create_instance_buffer(instances, shader.instance_flags);
 
             self.instance_buffers.insert(
-                model.id,
+                key,
                 ModelInstance {
                     instance_buffer,
                     instance_count: instances.len(),
                 },
             );
         } else {
-            let model_instance = self.instance_buffers.get_mut(&model.id).unwrap();
+            let model_instance = self.instance_buffers.get_mut(&key).unwrap();
 
-            gfx.update_instance_buffer(&model_instance.instance_buffer, instances);
+            gfx.update_instance_buffer(
+                &model_instance.instance_buffer,
+                instances,
+                shader.instance_flags,
+            );
             model_instance.instance_count = instances.len();
         }
     }
 
-    pub fn instance_data(&self, model: Arc<Model>) -> &ModelInstance {
-        let model_instance = self.instance_buffers.get(&model.id).unwrap();
+    pub fn instance_data(&self, model: &Model, shader: &Shader) -> &ModelInstance {
+        let key = (model.id, shader.id);
+
+        let model_instance = self.instance_buffers.get(&key).unwrap();
 
         model_instance
     }

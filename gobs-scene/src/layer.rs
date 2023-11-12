@@ -51,7 +51,7 @@ impl Layer {
                 self.instances.insert(model_id, Vec::new());
             }
 
-            let instance_data = InstanceData::new(node.model().shader.instance_flags)
+            let instance_data = InstanceData::new()
                 .model_transform(
                     node.transform().translation,
                     node.transform().rotation,

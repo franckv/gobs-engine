@@ -11,7 +11,6 @@ bitflags! {
 }
 
 pub struct InstanceDataBuilder {
-    flags: InstanceFlag,
     model: Option<Mat4>,
     normal: Option<Mat3>,
     texture_map: Option<Vec4>,
@@ -48,7 +47,6 @@ impl InstanceDataBuilder {
 
     pub fn build(self) -> InstanceData {
         InstanceData {
-            flags: self.flags,
             model: self.model.unwrap_or(Mat4::IDENTITY),
             normal: self.normal.unwrap_or(Mat3::IDENTITY),
             texture_map: self.texture_map.unwrap_or(Vec4::new(0., 1., 0., 1.)),
@@ -57,34 +55,32 @@ impl InstanceDataBuilder {
 }
 
 pub struct InstanceData {
-    flags: InstanceFlag,
     model: Mat4,
     normal: Mat3,
     texture_map: Vec4,
 }
 
 impl InstanceData {
-    pub fn new(flags: InstanceFlag) -> InstanceDataBuilder {
+    pub fn new() -> InstanceDataBuilder {
         InstanceDataBuilder {
-            flags,
             model: None,
             normal: None,
             texture_map: None,
         }
     }
 
-    pub fn raw(&self) -> Vec<u8> {
+    pub fn raw(&self, flags: InstanceFlag) -> Vec<u8> {
         let mut data: Vec<u8> = Vec::new();
 
-        if self.flags.contains(InstanceFlag::MODEL) {
+        if flags.contains(InstanceFlag::MODEL) {
             data.extend_from_slice(bytemuck::cast_slice(&self.model.to_cols_array()));
         };
 
-        if self.flags.contains(InstanceFlag::NORMAL) {
+        if flags.contains(InstanceFlag::NORMAL) {
             data.extend_from_slice(bytemuck::cast_slice(&self.normal.to_cols_array()));
         };
 
-        if self.flags.contains(InstanceFlag::TEXTURE) {
+        if flags.contains(InstanceFlag::TEXTURE) {
             data.extend_from_slice(bytemuck::cast_slice(&self.texture_map.to_array()));
         };
 
