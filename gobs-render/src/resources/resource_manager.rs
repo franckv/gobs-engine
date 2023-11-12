@@ -34,24 +34,13 @@ impl ResourceManager {
         let key = (model.id, shader.id);
 
         if !self.instance_buffers.contains_key(&key) {
-            let instance_buffer = gfx.create_instance_buffer(instances, shader.instance_flags);
+            let model_instance = ModelInstance::new(gfx, instances, shader.instance_flags);
 
-            self.instance_buffers.insert(
-                key,
-                ModelInstance {
-                    instance_buffer,
-                    instance_count: instances.len(),
-                },
-            );
+            self.instance_buffers.insert(key, model_instance);
         } else {
             let model_instance = self.instance_buffers.get_mut(&key).unwrap();
 
-            gfx.update_instance_buffer(
-                &model_instance.instance_buffer,
-                instances,
-                shader.instance_flags,
-            );
-            model_instance.instance_count = instances.len();
+            model_instance.update(gfx, instances, shader.instance_flags);
         }
     }
 

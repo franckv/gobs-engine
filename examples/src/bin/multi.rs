@@ -79,10 +79,7 @@ impl Run for App {
             .build(gfx);
 
         let cube = ModelBuilder::new()
-            .add_mesh(
-                scene::shape::Shapes::cube(1, 1, &[1]),
-                Some(material),
-            )
+            .add_mesh(scene::shape::Shapes::cube(1, 1, &[1]), Some(material))
             .build(phong_shader);
 
         let light_model = scene

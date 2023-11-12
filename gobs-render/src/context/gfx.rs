@@ -4,7 +4,7 @@ use wgpu::util::DeviceExt;
 use winit::window::Window;
 
 use crate::context::Display;
-use crate::model::{InstanceData, InstanceFlag, VertexData, VertexFlag};
+use crate::model::{VertexData, VertexFlag};
 use crate::resources::{CameraResource, LightResource};
 
 pub struct Gfx {
@@ -153,40 +153,5 @@ impl Gfx {
                 contents: bytemuck::cast_slice(atlas),
                 usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
             })
-    }
-
-    pub fn create_instance_buffer(
-        &self,
-        instance_data: &Vec<InstanceData>,
-        flags: InstanceFlag,
-    ) -> wgpu::Buffer {
-        let bytes = instance_data
-            .iter()
-            .map(|d| d.raw(flags))
-            .flat_map(|s| s)
-            .collect::<Vec<u8>>();
-
-        self.device
-            .create_buffer_init(&wgpu::util::BufferInitDescriptor {
-                label: Some("Instance Buffer"),
-                contents: bytes.as_slice(),
-                usage: wgpu::BufferUsages::VERTEX | wgpu::BufferUsages::COPY_DST,
-            })
-    }
-
-    pub fn update_instance_buffer(
-        &self,
-        instance_buffer: &wgpu::Buffer,
-        instance_data: &Vec<InstanceData>,
-        flags: InstanceFlag,
-    ) {
-        let bytes = instance_data
-            .iter()
-            .map(|d| d.raw(flags))
-            .flat_map(|s| s)
-            .collect::<Vec<u8>>();
-
-        self.queue
-            .write_buffer(instance_buffer, 0, bytes.as_slice())
     }
 }

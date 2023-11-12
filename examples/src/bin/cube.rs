@@ -48,10 +48,7 @@ impl Run for App {
             .build(gfx);
 
         let cube = ModelBuilder::new()
-            .add_mesh(
-                scene::shape::Shapes::cube(1, 1, &[1]),
-                Some(material),
-            )
+            .add_mesh(scene::shape::Shapes::cube(1, 1, &[1]), Some(material))
             .build(shader);
 
         scene.add_node(CUBE_LAYER, Vec3::ZERO, Quat::IDENTITY, Vec3::ONE, cube);
