@@ -34,11 +34,7 @@ impl RenderGraph {
 
         let mut passes = vec![RenderPass::new("Forward Pass", true)];
         for shader in shaders {
-            passes.push(RenderPass::with_shader(
-                &shader.name,
-                shader.clone(),
-                false,
-            ));
+            passes.push(RenderPass::with_shader(&shader.name, shader.clone(), false));
         }
 
         RenderGraph {

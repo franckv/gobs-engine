@@ -21,7 +21,7 @@ impl RenderPass {
             name: name.to_string(),
             shader: None,
             clear,
-            enabled: true
+            enabled: true,
         }
     }
 
@@ -30,7 +30,7 @@ impl RenderPass {
             name: name.to_string(),
             shader: Some(shader),
             clear,
-            enabled: true
+            enabled: true,
         }
     }
 
@@ -44,6 +44,10 @@ impl RenderPass {
                 Some(shader) => shader,
                 None => &item.model.shader,
             };
+
+            if let Some(instance_data) = item.instances {
+                resource_manager.update_instance_data(gfx, item.model.clone(), instance_data);
+            }
 
             for (mesh, material) in &item.model.meshes {
                 resource_manager.update_mesh_buffer(gfx, mesh, shader);
@@ -70,9 +74,9 @@ impl RenderPass {
         batch: &Batch<'_>,
     ) {
         if !self.enabled {
-            return
+            return;
         }
-        
+
         self.prepare(gfx, resource_manager, batch);
 
         let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
@@ -116,7 +120,9 @@ impl RenderPass {
             render_pass.set_bind_group(0, &batch.camera_resource.bind_group, &[]);
             render_pass.set_bind_group(1, &batch.light_resource.bind_group, &[]);
 
-            render_pass.set_vertex_buffer(1, item.instances_buffer.unwrap().slice(..));
+            let model_instance = resource_manager.instance_data(item.model.clone());
+
+            render_pass.set_vertex_buffer(1, model_instance.instance_buffer.slice(..));
             for (mesh, material) in &item.model.meshes {
                 let mesh_data = resource_manager.mesh_buffer(mesh, shader);
                 render_pass.set_vertex_buffer(0, mesh_data.vertex_buffer.slice(..));
@@ -132,7 +138,7 @@ impl RenderPass {
                 render_pass.draw_indexed(
                     0..mesh.indices.len() as _,
                     0,
-                    0..item.instances_count as _,
+                    0..model_instance.instance_count as _,
                 );
             }
             render_pass.pop_debug_group();

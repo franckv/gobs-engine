@@ -44,3 +44,9 @@ pub struct Model {
     pub shader: Arc<Shader>,
     pub meshes: Vec<(Arc<Mesh>, Option<Arc<Material>>)>,
 }
+
+impl PartialEq for Model {
+    fn eq(&self, other: &Self) -> bool {
+        self.id == other.id
+    }
+}

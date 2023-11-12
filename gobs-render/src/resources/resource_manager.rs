@@ -1,6 +1,9 @@
 use std::collections::HashMap;
+use std::sync::Arc;
 
+use crate::model::{InstanceData, Model, ModelId};
 use crate::resources::mesh::MeshData;
+use crate::resources::ModelInstance;
 use crate::{
     context::Gfx,
     model::{Material, MaterialId, Mesh, MeshId},
@@ -10,6 +13,7 @@ use crate::{
 pub struct ResourceManager {
     mesh_buffers: HashMap<(MeshId, ShaderId), MeshData>,
     material_bind_groups: HashMap<MaterialId, wgpu::BindGroup>,
+    instance_buffers: HashMap<ModelId, ModelInstance>,
 }
 
 impl ResourceManager {
@@ -17,7 +21,38 @@ impl ResourceManager {
         ResourceManager {
             mesh_buffers: HashMap::new(),
             material_bind_groups: HashMap::new(),
+            instance_buffers: HashMap::new(),
         }
+    }
+
+    pub fn update_instance_data(
+        &mut self,
+        gfx: &Gfx,
+        model: Arc<Model>,
+        instances: &Vec<InstanceData>,
+    ) {
+        if !self.instance_buffers.contains_key(&model.id) {
+            let instance_buffer = gfx.create_instance_buffer(instances);
+
+            self.instance_buffers.insert(
+                model.id,
+                ModelInstance {
+                    instance_buffer,
+                    instance_count: instances.len(),
+                },
+            );
+        } else {
+            let model_instance = self.instance_buffers.get_mut(&model.id).unwrap();
+
+            gfx.update_instance_buffer(&model_instance.instance_buffer, instances);
+            model_instance.instance_count = instances.len();
+        }
+    }
+
+    pub fn instance_data(&self, model: Arc<Model>) -> &ModelInstance {
+        let model_instance = self.instance_buffers.get(&model.id).unwrap();
+
+        model_instance
     }
 
     pub fn update_material_bind_group(

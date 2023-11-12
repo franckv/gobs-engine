@@ -1,10 +1,11 @@
-use crate::model::Model;
+use std::sync::Arc;
+
+use crate::model::{InstanceData, Model};
 use crate::resources::{CameraResource, LightResource};
 
 pub struct BatchItem<'a> {
-    pub(crate) model: &'a Model,
-    pub(crate) instances_buffer: Option<&'a wgpu::Buffer>,
-    pub(crate) instances_count: usize,
+    pub(crate) model: Arc<Model>,
+    pub(crate) instances: Option<&'a Vec<InstanceData>>,
 }
 
 pub struct BatchBuilder<'a> {
@@ -34,28 +35,23 @@ impl<'a> BatchBuilder<'a> {
         self
     }
 
-    pub fn draw(mut self, model: &'a Model) -> Self {
+    /*
+       pub fn draw(mut self, model: &'a Model) -> Self {
+           let item = BatchItem {
+               model,
+               instances_buffer: None,
+               instances_count: 0,
+           };
+
+           self.items.push(item);
+
+           self
+       }
+    */
+    pub fn draw_indexed(mut self, model: Arc<Model>, instances: &'a Vec<InstanceData>) -> Self {
         let item = BatchItem {
             model,
-            instances_buffer: None,
-            instances_count: 0,
-        };
-
-        self.items.push(item);
-
-        self
-    }
-
-    pub fn draw_indexed(
-        mut self,
-        model: &'a Model,
-        instances_buffer: &'a wgpu::Buffer,
-        instances_count: usize,
-    ) -> Self {
-        let item = BatchItem {
-            model,
-            instances_buffer: Some(instances_buffer),
-            instances_count,
+            instances: Some(instances),
         };
 
         self.items.push(item);

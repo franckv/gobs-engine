@@ -45,7 +45,14 @@ impl Run for App {
         let solid_shader = examples::solid_shader(gfx).await;
         let wire_shader = examples::wire_shader(gfx).await;
 
-        let mut scene = Scene::new(gfx, camera, light, phong_shader.clone(), &[wire_shader.clone()]).await;
+        let mut scene = Scene::new(
+            gfx,
+            camera,
+            light,
+            phong_shader.clone(),
+            &[wire_shader.clone()],
+        )
+        .await;
         scene.toggle_pass(&wire_shader.name);
 
         let model = scene

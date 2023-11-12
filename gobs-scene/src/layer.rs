@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::{collections::HashMap, sync::Arc};
 
 use glam::{Quat, Vec3};
 
@@ -7,7 +7,7 @@ use gobs_render as render;
 use render::{
     context::Gfx,
     graph::batch::BatchBuilder,
-    model::{InstanceData, Model, ModelInstance},
+    model::{InstanceData, Model, ModelId},
 };
 
 use crate::data::Node;
@@ -16,7 +16,8 @@ pub struct Layer {
     pub name: String,
     pub visible: bool,
     pub nodes: Vec<Node<Arc<Model>>>,
-    models: Vec<ModelInstance>,
+    pub models: Vec<Arc<Model>>,
+    pub instances: HashMap<ModelId, Vec<InstanceData>>,
 }
 
 impl Layer {
@@ -26,62 +27,51 @@ impl Layer {
             visible: true,
             nodes: Vec::new(),
             models: Vec::new(),
+            instances: HashMap::new(),
         }
     }
 
     pub fn add_node(&mut self, position: Vec3, rotation: Quat, scale: Vec3, model: Arc<Model>) {
-        let exist = self.models.iter().find(|m| m.model.id == model.id);
-
-        if exist.is_none() {
-            let model_instance = ModelInstance {
-                model: model.clone(),
-                instance_buffer: None,
-                instance_count: 0,
-            };
-
-            self.models.push(model_instance);
-        };
         let node = Node::new(position, rotation, scale, model);
         self.nodes.push(node);
     }
 
-    pub fn update(&mut self, gfx: &Gfx) {
-        for model in &mut self.models {
-            let instance_data = self
-                .nodes
-                .iter()
-                .filter(|n| n.model().id == model.model.id)
-                .map(|n| {
-                    InstanceData::new(model.model.shader.instance_flags)
-                        .model_transform(
-                            n.transform().translation,
-                            n.transform().rotation,
-                            n.transform().scale,
-                        )
-                        .normal_rot(n.transform().rotation)
-                        .build()
-                })
-                .collect::<Vec<_>>();
+    pub fn update(&mut self, _gfx: &Gfx) {
+        self.models.clear();
+        self.instances.clear();
 
-            match &model.instance_buffer {
-                Some(instance_buffer) => {
-                    gfx.update_instance_buffer(&instance_buffer, &instance_data);
-                }
-                None => {
-                    model.instance_buffer = Some(gfx.create_instance_buffer(&instance_data));
-                }
+        for node in &self.nodes {
+            let model_id = node.model().id;
+
+            if !self.models.contains(&node.model()) {
+                self.models.push(node.model().clone());
             }
-            model.instance_count = instance_data.len();
+
+            if !self.instances.contains_key(&model_id) {
+                self.instances.insert(model_id, Vec::new());
+            }
+
+            let instance_data = InstanceData::new(node.model().shader.instance_flags)
+                .model_transform(
+                    node.transform().translation,
+                    node.transform().rotation,
+                    node.transform().scale,
+                )
+                .normal_rot(node.transform().rotation)
+                .build();
+
+            self.instances
+                .get_mut(&model_id)
+                .unwrap()
+                .push(instance_data);
         }
     }
 
     pub fn render<'a>(&'a self, mut batch: BatchBuilder<'a>) -> BatchBuilder<'a> {
-        for instance in &self.models {
-            batch = batch.draw_indexed(
-                &instance.model,
-                instance.instance_buffer.as_ref().unwrap(),
-                instance.instance_count,
-            );
+        for model in &self.models {
+            let instances = self.instances.get(&model.id).unwrap();
+
+            batch = batch.draw_indexed(model.clone(), instances);
         }
 
         batch
