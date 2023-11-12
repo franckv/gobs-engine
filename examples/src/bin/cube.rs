@@ -82,7 +82,7 @@ impl Run for App {
 
         self.scene.light.update(position);
 
-        for node in &mut self.scene.layer_mut(CUBE_LAYER).nodes {
+        for node in self.scene.layer_mut(CUBE_LAYER).nodes_mut() {
             node.rotate(rot_delta_model);
         }
 

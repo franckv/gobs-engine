@@ -55,7 +55,7 @@ impl Run for App {
             });
         });
 
-        self.scene.layer_mut(UI_LAYER).nodes.clear();
+        self.scene.layer_mut(UI_LAYER).nodes_mut().clear();
 
         models.into_iter().for_each(|m| {
             self.scene

@@ -115,7 +115,7 @@ impl Run for App {
 
         self.scene.light.update(position);
 
-        for node in &mut self.scene.layer_mut(LIGHT_LAYER).nodes {
+        for node in self.scene.layer_mut(LIGHT_LAYER).nodes_mut() {
             if node.model().id == self.light_model.id {
                 node.move_to_position(position);
             }

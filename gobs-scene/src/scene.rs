@@ -73,6 +73,10 @@ impl Scene {
 
     pub fn resize(&mut self, width: u32, height: u32) {
         self.camera.resize(width, height);
+
+        for layer in &mut self.layers {
+            layer.resize(width, height);
+        }
     }
 
     pub fn toggle_pass(&mut self, pass_name: &str) {
@@ -89,7 +93,7 @@ impl Scene {
             .update(gfx, self.light.position.into(), self.light.colour.into());
 
         for layer in &mut self.layers {
-            if layer.visible {
+            if layer.visible() {
                 layer.update(gfx);
             }
         }
@@ -107,7 +111,7 @@ impl Scene {
     }
 
     pub fn toggle_layer(&mut self, layer_name: &str) {
-        self.layer_mut(layer_name).visible = !self.layer_mut(layer_name).visible;
+        self.layer_mut(layer_name).toggle();
     }
 
     pub fn add_node(
@@ -128,7 +132,7 @@ impl Scene {
             .light_resource(&self.light_resource);
 
         for layer in &self.layers {
-            if layer.visible {
+            if layer.visible() {
                 batch = layer.render(batch);
             }
         }
