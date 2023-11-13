@@ -17,6 +17,14 @@ pub struct InstanceDataBuilder {
 }
 
 impl InstanceDataBuilder {
+    pub fn new() -> Self {
+        InstanceDataBuilder {
+            model: None,
+            normal: None,
+            texture_map: None,
+        }
+    }
+
     pub fn model(mut self, model: Mat4) -> Self {
         self.model = Some(model);
 
@@ -61,14 +69,6 @@ pub struct InstanceData {
 }
 
 impl InstanceData {
-    pub fn new() -> InstanceDataBuilder {
-        InstanceDataBuilder {
-            model: None,
-            normal: None,
-            texture_map: None,
-        }
-    }
-
     pub fn raw(&self, flags: InstanceFlag) -> Vec<u8> {
         let mut data: Vec<u8> = Vec::new();
 

@@ -21,7 +21,7 @@ impl Display {
         config: wgpu::SurfaceConfiguration,
         device: &wgpu::Device,
     ) -> Self {
-        surface.configure(&device, &config);
+        surface.configure(device, &config);
 
         Display { surface, config }
     }

@@ -93,7 +93,7 @@ impl<'a> PipelineBuilder<'a> {
 
         let layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
             label: Some("Render Pipeline Layout"),
-            bind_group_layouts: &self.bind_layouts.as_slice(),
+            bind_group_layouts: self.bind_layouts.as_slice(),
             push_constant_ranges: &[],
         });
 

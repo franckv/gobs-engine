@@ -60,8 +60,8 @@ impl Camera {
             id: Uuid::new_v4(),
             position: position.into(),
             mode: ProjectionMode::Perspective(projection),
-            yaw: yaw.into(),
-            pitch: pitch.into(),
+            yaw,
+            pitch,
             up,
         }
     }
@@ -87,8 +87,8 @@ impl Camera {
             id: Uuid::new_v4(),
             position: position.into(),
             mode: ProjectionMode::Ortho(projection),
-            yaw: yaw.into(),
-            pitch: pitch.into(),
+            yaw,
+            pitch,
             up,
         }
     }

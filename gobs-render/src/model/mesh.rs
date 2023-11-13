@@ -5,7 +5,7 @@ use glam::{Vec2, Vec3, Vec4};
 use log::info;
 use uuid::Uuid;
 
-use crate::model::VertexData;
+use crate::model::{VertexData, VertexDataBuilder};
 
 pub struct MeshBuilder {
     name: String,
@@ -31,7 +31,7 @@ impl MeshBuilder {
         normal: Vec3,
         normal_texture: Vec2,
     ) -> Self {
-        let vertex = VertexData::new()
+        let vertex = VertexDataBuilder::new()
             .position(position)
             .color(color)
             .texture(texture)
@@ -53,7 +53,7 @@ impl MeshBuilder {
     }
 
     fn autoindex(mut self) -> Self {
-        if self.indices.len() > 0 {
+        if !self.indices.is_empty() {
             info!("Skip indices");
             return self;
         }
@@ -71,12 +71,12 @@ impl MeshBuilder {
                 if unique.contains_key(&key) {
                     let idx = unique.get(&key).unwrap();
                     self.indices.push(*idx);
-                    return false;
+                    false
                 } else {
                     unique.insert(key, idx);
                     self.indices.push(idx);
                     idx += 1;
-                    return true;
+                    true
                 }
             })
             .collect::<Vec<VertexData>>();
@@ -119,12 +119,12 @@ impl MeshBuilder {
             let tangent = (delta_pos1 * delta_uv2.y - delta_pos2 * delta_uv1.y) * r;
             let bitangent = (delta_pos2 * delta_uv1.x - delta_pos1 * delta_uv2.x) * -r;
 
-            self.vertices[c[0] as usize].set_tangent(tangent + Vec3::from(v0.tangent()));
-            self.vertices[c[1] as usize].set_tangent(tangent + Vec3::from(v1.tangent()));
-            self.vertices[c[2] as usize].set_tangent(tangent + Vec3::from(v2.tangent()));
-            self.vertices[c[0] as usize].set_bitangent(bitangent + Vec3::from(v0.bitangent()));
-            self.vertices[c[1] as usize].set_bitangent(bitangent + Vec3::from(v1.bitangent()));
-            self.vertices[c[2] as usize].set_bitangent(bitangent + Vec3::from(v2.bitangent()));
+            self.vertices[c[0] as usize].set_tangent(tangent + v0.tangent());
+            self.vertices[c[1] as usize].set_tangent(tangent + v1.tangent());
+            self.vertices[c[2] as usize].set_tangent(tangent + v2.tangent());
+            self.vertices[c[0] as usize].set_bitangent(bitangent + v0.bitangent());
+            self.vertices[c[1] as usize].set_bitangent(bitangent + v1.bitangent());
+            self.vertices[c[2] as usize].set_bitangent(bitangent + v2.bitangent());
 
             triangles_included[c[0] as usize] += 1;
             triangles_included[c[1] as usize] += 1;
@@ -134,8 +134,8 @@ impl MeshBuilder {
         for (i, n) in triangles_included.into_iter().enumerate() {
             let denom = 1. / n as f32;
             let v = &mut self.vertices[i];
-            v.set_tangent(Vec3::from(v.tangent()) * denom);
-            v.set_bitangent(Vec3::from(v.bitangent()) * denom);
+            v.set_tangent(v.tangent() * denom);
+            v.set_bitangent(v.bitangent() * denom);
         }
 
         self

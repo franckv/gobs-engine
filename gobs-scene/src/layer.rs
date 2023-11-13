@@ -7,7 +7,7 @@ use gobs_render as render;
 use render::{
     context::Gfx,
     graph::batch::BatchBuilder,
-    model::{InstanceData, Model, ModelId},
+    model::{InstanceData, InstanceDataBuilder, Model, ModelId},
 };
 
 use crate::data::Node;
@@ -73,11 +73,9 @@ impl Layer {
                 self.models.push(node.model().clone());
             }
 
-            if !self.instances.contains_key(&model_id) {
-                self.instances.insert(model_id, Vec::new());
-            }
+            self.instances.entry(model_id).or_default();
 
-            let instance_data = InstanceData::new()
+            let instance_data = InstanceDataBuilder::new()
                 .model_transform(
                     node.transform().translation,
                     node.transform().rotation,

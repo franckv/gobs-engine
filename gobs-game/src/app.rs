@@ -58,12 +58,12 @@ impl Application {
         pollster::block_on(self.run_async::<R>());
     }
 
-    async fn run_async<R>(mut self)
+    async fn run_async<R>(self)
     where
         R: Run + 'static,
     {
         let mut timer = Timer::new();
-        let mut runnable = R::create(&mut self.gfx).await;
+        let mut runnable = R::create(&self.gfx).await;
 
         self.events_loop.run(move |event, _, control_flow| {
             let event = Event::new(event);
@@ -72,10 +72,10 @@ impl Application {
                     log::debug!("Resize to : {}/{}", width, height);
                     self.gfx.resize(width, height);
 
-                    runnable.resize(width, height, &mut self.gfx);
+                    runnable.resize(width, height, &self.gfx);
                 }
                 Event::Input(input) => {
-                    runnable.input(&mut self.gfx, input);
+                    runnable.input(&self.gfx, input);
                 }
                 Event::Close => {
                     log::info!("Stopping");
@@ -85,12 +85,12 @@ impl Application {
                     let delta = timer.delta();
                     log::trace!("FPS: {}", 1. / delta);
 
-                    runnable.update(delta, &mut self.gfx);
-                    match runnable.render(&mut self.gfx) {
+                    runnable.update(delta, &self.gfx);
+                    match runnable.render(&self.gfx) {
                         Ok(_) => {}
                         Err(RenderError::Lost | RenderError::Outdated) => {
                             self.gfx.resize(self.gfx.width(), self.gfx.height());
-                            runnable.resize(self.gfx.width(), self.gfx.height(), &mut self.gfx);
+                            runnable.resize(self.gfx.width(), self.gfx.height(), &self.gfx);
                         }
                         Err(e) => error!("{:?}", e),
                     }

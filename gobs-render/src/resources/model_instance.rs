@@ -11,11 +11,10 @@ pub struct ModelInstance {
 }
 
 impl ModelInstance {
-    pub fn new(gfx: &Gfx, instance_data: &Vec<InstanceData>, flags: InstanceFlag) -> Self {
+    pub fn new(gfx: &Gfx, instance_data: &[InstanceData], flags: InstanceFlag) -> Self {
         let bytes = instance_data
             .iter()
-            .map(|d| d.raw(flags))
-            .flat_map(|s| s)
+            .flat_map(|d| d.raw(flags))
             .collect::<Vec<u8>>();
 
         let instance_buffer = gfx
@@ -32,11 +31,10 @@ impl ModelInstance {
         }
     }
 
-    pub fn update(&mut self, gfx: &Gfx, instance_data: &Vec<InstanceData>, flags: InstanceFlag) {
+    pub fn update(&mut self, gfx: &Gfx, instance_data: &[InstanceData], flags: InstanceFlag) {
         let bytes = instance_data
             .iter()
-            .map(|d| d.raw(flags))
-            .flat_map(|s| s)
+            .flat_map(|d| d.raw(flags))
             .collect::<Vec<u8>>();
 
         gfx.queue()

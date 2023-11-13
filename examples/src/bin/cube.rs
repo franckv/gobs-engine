@@ -74,8 +74,8 @@ impl Run for App {
             (0.1 * angular_speed * delta).to_radians(),
         );
 
-        let old_position: Vec3 = self.scene.light.position;
-        let position: Vec3 = (rot_delta * old_position).into();
+        let old_position = self.scene.light.position;
+        let position = rot_delta * old_position;
 
         self.scene.light.update(position);
 

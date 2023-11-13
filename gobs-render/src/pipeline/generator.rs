@@ -35,8 +35,8 @@ impl Generator {
             ..
         } = ty
         {
-            match kind {
-                naga::ScalarKind::Float => match size {
+            if kind == &naga::ScalarKind::Float {
+                match size {
                     naga::VectorSize::Bi => {
                         if *width == 4 {
                             return Some((wgpu::VertexFormat::Float32x2, 8));
@@ -52,8 +52,7 @@ impl Generator {
                             return Some((wgpu::VertexFormat::Float32x4, 16));
                         }
                     }
-                },
-                _ => (),
+                }
             }
         } else if let Type {
             inner:
@@ -122,7 +121,7 @@ impl Generator {
             } else {
                 wgpu::VertexStepMode::Vertex
             },
-            attributes: &attributes.as_slice(),
+            attributes: attributes.as_slice(),
         }
     }
 
@@ -140,7 +139,7 @@ impl Generator {
                                 let format = self.lookup_type_format(&member.ty).unwrap();
                                 attributes.push(wgpu::VertexAttribute {
                                     format: format.0,
-                                    offset: offset as u64,
+                                    offset,
                                     shader_location: location,
                                 });
                                 offset += format.1;
@@ -168,11 +167,9 @@ impl Generator {
             if let Some(binding) = &var.1.binding {
                 let gid = binding.clone().group;
 
-                if !groups.contains_key(&gid) {
-                    groups.insert(gid, Vec::new());
-                }
+                groups.entry(gid).or_default();
 
-                groups.get_mut(&gid).unwrap().push(&var.1);
+                groups.get_mut(&gid).unwrap().push(var.1);
             }
         }
 
@@ -190,7 +187,7 @@ impl Generator {
                 let label = format!("Bind group {}", i);
 
                 let layout = wgpu::BindGroupLayoutDescriptor {
-                    entries: &(entries.as_slice()),
+                    entries: (entries.as_slice()),
                     label: Some(&label),
                 };
 

@@ -26,7 +26,7 @@ pub struct Scene {
 
 impl Scene {
     pub fn layer_mut(&mut self, layer_name: &str) -> &mut Layer {
-        let exists = self.layers.iter().find(|l| l.name.eq(layer_name)).is_some();
+        let exists = self.layers.iter().any(|l| l.name.eq(layer_name));
 
         if exists {
             self.layers

@@ -47,7 +47,7 @@ impl Run for App {
 
     fn update(&mut self, _delta: f32, gfx: &Gfx) {
         let models = self.ui.update(gfx, |ctx| {
-            egui::CentralPanel::default().show(&ctx, |ui| {
+            egui::CentralPanel::default().show(ctx, |ui| {
                 ui.visuals_mut().override_text_color = Some(egui::Color32::GREEN);
                 ctx.inspection_ui(ui);
                 ctx.settings_ui(ui);

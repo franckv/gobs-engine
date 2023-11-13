@@ -52,7 +52,7 @@ impl Shader {
             .bind_layout(layouts.iter().collect::<Vec<_>>().as_slice())
             .vertex_layout(vertex_layout)
             .vertex_layout(instance_layout)
-            .color_format(gfx.format().clone())
+            .color_format(gfx.format())
             .depth_format(Texture::DEPTH_FORMAT)
             .build();
 

@@ -72,7 +72,7 @@ impl Texture {
 
         let texture = gfx.device().create_texture(&desc);
 
-        if img.len() > 0 {
+        if !img.is_empty() {
             gfx.queue().write_texture(
                 wgpu::ImageCopyTexture {
                     aspect: wgpu::TextureAspect::All,

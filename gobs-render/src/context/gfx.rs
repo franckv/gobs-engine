@@ -111,22 +111,21 @@ impl Gfx {
         LightResource::new(&self.device, layout)
     }
 
-    pub fn create_bind_group_layout<'a>(
+    pub fn create_bind_group_layout(
         &self,
-        layout: &wgpu::BindGroupLayoutDescriptor<'a>,
+        layout: &wgpu::BindGroupLayoutDescriptor<'_>,
     ) -> wgpu::BindGroupLayout {
         self.device.create_bind_group_layout(layout)
     }
 
     pub fn create_vertex_buffer(
         &self,
-        vertex_data: &Vec<VertexData>,
+        vertex_data: &[VertexData],
         flags: VertexFlag,
     ) -> wgpu::Buffer {
         let bytes = vertex_data
             .iter()
-            .map(|v| v.raw(flags))
-            .flat_map(|s| s)
+            .flat_map(|v| v.raw(flags))
             .collect::<Vec<u8>>();
 
         self.device
@@ -137,7 +136,7 @@ impl Gfx {
             })
     }
 
-    pub fn create_index_buffer(&self, indices: &Vec<u32>) -> wgpu::Buffer {
+    pub fn create_index_buffer(&self, indices: &[u32]) -> wgpu::Buffer {
         self.device
             .create_buffer_init(&wgpu::util::BufferInitDescriptor {
                 label: Some("Index Buffer"),
@@ -146,7 +145,7 @@ impl Gfx {
             })
     }
 
-    pub fn create_atlas_buffer(&self, atlas: &Vec<f32>) -> wgpu::Buffer {
+    pub fn create_atlas_buffer(&self, atlas: &[f32]) -> wgpu::Buffer {
         self.device
             .create_buffer_init(&wgpu::util::BufferInitDescriptor {
                 label: Some("Atlas Buffer"),

@@ -132,11 +132,10 @@ impl Run for App {
         self.camera_controller
             .update_camera(&mut self.scene.camera, delta);
 
-        let old_position: Vec3 = self.scene.light.position;
-        let position: Vec3 =
-            (Quat::from_axis_angle((0., 1., 0.).into(), (angular_speed * delta).to_radians())
-                * old_position)
-                .into();
+        let old_position = self.scene.light.position;
+        let position =
+            Quat::from_axis_angle((0., 1., 0.).into(), (angular_speed * delta).to_radians())
+                * old_position;
 
         self.scene.light.update(position);
 

@@ -58,7 +58,7 @@ impl RenderPass {
                     if shader.vertex_flags.contains(VertexFlag::TEXTURE) {
                         resource_manager.update_material_bind_group(
                             gfx,
-                            &material,
+                            material,
                             shader.layout(ShaderBindGroup::Material),
                         );
                     }
@@ -124,9 +124,9 @@ impl RenderPass {
                 &self.name, &shader.pipeline.name
             ));
             render_pass.set_pipeline(&shader.pipeline.pipeline);
-            let camera_resource = resource_manager.camera(&batch.camera, shader);
+            let camera_resource = resource_manager.camera(batch.camera, shader);
             render_pass.set_bind_group(0, &camera_resource.bind_group, &[]);
-            let light_resource = resource_manager.light(&batch.light, shader);
+            let light_resource = resource_manager.light(batch.light, shader);
             render_pass.set_bind_group(1, &light_resource.bind_group, &[]);
 
             let model_instance = resource_manager.instance_data(&item.model, shader);
@@ -139,9 +139,9 @@ impl RenderPass {
                     .set_index_buffer(mesh_data.index_buffer.slice(..), wgpu::IndexFormat::Uint32);
                 if let Some(material) = material {
                     if shader.vertex_flags.contains(VertexFlag::TEXTURE) {
-                        let bind_group = resource_manager.material_bind_group(&material);
+                        let bind_group = resource_manager.material_bind_group(material);
                         render_pass.insert_debug_marker("Draw with texture");
-                        render_pass.set_bind_group(2, &bind_group, &[]);
+                        render_pass.set_bind_group(2, bind_group, &[]);
                     }
                 }
                 render_pass.draw_indexed(

@@ -23,6 +23,19 @@ pub struct VertexDataBuilder {
 }
 
 impl VertexDataBuilder {
+    pub fn new() -> Self {
+        VertexDataBuilder {
+            position: None,
+            color: None,
+            texture: None,
+            normal: None,
+            normal_texture: None,
+            tangent: None,
+            bitangent: None,
+            index: None,
+        }
+    }
+
     pub fn position(mut self, position: Vec3) -> Self {
         self.position = Some(position);
 
@@ -98,19 +111,6 @@ pub struct VertexData {
 }
 
 impl VertexData {
-    pub fn new() -> VertexDataBuilder {
-        VertexDataBuilder {
-            position: None,
-            color: None,
-            texture: None,
-            normal: None,
-            normal_texture: None,
-            tangent: None,
-            bitangent: None,
-            index: None,
-        }
-    }
-
     pub fn position(&self) -> Vec3 {
         self.position
     }

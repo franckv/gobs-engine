@@ -68,11 +68,13 @@ impl UIRenderer {
     }
 
     fn prepare_inputs(&mut self) -> RawInput {
-        let mut input = RawInput::default();
-        input.screen_rect = Some(Rect::from_min_size(
-            Default::default(),
-            [self.width, self.height].into(),
-        ));
+        let mut input = RawInput {
+            screen_rect: Some(Rect::from_min_size(
+                Default::default(),
+                [self.width, self.height].into(),
+            )),
+            ..Default::default()
+        };
 
         self.input.drain(..).for_each(|e| match e {
             Input::KeyPressed(_) => (),
@@ -112,7 +114,7 @@ impl UIRenderer {
     async fn update_textures(&mut self, gfx: &Gfx, output: &FullOutput) {
         for (id, img) in &output.textures_delta.set {
             info!("New texture {:?}", id);
-            if let Some(_) = img.pos {
+            if img.pos.is_some() {
                 info!("Patching texture");
                 self.patch_texture(
                     gfx,
@@ -147,7 +149,7 @@ impl UIRenderer {
                 let bytes: &[u8] = bytemuck::cast_slice(pixels.as_slice());
 
                 let texture = Texture::new(
-                    &gfx,
+                    gfx,
                     "egui",
                     TextureType::IMAGE,
                     img.image.width() as u32,
