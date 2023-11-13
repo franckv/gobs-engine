@@ -8,15 +8,16 @@ bitflags! {
     #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
     pub struct PipelineFlag: u32 {
         const CULLING = 1;
-        const DEPTH = 1 << 1;
-        const LINE = 1 << 2;
-        const ALPHA = 1 << 3;
+        const DEPTH_TEST = 1 << 1;
+        const DEPTH_WRITE = 1 << 2;
+        const LINE = 1 << 3;
+        const ALPHA = 1 << 4;
     }
 }
 
 impl Default for PipelineFlag {
     fn default() -> Self {
-        PipelineFlag::CULLING | PipelineFlag::DEPTH
+        PipelineFlag::CULLING | PipelineFlag::DEPTH_TEST | PipelineFlag::DEPTH_WRITE
     }
 }
 
@@ -138,7 +139,7 @@ impl<'a> PipelineBuilder<'a> {
 
         let depth_stencil = self.depth_format.map(|format| wgpu::DepthStencilState {
             format,
-            depth_write_enabled: self.flags.contains(PipelineFlag::DEPTH),
+            depth_write_enabled: self.flags.contains(PipelineFlag::DEPTH_WRITE),
             depth_compare: wgpu::CompareFunction::Less,
             stencil: wgpu::StencilState::default(),
             bias: wgpu::DepthBiasState::default(),

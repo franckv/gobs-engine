@@ -64,7 +64,7 @@ pub async fn phong_shader(gfx: &Gfx) -> Arc<Shader> {
         "phong.wgsl",
         VertexFlag::POSITION | VertexFlag::TEXTURE | VertexFlag::NORMAL,
         InstanceFlag::MODEL | InstanceFlag::NORMAL,
-        PipelineFlag::CULLING | PipelineFlag::DEPTH,
+        PipelineFlag::CULLING | PipelineFlag::DEPTH_TEST | PipelineFlag::DEPTH_WRITE,
     )
     .await
 }
@@ -76,7 +76,7 @@ pub async fn solid_shader(gfx: &Gfx) -> Arc<Shader> {
         "solid.wgsl",
         VertexFlag::POSITION | VertexFlag::COLOR,
         InstanceFlag::MODEL,
-        PipelineFlag::CULLING | PipelineFlag::DEPTH,
+        PipelineFlag::CULLING | PipelineFlag::DEPTH_TEST | PipelineFlag::DEPTH_WRITE,
     )
     .await
 }
@@ -88,7 +88,7 @@ pub async fn wire_shader(gfx: &Gfx) -> Arc<Shader> {
         "wire.wgsl",
         VertexFlag::POSITION,
         InstanceFlag::MODEL,
-        PipelineFlag::CULLING | PipelineFlag::DEPTH | PipelineFlag::LINE | PipelineFlag::ALPHA,
+        PipelineFlag::CULLING | PipelineFlag::DEPTH_TEST | PipelineFlag::LINE | PipelineFlag::ALPHA,
     )
     .await
 }
