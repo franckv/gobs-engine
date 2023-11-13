@@ -13,9 +13,9 @@ use game::{
     input::Input,
 };
 use scene::Gfx;
-use scene::{camera::Camera, RenderError};
-use scene::{light::Light, MaterialBuilder, ModelBuilder};
 use scene::{scene::Scene, Model};
+use scene::{Camera, RenderError};
+use scene::{Light, MaterialBuilder, ModelBuilder};
 
 const WALL_LAYER: &str = "wall";
 const FLOOR_LAYER: &str = "floor";
@@ -47,14 +47,7 @@ impl Run for App {
         let solid_shader = examples::solid_shader(gfx).await;
         let wire_shader = examples::wire_shader(gfx).await;
 
-        let mut scene = Scene::new(
-            gfx,
-            camera,
-            light,
-            phong_shader.clone(),
-            &[wire_shader.clone()],
-        )
-        .await;
+        let mut scene = Scene::new(gfx, camera, light, &[wire_shader.clone()]).await;
         scene.toggle_pass(&wire_shader.name);
 
         let wall_material = MaterialBuilder::new("diffuse")

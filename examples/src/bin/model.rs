@@ -9,8 +9,8 @@ use game::{
 };
 use scene::scene::Scene;
 use scene::Gfx;
-use scene::{camera::Camera, RenderError};
-use scene::{light::Light, MaterialBuilder};
+use scene::{Camera, RenderError};
+use scene::{Light, MaterialBuilder};
 
 const MODEL_LAYER: &str = "model";
 
@@ -37,7 +37,7 @@ impl Run for App {
         let shader = examples::phong_shader(gfx).await;
         let wire = examples::wire_shader(gfx).await;
 
-        let mut scene = Scene::new(gfx, camera, light, shader.clone(), &[wire.clone()]).await;
+        let mut scene = Scene::new(gfx, camera, light, &[wire.clone()]).await;
         scene.toggle_pass(&wire.name);
 
         let material = MaterialBuilder::new("diffuse")

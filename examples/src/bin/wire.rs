@@ -9,8 +9,8 @@ use game::{
 };
 use scene::scene::Scene;
 use scene::Gfx;
-use scene::{camera::Camera, RenderError};
-use scene::{light::Light, ModelBuilder};
+use scene::{Camera, RenderError};
+use scene::{Light, ModelBuilder};
 
 const CUBE_LAYER: &str = "cube";
 
@@ -36,7 +36,7 @@ impl Run for App {
 
         let shader = examples::wire_shader(gfx).await;
 
-        let mut scene = Scene::new(gfx, camera, light, shader.clone(), &[]).await;
+        let mut scene = Scene::new(gfx, camera, light, &[]).await;
 
         let cube = ModelBuilder::new()
             .add_mesh(scene::shape::Shapes::cube(3, 2, &[1]), None)

@@ -45,6 +45,9 @@ impl RenderPass {
                 None => &item.model.shader,
             };
 
+            resource_manager.update_light(gfx, batch.light, shader);
+            resource_manager.update_camera(gfx, batch.camera, shader);
+
             if let Some(instance_data) = item.instances {
                 resource_manager.update_instance_data(gfx, &item.model, shader, instance_data);
             }
@@ -121,8 +124,10 @@ impl RenderPass {
                 &self.name, &shader.pipeline.name
             ));
             render_pass.set_pipeline(&shader.pipeline.pipeline);
-            render_pass.set_bind_group(0, &batch.camera_resource.bind_group, &[]);
-            render_pass.set_bind_group(1, &batch.light_resource.bind_group, &[]);
+            let camera_resource = resource_manager.camera(&batch.camera, shader);
+            render_pass.set_bind_group(0, &camera_resource.bind_group, &[]);
+            let light_resource = resource_manager.light(&batch.light, shader);
+            render_pass.set_bind_group(1, &light_resource.bind_group, &[]);
 
             let model_instance = resource_manager.instance_data(&item.model, shader);
 

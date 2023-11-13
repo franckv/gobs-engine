@@ -9,10 +9,10 @@ use game::{
     app::{Application, Run},
     input::Input,
 };
-use scene::{camera::Camera, RenderError};
-use scene::{light::Light, ModelBuilder};
 use scene::{scene::Scene, MaterialBuilder};
+use scene::{Camera, RenderError};
 use scene::{Gfx, Model};
+use scene::{Light, ModelBuilder};
 
 const CUBE_LAYER: &str = "cube";
 const TRIANGLE_LAYER: &str = "triangle";
@@ -45,14 +45,7 @@ impl Run for App {
         let solid_shader = examples::solid_shader(gfx).await;
         let wire_shader = examples::wire_shader(gfx).await;
 
-        let mut scene = Scene::new(
-            gfx,
-            camera,
-            light,
-            phong_shader.clone(),
-            &[wire_shader.clone()],
-        )
-        .await;
+        let mut scene = Scene::new(gfx, camera, light, &[wire_shader.clone()]).await;
         scene.toggle_pass(&wire_shader.name);
 
         let triangle = ModelBuilder::new()

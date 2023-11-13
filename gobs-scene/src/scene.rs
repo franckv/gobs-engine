@@ -6,24 +6,21 @@ use log::*;
 
 use gobs_render as render;
 
+use render::camera::Camera;
 use render::context::Gfx;
 use render::graph::batch::Batch;
 use render::graph::graph::{RenderError, RenderGraph};
+use render::light::Light;
 use render::model::{Material, Model};
-use render::resources::{CameraResource, LightResource};
-use render::shader::{Shader, ShaderBindGroup};
+use render::shader::Shader;
 
 use crate::assets;
-use crate::camera::Camera;
 use crate::layer::Layer;
-use crate::light::Light;
 
 pub struct Scene {
     pub render_graph: RenderGraph,
     pub camera: Camera,
     pub light: Light,
-    pub camera_resource: CameraResource,
-    pub light_resource: LightResource,
     layers: Vec<Layer>,
 }
 
@@ -42,20 +39,8 @@ impl Scene {
         }
     }
 
-    pub async fn new(
-        gfx: &Gfx,
-        camera: Camera,
-        light: Light,
-        default_shader: Arc<Shader>,
-        shaders: &[Arc<Shader>],
-    ) -> Self {
+    pub async fn new(gfx: &Gfx, camera: Camera, light: Light, shaders: &[Arc<Shader>]) -> Self {
         info!("New scene");
-
-        let camera_resource =
-            gfx.create_camera_resource(default_shader.layout(ShaderBindGroup::Camera));
-
-        let light_resource =
-            gfx.create_light_resource(default_shader.layout(ShaderBindGroup::Light));
 
         let layers = Vec::new();
 
@@ -65,8 +50,6 @@ impl Scene {
             render_graph,
             camera,
             light,
-            camera_resource,
-            light_resource,
             layers,
         }
     }
@@ -84,14 +67,6 @@ impl Scene {
     }
 
     pub fn update(&mut self, gfx: &Gfx) {
-        let view_position = self.camera.position.extend(1.).to_array();
-        let view_proj = self.camera.view_proj().to_cols_array_2d();
-
-        self.camera_resource.update(gfx, view_position, view_proj);
-
-        self.light_resource
-            .update(gfx, self.light.position.into(), self.light.colour.into());
-
         for layer in &mut self.layers {
             if layer.visible() {
                 layer.update(gfx);
@@ -128,9 +103,7 @@ impl Scene {
     }
 
     pub fn render(&mut self, gfx: &Gfx) -> Result<(), RenderError> {
-        let mut batch = Batch::begin()
-            .camera_resource(&self.camera_resource)
-            .light_resource(&self.light_resource);
+        let mut batch = Batch::begin().camera(&self.camera).light(&self.light);
 
         for layer in &self.layers {
             if layer.visible() {

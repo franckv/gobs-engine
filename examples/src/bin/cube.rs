@@ -8,9 +8,9 @@ use game::{
     input::Input,
 };
 use scene::Gfx;
-use scene::{camera::Camera, RenderError};
-use scene::{light::Light, ModelBuilder};
 use scene::{scene::Scene, MaterialBuilder};
+use scene::{Camera, RenderError};
+use scene::{Light, ModelBuilder};
 
 const CUBE_LAYER: &str = "cube";
 
@@ -37,7 +37,7 @@ impl Run for App {
         let shader = examples::phong_shader(gfx).await;
         let wire = examples::wire_shader(gfx).await;
 
-        let mut scene = Scene::new(gfx, camera, light, shader.clone(), &[wire.clone()]).await;
+        let mut scene = Scene::new(gfx, camera, light, &[wire.clone()]).await;
         scene.toggle_pass(&wire.name);
 
         let material = MaterialBuilder::new("diffuse")

@@ -1,6 +1,7 @@
 use core::fmt;
 
 use glam::{Mat4, Vec3};
+use uuid::Uuid;
 
 #[derive(Debug)]
 #[allow(dead_code)]
@@ -25,8 +26,11 @@ pub struct OrthoProjection {
     pub far: f32,
 }
 
+pub type CameraId = Uuid;
+
 #[derive(Debug)]
 pub struct Camera {
+    pub id: CameraId,
     pub position: Vec3,
     pub mode: ProjectionMode,
     pub yaw: f32,
@@ -53,6 +57,7 @@ impl Camera {
         };
 
         Camera {
+            id: Uuid::new_v4(),
             position: position.into(),
             mode: ProjectionMode::Perspective(projection),
             yaw: yaw.into(),
@@ -79,6 +84,7 @@ impl Camera {
         };
 
         Camera {
+            id: Uuid::new_v4(),
             position: position.into(),
             mode: ProjectionMode::Ortho(projection),
             yaw: yaw.into(),
@@ -136,7 +142,7 @@ impl Camera {
 }
 
 impl fmt::Display for Camera {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match &self.mode {
             ProjectionMode::Ortho(projection) => {
                 write!(

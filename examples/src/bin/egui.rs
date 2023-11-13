@@ -8,10 +8,10 @@ use game::{
     input::Input,
 };
 use gui::UIRenderer;
-use scene::light::Light;
 use scene::scene::Scene;
 use scene::Gfx;
-use scene::{camera::Camera, RenderError};
+use scene::Light;
+use scene::{Camera, RenderError};
 
 const UI_LAYER: &str = "ui";
 
@@ -38,7 +38,7 @@ impl Run for App {
         let light = Light::new((0., 0., 10.), (1., 1., 1.));
         let shader = examples::ui_shader(gfx).await;
 
-        let scene = Scene::new(gfx, camera, light, shader.clone(), &[]).await;
+        let scene = Scene::new(gfx, camera, light, &[]).await;
 
         let ui = UIRenderer::new(width, height, shader);
 

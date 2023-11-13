@@ -1,8 +1,12 @@
 use std::collections::HashMap;
 
+use crate::camera::{Camera, CameraId};
+use crate::light::{Light, LightId};
 use crate::model::{InstanceData, Model, ModelId};
 use crate::resources::mesh::MeshData;
 use crate::resources::ModelInstance;
+use crate::resources::{CameraResource, LightResource};
+use crate::shader::ShaderBindGroup;
 use crate::{
     context::Gfx,
     model::{Material, MaterialId, Mesh, MeshId},
@@ -13,6 +17,8 @@ pub struct ResourceManager {
     mesh_buffers: HashMap<(MeshId, ShaderId), MeshData>,
     material_bind_groups: HashMap<MaterialId, wgpu::BindGroup>,
     instance_buffers: HashMap<(ModelId, ShaderId), ModelInstance>,
+    light_resources: HashMap<(LightId, ShaderId), LightResource>,
+    camera_resources: HashMap<(CameraId, ShaderId), CameraResource>,
 }
 
 impl ResourceManager {
@@ -21,7 +27,57 @@ impl ResourceManager {
             mesh_buffers: HashMap::new(),
             material_bind_groups: HashMap::new(),
             instance_buffers: HashMap::new(),
+            light_resources: HashMap::new(),
+            camera_resources: HashMap::new(),
         }
+    }
+
+    pub fn update_light(&mut self, gfx: &Gfx, light: &Light, shader: &Shader) {
+        let key = (light.id, shader.id);
+
+        if !self.light_resources.contains_key(&key) {
+            let light_resource = gfx.create_light_resource(shader.layout(ShaderBindGroup::Light));
+
+            self.light_resources.insert(key, light_resource);
+        }
+
+        let light_resource = self.light_resources.get_mut(&key).unwrap();
+
+        light_resource.update(gfx, light.position.into(), light.colour.into());
+    }
+
+    pub fn light(&self, light: &Light, shader: &Shader) -> &LightResource {
+        let key = (light.id, shader.id);
+
+        let light_resource = self.light_resources.get(&key).unwrap();
+
+        light_resource
+    }
+
+    pub fn update_camera(&mut self, gfx: &Gfx, camera: &Camera, shader: &Shader) {
+        let key = (camera.id, shader.id);
+
+        if !self.camera_resources.contains_key(&key) {
+            let camera_resource =
+                gfx.create_camera_resource(shader.layout(ShaderBindGroup::Camera));
+
+            self.camera_resources.insert(key, camera_resource);
+        }
+
+        let camera_resource = self.camera_resources.get_mut(&key).unwrap();
+
+        let view_position = camera.position.extend(1.).to_array();
+        let view_proj = camera.view_proj().to_cols_array_2d();
+
+        camera_resource.update(gfx, view_position, view_proj);
+    }
+
+    pub fn camera(&self, camera: &Camera, shader: &Shader) -> &CameraResource {
+        let key = (camera.id, shader.id);
+
+        let camera_resource = self.camera_resources.get(&key).unwrap();
+
+        camera_resource
     }
 
     pub fn update_instance_data(

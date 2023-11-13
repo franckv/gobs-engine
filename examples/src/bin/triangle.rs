@@ -11,8 +11,8 @@ use game::{
 };
 use scene::scene::Scene;
 use scene::Gfx;
-use scene::{camera::Camera, RenderError};
-use scene::{light::Light, ModelBuilder};
+use scene::{Camera, RenderError};
+use scene::{Light, ModelBuilder};
 
 const TRIANGLE_LAYER: &str = "triangle";
 
@@ -38,7 +38,7 @@ impl Run for App {
 
         let solid_shader = examples::solid_shader(gfx).await;
 
-        let mut scene = Scene::new(gfx, camera, light, solid_shader.clone(), &[]).await;
+        let mut scene = Scene::new(gfx, camera, light, &[]).await;
 
         let triangle: Arc<scene::Model> = ModelBuilder::new()
             .add_mesh(

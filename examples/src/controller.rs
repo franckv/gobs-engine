@@ -8,7 +8,7 @@ use gobs_scene as scene;
 
 use game::input::Key;
 
-use scene::camera::{Camera, ProjectionMode};
+use scene::{Camera, ProjectionMode};
 
 const SAFE_FRAC_PI_2: f32 = FRAC_PI_2 - 0.0001;
 

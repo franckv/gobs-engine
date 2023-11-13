@@ -1,7 +1,8 @@
 use std::sync::Arc;
 
+use crate::camera::Camera;
+use crate::light::Light;
 use crate::model::{InstanceData, Model};
-use crate::resources::{CameraResource, LightResource};
 
 pub struct BatchItem<'a> {
     pub(crate) model: Arc<Model>,
@@ -9,45 +10,32 @@ pub struct BatchItem<'a> {
 }
 
 pub struct BatchBuilder<'a> {
-    camera_resource: Option<&'a CameraResource>,
-    light_resource: Option<&'a LightResource>,
+    camera: Option<&'a Camera>,
+    light: Option<&'a Light>,
     items: Vec<BatchItem<'a>>,
 }
 
 impl<'a> BatchBuilder<'a> {
     pub fn new() -> Self {
         BatchBuilder {
-            camera_resource: None,
-            light_resource: None,
+            camera: None,
+            light: None,
             items: Vec::new(),
         }
     }
 
-    pub fn camera_resource(mut self, camera_resource: &'a CameraResource) -> Self {
-        self.camera_resource = Some(camera_resource);
+    pub fn camera(mut self, camera: &'a Camera) -> Self {
+        self.camera = Some(camera);
 
         self
     }
 
-    pub fn light_resource(mut self, light_resource: &'a LightResource) -> Self {
-        self.light_resource = Some(light_resource);
+    pub fn light(mut self, light: &'a Light) -> Self {
+        self.light = Some(light);
 
         self
     }
 
-    /*
-       pub fn draw(mut self, model: &'a Model) -> Self {
-           let item = BatchItem {
-               model,
-               instances_buffer: None,
-               instances_count: 0,
-           };
-
-           self.items.push(item);
-
-           self
-       }
-    */
     pub fn draw_indexed(mut self, model: Arc<Model>, instances: &'a Vec<InstanceData>) -> Self {
         let item = BatchItem {
             model,
@@ -61,16 +49,16 @@ impl<'a> BatchBuilder<'a> {
 
     pub fn finish(self) -> Batch<'a> {
         Batch {
-            camera_resource: self.camera_resource.unwrap(),
-            light_resource: self.light_resource.unwrap(),
+            camera: self.camera.unwrap(),
+            light: self.light.unwrap(),
             items: self.items,
         }
     }
 }
 
 pub struct Batch<'a> {
-    pub(crate) camera_resource: &'a CameraResource,
-    pub(crate) light_resource: &'a LightResource,
+    pub(crate) camera: &'a Camera,
+    pub(crate) light: &'a Light,
     pub(crate) items: Vec<BatchItem<'a>>,
 }
 
