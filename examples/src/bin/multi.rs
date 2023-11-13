@@ -55,11 +55,6 @@ impl Run for App {
         .await;
         scene.toggle_pass(&wire_shader.name);
 
-        let model = scene
-            .load_model(gfx, examples::CUBE, phong_shader.clone())
-            .await
-            .unwrap();
-
         let triangle = ModelBuilder::new()
             .add_mesh(
                 scene::shape::Shapes::triangle(
@@ -78,12 +73,22 @@ impl Run for App {
             .await
             .build(gfx);
 
+        let model = scene
+            .load_model(
+                gfx,
+                examples::CUBE,
+                Some(material.clone()),
+                phong_shader.clone(),
+            )
+            .await
+            .unwrap();
+
         let cube = ModelBuilder::new()
             .add_mesh(scene::shape::Shapes::cube(1, 1, &[1]), Some(material))
             .build(phong_shader);
 
         let light_model = scene
-            .load_model(gfx, examples::LIGHT, solid_shader)
+            .load_model(gfx, examples::LIGHT, None, solid_shader)
             .await
             .unwrap();
 

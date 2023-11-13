@@ -13,7 +13,12 @@ use utils::load::{self, AssetType};
 
 use crate::Gfx;
 
-pub async fn load_model(file_name: &str, gfx: &Gfx, shader: Arc<Shader>) -> Result<Arc<Model>> {
+pub async fn load_model(
+    file_name: &str,
+    gfx: &Gfx,
+    default_material: Option<Arc<Material>>,
+    shader: Arc<Shader>,
+) -> Result<Arc<Model>> {
     let obj_text = load::load_string(file_name, AssetType::MODEL).await?;
     let obj_cursor = Cursor::new(obj_text);
     let mut obj_reader = BufReader::new(obj_cursor);
@@ -34,7 +39,7 @@ pub async fn load_model(file_name: &str, gfx: &Gfx, shader: Arc<Shader>) -> Resu
 
     let materials = load_material(gfx, file_name, obj_materials?).await?;
 
-    let meshes = load_mesh(models, &materials).await;
+    let meshes = load_mesh(models, &materials, default_material).await;
 
     info!(
         "{}: {} meshes / {} materials loaded",
@@ -51,6 +56,7 @@ pub async fn load_model(file_name: &str, gfx: &Gfx, shader: Arc<Shader>) -> Resu
 async fn load_mesh(
     models: Vec<tobj::Model>,
     materials: &Vec<Arc<Material>>,
+    default_material: Option<Arc<Material>>,
 ) -> Vec<(Arc<Mesh>, Option<Arc<Material>>)> {
     models
         .into_iter()
@@ -88,7 +94,7 @@ async fn load_mesh(
             let material = if materials.len() > material_id {
                 Some(materials[material_id].clone())
             } else {
-                None
+                default_material.clone()
             };
 
             (mesh.add_indices(&m.mesh.indices).build(), material)

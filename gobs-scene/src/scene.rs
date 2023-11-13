@@ -9,7 +9,7 @@ use gobs_render as render;
 use render::context::Gfx;
 use render::graph::batch::Batch;
 use render::graph::graph::{RenderError, RenderGraph};
-use render::model::Model;
+use render::model::{Material, Model};
 use render::resources::{CameraResource, LightResource};
 use render::shader::{Shader, ShaderBindGroup};
 
@@ -103,9 +103,10 @@ impl Scene {
         &mut self,
         gfx: &Gfx,
         name: &str,
+        default_material: Option<Arc<Material>>,
         shader: Arc<Shader>,
     ) -> Result<Arc<Model>> {
-        let model = assets::load_model(name, gfx, shader.clone()).await?;
+        let model = assets::load_model(name, gfx, default_material, shader.clone()).await?;
 
         Ok(model)
     }

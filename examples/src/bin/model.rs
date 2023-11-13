@@ -7,10 +7,10 @@ use game::{
     app::{Application, Run},
     input::Input,
 };
-use scene::light::Light;
 use scene::scene::Scene;
 use scene::Gfx;
 use scene::{camera::Camera, RenderError};
+use scene::{light::Light, MaterialBuilder};
 
 const MODEL_LAYER: &str = "model";
 
@@ -40,7 +40,17 @@ impl Run for App {
         let mut scene = Scene::new(gfx, camera, light, shader.clone(), &[wire.clone()]).await;
         scene.toggle_pass(&wire.name);
 
-        let cube = scene.load_model(gfx, examples::CUBE, shader).await.unwrap();
+        let material = MaterialBuilder::new("diffuse")
+            .diffuse_texture(gfx, examples::WALL_TEXTURE)
+            .await
+            .normal_texture(gfx, examples::WALL_TEXTURE_N)
+            .await
+            .build(gfx);
+
+        let cube = scene
+            .load_model(gfx, examples::CUBE, Some(material), shader)
+            .await
+            .unwrap();
 
         scene.add_node(
             MODEL_LAYER,
