@@ -23,3 +23,9 @@ impl Timer {
         self.last_tick = time::OffsetDateTime::now_utc();
     }
 }
+
+impl Default for Timer {
+    fn default() -> Self {
+        Self::new()
+    }
+}

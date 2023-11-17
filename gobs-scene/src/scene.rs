@@ -8,7 +8,7 @@ use gobs_render as render;
 
 use render::camera::Camera;
 use render::context::Gfx;
-use render::graph::batch::Batch;
+use render::graph::batch::BatchBuilder;
 use render::graph::graph::{RenderError, RenderGraph};
 use render::light::Light;
 use render::model::{Material, Model};
@@ -103,7 +103,7 @@ impl Scene {
     }
 
     pub fn render(&mut self, gfx: &Gfx) -> Result<(), RenderError> {
-        let mut batch = Batch::begin().camera(&self.camera).light(&self.light);
+        let mut batch = BatchBuilder::new().camera(&self.camera).light(&self.light);
 
         for layer in &self.layers {
             if layer.visible() {

@@ -104,6 +104,12 @@ impl Application {
     }
 }
 
+impl Default for Application {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 #[allow(async_fn_in_trait)]
 pub trait Run: Sized {
     async fn create(gfx: &Gfx) -> Self;

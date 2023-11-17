@@ -56,14 +56,14 @@ impl<'a> BatchBuilder<'a> {
     }
 }
 
+impl<'a> Default for BatchBuilder<'a> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 pub struct Batch<'a> {
     pub(crate) camera: &'a Camera,
     pub(crate) light: &'a Light,
     pub(crate) items: Vec<BatchItem<'a>>,
-}
-
-impl<'a> Batch<'a> {
-    pub fn begin() -> BatchBuilder<'a> {
-        BatchBuilder::new()
-    }
 }

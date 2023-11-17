@@ -37,6 +37,12 @@ impl ModelBuilder {
     }
 }
 
+impl Default for ModelBuilder {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 pub type ModelId = Uuid;
 
 pub struct Model {

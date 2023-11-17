@@ -62,6 +62,12 @@ impl InstanceDataBuilder {
     }
 }
 
+impl Default for InstanceDataBuilder {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 pub struct InstanceData {
     model: Mat4,
     normal: Mat3,

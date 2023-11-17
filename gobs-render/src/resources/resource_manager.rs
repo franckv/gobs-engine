@@ -168,3 +168,9 @@ impl ResourceManager {
         self.mesh_buffers.get(&(mesh.id, shader.id)).unwrap()
     }
 }
+
+impl Default for ResourceManager {
+    fn default() -> Self {
+        Self::new()
+    }
+}

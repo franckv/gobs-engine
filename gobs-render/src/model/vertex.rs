@@ -98,6 +98,12 @@ impl VertexDataBuilder {
     }
 }
 
+impl Default for VertexDataBuilder {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 #[derive(Clone)]
 pub struct VertexData {
     pub position: Vec3,
