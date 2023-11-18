@@ -1,8 +1,12 @@
 use std::sync::Arc;
 
-use crate::camera::Camera;
-use crate::light::Light;
-use crate::model::{InstanceData, Model};
+use gobs_core as core;
+
+use core::entity::camera::Camera;
+use core::entity::instance::InstanceData;
+use core::entity::light::Light;
+
+use crate::model::Model;
 
 pub struct BatchItem<'a> {
     pub(crate) model: Arc<Model>,

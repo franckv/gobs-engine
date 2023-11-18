@@ -4,18 +4,22 @@ use log::*;
 
 use glam::{Quat, Vec3};
 
-use examples::CameraController;
+use gobs_core as core;
 use gobs_game as game;
 use gobs_scene as scene;
 
+use core::entity::camera::Camera;
+use core::entity::light::Light;
 use game::{
     app::{Application, Run},
     input::Input,
 };
 use scene::Gfx;
+use scene::RenderError;
 use scene::{scene::Scene, Model};
-use scene::{Camera, RenderError};
-use scene::{Light, MaterialBuilder, ModelBuilder};
+use scene::{MaterialBuilder, ModelBuilder};
+
+use examples::CameraController;
 
 const WALL_LAYER: &str = "wall";
 const FLOOR_LAYER: &str = "floor";

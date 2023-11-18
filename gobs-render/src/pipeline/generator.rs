@@ -5,11 +5,14 @@ use log::*;
 use naga::front::wgsl::Frontend;
 use naga::{Binding, GlobalVariable, Handle, Module, Type, TypeInner};
 
+use gobs_core as core;
 use gobs_utils as utils;
 
-use crate::context::Gfx;
-use crate::model::{InstanceData, InstanceFlag, VertexData, VertexFlag};
+use core::entity::instance::{InstanceData, InstanceFlag};
+use core::geometry::vertex::{VertexData, VertexFlag};
 use utils::load::{self, AssetType};
+
+use crate::context::Gfx;
 
 pub struct Generator {
     module: Module,

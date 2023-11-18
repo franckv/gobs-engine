@@ -1,6 +1,10 @@
 use wgpu::util::DeviceExt;
 
-use crate::{context::Gfx, model::UniformData};
+use gobs_core as core;
+
+use core::entity::uniform::UniformData;
+
+use crate::context::Gfx;
 
 pub struct UniformResource {
     pub data: UniformData,

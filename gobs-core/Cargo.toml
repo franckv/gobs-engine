@@ -1,0 +1,13 @@
+[package]
+name = "gobs-core"
+version = "0.1.0"
+authors = { workspace = true }
+edition = { workspace = true }
+
+[dependencies]
+bitflags = { workspace = true }
+bytemuck = { workspace = true }
+indexmap = { workspace = true }
+glam = { workspace = true }
+log = { workspace = true }
+uuid = { workspace = true }

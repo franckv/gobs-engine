@@ -2,15 +2,21 @@ use std::collections::HashMap;
 
 use uuid::Uuid;
 
-use crate::camera::Camera;
-use crate::light::Light;
-use crate::model::{InstanceData, Model, ModelId, UniformDataBuilder, UniformProp};
+use gobs_core as core;
+
+use core::entity::camera::Camera;
+use core::entity::instance::InstanceData;
+use core::entity::light::Light;
+use core::entity::uniform::{UniformDataBuilder, UniformProp};
+use core::geometry::mesh::{Mesh, MeshId};
+
+use crate::model::{Model, ModelId};
 use crate::resources::mesh::MeshData;
 use crate::resources::ModelInstance;
 use crate::resources::UniformResource;
 use crate::{
     context::Gfx,
-    model::{Material, MaterialId, Mesh, MeshId},
+    model::{Material, MaterialId},
     shader::{Shader, ShaderId},
 };
 

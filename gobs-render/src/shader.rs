@@ -2,9 +2,14 @@ use std::sync::Arc;
 
 use uuid::Uuid;
 
+use gobs_core as core;
+
+use core::entity::instance::InstanceFlag;
+use core::geometry::vertex::VertexFlag;
+
 use crate::{
     context::Gfx,
-    model::{InstanceFlag, Texture, VertexFlag},
+    model::Texture,
     pipeline::{Generator, Pipeline, PipelineBuilder, PipelineFlag},
 };
 

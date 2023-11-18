@@ -1,9 +1,10 @@
 use wgpu::util::DeviceExt;
 
-use crate::{
-    context::Gfx,
-    model::{InstanceData, InstanceFlag},
-};
+use gobs_core as core;
+
+use core::entity::instance::{InstanceData, InstanceFlag};
+
+use crate::context::Gfx;
 
 pub struct ModelInstance {
     pub instance_buffer: wgpu::Buffer,

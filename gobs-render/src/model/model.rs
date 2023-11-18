@@ -2,10 +2,25 @@ use std::sync::Arc;
 
 use uuid::Uuid;
 
-use crate::{
-    model::{Material, Mesh},
-    shader::Shader,
-};
+use gobs_core as core;
+
+use core::geometry::mesh::Mesh;
+
+use crate::{model::Material, shader::Shader};
+
+pub type ModelId = Uuid;
+
+pub struct Model {
+    pub id: ModelId,
+    pub shader: Arc<Shader>,
+    pub meshes: Vec<(Arc<Mesh>, Option<Arc<Material>>)>,
+}
+
+impl PartialEq for Model {
+    fn eq(&self, other: &Self) -> bool {
+        self.id == other.id
+    }
+}
 
 pub struct ModelBuilder {
     meshes: Vec<(Arc<Mesh>, Option<Arc<Material>>)>,
@@ -40,19 +55,5 @@ impl ModelBuilder {
 impl Default for ModelBuilder {
     fn default() -> Self {
         Self::new()
-    }
-}
-
-pub type ModelId = Uuid;
-
-pub struct Model {
-    pub id: ModelId,
-    pub shader: Arc<Shader>,
-    pub meshes: Vec<(Arc<Mesh>, Option<Arc<Material>>)>,
-}
-
-impl PartialEq for Model {
-    fn eq(&self, other: &Self) -> bool {
-        self.id == other.id
     }
 }

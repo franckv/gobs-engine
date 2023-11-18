@@ -12,6 +12,7 @@ path = "src/lib.rs"
 anyhow = { workspace = true }
 bytemuck = { workspace = true }
 glam = { workspace = true }
+gobs-core = { path = "../gobs-core" }
 gobs-utils = { path = "../gobs-utils" }
 gobs-render = { path = "../gobs-render" }
 image = { workspace = true }

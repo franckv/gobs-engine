@@ -5,14 +5,16 @@ use egui::{
     Context, Event, FullOutput, Modifiers, PointerButton, RawInput, Rect, Rgba, TextureId,
 };
 use glam::{Vec2, Vec3, Vec4};
+use log::info;
 
+use gobs_core as core;
 use gobs_game::input::Input;
 use gobs_render as render;
 
-use log::info;
+use core::geometry::mesh::MeshBuilder;
 use render::{
     context::Gfx,
-    model::{Material, MaterialBuilder, MeshBuilder, Model, ModelBuilder, Texture, TextureType},
+    model::{Material, MaterialBuilder, Model, ModelBuilder, Texture, TextureType},
     shader::Shader,
 };
 

@@ -6,11 +6,10 @@ edition = { workspace = true }
 
 [dependencies]
 bytemuck = { workspace = true }
+gobs-core = { path = "../gobs-core" }
 gobs-game = { path = "../gobs-game" }
 gobs-render = { path = "../gobs-render" }
 log = { workspace = true }
-eframe = { workspace = true }
 egui = { workspace = true }
-egui_extras = { workspace = true }
 glam = { workspace = true }
 pollster = { workspace = true }

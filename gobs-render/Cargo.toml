@@ -9,6 +9,7 @@ anyhow = { workspace = true }
 bitflags = { workspace = true }
 bytemuck = { workspace = true }
 glam = { workspace = true }
+gobs-core = { path = "../gobs-core" }
 gobs-utils = { path = "../gobs-utils" }
 image = { workspace = true }
 indexmap = { workspace = true }

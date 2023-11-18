@@ -1,9 +1,10 @@
 use std::sync::Arc;
 
 use glam::{Vec2, Vec4};
-use gobs_render as render;
 
-use render::model::{Mesh, MeshBuilder};
+use gobs_core as core;
+
+use core::geometry::mesh::{Mesh, MeshBuilder};
 
 const T_MIN: f32 = 0.01;
 const T_MAX: f32 = 1. - T_MIN;

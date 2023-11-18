@@ -2,12 +2,15 @@ use std::{collections::HashMap, sync::Arc};
 
 use glam::{Quat, Vec3};
 
+use gobs_core as core;
 use gobs_render as render;
+
+use core::entity::instance::{InstanceData, InstanceDataBuilder};
 
 use render::{
     context::Gfx,
     graph::batch::BatchBuilder,
-    model::{InstanceData, InstanceDataBuilder, Model, ModelId},
+    model::{Model, ModelId},
 };
 
 use crate::data::Node;

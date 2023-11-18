@@ -1,9 +1,12 @@
 use std::sync::Arc;
 
+use gobs_core as core;
+
+use core::geometry::vertex::VertexFlag;
+
 use crate::{
     context::Gfx,
     graph::batch::Batch,
-    model::VertexFlag,
     resources::ResourceManager,
     shader::{Shader, ShaderBindGroup},
 };

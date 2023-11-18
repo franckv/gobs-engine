@@ -3,12 +3,11 @@ use std::f32::consts::FRAC_PI_2;
 use glam::Vec3;
 use log::*;
 
+use gobs_core as core;
 use gobs_game as game;
-use gobs_scene as scene;
 
+use core::entity::camera::{Camera, ProjectionMode};
 use game::input::Key;
-
-use scene::{Camera, ProjectionMode};
 
 const SAFE_FRAC_PI_2: f32 = FRAC_PI_2 - 0.0001;
 

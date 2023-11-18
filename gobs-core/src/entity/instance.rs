@@ -10,6 +10,44 @@ bitflags! {
     }
 }
 
+pub struct InstanceData {
+    model: Mat4,
+    normal: Mat3,
+    texture_map: Vec4,
+}
+
+impl InstanceData {
+    pub fn raw(&self, flags: InstanceFlag) -> Vec<u8> {
+        let mut data: Vec<u8> = Vec::new();
+
+        if flags.contains(InstanceFlag::MODEL) {
+            data.extend_from_slice(bytemuck::cast_slice(&self.model.to_cols_array()));
+        };
+
+        if flags.contains(InstanceFlag::NORMAL) {
+            data.extend_from_slice(bytemuck::cast_slice(&self.normal.to_cols_array()));
+        };
+
+        if flags.contains(InstanceFlag::TEXTURE) {
+            data.extend_from_slice(bytemuck::cast_slice(&self.texture_map.to_array()));
+        };
+
+        data
+    }
+
+    pub fn size(flags: InstanceFlag) -> usize {
+        flags
+            .iter()
+            .map(|bit| match bit {
+                InstanceFlag::MODEL => std::mem::size_of::<Mat4>(),
+                InstanceFlag::NORMAL => std::mem::size_of::<Mat3>(),
+                InstanceFlag::TEXTURE => std::mem::size_of::<Vec4>(),
+                _ => unimplemented!(),
+            })
+            .sum()
+    }
+}
+
 pub struct InstanceDataBuilder {
     model: Option<Mat4>,
     normal: Option<Mat3>,
@@ -65,43 +103,5 @@ impl InstanceDataBuilder {
 impl Default for InstanceDataBuilder {
     fn default() -> Self {
         Self::new()
-    }
-}
-
-pub struct InstanceData {
-    model: Mat4,
-    normal: Mat3,
-    texture_map: Vec4,
-}
-
-impl InstanceData {
-    pub fn raw(&self, flags: InstanceFlag) -> Vec<u8> {
-        let mut data: Vec<u8> = Vec::new();
-
-        if flags.contains(InstanceFlag::MODEL) {
-            data.extend_from_slice(bytemuck::cast_slice(&self.model.to_cols_array()));
-        };
-
-        if flags.contains(InstanceFlag::NORMAL) {
-            data.extend_from_slice(bytemuck::cast_slice(&self.normal.to_cols_array()));
-        };
-
-        if flags.contains(InstanceFlag::TEXTURE) {
-            data.extend_from_slice(bytemuck::cast_slice(&self.texture_map.to_array()));
-        };
-
-        data
-    }
-
-    pub fn size(flags: InstanceFlag) -> usize {
-        flags
-            .iter()
-            .map(|bit| match bit {
-                InstanceFlag::MODEL => std::mem::size_of::<Mat4>(),
-                InstanceFlag::NORMAL => std::mem::size_of::<Mat3>(),
-                InstanceFlag::TEXTURE => std::mem::size_of::<Vec4>(),
-                _ => unimplemented!(),
-            })
-            .sum()
     }
 }

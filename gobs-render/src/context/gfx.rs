@@ -3,8 +3,11 @@ use std::sync::RwLock;
 use wgpu::util::DeviceExt;
 use winit::window::Window;
 
+use gobs_core as core;
+
+use core::geometry::vertex::{VertexData, VertexFlag};
+
 use crate::context::Display;
-use crate::model::{VertexData, VertexFlag};
 
 pub struct Gfx {
     pub(crate) display: RwLock<Display>,

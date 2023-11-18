@@ -4,13 +4,14 @@ use anyhow::Result;
 use glam::{Quat, Vec3};
 use log::*;
 
+use gobs_core as core;
 use gobs_render as render;
 
-use render::camera::Camera;
+use core::entity::camera::Camera;
+use core::entity::light::Light;
 use render::context::Gfx;
 use render::graph::batch::BatchBuilder;
 use render::graph::graph::{RenderError, RenderGraph};
-use render::light::Light;
 use render::model::{Material, Model};
 use render::shader::Shader;
 

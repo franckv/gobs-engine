@@ -1,16 +1,21 @@
-use examples::CameraController;
 use glam::{Quat, Vec3};
+
+use gobs_core as core;
 use gobs_game as game;
 use gobs_scene as scene;
 
+use core::entity::camera::Camera;
+use core::entity::light::Light;
 use game::{
     app::{Application, Run},
     input::Input,
 };
 use scene::scene::Scene;
 use scene::Gfx;
-use scene::{Camera, RenderError};
-use scene::{Light, MaterialBuilder};
+use scene::MaterialBuilder;
+use scene::RenderError;
+
+use examples::CameraController;
 
 const MODEL_LAYER: &str = "model";
 

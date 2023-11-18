@@ -2,9 +2,12 @@ mod controller;
 
 use std::sync::Arc;
 
+use gobs_core as core;
 use gobs_scene as scene;
 
-use scene::{Gfx, InstanceFlag, PipelineFlag, Shader, VertexFlag};
+use core::entity::instance::InstanceFlag;
+use core::geometry::vertex::VertexFlag;
+use scene::{Gfx, PipelineFlag, Shader};
 use simplelog::{
     ColorChoice, CombinedLogger, ConfigBuilder, LevelFilter, TermLogger, TerminalMode,
 };

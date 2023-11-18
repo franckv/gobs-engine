@@ -5,7 +5,16 @@ use glam::{Vec2, Vec3, Vec4};
 use log::info;
 use uuid::Uuid;
 
-use crate::model::{VertexData, VertexDataBuilder};
+use crate::geometry::vertex::{VertexData, VertexDataBuilder};
+
+pub type MeshId = Uuid;
+
+pub struct Mesh {
+    pub id: Uuid,
+    pub name: String,
+    pub vertices: Vec<VertexData>,
+    pub indices: Vec<u32>,
+}
 
 pub struct MeshBuilder {
     name: String,
@@ -162,13 +171,4 @@ impl MeshBuilder {
             indices: self.indices,
         })
     }
-}
-
-pub type MeshId = Uuid;
-
-pub struct Mesh {
-    pub id: Uuid,
-    pub name: String,
-    pub vertices: Vec<VertexData>,
-    pub indices: Vec<u32>,
 }

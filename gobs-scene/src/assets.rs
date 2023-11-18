@@ -4,10 +4,12 @@ use std::sync::Arc;
 use anyhow::Result;
 use log::*;
 
+use gobs_core as core;
 use gobs_render as render;
 use gobs_utils as utils;
 
-use render::model::{Material, Mesh, MeshBuilder, Model, ModelBuilder, Texture};
+use core::geometry::mesh::{Mesh, MeshBuilder};
+use render::model::{Material, Model, ModelBuilder, Texture};
 use render::shader::Shader;
 use utils::load::{self, AssetType};
 
