@@ -10,7 +10,7 @@ use crate::geometry::vertex::{VertexData, VertexDataBuilder};
 pub type MeshId = Uuid;
 
 pub struct Mesh {
-    pub id: Uuid,
+    pub id: MeshId,
     pub name: String,
     pub vertices: Vec<VertexData>,
     pub indices: Vec<u32>,
