@@ -11,6 +11,7 @@ bytemuck = { workspace = true }
 glam = { workspace = true }
 gobs-utils = { path = "../gobs-utils" }
 image = { workspace = true }
+indexmap = { workspace = true }
 itertools = { workspace = true }
 log = { workspace = true }
 naga = { workspace = true }

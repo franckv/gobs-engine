@@ -1,12 +1,13 @@
 use std::collections::HashMap;
 
-use crate::camera::{Camera, CameraId};
-use crate::light::{Light, LightId};
-use crate::model::{InstanceData, Model, ModelId};
+use uuid::Uuid;
+
+use crate::camera::Camera;
+use crate::light::Light;
+use crate::model::{InstanceData, Model, ModelId, UniformDataBuilder, UniformProp};
 use crate::resources::mesh::MeshData;
 use crate::resources::ModelInstance;
-use crate::resources::{CameraResource, LightResource};
-use crate::shader::ShaderBindGroup;
+use crate::resources::UniformResource;
 use crate::{
     context::Gfx,
     model::{Material, MaterialId, Mesh, MeshId},
@@ -17,8 +18,7 @@ pub struct ResourceManager {
     mesh_buffers: HashMap<(MeshId, ShaderId), MeshData>,
     material_bind_groups: HashMap<MaterialId, wgpu::BindGroup>,
     instance_buffers: HashMap<(ModelId, ShaderId), ModelInstance>,
-    light_resources: HashMap<(LightId, ShaderId), LightResource>,
-    camera_resources: HashMap<(CameraId, ShaderId), CameraResource>,
+    uniform_resources: HashMap<(Uuid, ShaderId), UniformResource>,
 }
 
 impl ResourceManager {
@@ -27,50 +27,67 @@ impl ResourceManager {
             mesh_buffers: HashMap::new(),
             material_bind_groups: HashMap::new(),
             instance_buffers: HashMap::new(),
-            light_resources: HashMap::new(),
-            camera_resources: HashMap::new(),
+            uniform_resources: HashMap::new(),
         }
     }
 
     pub fn update_light(&mut self, gfx: &Gfx, light: &Light, shader: &Shader) {
         let key = (light.id, shader.id);
 
-        self.light_resources
-            .entry(key)
-            .or_insert_with(|| gfx.create_light_resource(shader.layout(ShaderBindGroup::Light)));
+        let position = UniformProp::Vec3F(light.position.into());
+        let colour = UniformProp::Vec3F(light.colour.into());
 
-        let light_resource = self.light_resources.get_mut(&key).unwrap();
+        self.uniform_resources.entry(key).or_insert_with(|| {
+            let light_data = UniformDataBuilder::new("light")
+                .prop("position", position)
+                .prop("colour", colour)
+                .build();
 
-        light_resource.update(gfx, light.position.into(), light.colour.into());
+            UniformResource::new(gfx, light_data)
+        });
+
+        let light_resource = self.uniform_resources.get_mut(&key).unwrap();
+
+        light_resource.data.update("position", position);
+        light_resource.data.update("colour", colour);
+
+        light_resource.update(gfx);
     }
 
-    pub fn light(&self, light: &Light, shader: &Shader) -> &LightResource {
+    pub fn light(&self, light: &Light, shader: &Shader) -> &UniformResource {
         let key = (light.id, shader.id);
 
-        let light_resource = self.light_resources.get(&key).unwrap();
+        let light_resource = self.uniform_resources.get(&key).unwrap();
 
         light_resource
     }
 
     pub fn update_camera(&mut self, gfx: &Gfx, camera: &Camera, shader: &Shader) {
         let key = (camera.id, shader.id);
+        let view_position = UniformProp::Vec4F(camera.position.extend(1.).into());
+        let view_proj = UniformProp::Mat4F(camera.view_proj().to_cols_array_2d());
 
-        self.camera_resources
-            .entry(key)
-            .or_insert_with(|| gfx.create_camera_resource(shader.layout(ShaderBindGroup::Camera)));
+        self.uniform_resources.entry(key).or_insert_with(|| {
+            let camera_data = UniformDataBuilder::new("camera")
+                .prop("view_position", view_position)
+                .prop("view_proj", view_proj)
+                .build();
 
-        let camera_resource = self.camera_resources.get_mut(&key).unwrap();
+            UniformResource::new(gfx, camera_data)
+        });
 
-        let view_position = camera.position.extend(1.).to_array();
-        let view_proj = camera.view_proj().to_cols_array_2d();
+        let camera_resource = self.uniform_resources.get_mut(&key).unwrap();
 
-        camera_resource.update(gfx, view_position, view_proj);
+        camera_resource.data.update("view_position", view_position);
+        camera_resource.data.update("view_proj", view_proj);
+
+        camera_resource.update(gfx);
     }
 
-    pub fn camera(&self, camera: &Camera, shader: &Shader) -> &CameraResource {
+    pub fn camera(&self, camera: &Camera, shader: &Shader) -> &UniformResource {
         let key = (camera.id, shader.id);
 
-        let camera_resource = self.camera_resources.get(&key).unwrap();
+        let camera_resource = self.uniform_resources.get(&key).unwrap();
 
         camera_resource
     }

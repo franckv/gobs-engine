@@ -5,7 +5,6 @@ use winit::window::Window;
 
 use crate::context::Display;
 use crate::model::{VertexData, VertexFlag};
-use crate::resources::{CameraResource, LightResource};
 
 pub struct Gfx {
     pub(crate) display: RwLock<Display>,
@@ -101,14 +100,6 @@ impl Gfx {
                 .unwrap()
                 .resize(&self.device, width, height);
         }
-    }
-
-    pub fn create_camera_resource(&self, layout: &wgpu::BindGroupLayout) -> CameraResource {
-        CameraResource::new(&self.device, layout)
-    }
-
-    pub fn create_light_resource(&self, layout: &wgpu::BindGroupLayout) -> LightResource {
-        LightResource::new(&self.device, layout)
     }
 
     pub fn create_bind_group_layout(
