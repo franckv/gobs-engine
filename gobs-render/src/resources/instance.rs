@@ -6,12 +6,12 @@ use core::entity::instance::{InstanceData, InstanceFlag};
 
 use crate::context::Gfx;
 
-pub struct ModelInstance {
+pub struct InstanceBuffer {
     pub instance_buffer: wgpu::Buffer,
     pub instance_count: usize,
 }
 
-impl ModelInstance {
+impl InstanceBuffer {
     pub fn new(gfx: &Gfx, instance_data: &[InstanceData], flags: InstanceFlag) -> Self {
         let bytes = instance_data
             .iter()
@@ -26,7 +26,7 @@ impl ModelInstance {
                 usage: wgpu::BufferUsages::VERTEX | wgpu::BufferUsages::COPY_DST,
             });
 
-        ModelInstance {
+        InstanceBuffer {
             instance_buffer,
             instance_count: instance_data.len(),
         }

@@ -11,8 +11,8 @@ use core::entity::uniform::{UniformDataBuilder, UniformProp};
 use core::geometry::mesh::{Mesh, MeshId};
 
 use crate::model::{Model, ModelId};
-use crate::resources::mesh::MeshData;
-use crate::resources::ModelInstance;
+use crate::resources::mesh::MeshBuffer;
+use crate::resources::InstanceBuffer;
 use crate::resources::UniformResource;
 use crate::{
     context::Gfx,
@@ -21,9 +21,9 @@ use crate::{
 };
 
 pub struct ResourceManager {
-    mesh_buffers: HashMap<(MeshId, ShaderId), MeshData>,
+    mesh_buffers: HashMap<(MeshId, ShaderId), MeshBuffer>,
     material_bind_groups: HashMap<MaterialId, wgpu::BindGroup>,
-    instance_buffers: HashMap<(ModelId, ShaderId), ModelInstance>,
+    instance_buffers: HashMap<(ModelId, ShaderId), InstanceBuffer>,
     uniform_resources: HashMap<(Uuid, ShaderId), UniformResource>,
 }
 
@@ -108,7 +108,7 @@ impl ResourceManager {
         let key = (model.id, shader.id);
 
         if !self.instance_buffers.contains_key(&key) {
-            let model_instance = ModelInstance::new(gfx, instances, shader.instance_flags);
+            let model_instance = InstanceBuffer::new(gfx, instances, shader.instance_flags);
 
             self.instance_buffers.insert(key, model_instance);
         } else {
@@ -118,7 +118,7 @@ impl ResourceManager {
         }
     }
 
-    pub fn instance_data(&self, model: &Model, shader: &Shader) -> &ModelInstance {
+    pub fn instance_data(&self, model: &Model, shader: &Shader) -> &InstanceBuffer {
         let key = (model.id, shader.id);
 
         let model_instance = self.instance_buffers.get(&key).unwrap();
@@ -179,7 +179,7 @@ impl ResourceManager {
             let vertex_buffer = gfx.create_vertex_buffer(&mesh.vertices, shader.vertex_flags);
             let index_buffer = gfx.create_index_buffer(&mesh.indices);
 
-            MeshData {
+            MeshBuffer {
                 vertex_buffer,
                 index_buffer,
                 num_elements: mesh.indices.len(),
@@ -187,7 +187,7 @@ impl ResourceManager {
         });
     }
 
-    pub fn mesh_buffer(&self, mesh: &Mesh, shader: &Shader) -> &MeshData {
+    pub fn mesh_buffer(&self, mesh: &Mesh, shader: &Shader) -> &MeshBuffer {
         self.mesh_buffers.get(&(mesh.id, shader.id)).unwrap()
     }
 }

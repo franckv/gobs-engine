@@ -1,9 +1,9 @@
 mod mesh;
-mod model_instance;
+mod instance;
 mod resource_manager;
 mod uniform;
 
-pub use mesh::MeshData;
-pub use model_instance::ModelInstance;
+pub use mesh::MeshBuffer;
+pub use instance::InstanceBuffer;
 pub use resource_manager::ResourceManager;
 pub use uniform::UniformResource;
