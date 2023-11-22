@@ -1,19 +1,13 @@
 use anyhow::Result;
 use image::{imageops::FilterType, DynamicImage, GenericImage, GenericImageView, ImageBuffer};
 
+use gobs_core as core;
 use gobs_utils as utils;
 
+use core::material::texture::{Texture, TextureType};
 use utils::load::{self, AssetType};
 
-use crate::context::Gfx;
-use crate::model::{Texture, TextureType};
-
-pub async fn load_atlas(
-    gfx: &Gfx,
-    files: &[&str],
-    cols: u32,
-    is_normal_map: bool,
-) -> Result<Texture> {
+pub async fn load_atlas(files: &[&str], cols: u32, is_normal_map: bool) -> Result<Texture> {
     let n = files.len();
 
     let mut imgs = Vec::new();
@@ -56,11 +50,10 @@ pub async fn load_atlas(
     let img = &DynamicImage::ImageRgba8(target);
 
     Ok(Texture::new(
-        gfx,
         "atlas",
         ty,
+        &img.to_rgba8(),
         img.dimensions().0,
         img.dimensions().1,
-        &img.to_rgba8(),
     ))
 }

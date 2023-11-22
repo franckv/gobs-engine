@@ -11,10 +11,12 @@ use gobs_core as core;
 use gobs_game::input::Input;
 use gobs_render as render;
 
-use core::geometry::mesh::MeshBuilder;
+use core::{
+    geometry::mesh::MeshBuilder,
+    material::texture::{Texture, TextureType},
+};
 use render::{
-    context::Gfx,
-    model::{Material, MaterialBuilder, Model, ModelBuilder, Texture, TextureType},
+    model::{Material, MaterialBuilder, Model, ModelBuilder},
     shader::Shader,
 };
 
@@ -45,7 +47,7 @@ impl UIRenderer {
         }
     }
 
-    pub fn update<F>(&mut self, gfx: &Gfx, callback: F) -> Vec<Arc<Model>>
+    pub fn update<F>(&mut self, callback: F) -> Vec<Arc<Model>>
     where
         F: Fn(&Context),
     {
@@ -53,7 +55,7 @@ impl UIRenderer {
 
         let output = self.ctx.run(input, callback);
 
-        pollster::block_on(self.update_textures(gfx, &output));
+        pollster::block_on(self.update_textures(&output));
 
         let to_remove = output.textures_delta.free.clone();
 
@@ -113,13 +115,12 @@ impl UIRenderer {
         self.input.push(input);
     }
 
-    async fn update_textures(&mut self, gfx: &Gfx, output: &FullOutput) {
+    async fn update_textures(&mut self, output: &FullOutput) {
         for (id, img) in &output.textures_delta.set {
             info!("New texture {:?}", id);
             if img.pos.is_some() {
                 info!("Patching texture");
                 self.patch_texture(
-                    gfx,
                     self.font_texture
                         .get(id)
                         .cloned()
@@ -129,7 +130,7 @@ impl UIRenderer {
                 .await;
             } else {
                 info!("Allocate new texture");
-                let texture = self.decode_texture(gfx, img).await;
+                let texture = self.decode_texture(img).await;
                 self.font_texture.insert(*id, texture);
             }
         }
@@ -143,7 +144,7 @@ impl UIRenderer {
         }
     }
 
-    async fn decode_texture(&self, gfx: &Gfx, img: &ImageDelta) -> Arc<Material> {
+    async fn decode_texture(&self, img: &ImageDelta) -> Arc<Material> {
         match &img.image {
             egui::ImageData::Color(_) => todo!(),
             egui::ImageData::Font(font) => {
@@ -151,23 +152,22 @@ impl UIRenderer {
                 let bytes: &[u8] = bytemuck::cast_slice(pixels.as_slice());
 
                 let texture = Texture::new(
-                    gfx,
                     "egui",
                     TextureType::IMAGE,
+                    bytes,
                     img.image.width() as u32,
                     img.image.height() as u32,
-                    bytes,
                 );
 
                 MaterialBuilder::new("diffuse")
                     .diffuse_texture_t(texture)
                     .await
-                    .build(gfx)
+                    .build()
             }
         }
     }
 
-    async fn patch_texture(&self, gfx: &Gfx, material: Arc<Material>, img: &ImageDelta) {
+    async fn patch_texture(&self, material: Arc<Material>, img: &ImageDelta) {
         match &img.image {
             egui::ImageData::Color(_) => todo!(),
             egui::ImageData::Font(font) => {
@@ -176,8 +176,20 @@ impl UIRenderer {
 
                 let pos = img.pos.expect("Can only patch texture with start position");
 
-                material.diffuse_texture.patch_texture(
-                    gfx,
+                info!(
+                    "Patching texture origin: {}/{}, size: {}/{}, len={}",
+                    pos[0],
+                    pos[1],
+                    font.width(),
+                    font.height(),
+                    bytes.len()
+                );
+                info!(
+                    "Patching texture original size: {:?}",
+                    material.diffuse_texture.read().unwrap().size()
+                );
+
+                material.diffuse_texture.write().unwrap().patch_texture(
                     pos[0] as u32,
                     pos[1] as u32,
                     font.width() as u32,

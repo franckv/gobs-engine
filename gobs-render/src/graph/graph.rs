@@ -1,10 +1,13 @@
 use std::sync::Arc;
 
+use gobs_core as core;
+
+use core::material::texture::{Texture, TextureType};
+
 use crate::context::Gfx;
 use crate::graph::batch::Batch;
 use crate::graph::pass::RenderPass;
-use crate::model::{Texture, TextureType};
-use crate::resources::ResourceManager;
+use crate::resources::{ResourceManager, TextureBuffer};
 use crate::shader::Shader;
 
 #[derive(Debug)]
@@ -18,18 +21,20 @@ pub struct RenderGraph {
     name: String,
     resource_manager: ResourceManager,
     passes: Vec<RenderPass>,
-    depth_texture: Texture,
+    depth_texture: TextureBuffer,
 }
 
 impl RenderGraph {
     pub fn new(name: &str, gfx: &Gfx, shaders: &[Arc<Shader>]) -> Self {
-        let depth_texture = Texture::new(
+        let depth_texture = TextureBuffer::new(
             gfx,
-            "depth_texture",
-            TextureType::DEPTH,
-            gfx.width(),
-            gfx.height(),
-            &[],
+            Texture::new(
+                "depth_texture",
+                TextureType::DEPTH,
+                &[],
+                gfx.width(),
+                gfx.height(),
+            ),
         );
 
         let mut passes = vec![RenderPass::new("Forward Pass", true)];
@@ -56,9 +61,12 @@ impl RenderGraph {
     fn update_depth(&mut self, gfx: &Gfx) {
         let (width, height) = (gfx.width(), gfx.height());
 
-        if self.depth_texture.width != width || self.depth_texture.height != height {
-            self.depth_texture =
-                Texture::new(gfx, "depth_texture", TextureType::DEPTH, width, height, &[]);
+        if self.depth_texture.texture.width != width || self.depth_texture.texture.height != height
+        {
+            self.depth_texture = TextureBuffer::new(
+                gfx,
+                Texture::new("depth_texture", TextureType::DEPTH, &[], width, height),
+            );
         }
     }
 

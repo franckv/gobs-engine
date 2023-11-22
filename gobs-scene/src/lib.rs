@@ -9,6 +9,6 @@ use gobs_render as render;
 
 pub use render::context::Gfx;
 pub use render::graph::graph::RenderError;
-pub use render::model::{Material, MaterialBuilder, Model, ModelBuilder, Texture, TextureType};
+pub use render::model::{Material, MaterialBuilder, Model, ModelBuilder};
 pub use render::pipeline::PipelineFlag;
 pub use render::shader::Shader;

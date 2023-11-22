@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use std::sync::Arc;
 
 use glam::{Vec2, Vec3, Vec4};
-use log::info;
+use log::{debug, info};
 use uuid::Uuid;
 
 use crate::geometry::vertex::{VertexData, VertexDataBuilder};
@@ -63,13 +63,13 @@ impl MeshBuilder {
 
     fn autoindex(mut self) -> Self {
         if !self.indices.is_empty() {
-            info!("Skip indices");
+            debug!("Skip indices");
             return self;
         }
 
         let mut unique = HashMap::new();
 
-        info!("Indexing {} vertices", self.vertices.len());
+        debug!("Indexing {} vertices", self.vertices.len());
 
         let mut idx = 0;
         let vertices = self
@@ -102,7 +102,7 @@ impl MeshBuilder {
     }
 
     fn update_tangent(mut self) -> Self {
-        info!("Calculating tangents for {} indices", self.indices.len());
+        debug!("Calculating tangents for {} indices", self.indices.len());
 
         let mut triangles_included = vec![0; self.vertices.len()];
 
@@ -157,7 +157,7 @@ impl MeshBuilder {
 
         self = self.update_tangent();
 
-        info!(
+        debug!(
             "Load mesh {} ({} vertices / {} indices)",
             self.name,
             self.vertices.len(),

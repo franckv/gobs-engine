@@ -59,7 +59,7 @@ impl RenderPass {
                 resource_manager.update_mesh_buffer(gfx, mesh, shader);
                 if let Some(material) = material {
                     if shader.vertex_flags.contains(VertexFlag::TEXTURE) {
-                        resource_manager.update_material_bind_group(
+                        resource_manager.update_material(
                             gfx,
                             material,
                             shader.layout(ShaderBindGroup::Material),

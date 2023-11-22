@@ -55,18 +55,18 @@ impl Run for App {
         scene.toggle_pass(&wire_shader.name);
 
         let wall_material = MaterialBuilder::new("diffuse")
-            .diffuse_texture(gfx, examples::WALL_TEXTURE)
+            .diffuse_texture(examples::WALL_TEXTURE)
             .await
-            .normal_texture(gfx, examples::WALL_TEXTURE_N)
+            .normal_texture(examples::WALL_TEXTURE_N)
             .await
-            .build(gfx);
+            .build();
 
         let floor_material = MaterialBuilder::new("diffuse")
-            .diffuse_texture(gfx, examples::FLOOR_TEXTURE)
+            .diffuse_texture(examples::FLOOR_TEXTURE)
             .await
-            .normal_texture(gfx, examples::FLOOR_TEXTURE_N)
+            .normal_texture(examples::FLOOR_TEXTURE_N)
             .await
-            .build(gfx);
+            .build();
 
         let wall_model = ModelBuilder::new()
             .add_mesh(
@@ -84,7 +84,7 @@ impl Run for App {
         scene.camera.position = (pos_x, pos_y, pos_z).into();
 
         let light_model = scene
-            .load_model(gfx, examples::LIGHT, None, solid_shader)
+            .load_model(examples::LIGHT, None, solid_shader)
             .await
             .unwrap();
 

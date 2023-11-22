@@ -46,11 +46,11 @@ impl Run for App {
         scene.toggle_pass(&wire.name);
 
         let material = MaterialBuilder::new("diffuse")
-            .diffuse_texture(gfx, examples::WALL_TEXTURE)
+            .diffuse_texture(examples::WALL_TEXTURE)
             .await
-            .normal_texture(gfx, examples::WALL_TEXTURE_N)
+            .normal_texture(examples::WALL_TEXTURE_N)
             .await
-            .build(gfx);
+            .build();
 
         let cube = ModelBuilder::new()
             .add_mesh(scene::shape::Shapes::cube(1, 1, &[1]), Some(material))

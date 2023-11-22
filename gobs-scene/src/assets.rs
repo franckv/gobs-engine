@@ -9,15 +9,13 @@ use gobs_render as render;
 use gobs_utils as utils;
 
 use core::geometry::mesh::{Mesh, MeshBuilder};
-use render::model::{Material, Model, ModelBuilder, Texture};
+use core::material::texture::{Texture, TextureType};
+use render::model::{Material, Model, ModelBuilder};
 use render::shader::Shader;
 use utils::load::{self, AssetType};
 
-use crate::Gfx;
-
 pub async fn load_model(
     file_name: &str,
-    gfx: &Gfx,
     default_material: Option<Arc<Material>>,
     shader: Arc<Shader>,
 ) -> Result<Arc<Model>> {
@@ -39,7 +37,7 @@ pub async fn load_model(
     )
     .await?;
 
-    let materials = load_material(gfx, file_name, obj_materials?).await?;
+    let materials = load_material(file_name, obj_materials?).await?;
 
     let meshes = load_mesh(models, &materials, default_material).await;
 
@@ -105,7 +103,6 @@ async fn load_mesh(
 }
 
 async fn load_material(
-    gfx: &Gfx,
     name: &str,
     obj_materials: Vec<tobj::Material>,
 ) -> Result<Vec<Arc<Material>>> {
@@ -116,17 +113,17 @@ async fn load_material(
 
         let diffuse_texture = {
             if let Some(texture_name) = &m.diffuse_texture {
-                Texture::load_texture(gfx, texture_name, false).await?
+                Texture::from_file(texture_name, TextureType::IMAGE).await?
             } else {
-                Texture::load_texture(gfx, "cube-diffuse.jpg", false).await?
+                Texture::from_file("cube-diffuse.jpg", TextureType::IMAGE).await?
             }
         };
 
         let normal_texture = {
             if let Some(texture_name) = &m.normal_texture {
-                Texture::load_texture(gfx, texture_name, true).await?
+                Texture::from_file(texture_name, TextureType::NORMAL).await?
             } else {
-                Texture::load_texture(gfx, "cube-normal.png", true).await?
+                Texture::from_file("cube-normal.png", TextureType::NORMAL).await?
             }
         };
 

@@ -1,10 +1,11 @@
-use std::sync::Arc;
+use std::sync::{Arc, RwLock};
 
-use crate::model::Texture;
 use log::*;
 use uuid::Uuid;
 
-use crate::context::Gfx;
+use gobs_core as core;
+
+use core::material::texture::{Texture, TextureType};
 
 pub struct MaterialBuilder {
     name: String,
@@ -21,8 +22,8 @@ impl MaterialBuilder {
         }
     }
 
-    pub async fn diffuse_color(mut self, gfx: &Gfx, color: [u8; 4]) -> Self {
-        self.diffuse_texture = Some(Texture::from_color(gfx, color, false));
+    pub async fn diffuse_color(mut self, color: [u8; 4]) -> Self {
+        self.diffuse_texture = Some(Texture::from_color(color, TextureType::IMAGE));
 
         self
     }
@@ -33,27 +34,27 @@ impl MaterialBuilder {
         self
     }
 
-    pub async fn diffuse_texture(mut self, gfx: &Gfx, file: &str) -> Self {
-        self.diffuse_texture = Some(Texture::load_texture(gfx, file, false).await.unwrap());
+    pub async fn diffuse_texture(mut self, file: &str) -> Self {
+        self.diffuse_texture = Some(Texture::from_file(file, TextureType::IMAGE).await.unwrap());
 
         self
     }
 
-    pub async fn normal_texture(mut self, gfx: &Gfx, file: &str) -> Self {
-        self.normal_texture = Some(Texture::load_texture(gfx, file, true).await.unwrap());
+    pub async fn normal_texture(mut self, file: &str) -> Self {
+        self.normal_texture = Some(Texture::from_file(file, TextureType::NORMAL).await.unwrap());
 
         self
     }
 
-    pub fn build(self, gfx: &Gfx) -> Arc<Material> {
+    pub fn build(self) -> Arc<Material> {
         let diffuse_texture = match self.diffuse_texture {
             Some(diffuse_texture) => diffuse_texture,
-            None => Texture::from_color(gfx, [255, 255, 255, 1], false),
+            None => Texture::from_color([255, 255, 255, 1], TextureType::IMAGE),
         };
 
         let normal_texture = match self.normal_texture {
             Some(normal_texture) => normal_texture,
-            None => Texture::from_color(gfx, [0, 0, 0, 1], true),
+            None => Texture::from_color([0, 0, 0, 1], TextureType::NORMAL),
         };
 
         Material::new(self.name, diffuse_texture, normal_texture)
@@ -65,8 +66,8 @@ pub type MaterialId = Uuid;
 pub struct Material {
     pub id: MaterialId,
     pub name: String,
-    pub diffuse_texture: Texture,
-    pub normal_texture: Texture,
+    pub diffuse_texture: RwLock<Texture>,
+    pub normal_texture: RwLock<Texture>,
 }
 
 impl Material {
@@ -76,8 +77,8 @@ impl Material {
         Arc::new(Material {
             id: Uuid::new_v4(),
             name,
-            diffuse_texture,
-            normal_texture,
+            diffuse_texture: RwLock::new(diffuse_texture),
+            normal_texture: RwLock::new(normal_texture),
         })
     }
 }

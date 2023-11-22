@@ -77,12 +77,11 @@ impl Scene {
 
     pub async fn load_model(
         &mut self,
-        gfx: &Gfx,
         name: &str,
         default_material: Option<Arc<Material>>,
         shader: Arc<Shader>,
     ) -> Result<Arc<Model>> {
-        let model = assets::load_model(name, gfx, default_material, shader.clone()).await?;
+        let model = assets::load_model(name, default_material, shader.clone()).await?;
 
         Ok(model)
     }

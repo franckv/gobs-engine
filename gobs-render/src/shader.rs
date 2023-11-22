@@ -9,7 +9,6 @@ use core::geometry::vertex::VertexFlag;
 
 use crate::{
     context::Gfx,
-    model::Texture,
     pipeline::{Generator, Pipeline, PipelineBuilder, PipelineFlag},
 };
 
@@ -58,7 +57,7 @@ impl Shader {
             .vertex_layout(vertex_layout)
             .vertex_layout(instance_layout)
             .color_format(gfx.format())
-            .depth_format(Texture::DEPTH_FORMAT)
+            .depth_format(wgpu::TextureFormat::Depth32Float)
             .build();
 
         Arc::new(Shader {

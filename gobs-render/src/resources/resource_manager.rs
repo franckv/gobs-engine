@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 
+use log::info;
 use uuid::Uuid;
 
 use gobs_core as core;
@@ -9,10 +10,12 @@ use core::entity::instance::InstanceData;
 use core::entity::light::Light;
 use core::entity::uniform::{UniformDataBuilder, UniformProp};
 use core::geometry::mesh::{Mesh, MeshId};
+use core::material::texture::TextureId;
 
 use crate::model::{Model, ModelId};
 use crate::resources::mesh::MeshBuffer;
 use crate::resources::InstanceBuffer;
+use crate::resources::TextureBuffer;
 use crate::resources::UniformResource;
 use crate::{
     context::Gfx,
@@ -25,6 +28,7 @@ pub struct ResourceManager {
     material_bind_groups: HashMap<MaterialId, wgpu::BindGroup>,
     instance_buffers: HashMap<(ModelId, ShaderId), InstanceBuffer>,
     uniform_resources: HashMap<(Uuid, ShaderId), UniformResource>,
+    texture_resources: HashMap<TextureId, TextureBuffer>,
 }
 
 impl ResourceManager {
@@ -34,6 +38,7 @@ impl ResourceManager {
             material_bind_groups: HashMap::new(),
             instance_buffers: HashMap::new(),
             uniform_resources: HashMap::new(),
+            texture_resources: HashMap::new(),
         }
     }
 
@@ -126,12 +131,54 @@ impl ResourceManager {
         model_instance
     }
 
-    pub fn update_material_bind_group(
+    pub fn update_material(
         &mut self,
         gfx: &Gfx,
         material: &Material,
         layout: &wgpu::BindGroupLayout,
     ) {
+        let diffuse_texture_id = material.diffuse_texture.read().unwrap().id;
+
+        if material.diffuse_texture.read().unwrap().dirty {
+            info!("Replace texture {}", diffuse_texture_id);
+            material.diffuse_texture.write().unwrap().dirty = false;
+            self.texture_resources.remove(&diffuse_texture_id);
+            self.material_bind_groups.remove(&material.id);
+        }
+
+        self.texture_resources
+            .entry(diffuse_texture_id)
+            .or_insert_with(|| {
+                info!("Insert texture {}", diffuse_texture_id);
+                TextureBuffer::new(gfx, material.diffuse_texture.read().unwrap().clone())
+            });
+
+        let normal_texture_id = material.normal_texture.read().unwrap().id;
+
+        if material.normal_texture.read().unwrap().dirty {
+            info!("Replace normal texture {}", diffuse_texture_id);
+            material.normal_texture.write().unwrap().dirty = false;
+            self.texture_resources.remove(&normal_texture_id);
+            self.material_bind_groups.remove(&material.id);
+        }
+
+        self.texture_resources
+            .entry(normal_texture_id)
+            .or_insert_with(|| {
+                info!("Insert normal texture {}", diffuse_texture_id);
+                TextureBuffer::new(gfx, material.normal_texture.read().unwrap().clone())
+            });
+
+        let diffuse_texture = self
+            .texture_resources
+            .get(&material.diffuse_texture.read().unwrap().id)
+            .unwrap();
+
+        let normal_texture = self
+            .texture_resources
+            .get(&material.normal_texture.read().unwrap().id)
+            .unwrap();
+
         self.material_bind_groups
             .entry(material.id)
             .or_insert_with(|| {
@@ -140,27 +187,19 @@ impl ResourceManager {
                     entries: &[
                         wgpu::BindGroupEntry {
                             binding: 0,
-                            resource: wgpu::BindingResource::TextureView(
-                                &material.diffuse_texture.view,
-                            ),
+                            resource: wgpu::BindingResource::TextureView(&diffuse_texture.view),
                         },
                         wgpu::BindGroupEntry {
                             binding: 1,
-                            resource: wgpu::BindingResource::Sampler(
-                                &material.diffuse_texture.sampler,
-                            ),
+                            resource: wgpu::BindingResource::Sampler(&diffuse_texture.sampler),
                         },
                         wgpu::BindGroupEntry {
                             binding: 2,
-                            resource: wgpu::BindingResource::TextureView(
-                                &material.normal_texture.view,
-                            ),
+                            resource: wgpu::BindingResource::TextureView(&normal_texture.view),
                         },
                         wgpu::BindGroupEntry {
                             binding: 3,
-                            resource: wgpu::BindingResource::Sampler(
-                                &material.normal_texture.sampler,
-                            ),
+                            resource: wgpu::BindingResource::Sampler(&normal_texture.sampler),
                         },
                     ],
                     label: None,
