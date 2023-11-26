@@ -7,6 +7,28 @@ use gobs_core as core;
 
 use core::material::texture::{Texture, TextureType};
 
+pub type MaterialId = Uuid;
+
+pub struct Material {
+    pub id: MaterialId,
+    pub name: String,
+    pub diffuse_texture: RwLock<Texture>,
+    pub normal_texture: RwLock<Texture>,
+}
+
+impl Material {
+    pub fn new(name: String, diffuse_texture: Texture, normal_texture: Texture) -> Arc<Self> {
+        info!("Create Material bind group");
+
+        Arc::new(Material {
+            id: Uuid::new_v4(),
+            name,
+            diffuse_texture: RwLock::new(diffuse_texture),
+            normal_texture: RwLock::new(normal_texture),
+        })
+    }
+}
+
 pub struct MaterialBuilder {
     name: String,
     diffuse_texture: Option<Texture>,
@@ -58,27 +80,5 @@ impl MaterialBuilder {
         };
 
         Material::new(self.name, diffuse_texture, normal_texture)
-    }
-}
-
-pub type MaterialId = Uuid;
-
-pub struct Material {
-    pub id: MaterialId,
-    pub name: String,
-    pub diffuse_texture: RwLock<Texture>,
-    pub normal_texture: RwLock<Texture>,
-}
-
-impl Material {
-    pub fn new(name: String, diffuse_texture: Texture, normal_texture: Texture) -> Arc<Self> {
-        info!("Create Material bind group");
-
-        Arc::new(Material {
-            id: Uuid::new_v4(),
-            name,
-            diffuse_texture: RwLock::new(diffuse_texture),
-            normal_texture: RwLock::new(normal_texture),
-        })
     }
 }

@@ -11,6 +11,58 @@ bitflags! {
     }
 }
 
+#[derive(Clone, Copy)]
+pub struct VertexData {
+    pub position: Vec3,
+    pub color: Vec4,
+    pub texture: Vec2,
+    pub normal: Vec3,
+    pub normal_texture: Vec2,
+    pub tangent: Vec3,
+    pub bitangent: Vec3,
+    pub index: f32,
+}
+
+impl VertexData {
+    pub fn raw(&self, flags: VertexFlag) -> Vec<u8> {
+        let mut data: Vec<u8> = Vec::new();
+
+        if flags.contains(VertexFlag::POSITION) {
+            data.extend_from_slice(bytemuck::cast_slice(&self.position.to_array()));
+        };
+
+        if flags.contains(VertexFlag::COLOR) {
+            data.extend_from_slice(bytemuck::cast_slice(&self.color.to_array()));
+        };
+
+        if flags.contains(VertexFlag::TEXTURE) {
+            data.extend_from_slice(bytemuck::cast_slice(&self.texture.to_array()));
+        };
+
+        if flags.contains(VertexFlag::NORMAL) {
+            data.extend_from_slice(bytemuck::cast_slice(&self.normal.to_array()));
+            data.extend_from_slice(bytemuck::cast_slice(&self.normal_texture.to_array()));
+            data.extend_from_slice(bytemuck::cast_slice(&self.tangent.to_array()));
+            data.extend_from_slice(bytemuck::cast_slice(&self.bitangent.to_array()));
+        };
+
+        data
+    }
+
+    pub fn size(flags: VertexFlag) -> usize {
+        flags
+            .iter()
+            .map(|bit| match bit {
+                VertexFlag::POSITION => std::mem::size_of::<Vec3>(),
+                VertexFlag::COLOR => std::mem::size_of::<Vec4>(),
+                VertexFlag::TEXTURE => std::mem::size_of::<Vec2>(),
+                VertexFlag::NORMAL => 3 * std::mem::size_of::<Vec3>() + std::mem::size_of::<Vec2>(),
+                _ => unimplemented!(),
+            })
+            .sum()
+    }
+}
+
 pub struct VertexDataBuilder {
     pub position: Option<Vec3>,
     pub color: Option<Vec4>,
@@ -101,97 +153,5 @@ impl VertexDataBuilder {
 impl Default for VertexDataBuilder {
     fn default() -> Self {
         Self::new()
-    }
-}
-
-#[derive(Clone)]
-pub struct VertexData {
-    pub position: Vec3,
-    pub color: Vec4,
-    pub texture: Vec2,
-    pub normal: Vec3,
-    pub normal_texture: Vec2,
-    pub tangent: Vec3,
-    pub bitangent: Vec3,
-    pub index: f32,
-}
-
-impl VertexData {
-    pub fn position(&self) -> Vec3 {
-        self.position
-    }
-
-    pub fn color(&self) -> Vec4 {
-        self.color
-    }
-
-    pub fn texture(&self) -> Vec2 {
-        self.texture
-    }
-
-    pub fn normal_texture(&self) -> Vec2 {
-        self.normal_texture
-    }
-
-    pub fn normal(&self) -> Vec3 {
-        self.normal
-    }
-
-    pub fn tangent(&self) -> Vec3 {
-        self.tangent
-    }
-
-    pub fn bitangent(&self) -> Vec3 {
-        self.bitangent
-    }
-
-    pub fn index(&self) -> f32 {
-        self.index
-    }
-
-    pub fn set_tangent(&mut self, tangent: Vec3) {
-        self.tangent = tangent
-    }
-
-    pub fn set_bitangent(&mut self, bitangent: Vec3) {
-        self.bitangent = bitangent
-    }
-
-    pub fn raw(&self, flags: VertexFlag) -> Vec<u8> {
-        let mut data: Vec<u8> = Vec::new();
-
-        if flags.contains(VertexFlag::POSITION) {
-            data.extend_from_slice(bytemuck::cast_slice(&self.position.to_array()));
-        };
-
-        if flags.contains(VertexFlag::COLOR) {
-            data.extend_from_slice(bytemuck::cast_slice(&self.color.to_array()));
-        };
-
-        if flags.contains(VertexFlag::TEXTURE) {
-            data.extend_from_slice(bytemuck::cast_slice(&self.texture.to_array()));
-        };
-
-        if flags.contains(VertexFlag::NORMAL) {
-            data.extend_from_slice(bytemuck::cast_slice(&self.normal.to_array()));
-            data.extend_from_slice(bytemuck::cast_slice(&self.normal_texture.to_array()));
-            data.extend_from_slice(bytemuck::cast_slice(&self.tangent.to_array()));
-            data.extend_from_slice(bytemuck::cast_slice(&self.bitangent.to_array()));
-        };
-
-        data
-    }
-
-    pub fn size(flags: VertexFlag) -> usize {
-        flags
-            .iter()
-            .map(|bit| match bit {
-                VertexFlag::POSITION => std::mem::size_of::<Vec3>(),
-                VertexFlag::COLOR => std::mem::size_of::<Vec4>(),
-                VertexFlag::TEXTURE => std::mem::size_of::<Vec2>(),
-                VertexFlag::NORMAL => 3 * std::mem::size_of::<Vec3>() + std::mem::size_of::<Vec2>(),
-                _ => unimplemented!(),
-            })
-            .sum()
     }
 }

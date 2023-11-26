@@ -13,6 +13,12 @@ pub struct BatchItem<'a> {
     pub(crate) instances: Option<&'a Vec<InstanceData>>,
 }
 
+pub struct Batch<'a> {
+    pub(crate) camera: &'a Camera,
+    pub(crate) light: &'a Light,
+    pub(crate) items: Vec<BatchItem<'a>>,
+}
+
 pub struct BatchBuilder<'a> {
     camera: Option<&'a Camera>,
     light: Option<&'a Light>,
@@ -64,10 +70,4 @@ impl<'a> Default for BatchBuilder<'a> {
     fn default() -> Self {
         Self::new()
     }
-}
-
-pub struct Batch<'a> {
-    pub(crate) camera: &'a Camera,
-    pub(crate) light: &'a Light,
-    pub(crate) items: Vec<BatchItem<'a>>,
 }

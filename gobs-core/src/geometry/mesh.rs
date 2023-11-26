@@ -76,7 +76,7 @@ impl MeshBuilder {
             .vertices
             .into_iter()
             .filter(|v| {
-                let key = format!("{}:{}:{}", v.position(), v.texture(), v.normal());
+                let key = format!("{}:{}:{}", v.position, v.texture, v.normal);
                 if unique.contains_key(&key) {
                     let idx = unique.get(&key).unwrap();
                     self.indices.push(*idx);
@@ -111,13 +111,13 @@ impl MeshBuilder {
             let v1 = self.vertices[c[1] as usize].clone();
             let v2 = self.vertices[c[2] as usize].clone();
 
-            let pos0 = v0.position();
-            let pos1 = v1.position();
-            let pos2 = v2.position();
+            let pos0 = v0.position;
+            let pos1 = v1.position;
+            let pos2 = v2.position;
 
-            let uv0: Vec2 = v0.texture();
-            let uv1: Vec2 = v1.texture();
-            let uv2: Vec2 = v2.texture();
+            let uv0: Vec2 = v0.texture;
+            let uv1: Vec2 = v1.texture;
+            let uv2: Vec2 = v2.texture;
 
             let delta_pos1 = pos1 - pos0;
             let delta_pos2 = pos2 - pos0;
@@ -128,12 +128,12 @@ impl MeshBuilder {
             let tangent = (delta_pos1 * delta_uv2.y - delta_pos2 * delta_uv1.y) * r;
             let bitangent = (delta_pos2 * delta_uv1.x - delta_pos1 * delta_uv2.x) * -r;
 
-            self.vertices[c[0] as usize].set_tangent(tangent + v0.tangent());
-            self.vertices[c[1] as usize].set_tangent(tangent + v1.tangent());
-            self.vertices[c[2] as usize].set_tangent(tangent + v2.tangent());
-            self.vertices[c[0] as usize].set_bitangent(bitangent + v0.bitangent());
-            self.vertices[c[1] as usize].set_bitangent(bitangent + v1.bitangent());
-            self.vertices[c[2] as usize].set_bitangent(bitangent + v2.bitangent());
+            self.vertices[c[0] as usize].tangent = tangent + v0.tangent;
+            self.vertices[c[1] as usize].tangent = tangent + v1.tangent;
+            self.vertices[c[2] as usize].tangent = tangent + v2.tangent;
+            self.vertices[c[0] as usize].bitangent = bitangent + v0.bitangent;
+            self.vertices[c[1] as usize].bitangent = bitangent + v1.bitangent;
+            self.vertices[c[2] as usize].bitangent = bitangent + v2.bitangent;
 
             triangles_included[c[0] as usize] += 1;
             triangles_included[c[1] as usize] += 1;
@@ -143,8 +143,8 @@ impl MeshBuilder {
         for (i, n) in triangles_included.into_iter().enumerate() {
             let denom = 1. / n as f32;
             let v = &mut self.vertices[i];
-            v.set_tangent(v.tangent() * denom);
-            v.set_bitangent(v.bitangent() * denom);
+            v.tangent = v.tangent * denom;
+            v.bitangent = v.bitangent * denom;
         }
 
         self
