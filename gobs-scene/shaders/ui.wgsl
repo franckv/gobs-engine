@@ -76,5 +76,5 @@ fn tex_map(tex_coords: vec2f, cols: f32, rows: f32, index: f32) -> vec2f {
 fn fs_main(in: VertexOutput) -> @location(0) vec4f {
     let object_color: vec4f = textureSample(t_diffuse, s_diffuse, in.tex_coords);
 
-    return vec4f(object_color.xyz * in.color.xyz, in.color.a);
+    return in.color * object_color;
 }

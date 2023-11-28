@@ -20,6 +20,8 @@ use render::{
     shader::Shader,
 };
 
+const PIXEL_PER_POINT: f32 = 1.;
+
 pub struct UIRenderer {
     ctx: Context,
     width: f32,
@@ -34,7 +36,7 @@ impl UIRenderer {
     pub fn new(width: f32, height: f32, shader: Arc<Shader>) -> Self {
         let ctx = egui::Context::default();
 
-        ctx.set_pixels_per_point(1.);
+        ctx.set_pixels_per_point(PIXEL_PER_POINT);
 
         UIRenderer {
             ctx,
@@ -49,7 +51,7 @@ impl UIRenderer {
 
     pub fn update<F>(&mut self, callback: F) -> Vec<Arc<Model>>
     where
-        F: Fn(&Context),
+        F: FnMut(&Context),
     {
         let input = self.prepare_inputs();
 
@@ -208,7 +210,7 @@ impl UIRenderer {
     ) -> Vec<Arc<Model>> {
         let mut models = Vec::new();
 
-        let primitives = ctx.tessellate(output.shapes, 1.);
+        let primitives = ctx.tessellate(output.shapes, PIXEL_PER_POINT);
 
         //println!("{:#?}", primitives);
         primitives.iter().for_each(|s| {
