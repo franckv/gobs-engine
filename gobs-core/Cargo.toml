@@ -1,6 +1,6 @@
 [package]
 name = "gobs-core"
-version = "0.1.0"
+version = { workspace = true }
 authors = { workspace = true }
 edition = { workspace = true }
 
@@ -8,7 +8,7 @@ edition = { workspace = true }
 anyhow = { workspace = true }
 bitflags = { workspace = true }
 bytemuck = { workspace = true }
-gobs-utils = { path = "../gobs-utils" }
+gobs-utils = { workspace = true }
 image = { workspace = true }
 indexmap = { workspace = true }
 glam = { workspace = true }

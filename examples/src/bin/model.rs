@@ -1,19 +1,11 @@
 use glam::{Quat, Vec3};
 
-use gobs_core as core;
-use gobs_game as game;
-use gobs_scene as scene;
-
-use core::entity::camera::Camera;
-use core::entity::light::Light;
-use game::{
+use gobs::core::entity::{camera::Camera, light::Light};
+use gobs::game::{
     app::{Application, Run},
-    input::Input,
+    input::{Input, Key},
 };
-use scene::scene::Scene;
-use scene::Gfx;
-use scene::MaterialBuilder;
-use scene::RenderError;
+use gobs::scene::{Gfx, MaterialBuilder, RenderError, Scene};
 
 use examples::CameraController;
 
@@ -96,7 +88,7 @@ impl Run for App {
     fn input(&mut self, _gfx: &Gfx, input: Input) {
         match input {
             Input::KeyPressed(key) => match key {
-                game::input::Key::W => self.scene.toggle_pass(examples::WIRE_PASS),
+                Key::W => self.scene.toggle_pass(examples::WIRE_PASS),
                 _ => self.camera_controller.key_pressed(key),
             },
             Input::KeyReleased(key) => {

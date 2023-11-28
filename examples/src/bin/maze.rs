@@ -4,20 +4,13 @@ use log::*;
 
 use glam::{Quat, Vec3};
 
-use gobs_core as core;
-use gobs_game as game;
-use gobs_scene as scene;
-
-use core::entity::camera::Camera;
-use core::entity::light::Light;
-use game::{
+use gobs::core::entity::{camera::Camera, light::Light};
+use gobs::game::{
     app::{Application, Run},
-    input::Input,
+    input::{Input, Key},
 };
-use scene::Gfx;
-use scene::RenderError;
-use scene::{scene::Scene, Model};
-use scene::{MaterialBuilder, ModelBuilder};
+use gobs::scene::shape::Shapes;
+use gobs::scene::{Gfx, MaterialBuilder, Model, ModelBuilder, RenderError, Scene};
 
 use examples::CameraController;
 
@@ -69,14 +62,11 @@ impl Run for App {
             .build();
 
         let wall_model = ModelBuilder::new()
-            .add_mesh(
-                scene::shape::Shapes::cube(1, 1, &[1]),
-                Some(wall_material.clone()),
-            )
+            .add_mesh(Shapes::cube(1, 1, &[1]), Some(wall_material.clone()))
             .build(phong_shader.clone());
 
         let floor_model = ModelBuilder::new()
-            .add_mesh(scene::shape::Shapes::cube(3, 2, &[4]), Some(floor_material))
+            .add_mesh(Shapes::cube(3, 2, &[4]), Some(floor_material))
             .build(phong_shader);
 
         let (pos_x, pos_y, pos_z) = Self::load_scene(&mut scene, wall_model, floor_model);
@@ -134,7 +124,7 @@ impl Run for App {
     fn input(&mut self, _gfx: &Gfx, input: Input) {
         match input {
             Input::KeyPressed(key) => match key {
-                game::input::Key::W => self.scene.toggle_pass(examples::WIRE_PASS),
+                Key::W => self.scene.toggle_pass(examples::WIRE_PASS),
                 _ => self.camera_controller.key_pressed(key),
             },
             Input::KeyReleased(key) => {

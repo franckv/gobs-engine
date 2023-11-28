@@ -2,20 +2,13 @@ use std::sync::Arc;
 
 use glam::{Quat, Vec3};
 
-use gobs_core as core;
-use gobs_game as game;
-use gobs_scene as scene;
-
-use core::entity::camera::Camera;
-use core::entity::light::Light;
-use game::{
+use gobs::core::entity::{camera::Camera, light::Light};
+use gobs::game::{
     app::{Application, Run},
-    input::Input,
+    input::{Input, Key},
 };
-use scene::ModelBuilder;
-use scene::RenderError;
-use scene::{scene::Scene, MaterialBuilder};
-use scene::{Gfx, Model};
+use gobs::scene::shape::Shapes;
+use gobs::scene::{Gfx, MaterialBuilder, Model, ModelBuilder, RenderError, Scene};
 
 use examples::CameraController;
 
@@ -55,11 +48,7 @@ impl Run for App {
 
         let triangle = ModelBuilder::new()
             .add_mesh(
-                scene::shape::Shapes::triangle(
-                    [1., 0., 0., 1.],
-                    [0., 1., 0., 1.],
-                    [0., 0., 1., 1.],
-                ),
+                Shapes::triangle([1., 0., 0., 1.], [0., 1., 0., 1.], [0., 0., 1., 1.]),
                 None,
             )
             .build(solid_shader.clone());
@@ -77,7 +66,7 @@ impl Run for App {
             .unwrap();
 
         let cube = ModelBuilder::new()
-            .add_mesh(scene::shape::Shapes::cube(1, 1, &[1]), Some(material))
+            .add_mesh(Shapes::cube(1, 1, &[1]), Some(material))
             .build(phong_shader);
 
         let light_model = scene
@@ -155,11 +144,11 @@ impl Run for App {
     fn input(&mut self, _gfx: &Gfx, input: Input) {
         match input {
             Input::KeyPressed(key) => match key {
-                game::input::Key::T => self.scene.toggle_layer(TRIANGLE_LAYER),
-                game::input::Key::M => self.scene.toggle_layer(MODEL_LAYER),
-                game::input::Key::C => self.scene.toggle_layer(CUBE_LAYER),
-                game::input::Key::L => self.scene.toggle_layer(LIGHT_LAYER),
-                game::input::Key::W => self.scene.toggle_pass(examples::WIRE_PASS),
+                Key::T => self.scene.toggle_layer(TRIANGLE_LAYER),
+                Key::M => self.scene.toggle_layer(MODEL_LAYER),
+                Key::C => self.scene.toggle_layer(CUBE_LAYER),
+                Key::L => self.scene.toggle_layer(LIGHT_LAYER),
+                Key::W => self.scene.toggle_pass(examples::WIRE_PASS),
                 _ => self.camera_controller.key_pressed(key),
             },
             Input::KeyReleased(key) => {
