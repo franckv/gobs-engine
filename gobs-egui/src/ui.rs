@@ -208,7 +208,7 @@ impl UIRenderer {
     ) -> Vec<Arc<Model>> {
         let mut models = Vec::new();
 
-        let primitives = ctx.tessellate(output.shapes);
+        let primitives = ctx.tessellate(output.shapes, 1.);
 
         //println!("{:#?}", primitives);
         primitives.iter().for_each(|s| {
