@@ -1,20 +1,12 @@
 use glam::{Quat, Vec3};
 
-use gobs_core as core;
-use gobs_egui as gui;
-use gobs_game as game;
-use gobs_scene as scene;
-
-use core::entity::camera::Camera;
-use core::entity::light::Light;
-use game::{
+use gobs::core::entity::{camera::Camera, light::Light};
+use gobs::egui::UIRenderer;
+use gobs::game::{
     app::{Application, Run},
     input::Input,
 };
-use gui::UIRenderer;
-use scene::scene::Scene;
-use scene::Gfx;
-use scene::RenderError;
+use gobs::scene::{Gfx, RenderError, Scene};
 
 const UI_LAYER: &str = "ui";
 

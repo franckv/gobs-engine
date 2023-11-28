@@ -12,3 +12,5 @@ pub use render::graph::graph::RenderError;
 pub use render::model::{Material, MaterialBuilder, Model, ModelBuilder};
 pub use render::pipeline::PipelineFlag;
 pub use render::shader::Shader;
+
+pub use scene::Scene;

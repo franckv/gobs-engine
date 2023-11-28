@@ -1,6 +1,6 @@
 [package]
 name = "gobs-render"
-version = "0.1.0"
+version = { workspace = true }
 authors = { workspace = true }
 edition = { workspace = true }
 
@@ -9,8 +9,8 @@ anyhow = { workspace = true }
 bitflags = { workspace = true }
 bytemuck = { workspace = true }
 glam = { workspace = true }
-gobs-core = { path = "../gobs-core" }
-gobs-utils = { path = "../gobs-utils" }
+gobs-core = { workspace = true }
+gobs-utils = { workspace = true }
 image = { workspace = true }
 indexmap = { workspace = true }
 itertools = { workspace = true }

@@ -2,8 +2,10 @@ use std::sync::{Arc, RwLock};
 
 use cgmath::{Matrix4, SquareMatrix};
 
-use crate::scene::camera::Camera;
-use crate::scene::light::{Light, LightBuilder};
+use crate::scene::{
+    camera::Camera,
+    light::{Light, LightBuilder},
+};
 
 type NodeRef<T> = Arc<RwLock<Node<T>>>;
 

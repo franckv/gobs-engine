@@ -7,12 +7,42 @@ members = [
     "gobs-render",
     "gobs-scene",
     "gobs-utils",
+    "gobs",
 ]
 resolver = "2"
 
 [workspace.package]
 authors = ["franckv <franck.vdl@gmail.com>"]
 edition = "2021"
+version = "0.1.0"
+
+[workspace.dependencies.gobs]
+package = "gobs"
+path = "./gobs"
+
+[workspace.dependencies.gobs-core]
+package = "gobs-core"
+path = "./gobs-core"
+
+[workspace.dependencies.gobs-egui]
+package = "gobs-egui"
+path = "./gobs-egui"
+
+[workspace.dependencies.gobs-game]
+package = "gobs-game"
+path = "./gobs-game"
+
+[workspace.dependencies.gobs-render]
+package = "gobs-render"
+path = "./gobs-render"
+
+[workspace.dependencies.gobs-scene]
+package = "gobs-scene"
+path = "./gobs-scene"
+
+[workspace.dependencies.gobs-utils]
+package = "gobs-utils"
+path = "./gobs-utils"
 
 [workspace.dependencies]
 anyhow = "1.0"

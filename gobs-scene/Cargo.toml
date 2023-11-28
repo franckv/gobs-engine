@@ -1,6 +1,6 @@
 [package]
 name = "gobs-scene"
-version = "0.1.0"
+version = { workspace = true }
 authors = { workspace = true }
 edition = { workspace = true }
 
@@ -12,9 +12,9 @@ path = "src/lib.rs"
 anyhow = { workspace = true }
 bytemuck = { workspace = true }
 glam = { workspace = true }
-gobs-core = { path = "../gobs-core" }
-gobs-utils = { path = "../gobs-utils" }
-gobs-render = { path = "../gobs-render" }
+gobs-core = { workspace = true }
+gobs-utils = { workspace = true }
+gobs-render = { workspace = true }
 image = { workspace = true }
 log = { workspace = true }
 tobj = { workspace = true }

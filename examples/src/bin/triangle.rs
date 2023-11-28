@@ -2,20 +2,13 @@ use std::sync::Arc;
 
 use glam::{Quat, Vec3};
 
-use gobs_core as core;
-use gobs_game as game;
-use gobs_scene as scene;
-
-use core::entity::camera::Camera;
-use core::entity::light::Light;
-use game::{
+use gobs::core::entity::{camera::Camera, light::Light};
+use gobs::game::{
     app::{Application, Run},
-    input::Input,
+    input::{Input, Key},
 };
-use scene::scene::Scene;
-use scene::Gfx;
-use scene::ModelBuilder;
-use scene::RenderError;
+use gobs::scene::shape::Shapes;
+use gobs::scene::{Gfx, Model, ModelBuilder, RenderError, Scene};
 
 use examples::CameraController;
 
@@ -45,13 +38,9 @@ impl Run for App {
 
         let mut scene = Scene::new(gfx, camera, light, &[]).await;
 
-        let triangle: Arc<scene::Model> = ModelBuilder::new()
+        let triangle: Arc<Model> = ModelBuilder::new()
             .add_mesh(
-                scene::shape::Shapes::triangle(
-                    [1., 0., 0., 0.5],
-                    [0., 1., 0., 0.5],
-                    [0., 0., 1., 0.5],
-                ),
+                Shapes::triangle([1., 0., 0., 0.5], [0., 1., 0., 0.5], [0., 0., 1., 0.5]),
                 None,
             )
             .build(solid_shader);
@@ -86,7 +75,7 @@ impl Run for App {
     fn input(&mut self, _gfx: &Gfx, input: Input) {
         match input {
             Input::KeyPressed(key) => match key {
-                game::input::Key::W => self.scene.toggle_pass(examples::WIRE_PASS),
+                Key::W => self.scene.toggle_pass(examples::WIRE_PASS),
                 _ => self.camera_controller.key_pressed(key),
             },
             Input::KeyReleased(key) => {

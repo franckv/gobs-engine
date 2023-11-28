@@ -1,19 +1,14 @@
 use glam::{Quat, Vec3};
 
-use gobs_core as core;
-use gobs_game as game;
-use gobs_scene as scene;
-
-use core::entity::camera::Camera;
-use core::entity::light::Light;
-use game::{
+use gobs::core::entity::camera::Camera;
+use gobs::core::entity::light::Light;
+use gobs::game::input::Key;
+use gobs::game::{
     app::{Application, Run},
     input::Input,
 };
-use scene::Gfx;
-use scene::ModelBuilder;
-use scene::RenderError;
-use scene::{scene::Scene, MaterialBuilder};
+use gobs::scene::shape::Shapes;
+use gobs::scene::{Gfx, MaterialBuilder, ModelBuilder, RenderError, Scene};
 
 use examples::CameraController;
 
@@ -53,7 +48,7 @@ impl Run for App {
             .build();
 
         let cube = ModelBuilder::new()
-            .add_mesh(scene::shape::Shapes::cube(1, 1, &[1]), Some(material))
+            .add_mesh(Shapes::cube(1, 1, &[1]), Some(material))
             .build(shader);
 
         scene.add_node(CUBE_LAYER, Vec3::ZERO, Quat::IDENTITY, Vec3::ONE, cube);
@@ -98,7 +93,7 @@ impl Run for App {
     fn input(&mut self, _gfx: &Gfx, input: Input) {
         match input {
             Input::KeyPressed(key) => match key {
-                game::input::Key::W => self.scene.toggle_pass(examples::WIRE_PASS),
+                Key::W => self.scene.toggle_pass(examples::WIRE_PASS),
                 _ => self.camera_controller.key_pressed(key),
             },
             Input::KeyReleased(key) => {
