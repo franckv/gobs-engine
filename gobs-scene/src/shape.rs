@@ -54,10 +54,8 @@ impl Shapes {
         builder.build()
     }
 
-    pub fn quad() -> Arc<Mesh> {
-        let mut builder = MeshBuilder::new("quad");
-
-        let (top, bottom, left, right) = (0.5, -0.5, -0.5, 0.5);
+    pub fn rect(top: f32, bottom: f32, left: f32, right: f32) -> Arc<Mesh> {
+        let mut builder = MeshBuilder::new("rect");
 
         let v = [
             [left, top, 0.],
@@ -92,6 +90,10 @@ impl Shapes {
         }
 
         builder.build()
+    }
+
+    pub fn quad() -> Arc<Mesh> {
+        Self::rect(0.5, -0.5, -0.5, 0.5)
     }
 
     pub fn cube(cols: u32, rows: u32, index: &[u32]) -> Arc<Mesh> {
