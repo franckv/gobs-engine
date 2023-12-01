@@ -44,6 +44,18 @@ impl MaterialBuilder {
         }
     }
 
+    pub async fn diffuse_buffer(mut self, buffer: &[u8], width: u32, height: u32) -> Self {
+        self.diffuse_texture = Some(Texture::new(
+            "framebuffer",
+            TextureType::IMAGE,
+            buffer,
+            width,
+            height,
+        ));
+
+        self
+    }
+
     pub async fn diffuse_color(mut self, color: [u8; 4]) -> Self {
         self.diffuse_texture = Some(Texture::from_color(color, TextureType::IMAGE));
 
