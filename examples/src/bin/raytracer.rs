@@ -8,6 +8,8 @@ use gobs::game::{
 use gobs::ray::{Ray, Sphere, Tracer};
 use gobs::scene::{Gfx, RenderError};
 
+const N_RAYS: u32 = 20;
+
 struct App {
     tracer: Tracer,
 }
@@ -16,7 +18,7 @@ impl Run for App {
     async fn create(gfx: &Gfx) -> Self {
         let (width, height) = (gfx.width(), gfx.height());
 
-        let mut tracer = Tracer::new(gfx, width, height, Self::background_color).await;
+        let mut tracer = Tracer::new(gfx, width, height, N_RAYS, Self::background_color).await;
 
         tracer.add_model(Sphere::new(Vec3::new(0., -500.5, -10.), 500., Color::GREY));
         tracer.add_model(Sphere::new(Vec3::new(1., 0.5, 2.), 0.5, Color::RED));

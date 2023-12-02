@@ -1,6 +1,7 @@
 use std::ops::{Add, Div};
 
 use bytemuck::{Pod, Zeroable};
+use glam::Vec3;
 use image::Rgba;
 
 #[repr(C)]
@@ -145,5 +146,16 @@ impl Into<Rgba<u8>> for Color {
             (self.b * 255.) as u8,
             (self.a * 255.) as u8,
         ])
+    }
+}
+
+impl From<Vec3> for Color {
+    fn from(value: Vec3) -> Self {
+        Color {
+            r: value.x,
+            g: value.y,
+            b: value.z,
+            a: 1.,
+        }
     }
 }

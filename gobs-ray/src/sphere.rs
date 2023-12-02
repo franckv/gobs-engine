@@ -35,17 +35,21 @@ impl Hitable for Sphere {
             let s2 = 0.5 * (-b + delta.sqrt()) / a;
 
             if s1 >= min && s1 <= max && s1 <= s2 {
+                let position = ray.origin + s1 * ray.direction;
+                let normal = (position - self.center).normalize();
                 Some(Hit {
                     distance: s1,
-                    position: ray.origin + s1 * ray.direction,
-                    normal: Vec3::ZERO,
+                    position,
+                    normal,
                     color: self.color,
                 })
             } else if s2 >= min && s2 <= max {
+                let position = ray.origin + s2 * ray.direction;
+                let normal = (position - self.center).normalize();
                 Some(Hit {
                     distance: s2,
-                    position: ray.origin + s2 * ray.direction,
-                    normal: Vec3::ZERO,
+                    position,
+                    normal,
                     color: self.color,
                 })
             } else {

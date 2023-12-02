@@ -1,8 +1,9 @@
 use std::sync::Arc;
 
 use glam::{Quat, Vec3};
-use rand::Rng;
+use rand::{seq::SliceRandom, Rng};
 
+use crate::{hit::Hitable, Ray};
 use gobs_core::{
     entity::{camera::Camera, instance::InstanceFlag, light::Light},
     geometry::vertex::VertexFlag,
@@ -14,7 +15,32 @@ use gobs_scene::{
 };
 use gobs_utils::timer::Timer;
 
-use crate::{hit::Hitable, Ray};
+struct RngPool {
+    index: usize,
+    pool: Vec<f32>,
+}
+
+impl RngPool {
+    const RNG_MAX: usize = 5000;
+
+    pub fn new() -> Self {
+        let mut rng = rand::thread_rng();
+
+        Self {
+            index: 0,
+            pool: (0..Self::RNG_MAX)
+                .map(|_| rng.gen_range(-1.0..1.0))
+                .collect::<Vec<f32>>(),
+        }
+    }
+
+    pub fn next(&mut self) -> f32 {
+        let r = self.pool[self.index];
+        self.index = (self.index + 1) % Self::RNG_MAX;
+
+        r
+    }
+}
 
 pub struct Tracer {
     width: u32,
@@ -25,19 +51,26 @@ pub struct Tracer {
     material: Arc<Material>,
     shader: Arc<Shader>,
     framebuffer: Vec<Color>,
+    n_rays: u32,
     background: fn(&Ray) -> Color,
     changed: bool,
-    rand_index: usize,
-    rand_pool: Vec<f32>,
+    draw_indexes: Vec<usize>,
+    rng: RngPool,
+    timer: Timer,
 }
 
 impl Tracer {
     const LAYER: &'static str = "tracer";
     const SHADER: &'static str = "ui.wgsl";
-    const N_RAYS: u32 = 10;
-    const RNG_MAX: usize = 5000;
+    const PIXEL_PER_FRAME: usize = 15000;
 
-    pub async fn new(gfx: &Gfx, width: u32, height: u32, background: fn(&Ray) -> Color) -> Self {
+    pub async fn new(
+        gfx: &Gfx,
+        width: u32,
+        height: u32,
+        n_rays: u32,
+        background: fn(&Ray) -> Color,
+    ) -> Self {
         let light = Light::new((0., 0., 10.), Color::WHITE);
 
         let frame_camera = Camera::ortho(
@@ -63,7 +96,8 @@ impl Tracer {
         )
         .await;
 
-        let framebuffer = vec![];
+        let framebuffer = Vec::new();
+        let draw_indexes = Vec::new();
 
         let material = MaterialBuilder::new("diffuse")
             .diffuse_buffer(&framebuffer, width as u32, height as u32)
@@ -81,8 +115,6 @@ impl Tracer {
             [width as f32, height as f32, 1.].into(),
             image,
         );
-
-        let mut rng = rand::thread_rng();
 
         Tracer {
             width,
@@ -102,19 +134,31 @@ impl Tracer {
             material,
             shader,
             framebuffer,
+            n_rays,
             background,
             changed: true,
-            rand_index: 0,
-            rand_pool: (0..Self::RNG_MAX)
-                .map(|_| rng.gen_range(-1.0..1.0))
-                .collect::<Vec<f32>>(),
+            draw_indexes,
+            rng: RngPool::new(),
+            timer: Timer::new(),
         }
+    }
+
+    pub fn reset(&mut self) {
+        self.framebuffer.clear();
+        self.draw_indexes.clear();
+
+        for i in 0..(self.height as usize * self.width as usize) {
+            self.framebuffer.push(Color::BLACK);
+            self.draw_indexes.push(i);
+        }
+
+        let mut rng = rand::thread_rng();
+        self.draw_indexes.shuffle(&mut rng)
     }
 
     pub fn add_model(&mut self, model: Box<dyn Hitable>) {
         self.models.push(model);
-
-        self.changed = true;
+        self.reset();
     }
 
     pub fn render(&mut self, gfx: &Gfx) -> Result<(), RenderError> {
@@ -123,6 +167,11 @@ impl Tracer {
 
     pub fn update(&mut self, gfx: &Gfx) {
         if self.changed {
+            self.reset();
+            self.timer.reset();
+        }
+
+        if self.draw_indexes.len() > 0 {
             self.update_buffer();
 
             self.scene.layer_mut(Self::LAYER).nodes_mut().clear();
@@ -149,6 +198,10 @@ impl Tracer {
                 [self.width as f32, self.height as f32, 1.].into(),
                 image,
             );
+
+            if self.draw_indexes.is_empty() {
+                log::info!("Rendering time: {}", self.timer.delta());
+            }
         }
 
         self.changed = false;
@@ -159,54 +212,50 @@ impl Tracer {
         self.scene.resize(width, height);
     }
 
-    fn next_rng(&mut self) -> f32 {
-        let r = self.rand_pool[self.rand_index];
-        self.rand_index = (self.rand_index + 1) % Self::RNG_MAX;
+    fn update_buffer(&mut self) {
+        let indices = self
+            .draw_indexes
+            .drain(0..Self::PIXEL_PER_FRAME.min(self.draw_indexes.len()))
+            .collect::<Vec<usize>>();
 
-        r
+        for idx in indices {
+            let i = idx / self.width as usize;
+            let j = idx % self.width as usize;
+
+            let mut c = Color::BLACK;
+            for _ in 0..self.n_rays {
+                // -2..2
+                let x = -2. + 4. * ((j as f32 + self.rng.next()) / self.width as f32);
+                // -1..1
+                let y = 1. - 2. * ((i as f32 + self.rng.next()) / self.height as f32);
+
+                let ray = Ray {
+                    origin: self.camera.position,
+                    direction: Vec3::new(x, y, 1.).normalize(),
+                };
+
+                c = c + self.cast(&ray);
+            }
+
+            c = c / self.n_rays as f32;
+
+            self.framebuffer[idx] = c;
+        }
     }
 
-    fn update_buffer(&mut self) {
-        let mut timer = Timer::new();
-        let mut total_rays = 0;
+    fn cast(&self, ray: &Ray) -> Color {
+        let bg: fn(&Ray) -> Color = self.background;
 
-        self.framebuffer.clear();
+        let hit = self
+            .models
+            .iter()
+            .filter_map(|m| m.hit(&ray, 0.1, 100.))
+            .min_by(|h1, h2| h1.distance.partial_cmp(&h2.distance).unwrap());
 
-        for i in 0..(self.height as u32) {
-            for j in 0..(self.width as u32) {
-                let mut c = Color::BLACK;
-                for _ in 0..Self::N_RAYS {
-                    // -2..2
-                    let x = -2. + 4. * ((j as f32 + self.next_rng()) / self.width as f32);
-                    // -1..1
-                    let y = 1. - 2. * ((i as f32 + self.next_rng()) / self.height as f32);
-
-                    total_rays += 1;
-                    let ray = Ray {
-                        origin: self.camera.position,
-                        direction: Vec3::new(x, y, 1.).normalize(),
-                    };
-
-                    let bg: fn(&Ray) -> Color = self.background;
-
-                    let hit = self
-                        .models
-                        .iter()
-                        .filter_map(|m| m.hit(&ray, 0.1, 100.))
-                        .min_by(|h1, h2| h1.distance.partial_cmp(&h2.distance).unwrap());
-
-                    match hit {
-                        Some(hit) => c = c + hit.color,
-                        None => c = c + bg(&ray),
-                    }
-                }
-
-                c = c / Self::N_RAYS as f32;
-
-                self.framebuffer.push(c);
-            }
+        match hit {
+            Some(hit) => hit.color,
+            //Some(hit) => c = c + (0.5 * (Vec3::ONE + hit.normal)).into(),
+            None => bg(&ray),
         }
-
-        log::info!("Rendering time: {} rays in {}", total_rays, timer.delta());
     }
 }
