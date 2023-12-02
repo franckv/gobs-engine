@@ -66,6 +66,7 @@ impl Camera {
         }
     }
 
+    // Ortho Camera (origin top/left)
     pub fn ortho<V: Into<Vec3>>(
         position: V,
         width: f32,
