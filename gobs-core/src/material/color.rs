@@ -1,4 +1,8 @@
-#[derive(Clone, Copy, Debug)]
+use bytemuck::{Pod, Zeroable};
+use image::Rgba;
+
+#[repr(C)]
+#[derive(Clone, Copy, Debug, Pod, Zeroable)]
 pub struct Color {
     r: f32,
     g: f32,
@@ -96,5 +100,22 @@ impl Into<[u8; 4]> for Color {
             (self.b * 255.) as u8,
             (self.a * 255.) as u8,
         ]
+    }
+}
+
+impl Into<Rgba<f32>> for Color {
+    fn into(self) -> Rgba<f32> {
+        image::Rgba([self.r, self.g, self.b, self.a])
+    }
+}
+
+impl Into<Rgba<u8>> for Color {
+    fn into(self) -> Rgba<u8> {
+        image::Rgba([
+            (self.r * 255.) as u8,
+            (self.g * 255.) as u8,
+            (self.b * 255.) as u8,
+            (self.a * 255.) as u8,
+        ])
     }
 }

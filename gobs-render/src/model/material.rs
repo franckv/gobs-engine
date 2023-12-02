@@ -5,7 +5,7 @@ use uuid::Uuid;
 
 use gobs_core as core;
 
-use core::material::texture::{Texture, TextureType};
+use core::{material::texture::{Texture, TextureType}, Color};
 
 pub type MaterialId = Uuid;
 
@@ -44,19 +44,19 @@ impl MaterialBuilder {
         }
     }
 
-    pub async fn diffuse_buffer(mut self, buffer: &[u8], width: u32, height: u32) -> Self {
+    pub async fn diffuse_buffer(mut self, buffer: &[Color], width: u32, height: u32) -> Self {
         self.diffuse_texture = Some(Texture::new(
             "framebuffer",
             TextureType::IMAGE,
-            buffer,
+            &buffer.iter().flat_map(|c| { Into::<[u8; 4]>::into(*c) }).collect::<Vec<u8>>(),
             width,
             height,
-        ));
+        ));        
 
         self
     }
 
-    pub async fn diffuse_color(mut self, color: [u8; 4]) -> Self {
+    pub async fn diffuse_color(mut self, color: Color) -> Self {
         self.diffuse_texture = Some(Texture::from_color(color, TextureType::IMAGE));
 
         self
@@ -83,12 +83,12 @@ impl MaterialBuilder {
     pub fn build(self) -> Arc<Material> {
         let diffuse_texture = match self.diffuse_texture {
             Some(diffuse_texture) => diffuse_texture,
-            None => Texture::from_color([255, 255, 255, 1], TextureType::IMAGE),
+            None => Texture::from_color(Color::WHITE, TextureType::IMAGE),
         };
 
         let normal_texture = match self.normal_texture {
             Some(normal_texture) => normal_texture,
-            None => Texture::from_color([0, 0, 0, 1], TextureType::NORMAL),
+            None => Texture::from_color(Color::BLACK, TextureType::NORMAL),
         };
 
         Material::new(self.name, diffuse_texture, normal_texture)

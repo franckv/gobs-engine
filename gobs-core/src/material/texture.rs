@@ -1,10 +1,11 @@
 use anyhow::Result;
 use image::{DynamicImage, GenericImageView, ImageBuffer};
+use uuid::Uuid;
 
 use gobs_utils as utils;
 
+use crate::Color;
 use utils::load::{self, AssetType};
-use uuid::Uuid;
 
 #[derive(Copy, Clone, Debug)]
 pub enum TextureFormat {
@@ -80,10 +81,8 @@ impl Texture {
         ))
     }
 
-    pub fn from_color(c: [u8; 4], ty: TextureType) -> Self {
-        let pixel = image::Rgba([c[0], c[1], c[2], c[3]]);
-
-        let img = ImageBuffer::from_pixel(1, 1, pixel);
+    pub fn from_color(c: Color, ty: TextureType) -> Self {
+        let img = ImageBuffer::from_pixel(1, 1, c.into());
 
         let img_color = DynamicImage::ImageRgba8(img);
 

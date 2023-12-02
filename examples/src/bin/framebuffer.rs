@@ -101,25 +101,18 @@ impl Run for App {
 }
 
 impl App {
-    fn generate_framebuffer(width: u32, height: u32) -> Vec<u8> {
+    fn generate_framebuffer(width: u32, height: u32) -> Vec<Color> {
         let mut buffer = Vec::new();
 
         let border = 50;
 
         for i in 0..height {
             for j in 0..width {
-                //if i < border || i >= height - border || j < border || j >= width - border {
-                if i < border && j < border {
-                    buffer.push(0);
-                    buffer.push(0);
-                    buffer.push(255);
+                if i < border || i >= height - border || j < border || j >= width - border {
+                    buffer.push(Color::BLUE);
                 } else {
-                    buffer.push(255);
-                    buffer.push(0);
-                    buffer.push(0);
+                    buffer.push(Color::RED);
                 }
-
-                buffer.push(255);
             }
         }
         buffer
