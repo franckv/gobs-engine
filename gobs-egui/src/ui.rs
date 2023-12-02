@@ -198,7 +198,7 @@ impl UIRenderer {
             egui::ImageData::Color(_) => todo!(),
             egui::ImageData::Font(font) => {
                 let pixels = font.srgba_pixels(None).collect::<Vec<_>>();
-                let bytes: &[u8] = bytemuck::cast_slice(pixels.as_slice());
+                let bytes: Vec<u8> = bytemuck::cast_slice(pixels.as_slice()).to_vec();
 
                 let texture = Texture::new(
                     "egui",

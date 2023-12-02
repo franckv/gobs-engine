@@ -1,13 +1,14 @@
 [package]
-name = "gobs"
+name = "gobs-ray"
 version = { workspace = true }
 authors = { workspace = true }
 edition = { workspace = true }
 
 [dependencies]
 gobs-core = { workspace = true }
-gobs-egui = { workspace = true }
-gobs-game = { workspace = true }
-gobs-ray = { workspace = true }
 gobs-render = { workspace = true }
 gobs-scene = { workspace = true }
+image = { workspace = true }
+glam = { workspace = true }
+log = { workspace = true }
+rand = { workspace = true }

@@ -5,7 +5,10 @@ use uuid::Uuid;
 
 use gobs_core as core;
 
-use core::{material::texture::{Texture, TextureType}, Color};
+use core::{
+    material::texture::{Texture, TextureType},
+    Color,
+};
 
 pub type MaterialId = Uuid;
 
@@ -48,10 +51,13 @@ impl MaterialBuilder {
         self.diffuse_texture = Some(Texture::new(
             "framebuffer",
             TextureType::IMAGE,
-            &buffer.iter().flat_map(|c| { Into::<[u8; 4]>::into(*c) }).collect::<Vec<u8>>(),
+            buffer
+                .iter()
+                .flat_map(|c| Into::<[u8; 4]>::into(*c))
+                .collect::<Vec<u8>>(),
             width,
             height,
-        ));        
+        ));
 
         self
     }

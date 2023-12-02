@@ -49,14 +49,14 @@ pub struct Texture {
     pub name: String,
     pub ty: TextureType,
     pub format: TextureFormat,
-    pub data: Vec<u8>,
+    data: Vec<u8>,
     pub width: u32,
     pub height: u32,
     pub dirty: bool,
 }
 
 impl Texture {
-    pub fn new(name: &str, ty: TextureType, data: &[u8], width: u32, height: u32) -> Self {
+    pub fn new(name: &str, ty: TextureType, data: Vec<u8>, width: u32, height: u32) -> Self {
         Texture {
             id: Uuid::new_v4(),
             name: name.to_string(),
@@ -75,7 +75,7 @@ impl Texture {
         Ok(Self::new(
             file_name,
             ty,
-            &img.to_rgba8(),
+            img.to_rgba8().into_raw(),
             img.dimensions().0,
             img.dimensions().1,
         ))
@@ -89,14 +89,23 @@ impl Texture {
         Self::new(
             "Color texture",
             ty,
-            &img_color.to_rgba8(),
+            img_color.to_rgba8().into_raw(),
             img_color.dimensions().0,
             img_color.dimensions().1,
         )
     }
 
+    pub fn data(&self) -> &[u8] {
+        &self.data
+    }
+
     pub fn size(&self) -> (u32, u32) {
         (self.width, self.height)
+    }
+
+    pub fn update_texture(&mut self, new_data: Vec<u8>) {
+        self.data = new_data.to_owned();
+        self.dirty = true;
     }
 
     pub fn patch_texture(

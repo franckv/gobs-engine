@@ -52,7 +52,7 @@ pub async fn load_atlas(files: &[&str], cols: u32, is_normal_map: bool) -> Resul
     Ok(Texture::new(
         "atlas",
         ty,
-        &img.to_rgba8(),
+        img.to_rgba8().into_raw(),
         img.dimensions().0,
         img.dimensions().1,
     ))

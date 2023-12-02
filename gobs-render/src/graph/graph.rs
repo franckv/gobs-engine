@@ -31,7 +31,7 @@ impl RenderGraph {
             Texture::new(
                 "depth_texture",
                 TextureType::DEPTH,
-                &[],
+                vec![],
                 gfx.width(),
                 gfx.height(),
             ),
@@ -65,7 +65,7 @@ impl RenderGraph {
         {
             self.depth_texture = TextureBuffer::new(
                 gfx,
-                Texture::new("depth_texture", TextureType::DEPTH, &[], width, height),
+                Texture::new("depth_texture", TextureType::DEPTH, vec![], width, height),
             );
         }
     }

@@ -32,7 +32,7 @@ impl TextureBuffer {
 
         let texture_buffer = gfx.device().create_texture(&desc);
 
-        if !texture.data.is_empty() {
+        if !texture.data().is_empty() {
             gfx.queue().write_texture(
                 wgpu::ImageCopyTexture {
                     aspect: wgpu::TextureAspect::All,
@@ -40,7 +40,7 @@ impl TextureBuffer {
                     mip_level: 0,
                     origin: wgpu::Origin3d::ZERO,
                 },
-                &texture.data,
+                &texture.data(),
                 wgpu::ImageDataLayout {
                     offset: 0,
                     bytes_per_row: Some(4 * texture.width),
