@@ -1,6 +1,7 @@
 use glam::{Quat, Vec3};
 
 use gobs::core::entity::{camera::Camera, light::Light};
+use gobs::core::Color;
 use gobs::egui::UIRenderer;
 use gobs::game::{
     app::{Application, Run},
@@ -30,7 +31,7 @@ impl Run for App {
             -Vec3::Y,
         );
 
-        let light = Light::new((0., 0., 10.), (1., 1., 1.));
+        let light = Light::new((0., 0., 10.), Color::WHITE);
         let shader = examples::ui_shader(gfx).await;
 
         let scene = Scene::new(gfx, camera, light, &[]).await;

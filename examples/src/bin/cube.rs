@@ -1,11 +1,10 @@
 use glam::{Quat, Vec3};
 
-use gobs::core::entity::camera::Camera;
-use gobs::core::entity::light::Light;
-use gobs::game::input::Key;
+use gobs::core::entity::{camera::Camera, light::Light};
+use gobs::core::Color;
 use gobs::game::{
     app::{Application, Run},
-    input::Input,
+    input::{Input, Key},
 };
 use gobs::scene::shape::Shapes;
 use gobs::scene::{Gfx, MaterialBuilder, ModelBuilder, RenderError, Scene};
@@ -32,7 +31,7 @@ impl Run for App {
             Vec3::Y,
         );
 
-        let light = Light::new((10., 0., 7.), (1., 1., 0.9));
+        let light = Light::new((10., 0., 7.), Color::new(1., 1., 0.9, 1.));
 
         let shader = examples::phong_shader(gfx).await;
         let wire = examples::wire_shader(gfx).await;

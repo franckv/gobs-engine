@@ -5,6 +5,7 @@ use log::*;
 use glam::{Quat, Vec3};
 
 use gobs::core::entity::{camera::Camera, light::Light};
+use gobs::core::Color;
 use gobs::game::{
     app::{Application, Run},
     input::{Input, Key},
@@ -37,7 +38,7 @@ impl Run for App {
             Vec3::Y,
         );
 
-        let light = Light::new((8., 2., 8.), (1., 1., 0.9));
+        let light = Light::new((8., 2., 8.), Color::new(1., 1., 0.9, 1.));
         let light_position = light.position;
 
         let phong_shader = examples::phong_shader(gfx).await;

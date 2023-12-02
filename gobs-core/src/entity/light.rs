@@ -1,18 +1,19 @@
 use glam::Vec3;
 use uuid::Uuid;
 
+use crate::Color;
+
 pub type LightId = Uuid;
 
 pub struct Light {
     pub id: LightId,
     pub position: Vec3,
-    pub colour: Vec3,
+    pub colour: Color,
 }
 
 impl Light {
-    pub fn new<V: Into<Vec3>>(position: V, colour: V) -> Self {
+    pub fn new<V: Into<Vec3>>(position: V, colour: Color) -> Self {
         let position: Vec3 = position.into();
-        let colour: Vec3 = colour.into();
 
         Light {
             id: Uuid::new_v4(),

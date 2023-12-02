@@ -1,6 +1,7 @@
 use glam::{Quat, Vec3};
 
 use gobs::core::entity::{camera::Camera, light::Light};
+use gobs::core::Color;
 use gobs::game::{
     app::{Application, Run},
     input::Input,
@@ -30,7 +31,7 @@ impl Run for App {
             Vec3::Y,
         );
 
-        let light = Light::new((10., 0., 7.), (1., 1., 0.9));
+        let light = Light::new((10., 0., 7.), Color::new(1., 1., 0.9, 1.));
 
         let shader = examples::wire_shader(gfx).await;
 
