@@ -8,7 +8,7 @@ use glam::{Vec2, Vec3, Vec4};
 use log::info;
 
 use gobs_core as core;
-use gobs_game::input::Input;
+use gobs_game::input::{Input, Key};
 use gobs_render as render;
 
 use core::{
@@ -73,6 +73,39 @@ impl UIRenderer {
         self.height = height as f32;
     }
 
+    fn get_key(key: Key) -> egui::Key {
+        match key {
+            Key::A => egui::Key::A,
+            Key::B => egui::Key::B,
+            Key::C => egui::Key::C,
+            Key::D => egui::Key::D,
+            Key::E => egui::Key::E,
+            Key::F => egui::Key::F,
+            Key::G => egui::Key::G,
+            Key::H => egui::Key::H,
+            Key::I => egui::Key::I,
+            Key::J => egui::Key::J,
+            Key::K => egui::Key::K,
+            Key::L => egui::Key::L,
+            Key::M => egui::Key::M,
+            Key::N => egui::Key::N,
+            Key::O => egui::Key::O,
+            Key::P => egui::Key::P,
+            Key::Q => egui::Key::Q,
+            Key::R => egui::Key::R,
+            Key::S => egui::Key::S,
+            Key::T => egui::Key::T,
+            Key::U => egui::Key::U,
+            Key::V => egui::Key::V,
+            Key::W => egui::Key::W,
+            Key::X => egui::Key::X,
+            Key::Y => egui::Key::Y,
+            Key::Z => egui::Key::Z,
+            Key::Backspace => egui::Key::Backspace,
+            _ => egui::Key::Escape,
+        }
+    }
+
     fn prepare_inputs(&mut self) -> RawInput {
         let mut input = RawInput {
             screen_rect: Some(Rect::from_min_size(
@@ -83,8 +116,22 @@ impl UIRenderer {
         };
 
         self.input.drain(..).for_each(|e| match e {
-            Input::KeyPressed(_) => (),
-            Input::KeyReleased(_) => (),
+            Input::KeyPressed(key) => {
+                input.events.push(Event::Key {
+                    key: Self::get_key(key),
+                    pressed: true,
+                    repeat: false,
+                    modifiers: Modifiers::NONE,
+                });
+            }
+            Input::KeyReleased(key) => {
+                input.events.push(Event::Key {
+                    key: Self::get_key(key),
+                    pressed: false,
+                    repeat: false,
+                    modifiers: Modifiers::NONE,
+                });
+            }
             Input::MousePressed => {
                 input.events.push(Event::PointerButton {
                     pos: self.mouse_position.into(),

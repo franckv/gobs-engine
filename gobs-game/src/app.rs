@@ -66,6 +66,8 @@ impl Application {
         let mut runnable = R::create(&self.gfx).await;
 
         self.events_loop.run(move |event, _, control_flow| {
+            log::trace!("evt={:?}, ctrl={:?}", event, control_flow);
+
             let event = Event::new(event);
             match event {
                 Event::Resize(width, height) => {
@@ -79,7 +81,7 @@ impl Application {
                 }
                 Event::Close => {
                     log::info!("Stopping");
-                    *control_flow = ControlFlow::Exit
+                    *control_flow = ControlFlow::Exit;
                 }
                 Event::Redraw => {
                     let delta = timer.delta();
