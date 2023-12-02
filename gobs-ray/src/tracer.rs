@@ -63,6 +63,7 @@ impl Tracer {
     const LAYER: &'static str = "tracer";
     const SHADER: &'static str = "ui.wgsl";
     const PIXEL_PER_FRAME: usize = 15000;
+    const MAX_REFLECT: u32 = 10;
 
     pub async fn new(
         gfx: &Gfx,
@@ -229,12 +230,9 @@ impl Tracer {
                 // -1..1
                 let y = 1. - 2. * ((i as f32 + self.rng.next()) / self.height as f32);
 
-                let ray = Ray {
-                    origin: self.camera.position,
-                    direction: Vec3::new(x, y, 1.).normalize(),
-                };
+                let ray = Ray::new(self.camera.position, Vec3::new(x, y, 1.));
 
-                c = c + self.cast(&ray);
+                c = c + self.cast(&ray, Self::MAX_REFLECT);
             }
 
             c = c / self.n_rays as f32;
@@ -243,7 +241,11 @@ impl Tracer {
         }
     }
 
-    fn cast(&self, ray: &Ray) -> Color {
+    fn cast(&self, ray: &Ray, limit: u32) -> Color {
+        if limit <= 0 {
+            return Color::BLACK;
+        }
+
         let bg: fn(&Ray) -> Color = self.background;
 
         let hit = self
@@ -253,8 +255,10 @@ impl Tracer {
             .min_by(|h1, h2| h1.distance.partial_cmp(&h2.distance).unwrap());
 
         match hit {
-            Some(hit) => hit.color,
-            //Some(hit) => c = c + (0.5 * (Vec3::ONE + hit.normal)).into(),
+            Some(hit) => {
+                let reflect_color = self.cast(&ray.reflect(hit.position, hit.normal), limit - 1);
+                hit.color * (1. - hit.reflect) + reflect_color * hit.reflect
+            }
             None => bg(&ray),
         }
     }

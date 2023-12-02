@@ -1,11 +1,11 @@
-use std::ops::{Add, Div};
+use std::ops::{Add, Div, Mul};
 
 use bytemuck::{Pod, Zeroable};
 use glam::Vec3;
 use image::Rgba;
 
 #[repr(C)]
-#[derive(Clone, Copy, Debug, Pod, Zeroable)]
+#[derive(Clone, Copy, Debug, PartialEq, Pod, Zeroable)]
 pub struct Color {
     r: f32,
     g: f32,
@@ -91,6 +91,19 @@ impl Add for Color {
             r: self.r + rhs.r,
             g: self.g + rhs.g,
             b: self.b + rhs.b,
+            a: self.a,
+        }
+    }
+}
+
+impl Mul<f32> for Color {
+    type Output = Self;
+
+    fn mul(self, rhs: f32) -> Self {
+        Self {
+            r: self.r * rhs,
+            g: self.g * rhs,
+            b: self.b * rhs,
             a: self.a,
         }
     }

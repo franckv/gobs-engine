@@ -20,9 +20,14 @@ impl Run for App {
 
         let mut tracer = Tracer::new(gfx, width, height, N_RAYS, Self::background_color).await;
 
-        tracer.add_model(Sphere::new(Vec3::new(0., -500.5, -10.), 500., Color::GREY));
-        tracer.add_model(Sphere::new(Vec3::new(1., 0.5, 2.), 0.5, Color::RED));
-        tracer.add_model(Sphere::new(Vec3::new(-1., 0., 1.5), 0.5, Color::GREEN));
+        tracer.add_model(Sphere::new(
+            Vec3::new(0., -500.5, -10.),
+            500.,
+            Color::GREY,
+            0.1,
+        ));
+        tracer.add_model(Sphere::new(Vec3::new(1., 0.5, 2.), 0.5, Color::BLACK, 0.8));
+        tracer.add_model(Sphere::new(Vec3::new(-1., 0., 1.5), 0.5, Color::GREEN, 0.4));
 
         App { tracer }
     }

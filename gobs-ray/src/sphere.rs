@@ -8,20 +8,22 @@ pub struct Sphere {
     center: Vec3,
     radius: f32,
     color: Color,
+    reflect: f32,
 }
 
 impl Sphere {
-    pub fn new(center: Vec3, radius: f32, color: Color) -> Box<dyn Hitable> {
+    pub fn new(center: Vec3, radius: f32, color: Color, reflect: f32) -> Box<dyn Hitable> {
         Box::new(Self {
             center,
             radius,
             color,
+            reflect,
         })
     }
 }
 
 impl Hitable for Sphere {
-    fn hit(&self, ray: &Ray, min: f32, max: f32) -> Option<Hit> {
+    fn hit_distance(&self, ray: &Ray, min: f32, max: f32) -> Option<f32> {
         let d = ray.origin - self.center;
 
         let a = ray.direction.dot(ray.direction); // > 0
@@ -31,32 +33,37 @@ impl Hitable for Sphere {
         let delta = b * b - 4. * a * c;
 
         if delta > 0. {
-            let s1 = 0.5 * (-b - delta.sqrt()) / a;
-            let s2 = 0.5 * (-b + delta.sqrt()) / a;
+            let t1 = 0.5 * (-b - delta.sqrt()) / a;
+            let t2 = 0.5 * (-b + delta.sqrt()) / a;
 
-            if s1 >= min && s1 <= max && s1 <= s2 {
-                let position = ray.origin + s1 * ray.direction;
-                let normal = (position - self.center).normalize();
-                Some(Hit {
-                    distance: s1,
-                    position,
-                    normal,
-                    color: self.color,
-                })
-            } else if s2 >= min && s2 <= max {
-                let position = ray.origin + s2 * ray.direction;
-                let normal = (position - self.center).normalize();
-                Some(Hit {
-                    distance: s2,
-                    position,
-                    normal,
-                    color: self.color,
-                })
+            if t1 >= min && t1 <= max && t1 <= t2 {
+                Some(t1)
+            } else if t2 >= min && t2 <= max {
+                Some(t2)
             } else {
                 None
             }
         } else {
             None
+        }
+    }
+
+    fn hit(&self, ray: &Ray, min: f32, max: f32) -> Option<Hit> {
+        let distance = self.hit_distance(ray, min, max);
+
+        match distance {
+            Some(t) => {
+                let position = ray.origin + t * ray.direction;
+                let normal = (position - self.center).normalize();
+                Some(Hit {
+                    distance: t,
+                    position,
+                    normal,
+                    color: self.color,
+                    reflect: self.reflect,
+                })
+            }
+            None => None,
         }
     }
 }
