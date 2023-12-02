@@ -11,3 +11,4 @@ gobs-game = { workspace = true }
 gobs-ray = { workspace = true }
 gobs-render = { workspace = true }
 gobs-scene = { workspace = true }
+gobs-utils = { workspace = true }

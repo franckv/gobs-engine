@@ -5,7 +5,7 @@ use gobs::game::{
     app::{Application, Run},
     input::Input,
 };
-use gobs::ray::{Ray, Tracer};
+use gobs::ray::{Ray, Sphere, Tracer};
 use gobs::scene::{Gfx, RenderError};
 
 struct App {
@@ -16,7 +16,11 @@ impl Run for App {
     async fn create(gfx: &Gfx) -> Self {
         let (width, height) = (gfx.width(), gfx.height());
 
-        let tracer = Tracer::new(gfx, width, height, Self::background_color).await;
+        let mut tracer = Tracer::new(gfx, width, height, Self::background_color).await;
+
+        tracer.add_model(Sphere::new(Vec3::new(0., -500.5, -10.), 500., Color::GREY));
+        tracer.add_model(Sphere::new(Vec3::new(1., 0.5, 2.), 0.5, Color::RED));
+        tracer.add_model(Sphere::new(Vec3::new(-1., 0., 1.5), 0.5, Color::GREEN));
 
         App { tracer }
     }
@@ -37,7 +41,7 @@ impl Run for App {
 }
 
 impl App {
-    fn background_color(ray: Ray) -> Color {
+    fn background_color(ray: &Ray) -> Color {
         let dot_x = ray.direction.dot(Vec3::X);
         let dot_y = ray.direction.dot(Vec3::Y);
 

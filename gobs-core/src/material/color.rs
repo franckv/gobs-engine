@@ -1,3 +1,5 @@
+use std::ops::{Add, Div};
+
 use bytemuck::{Pod, Zeroable};
 use image::Rgba;
 
@@ -77,6 +79,32 @@ impl Color {
             b as f32 / 255.,
             a as f32 / 255.,
         )
+    }
+}
+
+impl Add for Color {
+    type Output = Self;
+
+    fn add(self, rhs: Color) -> Self {
+        Self {
+            r: self.r + rhs.r,
+            g: self.g + rhs.g,
+            b: self.b + rhs.b,
+            a: self.a,
+        }
+    }
+}
+
+impl Div<f32> for Color {
+    type Output = Self;
+
+    fn div(self, rhs: f32) -> Self {
+        Self {
+            r: self.r / rhs,
+            g: self.g / rhs,
+            b: self.b / rhs,
+            a: self.a,
+        }
     }
 }
 

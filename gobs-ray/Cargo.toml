@@ -8,6 +8,7 @@ edition = { workspace = true }
 gobs-core = { workspace = true }
 gobs-render = { workspace = true }
 gobs-scene = { workspace = true }
+gobs-utils = { workspace = true }
 image = { workspace = true }
 glam = { workspace = true }
 log = { workspace = true }
