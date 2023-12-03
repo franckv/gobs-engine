@@ -19,6 +19,7 @@ impl ImageBuffer {
     }
 
     pub fn reset(&mut self) {
+        log::debug!("Reset buffer");
         self.framebuffer.clear();
 
         for _ in 0..(self.height as usize * self.width as usize) {
@@ -44,6 +45,7 @@ impl ImageBuffer {
     }
 
     pub fn get_chunk(&mut self) -> Vec<usize> {
+        log::debug!("Get chunk");
         self.strategy.get_chunk()
     }
 }
@@ -220,6 +222,9 @@ impl BoxChunk {
     }
 
     fn get_chunk(&mut self) -> Vec<usize> {
-        self.draw_boxes.pop().unwrap()
+        let chunk = self.draw_boxes.pop().unwrap();
+        log::debug!("Pop chunk: {}", chunk.len());
+
+        chunk
     }
 }

@@ -129,7 +129,7 @@ impl Tracer {
 
     pub fn add_model(&mut self, model: Box<dyn Hitable + Sync + Send>) {
         self.models.push(model);
-        self.reset();
+        self.changed = true;
     }
 
     pub fn render(&mut self, gfx: &Gfx) -> Result<(), RenderError> {
@@ -196,14 +196,12 @@ impl Tracer {
         let results: Vec<Vec<(usize, Color)>> = if Self::MULTI_THREAD {
             chunks
                 .par_iter()
-                .cloned()
-                .map(|chunk| self.compute_chunk(chunk))
+                .map(|chunk| self.compute_chunk(&chunk))
                 .collect()
         } else {
             chunks
                 .iter()
-                .cloned()
-                .map(|chunk| self.compute_chunk(chunk))
+                .map(|chunk| self.compute_chunk(&chunk))
                 .collect()
         };
 
@@ -214,15 +212,15 @@ impl Tracer {
         }
     }
 
-    pub fn compute_chunk(&self, chunk: Vec<usize>) -> Vec<(usize, Color)> {
+    pub fn compute_chunk(&self, chunk: &[usize]) -> Vec<(usize, Color)> {
         let mut result = Vec::new();
 
         let mut rng = RngPool::new(chunk.len());
 
         for idx in chunk {
-            let c = self.compute_pixel(idx, &mut rng);
+            let c = self.compute_pixel(*idx, &mut rng);
 
-            result.push((idx, c));
+            result.push((*idx, c));
         }
 
         result
