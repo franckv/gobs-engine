@@ -10,6 +10,22 @@ pub enum ProjectionMode {
     Perspective(PerspectiveProjection),
 }
 
+impl ProjectionMode {
+    pub fn near(&self) -> f32 {
+        match self {
+            ProjectionMode::Ortho(p) => p.near,
+            ProjectionMode::Perspective(p) => p.near,
+        }
+    }
+
+    pub fn far(&self) -> f32 {
+        match self {
+            ProjectionMode::Ortho(p) => p.far,
+            ProjectionMode::Perspective(p) => p.far,
+        }
+    }
+}
+
 #[derive(Debug)]
 pub struct PerspectiveProjection {
     pub aspect: f32,

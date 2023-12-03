@@ -13,6 +13,7 @@ pub struct Hit {
 }
 
 pub trait Hitable {
+    fn name(&self) -> &str;
     fn hit(&self, ray: &Ray, min: f32, max: f32) -> Option<Hit>;
     fn hit_distance(&self, ray: &Ray, min: f32, max: f32) -> Option<f32>;
 }

@@ -3,8 +3,9 @@ use gobs_core::Color;
 
 use crate::{Hit, Hitable, Ray};
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Clone, Debug)]
 pub struct Sphere {
+    name: String,
     center: Vec3,
     radius: f32,
     color: Color,
@@ -13,12 +14,14 @@ pub struct Sphere {
 
 impl Sphere {
     pub fn new(
+        name: &str,
         center: Vec3,
         radius: f32,
         color: Color,
         reflect: f32,
     ) -> Box<dyn Hitable + Send + Sync> {
         Box::new(Self {
+            name: name.to_string(),
             center,
             radius,
             color,
@@ -28,6 +31,10 @@ impl Sphere {
 }
 
 impl Hitable for Sphere {
+    fn name(&self) -> &str {
+        &self.name
+    }
+
     fn hit_distance(&self, ray: &Ray, min: f32, max: f32) -> Option<f32> {
         let d = ray.origin - self.center;
 

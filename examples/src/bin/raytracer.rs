@@ -1,4 +1,5 @@
 use glam::Vec3;
+use gobs::core::entity::light::Light;
 use image::{ImageBuffer, Rgba};
 
 use gobs::core::entity::camera::Camera;
@@ -10,8 +11,6 @@ use gobs::game::{
 };
 use gobs::ray::{ChunkStrategy, Ray, Sphere, Tracer, TracerBuilder};
 use gobs::scene::{Gfx, RenderError};
-
-const N_RAYS: u32 = 100;
 
 struct App {
     tracer: Tracer,
@@ -33,21 +32,38 @@ impl Run for App {
                 (0. as f32).to_radians(),
                 Vec3::Y,
             ))
-            .rays(N_RAYS)
+            .rays(10)
+            .reflects(10)
+            .threads(8)
+            .light(Light::new(Vec3::new(0., 2., -2.), Color::WHITE))
             .model(Sphere::new(
+                "ground",
                 Vec3::new(0., -5000.2, 0.),
                 5000.,
                 Color::GREY,
                 0.1,
             ))
-            .model(Sphere::new(Vec3::new(0., 0.5, 1.2), 0.3, Color::BLACK, 0.8))
             .model(Sphere::new(
+                "black",
+                Vec3::new(0., 0.5, 1.2),
+                0.3,
+                Color::BLACK,
+                0.8,
+            ))
+            .model(Sphere::new(
+                "green",
                 Vec3::new(-0.5, 0.2, 0.7),
                 0.3,
                 Color::GREEN,
                 0.4,
             ))
-            .model(Sphere::new(Vec3::new(0.5, 0.2, 0.7), 0.3, Color::RED, 0.25))
+            .model(Sphere::new(
+                "red",
+                Vec3::new(0.5, 0.2, 0.7),
+                0.3,
+                Color::RED,
+                0.25,
+            ))
             .background(Self::background_color)
             .strategy(ChunkStrategy::BOX)
             .build()

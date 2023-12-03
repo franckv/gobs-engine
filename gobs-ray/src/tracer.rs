@@ -23,22 +23,20 @@ pub struct Tracer {
     scene: Scene,
     image_buffer: ImageBuffer,
     models: Vec<Box<dyn Hitable + Sync + Send>>,
+    lights: Vec<Light>,
     camera: Camera,
     material: Arc<Material>,
     shader: Arc<Shader>,
     background: fn(&Ray) -> Color,
     n_rays: u32,
+    n_reflects: u32,
+    n_threads: u32,
     changed: bool,
     timer: Timer,
 }
 
 impl Tracer {
     const LAYER: &'static str = "tracer";
-    const MAX_REFLECT: u32 = 10;
-    const MIN_DISTANCE: f32 = 0.1;
-    const MAX_DISTANCE: f32 = 200.;
-    const MULTI_THREAD: bool = true;
-    const N_THREADS: u32 = 8;
 
     pub fn width(&self) -> u32 {
         self.image_buffer.width
@@ -114,14 +112,14 @@ impl Tracer {
     }
 
     fn update_buffer(&mut self) {
-        let chunks: Vec<Vec<usize>> = (0..Self::N_THREADS)
+        let chunks: Vec<Vec<usize>> = (0..self.n_threads)
             .filter_map(|_| match self.image_buffer.is_complete() {
                 true => None,
                 false => Some(self.image_buffer.get_chunk()),
             })
             .collect();
 
-        let results: Vec<Vec<(usize, Color)>> = if Self::MULTI_THREAD {
+        let results: Vec<Vec<(usize, Color)>> = if self.n_threads > 1 {
             chunks
                 .par_iter()
                 .map(|chunk| self.compute_chunk(&chunk))
@@ -167,7 +165,7 @@ impl Tracer {
 
             let ray = Ray::new(self.camera.position, Vec3::new(x, y, 1.));
 
-            c = c + self.cast(&ray, Self::MAX_REFLECT);
+            c = c + self.cast(&ray, self.n_reflects);
         }
 
         c = c / self.n_rays as f32;
@@ -185,13 +183,27 @@ impl Tracer {
         let hit = self
             .models
             .iter()
-            .filter_map(|m| m.hit(&ray, Self::MIN_DISTANCE, Self::MAX_DISTANCE))
+            .filter_map(|m| m.hit(&ray, self.camera.mode.near(), self.camera.mode.far()))
             .min_by(|h1, h2| h1.distance.partial_cmp(&h2.distance).unwrap());
 
         match hit {
             Some(hit) => {
                 let reflect_color = self.cast(&ray.reflect(hit.position, hit.normal), limit - 1);
-                hit.color * (1. - hit.reflect) + reflect_color * hit.reflect
+
+                for light in &self.lights {
+                    let light_direction = light.position - hit.position;
+                    let light_ray = Ray::new(hit.position, light_direction);
+                    let blocker = self.models.iter().find(|m| {
+                        m.hit_distance(&light_ray, self.camera.mode.near(), self.camera.mode.far())
+                            .is_some()
+                    });
+
+                    if blocker.is_none() {
+                        return hit.color * (1. - hit.reflect) + reflect_color * hit.reflect;
+                    }
+                }
+
+                (hit.color * (1. - hit.reflect) + reflect_color * hit.reflect) * 0.5
             }
             None => bg(&ray),
         }
@@ -203,10 +215,13 @@ pub struct TracerBuilder {
     height: u32,
     scene: Scene,
     models: Vec<Box<dyn Hitable + Sync + Send>>,
+    lights: Vec<Light>,
     camera: Camera,
     shader: Arc<Shader>,
     background: fn(&Ray) -> Color,
     n_rays: u32,
+    n_reflects: u32,
+    n_threads: u32,
     strategy: ChunkStrategy,
 }
 
@@ -259,10 +274,13 @@ impl TracerBuilder {
             height,
             scene,
             models: Vec::new(),
+            lights: Vec::new(),
             camera,
             shader,
             background: Self::default_background,
             n_rays: 10,
+            n_reflects: 10,
+            n_threads: 1,
             strategy: ChunkStrategy::BOX,
         }
     }
@@ -279,6 +297,12 @@ impl TracerBuilder {
         self
     }
 
+    pub fn light(mut self, light: Light) -> Self {
+        self.lights.push(light);
+
+        self
+    }
+
     pub fn model(mut self, model: Box<dyn Hitable + Sync + Send>) -> Self {
         self.models.push(model);
 
@@ -287,6 +311,18 @@ impl TracerBuilder {
 
     pub fn rays(mut self, rays: u32) -> Self {
         self.n_rays = rays;
+
+        self
+    }
+
+    pub fn reflects(mut self, reflects: u32) -> Self {
+        self.n_reflects = reflects;
+
+        self
+    }
+
+    pub fn threads(mut self, threads: u32) -> Self {
+        self.n_threads = threads;
 
         self
     }
@@ -321,11 +357,14 @@ impl TracerBuilder {
             scene: self.scene,
             image_buffer,
             models: self.models,
+            lights: self.lights,
             camera: self.camera,
             material,
             shader: self.shader,
             background: self.background,
             n_rays: self.n_rays,
+            n_reflects: self.n_reflects,
+            n_threads: self.n_threads,
             changed: true,
             timer: Timer::new(),
         }
