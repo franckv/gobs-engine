@@ -43,8 +43,8 @@ impl RngPool {
 }
 
 pub struct Tracer {
-    width: u32,
-    height: u32,
+    pub width: u32,
+    pub height: u32,
     scene: Scene,
     models: Vec<Box<dyn Hitable>>,
     camera: Camera,
@@ -138,6 +138,17 @@ impl Tracer {
         }
     }
 
+    pub fn framebuffer(&self) -> &[Color] {
+        &self.framebuffer
+    }
+
+    pub fn bytes(&self) -> Vec<u8> {
+        self.framebuffer
+            .iter()
+            .flat_map(|c| Into::<[u8; 4]>::into(*c))
+            .collect::<Vec<u8>>()
+    }
+
     pub fn reset(&mut self) {
         self.framebuffer.clear();
         self.draw_indexes.clear();
@@ -170,11 +181,8 @@ impl Tracer {
             self.update_buffer();
 
             self.scene.layer_mut(Self::LAYER).nodes_mut().clear();
-            let data = self
-                .framebuffer
-                .iter()
-                .flat_map(|c| Into::<[u8; 4]>::into(*c))
-                .collect::<Vec<u8>>();
+
+            let data = self.bytes();
 
             self.material
                 .diffuse_texture

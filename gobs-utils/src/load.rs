@@ -4,7 +4,6 @@ use std::path::PathBuf;
 
 use anyhow::Result;
 use image::DynamicImage;
-use log::info;
 
 pub enum AssetType {
     SHADER,
@@ -29,7 +28,7 @@ pub fn get_asset_dir(file_name: &str, ty: AssetType) -> Result<PathBuf> {
 pub async fn load_string(file_name: &str, ty: AssetType) -> Result<String> {
     let path = get_asset_dir(file_name, ty)?;
 
-    info!("Loading string: {:?}", path);
+    log::debug!("Loading string: {:?}", path);
 
     let txt = std::fs::read_to_string(path)?;
 
@@ -39,7 +38,7 @@ pub async fn load_string(file_name: &str, ty: AssetType) -> Result<String> {
 pub async fn load_binary(file_name: &str, ty: AssetType) -> Result<Vec<u8>> {
     let path = get_asset_dir(file_name, ty)?;
 
-    info!("Loading bin: {:?}", path);
+    log::debug!("Loading bin: {:?}", path);
 
     let data = std::fs::read(path)?;
 

@@ -9,6 +9,7 @@ bytemuck = { workspace = true }
 egui = { workspace = true }
 glam = { workspace = true }
 gobs = { workspace = true }
+image = { workspace = true }
 log = { workspace = true }
 simplelog = { workspace = true }
 uuid = { workspace = true }

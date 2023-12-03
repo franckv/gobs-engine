@@ -1,7 +1,9 @@
 use glam::Vec3;
+use image::{ImageBuffer, Rgba};
 
 use gobs::core::entity::camera::Camera;
 use gobs::core::Color;
+use gobs::game::input::Key;
 use gobs::game::{
     app::{Application, Run},
     input::Input,
@@ -63,7 +65,15 @@ impl Run for App {
         self.tracer.resize(width, height)
     }
 
-    fn input(&mut self, _gfx: &Gfx, _input: Input) {}
+    fn input(&mut self, _gfx: &Gfx, input: Input) {
+        match input {
+            Input::KeyPressed(key) => match key {
+                Key::P => self.screenshot(),
+                _ => (),
+            },
+            _ => (),
+        }
+    }
 }
 
 impl App {
@@ -73,10 +83,22 @@ impl App {
 
         Color::new(0.2 * dot_x, 0.5 + 0.5 * dot_y, 1., 1.)
     }
+
+    fn screenshot(&self) {
+        let buffer = self.tracer.bytes();
+        let file_name = "examples/assets/raytracer.png";
+
+        let img: ImageBuffer<Rgba<u8>, _> =
+            ImageBuffer::from_raw(self.tracer.width, self.tracer.height, buffer).unwrap();
+
+        img.save(file_name).expect("Saving");
+
+        log::info!("Image save: {}", file_name);
+    }
 }
 
 fn main() {
-    examples::init_logger();
+    examples::init_logger(module_path!());
 
     Application::new().run::<App>();
 }

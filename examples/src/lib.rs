@@ -22,12 +22,12 @@ pub const FLOOR_TEXTURE: &str = "floor.png";
 pub const FLOOR_TEXTURE_N: &str = "floor_n.png";
 pub const WIRE_PASS: &str = "Wire";
 
-pub fn init_logger() {
+pub fn init_logger(path: &str) {
     let config_other = ConfigBuilder::new()
         .add_filter_allow_str("gobs")
         .build();
     let config_self = ConfigBuilder::new()
-        .add_filter_allow_str("examples")
+        .add_filter_allow(path.to_string())
         .build();
 
     let _ = CombinedLogger::init(vec![
@@ -38,12 +38,14 @@ pub fn init_logger() {
             ColorChoice::Auto,
         ),
         TermLogger::new(
-            LevelFilter::Info,
+            LevelFilter::Debug,
             config_self,
             TerminalMode::Mixed,
             ColorChoice::Auto,
         ),
     ]);
+
+    log::debug!("Logger initialized");
 }
 
 pub async fn ui_shader(gfx: &Gfx) -> Arc<Shader> {

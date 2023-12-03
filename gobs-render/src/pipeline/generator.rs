@@ -1,7 +1,6 @@
 use itertools::Itertools;
 use std::collections::HashMap;
 
-use log::*;
 use naga::front::wgsl::Frontend;
 use naga::{Binding, GlobalVariable, Handle, Module, Type, TypeInner};
 
@@ -135,7 +134,7 @@ impl Generator {
         for ty in self.module.types.iter() {
             if let Some(n) = &ty.1.name {
                 if name == n {
-                    info!("found {}", n);
+                    log::debug!("found {}", n);
                     if let TypeInner::Struct { members, .. } = &ty.1.inner {
                         for member in members {
                             if let Some(Binding::Location { location, .. }) = member.binding {
@@ -162,7 +161,7 @@ impl Generator {
     ///     var<uniform> camera: Camera;
     /// Return a list of binding groups (@group)
     pub fn bind_layouts(&self, gfx: &Gfx) -> Vec<wgpu::BindGroupLayout> {
-        info!("Generate bind group layouts");
+        log::debug!("Generate bind group layouts");
 
         let mut groups: HashMap<u32, Vec<&GlobalVariable>> = HashMap::new();
 
@@ -194,7 +193,7 @@ impl Generator {
                     label: Some(&label),
                 };
 
-                info!("[{}] {}", i, label);
+                log::debug!("[{}] {}", i, label);
                 gfx.create_bind_group_layout(&layout)
             })
             .collect::<Vec<_>>()

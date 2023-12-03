@@ -1,6 +1,5 @@
 use std::sync::{Arc, RwLock};
 
-use log::*;
 use uuid::Uuid;
 
 use gobs_core as core;
@@ -21,7 +20,7 @@ pub struct Material {
 
 impl Material {
     pub fn new(name: String, diffuse_texture: Texture, normal_texture: Texture) -> Arc<Self> {
-        info!("Create Material bind group");
+        log::debug!("Create Material bind group");
 
         Arc::new(Material {
             id: Uuid::new_v4(),

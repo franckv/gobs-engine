@@ -65,6 +65,8 @@ impl Application {
         let mut timer = Timer::new();
         let mut runnable = R::create(&self.gfx).await;
 
+        log::info!("Start main loop");
+
         self.events_loop.run(move |event, _, control_flow| {
             log::trace!("evt={:?}, ctrl={:?}", event, control_flow);
 

@@ -120,7 +120,7 @@ impl App {
 }
 
 fn main() {
-    examples::init_logger();
+    examples::init_logger(module_path!());
 
     Application::new().run::<App>();
 }
