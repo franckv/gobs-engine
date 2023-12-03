@@ -1,4 +1,3 @@
-use log::*;
 use winit;
 use winit::dpi::PhysicalPosition;
 use winit::event::{
@@ -84,7 +83,7 @@ impl Event {
             _ => (),
         }
 
-        debug!("Status={:?}", status);
+        log::trace!("Status={:?}", status);
         status
     }
 }
