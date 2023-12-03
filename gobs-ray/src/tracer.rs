@@ -62,13 +62,16 @@ pub struct Tracer {
 impl Tracer {
     const LAYER: &'static str = "tracer";
     const SHADER: &'static str = "ui.wgsl";
-    const PIXEL_PER_FRAME: usize = 15000;
+    const PIXEL_PER_FRAME: usize = 20000;
     const MAX_REFLECT: u32 = 10;
+    const MIN_DISTANCE: f32 = 0.1;
+    const MAX_DISTANCE: f32 = 200.;
 
     pub async fn new(
         gfx: &Gfx,
         width: u32,
         height: u32,
+        camera: Camera,
         n_rays: u32,
         background: fn(&Ray) -> Color,
     ) -> Self {
@@ -122,16 +125,7 @@ impl Tracer {
             height,
             scene,
             models: Vec::new(),
-            camera: Camera::perspective(
-                Vec3::ZERO,
-                width as f32 / height as f32,
-                (45. as f32).to_radians(),
-                0.1,
-                100.,
-                (-90. as f32).to_radians(),
-                (0. as f32).to_radians(),
-                Vec3::Y,
-            ),
+            camera,
             material,
             shader,
             framebuffer,
@@ -220,25 +214,31 @@ impl Tracer {
             .collect::<Vec<usize>>();
 
         for idx in indices {
-            let i = idx / self.width as usize;
-            let j = idx % self.width as usize;
-
-            let mut c = Color::BLACK;
-            for _ in 0..self.n_rays {
-                // -2..2
-                let x = -2. + 4. * ((j as f32 + self.rng.next()) / self.width as f32);
-                // -1..1
-                let y = 1. - 2. * ((i as f32 + self.rng.next()) / self.height as f32);
-
-                let ray = Ray::new(self.camera.position, Vec3::new(x, y, 1.));
-
-                c = c + self.cast(&ray, Self::MAX_REFLECT);
-            }
-
-            c = c / self.n_rays as f32;
+            let c = self.compute_pixel(idx);
 
             self.framebuffer[idx] = c;
         }
+    }
+
+    fn compute_pixel(&mut self, idx: usize) -> Color {
+        let i = idx / self.width as usize;
+        let j = idx % self.width as usize;
+
+        let mut c = Color::BLACK;
+        for _ in 0..self.n_rays {
+            // -2..2
+            let x = -2. + 4. * ((j as f32 + self.rng.next()) / self.width as f32);
+            // -1..1
+            let y = 1. - 2. * ((i as f32 + self.rng.next()) / self.height as f32);
+
+            let ray = Ray::new(self.camera.position, Vec3::new(x, y, 1.));
+
+            c = c + self.cast(&ray, Self::MAX_REFLECT);
+        }
+
+        c = c / self.n_rays as f32;
+
+        c
     }
 
     fn cast(&self, ray: &Ray, limit: u32) -> Color {
@@ -251,7 +251,7 @@ impl Tracer {
         let hit = self
             .models
             .iter()
-            .filter_map(|m| m.hit(&ray, 0.1, 100.))
+            .filter_map(|m| m.hit(&ray, Self::MIN_DISTANCE, Self::MAX_DISTANCE))
             .min_by(|h1, h2| h1.distance.partial_cmp(&h2.distance).unwrap());
 
         match hit {

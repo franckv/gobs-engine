@@ -24,7 +24,7 @@ pub const WIRE_PASS: &str = "Wire";
 
 pub fn init_logger() {
     let config_other = ConfigBuilder::new()
-        .add_filter_allow_str("gobs_game")
+        .add_filter_allow_str("gobs")
         .build();
     let config_self = ConfigBuilder::new()
         .add_filter_allow_str("examples")
@@ -32,7 +32,7 @@ pub fn init_logger() {
 
     let _ = CombinedLogger::init(vec![
         TermLogger::new(
-            LevelFilter::Debug,
+            LevelFilter::Info,
             config_other,
             TerminalMode::Mixed,
             ColorChoice::Auto,

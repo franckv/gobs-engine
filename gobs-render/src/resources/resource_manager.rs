@@ -1,6 +1,5 @@
 use std::collections::HashMap;
 
-use log::info;
 use uuid::Uuid;
 
 use gobs_core as core;
@@ -140,7 +139,7 @@ impl ResourceManager {
         let diffuse_texture_id = material.diffuse_texture.read().unwrap().id;
 
         if material.diffuse_texture.read().unwrap().dirty {
-            info!("Replace texture {}", diffuse_texture_id);
+            log::debug!("Replace texture {}", diffuse_texture_id);
             material.diffuse_texture.write().unwrap().dirty = false;
             self.texture_resources.remove(&diffuse_texture_id);
             self.material_bind_groups.remove(&material.id);
@@ -149,14 +148,14 @@ impl ResourceManager {
         self.texture_resources
             .entry(diffuse_texture_id)
             .or_insert_with(|| {
-                info!("Insert texture {}", diffuse_texture_id);
+                log::debug!("Insert texture {}", diffuse_texture_id);
                 TextureBuffer::new(gfx, material.diffuse_texture.read().unwrap().clone())
             });
 
         let normal_texture_id = material.normal_texture.read().unwrap().id;
 
         if material.normal_texture.read().unwrap().dirty {
-            info!("Replace normal texture {}", diffuse_texture_id);
+            log::debug!("Replace normal texture {}", diffuse_texture_id);
             material.normal_texture.write().unwrap().dirty = false;
             self.texture_resources.remove(&normal_texture_id);
             self.material_bind_groups.remove(&material.id);
@@ -165,7 +164,7 @@ impl ResourceManager {
         self.texture_resources
             .entry(normal_texture_id)
             .or_insert_with(|| {
-                info!("Insert normal texture {}", diffuse_texture_id);
+                log::debug!("Insert normal texture {}", diffuse_texture_id);
                 TextureBuffer::new(gfx, material.normal_texture.read().unwrap().clone())
             });
 
