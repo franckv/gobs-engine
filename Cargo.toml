@@ -63,6 +63,7 @@ log = "0.4"
 naga = { version = "0.14" }
 pollster = "0.3"
 rand = "0.8"
+rayon = "1.8"
 rusttype = "0.9"
 simplelog = "0.12"
 time = "0.3"

@@ -1,7 +1,8 @@
 use std::sync::Arc;
 
 use glam::{Quat, Vec3};
-use rand::{seq::SliceRandom, Rng};
+use rand::seq::SliceRandom;
+use rayon::prelude::*;
 
 use crate::{hit::Hitable, Ray};
 use gobs_core::{
@@ -13,40 +14,13 @@ use gobs_render::{context::Gfx, pipeline::PipelineFlag, shader::Shader};
 use gobs_scene::{
     shape::Shapes, Material, MaterialBuilder, Model, ModelBuilder, RenderError, Scene,
 };
-use gobs_utils::timer::Timer;
-
-struct RngPool {
-    index: usize,
-    pool: Vec<f32>,
-}
-
-impl RngPool {
-    const RNG_MAX: usize = 5000;
-
-    pub fn new() -> Self {
-        let mut rng = rand::thread_rng();
-
-        Self {
-            index: 0,
-            pool: (0..Self::RNG_MAX)
-                .map(|_| rng.gen_range(-1.0..1.0))
-                .collect::<Vec<f32>>(),
-        }
-    }
-
-    pub fn next(&mut self) -> f32 {
-        let r = self.pool[self.index];
-        self.index = (self.index + 1) % Self::RNG_MAX;
-
-        r
-    }
-}
+use gobs_utils::{rng::RngPool, timer::Timer};
 
 pub struct Tracer {
     pub width: u32,
     pub height: u32,
     scene: Scene,
-    models: Vec<Box<dyn Hitable>>,
+    models: Vec<Box<dyn Hitable + Sync + Send>>,
     camera: Camera,
     material: Arc<Material>,
     shader: Arc<Shader>,
@@ -55,17 +29,18 @@ pub struct Tracer {
     background: fn(&Ray) -> Color,
     changed: bool,
     draw_indexes: Vec<usize>,
-    rng: RngPool,
     timer: Timer,
 }
 
 impl Tracer {
     const LAYER: &'static str = "tracer";
     const SHADER: &'static str = "ui.wgsl";
-    const PIXEL_PER_FRAME: usize = 20000;
+    const PIXEL_PER_CHUNK: usize = 20000;
     const MAX_REFLECT: u32 = 10;
     const MIN_DISTANCE: f32 = 0.1;
     const MAX_DISTANCE: f32 = 200.;
+    const MULTI_THREAD: bool = true;
+    const N_THREADS: u32 = 8;
 
     pub async fn new(
         gfx: &Gfx,
@@ -133,7 +108,6 @@ impl Tracer {
             background,
             changed: true,
             draw_indexes,
-            rng: RngPool::new(),
             timer: Timer::new(),
         }
     }
@@ -162,7 +136,7 @@ impl Tracer {
         self.draw_indexes.shuffle(&mut rng)
     }
 
-    pub fn add_model(&mut self, model: Box<dyn Hitable>) {
+    pub fn add_model(&mut self, model: Box<dyn Hitable + Sync + Send>) {
         self.models.push(model);
         self.reset();
     }
@@ -216,28 +190,61 @@ impl Tracer {
     }
 
     fn update_buffer(&mut self) {
-        let indices = self
-            .draw_indexes
-            .drain(0..Self::PIXEL_PER_FRAME.min(self.draw_indexes.len()))
-            .collect::<Vec<usize>>();
+        let chunks: Vec<Vec<usize>> = (0..Self::N_THREADS)
+            .map(|_| self.get_chunk(Self::PIXEL_PER_CHUNK))
+            .collect();
 
-        for idx in indices {
-            let c = self.compute_pixel(idx);
+        let results: Vec<Vec<(usize, Color)>> = if Self::MULTI_THREAD {
+            chunks
+                .par_iter()
+                .cloned()
+                .map(|chunk| self.compute_chunk(chunk))
+                .collect()
+        } else {
+            chunks
+                .iter()
+                .cloned()
+                .map(|chunk| self.compute_chunk(chunk))
+                .collect()
+        };
 
-            self.framebuffer[idx] = c;
+        for result in results {
+            for (idx, c) in result {
+                self.framebuffer[idx] = c;
+            }
         }
     }
 
-    fn compute_pixel(&mut self, idx: usize) -> Color {
+    pub fn get_chunk(&mut self, size: usize) -> Vec<usize> {
+        self.draw_indexes
+            .drain(0..size.min(self.draw_indexes.len()))
+            .collect::<Vec<usize>>()
+    }
+
+    pub fn compute_chunk(&self, chunk: Vec<usize>) -> Vec<(usize, Color)> {
+        let mut result = Vec::new();
+
+        let mut rng = RngPool::new(chunk.len());
+
+        for idx in chunk {
+            let c = self.compute_pixel(idx, &mut rng);
+
+            result.push((idx, c));
+        }
+
+        result
+    }
+
+    fn compute_pixel(&self, idx: usize, rng: &mut RngPool) -> Color {
         let i = idx / self.width as usize;
         let j = idx % self.width as usize;
 
         let mut c = Color::BLACK;
         for _ in 0..self.n_rays {
             // -2..2
-            let x = -2. + 4. * ((j as f32 + self.rng.next()) / self.width as f32);
+            let x = -2. + 4. * ((j as f32 + rng.next()) / self.width as f32);
             // -1..1
-            let y = 1. - 2. * ((i as f32 + self.rng.next()) / self.height as f32);
+            let y = 1. - 2. * ((i as f32 + rng.next()) / self.height as f32);
 
             let ray = Ray::new(self.camera.position, Vec3::new(x, y, 1.));
 

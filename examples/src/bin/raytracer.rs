@@ -11,7 +11,7 @@ use gobs::game::{
 use gobs::ray::{Ray, Sphere, Tracer};
 use gobs::scene::{Gfx, RenderError};
 
-const N_RAYS: u32 = 20;
+const N_RAYS: u32 = 100;
 
 struct App {
     tracer: Tracer,

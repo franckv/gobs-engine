@@ -23,9 +23,7 @@ pub const FLOOR_TEXTURE_N: &str = "floor_n.png";
 pub const WIRE_PASS: &str = "Wire";
 
 pub fn init_logger(path: &str) {
-    let config_other = ConfigBuilder::new()
-        .add_filter_allow_str("gobs")
-        .build();
+    let config_other = ConfigBuilder::new().add_filter_allow_str("gobs").build();
     let config_self = ConfigBuilder::new()
         .add_filter_allow(path.to_string())
         .build();

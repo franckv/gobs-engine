@@ -12,7 +12,12 @@ pub struct Sphere {
 }
 
 impl Sphere {
-    pub fn new(center: Vec3, radius: f32, color: Color, reflect: f32) -> Box<dyn Hitable> {
+    pub fn new(
+        center: Vec3,
+        radius: f32,
+        color: Color,
+        reflect: f32,
+    ) -> Box<dyn Hitable + Send + Sync> {
         Box::new(Self {
             center,
             radius,
