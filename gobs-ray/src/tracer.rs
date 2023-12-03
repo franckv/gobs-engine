@@ -34,78 +34,11 @@ pub struct Tracer {
 
 impl Tracer {
     const LAYER: &'static str = "tracer";
-    const SHADER: &'static str = "ui.wgsl";
     const MAX_REFLECT: u32 = 10;
     const MIN_DISTANCE: f32 = 0.1;
     const MAX_DISTANCE: f32 = 200.;
     const MULTI_THREAD: bool = true;
     const N_THREADS: u32 = 8;
-
-    pub async fn new(
-        gfx: &Gfx,
-        width: u32,
-        height: u32,
-        camera: Camera,
-        n_rays: u32,
-        background: fn(&Ray) -> Color,
-    ) -> Self {
-        let light = Light::new((0., 0., 10.), Color::WHITE);
-
-        let frame_camera = Camera::ortho(
-            (0., 0., 1.),
-            width as f32,
-            height as f32,
-            0.1,
-            100.,
-            (-90. as f32).to_radians(),
-            (0. as f32).to_radians(),
-            Vec3::Y,
-        );
-
-        let mut scene = Scene::new(gfx, frame_camera, light, &[]).await;
-
-        let shader = Shader::new(
-            gfx,
-            "shader",
-            Self::SHADER,
-            VertexFlag::POSITION | VertexFlag::COLOR | VertexFlag::TEXTURE,
-            InstanceFlag::MODEL,
-            PipelineFlag::empty(),
-        )
-        .await;
-
-        let image_buffer = ImageBuffer::new(width, height, ChunkStrategy::BOX);
-
-        let material = MaterialBuilder::new("diffuse")
-            .diffuse_buffer(&image_buffer.framebuffer, width as u32, height as u32)
-            .await
-            .build();
-
-        let image: Arc<Model> = ModelBuilder::new()
-            .add_mesh(Shapes::quad(), Some(material.clone()))
-            .build(shader.clone());
-
-        scene.add_node(
-            Self::LAYER,
-            [0., 0., 0.].into(),
-            Quat::IDENTITY,
-            [width as f32, height as f32, 1.].into(),
-            image,
-        );
-
-        Tracer {
-            scene,
-            image_buffer,
-            models: Vec::new(),
-            camera,
-            material,
-            shader,
-            background,
-            n_rays,
-            changed: true,
-            timer: Timer::new(),
-        }
-    }
 
     pub fn width(&self) -> u32 {
         self.image_buffer.width
@@ -125,11 +58,6 @@ impl Tracer {
 
     pub fn reset(&mut self) {
         self.image_buffer.reset();
-    }
-
-    pub fn add_model(&mut self, model: Box<dyn Hitable + Sync + Send>) {
-        self.models.push(model);
-        self.changed = true;
     }
 
     pub fn render(&mut self, gfx: &Gfx) -> Result<(), RenderError> {
@@ -266,6 +194,140 @@ impl Tracer {
                 hit.color * (1. - hit.reflect) + reflect_color * hit.reflect
             }
             None => bg(&ray),
+        }
+    }
+}
+
+pub struct TracerBuilder {
+    width: u32,
+    height: u32,
+    scene: Scene,
+    models: Vec<Box<dyn Hitable + Sync + Send>>,
+    camera: Camera,
+    shader: Arc<Shader>,
+    background: fn(&Ray) -> Color,
+    n_rays: u32,
+    strategy: ChunkStrategy,
+}
+
+impl TracerBuilder {
+    const SHADER: &'static str = "ui.wgsl";
+
+    pub fn default_background(_: &Ray) -> Color {
+        Color::BLACK
+    }
+
+    pub async fn new(gfx: &Gfx, width: u32, height: u32) -> Self {
+        let light = Light::new((0., 0., 10.), Color::WHITE);
+
+        let frame_camera = Camera::ortho(
+            (0., 0., 1.),
+            width as f32,
+            height as f32,
+            0.1,
+            100.,
+            (-90. as f32).to_radians(),
+            (0. as f32).to_radians(),
+            Vec3::Y,
+        );
+
+        let camera = Camera::perspective(
+            Vec3::new(0., 0.2, 0.),
+            width as f32 / height as f32,
+            (45. as f32).to_radians(),
+            0.1,
+            100.,
+            (-90. as f32).to_radians(),
+            (0. as f32).to_radians(),
+            Vec3::Y,
+        );
+
+        let scene = Scene::new(gfx, frame_camera, light, &[]).await;
+
+        let shader = Shader::new(
+            gfx,
+            "shader",
+            Self::SHADER,
+            VertexFlag::POSITION | VertexFlag::COLOR | VertexFlag::TEXTURE,
+            InstanceFlag::MODEL,
+            PipelineFlag::empty(),
+        )
+        .await;
+
+        TracerBuilder {
+            width,
+            height,
+            scene,
+            models: Vec::new(),
+            camera,
+            shader,
+            background: Self::default_background,
+            n_rays: 10,
+            strategy: ChunkStrategy::BOX,
+        }
+    }
+
+    pub fn background(mut self, background: fn(&Ray) -> Color) -> Self {
+        self.background = background;
+
+        self
+    }
+
+    pub fn camera(mut self, camera: Camera) -> Self {
+        self.camera = camera;
+
+        self
+    }
+
+    pub fn model(mut self, model: Box<dyn Hitable + Sync + Send>) -> Self {
+        self.models.push(model);
+
+        self
+    }
+
+    pub fn rays(mut self, rays: u32) -> Self {
+        self.n_rays = rays;
+
+        self
+    }
+
+    pub fn strategy(mut self, strategy: ChunkStrategy) -> Self {
+        self.strategy = strategy;
+
+        self
+    }
+
+    pub async fn build(mut self) -> Tracer {
+        let image_buffer = ImageBuffer::new(self.width, self.height, self.strategy);
+
+        let material = MaterialBuilder::new("diffuse")
+            .diffuse_buffer(&image_buffer.framebuffer, self.width, self.height)
+            .await
+            .build();
+
+        let image: Arc<Model> = ModelBuilder::new()
+            .add_mesh(Shapes::quad(), Some(material.clone()))
+            .build(self.shader.clone());
+
+        self.scene.add_node(
+            Tracer::LAYER,
+            [0., 0., 0.].into(),
+            Quat::IDENTITY,
+            [self.width as f32, self.height as f32, 1.].into(),
+            image,
+        );
+
+        Tracer {
+            scene: self.scene,
+            image_buffer,
+            models: self.models,
+            camera: self.camera,
+            material,
+            shader: self.shader,
+            background: self.background,
+            n_rays: self.n_rays,
+            changed: true,
+            timer: Timer::new(),
         }
     }
 }

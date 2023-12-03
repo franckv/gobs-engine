@@ -8,7 +8,7 @@ use gobs::game::{
     app::{Application, Run},
     input::Input,
 };
-use gobs::ray::{Ray, Sphere, Tracer};
+use gobs::ray::{ChunkStrategy, Ray, Sphere, Tracer, TracerBuilder};
 use gobs::scene::{Gfx, RenderError};
 
 const N_RAYS: u32 = 100;
@@ -21,34 +21,37 @@ impl Run for App {
     async fn create(gfx: &Gfx) -> Self {
         let (width, height) = (gfx.width(), gfx.height());
 
-        let camera = Camera::perspective(
-            Vec3::new(0., 0.2, 0.),
-            width as f32 / height as f32,
-            (45. as f32).to_radians(),
-            0.1,
-            100.,
-            (-90. as f32).to_radians(),
-            (0. as f32).to_radians(),
-            Vec3::Y,
-        );
-
-        let mut tracer =
-            Tracer::new(gfx, width, height, camera, N_RAYS, Self::background_color).await;
-
-        tracer.add_model(Sphere::new(
-            Vec3::new(0., -5000.2, 0.),
-            5000.,
-            Color::GREY,
-            0.1,
-        ));
-        tracer.add_model(Sphere::new(Vec3::new(0., 0.5, 1.2), 0.3, Color::BLACK, 0.8));
-        tracer.add_model(Sphere::new(
-            Vec3::new(-0.5, 0.2, 0.7),
-            0.3,
-            Color::GREEN,
-            0.4,
-        ));
-        tracer.add_model(Sphere::new(Vec3::new(0.5, 0.2, 0.7), 0.3, Color::RED, 0.25));
+        let tracer = TracerBuilder::new(gfx, width, height)
+            .await
+            .camera(Camera::perspective(
+                Vec3::new(0., 0.2, 0.),
+                width as f32 / height as f32,
+                (45. as f32).to_radians(),
+                0.1,
+                100.,
+                (-90. as f32).to_radians(),
+                (0. as f32).to_radians(),
+                Vec3::Y,
+            ))
+            .rays(N_RAYS)
+            .model(Sphere::new(
+                Vec3::new(0., -5000.2, 0.),
+                5000.,
+                Color::GREY,
+                0.1,
+            ))
+            .model(Sphere::new(Vec3::new(0., 0.5, 1.2), 0.3, Color::BLACK, 0.8))
+            .model(Sphere::new(
+                Vec3::new(-0.5, 0.2, 0.7),
+                0.3,
+                Color::GREEN,
+                0.4,
+            ))
+            .model(Sphere::new(Vec3::new(0.5, 0.2, 0.7), 0.3, Color::RED, 0.25))
+            .background(Self::background_color)
+            .strategy(ChunkStrategy::BOX)
+            .build()
+            .await;
 
         App { tracer }
     }

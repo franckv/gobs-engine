@@ -8,4 +8,4 @@ pub use buffer::ChunkStrategy;
 pub use hit::{Hit, Hitable};
 pub use ray::Ray;
 pub use sphere::Sphere;
-pub use tracer::Tracer;
+pub use tracer::{Tracer, TracerBuilder};
