@@ -89,7 +89,7 @@ impl App {
         let file_name = "examples/assets/raytracer.png";
 
         let img: ImageBuffer<Rgba<u8>, _> =
-            ImageBuffer::from_raw(self.tracer.width, self.tracer.height, buffer).unwrap();
+            ImageBuffer::from_raw(self.tracer.width(), self.tracer.height(), buffer).unwrap();
 
         img.save(file_name).expect("Saving");
 

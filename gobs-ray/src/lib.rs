@@ -1,3 +1,4 @@
+mod buffer;
 mod hit;
 mod ray;
 mod sphere;

@@ -1,10 +1,9 @@
 use std::sync::Arc;
 
 use glam::{Quat, Vec3};
-use rand::seq::SliceRandom;
 use rayon::prelude::*;
 
-use crate::{hit::Hitable, Ray};
+use crate::{buffer::ImageBuffer, hit::Hitable, Ray};
 use gobs_core::{
     entity::{camera::Camera, instance::InstanceFlag, light::Light},
     geometry::vertex::VertexFlag,
@@ -17,25 +16,21 @@ use gobs_scene::{
 use gobs_utils::{rng::RngPool, timer::Timer};
 
 pub struct Tracer {
-    pub width: u32,
-    pub height: u32,
     scene: Scene,
+    image_buffer: ImageBuffer,
     models: Vec<Box<dyn Hitable + Sync + Send>>,
     camera: Camera,
     material: Arc<Material>,
     shader: Arc<Shader>,
-    framebuffer: Vec<Color>,
-    n_rays: u32,
     background: fn(&Ray) -> Color,
+    n_rays: u32,
     changed: bool,
-    draw_indexes: Vec<usize>,
     timer: Timer,
 }
 
 impl Tracer {
     const LAYER: &'static str = "tracer";
     const SHADER: &'static str = "ui.wgsl";
-    const PIXEL_PER_CHUNK: usize = 20000;
     const MAX_REFLECT: u32 = 10;
     const MIN_DISTANCE: f32 = 0.1;
     const MAX_DISTANCE: f32 = 200.;
@@ -75,11 +70,10 @@ impl Tracer {
         )
         .await;
 
-        let framebuffer = Vec::new();
-        let draw_indexes = Vec::new();
+        let image_buffer = ImageBuffer::new(width, height);
 
         let material = MaterialBuilder::new("diffuse")
-            .diffuse_buffer(&framebuffer, width as u32, height as u32)
+            .diffuse_buffer(&image_buffer.framebuffer, width as u32, height as u32)
             .await
             .build();
 
@@ -96,44 +90,43 @@ impl Tracer {
         );
 
         Tracer {
-            width,
-            height,
             scene,
+            image_buffer,
             models: Vec::new(),
             camera,
             material,
             shader,
-            framebuffer,
-            n_rays,
             background,
+            n_rays,
             changed: true,
-            draw_indexes,
             timer: Timer::new(),
         }
     }
 
+    pub fn width(&self) -> u32 {
+        self.image_buffer.width
+    }
+
+    pub fn height(&self) -> u32 {
+        self.image_buffer.height
+    }
+
     pub fn framebuffer(&self) -> &[Color] {
-        &self.framebuffer
+        &self.image_buffer.framebuffer
     }
 
     pub fn bytes(&self) -> Vec<u8> {
-        self.framebuffer
-            .iter()
-            .flat_map(|c| Into::<[u8; 4]>::into(*c))
-            .collect::<Vec<u8>>()
+        self.image_buffer.bytes()
     }
 
     pub fn reset(&mut self) {
-        self.framebuffer.clear();
-        self.draw_indexes.clear();
+        self.image_buffer.clear();
 
-        for i in 0..(self.height as usize * self.width as usize) {
-            self.framebuffer.push(Color::BLACK);
-            self.draw_indexes.push(i);
+        for i in 0..(self.image_buffer.height as usize * self.image_buffer.width as usize) {
+            self.image_buffer.add_pixel(i);
         }
 
-        let mut rng = rand::thread_rng();
-        self.draw_indexes.shuffle(&mut rng)
+        self.image_buffer.prepare();
     }
 
     pub fn add_model(&mut self, model: Box<dyn Hitable + Sync + Send>) {
@@ -151,12 +144,12 @@ impl Tracer {
             self.timer.reset();
         }
 
-        if self.draw_indexes.len() > 0 {
+        if !self.image_buffer.is_complete() {
             self.update_buffer();
 
             self.scene.layer_mut(Self::LAYER).nodes_mut().clear();
 
-            let data = self.bytes();
+            let data = self.image_buffer.bytes();
 
             self.material
                 .diffuse_texture
@@ -172,12 +165,17 @@ impl Tracer {
                 Self::LAYER,
                 [0., 0., 0.].into(),
                 Quat::IDENTITY,
-                [self.width as f32, self.height as f32, 1.].into(),
+                [
+                    self.image_buffer.width as f32,
+                    self.image_buffer.height as f32,
+                    1.,
+                ]
+                .into(),
                 image,
             );
 
-            if self.draw_indexes.is_empty() {
-                log::info!("Rendering time: {}", self.timer.delta());
+            if self.image_buffer.is_complete() {
+                log::info!("Rendering time: {:.2}s", self.timer.delta());
             }
         }
 
@@ -191,7 +189,7 @@ impl Tracer {
 
     fn update_buffer(&mut self) {
         let chunks: Vec<Vec<usize>> = (0..Self::N_THREADS)
-            .map(|_| self.get_chunk(Self::PIXEL_PER_CHUNK))
+            .map(|_| self.image_buffer.get_chunk())
             .collect();
 
         let results: Vec<Vec<(usize, Color)>> = if Self::MULTI_THREAD {
@@ -210,15 +208,9 @@ impl Tracer {
 
         for result in results {
             for (idx, c) in result {
-                self.framebuffer[idx] = c;
+                self.image_buffer.update_pixel(idx, c);
             }
         }
-    }
-
-    pub fn get_chunk(&mut self, size: usize) -> Vec<usize> {
-        self.draw_indexes
-            .drain(0..size.min(self.draw_indexes.len()))
-            .collect::<Vec<usize>>()
     }
 
     pub fn compute_chunk(&self, chunk: Vec<usize>) -> Vec<(usize, Color)> {
@@ -236,15 +228,15 @@ impl Tracer {
     }
 
     fn compute_pixel(&self, idx: usize, rng: &mut RngPool) -> Color {
-        let i = idx / self.width as usize;
-        let j = idx % self.width as usize;
+        let i = idx / self.image_buffer.width as usize;
+        let j = idx % self.image_buffer.width as usize;
 
         let mut c = Color::BLACK;
         for _ in 0..self.n_rays {
             // -2..2
-            let x = -2. + 4. * ((j as f32 + rng.next()) / self.width as f32);
+            let x = -2. + 4. * ((j as f32 + rng.next()) / self.image_buffer.width as f32);
             // -1..1
-            let y = 1. - 2. * ((i as f32 + rng.next()) / self.height as f32);
+            let y = 1. - 2. * ((i as f32 + rng.next()) / self.image_buffer.height as f32);
 
             let ray = Ray::new(self.camera.position, Vec3::new(x, y, 1.));
 
