@@ -3,7 +3,11 @@ use std::sync::Arc;
 use glam::{Quat, Vec3};
 use rayon::prelude::*;
 
-use crate::{buffer::ImageBuffer, hit::Hitable, Ray};
+use crate::{
+    buffer::{ChunkStrategy, ImageBuffer},
+    hit::Hitable,
+    Ray,
+};
 use gobs_core::{
     entity::{camera::Camera, instance::InstanceFlag, light::Light},
     geometry::vertex::VertexFlag,
@@ -70,7 +74,7 @@ impl Tracer {
         )
         .await;
 
-        let image_buffer = ImageBuffer::new(width, height);
+        let image_buffer = ImageBuffer::new(width, height, ChunkStrategy::BOX);
 
         let material = MaterialBuilder::new("diffuse")
             .diffuse_buffer(&image_buffer.framebuffer, width as u32, height as u32)
@@ -120,13 +124,7 @@ impl Tracer {
     }
 
     pub fn reset(&mut self) {
-        self.image_buffer.clear();
-
-        for i in 0..(self.image_buffer.height as usize * self.image_buffer.width as usize) {
-            self.image_buffer.add_pixel(i);
-        }
-
-        self.image_buffer.prepare();
+        self.image_buffer.reset();
     }
 
     pub fn add_model(&mut self, model: Box<dyn Hitable + Sync + Send>) {
