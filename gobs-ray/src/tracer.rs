@@ -187,7 +187,10 @@ impl Tracer {
 
     fn update_buffer(&mut self) {
         let chunks: Vec<Vec<usize>> = (0..Self::N_THREADS)
-            .map(|_| self.image_buffer.get_chunk())
+            .filter_map(|_| match self.image_buffer.is_complete() {
+                true => None,
+                false => Some(self.image_buffer.get_chunk()),
+            })
             .collect();
 
         let results: Vec<Vec<(usize, Color)>> = if Self::MULTI_THREAD {

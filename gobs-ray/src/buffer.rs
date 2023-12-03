@@ -80,7 +80,7 @@ impl ChunkStrategyData {
                 strategy.reset(width, height);
             }
             ChunkStrategyData::BOX(ref mut strategy) => {
-                strategy.reset(width);
+                strategy.reset(width, height);
             }
         }
     }
@@ -175,12 +175,12 @@ pub struct BoxChunk {
 }
 
 impl BoxChunk {
-    const BOX_WIDTH: u32 = 120;
-    const BOX_HEIGHT: u32 = 120;
+    const BOX_WIDTH: u32 = 128;
+    const BOX_HEIGHT: u32 = 128;
 
     pub fn new(width: u32, height: u32) -> Self {
-        let cols = width / Self::BOX_WIDTH;
-        let rows = height / Self::BOX_HEIGHT;
+        let cols = width.div_ceil(Self::BOX_WIDTH);
+        let rows = height.div_ceil(Self::BOX_HEIGHT);
 
         Self {
             cols,
@@ -189,7 +189,7 @@ impl BoxChunk {
         }
     }
 
-    pub fn reset(&mut self, width: u32) {
+    pub fn reset(&mut self, width: u32, height: u32) {
         self.draw_boxes.clear();
 
         for j in 0..self.rows {
@@ -197,9 +197,9 @@ impl BoxChunk {
                 let mut chunk = Vec::new();
 
                 let x_min = i * Self::BOX_WIDTH;
-                let x_max = x_min + Self::BOX_WIDTH;
+                let x_max = (x_min + Self::BOX_WIDTH).min(width);
                 let y_min = j * Self::BOX_HEIGHT;
-                let y_max = y_min + Self::BOX_HEIGHT;
+                let y_max = (y_min + Self::BOX_HEIGHT).min(height);
 
                 for x in x_min..x_max {
                     for y in y_min..y_max {
@@ -215,6 +215,7 @@ impl BoxChunk {
     }
 
     fn is_complete(&self) -> bool {
+        log::debug!("{} boxes to draw", self.draw_boxes.len());
         self.draw_boxes.is_empty()
     }
 
