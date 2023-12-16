@@ -9,14 +9,13 @@ use log::info;
 
 use gobs_core as core;
 use gobs_game::input::{Input, Key};
+use gobs_material as material;
 use gobs_render as render;
 
-use core::{
-    geometry::mesh::MeshBuilder,
-    material::texture::{Texture, TextureType},
-};
+use core::geometry::mesh::MeshBuilder;
+use material::{Material, MaterialBuilder, Texture, TextureType};
 use render::{
-    model::{Material, MaterialBuilder, Model, ModelBuilder},
+    model::{Model, ModelBuilder},
     shader::Shader,
 };
 

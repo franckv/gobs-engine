@@ -3,13 +3,15 @@ use std::collections::HashMap;
 use uuid::Uuid;
 
 use gobs_core as core;
+use gobs_material as material;
 
 use core::entity::camera::Camera;
 use core::entity::instance::InstanceData;
 use core::entity::light::Light;
 use core::entity::uniform::{UniformDataBuilder, UniformProp};
 use core::geometry::mesh::{Mesh, MeshId};
-use core::material::texture::TextureId;
+use material::TextureId;
+use material::{Material, MaterialId};
 
 use crate::model::{Model, ModelId};
 use crate::resources::mesh::MeshBuffer;
@@ -18,7 +20,6 @@ use crate::resources::TextureBuffer;
 use crate::resources::UniformResource;
 use crate::{
     context::Gfx,
-    model::{Material, MaterialId},
     shader::{Shader, ShaderId},
 };
 

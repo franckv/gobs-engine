@@ -4,10 +4,9 @@ use uuid::Uuid;
 
 use gobs_core as core;
 
-use core::{
-    material::texture::{Texture, TextureType},
-    Color,
-};
+use core::Color;
+
+use crate::texture::{Texture, TextureType};
 
 pub type MaterialId = Uuid;
 

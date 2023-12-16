@@ -5,12 +5,14 @@ use anyhow::Result;
 use log::*;
 
 use gobs_core as core;
+use gobs_material as material;
 use gobs_render as render;
 use gobs_utils as utils;
 
 use core::geometry::mesh::{Mesh, MeshBuilder};
-use core::material::texture::{Texture, TextureType};
-use render::model::{Material, Model, ModelBuilder};
+use material::Material;
+use material::{Texture, TextureType};
+use render::model::{Model, ModelBuilder};
 use render::shader::Shader;
 use utils::load::{self, AssetType};
 

@@ -1,22 +1,21 @@
 [package]
-name = "gobs-render"
+name = "gobs-material"
 version = { workspace = true }
 authors = { workspace = true }
 edition = { workspace = true }
 
 [dependencies]
 anyhow = { workspace = true }
-bitflags = { workspace = true }
-bytemuck = { workspace = true }
-glam = { workspace = true }
 gobs-core = { workspace = true }
-gobs-material = { workspace = true }
 gobs-utils = { workspace = true }
+glam = { workspace = true }
 image = { workspace = true }
-indexmap = { workspace = true }
-itertools = { workspace = true }
 log = { workspace = true }
 naga = { workspace = true }
+pollster = { workspace = true }
+simplelog = { workspace = true }
 uuid = { workspace = true }
 wgpu = { workspace = true }
-winit = { workspace = true }
+
+[build-dependencies]
+fs_extra = { workspace = true }

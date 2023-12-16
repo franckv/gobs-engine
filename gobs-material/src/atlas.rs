@@ -1,10 +1,9 @@
 use anyhow::Result;
 use image::{imageops::FilterType, DynamicImage, GenericImage, GenericImageView, ImageBuffer};
 
-use gobs_core as core;
 use gobs_utils as utils;
 
-use core::material::texture::{Texture, TextureType};
+use crate::{Texture, TextureType};
 use utils::load::{self, AssetType};
 
 pub async fn load_atlas(files: &[&str], cols: u32, is_normal_map: bool) -> Result<Texture> {

@@ -4,7 +4,7 @@ use uuid::Uuid;
 
 use gobs_utils as utils;
 
-use crate::Color;
+use gobs_core::Color;
 use utils::load::{self, AssetType};
 
 #[derive(Copy, Clone, Debug)]

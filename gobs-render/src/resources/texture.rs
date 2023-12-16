@@ -1,6 +1,6 @@
-use gobs_core as core;
+use gobs_material as material;
 
-use core::material::texture::{Texture, TextureFormat, TextureType};
+use material::{Texture, TextureFormat, TextureType};
 
 use crate::context::Gfx;
 

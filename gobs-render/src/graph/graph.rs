@@ -1,8 +1,8 @@
 use std::sync::Arc;
 
-use gobs_core as core;
+use gobs_material as material;
 
-use core::material::texture::{Texture, TextureType};
+use material::{Texture, TextureType};
 
 use crate::context::Gfx;
 use crate::graph::batch::Batch;

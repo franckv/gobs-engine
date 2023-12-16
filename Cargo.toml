@@ -4,6 +4,7 @@ members = [
     "gobs-core",
     "gobs-egui",
     "gobs-game",
+    "gobs-material",
     "gobs-ray",
     "gobs-render",
     "gobs-scene",
@@ -32,6 +33,10 @@ path = "./gobs-egui"
 [workspace.dependencies.gobs-game]
 package = "gobs-game"
 path = "./gobs-game"
+
+[workspace.dependencies.gobs-material]
+package = "gobs-material"
+path = "./gobs-material"
 
 [workspace.dependencies.gobs-ray]
 package = "gobs-ray"

@@ -5,14 +5,16 @@ use glam::{Quat, Vec3};
 use log::*;
 
 use gobs_core as core;
+use gobs_material as material;
 use gobs_render as render;
 
 use core::entity::camera::Camera;
 use core::entity::light::Light;
+use material::Material;
 use render::context::Gfx;
 use render::graph::batch::BatchBuilder;
 use render::graph::graph::{RenderError, RenderGraph};
-use render::model::{Material, Model};
+use render::model::Model;
 use render::shader::Shader;
 
 use crate::assets;

@@ -6,7 +6,8 @@ use gobs::game::{
     app::{Application, Run},
     input::{Input, Key},
 };
-use gobs::scene::{Gfx, MaterialBuilder, RenderError, Scene};
+use gobs::material::MaterialBuilder;
+use gobs::scene::{Gfx, RenderError, Scene};
 
 use examples::CameraController;
 

@@ -13,10 +13,9 @@ use gobs_core::{
     geometry::vertex::VertexFlag,
     Color,
 };
+use gobs_material::{Material, MaterialBuilder};
 use gobs_render::{context::Gfx, pipeline::PipelineFlag, shader::Shader};
-use gobs_scene::{
-    shape::Shapes, Material, MaterialBuilder, Model, ModelBuilder, RenderError, Scene,
-};
+use gobs_scene::{shape::Shapes, Model, ModelBuilder, RenderError, Scene};
 use gobs_utils::{rng::RngPool, timer::Timer};
 
 pub struct Tracer {

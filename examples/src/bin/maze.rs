@@ -10,8 +10,9 @@ use gobs::game::{
     app::{Application, Run},
     input::{Input, Key},
 };
+use gobs::material::MaterialBuilder;
 use gobs::scene::shape::Shapes;
-use gobs::scene::{Gfx, MaterialBuilder, Model, ModelBuilder, RenderError, Scene};
+use gobs::scene::{Gfx, Model, ModelBuilder, RenderError, Scene};
 
 use examples::CameraController;
 
