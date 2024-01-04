@@ -1,0 +1,10 @@
+[package]
+name = "gobs"
+version = { workspace = true }
+authors = { workspace = true }
+edition = { workspace = true }
+
+[dependencies]
+#gobs-core = { workspace = true }
+gobs-game = { workspace = true }
+gobs-utils = { workspace = true }

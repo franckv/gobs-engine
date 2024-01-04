@@ -1,0 +1,11 @@
+[package]
+name = "gobs-game"
+version = { workspace = true }
+authors = { workspace = true }
+edition = { workspace = true }
+
+[dependencies]
+gobs-utils = { workspace = true }
+log = { workspace = true }
+pollster = { workspace = true }
+winit = { workspace = true }
