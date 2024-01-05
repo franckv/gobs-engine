@@ -41,6 +41,7 @@ image = "0.24"
 indexmap = "2.1.0"
 itertools = { version = "0.12" }
 log = "0.4"
+naga = {version = "0.14", features = ["glsl-in", "spv-out"]}
 pollster = "0.3"
 rand = "0.8"
 raw-window-handle = "0.5"

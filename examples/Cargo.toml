@@ -9,3 +9,6 @@ glam = { workspace = true }
 gobs = { workspace = true }
 log = { workspace = true }
 simplelog = { workspace = true }
+
+[build-dependencies]
+naga = { workspace = true }

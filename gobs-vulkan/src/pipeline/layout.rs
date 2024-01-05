@@ -10,26 +10,28 @@ use crate::Wrap;
 
 pub struct PipelineLayout {
     device: Arc<Device>,
-    _descriptor_layout: Arc<DescriptorSetLayout>,
+    descriptor_layout: Arc<DescriptorSetLayout>,
     pub(crate) layout: vk::PipelineLayout,
 }
 
 impl PipelineLayout {
-    pub fn new(device: Arc<Device>, _descriptor_layout: Arc<DescriptorSetLayout>) -> Self {
-        let set_layout = [_descriptor_layout.layout];
+    pub fn new(device: Arc<Device>, descriptor_layout: Arc<DescriptorSetLayout>) -> Arc<Self> {
+        let set_layout = [descriptor_layout.layout];
 
         let layout_info = vk::PipelineLayoutCreateInfo::builder().set_layouts(&set_layout);
 
-        unsafe {
+        let layout = unsafe {
             PipelineLayout {
                 device: device.clone(),
-                _descriptor_layout,
+                descriptor_layout,
                 layout: device
                     .raw()
                     .create_pipeline_layout(&layout_info, None)
                     .unwrap(),
             }
-        }
+        };
+
+        Arc::new(layout)
     }
 }
 

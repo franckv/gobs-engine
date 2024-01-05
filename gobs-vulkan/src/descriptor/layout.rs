@@ -10,6 +10,7 @@ pub enum DescriptorType {
     Uniform,
     UniformDynamic,
     ImageSampler,
+    StorageImage,
 }
 
 impl Into<vk::DescriptorType> for DescriptorType {
@@ -18,12 +19,14 @@ impl Into<vk::DescriptorType> for DescriptorType {
             DescriptorType::Uniform => vk::DescriptorType::UNIFORM_BUFFER,
             DescriptorType::UniformDynamic => vk::DescriptorType::UNIFORM_BUFFER_DYNAMIC,
             DescriptorType::ImageSampler => vk::DescriptorType::COMBINED_IMAGE_SAMPLER,
+            DescriptorType::StorageImage => vk::DescriptorType::STORAGE_IMAGE,
         }
     }
 }
 
 #[derive(Copy, Clone)]
 pub enum DescriptorStage {
+    Compute,
     Vertex,
     Fragment,
     All,
@@ -32,6 +35,7 @@ pub enum DescriptorStage {
 impl Into<vk::ShaderStageFlags> for DescriptorStage {
     fn into(self) -> vk::ShaderStageFlags {
         match self {
+            DescriptorStage::Compute => vk::ShaderStageFlags::COMPUTE,
             DescriptorStage::Vertex => vk::ShaderStageFlags::VERTEX,
             DescriptorStage::Fragment => vk::ShaderStageFlags::FRAGMENT,
             DescriptorStage::All => vk::ShaderStageFlags::VERTEX | vk::ShaderStageFlags::FRAGMENT,
@@ -114,6 +118,8 @@ impl DescriptorSetLayout {
 
 impl Drop for DescriptorSetLayout {
     fn drop(&mut self) {
+        log::info!("Drop DescriptorSetLayout");
+
         unsafe {
             self.device
                 .raw()

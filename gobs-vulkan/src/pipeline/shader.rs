@@ -12,6 +12,7 @@ use crate::device::Device;
 use crate::Wrap;
 
 pub enum ShaderType {
+    Compute,
     Vertex,
     Fragment,
 }

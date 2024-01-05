@@ -8,7 +8,7 @@ use crate::descriptor::DescriptorSet;
 use crate::device::Device;
 use crate::framebuffer::Framebuffer;
 use crate::image::{Image, ImageLayout};
-use crate::pipeline::Pipeline;
+use crate::pipeline::{Pipeline, PipelineLayout};
 use crate::queue::Queue;
 use crate::sync::{Fence, Semaphore};
 use crate::Wrap;
@@ -133,7 +133,7 @@ impl CommandBuffer {
         unsafe {
             self.device.raw().cmd_bind_pipeline(
                 self.command_buffer,
-                vk::PipelineBindPoint::GRAPHICS,
+                pipeline.bind_point,
                 pipeline.raw(),
             );
         }
@@ -164,19 +164,21 @@ impl CommandBuffer {
         }
     }
 
-    pub fn bind_descriptor_set(&self, set: &DescriptorSet, pipeline: &Pipeline, offsets: Vec<u32>) {
-        let sets = [set.raw()];
-
+    pub fn bind_descriptor_set(&self, set: &DescriptorSet, pipeline: &Pipeline) {
         unsafe {
             self.device.raw().cmd_bind_descriptor_sets(
                 self.command_buffer,
-                vk::PipelineBindPoint::GRAPHICS,
+                pipeline.bind_point,
                 pipeline.layout.raw(),
                 0,
-                &sets,
-                offsets.as_ref(),
+                &[set.raw()],
+                &[],
             );
         }
+    }
+
+    pub fn dispatch(&self, x: u32, y: u32, z: u32) {
+        unsafe { self.device.raw().cmd_dispatch(self.command_buffer, x, y, z) }
     }
 
     pub fn draw(&self, vertex_count: usize) {

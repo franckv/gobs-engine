@@ -1,18 +1,20 @@
 use std::mem;
-use std::ptr;
 use std::sync::Arc;
 
 use ash::vk;
 
 use crate::buffer::Buffer;
 use crate::device::Device;
-use crate::image::{Image, Sampler};
+use crate::image::{Image, ImageLayout, Sampler};
 use crate::Wrap;
+
+use super::DescriptorSetLayout;
 
 enum ResourceInfo {
     Buffer(vk::DescriptorBufferInfo),
     DynamicBuffer(vk::DescriptorBufferInfo),
     Image(vk::DescriptorImageInfo),
+    ImageCombined(vk::DescriptorImageInfo),
 }
 
 /// List of updates to apply on a descriptor set
@@ -26,11 +28,11 @@ impl DescriptorSetUpdates {
     pub fn bind_buffer<T: Copy>(mut self, buffer: &Buffer<T>, start: usize, len: usize) -> Self {
         let item_size = mem::size_of::<T>();
 
-        let buffer_info = vk::DescriptorBufferInfo {
-            buffer: buffer.raw(),
-            offset: (start * item_size) as u64,
-            range: (len * item_size) as u64,
-        };
+        let buffer_info = vk::DescriptorBufferInfo::builder()
+            .buffer(buffer.raw())
+            .offset((start * item_size) as u64)
+            .range((len * item_size) as u64)
+            .build();
 
         self.updates.push(ResourceInfo::Buffer(buffer_info));
 
@@ -45,25 +47,41 @@ impl DescriptorSetUpdates {
     ) -> Self {
         let item_size = mem::size_of::<T>();
 
-        let buffer_info = vk::DescriptorBufferInfo {
-            buffer: buffer.raw(),
-            offset: (start * item_size) as u64,
-            range: (len * item_size) as u64,
-        };
+        let buffer_info = vk::DescriptorBufferInfo::builder()
+            .buffer(buffer.raw())
+            .offset((start * item_size) as u64)
+            .range((len * item_size) as u64)
+            .build();
 
         self.updates.push(ResourceInfo::DynamicBuffer(buffer_info));
 
         self
     }
 
-    pub fn bind_image(mut self, image: &Image, sampler: &Sampler) -> Self {
-        let image_info = vk::DescriptorImageInfo {
-            image_layout: vk::ImageLayout::SHADER_READ_ONLY_OPTIMAL,
-            image_view: image.image_view,
-            sampler: sampler.raw(),
-        };
+    pub fn bind_image(mut self, image: &Image, layout: ImageLayout) -> Self {
+        let image_info = vk::DescriptorImageInfo::builder()
+            .image_layout(layout.into())
+            .image_view(image.image_view)
+            .build();
 
         self.updates.push(ResourceInfo::Image(image_info));
+
+        self
+    }
+
+    pub fn bind_image_combined(
+        mut self,
+        image: &Image,
+        sampler: &Sampler,
+        layout: ImageLayout,
+    ) -> Self {
+        let image_info = vk::DescriptorImageInfo::builder()
+            .image_layout(layout.into())
+            .image_view(image.image_view)
+            .sampler(sampler.raw())
+            .build();
+
+        self.updates.push(ResourceInfo::ImageCombined(image_info));
 
         self
     }
@@ -72,30 +90,33 @@ impl DescriptorSetUpdates {
         let mut updates = Vec::new();
 
         for (idx, update) in self.updates.iter().enumerate() {
-            updates.push(vk::WriteDescriptorSet {
-                s_type: vk::StructureType::WRITE_DESCRIPTOR_SET,
-                p_next: ptr::null(),
-                dst_set: self.set,
-                dst_binding: idx as u32,
-                dst_array_element: 0,
-                descriptor_type: match update {
+            let write_info_builder = vk::WriteDescriptorSet::builder()
+                .dst_set(self.set)
+                .dst_binding(idx as u32)
+                .dst_array_element(0)
+                .descriptor_type(match update {
                     ResourceInfo::Buffer(_) => vk::DescriptorType::UNIFORM_BUFFER,
                     ResourceInfo::DynamicBuffer(_) => vk::DescriptorType::UNIFORM_BUFFER_DYNAMIC,
-                    ResourceInfo::Image(_) => vk::DescriptorType::COMBINED_IMAGE_SAMPLER,
-                },
-                descriptor_count: 1,
-                p_buffer_info: match update {
-                    ResourceInfo::Buffer(buffer_info) => buffer_info,
-                    ResourceInfo::DynamicBuffer(buffer_info) => buffer_info,
-                    ResourceInfo::Image(_) => ptr::null(),
-                },
-                p_image_info: match update {
-                    ResourceInfo::Buffer(_) => ptr::null(),
-                    ResourceInfo::DynamicBuffer(_) => ptr::null(),
-                    ResourceInfo::Image(image_info) => image_info,
-                },
-                p_texel_buffer_view: ptr::null(),
-            });
+                    ResourceInfo::Image(_) => vk::DescriptorType::STORAGE_IMAGE,
+                    ResourceInfo::ImageCombined(_) => vk::DescriptorType::COMBINED_IMAGE_SAMPLER,
+                });
+
+            let write_info = match update {
+                ResourceInfo::Buffer(buffer_info) => {
+                    write_info_builder.buffer_info(&[*buffer_info]).build()
+                }
+                ResourceInfo::DynamicBuffer(buffer_info) => {
+                    write_info_builder.buffer_info(&[*buffer_info]).build()
+                }
+                ResourceInfo::ImageCombined(image_info) => {
+                    write_info_builder.image_info(&[*image_info]).build()
+                }
+                ResourceInfo::Image(image_info) => {
+                    write_info_builder.image_info(&[*image_info]).build()
+                }
+            };
+
+            updates.push(write_info);
         }
 
         unsafe {
@@ -109,15 +130,24 @@ impl DescriptorSetUpdates {
 /// Bind resources to shaders
 pub struct DescriptorSet {
     device: Arc<Device>,
+    layout: Arc<DescriptorSetLayout>,
     set: vk::DescriptorSet,
 }
 
 impl DescriptorSet {
-    pub(crate) fn new(device: Arc<Device>, set: vk::DescriptorSet) -> Self {
-        DescriptorSet { device, set }
+    pub(crate) fn new(
+        device: Arc<Device>,
+        set: vk::DescriptorSet,
+        layout: Arc<DescriptorSetLayout>,
+    ) -> Self {
+        DescriptorSet {
+            device,
+            layout,
+            set,
+        }
     }
 
-    pub fn start_update(&self) -> DescriptorSetUpdates {
+    pub fn update(&self) -> DescriptorSetUpdates {
         DescriptorSetUpdates {
             device: self.device.clone(),
             set: self.raw(),

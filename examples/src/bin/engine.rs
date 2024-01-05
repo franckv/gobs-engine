@@ -8,8 +8,13 @@ use gobs::{
     },
     vulkan::{
         command::{CommandBuffer, CommandPool},
+        descriptor::{
+            DescriptorSet, DescriptorSetLayout, DescriptorSetLayoutBuilder, DescriptorSetPool,
+            DescriptorStage, DescriptorType,
+        },
         device::Device,
         image::{ColorSpace, Image, ImageFormat, ImageLayout, ImageUsage},
+        pipeline::{Pipeline, PipelineLayout, Shader, ShaderType},
         queue::QueueFamily,
         swapchain::{PresentationMode, SwapChain},
         sync::{Fence, Semaphore},
@@ -49,6 +54,11 @@ struct App {
     swapchain: SwapChain,
     swapchain_images: Vec<Image>,
     draw_image: Image,
+    ds_pool: DescriptorSetPool,
+    ds_layout: Arc<DescriptorSetLayout>,
+    ds: DescriptorSet,
+    pipeline: Pipeline,
+    pipeline_layout: Arc<PipelineLayout>,
 }
 
 impl Run for App {
@@ -72,12 +82,39 @@ impl Run for App {
             extent.1,
         );
 
+        let ds_layout = DescriptorSetLayoutBuilder::new()
+            .binding(DescriptorType::StorageImage, DescriptorStage::Compute)
+            .build(ctx.device.clone());
+        let ds_pool = DescriptorSetPool::new(ctx.device.clone(), ds_layout.clone(), 10);
+        let ds = ds_pool.allocate(ds_layout.clone());
+
+        ds.update()
+            .bind_image(&draw_image, ImageLayout::General)
+            .end();
+
+        let shader = Shader::from_file(
+            "examples/shaders/sky.comp.spv",
+            ctx.device.clone(),
+            ShaderType::Compute,
+        );
+
+        let pipeline_layout = PipelineLayout::new(ctx.device.clone(), ds_layout.clone());
+        let pipeline = Pipeline::compute_builder(ctx.device.clone())
+            .layout(pipeline_layout.clone())
+            .compute_shader("main", shader)
+            .build();
+
         App {
             frame_number: 0,
             frames,
             swapchain,
             swapchain_images,
             draw_image,
+            ds_pool,
+            ds_layout,
+            ds,
+            pipeline,
+            pipeline_layout,
         }
     }
 
@@ -112,8 +149,10 @@ impl Run for App {
 
         Self::draw_background(
             &mut frame.command_buffer,
-            self.frame_number,
-            &self.draw_image,
+            &self.pipeline,
+            &self.ds,
+            self.draw_image.width,
+            self.draw_image.height,
         );
 
         frame.command_buffer.transition_image_layout(
@@ -175,9 +214,21 @@ impl Run for App {
 }
 
 impl App {
-    fn draw_background(cmd: &mut CommandBuffer, frame_number: usize, image: &Image) {
+    fn clear_background(cmd: &mut CommandBuffer, frame_number: usize, image: &Image) {
         let flash = (frame_number as f32 / 120.).sin().abs();
         cmd.clear_color(image, [flash, 0., 0., 1.]);
+    }
+
+    fn draw_background(
+        cmd: &mut CommandBuffer,
+        pipeline: &Pipeline,
+        ds: &DescriptorSet,
+        width: u32,
+        height: u32,
+    ) {
+        cmd.bind_pipeline(pipeline);
+        cmd.bind_descriptor_set(ds, &pipeline);
+        cmd.dispatch(width / 16 + 1, height / 16 + 1, 1);
     }
 
     fn create_swapchain(ctx: &Context) -> SwapChain {
