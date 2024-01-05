@@ -194,13 +194,14 @@ impl From<vk::Format> for ImageFormat {
         match format {
             vk::Format::R8G8B8A8_UNORM => ImageFormat::R8g8b8a8Unorm,
             vk::Format::B8G8R8A8_SRGB => ImageFormat::B8g8r8a8Srgb,
+            vk::Format::R8G8B8A8_SRGB => ImageFormat::R8g8b8a8Srgb,
             vk::Format::B8G8R8A8_UNORM => ImageFormat::B8g8r8a8Unorm,
             vk::Format::R32G32_SFLOAT => ImageFormat::R32g32Sfloat,
             vk::Format::R32G32B32_SFLOAT => ImageFormat::R32g32b32Sfloat,
             vk::Format::R32G32B32A32_SFLOAT => ImageFormat::R32g32b32a32Sfloat,
             vk::Format::D32_SFLOAT => ImageFormat::D32Sfloat,
             vk::Format::A2B10G10R10_UNORM_PACK32 => ImageFormat::A2b10g10r10UnormPack32,
-            _ => panic!("Format not implemented: {:?}", format)
+            _ => panic!("Format not implemented: {:?}", format),
         }
     }
 }
@@ -210,26 +211,26 @@ impl Into<vk::Format> for ImageFormat {
         match self {
             ImageFormat::R8g8b8a8Unorm => vk::Format::R8G8B8A8_UNORM,
             ImageFormat::B8g8r8a8Srgb => vk::Format::B8G8R8A8_SRGB,
+            ImageFormat::R8g8b8a8Srgb => vk::Format::R8G8B8A8_SRGB,
             ImageFormat::B8g8r8a8Unorm => vk::Format::B8G8R8A8_UNORM,
             ImageFormat::R32g32Sfloat => vk::Format::R32G32_SFLOAT,
             ImageFormat::R32g32b32Sfloat => vk::Format::R32G32B32_SFLOAT,
             ImageFormat::R32g32b32a32Sfloat => vk::Format::R32G32B32A32_SFLOAT,
             ImageFormat::D32Sfloat => vk::Format::D32_SFLOAT,
-            _ => panic!("Format not implemented: {:?}", self)
+            _ => panic!("Format not implemented: {:?}", self),
         }
     }
 }
 
-
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum ColorSpace {
-    SrgbNonlinear
+    SrgbNonlinear,
 }
 
 impl From<vk::ColorSpaceKHR> for ColorSpace {
     fn from(color_space: vk::ColorSpaceKHR) -> ColorSpace {
         match color_space {
-            _ => ColorSpace::SrgbNonlinear
+            _ => ColorSpace::SrgbNonlinear,
         }
     }
 }

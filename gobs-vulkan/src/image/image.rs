@@ -13,46 +13,24 @@ use crate::Wrap;
 #[derive(Copy, Clone)]
 pub enum ImageLayout {
     Undefined,
+    General,
     Transfer,
     Shader,
     Depth,
-    Color
+    Color,
+    Present,
 }
 
 impl Into<vk::ImageLayout> for ImageLayout {
     fn into(self) -> vk::ImageLayout {
         match self {
             ImageLayout::Undefined => vk::ImageLayout::UNDEFINED,
+            ImageLayout::General => vk::ImageLayout::GENERAL,
             ImageLayout::Transfer => vk::ImageLayout::TRANSFER_DST_OPTIMAL,
             ImageLayout::Shader => vk::ImageLayout::SHADER_READ_ONLY_OPTIMAL,
             ImageLayout::Depth => vk::ImageLayout::DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
             ImageLayout::Color => vk::ImageLayout::COLOR_ATTACHMENT_OPTIMAL,
-        }
-    }
-}
-
-impl Into<vk::AccessFlags> for ImageLayout {
-    fn into(self) -> vk::AccessFlags {
-        match self {
-            ImageLayout::Undefined => Default::default(),
-            ImageLayout::Transfer => vk::AccessFlags::TRANSFER_WRITE,
-            ImageLayout::Shader => vk::AccessFlags::SHADER_READ,
-            ImageLayout::Depth => vk::AccessFlags::DEPTH_STENCIL_ATTACHMENT_READ |
-                vk::AccessFlags::DEPTH_STENCIL_ATTACHMENT_WRITE,
-            ImageLayout::Color => vk::AccessFlags::COLOR_ATTACHMENT_READ |
-                vk::AccessFlags::COLOR_ATTACHMENT_WRITE
-        }
-    }
-}
-
-impl Into<vk::PipelineStageFlags> for ImageLayout {
-    fn into(self) -> vk::PipelineStageFlags {
-        match self {
-            ImageLayout::Undefined => vk::PipelineStageFlags::TOP_OF_PIPE,
-            ImageLayout::Transfer => vk::PipelineStageFlags::TRANSFER,
-            ImageLayout::Shader => vk::PipelineStageFlags::FRAGMENT_SHADER,
-            ImageLayout::Depth => vk::PipelineStageFlags::EARLY_FRAGMENT_TESTS,
-            ImageLayout::Color => vk::PipelineStageFlags::COLOR_ATTACHMENT_OUTPUT
+            ImageLayout::Present => vk::ImageLayout::PRESENT_SRC_KHR,
         }
     }
 }
@@ -61,16 +39,15 @@ impl Into<vk::PipelineStageFlags> for ImageLayout {
 pub enum ImageUsage {
     Swapchain,
     Texture,
-    Depth
+    Depth,
 }
 
 impl Into<vk::ImageUsageFlags> for ImageUsage {
     fn into(self) -> vk::ImageUsageFlags {
         match self {
-            ImageUsage::Swapchain => vk::ImageUsageFlags::COLOR_ATTACHMENT,
-            ImageUsage::Texture => vk::ImageUsageFlags::TRANSFER_DST |
-                vk::ImageUsageFlags::SAMPLED,
-            ImageUsage::Depth => vk::ImageUsageFlags::DEPTH_STENCIL_ATTACHMENT
+            ImageUsage::Swapchain => vk::ImageUsageFlags::TRANSFER_DST | vk::ImageUsageFlags::COLOR_ATTACHMENT,
+            ImageUsage::Texture => vk::ImageUsageFlags::TRANSFER_DST | vk::ImageUsageFlags::SAMPLED,
+            ImageUsage::Depth => vk::ImageUsageFlags::DEPTH_STENCIL_ATTACHMENT,
         }
     }
 }
@@ -80,7 +57,7 @@ impl Into<vk::ImageAspectFlags> for ImageUsage {
         match self {
             ImageUsage::Swapchain => vk::ImageAspectFlags::COLOR,
             ImageUsage::Texture => vk::ImageAspectFlags::COLOR,
-            ImageUsage::Depth => vk::ImageAspectFlags::DEPTH
+            ImageUsage::Depth => vk::ImageAspectFlags::DEPTH,
         }
     }
 }
@@ -97,16 +74,18 @@ pub struct Image {
 }
 
 impl Image {
-    pub fn new(device: Arc<Device>, format: ImageFormat,
-               usage: ImageUsage,
-               width: u32, height: u32) -> Self {
-        let image = Self::create_image(&device, width, height,
-                                       format, usage);
+    pub fn new(
+        device: Arc<Device>,
+        format: ImageFormat,
+        usage: ImageUsage,
+        width: u32,
+        height: u32,
+    ) -> Self {
+        let image = Self::create_image(&device, width, height, format, usage);
 
         let memory = Memory::with_image(device.clone(), image);
 
-        let image_view = Self::create_image_view(&device, image,
-                                                 format, usage);
+        let image_view = Self::create_image_view(&device, image, format, usage);
 
         Image {
             device,
@@ -119,15 +98,15 @@ impl Image {
         }
     }
 
-    pub(crate) fn with_raw(device: Arc<Device>,
-                           image: vk::Image,
-                           format: ImageFormat,
-                           usage: ImageUsage,
-                           width: u32, height: u32) -> Self {
-
-
-        let image_view = Self::create_image_view(&device, image,
-                                                 format, usage);
+    pub(crate) fn with_raw(
+        device: Arc<Device>,
+        image: vk::Image,
+        format: ImageFormat,
+        usage: ImageUsage,
+        width: u32,
+        height: u32,
+    ) -> Self {
+        let image_view = Self::create_image_view(&device, image, format, usage);
 
         Image {
             device,
@@ -144,8 +123,13 @@ impl Image {
         (self.width, self.height)
     }
 
-    fn create_image(device: &Arc<Device>, width: u32, height: u32,
-                    format: ImageFormat, usage: ImageUsage) -> vk::Image {
+    fn create_image(
+        device: &Arc<Device>,
+        width: u32,
+        height: u32,
+        format: ImageFormat,
+        usage: ImageUsage,
+    ) -> vk::Image {
         let image_info = vk::ImageCreateInfo {
             s_type: vk::StructureType::IMAGE_CREATE_INFO,
             p_next: ptr::null(),
@@ -168,17 +152,15 @@ impl Image {
             p_queue_family_indices: ptr::null(),
         };
 
-        unsafe {
-            device.raw().create_image(&image_info,
-                                       None).unwrap()
-        }
+        unsafe { device.raw().create_image(&image_info, None).unwrap() }
     }
 
-    pub(crate) fn create_image_view(device: &Arc<Device>,
-                                    image: vk::Image,
-                                    format: ImageFormat,
-                                    usage: ImageUsage) -> vk::ImageView {
-
+    pub(crate) fn create_image_view(
+        device: &Arc<Device>,
+        image: vk::Image,
+        format: ImageFormat,
+        usage: ImageUsage,
+    ) -> vk::ImageView {
         let view_info = vk::ImageViewCreateInfo {
             s_type: vk::StructureType::IMAGE_VIEW_CREATE_INFO,
             p_next: ptr::null(),
@@ -201,10 +183,7 @@ impl Image {
             },
         };
 
-        unsafe {
-            device.raw().create_image_view(&view_info,
-                                            None).unwrap()
-        }
+        unsafe { device.raw().create_image_view(&view_info, None).unwrap() }
     }
 }
 

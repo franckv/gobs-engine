@@ -10,7 +10,7 @@ use crate::Wrap;
 
 pub struct Sampler {
     device: Arc<Device>,
-    sampler: vk::Sampler
+    sampler: vk::Sampler,
 }
 
 impl Sampler {
@@ -33,18 +33,12 @@ impl Sampler {
             mipmap_mode: vk::SamplerMipmapMode::LINEAR,
             mip_lod_bias: 0.,
             min_lod: 0.,
-            max_lod: 0.
+            max_lod: 0.,
         };
 
-        let sampler = unsafe {
-            device.raw().create_sampler(&sampler_info,
-                                        None).unwrap()
-        };
+        let sampler = unsafe { device.raw().create_sampler(&sampler_info, None).unwrap() };
 
-        Sampler {
-            device,
-            sampler
-        }
+        Sampler { device, sampler }
     }
 }
 

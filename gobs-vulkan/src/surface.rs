@@ -1,12 +1,10 @@
 use std;
 use std::sync::Arc;
 
-use winit::window::Window;
 use raw_window_handle::{HasRawDisplayHandle, HasRawWindowHandle};
+use winit::window::Window;
 
 use ash::vk;
-
-use log::trace;
 
 use crate::device::Device;
 use crate::image::{ColorSpace, ImageFormat};
@@ -31,14 +29,21 @@ pub struct SurfaceCapabilities {
 
 pub struct Surface {
     instance: Arc<Instance>,
-    window: Window,
-    surface: vk::SurfaceKHR
+    pub window: Window,
+    surface: vk::SurfaceKHR,
 }
 
 impl Surface {
     pub fn new(instance: Arc<Instance>, window: Window) -> Arc<Self> {
         let surface = unsafe {
-            ash_window::create_surface(&instance.entry, &instance.instance, window.raw_display_handle(), window.raw_window_handle(), None).unwrap()
+            ash_window::create_surface(
+                &instance.entry,
+                &instance.instance,
+                window.raw_display_handle(),
+                window.raw_window_handle(),
+                None,
+            )
+            .unwrap()
         };
 
         Arc::new(Surface {
@@ -48,11 +53,12 @@ impl Surface {
         })
     }
 
-    pub fn family_supported(&self, p_device: &PhysicalDevice,
-                            family: &QueueFamily) -> bool {
+    pub fn family_supported(&self, p_device: &PhysicalDevice, family: &QueueFamily) -> bool {
         unsafe {
-            self.instance.surface_loader.get_physical_device_surface_support(
-            p_device.raw(), family.index, self.surface).unwrap()
+            self.instance
+                .surface_loader
+                .get_physical_device_surface_support(p_device.raw(), family.index, self.surface)
+                .unwrap()
         }
     }
 
@@ -60,9 +66,10 @@ impl Surface {
         let mut results = Vec::new();
 
         let formats = unsafe {
-            self.instance.surface_loader
-                .get_physical_device_surface_formats(
-                    p_device.raw(), self.surface).unwrap()
+            self.instance
+                .surface_loader
+                .get_physical_device_surface_formats(p_device.raw(), self.surface)
+                .unwrap()
         };
 
         for format in formats {
@@ -76,29 +83,30 @@ impl Surface {
         results
     }
 
-    pub fn get_available_presentation_modes(&self, device: &Arc<Device>)
-        -> Vec<PresentationMode> {
-            let mut results = Vec::new();
+    pub fn get_available_presentation_modes(&self, device: Arc<Device>) -> Vec<PresentationMode> {
+        let mut results = Vec::new();
 
-            let presents = unsafe {
-                self.instance.surface_loader
-                    .get_physical_device_surface_present_modes(
-                        device.p_device.raw(), self.surface).unwrap()
-            };
+        let presents = unsafe {
+            self.instance
+                .surface_loader
+                .get_physical_device_surface_present_modes(device.p_device.raw(), self.surface)
+                .unwrap()
+        };
 
-            for present in presents {
-                let mode: PresentationMode = present.into();
-                results.push(mode);
-            }
-
-            results
+        for present in presents {
+            let mode: PresentationMode = present.into();
+            results.push(mode);
         }
 
-    pub fn get_capabilities(&self, device: &Arc<Device>) -> SurfaceCapabilities {
+        results
+    }
+
+    pub fn get_capabilities(&self, device: Arc<Device>) -> SurfaceCapabilities {
         let capabilities = unsafe {
-            self.instance.surface_loader
-                .get_physical_device_surface_capabilities(
-                    device.p_device.raw(), self.surface).unwrap()
+            self.instance
+                .surface_loader
+                .get_physical_device_surface_capabilities(device.p_device.raw(), self.surface)
+                .unwrap()
         };
 
         SurfaceCapabilities {
@@ -115,19 +123,17 @@ impl Surface {
 
     pub fn get_dimensions(&self) -> (u32, u32) {
         let dim = self.window.inner_size();
-        
+
         dim.into()
     }
 
-    pub fn get_extent(&self, device: &Arc<Device>) -> (u32, u32) {
+    pub fn get_extent(&self, device: Arc<Device>) -> (u32, u32) {
         let caps = self.get_capabilities(device);
         let dim = self.get_dimensions();
 
         let extent = match caps.width {
-            std::u32::MAX => {
-                dim
-            }
-            _ => (caps.width, caps.height)
+            std::u32::MAX => dim,
+            _ => (caps.width, caps.height),
         };
 
         extent
@@ -142,9 +148,11 @@ impl Wrap<vk::SurfaceKHR> for Surface {
 
 impl Drop for Surface {
     fn drop(&mut self) {
-        trace!("Drop surface");
+        log::info!("Drop surface");
         unsafe {
-            self.instance.surface_loader.destroy_surface(self.surface, None);
+            self.instance
+                .surface_loader
+                .destroy_surface(self.surface, None);
         }
     }
 }

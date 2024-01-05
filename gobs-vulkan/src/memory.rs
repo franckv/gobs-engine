@@ -18,51 +18,38 @@ pub struct Memory {
 }
 
 impl Memory {
-    pub(crate) fn with_buffer(device: Arc<Device>,
-                              buffer: vk::Buffer,
-                              usage: BufferUsage) -> Self {
-        let mem_req = unsafe {
-            device.raw().get_buffer_memory_requirements(buffer)
-        };
+    pub(crate) fn with_buffer(device: Arc<Device>, buffer: vk::Buffer, usage: BufferUsage) -> Self {
+        let mem_req = unsafe { device.raw().get_buffer_memory_requirements(buffer) };
 
         let memory = Self::allocate(&device, mem_req, usage.into());
 
         unsafe {
-            device.raw().bind_buffer_memory(buffer, memory,
-                                            0).unwrap();
+            device.raw().bind_buffer_memory(buffer, memory, 0).unwrap();
         }
 
-        Memory {
-            device,
-            memory,
-        }
+        Memory { device, memory }
     }
 
     pub(crate) fn with_image(device: Arc<Device>, image: vk::Image) -> Self {
-        let mem_req = unsafe {
-            device.raw().get_image_memory_requirements(image)
-        };
+        let mem_req = unsafe { device.raw().get_image_memory_requirements(image) };
 
         let mem_flags = vk::MemoryPropertyFlags::DEVICE_LOCAL;
 
         let memory = Self::allocate(&device, mem_req, mem_flags);
 
         unsafe {
-            device.raw().bind_image_memory(image, memory,
-                                           0).unwrap();
+            device.raw().bind_image_memory(image, memory, 0).unwrap();
         }
 
-        Memory {
-            device,
-            memory,
-        }
+        Memory { device, memory }
     }
 
-    fn allocate(device: &Arc<Device>,
-                mem_req: vk::MemoryRequirements,
-                mem_flags: vk::MemoryPropertyFlags) -> vk::DeviceMemory {
-        let mem_type = device.p_device.find_memory_type(&mem_req,
-                                                        mem_flags);
+    fn allocate(
+        device: &Arc<Device>,
+        mem_req: vk::MemoryRequirements,
+        mem_flags: vk::MemoryPropertyFlags,
+    ) -> vk::DeviceMemory {
+        let mem_type = device.p_device.find_memory_type(&mem_req, mem_flags);
 
         let memory_info = vk::MemoryAllocateInfo {
             s_type: vk::StructureType::MEMORY_ALLOCATE_INFO,
@@ -71,23 +58,20 @@ impl Memory {
             memory_type_index: mem_type,
         };
 
-        unsafe {
-            device.raw().allocate_memory(&memory_info,
-                                         None).unwrap()
-        }
+        unsafe { device.raw().allocate_memory(&memory_info, None).unwrap() }
     }
 
     pub fn upload<T: Copy>(&self, entries: &Vec<T>) {
         let size = (entries.len() * mem::size_of::<T>()) as u64;
 
         let data = unsafe {
-            self.device.raw().map_memory(self.memory, 0, size,
-                                         vk::MemoryMapFlags::empty()).unwrap()
+            self.device
+                .raw()
+                .map_memory(self.memory, 0, size, vk::MemoryMapFlags::empty())
+                .unwrap()
         };
 
-        let mut align = unsafe {
-            Align::new(data, align_of::<T>() as u64, size)
-        };
+        let mut align = unsafe { Align::new(data, align_of::<T>() as u64, size) };
 
         align.copy_from_slice(entries.as_ref());
 

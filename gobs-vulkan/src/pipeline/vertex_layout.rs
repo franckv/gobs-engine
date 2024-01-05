@@ -7,7 +7,7 @@ pub enum VertexAttributeFormat {
     Vec2,
     Vec3,
     Vec4,
-    Mat4
+    Mat4,
 }
 
 impl VertexAttributeFormat {
@@ -39,13 +39,13 @@ impl Into<vk::Format> for VertexAttributeFormat {
 pub struct VertexAttribute {
     pub location: usize,
     pub format: VertexAttributeFormat,
-    pub offset: usize
+    pub offset: usize,
 }
 
 #[derive(Copy, Clone)]
 pub enum VertexLayoutBindingType {
     Vertex,
-    Instance
+    Instance,
 }
 
 impl Into<vk::VertexInputRate> for VertexLayoutBindingType {
@@ -61,11 +61,11 @@ pub struct VertexLayoutBinding {
     pub ty: VertexLayoutBindingType,
     pub binding: usize,
     pub attributes: Vec<VertexAttribute>,
-    pub stride: usize
+    pub stride: usize,
 }
 
 pub struct VertexLayout {
-    pub bindings: Vec<VertexLayoutBinding>
+    pub bindings: Vec<VertexLayoutBinding>,
 }
 
 impl VertexLayout {
@@ -73,19 +73,17 @@ impl VertexLayout {
         let mut desc = Vec::new();
 
         for binding in &self.bindings {
-            desc.push(
-            vk::VertexInputBindingDescription {
+            desc.push(vk::VertexInputBindingDescription {
                 binding: binding.binding as u32,
                 stride: binding.stride as u32,
-                input_rate: binding.ty.into()
+                input_rate: binding.ty.into(),
             });
         }
 
         desc
     }
 
-    pub(crate) fn attribute_description(&self)
-    -> Vec<vk::VertexInputAttributeDescription> {
+    pub(crate) fn attribute_description(&self) -> Vec<vk::VertexInputAttributeDescription> {
         let mut desc = Vec::new();
 
         for binding in &self.bindings {
@@ -95,8 +93,7 @@ impl VertexLayout {
                         binding: binding.binding as u32,
                         location: (attr.location + i) as u32,
                         format: attr.format.into(),
-                        offset: (attr.offset +
-                            i * attr.format.location_size()) as u32
+                        offset: (attr.offset + i * attr.format.location_size()) as u32,
                     });
                 }
             }
@@ -117,7 +114,7 @@ impl VertexLayoutBuilder {
         VertexLayoutBuilder {
             bindings: Vec::new(),
             index: 0,
-            location: 0
+            location: 0,
         }
     }
 
@@ -126,7 +123,7 @@ impl VertexLayoutBuilder {
             ty,
             binding: self.index,
             attributes: Vec::new(),
-            stride: mem::size_of::<T>()
+            stride: mem::size_of::<T>(),
         });
 
         self.index += 1;
@@ -135,11 +132,15 @@ impl VertexLayoutBuilder {
     }
 
     pub fn attribute(mut self, format: VertexAttributeFormat, offset: usize) -> Self {
-        self.bindings.last_mut().unwrap().attributes.push(VertexAttribute {
-            location: self.location,
-            format,
-            offset
-        });
+        self.bindings
+            .last_mut()
+            .unwrap()
+            .attributes
+            .push(VertexAttribute {
+                location: self.location,
+                format,
+                offset,
+            });
 
         self.location += format.locations();
 
@@ -150,8 +151,6 @@ impl VertexLayoutBuilder {
         let mut bindings = Vec::new();
         bindings.append(&mut self.bindings);
 
-        VertexLayout {
-            bindings
-        }
+        VertexLayout { bindings }
     }
 }

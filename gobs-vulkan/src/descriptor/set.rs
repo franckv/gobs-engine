@@ -12,7 +12,7 @@ use crate::Wrap;
 enum ResourceInfo {
     Buffer(vk::DescriptorBufferInfo),
     DynamicBuffer(vk::DescriptorBufferInfo),
-    Image(vk::DescriptorImageInfo)
+    Image(vk::DescriptorImageInfo),
 }
 
 /// List of updates to apply on a descriptor set
@@ -23,8 +23,7 @@ pub struct DescriptorSetUpdates {
 }
 
 impl DescriptorSetUpdates {
-    pub fn bind_buffer<T: Copy>(mut self, buffer: &Buffer<T>,
-                                start: usize, len: usize) -> Self {
+    pub fn bind_buffer<T: Copy>(mut self, buffer: &Buffer<T>, start: usize, len: usize) -> Self {
         let item_size = mem::size_of::<T>();
 
         let buffer_info = vk::DescriptorBufferInfo {
@@ -38,8 +37,12 @@ impl DescriptorSetUpdates {
         self
     }
 
-    pub fn bind_dynamic_buffer<T: Copy>(mut self, buffer: &Buffer<T>,
-                                start: usize, len: usize) -> Self {
+    pub fn bind_dynamic_buffer<T: Copy>(
+        mut self,
+        buffer: &Buffer<T>,
+        start: usize,
+        len: usize,
+    ) -> Self {
         let item_size = mem::size_of::<T>();
 
         let buffer_info = vk::DescriptorBufferInfo {
@@ -78,26 +81,27 @@ impl DescriptorSetUpdates {
                 descriptor_type: match update {
                     ResourceInfo::Buffer(_) => vk::DescriptorType::UNIFORM_BUFFER,
                     ResourceInfo::DynamicBuffer(_) => vk::DescriptorType::UNIFORM_BUFFER_DYNAMIC,
-                    ResourceInfo::Image(_) => vk::DescriptorType::COMBINED_IMAGE_SAMPLER
+                    ResourceInfo::Image(_) => vk::DescriptorType::COMBINED_IMAGE_SAMPLER,
                 },
                 descriptor_count: 1,
                 p_buffer_info: match update {
                     ResourceInfo::Buffer(buffer_info) => buffer_info,
                     ResourceInfo::DynamicBuffer(buffer_info) => buffer_info,
-                    ResourceInfo::Image(_) => ptr::null()
+                    ResourceInfo::Image(_) => ptr::null(),
                 },
                 p_image_info: match update {
                     ResourceInfo::Buffer(_) => ptr::null(),
                     ResourceInfo::DynamicBuffer(_) => ptr::null(),
-                    ResourceInfo::Image(image_info) => image_info
+                    ResourceInfo::Image(image_info) => image_info,
                 },
                 p_texel_buffer_view: ptr::null(),
             });
         }
 
         unsafe {
-            self.device.raw().update_descriptor_sets(updates.as_ref(),
-                                                     &[]);
+            self.device
+                .raw()
+                .update_descriptor_sets(updates.as_ref(), &[]);
         }
     }
 }
@@ -105,15 +109,12 @@ impl DescriptorSetUpdates {
 /// Bind resources to shaders
 pub struct DescriptorSet {
     device: Arc<Device>,
-    set: vk::DescriptorSet
+    set: vk::DescriptorSet,
 }
 
 impl DescriptorSet {
     pub(crate) fn new(device: Arc<Device>, set: vk::DescriptorSet) -> Self {
-        DescriptorSet {
-            device,
-            set,
-        }
+        DescriptorSet { device, set }
     }
 
     pub fn start_update(&self) -> DescriptorSetUpdates {

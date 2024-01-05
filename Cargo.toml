@@ -24,6 +24,10 @@ path = "./gobs-game"
 package = "gobs-utils"
 path = "./gobs-utils"
 
+[workspace.dependencies.gobs-vulkan]
+package = "gobs-vulkan"
+path = "./gobs-vulkan"
+
 [workspace.dependencies]
 ash = { version = "0.37", features = ["linked", "debug"] }
 ash-window = "0.12"

@@ -2,19 +2,22 @@ use std::borrow::Cow;
 use std::ffi::{CStr, CString};
 use std::sync::Arc;
 
-use ash::{self, vk};
 use ash::extensions::ext::DebugUtils;
 use ash::extensions::khr::Surface as VkSurface;
-#[cfg(all(unix, not(target_os = "android"), not(target_os = "macos")))]
-use ash::extensions::khr::XlibSurface;
 #[cfg(target_os = "windows")]
 use ash::extensions::khr::Win32Surface;
-
-use log::{debug, error, trace};
+#[cfg(all(unix, not(target_os = "android"), not(target_os = "macos")))]
+use ash::extensions::khr::XlibSurface;
+use ash::vk::{
+    PhysicalDeviceFeatures2, PhysicalDeviceFeatures2Builder, PhysicalDeviceVulkan12Features,
+    PhysicalDeviceVulkan13Features, PhysicalDeviceVulkan13FeaturesBuilder,
+};
+use ash::{self, vk};
 
 use crate::physical::PhysicalDevice;
 use crate::queue::QueueFamily;
 use crate::surface::Surface;
+use crate::Wrap;
 
 unsafe extern "system" fn debug_cb(
     message_severity: vk::DebugUtilsMessageSeverityFlagsEXT,
@@ -37,7 +40,7 @@ unsafe extern "system" fn debug_cb(
         CStr::from_ptr(callback_data.p_message).to_string_lossy()
     };
 
-    error!(
+    log::error!(
         "{:?}:\n{:?} [{} ({})] : {}\n",
         message_severity,
         message_type,
@@ -62,7 +65,7 @@ impl Instance {
     pub fn new(name: &str, version: u32) -> Arc<Self> {
         let app_name = CString::new(name).unwrap();
 
-        let vk_version = vk::make_api_version(0, 1, 0, 0);
+        let vk_version = vk::make_api_version(0, 1, 3, 0);
 
         let app_info = vk::ApplicationInfo::builder()
             .application_name(&app_name)
@@ -80,14 +83,9 @@ impl Instance {
             DebugUtils::name().as_ptr(),
         ];
 
-        //let validation = CString::new("VK_LAYER_LUNARG_standard_validation").unwrap();
         let validation = CString::new("VK_LAYER_KHRONOS_validation").unwrap();
-        //let debug_validation = CString::new("VK_LAYER_LUNARG_api_dump").unwrap();
 
-        let layers = [
-            validation.as_ptr(),
-            //debug_validation.as_ptr()
-        ];
+        let layers = [validation.as_ptr()];
 
         let instance_info = vk::InstanceCreateInfo::builder()
             .application_info(&app_info)
@@ -97,14 +95,12 @@ impl Instance {
         let entry = ash::Entry::linked();
 
         let instance: ash::Instance = unsafe {
-            debug!("Create instance");
-
+            log::info!("Create instance");
 
             entry.create_instance(&instance_info, None).unwrap()
         };
 
-        let surface_loader =
-            VkSurface::new(&entry, &instance);
+        let surface_loader = VkSurface::new(&entry, &instance);
 
         let debug_info = vk::DebugUtilsMessengerCreateInfoEXT::builder()
             .message_severity(
@@ -115,17 +111,17 @@ impl Instance {
             .message_type(
                 vk::DebugUtilsMessageTypeFlagsEXT::GENERAL
                     | vk::DebugUtilsMessageTypeFlagsEXT::VALIDATION
-                    | vk::DebugUtilsMessageTypeFlagsEXT::PERFORMANCE
+                    | vk::DebugUtilsMessageTypeFlagsEXT::PERFORMANCE,
             )
             .pfn_user_callback(Some(debug_cb));
 
         let debug_utils_loader = DebugUtils::new(&entry, &instance);
         let debug_call_back = unsafe {
             debug_utils_loader
-            .create_debug_utils_messenger(&debug_info, None)
-            .unwrap()
+                .create_debug_utils_messenger(&debug_info, None)
+                .unwrap()
         };
-        
+
         Arc::new(Instance {
             instance,
             entry,
@@ -140,30 +136,53 @@ impl Instance {
 
         let idx = {
             let p_device = p_devices.iter().enumerate().find(|(_, p_device)| {
-                let family = self.find_family(&p_device, surface);
+                let family = self.find_family(p_device, surface);
+                let features = self.check_features(p_device);
 
-                family.is_some()
+                family.is_some() && features
             });
 
             match p_device {
                 Some((idx, _)) => idx,
-                None => panic!("No suitable device")
+                None => panic!("No suitable device"),
             }
         };
 
         p_devices.remove(idx)
     }
 
-    pub fn find_family(&self, p_device: &PhysicalDevice,
-                       surface: &Surface) -> Option<QueueFamily> {
-        let family = p_device.queue_families.iter().find(|family| {
-            family.graphics_bit &&
-                surface.family_supported(&p_device, &family)
-        });
+    fn check_features(&self, p_device: &PhysicalDevice) -> bool {
+        let mut features12: PhysicalDeviceVulkan12Features =
+            PhysicalDeviceVulkan12Features::default();
+        let mut features13: PhysicalDeviceVulkan13Features =
+            PhysicalDeviceVulkan13Features::default();
+        let mut features = PhysicalDeviceFeatures2::builder()
+            .push_next(&mut features12)
+            .push_next(&mut features13)
+            .build();
+
+        unsafe {
+            self.instance
+                .get_physical_device_features2(p_device.raw(), &mut features);
+        };
+
+        log::debug!("Features: {:?},{:?},{:?}", features, features12, features13);
+
+        features12.buffer_device_address == 1
+            && features12.descriptor_indexing == 1
+            && features13.dynamic_rendering == 1
+            && features13.synchronization2 == 1
+    }
+
+    pub fn find_family(&self, p_device: &PhysicalDevice, surface: &Surface) -> Option<QueueFamily> {
+        let family = p_device
+            .queue_families
+            .iter()
+            .find(|family| family.graphics_bit && surface.family_supported(&p_device, &family));
 
         match family {
             Some(family) => Some(family.clone()),
-            None => None
+            None => None,
         }
     }
 
@@ -174,7 +193,7 @@ impl Instance {
 
 impl Drop for Instance {
     fn drop(&mut self) {
-        trace!("Drop instance");
+        log::info!("Drop instance");
         unsafe {
             self.debug_utils_loader
                 .destroy_debug_utils_messenger(self.debug_call_back, None);

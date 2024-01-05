@@ -1,19 +1,20 @@
 use log::*;
 use winit::dpi::LogicalSize;
 use winit::event_loop::{ControlFlow, EventLoop};
-use winit::window::{Window, WindowBuilder};
+use winit::window::WindowBuilder;
 
 use gobs_utils as utils;
 
 use utils::timer::Timer;
 
+use crate::context::Context;
 use crate::input::{Event, Input};
 
 const WIDTH: u32 = 800; // TODO: hardcoded
 const HEIGHT: u32 = 600;
 
 pub struct Application {
-    pub window: Window,
+    pub context: Context,
     pub events_loop: EventLoop<()>,
 }
 
@@ -28,8 +29,10 @@ impl Application {
             .build(&events_loop)
             .unwrap();
 
+        let context = Context::new("engine", window);
+
         Application {
-            window,
+            context,
             events_loop,
         }
     }
@@ -46,7 +49,7 @@ impl Application {
         R: Run + 'static,
     {
         let mut timer = Timer::new();
-        let mut runnable = R::create().await;
+        let mut runnable = R::create(&self.context).await;
 
         log::info!("Start main loop");
 
@@ -57,36 +60,35 @@ impl Application {
             match event {
                 Event::Resize(width, height) => {
                     log::debug!("Resize to : {}/{}", width, height);
-                    runnable.resize(width, height);
+                    runnable.resize(&self.context, width, height);
                 }
                 Event::Input(input) => {
-                    runnable.input(input);
+                    runnable.input(&self.context, input);
                 }
                 Event::Close => {
                     log::info!("Stopping");
+                    runnable.close(&self.context);
                     *control_flow = ControlFlow::Exit;
                 }
                 Event::Redraw => {
                     let delta = timer.delta();
                     log::debug!("[Redraw] FPS: {}", 1. / delta);
 
-                    runnable.update(delta);
-                    match runnable.render() {
+                    runnable.update(&self.context, delta);
+                    match runnable.render(&self.context) {
                         Ok(_) => {}
-                        Err(RenderError::Lost | RenderError::Outdated) => {
-                        }
+                        Err(RenderError::Lost | RenderError::Outdated) => {}
                         Err(e) => error!("{:?}", e),
                     }
                 }
                 Event::Cleared => {
-                    self.window.request_redraw();
+                    self.context.surface.window.request_redraw();
                 }
                 Event::Continue => (),
             }
         });
     }
 }
-
 
 #[derive(Debug)]
 pub enum RenderError {
@@ -103,9 +105,10 @@ impl Default for Application {
 
 #[allow(async_fn_in_trait)]
 pub trait Run: Sized {
-    async fn create() -> Self;
-    fn update(&mut self, delta: f32);
-    fn render(&mut self) -> Result<(), RenderError>;
-    fn input(&mut self, input: Input);
-    fn resize(&mut self, width: u32, height: u32);
+    async fn create(context: &Context) -> Self;
+    fn update(&mut self, context: &Context, delta: f32);
+    fn render(&mut self, context: &Context) -> Result<(), RenderError>;
+    fn input(&mut self, context: &Context, input: Input);
+    fn resize(&mut self, context: &Context, width: u32, height: u32);
+    fn close(&mut self, context: &Context);
 }

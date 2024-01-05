@@ -3,10 +3,8 @@ use std::sync::Arc;
 
 use ash::vk;
 
-use log::{debug, trace};
-
-use crate::queue::QueueFamily;
 use crate::device::Device;
+use crate::queue::QueueFamily;
 use crate::Wrap;
 
 /// Used to allocate new CommandBuffers
@@ -25,14 +23,11 @@ impl CommandPool {
         };
 
         let pool = unsafe {
-            debug!("Create command pool");
+            log::debug!("Create command pool");
             device.raw().create_command_pool(&pool_info, None).unwrap()
         };
 
-        Arc::new(CommandPool {
-            device,
-            pool,
-        })
+        Arc::new(CommandPool { device, pool })
     }
 }
 
@@ -43,10 +38,9 @@ impl Wrap<vk::CommandPool> for CommandPool {
 }
 impl Drop for CommandPool {
     fn drop(&mut self) {
-        trace!("Drop command pool");
+        log::info!("Drop command pool");
         unsafe {
             self.device.raw().destroy_command_pool(self.pool, None);
         }
     }
 }
-

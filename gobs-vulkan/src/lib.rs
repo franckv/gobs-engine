@@ -11,8 +11,8 @@ pub mod pipeline;
 pub mod queue;
 pub mod renderpass;
 pub mod surface;
-pub mod sync;
 pub mod swapchain;
+pub mod sync;
 
 trait Wrap<T> {
     fn raw(&self) -> T;

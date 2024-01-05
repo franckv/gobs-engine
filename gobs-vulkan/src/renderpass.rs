@@ -40,19 +40,15 @@ impl RenderPass {
             final_layout: vk::ImageLayout::DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
         };
 
-        let color_ref = [
-            vk::AttachmentReference {
-                attachment: 0,
-                layout: vk::ImageLayout::COLOR_ATTACHMENT_OPTIMAL,
-            }
-        ];
+        let color_ref = [vk::AttachmentReference {
+            attachment: 0,
+            layout: vk::ImageLayout::COLOR_ATTACHMENT_OPTIMAL,
+        }];
 
-        let depth_ref = [
-            vk::AttachmentReference {
-                attachment: 1,
-                layout: vk::ImageLayout::DEPTH_STENCIL_ATTACHMENT_OPTIMAL
-            }
-        ];
+        let depth_ref = [vk::AttachmentReference {
+            attachment: 1,
+            layout: vk::ImageLayout::DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
+        }];
 
         let subpass = vk::SubpassDescription {
             flags: Default::default(),
@@ -74,8 +70,8 @@ impl RenderPass {
             src_stage_mask: vk::PipelineStageFlags::COLOR_ATTACHMENT_OUTPUT,
             src_access_mask: Default::default(),
             dst_stage_mask: vk::PipelineStageFlags::COLOR_ATTACHMENT_OUTPUT,
-            dst_access_mask: vk::AccessFlags::COLOR_ATTACHMENT_READ |
-                vk::AccessFlags::COLOR_ATTACHMENT_WRITE,
+            dst_access_mask: vk::AccessFlags::COLOR_ATTACHMENT_READ
+                | vk::AccessFlags::COLOR_ATTACHMENT_WRITE,
         };
 
         let attachments = [color_attach, depth_attach];
@@ -94,13 +90,13 @@ impl RenderPass {
 
         let renderpass = unsafe {
             debug!("Create renderpass");
-            device.raw().create_render_pass(&renderpass_info, None).unwrap()
+            device
+                .raw()
+                .create_render_pass(&renderpass_info, None)
+                .unwrap()
         };
 
-        Arc::new(RenderPass {
-            device,
-            renderpass
-        })
+        Arc::new(RenderPass { device, renderpass })
     }
 }
 

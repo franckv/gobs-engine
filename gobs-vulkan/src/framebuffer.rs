@@ -14,14 +14,16 @@ pub struct Framebuffer {
     device: Arc<Device>,
     framebuffer: vk::Framebuffer,
     image: Image,
-    renderpass: Arc<RenderPass>
+    renderpass: Arc<RenderPass>,
 }
 
 impl Framebuffer {
-    pub fn new(device: Arc<Device>,
-               image: Image,
-               depth_buffer: &Image,
-               renderpass: Arc<RenderPass>) -> Self {
+    pub fn new(
+        device: Arc<Device>,
+        image: Image,
+        depth_buffer: &Image,
+        renderpass: Arc<RenderPass>,
+    ) -> Self {
         let attachments = [image.image_view, depth_buffer.image_view];
 
         let framebuffer_info = vk::FramebufferCreateInfo {
@@ -37,15 +39,17 @@ impl Framebuffer {
         };
 
         let framebuffer = unsafe {
-            device.raw().create_framebuffer(&framebuffer_info,
-                                             None).unwrap()
+            device
+                .raw()
+                .create_framebuffer(&framebuffer_info, None)
+                .unwrap()
         };
 
         Framebuffer {
             device,
             framebuffer,
             image,
-            renderpass
+            renderpass,
         }
     }
 
@@ -68,7 +72,9 @@ impl Drop for Framebuffer {
     fn drop(&mut self) {
         trace!("Drop framebuffer");
         unsafe {
-            self.device.raw().destroy_framebuffer(self.framebuffer, None);
+            self.device
+                .raw()
+                .destroy_framebuffer(self.framebuffer, None);
         }
     }
 }

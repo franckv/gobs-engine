@@ -1,8 +1,9 @@
-mod set;
-mod pool;
 mod layout;
+mod pool;
+mod set;
 
-pub use self::set::DescriptorSet;
+pub use self::layout::{
+    DescriptorSetLayout, DescriptorSetLayoutBuilder, DescriptorStage, DescriptorType,
+};
 pub use self::pool::DescriptorSetPool;
-pub use self::layout::{DescriptorSetLayout, DescriptorSetLayoutBuilder,
-    DescriptorType, DescriptorStage};
+pub use self::set::DescriptorSet;

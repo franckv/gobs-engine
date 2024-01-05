@@ -1,9 +1,7 @@
 use std::sync::Arc;
 
-use ash::vk;
 use ash::extensions::khr::Swapchain;
-
-use log::{debug, trace};
+use ash::vk::{self, PhysicalDeviceVulkan12Features, PhysicalDeviceVulkan13Features};
 
 use crate::instance::Instance;
 use crate::physical::PhysicalDevice;
@@ -14,29 +12,45 @@ use crate::Wrap;
 pub struct Device {
     instance: Arc<Instance>,
     device: ash::Device,
-    pub(crate) p_device: PhysicalDevice,
+    pub p_device: PhysicalDevice,
 }
 
 impl Device {
-    pub fn new(instance: Arc<Instance>, p_device: PhysicalDevice,
-               queue_family: &QueueFamily) -> Arc<Self> {
+    pub fn new(
+        instance: Arc<Instance>,
+        p_device: PhysicalDevice,
+        queue_family: &QueueFamily,
+    ) -> Arc<Self> {
         let priorities = [1.0];
 
         let queue_info = vk::DeviceQueueCreateInfo::builder()
-                .queue_family_index(queue_family.index)
-                .queue_priorities(&priorities);
+            .queue_family_index(queue_family.index)
+            .queue_priorities(&priorities);
 
         let extensions = [Swapchain::name().as_ptr()];
 
+        let mut features12: PhysicalDeviceVulkan12Features =
+            PhysicalDeviceVulkan12Features::builder()
+                .buffer_device_address(true)
+                .descriptor_indexing(true)
+                .build();
+        let mut features13: PhysicalDeviceVulkan13Features =
+            PhysicalDeviceVulkan13Features::builder()
+                .dynamic_rendering(true)
+                .synchronization2(true)
+                .build();
+
         let device_info = vk::DeviceCreateInfo::builder()
             .queue_create_infos(std::slice::from_ref(&queue_info))
-            .enabled_extension_names(&extensions);
+            .enabled_extension_names(&extensions)
+            .push_next(&mut features12)
+            .push_next(&mut features13);
 
         let device: ash::Device = unsafe {
-            debug!("Create device");
-            instance.instance.create_device(p_device.raw(),
-                                            &device_info,
-                                            None)
+            log::debug!("Create device");
+            instance
+                .instance
+                .create_device(p_device.raw(), &device_info, None)
                 .unwrap()
         };
 
@@ -52,9 +66,7 @@ impl Device {
     }
 
     pub fn wait(&self) {
-        unsafe {
-            self.device.device_wait_idle().unwrap()
-        };
+        unsafe { self.device.device_wait_idle().expect("Wait idle") };
     }
 
     pub(crate) fn raw(&self) -> &ash::Device {
@@ -64,7 +76,7 @@ impl Device {
 
 impl Drop for Device {
     fn drop(&mut self) {
-        trace!("Drop device");
+        log::info!("Drop device");
         unsafe {
             self.device.destroy_device(None);
         }

@@ -1,8 +1,8 @@
+use std::fs::File;
+use std::io::Read;
+use std::path::Path;
 use std::ptr;
 use std::sync::Arc;
-use std::io::Read;
-use std::fs::File;
-use std::path::Path;
 
 use ash::vk;
 
@@ -13,13 +13,13 @@ use crate::Wrap;
 
 pub enum ShaderType {
     Vertex,
-    Fragment
+    Fragment,
 }
 
 pub struct Shader {
     device: Arc<Device>,
     shader: vk::ShaderModule,
-    pub ty: ShaderType
+    pub ty: ShaderType,
 }
 
 impl Shader {
@@ -37,14 +37,13 @@ impl Shader {
         };
 
         let shader = unsafe {
-            device.raw().create_shader_module(&shader_info, None).unwrap()
+            device
+                .raw()
+                .create_shader_module(&shader_info, None)
+                .unwrap()
         };
 
-        Shader {
-            device,
-            shader,
-            ty
-        }
+        Shader { device, shader, ty }
     }
 }
 

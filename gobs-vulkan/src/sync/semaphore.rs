@@ -3,8 +3,6 @@ use std::sync::Arc;
 
 use ash::vk;
 
-use log::trace;
-
 use crate::device::Device;
 use crate::Wrap;
 
@@ -22,13 +20,13 @@ impl Semaphore {
         };
 
         let semaphore = unsafe {
-            device.raw().create_semaphore(&semaphore_info, None).unwrap()
+            device
+                .raw()
+                .create_semaphore(&semaphore_info, None)
+                .unwrap()
         };
 
-        Semaphore {
-            device,
-            semaphore,
-        }
+        Semaphore { device, semaphore }
     }
 }
 
@@ -40,7 +38,7 @@ impl Wrap<vk::Semaphore> for Semaphore {
 
 impl Drop for Semaphore {
     fn drop(&mut self) {
-        trace!("Drop semaphore");
+        log::info!("Drop semaphore");
         unsafe {
             self.device.raw().destroy_semaphore(self.semaphore, None);
         }

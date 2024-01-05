@@ -2,8 +2,6 @@ use std::sync::Arc;
 
 use ash::vk;
 
-use log::debug;
-
 use crate::device::Device;
 use crate::Wrap;
 
@@ -26,14 +24,14 @@ pub struct Queue {
 impl Queue {
     pub fn new(device: Arc<Device>, family: QueueFamily) -> Self {
         let queue = unsafe {
-            debug!("Create queue");
+            log::debug!("Create queue");
             device.raw().get_device_queue(family.index, 0)
         };
 
         Queue {
             device,
             queue,
-            family
+            family,
         }
     }
 

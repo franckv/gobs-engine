@@ -6,6 +6,7 @@ edition = { workspace = true }
 
 [dependencies]
 gobs-utils = { workspace = true }
+gobs-vulkan = { workspace = true }
 log = { workspace = true }
 pollster = { workspace = true }
 winit = { workspace = true }

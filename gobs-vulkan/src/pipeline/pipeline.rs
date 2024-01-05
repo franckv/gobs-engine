@@ -7,7 +7,7 @@ use log::trace;
 
 use crate::descriptor::DescriptorSetLayout;
 use crate::device::Device;
-use crate::pipeline::{Shader, ShaderType, VertexLayout, PipelineLayout};
+use crate::pipeline::{PipelineLayout, Shader, ShaderType, VertexLayout};
 use crate::renderpass::RenderPass;
 use crate::Wrap;
 
@@ -54,31 +54,43 @@ pub struct Rect2D {
 impl Rect2D {
     pub fn new(x: i32, y: i32, width: u32, height: u32) -> Self {
         Rect2D {
-            x, 
+            x,
             y,
             width,
-            height
+            height,
         }
     }
 
     fn raw(&self) -> vk::Rect2D {
         vk::Rect2D {
-            offset: vk::Offset2D { x: self.x, y: self.y },
-            extent: vk::Extent2D { width: self.width, height: self.height },
+            offset: vk::Offset2D {
+                x: self.x,
+                y: self.y,
+            },
+            extent: vk::Extent2D {
+                width: self.width,
+                height: self.height,
+            },
         }
     }
 }
 
 struct ViewportState {
     viewports: Vec<vk::Viewport>,
-    scissors: Vec<vk::Rect2D>
+    scissors: Vec<vk::Rect2D>,
 }
 
 impl ViewportState {
     fn new(viewports: &Vec<Viewport>, scissors: &Vec<Rect2D>) -> Self {
         ViewportState {
-            viewports: viewports.iter().map(|v| v.raw()).collect::<Vec<vk::Viewport>>(),
-            scissors: scissors.iter().map(|s| s.raw()).collect::<Vec<vk::Rect2D>>()
+            viewports: viewports
+                .iter()
+                .map(|v| v.raw())
+                .collect::<Vec<vk::Viewport>>(),
+            scissors: scissors
+                .iter()
+                .map(|s| s.raw())
+                .collect::<Vec<vk::Rect2D>>(),
         }
     }
 
@@ -91,7 +103,7 @@ impl ViewportState {
 
 pub enum DynamicStateElem {
     Viewport,
-    Scissor
+    Scissor,
 }
 
 impl DynamicStateElem {
@@ -104,19 +116,21 @@ impl DynamicStateElem {
 }
 
 struct DynamicStates {
-    dynamic_states: Vec<vk::DynamicState>
+    dynamic_states: Vec<vk::DynamicState>,
 }
 
 impl DynamicStates {
     fn new(states: &Vec<DynamicStateElem>) -> Self {
         DynamicStates {
-            dynamic_states: states.iter().map(|s| s.raw()).collect::<Vec<vk::DynamicState>>(),
+            dynamic_states: states
+                .iter()
+                .map(|s| s.raw())
+                .collect::<Vec<vk::DynamicState>>(),
         }
     }
 
     fn info(&self) -> vk::PipelineDynamicStateCreateInfoBuilder {
-        vk::PipelineDynamicStateCreateInfo::builder()
-        .dynamic_states(&self.dynamic_states)
+        vk::PipelineDynamicStateCreateInfo::builder().dynamic_states(&self.dynamic_states)
     }
 }
 
@@ -130,7 +144,7 @@ impl InputAssemblyState {
 
     fn info(&self) -> vk::PipelineInputAssemblyStateCreateInfoBuilder {
         vk::PipelineInputAssemblyStateCreateInfo::builder()
-        .topology(vk::PrimitiveTopology::TRIANGLE_LIST)
+            .topology(vk::PrimitiveTopology::TRIANGLE_LIST)
     }
 }
 
@@ -143,10 +157,10 @@ impl RasterizationState {
 
     fn info(&self) -> vk::PipelineRasterizationStateCreateInfoBuilder {
         vk::PipelineRasterizationStateCreateInfo::builder()
-        .line_width(1.)
-        .front_face(vk::FrontFace::CLOCKWISE)
-        .cull_mode(vk::CullModeFlags::NONE)
-        .polygon_mode(vk::PolygonMode::FILL)
+            .line_width(1.)
+            .front_face(vk::FrontFace::CLOCKWISE)
+            .cull_mode(vk::CullModeFlags::NONE)
+            .polygon_mode(vk::PolygonMode::FILL)
     }
 }
 
@@ -159,31 +173,31 @@ impl MultisampleState {
 
     fn info(&self) -> vk::PipelineMultisampleStateCreateInfoBuilder {
         vk::PipelineMultisampleStateCreateInfo::builder()
-        .rasterization_samples(vk::SampleCountFlags::TYPE_1)
+            .rasterization_samples(vk::SampleCountFlags::TYPE_1)
     }
 }
 
 pub struct ShaderStage {
     entry: CString,
-    shader: Shader
+    shader: Shader,
 }
 
 impl ShaderStage {
     fn new(entry: &str, shader: Shader) -> Self {
         ShaderStage {
             entry: CString::new(entry).unwrap(),
-            shader
+            shader,
         }
     }
 
     fn info(&self) -> vk::PipelineShaderStageCreateInfoBuilder {
         vk::PipelineShaderStageCreateInfo::builder()
-        .stage(match self.shader.ty {
-            ShaderType::Vertex => vk::ShaderStageFlags::VERTEX,
-            ShaderType::Fragment => vk::ShaderStageFlags::FRAGMENT,
-        })
-        .module(self.shader.raw())
-        .name(&self.entry)
+            .stage(match self.shader.ty {
+                ShaderType::Vertex => vk::ShaderStageFlags::VERTEX,
+                ShaderType::Fragment => vk::ShaderStageFlags::FRAGMENT,
+            })
+            .module(self.shader.raw())
+            .name(&self.entry)
     }
 }
 
@@ -203,18 +217,18 @@ impl StencilOpState {
             compare_mask: 0,
             write_mask: 0,
             reference: 0,
-        }    
+        }
     }
 }
 
 struct DepthStencilState {
-    op_state: vk::StencilOpState
+    op_state: vk::StencilOpState,
 }
 
 impl DepthStencilState {
     fn new(op_state: StencilOpState) -> Self {
         DepthStencilState {
-            op_state: op_state.info()
+            op_state: op_state.info(),
         }
     }
 
@@ -253,13 +267,13 @@ impl ColorBlendAttachmentState {
 }
 
 struct ColorBlendState {
-    attachment_state: Vec<vk::PipelineColorBlendAttachmentState>
+    attachment_state: Vec<vk::PipelineColorBlendAttachmentState>,
 }
 
 impl ColorBlendState {
     fn new(attachment_state: ColorBlendAttachmentState) -> Self {
         ColorBlendState {
-            attachment_state: vec![attachment_state.info().build()]
+            attachment_state: vec![attachment_state.info().build()],
         }
     }
 
@@ -272,22 +286,21 @@ impl ColorBlendState {
 
 struct VertexInputState {
     binding_desc: Vec<vk::VertexInputBindingDescription>,
-    attribute_desc: Vec<vk::VertexInputAttributeDescription>
+    attribute_desc: Vec<vk::VertexInputAttributeDescription>,
 }
 
 impl VertexInputState {
     fn new(vertex_layout: &VertexLayout) -> Self {
         VertexInputState {
             binding_desc: vertex_layout.binding_description(),
-            attribute_desc: vertex_layout.attribute_description()
+            attribute_desc: vertex_layout.attribute_description(),
         }
     }
 
     fn info(&self) -> vk::PipelineVertexInputStateCreateInfoBuilder {
-
         vk::PipelineVertexInputStateCreateInfo::builder()
-        .vertex_binding_descriptions(&self.binding_desc)
-        .vertex_attribute_descriptions(&self.attribute_desc)
+            .vertex_binding_descriptions(&self.binding_desc)
+            .vertex_attribute_descriptions(&self.attribute_desc)
     }
 }
 
@@ -302,7 +315,6 @@ pub struct PipelineBuilder {
     scissors: Option<Vec<Rect2D>>,
     dynamic_states: Option<DynamicStates>,
     pipeline_layout: Option<PipelineLayout>,
-
 }
 
 impl PipelineBuilder {
@@ -356,7 +368,10 @@ impl PipelineBuilder {
     }
 
     pub fn descriptor_layout(mut self, descriptor_layout: Arc<DescriptorSetLayout>) -> Self {
-        self.pipeline_layout = Some(PipelineLayout::new(self.device.clone().unwrap(), descriptor_layout));
+        self.pipeline_layout = Some(PipelineLayout::new(
+            self.device.clone().unwrap(),
+            descriptor_layout,
+        ));
 
         self
     }
@@ -373,7 +388,7 @@ impl PipelineBuilder {
         let shader_stages = [vertex_stage_info.build(), fragment_stage_info.build()];
 
         let vertex_input_state = self.vertex_input_state.unwrap();
-        let vertex_input_state_info = vertex_input_state.info();       
+        let vertex_input_state_info = vertex_input_state.info();
 
         let viewports = self.viewports.unwrap();
         let scissors = self.scissors.unwrap();
@@ -389,7 +404,7 @@ impl PipelineBuilder {
 
         let rasterization_state = RasterizationState::new();
         let rasterization_state_info = rasterization_state.info();
-        
+
         let multisample_state = MultisampleState::new();
         let multisample_state_info = multisample_state.info();
 
@@ -419,15 +434,21 @@ impl PipelineBuilder {
             .render_pass(renderpass.raw());
 
         let pipeline = unsafe {
-            device.raw().create_graphics_pipelines(vk::PipelineCache::null(),
-                                                   &[pipeline_info.build()], None).unwrap()[0]
+            device
+                .raw()
+                .create_graphics_pipelines(
+                    vk::PipelineCache::null(),
+                    &[pipeline_info.build()],
+                    None,
+                )
+                .unwrap()[0]
         };
 
         Pipeline {
             device: device,
             _renderpass: renderpass,
             layout: pipeline_layout,
-            pipeline
+            pipeline,
         }
     }
 }
@@ -436,7 +457,7 @@ pub struct Pipeline {
     device: Arc<Device>,
     _renderpass: Arc<RenderPass>,
     pub(crate) layout: PipelineLayout,
-    
+
     pipeline: vk::Pipeline,
 }
 

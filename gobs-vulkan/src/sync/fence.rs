@@ -4,8 +4,6 @@ use std::sync::Arc;
 
 use ash::vk;
 
-use log::trace;
-
 use crate::device::Device;
 use crate::Wrap;
 
@@ -28,30 +26,25 @@ impl Fence {
             flags,
         };
 
-        let fence = unsafe {
-            device.raw().create_fence(&fence_info, None).unwrap()
-        };
+        let fence = unsafe { device.raw().create_fence(&fence_info, None).unwrap() };
 
-        Fence {
-            device,
-            fence,
-        }
+        Fence { device, fence }
     }
 
     pub fn reset(&self) {
         let fences = [self.fence];
 
-        unsafe {
-            self.device.raw().reset_fences(&fences).unwrap()
-        }
+        unsafe { self.device.raw().reset_fences(&fences).unwrap() }
     }
 
     pub fn wait(&self) {
         let fences = [self.fence];
 
         unsafe {
-            self.device.raw().wait_for_fences(&fences, true,
-                                              std::u64::MAX).unwrap()
+            self.device
+                .raw()
+                .wait_for_fences(&fences, true, 1000000000)
+                .expect("Fence timeout");
         }
     }
 
@@ -59,9 +52,14 @@ impl Fence {
         let fences = [self.fence];
 
         unsafe {
-            self.device.raw().wait_for_fences(&fences, true,
-                                              std::u64::MAX).unwrap();
-            self.device.raw().reset_fences(&fences).unwrap()
+            self.device
+                .raw()
+                .wait_for_fences(&fences, true, 1000000000)
+                .expect("Fence timeout");
+            self.device
+                .raw()
+                .reset_fences(&fences)
+                .expect("Fence reset error");
         }
     }
 }
@@ -74,7 +72,7 @@ impl Wrap<vk::Fence> for Fence {
 
 impl Drop for Fence {
     fn drop(&mut self) {
-        trace!("Drop fence");
+        log::info!("Drop fence");
         unsafe {
             self.device.raw().destroy_fence(self.fence, None);
         }

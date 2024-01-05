@@ -15,12 +15,9 @@ pub enum DescriptorType {
 impl Into<vk::DescriptorType> for DescriptorType {
     fn into(self) -> vk::DescriptorType {
         match self {
-            DescriptorType::Uniform =>
-                vk::DescriptorType::UNIFORM_BUFFER,
-            DescriptorType::UniformDynamic =>
-                vk::DescriptorType::UNIFORM_BUFFER_DYNAMIC,
-            DescriptorType::ImageSampler =>
-                vk::DescriptorType::COMBINED_IMAGE_SAMPLER,
+            DescriptorType::Uniform => vk::DescriptorType::UNIFORM_BUFFER,
+            DescriptorType::UniformDynamic => vk::DescriptorType::UNIFORM_BUFFER_DYNAMIC,
+            DescriptorType::ImageSampler => vk::DescriptorType::COMBINED_IMAGE_SAMPLER,
         }
     }
 }
@@ -29,46 +26,37 @@ impl Into<vk::DescriptorType> for DescriptorType {
 pub enum DescriptorStage {
     Vertex,
     Fragment,
-    All
+    All,
 }
 
 impl Into<vk::ShaderStageFlags> for DescriptorStage {
     fn into(self) -> vk::ShaderStageFlags {
         match self {
-            DescriptorStage::Vertex =>
-                vk::ShaderStageFlags::VERTEX,
-            DescriptorStage::Fragment =>
-                vk::ShaderStageFlags::FRAGMENT,
-            DescriptorStage::All =>
-                vk::ShaderStageFlags::VERTEX |
-                    vk::ShaderStageFlags::FRAGMENT
+            DescriptorStage::Vertex => vk::ShaderStageFlags::VERTEX,
+            DescriptorStage::Fragment => vk::ShaderStageFlags::FRAGMENT,
+            DescriptorStage::All => vk::ShaderStageFlags::VERTEX | vk::ShaderStageFlags::FRAGMENT,
         }
     }
 }
 
 pub struct DescriptorSetLayoutBinding {
     pub ty: DescriptorType,
-    pub stage: DescriptorStage
+    pub stage: DescriptorStage,
 }
 
-
 pub struct DescriptorSetLayoutBuilder {
-    bindings: Vec<DescriptorSetLayoutBinding>
+    bindings: Vec<DescriptorSetLayoutBinding>,
 }
 
 impl DescriptorSetLayoutBuilder {
     pub fn new() -> Self {
         DescriptorSetLayoutBuilder {
-            bindings: Vec::new()
+            bindings: Vec::new(),
         }
     }
 
-    pub fn binding(mut self, ty: DescriptorType,
-                   stage: DescriptorStage) -> Self {
-        self.bindings.push(DescriptorSetLayoutBinding {
-            ty,
-            stage
-        });
+    pub fn binding(mut self, ty: DescriptorType, stage: DescriptorStage) -> Self {
+        self.bindings.push(DescriptorSetLayoutBinding { ty, stage });
 
         self
     }
@@ -81,26 +69,25 @@ impl DescriptorSetLayoutBuilder {
     }
 }
 
-
 pub struct DescriptorSetLayout {
     device: Arc<Device>,
     pub(crate) layout: vk::DescriptorSetLayout,
-    pub bindings: Vec<vk::DescriptorSetLayoutBinding>
+    pub bindings: Vec<vk::DescriptorSetLayoutBinding>,
 }
 
 impl DescriptorSetLayout {
     pub fn new(device: Arc<Device>, bindings: Vec<DescriptorSetLayoutBinding>) -> Arc<Self> {
-        let bindings: Vec<vk::DescriptorSetLayoutBinding> =
-            bindings.iter().enumerate().
-                map(|(idx, binding)| {
-                    vk::DescriptorSetLayoutBinding {
-                        binding: idx as u32,
-                        descriptor_type: binding.ty.into(),
-                        descriptor_count: 1,
-                        p_immutable_samplers: ptr::null(),
-                        stage_flags: binding.stage.into()
-                    }
-                }).collect();
+        let bindings: Vec<vk::DescriptorSetLayoutBinding> = bindings
+            .iter()
+            .enumerate()
+            .map(|(idx, binding)| vk::DescriptorSetLayoutBinding {
+                binding: idx as u32,
+                descriptor_type: binding.ty.into(),
+                descriptor_count: 1,
+                p_immutable_samplers: ptr::null(),
+                stage_flags: binding.stage.into(),
+            })
+            .collect();
 
         let descriptor_info = vk::DescriptorSetLayoutCreateInfo {
             s_type: vk::StructureType::DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
@@ -111,14 +98,16 @@ impl DescriptorSetLayout {
         };
 
         let layout = unsafe {
-            device.raw().create_descriptor_set_layout(&descriptor_info,
-                                                      None).unwrap()
+            device
+                .raw()
+                .create_descriptor_set_layout(&descriptor_info, None)
+                .unwrap()
         };
 
         Arc::new(DescriptorSetLayout {
             device,
             layout,
-            bindings
+            bindings,
         })
     }
 }
@@ -126,8 +115,9 @@ impl DescriptorSetLayout {
 impl Drop for DescriptorSetLayout {
     fn drop(&mut self) {
         unsafe {
-            self.device.raw().destroy_descriptor_set_layout(self.layout,
-                                                            None);
+            self.device
+                .raw()
+                .destroy_descriptor_set_layout(self.layout, None);
         }
     }
 }

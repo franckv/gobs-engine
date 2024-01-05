@@ -13,20 +13,23 @@ pub struct DescriptorSetPool {
     device: Arc<Device>,
     pool: vk::DescriptorPool,
     sets: Vec<DescriptorSet>,
-    current: usize
+    current: usize,
 }
 
 impl DescriptorSetPool {
-    pub fn new(device: Arc<Device>,
-               descriptor_layout: Arc<DescriptorSetLayout>,
-               count: usize) -> Self {
-        let pool_size: Vec<vk::DescriptorPoolSize> =
-            descriptor_layout.bindings.iter().map(|binding| {
-                vk::DescriptorPoolSize {
-                    ty: binding.descriptor_type,
-                    descriptor_count: count as u32,
-                }
-            }).collect();
+    pub fn new(
+        device: Arc<Device>,
+        descriptor_layout: Arc<DescriptorSetLayout>,
+        count: usize,
+    ) -> Self {
+        let pool_size: Vec<vk::DescriptorPoolSize> = descriptor_layout
+            .bindings
+            .iter()
+            .map(|binding| vk::DescriptorPoolSize {
+                ty: binding.descriptor_type,
+                descriptor_count: count as u32,
+            })
+            .collect();
 
         let pool_info = vk::DescriptorPoolCreateInfo {
             s_type: vk::StructureType::DESCRIPTOR_POOL_CREATE_INFO,
@@ -38,13 +41,14 @@ impl DescriptorSetPool {
         };
 
         let pool = unsafe {
-            device.raw().create_descriptor_pool(&pool_info,
-                                                None).unwrap()
+            device
+                .raw()
+                .create_descriptor_pool(&pool_info, None)
+                .unwrap()
         };
 
-        let layouts: Vec<vk::DescriptorSetLayout> = (0..count).map(|_| {
-            descriptor_layout.layout
-        }).collect();
+        let layouts: Vec<vk::DescriptorSetLayout> =
+            (0..count).map(|_| descriptor_layout.layout).collect();
 
         let descriptor_info = vk::DescriptorSetAllocateInfo {
             s_type: vk::StructureType::DESCRIPTOR_SET_ALLOCATE_INFO,
@@ -54,18 +58,21 @@ impl DescriptorSetPool {
             p_set_layouts: layouts.as_ptr(),
         };
 
-
         let sets = unsafe {
-            device.raw().allocate_descriptor_sets(&descriptor_info).unwrap()
-        }.iter().map(|&vk_set| {
-            DescriptorSet::new(device.clone(), vk_set)
-        }).collect();
+            device
+                .raw()
+                .allocate_descriptor_sets(&descriptor_info)
+                .unwrap()
+        }
+        .iter()
+        .map(|&vk_set| DescriptorSet::new(device.clone(), vk_set))
+        .collect();
 
         DescriptorSetPool {
             device,
             pool,
             sets,
-            current: 0
+            current: 0,
         }
     }
 

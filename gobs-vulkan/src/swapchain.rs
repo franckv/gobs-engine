@@ -2,10 +2,8 @@ use std;
 use std::ptr;
 use std::sync::Arc;
 
-use ash::vk;
 use ash::extensions::khr::Swapchain as KhrSwapchain;
-
-use log::trace;
+use ash::vk::{self, ImageUsageFlags};
 
 use crate::device::Device;
 use crate::image::{Image, ImageUsage};
@@ -29,7 +27,7 @@ impl From<vk::PresentModeKHR> for PresentationMode {
             vk::PresentModeKHR::FIFO_RELAXED => PresentationMode::FifoRelaxed,
             vk::PresentModeKHR::MAILBOX => PresentationMode::Mailbox,
             vk::PresentModeKHR::IMMEDIATE => PresentationMode::Immediate,
-            _ => panic!("Invalid present mode")
+            _ => panic!("Invalid present mode"),
         }
     }
 }
@@ -40,7 +38,7 @@ impl Into<vk::PresentModeKHR> for PresentationMode {
             PresentationMode::Fifo => vk::PresentModeKHR::FIFO,
             PresentationMode::FifoRelaxed => vk::PresentModeKHR::FIFO_RELAXED,
             PresentationMode::Mailbox => vk::PresentModeKHR::MAILBOX,
-            PresentationMode::Immediate => vk::PresentModeKHR::IMMEDIATE
+            PresentationMode::Immediate => vk::PresentModeKHR::IMMEDIATE,
         }
     }
 }
@@ -51,18 +49,19 @@ pub struct SwapChain {
     surface: Arc<Surface>,
     format: SurfaceFormat,
     loader: KhrSwapchain,
-    swapchain: vk::SwapchainKHR
+    swapchain: vk::SwapchainKHR,
 }
 
 impl SwapChain {
-    pub fn new(device: Arc<Device>,
-               surface: Arc<Surface>,
-               format: SurfaceFormat,
-               present: PresentationMode,
-               image_count: usize,
-               old_swapchain: Option<&SwapChain>) -> Self  {
-
-        let extent = surface.get_extent(&device);
+    pub fn new(
+        device: Arc<Device>,
+        surface: Arc<Surface>,
+        format: SurfaceFormat,
+        present: PresentationMode,
+        image_count: usize,
+        old_swapchain: Option<&SwapChain>,
+    ) -> Self {
+        let extent = surface.get_extent(device.clone());
 
         let swapchain_info = vk::SwapchainCreateInfoKHR {
             s_type: vk::StructureType::SWAPCHAIN_CREATE_INFO_KHR,
@@ -76,7 +75,7 @@ impl SwapChain {
                 width: extent.0,
                 height: extent.1,
             },
-            image_usage: vk::ImageUsageFlags::COLOR_ATTACHMENT,
+            image_usage: ImageUsage::Swapchain.into(),
             image_sharing_mode: vk::SharingMode::EXCLUSIVE,
             pre_transform: vk::SurfaceTransformFlagsKHR::IDENTITY,
             composite_alpha: vk::CompositeAlphaFlagsKHR::OPAQUE,
@@ -93,50 +92,50 @@ impl SwapChain {
 
         let loader = KhrSwapchain::new(device.instance().raw(), device.raw());
 
-        let swapchain = unsafe {
-            loader.create_swapchain(&swapchain_info, None).unwrap()
-        };
+        let swapchain = unsafe { loader.create_swapchain(&swapchain_info, None).unwrap() };
 
         SwapChain {
             device,
             surface,
             format,
             loader,
-            swapchain
+            swapchain,
         }
     }
 
     pub fn create_images(&self) -> Vec<Image> {
-        let extent = self.surface.get_extent(&self.device);
+        let extent = self.surface.get_extent(self.device.clone());
 
         unsafe {
-            let vk_images = self.loader.get_swapchain_images(
-                self.swapchain).unwrap();
+            let vk_images = self.loader.get_swapchain_images(self.swapchain).unwrap();
 
-            vk_images.iter().map(|&image| {
-                Image::with_raw(self.device.clone(),
-                image,
-                self.format.format,
-                ImageUsage::Swapchain,
-                extent.0,
-                extent.1)
-            }).collect()
+            vk_images
+                .iter()
+                .map(|&image| {
+                    Image::with_raw(
+                        self.device.clone(),
+                        image,
+                        self.format.format,
+                        ImageUsage::Swapchain,
+                        extent.0,
+                        extent.1,
+                    )
+                })
+                .collect()
         }
     }
 
     pub fn acquire_image(&mut self, signal: &Semaphore) -> Result<usize, ()> {
         unsafe {
-            match self.loader.acquire_next_image(self.swapchain,
-                                                     std::u64::MAX,
-                                                     signal.raw(),
-                                                     vk::Fence::null()) {
-                Ok((idx, _)) => {
-                    Ok(idx as usize)
-                }
-                Err(vk::Result::SUBOPTIMAL_KHR) | Err(vk::Result::ERROR_OUT_OF_DATE_KHR) => {
-                    Err(())
-                }
-                _ => panic!("Unable to acquire swapchain")
+            match self.loader.acquire_next_image(
+                self.swapchain,
+                std::u64::MAX,
+                signal.raw(),
+                vk::Fence::null(),
+            ) {
+                Ok((idx, _)) => Ok(idx as usize),
+                Err(vk::Result::SUBOPTIMAL_KHR) | Err(vk::Result::ERROR_OUT_OF_DATE_KHR) => Err(()),
+                _ => panic!("Unable to acquire swapchain"),
             }
         }
     }
@@ -160,10 +159,8 @@ impl SwapChain {
         unsafe {
             match self.loader.queue_present(queue.queue, &present_info) {
                 Ok(_) => Ok(()),
-                Err(vk::Result::SUBOPTIMAL_KHR) | Err(vk::Result::ERROR_OUT_OF_DATE_KHR) => {
-                    Err(())
-                }
-                _ => panic!("Unable to present swapchain")
+                Err(vk::Result::SUBOPTIMAL_KHR) | Err(vk::Result::ERROR_OUT_OF_DATE_KHR) => Err(()),
+                _ => panic!("Unable to present swapchain"),
             }
         }
     }
@@ -177,7 +174,7 @@ impl SwapChain {
 
 impl Drop for SwapChain {
     fn drop(&mut self) {
-        trace!("Drop swapchain");
+        log::info!("Drop swapchain");
         self.cleanup();
     }
 }
