@@ -1,9 +1,8 @@
 use std;
-use std::ptr;
 use std::sync::Arc;
 
 use ash::extensions::khr::Swapchain as KhrSwapchain;
-use ash::vk::{self, ImageUsageFlags};
+use ash::vk;
 
 use crate::device::Device;
 use crate::image::{Image, ImageUsage};
