@@ -52,6 +52,7 @@ impl Application {
         let mut runnable = R::create(&self.context).await;
 
         log::info!("Start main loop");
+        let mut close_requested = false;
 
         self.events_loop.run(move |event, _, control_flow| {
             log::trace!("evt={:?}, ctrl={:?}", event, control_flow);
@@ -67,6 +68,7 @@ impl Application {
                 }
                 Event::Close => {
                     log::info!("Stopping");
+                    close_requested = true;
                     runnable.close(&self.context);
                     *control_flow = ControlFlow::Exit;
                 }
@@ -74,11 +76,13 @@ impl Application {
                     let delta = timer.delta();
                     log::debug!("[Redraw] FPS: {}", 1. / delta);
 
-                    runnable.update(&self.context, delta);
-                    match runnable.render(&self.context) {
-                        Ok(_) => {}
-                        Err(RenderError::Lost | RenderError::Outdated) => {}
-                        Err(e) => error!("{:?}", e),
+                    if !close_requested {
+                        runnable.update(&self.context, delta);
+                        match runnable.render(&self.context) {
+                            Ok(_) => {}
+                            Err(RenderError::Lost | RenderError::Outdated) => {}
+                            Err(e) => error!("{:?}", e),
+                        }
                     }
                 }
                 Event::Cleared => {
@@ -106,9 +110,9 @@ impl Default for Application {
 #[allow(async_fn_in_trait)]
 pub trait Run: Sized {
     async fn create(context: &Context) -> Self;
-    fn update(&mut self, context: &Context, delta: f32);
-    fn render(&mut self, context: &Context) -> Result<(), RenderError>;
-    fn input(&mut self, context: &Context, input: Input);
-    fn resize(&mut self, context: &Context, width: u32, height: u32);
-    fn close(&mut self, context: &Context);
+    fn update(&mut self, ctx: &Context, delta: f32);
+    fn render(&mut self, ctx: &Context) -> Result<(), RenderError>;
+    fn input(&mut self, ctx: &Context, input: Input);
+    fn resize(&mut self, ctx: &Context, width: u32, height: u32);
+    fn close(&mut self, ctx: &Context);
 }

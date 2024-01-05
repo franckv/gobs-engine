@@ -63,32 +63,28 @@ impl SwapChain {
     ) -> Self {
         let extent = surface.get_extent(device.clone());
 
-        let swapchain_info = vk::SwapchainCreateInfoKHR {
-            s_type: vk::StructureType::SWAPCHAIN_CREATE_INFO_KHR,
-            p_next: ptr::null(),
-            flags: Default::default(),
-            surface: surface.raw(),
-            min_image_count: image_count as u32,
-            image_format: format.format.into(),
-            image_color_space: format.color_space.into(),
-            image_extent: vk::Extent2D {
+        let swapchain_info = vk::SwapchainCreateInfoKHR::builder()
+            .surface(surface.raw())
+            .min_image_count(image_count as u32)
+            .image_format(format.format.into())
+            .image_color_space(format.color_space.into())
+            .image_extent(vk::Extent2D {
                 width: extent.0,
                 height: extent.1,
-            },
-            image_usage: ImageUsage::Swapchain.into(),
-            image_sharing_mode: vk::SharingMode::EXCLUSIVE,
-            pre_transform: vk::SurfaceTransformFlagsKHR::IDENTITY,
-            composite_alpha: vk::CompositeAlphaFlagsKHR::OPAQUE,
-            present_mode: present.into(),
-            clipped: 1,
-            old_swapchain: match old_swapchain {
+            })
+            .image_usage(ImageUsage::Swapchain.into())
+            .image_sharing_mode(vk::SharingMode::EXCLUSIVE)
+            .pre_transform(vk::SurfaceTransformFlagsKHR::IDENTITY)
+            .composite_alpha(vk::CompositeAlphaFlagsKHR::OPAQUE)
+            .present_mode(present.into())
+            .clipped(true)
+            .old_swapchain(match old_swapchain {
                 Some(old_swapchain) => old_swapchain.swapchain,
                 None => vk::SwapchainKHR::null(),
-            },
-            image_array_layers: 1,
-            p_queue_family_indices: ptr::null(),
-            queue_family_index_count: 0,
-        };
+            })
+            .image_array_layers(1)
+            .queue_family_indices(&[])
+            .build();
 
         let loader = KhrSwapchain::new(device.instance().raw(), device.raw());
 
@@ -141,20 +137,11 @@ impl SwapChain {
     }
 
     pub fn present(&mut self, index: usize, queue: &Queue, wait: &Semaphore) -> Result<(), ()> {
-        let wait_semaphores = [wait.raw()];
-
-        let indices = [index as u32];
-
-        let present_info = vk::PresentInfoKHR {
-            s_type: vk::StructureType::PRESENT_INFO_KHR,
-            p_next: ptr::null(),
-            wait_semaphore_count: wait_semaphores.len() as u32,
-            p_wait_semaphores: wait_semaphores.as_ptr(),
-            swapchain_count: 1,
-            p_swapchains: &self.swapchain,
-            p_image_indices: indices.as_ptr(),
-            p_results: ptr::null_mut(),
-        };
+        let present_info = vk::PresentInfoKHR::builder()
+            .wait_semaphores(&[wait.raw()])
+            .image_indices(&[index as u32])
+            .swapchains(&[self.swapchain])
+            .build();
 
         unsafe {
             match self.loader.queue_present(queue.queue, &present_info) {

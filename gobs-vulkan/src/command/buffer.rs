@@ -1,7 +1,9 @@
 use std::ptr;
 use std::sync::Arc;
 
-use ash::vk::{self, CommandBufferResetFlags, PipelineStageFlags2, SemaphoreSubmitInfo};
+use ash::vk::{
+    self, CommandBufferResetFlags, ImageSubresourceRange, PipelineStageFlags2, SemaphoreSubmitInfo,
+};
 
 use crate::buffer::Buffer;
 use crate::command::CommandPool;
@@ -38,13 +40,15 @@ impl CommandBuffer {
             .command_pool(pool.raw())
             .level(vk::CommandBufferLevel::PRIMARY);
 
-        let command_buffer =
-            unsafe { device.raw().allocate_command_buffers(&buffer_info).unwrap()[0] };
+        let mut command_buffers =
+            unsafe { device.raw().allocate_command_buffers(&buffer_info).unwrap() };
+
+        assert!(command_buffers.len() == 1);
 
         CommandBuffer {
             device,
             pool,
-            command_buffer,
+            command_buffer: command_buffers.remove(0),
         }
     }
 
@@ -277,34 +281,28 @@ impl CommandBuffer {
         src_layout: ImageLayout,
         dst_layout: ImageLayout,
     ) {
-        let barrier_info = vk::ImageMemoryBarrier2 {
-            s_type: vk::StructureType::IMAGE_MEMORY_BARRIER_2,
-            p_next: ptr::null(),
-            old_layout: src_layout.into(),
-            new_layout: dst_layout.into(),
-            src_queue_family_index: vk::QUEUE_FAMILY_IGNORED,
-            dst_queue_family_index: vk::QUEUE_FAMILY_IGNORED,
-            image: image.raw(),
-            src_access_mask: vk::AccessFlags2::MEMORY_WRITE,
-            src_stage_mask: vk::PipelineStageFlags2::ALL_COMMANDS,
-            dst_access_mask: vk::AccessFlags2::MEMORY_WRITE | vk::AccessFlags2::MEMORY_READ,
-            dst_stage_mask: vk::PipelineStageFlags2::ALL_COMMANDS,
-            subresource_range: vk::ImageSubresourceRange {
-                aspect_mask: image.usage.into(),
-                base_mip_level: 0,
-                level_count: 1,
-                base_array_layer: 0,
-                layer_count: 1,
-            },
-        };
+        let barrier_info = vk::ImageMemoryBarrier2::builder()
+            .old_layout(src_layout.into())
+            .new_layout(dst_layout.into())
+            .image(image.raw())
+            .src_access_mask(vk::AccessFlags2::MEMORY_WRITE)
+            .dst_access_mask(vk::AccessFlags2::MEMORY_WRITE | vk::AccessFlags2::MEMORY_READ)
+            .src_stage_mask(vk::PipelineStageFlags2::ALL_COMMANDS)
+            .dst_stage_mask(vk::PipelineStageFlags2::ALL_COMMANDS)
+            .subresource_range(
+                ImageSubresourceRange::builder()
+                    .aspect_mask(image.usage.into())
+                    .base_mip_level(0)
+                    .level_count(1)
+                    .base_array_layer(0)
+                    .layer_count(1)
+                    .build(),
+            )
+            .build();
 
-        let dep_info = vk::DependencyInfo {
-            s_type: vk::StructureType::DEPENDENCY_INFO,
-            p_next: ptr::null(),
-            image_memory_barrier_count: 1,
-            p_image_memory_barriers: &barrier_info,
-            ..Default::default()
-        };
+        let dep_info = vk::DependencyInfo::builder()
+            .image_memory_barriers(&[barrier_info])
+            .build();
 
         unsafe {
             self.device
@@ -328,44 +326,13 @@ impl CommandBuffer {
         }
     }
 
-    pub fn submit(
-        &self,
-        queue: &Queue,
-        wait: Option<&Semaphore>,
-        signal: &Semaphore,
-        fence: &Fence,
-    ) {
-        let mut wait_semaphores = Vec::new();
-        let mut wait_stages = Vec::new();
-
-        if let Some(semaphore) = wait {
-            wait_semaphores.push(semaphore.raw());
-            wait_stages.push(vk::PipelineStageFlags::COLOR_ATTACHMENT_OUTPUT);
-        }
-
-        let command_buffers = [self.command_buffer];
-
-        let signal_semaphores = [signal.raw()];
-
-        let submit_info = vk::SubmitInfo {
-            s_type: vk::StructureType::SUBMIT_INFO,
-            p_next: ptr::null(),
-            command_buffer_count: command_buffers.len() as u32,
-            p_command_buffers: command_buffers.as_ptr(),
-            wait_semaphore_count: wait_semaphores.len() as u32,
-            p_wait_semaphores: if wait_semaphores.is_empty() {
-                ptr::null()
-            } else {
-                wait_semaphores.as_ptr()
-            },
-            p_wait_dst_stage_mask: if wait_stages.is_empty() {
-                ptr::null()
-            } else {
-                wait_stages.as_ptr()
-            },
-            signal_semaphore_count: signal_semaphores.len() as u32,
-            p_signal_semaphores: signal_semaphores.as_ptr(),
-        };
+    pub fn submit(&self, queue: &Queue, wait: &Semaphore, signal: &Semaphore, fence: &Fence) {
+        let submit_info = vk::SubmitInfo::builder()
+            .command_buffers(&[self.command_buffer])
+            .wait_semaphores(&[wait.raw()])
+            .wait_dst_stage_mask(&[vk::PipelineStageFlags::COLOR_ATTACHMENT_OUTPUT])
+            .signal_semaphores(&[signal.raw()])
+            .build();
 
         unsafe {
             self.device
@@ -409,7 +376,7 @@ impl CommandBuffer {
         }
     }
 
-    pub fn submit_now(&self, queue: &Queue, wait: Option<&Semaphore>) {
+    pub fn submit_now(&self, queue: &Queue, wait: &Semaphore) {
         let wait_command = Semaphore::new(queue.device());
         let fence = Fence::new(queue.device(), false);
 

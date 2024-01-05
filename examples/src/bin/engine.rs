@@ -70,22 +70,24 @@ impl Run for App {
         }
     }
 
-    fn update(&mut self, _context: &Context, _delta: f32) {
+    fn update(&mut self, _ctx: &Context, _delta: f32) {
         log::debug!("Update");
     }
 
-    fn render(&mut self, context: &Context) -> Result<(), RenderError> {
+    fn render(&mut self, ctx: &Context) -> Result<(), RenderError> {
         log::debug!("Render");
+        log::trace!("Frame {}", self.frame_number);
 
         let frame = &mut self.frames[self.frame_number % FRAMES_IN_FLIGHT];
 
         frame.render_fence.wait_and_reset();
+        assert!(!frame.render_fence.signaled());
 
         let image_index = self
             .swapchain
             .acquire_image(&frame.swapchain_semaphore)
-            .unwrap();
-        let image = &self.swapchain_images[image_index];
+            .expect("Failed to acquire image");
+        let image = &self.swapchain_images[image_index as usize];
 
         frame.command_buffer.reset();
 
@@ -109,44 +111,44 @@ impl Run for App {
         frame.command_buffer.end();
 
         frame.command_buffer.submit2(
-            &context.queue,
+            &ctx.queue,
             &frame.swapchain_semaphore,
             &frame.render_semaphore,
             &frame.render_fence,
         );
 
         self.swapchain
-            .present(image_index, &context.queue, &frame.render_semaphore)
-            .unwrap();
+            .present(image_index, &ctx.queue, &frame.render_semaphore)
+            .expect("Failed to present image");
 
         self.frame_number += 1;
+
+        log::debug!("End render");
 
         Ok(())
     }
 
-    fn input(&mut self, _context: &Context, _input: Input) {
+    fn input(&mut self, _ctx: &Context, _input: Input) {
         log::debug!("Input");
     }
 
-    fn resize(&mut self, _context: &Context, _width: u32, _height: u32) {
+    fn resize(&mut self, _ctx: &Context, _width: u32, _height: u32) {
         log::info!("Resize");
     }
 
-    fn close(&mut self, context: &Context) {
-        log::info!("Close");
+    fn close(&mut self, ctx: &Context) {
+        log::info!("Closing");
 
-        context.device.wait();
+        ctx.device.wait();
 
-        for frame in &self.frames {
-            frame.render_fence.wait();
-        }
+        log::info!("Closed");
     }
 }
 
 impl App {
-    fn create_swapchain(context: &Context) -> SwapChain {
-        let device = context.device.clone();
-        let surface = context.surface.clone();
+    fn create_swapchain(ctx: &Context) -> SwapChain {
+        let device = ctx.device.clone();
+        let surface = ctx.surface.clone();
 
         let presents = surface.get_available_presentation_modes(device.clone());
 

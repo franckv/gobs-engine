@@ -20,11 +20,7 @@ impl Fence {
             Default::default()
         };
 
-        let fence_info = vk::FenceCreateInfo {
-            s_type: vk::StructureType::FENCE_CREATE_INFO,
-            p_next: ptr::null(),
-            flags,
-        };
+        let fence_info = vk::FenceCreateInfo::builder().flags(flags).build();
 
         let fence = unsafe { device.raw().create_fence(&fence_info, None).unwrap() };
 
@@ -34,32 +30,42 @@ impl Fence {
     pub fn reset(&self) {
         let fences = [self.fence];
 
-        unsafe { self.device.raw().reset_fences(&fences).unwrap() }
-    }
-
-    pub fn wait(&self) {
-        let fences = [self.fence];
-
         unsafe {
             self.device
                 .raw()
-                .wait_for_fences(&fences, true, 1000000000)
+                .reset_fences(&fences)
+                .expect("Device lost")
+        }
+    }
+
+    pub fn wait(&self) {
+        unsafe {
+            self.device
+                .raw()
+                .wait_for_fences(&[self.fence], true, 5_000_000_000)
                 .expect("Fence timeout");
         }
     }
 
     pub fn wait_and_reset(&self) {
-        let fences = [self.fence];
-
         unsafe {
             self.device
                 .raw()
-                .wait_for_fences(&fences, true, 1000000000)
+                .wait_for_fences(&[self.fence], true, 5_000_000_000)
                 .expect("Fence timeout");
             self.device
                 .raw()
-                .reset_fences(&fences)
-                .expect("Fence reset error");
+                .reset_fences(&[self.fence])
+                .expect("Device lost");
+        }
+    }
+
+    pub fn signaled(&self) -> bool {
+        unsafe {
+            self.device
+                .raw()
+                .get_fence_status(self.fence)
+                .expect("Device lost")
         }
     }
 }
