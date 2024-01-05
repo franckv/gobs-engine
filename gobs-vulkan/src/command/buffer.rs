@@ -1,8 +1,6 @@
 use std::sync::Arc;
 
-use ash::vk::{
-    self, CommandBufferResetFlags, ImageSubresourceRange, PipelineStageFlags2, SemaphoreSubmitInfo,
-};
+use ash::vk;
 
 use crate::buffer::Buffer;
 use crate::command::CommandPool;
@@ -55,7 +53,7 @@ impl CommandBuffer {
         unsafe {
             self.device
                 .raw()
-                .reset_command_buffer(self.command_buffer, CommandBufferResetFlags::empty())
+                .reset_command_buffer(self.command_buffer, vk::CommandBufferResetFlags::empty())
                 .unwrap()
         };
     }
@@ -244,6 +242,58 @@ impl CommandBuffer {
         }
     }
 
+    pub fn copy_image_to_image(&self, src: &Image, dst: &Image) {
+        let blit_region = vk::ImageBlit2::builder()
+            .src_offsets([
+                vk::Offset3D::default(),
+                vk::Offset3D::builder()
+                    .x(src.width as i32)
+                    .y(src.height as i32)
+                    .z(1)
+                    .build(),
+            ])
+            .dst_offsets([
+                vk::Offset3D::default(),
+                vk::Offset3D::builder()
+                    .x(dst.width as i32)
+                    .y(dst.height as i32)
+                    .z(1)
+                    .build(),
+            ])
+            .src_subresource(
+                vk::ImageSubresourceLayers::builder()
+                    .aspect_mask(src.usage.into())
+                    .base_array_layer(0)
+                    .layer_count(1)
+                    .mip_level(0)
+                    .build(),
+            )
+            .dst_subresource(
+                vk::ImageSubresourceLayers::builder()
+                    .aspect_mask(dst.usage.into())
+                    .base_array_layer(0)
+                    .layer_count(1)
+                    .mip_level(0)
+                    .build(),
+            )
+            .build();
+
+        let blit_info = vk::BlitImageInfo2::builder()
+            .dst_image(dst.raw())
+            .dst_image_layout(vk::ImageLayout::TRANSFER_DST_OPTIMAL)
+            .src_image(src.raw())
+            .src_image_layout(vk::ImageLayout::TRANSFER_SRC_OPTIMAL)
+            .filter(vk::Filter::LINEAR)
+            .regions(&[blit_region])
+            .build();
+
+        unsafe {
+            self.device
+                .raw()
+                .cmd_blit_image2(self.command_buffer, &blit_info);
+        }
+    }
+
     pub fn copy_buffer_to_image<T: Copy>(
         &self,
         src: &Buffer<T>,
@@ -289,7 +339,7 @@ impl CommandBuffer {
             .src_stage_mask(vk::PipelineStageFlags2::ALL_COMMANDS)
             .dst_stage_mask(vk::PipelineStageFlags2::ALL_COMMANDS)
             .subresource_range(
-                ImageSubresourceRange::builder()
+                vk::ImageSubresourceRange::builder()
                     .aspect_mask(image.usage.into())
                     .base_mip_level(0)
                     .level_count(1)
@@ -347,15 +397,15 @@ impl CommandBuffer {
             .device_mask(0)
             .build();
 
-        let wait_info = SemaphoreSubmitInfo::builder()
-            .stage_mask(PipelineStageFlags2::COLOR_ATTACHMENT_OUTPUT_KHR)
+        let wait_info = vk::SemaphoreSubmitInfo::builder()
+            .stage_mask(vk::PipelineStageFlags2::COLOR_ATTACHMENT_OUTPUT_KHR)
             .semaphore(wait.raw())
             .device_index(0)
             .value(1)
             .build();
 
-        let signal_info = SemaphoreSubmitInfo::builder()
-            .stage_mask(PipelineStageFlags2::ALL_GRAPHICS)
+        let signal_info = vk::SemaphoreSubmitInfo::builder()
+            .stage_mask(vk::PipelineStageFlags2::ALL_GRAPHICS)
             .semaphore(signal.raw())
             .device_index(0)
             .value(1)

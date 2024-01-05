@@ -8,11 +8,7 @@ use ash::extensions::khr::Surface as VkSurface;
 use ash::extensions::khr::Win32Surface;
 #[cfg(all(unix, not(target_os = "android"), not(target_os = "macos")))]
 use ash::extensions::khr::XlibSurface;
-use ash::vk::{
-    PhysicalDeviceFeatures2, PhysicalDeviceFeatures2Builder, PhysicalDeviceVulkan12Features,
-    PhysicalDeviceVulkan13Features, PhysicalDeviceVulkan13FeaturesBuilder,
-};
-use ash::{self, vk};
+use ash::vk;
 
 use crate::physical::PhysicalDevice;
 use crate::queue::QueueFamily;
@@ -152,11 +148,11 @@ impl Instance {
     }
 
     fn check_features(&self, p_device: &PhysicalDevice) -> bool {
-        let mut features12: PhysicalDeviceVulkan12Features =
-            PhysicalDeviceVulkan12Features::default();
-        let mut features13: PhysicalDeviceVulkan13Features =
-            PhysicalDeviceVulkan13Features::default();
-        let mut features = PhysicalDeviceFeatures2::builder()
+        let mut features12: vk::PhysicalDeviceVulkan12Features =
+            vk::PhysicalDeviceVulkan12Features::default();
+        let mut features13: vk::PhysicalDeviceVulkan13Features =
+            vk::PhysicalDeviceVulkan13Features::default();
+        let mut features = vk::PhysicalDeviceFeatures2::builder()
             .push_next(&mut features12)
             .push_next(&mut features13)
             .build();

@@ -1,9 +1,6 @@
-use std::ptr;
 use std::sync::Arc;
 
 use ash::vk;
-
-use log::trace;
 
 use crate::device::Device;
 use crate::image::ImageFormat;
@@ -14,7 +11,8 @@ use crate::Wrap;
 pub enum ImageLayout {
     Undefined,
     General,
-    Transfer,
+    TransferSrc,
+    TransferDst,
     Shader,
     Depth,
     Color,
@@ -26,7 +24,8 @@ impl Into<vk::ImageLayout> for ImageLayout {
         match self {
             ImageLayout::Undefined => vk::ImageLayout::UNDEFINED,
             ImageLayout::General => vk::ImageLayout::GENERAL,
-            ImageLayout::Transfer => vk::ImageLayout::TRANSFER_DST_OPTIMAL,
+            ImageLayout::TransferSrc => vk::ImageLayout::TRANSFER_SRC_OPTIMAL,
+            ImageLayout::TransferDst => vk::ImageLayout::TRANSFER_DST_OPTIMAL,
             ImageLayout::Shader => vk::ImageLayout::SHADER_READ_ONLY_OPTIMAL,
             ImageLayout::Depth => vk::ImageLayout::DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
             ImageLayout::Color => vk::ImageLayout::COLOR_ATTACHMENT_OPTIMAL,
@@ -39,15 +38,24 @@ impl Into<vk::ImageLayout> for ImageLayout {
 pub enum ImageUsage {
     Swapchain,
     Texture,
+    Color,
     Depth,
 }
 
 impl Into<vk::ImageUsageFlags> for ImageUsage {
     fn into(self) -> vk::ImageUsageFlags {
         match self {
-            ImageUsage::Swapchain => vk::ImageUsageFlags::TRANSFER_DST | vk::ImageUsageFlags::COLOR_ATTACHMENT,
+            ImageUsage::Swapchain => {
+                vk::ImageUsageFlags::TRANSFER_DST | vk::ImageUsageFlags::COLOR_ATTACHMENT
+            }
             ImageUsage::Texture => vk::ImageUsageFlags::TRANSFER_DST | vk::ImageUsageFlags::SAMPLED,
             ImageUsage::Depth => vk::ImageUsageFlags::DEPTH_STENCIL_ATTACHMENT,
+            ImageUsage::Color => {
+                vk::ImageUsageFlags::TRANSFER_SRC
+                    | vk::ImageUsageFlags::TRANSFER_DST
+                    | vk::ImageUsageFlags::COLOR_ATTACHMENT
+                    | vk::ImageUsageFlags::STORAGE
+            }
         }
     }
 }
@@ -57,6 +65,7 @@ impl Into<vk::ImageAspectFlags> for ImageUsage {
         match self {
             ImageUsage::Swapchain => vk::ImageAspectFlags::COLOR,
             ImageUsage::Texture => vk::ImageAspectFlags::COLOR,
+            ImageUsage::Color => vk::ImageAspectFlags::COLOR,
             ImageUsage::Depth => vk::ImageAspectFlags::DEPTH,
         }
     }
@@ -130,27 +139,25 @@ impl Image {
         format: ImageFormat,
         usage: ImageUsage,
     ) -> vk::Image {
-        let image_info = vk::ImageCreateInfo {
-            s_type: vk::StructureType::IMAGE_CREATE_INFO,
-            p_next: ptr::null(),
-            flags: Default::default(),
-            image_type: vk::ImageType::TYPE_2D,
-            extent: vk::Extent3D {
-                width,
-                height,
-                depth: 1,
-            },
-            mip_levels: 1,
-            array_layers: 1,
-            format: format.into(),
-            tiling: vk::ImageTiling::OPTIMAL,
-            initial_layout: vk::ImageLayout::UNDEFINED,
-            usage: usage.into(),
-            sharing_mode: vk::SharingMode::EXCLUSIVE,
-            samples: vk::SampleCountFlags::TYPE_1,
-            queue_family_index_count: 0,
-            p_queue_family_indices: ptr::null(),
-        };
+        let image_info = vk::ImageCreateInfo::builder()
+            .image_type(vk::ImageType::TYPE_2D)
+            .extent(
+                vk::Extent3D::builder()
+                    .width(width)
+                    .height(height)
+                    .depth(1)
+                    .build(),
+            )
+            .mip_levels(1)
+            .array_layers(1)
+            .format(format.into())
+            .tiling(vk::ImageTiling::OPTIMAL)
+            .initial_layout(vk::ImageLayout::UNDEFINED)
+            .usage(usage.into())
+            .sharing_mode(vk::SharingMode::EXCLUSIVE)
+            .samples(vk::SampleCountFlags::TYPE_1)
+            .queue_family_indices(&[])
+            .build();
 
         unsafe { device.raw().create_image(&image_info, None).unwrap() }
     }
@@ -161,27 +168,28 @@ impl Image {
         format: ImageFormat,
         usage: ImageUsage,
     ) -> vk::ImageView {
-        let view_info = vk::ImageViewCreateInfo {
-            s_type: vk::StructureType::IMAGE_VIEW_CREATE_INFO,
-            p_next: ptr::null(),
-            flags: Default::default(),
-            image,
-            view_type: vk::ImageViewType::TYPE_2D,
-            format: format.into(),
-            subresource_range: vk::ImageSubresourceRange {
-                aspect_mask: usage.into(),
-                base_mip_level: 0,
-                level_count: 1,
-                base_array_layer: 0,
-                layer_count: 1,
-            },
-            components: vk::ComponentMapping {
-                r: vk::ComponentSwizzle::R,
-                g: vk::ComponentSwizzle::G,
-                b: vk::ComponentSwizzle::B,
-                a: vk::ComponentSwizzle::A,
-            },
-        };
+        let view_info = vk::ImageViewCreateInfo::builder()
+            .image(image)
+            .view_type(vk::ImageViewType::TYPE_2D)
+            .format(format.into())
+            .subresource_range(
+                vk::ImageSubresourceRange::builder()
+                    .aspect_mask(usage.into())
+                    .base_mip_level(0)
+                    .level_count(1)
+                    .base_array_layer(0)
+                    .layer_count(1)
+                    .build(),
+            )
+            .components(
+                vk::ComponentMapping::builder()
+                    .r(vk::ComponentSwizzle::R)
+                    .g(vk::ComponentSwizzle::G)
+                    .b(vk::ComponentSwizzle::B)
+                    .a(vk::ComponentSwizzle::A)
+                    .build(),
+            )
+            .build();
 
         unsafe { device.raw().create_image_view(&view_info, None).unwrap() }
     }
@@ -195,7 +203,7 @@ impl Wrap<vk::Image> for Image {
 
 impl Drop for Image {
     fn drop(&mut self) {
-        trace!("Drop image");
+        log::info!("Drop image");
         unsafe {
             self.device.raw().destroy_image_view(self.image_view, None);
             if self.memory.is_some() {

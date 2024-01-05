@@ -1,6 +1,5 @@
 use std::mem;
 use std::mem::align_of;
-use std::ptr;
 use std::sync::Arc;
 
 use ash::util::Align;
@@ -51,12 +50,10 @@ impl Memory {
     ) -> vk::DeviceMemory {
         let mem_type = device.p_device.find_memory_type(&mem_req, mem_flags);
 
-        let memory_info = vk::MemoryAllocateInfo {
-            s_type: vk::StructureType::MEMORY_ALLOCATE_INFO,
-            p_next: ptr::null(),
-            allocation_size: mem_req.size,
-            memory_type_index: mem_type,
-        };
+        let memory_info = vk::MemoryAllocateInfo::builder()
+            .allocation_size(mem_req.size)
+            .memory_type_index(mem_type)
+            .build();
 
         unsafe { device.raw().allocate_memory(&memory_info, None).unwrap() }
     }

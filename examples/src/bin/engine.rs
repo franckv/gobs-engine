@@ -9,7 +9,7 @@ use gobs::{
     vulkan::{
         command::{CommandBuffer, CommandPool},
         device::Device,
-        image::{ColorSpace, Image, ImageFormat, ImageLayout},
+        image::{ColorSpace, Image, ImageFormat, ImageLayout, ImageUsage},
         queue::QueueFamily,
         swapchain::{PresentationMode, SwapChain},
         sync::{Fence, Semaphore},
@@ -48,25 +48,36 @@ struct App {
     frames: [FrameData; FRAMES_IN_FLIGHT],
     swapchain: SwapChain,
     swapchain_images: Vec<Image>,
+    draw_image: Image,
 }
 
 impl Run for App {
-    async fn create(context: &Context) -> Self {
+    async fn create(ctx: &Context) -> Self {
         log::info!("Create");
 
         let frames = [
-            FrameData::new(context.device.clone(), context.queue.family()),
-            FrameData::new(context.device.clone(), context.queue.family()),
+            FrameData::new(ctx.device.clone(), ctx.queue.family()),
+            FrameData::new(ctx.device.clone(), ctx.queue.family()),
         ];
 
-        let swapchain = Self::create_swapchain(context);
+        let swapchain = Self::create_swapchain(ctx);
         let swapchain_images = swapchain.create_images();
+
+        let extent = ctx.surface.get_extent(ctx.device.clone());
+        let draw_image = Image::new(
+            ctx.device.clone(),
+            ImageFormat::R16g16b16a16Sfloat,
+            ImageUsage::Color,
+            extent.0,
+            extent.1,
+        );
 
         App {
             frame_number: 0,
             frames,
             swapchain,
             swapchain_images,
+            draw_image,
         }
     }
 
@@ -87,24 +98,42 @@ impl Run for App {
             .swapchain
             .acquire_image(&frame.swapchain_semaphore)
             .expect("Failed to acquire image");
-        let image = &self.swapchain_images[image_index as usize];
+        let swapchain_image = &self.swapchain_images[image_index as usize];
 
         frame.command_buffer.reset();
 
         frame.command_buffer.begin();
 
         frame.command_buffer.transition_image_layout(
-            image,
+            &self.draw_image,
             ImageLayout::Undefined,
             ImageLayout::General,
         );
 
-        let flash = (self.frame_number as f32 / 120.).sin().abs();
-        frame.command_buffer.clear_color(image, [flash, 0., 0., 1.]);
+        Self::draw_background(
+            &mut frame.command_buffer,
+            self.frame_number,
+            &self.draw_image,
+        );
 
         frame.command_buffer.transition_image_layout(
-            image,
+            &self.draw_image,
             ImageLayout::General,
+            ImageLayout::TransferSrc,
+        );
+        frame.command_buffer.transition_image_layout(
+            swapchain_image,
+            ImageLayout::Undefined,
+            ImageLayout::TransferDst,
+        );
+
+        frame
+            .command_buffer
+            .copy_image_to_image(&self.draw_image, swapchain_image);
+
+        frame.command_buffer.transition_image_layout(
+            swapchain_image,
+            ImageLayout::TransferDst,
             ImageLayout::Present,
         );
 
@@ -146,6 +175,11 @@ impl Run for App {
 }
 
 impl App {
+    fn draw_background(cmd: &mut CommandBuffer, frame_number: usize, image: &Image) {
+        let flash = (frame_number as f32 / 120.).sin().abs();
+        cmd.clear_color(image, [flash, 0., 0., 1.]);
+    }
+
     fn create_swapchain(ctx: &Context) -> SwapChain {
         let device = ctx.device.clone();
         let surface = ctx.surface.clone();
