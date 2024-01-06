@@ -10,22 +10,19 @@ use utils::timer::Timer;
 use crate::context::Context;
 use crate::input::{Event, Input};
 
-const WIDTH: u32 = 800; // TODO: hardcoded
-const HEIGHT: u32 = 600;
-
 pub struct Application {
     pub context: Context,
     pub events_loop: EventLoop<()>,
 }
 
 impl Application {
-    pub fn new() -> Application {
+    pub fn new(title: &str, width: u32, height: u32) -> Application {
         let events_loop = EventLoop::new();
 
         let window = WindowBuilder::new()
-            .with_inner_size(LogicalSize::new(WIDTH, HEIGHT))
-            .with_title("Test")
-            .with_resizable(true)
+            .with_inner_size(LogicalSize::new(width, height))
+            .with_title(title)
+            .with_resizable(false)
             .build(&events_loop)
             .unwrap();
 
@@ -103,7 +100,7 @@ pub enum RenderError {
 
 impl Default for Application {
     fn default() -> Self {
-        Self::new()
+        Self::new("Default", 800, 600)
     }
 }
 

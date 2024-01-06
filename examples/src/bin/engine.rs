@@ -55,8 +55,8 @@ struct App {
     swapchain_images: Vec<Image>,
     draw_image: Image,
     ds_pool: DescriptorSetPool,
-    ds_layout: Arc<DescriptorSetLayout>,
-    ds: DescriptorSet,
+    draw_ds_layout: Arc<DescriptorSetLayout>,
+    draw_ds: DescriptorSet,
     pipeline: Pipeline,
     pipeline_layout: Arc<PipelineLayout>,
 }
@@ -82,13 +82,14 @@ impl Run for App {
             extent.1,
         );
 
-        let ds_layout = DescriptorSetLayoutBuilder::new()
+        let draw_ds_layout = DescriptorSetLayoutBuilder::new()
             .binding(DescriptorType::StorageImage, DescriptorStage::Compute)
             .build(ctx.device.clone());
-        let ds_pool = DescriptorSetPool::new(ctx.device.clone(), ds_layout.clone(), 10);
-        let ds = ds_pool.allocate(ds_layout.clone());
+        let ds_pool = DescriptorSetPool::new(ctx.device.clone(), draw_ds_layout.clone(), 10);
+        let draw_ds = ds_pool.allocate(draw_ds_layout.clone());
 
-        ds.update()
+        draw_ds
+            .update()
             .bind_image(&draw_image, ImageLayout::General)
             .end();
 
@@ -98,7 +99,7 @@ impl Run for App {
             ShaderType::Compute,
         );
 
-        let pipeline_layout = PipelineLayout::new(ctx.device.clone(), ds_layout.clone());
+        let pipeline_layout = PipelineLayout::new(ctx.device.clone(), draw_ds_layout.clone());
         let pipeline = Pipeline::compute_builder(ctx.device.clone())
             .layout(pipeline_layout.clone())
             .compute_shader("main", shader)
@@ -111,8 +112,8 @@ impl Run for App {
             swapchain_images,
             draw_image,
             ds_pool,
-            ds_layout,
-            ds,
+            draw_ds_layout,
+            draw_ds,
             pipeline,
             pipeline_layout,
         }
@@ -126,7 +127,7 @@ impl Run for App {
         log::debug!("Render");
         log::trace!("Frame {}", self.frame_number);
 
-        let frame = &mut self.frames[self.frame_number % FRAMES_IN_FLIGHT];
+        let frame = &self.frames[self.frame_number % FRAMES_IN_FLIGHT];
 
         frame.render_fence.wait_and_reset();
         assert!(!frame.render_fence.signaled());
@@ -147,13 +148,8 @@ impl Run for App {
             ImageLayout::General,
         );
 
-        Self::draw_background(
-            &mut frame.command_buffer,
-            &self.pipeline,
-            &self.ds,
-            self.draw_image.width,
-            self.draw_image.height,
-        );
+        self.draw_background(&frame.command_buffer);
+        //self.clear_background(&frame.command_buffer);
 
         frame.command_buffer.transition_image_layout(
             &self.draw_image,
@@ -214,21 +210,19 @@ impl Run for App {
 }
 
 impl App {
-    fn clear_background(cmd: &mut CommandBuffer, frame_number: usize, image: &Image) {
-        let flash = (frame_number as f32 / 120.).sin().abs();
-        cmd.clear_color(image, [flash, 0., 0., 1.]);
+    fn clear_background(&self, cmd: &CommandBuffer) {
+        let flash = (self.frame_number as f32 / 120.).sin().abs();
+        cmd.clear_color(&self.draw_image, [flash, 0., 0., 1.]);
     }
 
-    fn draw_background(
-        cmd: &mut CommandBuffer,
-        pipeline: &Pipeline,
-        ds: &DescriptorSet,
-        width: u32,
-        height: u32,
-    ) {
-        cmd.bind_pipeline(pipeline);
-        cmd.bind_descriptor_set(ds, &pipeline);
-        cmd.dispatch(width / 16 + 1, height / 16 + 1, 1);
+    fn draw_background(&self, cmd: &CommandBuffer) {
+        cmd.bind_pipeline(&self.pipeline);
+        cmd.bind_descriptor_set(&self.draw_ds, &self.pipeline);
+        cmd.dispatch(
+            self.draw_image.width / 16 + 1,
+            self.draw_image.height / 16 + 1,
+            1,
+        );
     }
 
     fn create_swapchain(ctx: &Context) -> SwapChain {
@@ -268,5 +262,5 @@ fn main() {
 
     log::info!("Engine start");
 
-    Application::new().run::<App>();
+    Application::new("examples", 1600, 900).run::<App>();
 }

@@ -8,7 +8,7 @@ use crate::descriptor::DescriptorSet;
 use crate::device::Device;
 use crate::framebuffer::Framebuffer;
 use crate::image::{Image, ImageLayout};
-use crate::pipeline::{Pipeline, PipelineLayout};
+use crate::pipeline::Pipeline;
 use crate::queue::Queue;
 use crate::sync::{Fence, Semaphore};
 use crate::Wrap;
@@ -49,7 +49,7 @@ impl CommandBuffer {
         }
     }
 
-    pub fn reset(&mut self) {
+    pub fn reset(&self) {
         unsafe {
             self.device
                 .raw()
@@ -58,7 +58,7 @@ impl CommandBuffer {
         };
     }
 
-    pub fn begin(&mut self) {
+    pub fn begin(&self) {
         let begin_info = vk::CommandBufferBeginInfo::builder()
             .flags(vk::CommandBufferUsageFlags::ONE_TIME_SUBMIT)
             .build();
@@ -71,7 +71,7 @@ impl CommandBuffer {
         }
     }
 
-    pub fn clear_color(&mut self, image: &Image, color: [f32; 4]) {
+    pub fn clear_color(&self, image: &Image, color: [f32; 4]) {
         let color_value = vk::ClearColorValue { float32: color };
 
         unsafe {
@@ -91,7 +91,7 @@ impl CommandBuffer {
         }
     }
 
-    pub fn start_render_pass(&mut self, framebuffer: &Framebuffer) {
+    pub fn start_render_pass(&self, framebuffer: &Framebuffer) {
         let clear_values = [
             vk::ClearValue {
                 color: vk::ClearColorValue {

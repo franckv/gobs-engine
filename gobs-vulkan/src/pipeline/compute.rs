@@ -2,9 +2,8 @@ use std::sync::Arc;
 
 use ash::vk;
 
+use crate::pipeline::{Pipeline, PipelineLayout, Shader, ShaderStage};
 use crate::{device::Device, Wrap};
-
-use super::{pipeline::ShaderStage, Pipeline, PipelineLayout, Shader};
 
 #[derive(Default)]
 pub struct ComputePipelineBuilder {

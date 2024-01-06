@@ -2,9 +2,8 @@ use std::sync::Arc;
 
 use ash::vk;
 
-use crate::{descriptor::DescriptorSetLayout, device::Device, Wrap};
-
-use super::{pipeline::ShaderStage, Pipeline, PipelineLayout, Rect2D, Shader, VertexLayout};
+use crate::pipeline::{Pipeline, PipelineLayout, Rect2D, Shader, ShaderStage, VertexLayout};
+use crate::{device::Device, Wrap};
 
 pub struct Viewport {
     x: f32,
