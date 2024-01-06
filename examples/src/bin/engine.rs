@@ -15,7 +15,8 @@ use gobs::{
         device::Device,
         image::{ColorSpace, Image, ImageExtent2D, ImageFormat, ImageLayout, ImageUsage},
         pipeline::{
-            DynamicStateElem, Pipeline, PipelineLayout, Rect2D, Shader, ShaderType, Viewport,
+            DynamicStateElem, FrontFace, Pipeline, PipelineLayout, Rect2D, Shader, ShaderType,
+            Viewport,
         },
         queue::QueueFamily,
         swapchain::{PresentationMode, SwapChain},
@@ -142,6 +143,7 @@ impl Run for App {
             .dynamic_states(&vec![DynamicStateElem::Viewport, DynamicStateElem::Scissor])
             .attachments(draw_image.format, None)
             .depth_test_disable()
+            .front_face(FrontFace::CW)
             .build();
 
         App {

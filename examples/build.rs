@@ -33,7 +33,9 @@ fn main() {
         .unwrap();
 
         let mut data = Vec::new();
-        let mut writer = spv::Writer::new(&spv::Options::default()).unwrap();
+        let mut options = spv::Options::default();
+        options.flags.remove(spv::WriterFlags::ADJUST_COORDINATE_SPACE);
+        let mut writer = spv::Writer::new(&options).unwrap();
         writer
             .write(&module, &info, None, &None, &mut data)
             .expect("Failed to write shader");
