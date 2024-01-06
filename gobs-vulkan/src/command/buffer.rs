@@ -7,7 +7,7 @@ use crate::command::CommandPool;
 use crate::descriptor::DescriptorSet;
 use crate::device::Device;
 use crate::framebuffer::Framebuffer;
-use crate::image::{Image, ImageLayout};
+use crate::image::{Image, ImageExtent2D, ImageLayout};
 use crate::pipeline::Pipeline;
 use crate::queue::Queue;
 use crate::sync::{Fence, Semaphore};
@@ -113,10 +113,7 @@ impl CommandBuffer {
             .framebuffer(framebuffer.raw())
             .render_area(vk::Rect2D {
                 offset: vk::Offset2D { x: 0, y: 0 },
-                extent: vk::Extent2D {
-                    width: dim.0,
-                    height: dim.1,
-                },
+                extent: dim.into(),
             })
             .clear_values(&clear_values);
 
@@ -244,29 +241,35 @@ impl CommandBuffer {
         }
     }
 
-    pub fn copy_image_to_image(&self, src: &Image, dst: &Image) {
+    pub fn copy_image_to_image(
+        &self,
+        src: &Image,
+        src_size: ImageExtent2D,
+        dst: &Image,
+        dst_size: ImageExtent2D,
+    ) {
         log::trace!(
             "Blitting image {}/{} to {}/{}",
-            src.width,
-            src.height,
-            dst.width,
-            dst.height
+            src_size.width,
+            src_size.height,
+            dst_size.width,
+            dst_size.height
         );
 
         let blit_region = vk::ImageBlit2::builder()
             .src_offsets([
                 vk::Offset3D::default(),
                 vk::Offset3D::builder()
-                    .x(src.width as i32)
-                    .y(src.height as i32)
+                    .x(src_size.width as i32)
+                    .y(src_size.height as i32)
                     .z(1)
                     .build(),
             ])
             .dst_offsets([
                 vk::Offset3D::default(),
                 vk::Offset3D::builder()
-                    .x(dst.width as i32)
-                    .y(dst.height as i32)
+                    .x(dst_size.width as i32)
+                    .y(dst_size.height as i32)
                     .z(1)
                     .build(),
             ])

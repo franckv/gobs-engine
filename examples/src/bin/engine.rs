@@ -4,7 +4,7 @@ use gobs::{
     game::{
         app::{Application, RenderError, Run},
         context::Context,
-        input::Input,
+        input::{Input, Key},
     },
     vulkan::{
         command::{CommandBuffer, CommandPool},
@@ -13,7 +13,7 @@ use gobs::{
             DescriptorStage, DescriptorType,
         },
         device::Device,
-        image::{ColorSpace, Image, ImageFormat, ImageLayout, ImageUsage},
+        image::{ColorSpace, Image, ImageExtent2D, ImageFormat, ImageLayout, ImageUsage},
         pipeline::{Pipeline, PipelineLayout, Shader, ShaderType},
         queue::QueueFamily,
         swapchain::{PresentationMode, SwapChain},
@@ -54,6 +54,8 @@ struct App {
     swapchain: SwapChain,
     swapchain_images: Vec<Image>,
     draw_image: Image,
+    draw_extent: ImageExtent2D,
+    render_scaling: f32,
     ds_pool: DescriptorSetPool,
     draw_ds_layout: Arc<DescriptorSetLayout>,
     draw_ds: DescriptorSet,
@@ -78,9 +80,10 @@ impl Run for App {
             ctx.device.clone(),
             ImageFormat::R16g16b16a16Sfloat,
             ImageUsage::Color,
-            extent.0,
-            extent.1,
+            extent,
         );
+
+        let draw_extent = draw_image.extent;
 
         let draw_ds_layout = DescriptorSetLayoutBuilder::new()
             .binding(DescriptorType::StorageImage, DescriptorStage::Compute)
@@ -111,6 +114,8 @@ impl Run for App {
             swapchain,
             swapchain_images,
             draw_image,
+            draw_extent,
+            render_scaling: 1.,
             ds_pool,
             draw_ds_layout,
             draw_ds,
@@ -126,6 +131,19 @@ impl Run for App {
     fn render(&mut self, ctx: &Context) -> Result<(), RenderError> {
         log::debug!("Render");
         log::trace!("Frame {}", self.frame_number);
+
+        self.draw_extent.width = (self
+            .draw_image
+            .extent
+            .width
+            .min(ctx.surface.get_dimensions().width) as f32
+            * self.render_scaling) as u32;
+        self.draw_extent.height = (self
+            .draw_image
+            .extent
+            .height
+            .min(ctx.surface.get_dimensions().height) as f32
+            * self.render_scaling) as u32;
 
         let frame = &self.frames[self.frame_number % FRAMES_IN_FLIGHT];
 
@@ -162,9 +180,12 @@ impl Run for App {
             ImageLayout::TransferDst,
         );
 
-        frame
-            .command_buffer
-            .copy_image_to_image(&self.draw_image, swapchain_image);
+        frame.command_buffer.copy_image_to_image(
+            &self.draw_image,
+            self.draw_extent,
+            swapchain_image,
+            swapchain_image.extent,
+        );
 
         frame.command_buffer.transition_image_layout(
             swapchain_image,
@@ -195,8 +216,17 @@ impl Run for App {
         Ok(())
     }
 
-    fn input(&mut self, _ctx: &Context, _input: Input) {
+    fn input(&mut self, _ctx: &Context, input: Input) {
         log::debug!("Input");
+
+        match input {
+            Input::KeyPressed(key) => match key {
+                Key::E => self.render_scaling = (self.render_scaling + 0.1).min(1.),
+                Key::A => self.render_scaling = (self.render_scaling - 0.1).max(0.1),
+                _ => (),
+            },
+            _ => (),
+        }
     }
 
     fn resize(&mut self, ctx: &Context, _width: u32, _height: u32) {
@@ -223,8 +253,8 @@ impl App {
         cmd.bind_pipeline(&self.pipeline);
         cmd.bind_descriptor_set(&self.draw_ds, &self.pipeline);
         cmd.dispatch(
-            self.draw_image.width / 16 + 1,
-            self.draw_image.height / 16 + 1,
+            self.draw_extent.width / 16 + 1,
+            self.draw_extent.height / 16 + 1,
             1,
         );
     }

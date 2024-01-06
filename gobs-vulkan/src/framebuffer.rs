@@ -6,7 +6,7 @@ use ash::vk;
 use log::trace;
 
 use crate::device::Device;
-use crate::image::Image;
+use crate::image::{Image, ImageExtent2D};
 use crate::renderpass::RenderPass;
 use crate::Wrap;
 
@@ -33,8 +33,8 @@ impl Framebuffer {
             render_pass: renderpass.raw(),
             attachment_count: attachments.len() as u32,
             p_attachments: attachments.as_ptr(),
-            width: image.width,
-            height: image.height,
+            width: image.extent.width,
+            height: image.extent.height,
             layers: 1,
         };
 
@@ -53,8 +53,8 @@ impl Framebuffer {
         }
     }
 
-    pub fn dimensions(&self) -> (u32, u32) {
-        self.image.dimensions()
+    pub fn dimensions(&self) -> ImageExtent2D {
+        self.image.extent
     }
 
     pub fn renderpass(&self) -> &Arc<RenderPass> {

@@ -71,14 +71,40 @@ impl Into<vk::ImageAspectFlags> for ImageUsage {
     }
 }
 
+#[derive(Clone, Copy, Debug)]
+pub struct ImageExtent2D {
+    pub width: u32,
+    pub height: u32,
+}
+
+impl ImageExtent2D {
+    pub fn new(width: u32, height: u32) -> Self {
+        ImageExtent2D { width, height }
+    }
+}
+
+impl Into<vk::Extent2D> for ImageExtent2D {
+    fn into(self) -> vk::Extent2D {
+        vk::Extent2D {
+            width: self.width,
+            height: self.height,
+        }
+    }
+}
+
+impl From<(u32, u32)> for ImageExtent2D {
+    fn from(value: (u32, u32)) -> Self {
+        ImageExtent2D::new(value.0, value.1)
+    }
+}
+
 /// Image buffer allocated in memory
 pub struct Image {
     device: Arc<Device>,
     image: vk::Image,
     pub(crate) image_view: vk::ImageView,
     pub usage: ImageUsage,
-    pub width: u32,
-    pub height: u32,
+    pub extent: ImageExtent2D,
     memory: Option<Memory>,
 }
 
@@ -87,10 +113,9 @@ impl Image {
         device: Arc<Device>,
         format: ImageFormat,
         usage: ImageUsage,
-        width: u32,
-        height: u32,
+        extent: ImageExtent2D,
     ) -> Self {
-        let image = Self::create_image(&device, width, height, format, usage);
+        let image = Self::create_image(&device, extent, format, usage);
 
         let memory = Memory::with_image(device.clone(), image);
 
@@ -101,8 +126,7 @@ impl Image {
             image,
             image_view,
             usage,
-            width,
-            height,
+            extent,
             memory: Some(memory), // swapchain images don't need manual memory allocation
         }
     }
@@ -112,8 +136,7 @@ impl Image {
         image: vk::Image,
         format: ImageFormat,
         usage: ImageUsage,
-        width: u32,
-        height: u32,
+        extent: ImageExtent2D,
     ) -> Self {
         let image_view = Self::create_image_view(&device, image, format, usage);
 
@@ -122,20 +145,14 @@ impl Image {
             image,
             image_view,
             usage,
-            width,
-            height,
+            extent,
             memory: None,
         }
     }
 
-    pub fn dimensions(&self) -> (u32, u32) {
-        (self.width, self.height)
-    }
-
     fn create_image(
         device: &Arc<Device>,
-        width: u32,
-        height: u32,
+        extent: ImageExtent2D,
         format: ImageFormat,
         usage: ImageUsage,
     ) -> vk::Image {
@@ -143,8 +160,8 @@ impl Image {
             .image_type(vk::ImageType::TYPE_2D)
             .extent(
                 vk::Extent3D::builder()
-                    .width(width)
-                    .height(height)
+                    .width(extent.width)
+                    .height(extent.height)
                     .depth(1)
                     .build(),
             )

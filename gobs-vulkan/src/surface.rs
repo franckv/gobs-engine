@@ -4,10 +4,10 @@ use std::sync::Arc;
 use raw_window_handle::{HasRawDisplayHandle, HasRawWindowHandle};
 use winit::window::Window;
 
-use ash::vk;
+use ash::vk::{self, Image};
 
 use crate::device::Device;
-use crate::image::{ColorSpace, ImageFormat};
+use crate::image::{ColorSpace, ImageExtent2D, ImageFormat};
 use crate::instance::Instance;
 use crate::physical::PhysicalDevice;
 use crate::queue::QueueFamily;
@@ -121,19 +121,19 @@ impl Surface {
         self.window.scale_factor()
     }
 
-    pub fn get_dimensions(&self) -> (u32, u32) {
+    pub fn get_dimensions(&self) -> ImageExtent2D {
         let dim = self.window.inner_size();
 
-        dim.into()
+        ImageExtent2D::new(dim.width, dim.height)
     }
 
-    pub fn get_extent(&self, device: Arc<Device>) -> (u32, u32) {
+    pub fn get_extent(&self, device: Arc<Device>) -> ImageExtent2D {
         let caps = self.get_capabilities(device);
         let dim = self.get_dimensions();
 
         let extent = match caps.width {
             std::u32::MAX => dim,
-            _ => (caps.width, caps.height),
+            _ => ImageExtent2D::new(caps.width, caps.height),
         };
 
         extent

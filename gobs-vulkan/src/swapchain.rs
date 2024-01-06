@@ -69,10 +69,7 @@ impl SwapChain {
             .min_image_count(image_count as u32)
             .image_format(format.format.into())
             .image_color_space(format.color_space.into())
-            .image_extent(vk::Extent2D {
-                width: extent.0,
-                height: extent.1,
-            })
+            .image_extent(extent.into())
             .image_usage(ImageUsage::Swapchain.into())
             .image_sharing_mode(vk::SharingMode::EXCLUSIVE)
             .pre_transform(vk::SurfaceTransformFlagsKHR::IDENTITY)
@@ -116,8 +113,7 @@ impl SwapChain {
                         image,
                         self.format.format,
                         ImageUsage::Swapchain,
-                        extent.0,
-                        extent.1,
+                        extent,
                     )
                 })
                 .collect()
