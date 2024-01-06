@@ -14,7 +14,9 @@ use gobs::{
         },
         device::Device,
         image::{ColorSpace, Image, ImageExtent2D, ImageFormat, ImageLayout, ImageUsage},
-        pipeline::{Pipeline, PipelineLayout, Shader, ShaderType},
+        pipeline::{
+            DynamicStateElem, Pipeline, PipelineLayout, Rect2D, Shader, ShaderType, Viewport,
+        },
         queue::QueueFamily,
         swapchain::{PresentationMode, SwapChain},
         sync::{Fence, Semaphore},
@@ -54,13 +56,14 @@ struct App {
     swapchain: SwapChain,
     swapchain_images: Vec<Image>,
     draw_image: Image,
-    draw_extent: ImageExtent2D,
     render_scaling: f32,
     ds_pool: DescriptorSetPool,
     draw_ds_layout: Arc<DescriptorSetLayout>,
     draw_ds: DescriptorSet,
-    pipeline: Pipeline,
-    pipeline_layout: Arc<PipelineLayout>,
+    bg_pipeline: Pipeline,
+    bg_pipeline_layout: Arc<PipelineLayout>,
+    scene_pipeline: Pipeline,
+    scene_pipeline_layout: Arc<PipelineLayout>,
 }
 
 impl Run for App {
@@ -83,8 +86,6 @@ impl Run for App {
             extent,
         );
 
-        let draw_extent = draw_image.extent;
-
         let draw_ds_layout = DescriptorSetLayoutBuilder::new()
             .binding(DescriptorType::StorageImage, DescriptorStage::Compute)
             .build(ctx.device.clone());
@@ -96,16 +97,51 @@ impl Run for App {
             .bind_image(&draw_image, ImageLayout::General)
             .end();
 
-        let shader = Shader::from_file(
+        let compute_shader = Shader::from_file(
             "examples/shaders/sky.comp.spv",
             ctx.device.clone(),
             ShaderType::Compute,
         );
 
-        let pipeline_layout = PipelineLayout::new(ctx.device.clone(), draw_ds_layout.clone());
-        let pipeline = Pipeline::compute_builder(ctx.device.clone())
-            .layout(pipeline_layout.clone())
-            .compute_shader("main", shader)
+        let bg_pipeline_layout =
+            PipelineLayout::new(ctx.device.clone(), Some(draw_ds_layout.clone()));
+        let bg_pipeline = Pipeline::compute_builder(ctx.device.clone())
+            .layout(bg_pipeline_layout.clone())
+            .compute_shader("main", compute_shader)
+            .build();
+
+        let vertex_shader = Shader::from_file(
+            "examples/shaders/triangle.vert.spv",
+            ctx.device.clone(),
+            ShaderType::Vertex,
+        );
+
+        let fragment_shader = Shader::from_file(
+            "examples/shaders/triangle.frag.spv",
+            ctx.device.clone(),
+            ShaderType::Fragment,
+        );
+
+        let scene_pipeline_layout = PipelineLayout::new(ctx.device.clone(), None);
+        let scene_pipeline = Pipeline::graphics_builder(ctx.device.clone())
+            .layout(scene_pipeline_layout.clone())
+            .vertex_shader("main", vertex_shader)
+            .fragment_shader("main", fragment_shader)
+            .viewports(vec![Viewport::new(
+                0.,
+                0.,
+                draw_image.extent.width as f32,
+                draw_image.extent.height as f32,
+            )])
+            .scissors(vec![Rect2D::new(
+                0,
+                0,
+                draw_image.extent.width,
+                draw_image.extent.height,
+            )])
+            .dynamic_states(&vec![DynamicStateElem::Viewport, DynamicStateElem::Scissor])
+            .attachments(draw_image.format, None)
+            .depth_test_disable()
             .build();
 
         App {
@@ -114,13 +150,14 @@ impl Run for App {
             swapchain,
             swapchain_images,
             draw_image,
-            draw_extent,
             render_scaling: 1.,
             ds_pool,
             draw_ds_layout,
             draw_ds,
-            pipeline,
-            pipeline_layout,
+            bg_pipeline,
+            bg_pipeline_layout,
+            scene_pipeline,
+            scene_pipeline_layout,
         }
     }
 
@@ -129,21 +166,22 @@ impl Run for App {
     }
 
     fn render(&mut self, ctx: &Context) -> Result<(), RenderError> {
-        log::debug!("Render");
-        log::trace!("Frame {}", self.frame_number);
+        log::debug!("Render frame {}", self.frame_number);
 
-        self.draw_extent.width = (self
-            .draw_image
-            .extent
-            .width
-            .min(ctx.surface.get_dimensions().width) as f32
-            * self.render_scaling) as u32;
-        self.draw_extent.height = (self
-            .draw_image
-            .extent
-            .height
-            .min(ctx.surface.get_dimensions().height) as f32
-            * self.render_scaling) as u32;
+        let draw_extent = ImageExtent2D::new(
+            (self
+                .draw_image
+                .extent
+                .width
+                .min(ctx.surface.get_dimensions().width) as f32
+                * self.render_scaling) as u32,
+            (self
+                .draw_image
+                .extent
+                .height
+                .min(ctx.surface.get_dimensions().height) as f32
+                * self.render_scaling) as u32,
+        );
 
         let frame = &self.frames[self.frame_number % FRAMES_IN_FLIGHT];
 
@@ -154,44 +192,45 @@ impl Run for App {
             return Err(RenderError::Outdated);
         };
 
-        let swapchain_image = &self.swapchain_images[image_index as usize];
+        self.draw_image.invalidate();
+        self.swapchain_images[image_index as usize].invalidate();
 
         frame.command_buffer.reset();
 
         frame.command_buffer.begin();
 
-        frame.command_buffer.transition_image_layout(
-            &self.draw_image,
-            ImageLayout::Undefined,
-            ImageLayout::General,
-        );
+        frame
+            .command_buffer
+            .transition_image_layout(&mut self.draw_image, ImageLayout::General);
 
-        self.draw_background(&frame.command_buffer);
-        //self.clear_background(&frame.command_buffer);
+        self.draw_background(&frame.command_buffer, draw_extent);
 
-        frame.command_buffer.transition_image_layout(
-            &self.draw_image,
-            ImageLayout::General,
-            ImageLayout::TransferSrc,
-        );
-        frame.command_buffer.transition_image_layout(
-            swapchain_image,
-            ImageLayout::Undefined,
-            ImageLayout::TransferDst,
-        );
+        frame
+            .command_buffer
+            .transition_image_layout(&mut self.draw_image, ImageLayout::Color);
+
+        self.draw_scene(&frame.command_buffer, draw_extent);
+
+        frame
+            .command_buffer
+            .transition_image_layout(&mut self.draw_image, ImageLayout::TransferSrc);
+
+        let swapchain_image = &mut self.swapchain_images[image_index as usize];
+
+        frame
+            .command_buffer
+            .transition_image_layout(swapchain_image, ImageLayout::TransferDst);
 
         frame.command_buffer.copy_image_to_image(
             &self.draw_image,
-            self.draw_extent,
+            draw_extent,
             swapchain_image,
             swapchain_image.extent,
         );
 
-        frame.command_buffer.transition_image_layout(
-            swapchain_image,
-            ImageLayout::TransferDst,
-            ImageLayout::Present,
-        );
+        frame
+            .command_buffer
+            .transition_image_layout(swapchain_image, ImageLayout::Present);
 
         frame.command_buffer.end();
 
@@ -249,14 +288,18 @@ impl App {
         cmd.clear_color(&self.draw_image, [flash, 0., 0., 1.]);
     }
 
-    fn draw_background(&self, cmd: &CommandBuffer) {
-        cmd.bind_pipeline(&self.pipeline);
-        cmd.bind_descriptor_set(&self.draw_ds, &self.pipeline);
-        cmd.dispatch(
-            self.draw_extent.width / 16 + 1,
-            self.draw_extent.height / 16 + 1,
-            1,
-        );
+    fn draw_background(&self, cmd: &CommandBuffer, draw_extent: ImageExtent2D) {
+        cmd.bind_pipeline(&self.bg_pipeline);
+        cmd.bind_descriptor_set(&self.draw_ds, &self.bg_pipeline);
+        cmd.dispatch(draw_extent.width / 16 + 1, draw_extent.height / 16 + 1, 1);
+    }
+
+    fn draw_scene(&self, cmd: &CommandBuffer, draw_extent: ImageExtent2D) {
+        cmd.begin_rendering(&self.draw_image, draw_extent, None, false, [1.; 4]);
+        cmd.bind_pipeline(&self.scene_pipeline);
+        cmd.set_viewport(draw_extent.width, draw_extent.height);
+        cmd.draw(3);
+        cmd.end_rendering();
     }
 
     fn create_swapchain(ctx: &Context) -> SwapChain {

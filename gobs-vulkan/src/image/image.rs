@@ -7,7 +7,7 @@ use crate::image::ImageFormat;
 use crate::memory::Memory;
 use crate::Wrap;
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Debug, PartialEq)]
 pub enum ImageLayout {
     Undefined,
     General,
@@ -103,7 +103,9 @@ pub struct Image {
     device: Arc<Device>,
     image: vk::Image,
     pub(crate) image_view: vk::ImageView,
+    pub format: ImageFormat,
     pub usage: ImageUsage,
+    pub layout: ImageLayout,
     pub extent: ImageExtent2D,
     memory: Option<Memory>,
 }
@@ -121,11 +123,15 @@ impl Image {
 
         let image_view = Self::create_image_view(&device, image, format, usage);
 
+        let layout = ImageLayout::Undefined;
+
         Image {
             device,
             image,
             image_view,
+            format,
             usage,
+            layout,
             extent,
             memory: Some(memory), // swapchain images don't need manual memory allocation
         }
@@ -139,15 +145,22 @@ impl Image {
         extent: ImageExtent2D,
     ) -> Self {
         let image_view = Self::create_image_view(&device, image, format, usage);
+        let layout = ImageLayout::Undefined;
 
         Image {
             device,
             image,
             image_view,
+            format,
             usage,
+            layout,
             extent,
             memory: None,
         }
+    }
+
+    pub fn invalidate(&mut self) {
+        self.layout = ImageLayout::Undefined;
     }
 
     fn create_image(

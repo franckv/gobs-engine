@@ -2,6 +2,7 @@ use std::sync::Arc;
 
 use ash::vk;
 
+use crate::image::ImageFormat;
 use crate::pipeline::{Pipeline, PipelineLayout, Rect2D, Shader, ShaderStage, VertexLayout};
 use crate::{device::Device, Wrap};
 
@@ -97,33 +98,136 @@ impl DynamicStates {
     }
 }
 
+#[derive(Clone, Copy, Debug)]
+pub enum PrimitiveTopology {
+    Point,
+    Triangle,
+    Line,
+}
+
+impl Default for PrimitiveTopology {
+    fn default() -> Self {
+        PrimitiveTopology::Triangle
+    }
+}
+
+impl Into<vk::PrimitiveTopology> for PrimitiveTopology {
+    fn into(self) -> vk::PrimitiveTopology {
+        match self {
+            PrimitiveTopology::Point => vk::PrimitiveTopology::POINT_LIST,
+            PrimitiveTopology::Triangle => vk::PrimitiveTopology::TRIANGLE_LIST,
+            PrimitiveTopology::Line => vk::PrimitiveTopology::LINE_LIST,
+        }
+    }
+}
+
 /// primitive topology
-struct InputAssemblyState;
+struct InputAssemblyState {
+    primitive_topology: PrimitiveTopology,
+}
 
 impl InputAssemblyState {
-    fn new() -> Self {
-        InputAssemblyState
+    fn new(primitive_topology: PrimitiveTopology) -> Self {
+        InputAssemblyState { primitive_topology }
     }
 
     fn info(&self) -> vk::PipelineInputAssemblyStateCreateInfoBuilder {
         vk::PipelineInputAssemblyStateCreateInfo::builder()
-            .topology(vk::PrimitiveTopology::TRIANGLE_LIST)
+            .topology(self.primitive_topology.into())
+            .primitive_restart_enable(false)
     }
 }
 
-struct RasterizationState;
+#[derive(Clone, Copy, Debug)]
+pub enum PolygonMode {
+    Fill,
+    Line,
+    Point,
+}
+
+impl Default for PolygonMode {
+    fn default() -> Self {
+        Self::Fill
+    }
+}
+
+impl Into<vk::PolygonMode> for PolygonMode {
+    fn into(self) -> vk::PolygonMode {
+        match self {
+            PolygonMode::Fill => vk::PolygonMode::FILL,
+            PolygonMode::Line => vk::PolygonMode::LINE,
+            PolygonMode::Point => vk::PolygonMode::POINT,
+        }
+    }
+}
+
+#[derive(Clone, Copy, Debug)]
+pub enum FrontFace {
+    CW,
+    CCW,
+}
+
+impl Default for FrontFace {
+    fn default() -> Self {
+        Self::CCW
+    }
+}
+
+impl Into<vk::FrontFace> for FrontFace {
+    fn into(self) -> vk::FrontFace {
+        match self {
+            FrontFace::CW => vk::FrontFace::CLOCKWISE,
+            FrontFace::CCW => vk::FrontFace::COUNTER_CLOCKWISE,
+        }
+    }
+}
+
+#[derive(Clone, Copy, Debug)]
+pub enum CullMode {
+    None,
+    Front,
+    Back,
+    FrontBack,
+}
+
+impl Default for CullMode {
+    fn default() -> Self {
+        Self::Back
+    }
+}
+
+impl Into<vk::CullModeFlags> for CullMode {
+    fn into(self) -> vk::CullModeFlags {
+        match self {
+            CullMode::None => vk::CullModeFlags::NONE,
+            CullMode::Front => vk::CullModeFlags::FRONT,
+            CullMode::Back => vk::CullModeFlags::BACK,
+            CullMode::FrontBack => vk::CullModeFlags::FRONT_AND_BACK,
+        }
+    }
+}
+
+struct RasterizationState {
+    polygon_mode: PolygonMode,
+    front_face: FrontFace,
+    cull_mode: CullMode,
+}
 
 impl RasterizationState {
-    fn new() -> Self {
-        RasterizationState
+    fn new(polygon_mode: PolygonMode, front_face: FrontFace, cull_mode: CullMode) -> Self {
+        RasterizationState {
+            polygon_mode,
+            front_face,
+            cull_mode,
+        }
     }
 
     fn info(&self) -> vk::PipelineRasterizationStateCreateInfoBuilder {
         vk::PipelineRasterizationStateCreateInfo::builder()
             .line_width(1.)
-            .front_face(vk::FrontFace::CLOCKWISE)
-            .cull_mode(vk::CullModeFlags::NONE)
-            .polygon_mode(vk::PolygonMode::FILL)
+            .front_face(self.front_face.into())
+            .cull_mode(self.cull_mode.into())
+            .polygon_mode(self.polygon_mode.into())
     }
 }
 
@@ -136,7 +240,11 @@ impl MultisampleState {
 
     fn info(&self) -> vk::PipelineMultisampleStateCreateInfoBuilder {
         vk::PipelineMultisampleStateCreateInfo::builder()
+            .sample_shading_enable(false)
             .rasterization_samples(vk::SampleCountFlags::TYPE_1)
+            .min_sample_shading(1.)
+            .alpha_to_coverage_enable(false)
+            .alpha_to_one_enable(false)
     }
 }
 
@@ -160,28 +268,57 @@ impl StencilOpState {
     }
 }
 
+#[derive(Clone, Copy, Debug)]
+pub enum CompareOp {
+    Never,
+    Less,
+    Equal,
+    LessEqual,
+    Greater,
+    GreaterEqual,
+    NotEqual,
+    Always,
+}
+
+impl Into<vk::CompareOp> for CompareOp {
+    fn into(self) -> vk::CompareOp {
+        match self {
+            CompareOp::Never => vk::CompareOp::NEVER,
+            CompareOp::Less => vk::CompareOp::LESS,
+            CompareOp::Equal => vk::CompareOp::EQUAL,
+            CompareOp::LessEqual => vk::CompareOp::LESS_OR_EQUAL,
+            CompareOp::Greater => vk::CompareOp::GREATER,
+            CompareOp::GreaterEqual => vk::CompareOp::GREATER_OR_EQUAL,
+            CompareOp::NotEqual => vk::CompareOp::NOT_EQUAL,
+            CompareOp::Always => vk::CompareOp::ALWAYS,
+        }
+    }
+}
+
 struct DepthStencilState {
-    op_state: vk::StencilOpState,
+    test_enable: bool,
+    write_enable: bool,
+    compare: CompareOp,
 }
 
 impl DepthStencilState {
-    fn new(op_state: StencilOpState) -> Self {
+    fn new(test_enable: bool, write_enable: bool, compare: CompareOp) -> Self {
         DepthStencilState {
-            op_state: op_state.info(),
+            test_enable,
+            write_enable,
+            compare,
         }
     }
 
     fn info(&self) -> vk::PipelineDepthStencilStateCreateInfoBuilder {
         vk::PipelineDepthStencilStateCreateInfo::builder()
-            .depth_test_enable(true)
-            .depth_write_enable(true)
-            .depth_compare_op(vk::CompareOp::LESS)
+            .depth_test_enable(self.test_enable)
+            .depth_write_enable(self.write_enable)
+            .depth_compare_op(self.compare.into())
             .depth_bounds_test_enable(false)
+            .stencil_test_enable(false)
             .min_depth_bounds(0.)
             .max_depth_bounds(1.)
-            .stencil_test_enable(false)
-            .front(self.op_state)
-            .back(self.op_state)
     }
 }
 
@@ -243,6 +380,46 @@ impl VertexInputState {
     }
 }
 
+impl Default for VertexInputState {
+    fn default() -> Self {
+        Self {
+            binding_desc: Default::default(),
+            attribute_desc: Default::default(),
+        }
+    }
+}
+
+struct RenderingState {
+    color_format: Vec<vk::Format>,
+    depth_format: Option<vk::Format>,
+}
+
+impl RenderingState {
+    fn new(color_format: Vec<ImageFormat>, depth_format: Option<ImageFormat>) -> Self {
+        let color_format = color_format
+            .iter()
+            .map(|&f| f.into())
+            .collect::<Vec<vk::Format>>();
+
+        let depth_format = depth_format.map(|f| f.into());
+
+        RenderingState {
+            color_format,
+            depth_format,
+        }
+    }
+
+    fn info(&self) -> vk::PipelineRenderingCreateInfoBuilder {
+        match self.depth_format {
+            Some(depth_format) => vk::PipelineRenderingCreateInfo::builder()
+                .color_attachment_formats(&self.color_format)
+                .depth_attachment_format(depth_format.into()),
+            None => vk::PipelineRenderingCreateInfo::builder()
+                .color_attachment_formats(&self.color_format),
+        }
+    }
+}
+
 #[derive(Default)]
 pub struct GraphicsPipelineBuilder {
     device: Option<Arc<Device>>,
@@ -253,6 +430,12 @@ pub struct GraphicsPipelineBuilder {
     scissors: Option<Vec<Rect2D>>,
     dynamic_states: Option<DynamicStates>,
     pipeline_layout: Option<Arc<PipelineLayout>>,
+    rendering_state: Option<RenderingState>,
+    depth_stencil: Option<DepthStencilState>,
+    polygon_mode: PolygonMode,
+    front_face: FrontFace,
+    cull_mode: CullMode,
+    primitive_topology: PrimitiveTopology,
 }
 
 impl GraphicsPipelineBuilder {
@@ -305,8 +488,54 @@ impl GraphicsPipelineBuilder {
         self
     }
 
-    pub fn build(self) -> Pipeline {
+    pub fn polygon_mode(mut self, mode: PolygonMode) -> Self {
+        self.polygon_mode = mode;
+
+        self
+    }
+
+    pub fn front_face(mut self, front_face: FrontFace) -> Self {
+        self.front_face = front_face;
+
+        self
+    }
+
+    pub fn cull_mode(mut self, cull_mode: CullMode) -> Self {
+        self.cull_mode = cull_mode;
+
+        self
+    }
+
+    pub fn primitive_topology(mut self, primitive_topology: PrimitiveTopology) -> Self {
+        self.primitive_topology = primitive_topology;
+
+        self
+    }
+
+    pub fn attachments(
+        mut self,
+        color_format: ImageFormat,
+        depth_format: Option<ImageFormat>,
+    ) -> Self {
+        self.rendering_state = Some(RenderingState::new(
+            vec![color_format.into()],
+            depth_format.into(),
+        ));
+
+        self
+    }
+
+    pub fn depth_test_disable(mut self) -> Self {
+        self.depth_stencil = Some(DepthStencilState::new(false, false, CompareOp::Never));
+
+        self
+    }
+
+    pub fn build(mut self) -> Pipeline {
         let device = self.device.unwrap();
+
+        let rendering_state = self.rendering_state.unwrap();
+        let mut rendering_state_info = rendering_state.info();
 
         let vertex_stage = self.vertex_stage.unwrap();
         let vertex_stage_info = vertex_stage.info();
@@ -315,6 +544,10 @@ impl GraphicsPipelineBuilder {
         let fragment_stage_info = fragment_stage.info();
 
         let shader_stages = [vertex_stage_info.build(), fragment_stage_info.build()];
+
+        if self.vertex_input_state.is_none() {
+            self.vertex_input_state = Some(VertexInputState::default());
+        }
 
         let vertex_input_state = self.vertex_input_state.unwrap();
         let vertex_input_state_info = vertex_input_state.info();
@@ -328,17 +561,17 @@ impl GraphicsPipelineBuilder {
         let dynamic_states = self.dynamic_states.unwrap();
         let dynamic_states_info = dynamic_states.info();
 
-        let input_assembly_state = InputAssemblyState::new();
+        let input_assembly_state = InputAssemblyState::new(self.primitive_topology);
         let input_assembly_state_info = input_assembly_state.info();
 
-        let rasterization_state = RasterizationState::new();
+        let rasterization_state =
+            RasterizationState::new(self.polygon_mode, self.front_face, self.cull_mode);
         let rasterization_state_info = rasterization_state.info();
 
         let multisample_state = MultisampleState::new();
         let multisample_state_info = multisample_state.info();
 
-        let op_state = StencilOpState::new();
-        let depth_stencil_state = DepthStencilState::new(op_state);
+        let depth_stencil_state = self.depth_stencil.unwrap();
         let depth_stencil_state_info = depth_stencil_state.info();
 
         let color_blend_attachment = ColorBlendAttachmentState::new();
@@ -348,6 +581,7 @@ impl GraphicsPipelineBuilder {
         let pipeline_layout = self.pipeline_layout.unwrap();
 
         let pipeline_info = vk::GraphicsPipelineCreateInfo::builder()
+            .push_next(&mut rendering_state_info)
             .stages(&shader_stages)
             .vertex_input_state(&vertex_input_state_info)
             .viewport_state(&viewport_state_info)

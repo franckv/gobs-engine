@@ -2,8 +2,6 @@ use std::{ffi::CString, sync::Arc};
 
 use ash::vk;
 
-use log::trace;
-
 use crate::device::Device;
 use crate::pipeline::PipelineLayout;
 use crate::Wrap;
@@ -112,7 +110,7 @@ impl Wrap<vk::Pipeline> for Pipeline {
 
 impl Drop for Pipeline {
     fn drop(&mut self) {
-        trace!("Drop pipeline");
+        log::info!("Drop pipeline");
         unsafe {
             self.device.raw().destroy_pipeline(self.pipeline, None);
         }

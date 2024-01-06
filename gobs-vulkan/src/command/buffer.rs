@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use ash::vk;
+use ash::vk::{self, AttachmentLoadOp, AttachmentStoreOp, RenderingAttachmentInfo, RenderingInfo};
 
 use crate::buffer::Buffer;
 use crate::command::CommandPool;
@@ -88,6 +88,49 @@ impl CommandBuffer {
                     layer_count: 1,
                 }],
             )
+        }
+    }
+
+    pub fn begin_rendering(
+        &self,
+        color: &Image,
+        extent: ImageExtent2D,
+        depth: Option<&Image>,
+        clear: bool,
+        clear_color: [f32; 4],
+    ) {
+        let color_load_op = if clear {
+            AttachmentLoadOp::CLEAR
+        } else {
+            AttachmentLoadOp::LOAD
+        };
+
+        let rendering_info = RenderingInfo::builder()
+            .render_area(vk::Rect2D::builder().extent(extent.into()).build())
+            .layer_count(1)
+            .color_attachments(&[RenderingAttachmentInfo::builder()
+                .image_view(color.image_view)
+                .image_layout(color.layout.into())
+                .load_op(color_load_op)
+                .store_op(AttachmentStoreOp::STORE)
+                .clear_value(vk::ClearValue {
+                    color: vk::ClearColorValue {
+                        float32: clear_color,
+                    },
+                })
+                .build()])
+            .build();
+
+        unsafe {
+            self.device
+                .raw()
+                .cmd_begin_rendering(self.command_buffer, &rendering_info);
+        }
+    }
+
+    pub fn end_rendering(&self) {
+        unsafe {
+            self.device.raw().cmd_end_rendering(self.command_buffer);
         }
     }
 
@@ -337,14 +380,9 @@ impl CommandBuffer {
         }
     }
 
-    pub fn transition_image_layout(
-        &self,
-        image: &Image,
-        src_layout: ImageLayout,
-        dst_layout: ImageLayout,
-    ) {
+    pub fn transition_image_layout(&self, image: &mut Image, dst_layout: ImageLayout) {
         let barrier_info = vk::ImageMemoryBarrier2::builder()
-            .old_layout(src_layout.into())
+            .old_layout(image.layout.into())
             .new_layout(dst_layout.into())
             .image(image.raw())
             .src_access_mask(vk::AccessFlags2::MEMORY_WRITE)
@@ -371,6 +409,8 @@ impl CommandBuffer {
                 .raw()
                 .cmd_pipeline_barrier2(self.command_buffer, &dep_info);
         }
+
+        image.layout = dst_layout
     }
 
     pub fn end_render_pass(&self) {

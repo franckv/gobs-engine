@@ -2,23 +2,29 @@ use std::sync::Arc;
 
 use ash::vk;
 
-use log::trace;
-
 use crate::descriptor::DescriptorSetLayout;
 use crate::device::Device;
 use crate::Wrap;
 
 pub struct PipelineLayout {
     device: Arc<Device>,
-    descriptor_layout: Arc<DescriptorSetLayout>,
+    descriptor_layout: Option<Arc<DescriptorSetLayout>>,
     pub(crate) layout: vk::PipelineLayout,
 }
 
 impl PipelineLayout {
-    pub fn new(device: Arc<Device>, descriptor_layout: Arc<DescriptorSetLayout>) -> Arc<Self> {
-        let set_layout = [descriptor_layout.layout];
+    pub fn new(
+        device: Arc<Device>,
+        descriptor_layout: Option<Arc<DescriptorSetLayout>>,
+    ) -> Arc<Self> {
+        let mut layout_info = vk::PipelineLayoutCreateInfo::builder();
 
-        let layout_info = vk::PipelineLayoutCreateInfo::builder().set_layouts(&set_layout);
+        let mut set_layout = vec![];
+
+        if let Some(descriptor_layout) = &descriptor_layout {
+            set_layout.push(descriptor_layout.layout);
+            layout_info = layout_info.set_layouts(&set_layout);
+        }
 
         let layout = unsafe {
             PipelineLayout {
@@ -43,7 +49,7 @@ impl Wrap<vk::PipelineLayout> for PipelineLayout {
 
 impl Drop for PipelineLayout {
     fn drop(&mut self) {
-        trace!("Drop pipeline layout");
+        log::info!("Drop pipeline layout");
         unsafe {
             self.device.raw().destroy_pipeline_layout(self.layout, None);
         }
