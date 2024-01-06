@@ -22,7 +22,7 @@ impl Application {
         let window = WindowBuilder::new()
             .with_inner_size(LogicalSize::new(width, height))
             .with_title(title)
-            .with_resizable(false)
+            .with_resizable(true)
             .build(&events_loop)
             .unwrap();
 

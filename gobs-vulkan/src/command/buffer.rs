@@ -245,6 +245,14 @@ impl CommandBuffer {
     }
 
     pub fn copy_image_to_image(&self, src: &Image, dst: &Image) {
+        log::trace!(
+            "Blitting image {}/{} to {}/{}",
+            src.width,
+            src.height,
+            dst.width,
+            dst.height
+        );
+
         let blit_region = vk::ImageBlit2::builder()
             .src_offsets([
                 vk::Offset3D::default(),

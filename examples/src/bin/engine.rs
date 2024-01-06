@@ -132,10 +132,10 @@ impl Run for App {
         frame.render_fence.wait_and_reset();
         assert!(!frame.render_fence.signaled());
 
-        let image_index = self
-            .swapchain
-            .acquire_image(&frame.swapchain_semaphore)
-            .expect("Failed to acquire image");
+        let Ok(image_index) = self.swapchain.acquire_image(&frame.swapchain_semaphore) else {
+            return Err(RenderError::Outdated);
+        };
+
         let swapchain_image = &self.swapchain_images[image_index as usize];
 
         frame.command_buffer.reset();
@@ -181,9 +181,12 @@ impl Run for App {
             &frame.render_fence,
         );
 
-        self.swapchain
+        let Ok(_) = self
+            .swapchain
             .present(image_index, &ctx.queue, &frame.render_semaphore)
-            .expect("Failed to present image");
+        else {
+            return Err(RenderError::Outdated);
+        };
 
         self.frame_number += 1;
 
@@ -196,8 +199,9 @@ impl Run for App {
         log::debug!("Input");
     }
 
-    fn resize(&mut self, _ctx: &Context, _width: u32, _height: u32) {
+    fn resize(&mut self, ctx: &Context, _width: u32, _height: u32) {
         log::info!("Resize");
+        self.resize_swapchain(ctx);
     }
 
     fn close(&mut self, ctx: &Context) {
@@ -256,7 +260,22 @@ impl App {
 
         SwapChain::new(device, surface, format, present, image_count, None)
     }
+
+    fn resize_swapchain(&mut self, ctx: &Context) {
+        ctx.device.wait();
+
+        self.swapchain = SwapChain::new(
+            ctx.device.clone(),
+            ctx.surface.clone(),
+            self.swapchain.format,
+            self.swapchain.present,
+            self.swapchain.image_count,
+            Some(&self.swapchain),
+        );
+        self.swapchain_images = self.swapchain.create_images();
+    }
 }
+
 fn main() {
     examples::init_logger();
 

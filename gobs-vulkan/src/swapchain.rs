@@ -44,9 +44,11 @@ impl Into<vk::PresentModeKHR> for PresentationMode {
 
 /// Set of images that can be presented on a surface
 pub struct SwapChain {
-    device: Arc<Device>,
-    surface: Arc<Surface>,
-    format: SurfaceFormat,
+    pub device: Arc<Device>,
+    pub surface: Arc<Surface>,
+    pub format: SurfaceFormat,
+    pub present: PresentationMode,
+    pub image_count: usize,
     loader: KhrSwapchain,
     swapchain: vk::SwapchainKHR,
 }
@@ -93,6 +95,8 @@ impl SwapChain {
             device,
             surface,
             format,
+            present,
+            image_count,
             loader,
             swapchain,
         }
