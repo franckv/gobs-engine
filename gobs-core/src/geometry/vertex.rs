@@ -8,6 +8,53 @@ bitflags! {
         const COLOR = 1 << 1;
         const TEXTURE = 1 << 2;
         const NORMAL = 1 << 3;
+        const NORMAL_TEXTURE = 1 << 4;
+        const TANGENT = 1 << 5;
+        const BITANGENT = 1 << 6;
+    }
+}
+
+impl VertexFlag {
+    pub fn alignment(&self) -> usize {
+        let mut align = 0;
+        for bit in self.iter() {
+            let bit_align = match bit {
+                VertexFlag::POSITION => 16,
+                VertexFlag::COLOR => 16,
+                VertexFlag::TEXTURE => 8,
+                VertexFlag::NORMAL => 16,
+                VertexFlag::NORMAL_TEXTURE => 8,
+                VertexFlag::TANGENT => 16,
+                VertexFlag::BITANGENT => 16,
+                _ => 0,
+            };
+
+            if bit_align > align {
+                align = bit_align;
+            }
+        }
+
+        align
+    }
+
+    pub fn size(&self) -> usize {
+        let mut size = 0;
+        for bit in self.iter() {
+            let bit_align = match bit {
+                VertexFlag::POSITION => 12,
+                VertexFlag::COLOR => 16,
+                VertexFlag::TEXTURE => 8,
+                VertexFlag::NORMAL => 12,
+                VertexFlag::NORMAL_TEXTURE => 8,
+                VertexFlag::TANGENT => 12,
+                VertexFlag::BITANGENT => 12,
+                _ => 0,
+            };
+
+            size += bit_align;
+        }
+
+        size
     }
 }
 
@@ -24,26 +71,74 @@ pub struct VertexData {
 }
 
 impl VertexData {
+    pub fn builder() -> VertexDataBuilder {
+        VertexDataBuilder::new()
+    }
+
     pub fn raw(&self, flags: VertexFlag) -> Vec<u8> {
         let mut data: Vec<u8> = Vec::new();
 
         if flags.contains(VertexFlag::POSITION) {
             data.extend_from_slice(bytemuck::cast_slice(&self.position.to_array()));
+
+            let align = flags.alignment() - VertexFlag::POSITION.size();
+            for _ in 0..align {
+                data.push(0 as u8);
+            }
         };
 
         if flags.contains(VertexFlag::COLOR) {
             data.extend_from_slice(bytemuck::cast_slice(&self.color.to_array()));
+
+            let align = flags.alignment() - VertexFlag::COLOR.size();
+            for _ in 0..align {
+                data.push(0 as u8);
+            }
         };
 
         if flags.contains(VertexFlag::TEXTURE) {
             data.extend_from_slice(bytemuck::cast_slice(&self.texture.to_array()));
+
+            let align = flags.alignment() - VertexFlag::TEXTURE.size();
+            for _ in 0..align {
+                data.push(0 as u8);
+            }
         };
 
         if flags.contains(VertexFlag::NORMAL) {
             data.extend_from_slice(bytemuck::cast_slice(&self.normal.to_array()));
+
+            let align = flags.alignment() - VertexFlag::NORMAL.size();
+            for _ in 0..align {
+                data.push(0 as u8);
+            }
+        };
+
+        if flags.contains(VertexFlag::NORMAL_TEXTURE) {
             data.extend_from_slice(bytemuck::cast_slice(&self.normal_texture.to_array()));
+
+            let align = flags.alignment() - VertexFlag::NORMAL_TEXTURE.size();
+            for _ in 0..align {
+                data.push(0 as u8);
+            }
+        };
+
+        if flags.contains(VertexFlag::TANGENT) {
             data.extend_from_slice(bytemuck::cast_slice(&self.tangent.to_array()));
+
+            let align = flags.alignment() - VertexFlag::TANGENT.size();
+            for _ in 0..align {
+                data.push(0 as u8);
+            }
+        };
+
+        if flags.contains(VertexFlag::BITANGENT) {
             data.extend_from_slice(bytemuck::cast_slice(&self.bitangent.to_array()));
+
+            let align = flags.alignment() - VertexFlag::BITANGENT.size();
+            for _ in 0..align {
+                data.push(0 as u8);
+            }
         };
 
         data
@@ -53,10 +148,13 @@ impl VertexData {
         flags
             .iter()
             .map(|bit| match bit {
-                VertexFlag::POSITION => std::mem::size_of::<Vec3>(),
-                VertexFlag::COLOR => std::mem::size_of::<Vec4>(),
-                VertexFlag::TEXTURE => std::mem::size_of::<Vec2>(),
-                VertexFlag::NORMAL => 3 * std::mem::size_of::<Vec3>() + std::mem::size_of::<Vec2>(),
+                VertexFlag::POSITION
+                | VertexFlag::COLOR
+                | VertexFlag::TEXTURE
+                | VertexFlag::NORMAL
+                | VertexFlag::NORMAL_TEXTURE
+                | VertexFlag::TANGENT
+                | VertexFlag::BITANGENT => flags.alignment(),
                 _ => unimplemented!(),
             })
             .sum()

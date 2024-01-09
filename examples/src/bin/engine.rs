@@ -1,14 +1,16 @@
 use std::sync::Arc;
 
-use bytemuck::{Pod, Zeroable};
-use glam::{Mat4, Vec3, Vec4};
+use glam::Mat4;
 use gobs::{
     game::{
         app::{Application, RenderError, Run},
         context::Context,
         input::{Input, Key},
     },
-    gobs_core::entity::uniform::{UniformData, UniformProp},
+    gobs_core::{
+        entity::uniform::{UniformData, UniformProp},
+        geometry::vertex::{VertexData, VertexFlag},
+    },
     vulkan::{
         buffer::{Buffer, BufferAddress, BufferUsage},
         command::{CommandBuffer, CommandPool},
@@ -55,16 +57,6 @@ impl FrameData {
     }
 }
 
-#[repr(C)]
-#[derive(Clone, Copy, Debug, Pod, Zeroable)]
-struct Vertex {
-    position: Vec3,
-    uv_x: f32,
-    normal: Vec3,
-    uv_y: f32,
-    color: Vec4,
-}
-
 struct Mesh {
     staging: Buffer,
     index_buffer: Buffer,
@@ -73,9 +65,21 @@ struct Mesh {
 }
 
 impl Mesh {
-    pub fn new(device: Arc<Device>, indices: &[u32], vertices: &[Vertex]) -> Self {
+    pub fn new(device: Arc<Device>, indices: &[u32], vertices: &[VertexData]) -> Self {
+        let vertices_data = vertices
+            .iter()
+            .flat_map(|v| {
+                v.raw(
+                    VertexFlag::POSITION
+                        | VertexFlag::COLOR
+                        | VertexFlag::TEXTURE
+                        | VertexFlag::NORMAL,
+                )
+            })
+            .collect::<Vec<u8>>();
+
         let indices_size = indices.len() * std::mem::size_of::<u32>();
-        let vertices_size = vertices.len() * std::mem::size_of::<Vertex>();
+        let vertices_size = vertices_data.len();
 
         let mut staging = Buffer::new(
             indices_size + vertices_size,
@@ -87,7 +91,7 @@ impl Mesh {
         let vertex_buffer = Buffer::new(vertices_size, BufferUsage::Vertex, device.clone());
         let vertex_address = vertex_buffer.address(device.clone());
 
-        staging.copy(vertices, 0);
+        staging.copy(&vertices_data, 0);
         staging.copy(indices, vertices_size);
 
         Mesh {
@@ -385,38 +389,34 @@ impl App {
         cmd.end_rendering();
     }
 
-    fn get_mesh() -> (Vec<u32>, Vec<Vertex>) {
-        let v1 = Vertex {
-            position: [0.5, -0.5, 0.].into(),
-            uv_x: 0.,
-            normal: [0., 0., 0.].into(),
-            uv_y: 0.,
-            color: [0., 0., 0., 1.].into(),
-        };
+    fn get_mesh() -> (Vec<u32>, Vec<VertexData>) {
+        let v1 = VertexData::builder()
+            .position([0.5, -0.5, 0.].into())
+            .normal([0., 0., 1.].into())
+            .texture([1., 0.].into())
+            .color([1., 0., 0., 1.].into())
+            .build();
 
-        let v2 = Vertex {
-            position: [0.5, 0.5, 0.].into(),
-            uv_x: 0.,
-            normal: [0., 0., 0.].into(),
-            uv_y: 0.,
-            color: [0.5, 0.5, 0.5, 1.].into(),
-        };
+        let v2 = VertexData::builder()
+            .position([0.5, 0.5, 0.].into())
+            .normal([0., 0., 1.].into())
+            .texture([1., 1.].into())
+            .color([0.5, 0.5, 0.5, 1.].into())
+            .build();
 
-        let v3 = Vertex {
-            position: [-0.5, -0.5, 0.].into(),
-            uv_x: 0.,
-            normal: [0., 0., 0.].into(),
-            uv_y: 0.,
-            color: [1., 0., 0., 1.].into(),
-        };
+        let v3 = VertexData::builder()
+            .position([-0.5, -0.5, 0.].into())
+            .normal([0., 0., 1.].into())
+            .texture([0., 0.].into())
+            .color([0., 0., 1., 1.].into())
+            .build();
 
-        let v4 = Vertex {
-            position: [-0.5, 0.5, 0.].into(),
-            uv_x: 0.,
-            normal: [0., 0., 0.].into(),
-            uv_y: 0.,
-            color: [0., 1., 0., 1.].into(),
-        };
+        let v4 = VertexData::builder()
+            .position([-0.5, 0.5, 0.].into())
+            .normal([0., 0., 1.].into())
+            .texture([0., 1.].into())
+            .color([0., 1., 0., 1.].into())
+            .build();
 
         let vertices = vec![v1, v2, v3, v4];
         let indices = vec![0, 1, 2, 2, 1, 3];
