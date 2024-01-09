@@ -11,6 +11,7 @@ path = "src/lib.rs"
 [dependencies]
 ash = { workspace = true }
 ash-window = { workspace = true }
+bytemuck = { workspace = true }
 raw-window-handle = { workspace = true }
 log = { workspace = true }
 simplelog = { workspace = true }

@@ -36,14 +36,44 @@ unsafe extern "system" fn debug_cb(
         CStr::from_ptr(callback_data.p_message).to_string_lossy()
     };
 
-    log::error!(
-        "{:?}:\n{:?} [{} ({})] : {}\n",
-        message_severity,
-        message_type,
-        message_id_name,
-        &message_id_number.to_string(),
-        message,
-    );
+    match message_severity {
+        vk::DebugUtilsMessageSeverityFlagsEXT::WARNING => {
+            log::warn!(
+                "{:?} [{} ({})] : {}",
+                message_type,
+                message_id_name,
+                &message_id_number.to_string(),
+                message,
+            );
+        }
+        vk::DebugUtilsMessageSeverityFlagsEXT::INFO => {
+            log::info!(
+                "{:?} [{} ({})] : {}",
+                message_type,
+                message_id_name,
+                &message_id_number.to_string(),
+                message,
+            );
+        }
+        vk::DebugUtilsMessageSeverityFlagsEXT::VERBOSE => {
+            log::debug!(
+                "{:?} [{} ({})] : {}",
+                message_type,
+                message_id_name,
+                &message_id_number.to_string(),
+                message,
+            );
+        }
+        _ => {
+            log::error!(
+                "{:?} [{} ({})] : {}",
+                message_type,
+                message_id_name,
+                &message_id_number.to_string(),
+                message,
+            );
+        }
+    }
 
     vk::FALSE
 }

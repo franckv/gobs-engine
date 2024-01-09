@@ -6,6 +6,7 @@ use crate::descriptor::DescriptorSetLayout;
 use crate::device::Device;
 use crate::Wrap;
 
+#[allow(unused)]
 pub struct PipelineLayout {
     device: Arc<Device>,
     descriptor_layout: Option<Arc<DescriptorSetLayout>>,
@@ -18,6 +19,41 @@ impl PipelineLayout {
         descriptor_layout: Option<Arc<DescriptorSetLayout>>,
     ) -> Arc<Self> {
         let mut layout_info = vk::PipelineLayoutCreateInfo::builder();
+
+        let mut set_layout = vec![];
+
+        if let Some(descriptor_layout) = &descriptor_layout {
+            set_layout.push(descriptor_layout.layout);
+            layout_info = layout_info.set_layouts(&set_layout);
+        }
+
+        let layout = unsafe {
+            PipelineLayout {
+                device: device.clone(),
+                descriptor_layout,
+                layout: device
+                    .raw()
+                    .create_pipeline_layout(&layout_info, None)
+                    .unwrap(),
+            }
+        };
+
+        Arc::new(layout)
+    }
+
+    pub fn with_constants(
+        device: Arc<Device>,
+        descriptor_layout: Option<Arc<DescriptorSetLayout>>,
+        size: usize,
+    ) -> Arc<Self> {
+        let push_constant_range = vec![vk::PushConstantRange::builder()
+            .offset(0)
+            .size(size as u32)
+            .stage_flags(vk::ShaderStageFlags::VERTEX)
+            .build()];
+
+        let mut layout_info =
+            vk::PipelineLayoutCreateInfo::builder().push_constant_ranges(&push_constant_range);
 
         let mut set_layout = vec![];
 

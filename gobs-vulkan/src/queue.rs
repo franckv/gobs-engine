@@ -6,6 +6,7 @@ use crate::device::Device;
 use crate::Wrap;
 
 #[derive(Clone)]
+#[allow(unused)]
 pub struct QueueFamily {
     pub(crate) index: u32,
     pub(crate) size: u32,

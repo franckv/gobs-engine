@@ -248,8 +248,10 @@ impl MultisampleState {
     }
 }
 
+#[allow(unused)]
 struct StencilOpState;
 
+#[allow(unused)]
 impl StencilOpState {
     fn new() -> Self {
         StencilOpState

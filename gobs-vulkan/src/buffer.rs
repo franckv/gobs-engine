@@ -1,3 +1,3 @@
 mod buffer;
 
-pub use self::buffer::{Buffer, BufferUsage};
+pub use self::buffer::{Buffer, BufferAddress, BufferUsage};

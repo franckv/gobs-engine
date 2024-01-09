@@ -5,7 +5,7 @@ authors = { workspace = true }
 edition = { workspace = true }
 
 [dependencies]
-#gobs-core = { workspace = true }
+gobs-core = { workspace = true }
 gobs-game = { workspace = true }
 gobs-utils = { workspace = true }
 gobs-vulkan = { workspace = true }

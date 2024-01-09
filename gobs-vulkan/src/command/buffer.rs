@@ -1,6 +1,7 @@
 use std::sync::Arc;
 
 use ash::vk::{self, AttachmentLoadOp, AttachmentStoreOp, RenderingAttachmentInfo, RenderingInfo};
+use bytemuck::Pod;
 
 use crate::buffer::Buffer;
 use crate::command::CommandPool;
@@ -8,7 +9,7 @@ use crate::descriptor::DescriptorSet;
 use crate::device::Device;
 use crate::framebuffer::Framebuffer;
 use crate::image::{Image, ImageExtent2D, ImageLayout};
-use crate::pipeline::Pipeline;
+use crate::pipeline::{Pipeline, PipelineLayout};
 use crate::queue::Queue;
 use crate::sync::{Fence, Semaphore};
 use crate::Wrap;
@@ -95,7 +96,7 @@ impl CommandBuffer {
         &self,
         color: &Image,
         extent: ImageExtent2D,
-        depth: Option<&Image>,
+        _depth: Option<&Image>,
         clear: bool,
         clear_color: [f32; 4],
     ) {
@@ -179,7 +180,7 @@ impl CommandBuffer {
         }
     }
 
-    pub fn bind_vertex_buffer<T: Copy>(&self, binding: usize, buffer: &Buffer<T>) {
+    pub fn bind_vertex_buffer<T: Copy>(&self, binding: usize, buffer: &Buffer) {
         let bindings = [buffer.raw()];
         let offsets = [0];
 
@@ -193,7 +194,7 @@ impl CommandBuffer {
         }
     }
 
-    pub fn bind_index_buffer<T: IndexType>(&self, buffer: &Buffer<T>) {
+    pub fn bind_index_buffer<T: IndexType>(&self, buffer: &Buffer) {
         unsafe {
             self.device.raw().cmd_bind_index_buffer(
                 self.command_buffer,
@@ -242,6 +243,18 @@ impl CommandBuffer {
         }
     }
 
+    pub fn push_constants<T: Pod>(&self, layout: Arc<PipelineLayout>, constants: &[T]) {
+        unsafe {
+            self.device.raw().cmd_push_constants(
+                self.command_buffer,
+                layout.layout,
+                vk::ShaderStageFlags::VERTEX,
+                0,
+                bytemuck::cast_slice(constants),
+            );
+        }
+    }
+
     pub fn set_viewport(&self, width: u32, height: u32) {
         let viewports = vk::Viewport {
             x: 0.,
@@ -267,9 +280,9 @@ impl CommandBuffer {
         }
     }
 
-    pub fn copy_buffer<T: Copy>(&self, src: &Buffer<T>, dst: &Buffer<T>, size: usize) {
+    pub fn copy_buffer(&self, src: &Buffer, dst: &Buffer, size: usize, offset: usize) {
         let copy_info = vk::BufferCopy {
-            src_offset: 0,
+            src_offset: offset as u64,
             dst_offset: 0,
             size: size as u64,
         };
@@ -350,13 +363,7 @@ impl CommandBuffer {
         }
     }
 
-    pub fn copy_buffer_to_image<T: Copy>(
-        &self,
-        src: &Buffer<T>,
-        dst: &Image,
-        width: u32,
-        height: u32,
-    ) {
+    pub fn copy_buffer_to_image(&self, src: &Buffer, dst: &Image, width: u32, height: u32) {
         let image_subresource = vk::ImageSubresourceLayers::builder()
             .aspect_mask(vk::ImageAspectFlags::COLOR)
             .layer_count(1);

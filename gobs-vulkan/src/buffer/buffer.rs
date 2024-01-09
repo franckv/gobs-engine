@@ -1,10 +1,6 @@
-use std::marker::PhantomData;
-use std::mem;
 use std::sync::Arc;
 
 use ash::vk;
-
-use log::trace;
 
 use crate::device::Device;
 use crate::memory::Memory;
@@ -36,21 +32,24 @@ impl Into<vk::MemoryPropertyFlags> for BufferUsage {
     }
 }
 
+pub type BufferAddress = vk::DeviceAddress;
+
 /// Data buffer allocated in memory
-pub struct Buffer<T> {
+pub struct Buffer {
     device: Arc<Device>,
     buffer: vk::Buffer,
     memory: Memory,
-    count: usize,
-    marker: PhantomData<T>,
+    pub size: usize,
 }
 
-impl<T: Copy> Buffer<T> {
-    pub fn new(count: usize, usage: BufferUsage, device: Arc<Device>) -> Self {
+impl Buffer {
+    pub fn new(size: usize, usage: BufferUsage, device: Arc<Device>) -> Self {
         let usage_flags = match usage {
             BufferUsage::Staging => vk::BufferUsageFlags::TRANSFER_SRC,
             BufferUsage::Vertex => {
-                vk::BufferUsageFlags::TRANSFER_DST | vk::BufferUsageFlags::VERTEX_BUFFER
+                vk::BufferUsageFlags::TRANSFER_DST
+                    | vk::BufferUsageFlags::VERTEX_BUFFER
+                    | vk::BufferUsageFlags::SHADER_DEVICE_ADDRESS
             }
             BufferUsage::Instance => vk::BufferUsageFlags::VERTEX_BUFFER,
             BufferUsage::Index => {
@@ -58,8 +57,6 @@ impl<T: Copy> Buffer<T> {
             }
             BufferUsage::Uniform => vk::BufferUsageFlags::UNIFORM_BUFFER,
         };
-
-        let size = count * mem::size_of::<T>();
 
         let buffer_info = vk::BufferCreateInfo::builder()
             .size(size as u64)
@@ -74,37 +71,32 @@ impl<T: Copy> Buffer<T> {
             device,
             buffer,
             memory,
-            count,
-            marker: PhantomData,
+            size,
         }
     }
 
-    pub fn count(&self) -> usize {
-        self.count
+    pub fn address(&self, device: Arc<Device>) -> BufferAddress {
+        let address_info = vk::BufferDeviceAddressInfo::builder()
+            .buffer(self.buffer)
+            .build();
+
+        unsafe { device.raw().get_buffer_device_address(&address_info) }
     }
 
-    pub fn size(&self) -> usize {
-        self.count * mem::size_of::<T>()
-    }
-
-    pub fn item_size(&self) -> usize {
-        mem::size_of::<T>()
-    }
-
-    pub fn copy(&mut self, entries: &Vec<T>) {
-        self.memory.upload(entries);
+    pub fn copy<T: Copy>(&mut self, entries: &[T], offset: usize) {
+        self.memory.upload(entries, offset);
     }
 }
 
-impl<T> Wrap<vk::Buffer> for Buffer<T> {
+impl Wrap<vk::Buffer> for Buffer {
     fn raw(&self) -> vk::Buffer {
         self.buffer
     }
 }
 
-impl<T> Drop for Buffer<T> {
+impl Drop for Buffer {
     fn drop(&mut self) {
-        trace!("Drop buffer");
+        log::info!("Drop buffer");
         unsafe {
             self.device.raw().destroy_buffer(self.buffer, None);
         }

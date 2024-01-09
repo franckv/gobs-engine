@@ -5,8 +5,6 @@ use std::sync::Arc;
 use ash::util::Align;
 use ash::vk;
 
-use log::trace;
-
 use crate::buffer::BufferUsage;
 use crate::device::Device;
 use crate::Wrap;
@@ -53,18 +51,28 @@ impl Memory {
         let memory_info = vk::MemoryAllocateInfo::builder()
             .allocation_size(mem_req.size)
             .memory_type_index(mem_type)
+            .push_next(
+                &mut vk::MemoryAllocateFlagsInfo::builder()
+                    .flags(vk::MemoryAllocateFlags::DEVICE_ADDRESS)
+                    .build(),
+            )
             .build();
 
         unsafe { device.raw().allocate_memory(&memory_info, None).unwrap() }
     }
 
-    pub fn upload<T: Copy>(&self, entries: &Vec<T>) {
+    pub fn upload<T: Copy>(&self, entries: &[T], offset: usize) {
         let size = (entries.len() * mem::size_of::<T>()) as u64;
 
         let data = unsafe {
             self.device
                 .raw()
-                .map_memory(self.memory, 0, size, vk::MemoryMapFlags::empty())
+                .map_memory(
+                    self.memory,
+                    offset as u64,
+                    size,
+                    vk::MemoryMapFlags::empty(),
+                )
                 .unwrap()
         };
 
@@ -86,7 +94,7 @@ impl Wrap<vk::DeviceMemory> for Memory {
 
 impl Drop for Memory {
     fn drop(&mut self) {
-        trace!("Free memory");
+        log::info!("Free memory");
         unsafe {
             self.device.raw().free_memory(self.memory, None);
         }

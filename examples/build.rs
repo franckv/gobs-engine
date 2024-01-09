@@ -7,10 +7,28 @@ use std::fs;
 
 const SHADERS_DIR: &str = "shaders";
 
+#[allow(unused_macros)]
+macro_rules! debug {
+    ($($tokens: tt)*) => {
+        println!("cargo:warning={}", format!($($tokens)*))
+    }
+}
+
 fn main() {
+    println!("cargo:rerun-if-changed={}/", SHADERS_DIR);
+
     for f in fs::read_dir(SHADERS_DIR).unwrap() {
         let f = f.unwrap();
         if !f.file_type().unwrap().is_file() {
+            continue;
+        }
+
+        let file = f.path();
+        let file_name = file.to_str().unwrap();
+
+        let out = format!("{}.spv", file_name);
+
+        if std::path::Path::new(&out).exists() {
             continue;
         }
 
@@ -20,6 +38,9 @@ fn main() {
             "frag" => ShaderStage::Fragment,
             _ => continue,
         };
+
+        debug!("Input: {}", file_name);
+        debug!("Output: {}", out);
 
         let content = fs::read_to_string(f.path()).unwrap();
 
@@ -34,13 +55,13 @@ fn main() {
 
         let mut data = Vec::new();
         let mut options = spv::Options::default();
-        options.flags.remove(spv::WriterFlags::ADJUST_COORDINATE_SPACE);
+        options
+            .flags
+            .remove(spv::WriterFlags::ADJUST_COORDINATE_SPACE);
         let mut writer = spv::Writer::new(&options).unwrap();
         writer
             .write(&module, &info, None, &None, &mut data)
             .expect("Failed to write shader");
-
-        let out = format!("{}.spv", f.path().to_str().unwrap());
 
         let bytes: &[u8] = unsafe {
             std::slice::from_raw_parts(

@@ -1,4 +1,3 @@
-use std::mem;
 use std::sync::Arc;
 
 use ash::vk;
@@ -25,13 +24,11 @@ pub struct DescriptorSetUpdates {
 }
 
 impl DescriptorSetUpdates {
-    pub fn bind_buffer<T: Copy>(mut self, buffer: &Buffer<T>, start: usize, len: usize) -> Self {
-        let item_size = mem::size_of::<T>();
-
+    pub fn bind_buffer<T: Copy>(mut self, buffer: &Buffer, start: usize, len: usize) -> Self {
         let buffer_info = vk::DescriptorBufferInfo::builder()
             .buffer(buffer.raw())
-            .offset((start * item_size) as u64)
-            .range((len * item_size) as u64)
+            .offset(start as u64)
+            .range(len as u64)
             .build();
 
         self.updates.push(ResourceInfo::Buffer(buffer_info));
@@ -41,16 +38,14 @@ impl DescriptorSetUpdates {
 
     pub fn bind_dynamic_buffer<T: Copy>(
         mut self,
-        buffer: &Buffer<T>,
+        buffer: &Buffer,
         start: usize,
         len: usize,
     ) -> Self {
-        let item_size = mem::size_of::<T>();
-
         let buffer_info = vk::DescriptorBufferInfo::builder()
             .buffer(buffer.raw())
-            .offset((start * item_size) as u64)
-            .range((len * item_size) as u64)
+            .offset(start as u64)
+            .range(len as u64)
             .build();
 
         self.updates.push(ResourceInfo::DynamicBuffer(buffer_info));
@@ -128,6 +123,7 @@ impl DescriptorSetUpdates {
 }
 
 /// Bind resources to shaders
+#[allow(unused)]
 pub struct DescriptorSet {
     device: Arc<Device>,
     layout: Arc<DescriptorSetLayout>,

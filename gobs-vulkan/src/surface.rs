@@ -4,7 +4,7 @@ use std::sync::Arc;
 use raw_window_handle::{HasRawDisplayHandle, HasRawWindowHandle};
 use winit::window::Window;
 
-use ash::vk::{self, Image};
+use ash::vk;
 
 use crate::device::Device;
 use crate::image::{ColorSpace, ImageExtent2D, ImageFormat};

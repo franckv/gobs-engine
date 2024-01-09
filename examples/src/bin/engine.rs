@@ -1,12 +1,16 @@
 use std::sync::Arc;
 
+use bytemuck::{Pod, Zeroable};
+use glam::{Mat4, Vec3, Vec4};
 use gobs::{
     game::{
         app::{Application, RenderError, Run},
         context::Context,
         input::{Input, Key},
     },
+    gobs_core::entity::uniform::{UniformData, UniformProp},
     vulkan::{
+        buffer::{Buffer, BufferAddress, BufferUsage},
         command::{CommandBuffer, CommandPool},
         descriptor::{
             DescriptorSet, DescriptorSetLayout, DescriptorSetLayoutBuilder, DescriptorSetPool,
@@ -51,6 +55,51 @@ impl FrameData {
     }
 }
 
+#[repr(C)]
+#[derive(Clone, Copy, Debug, Pod, Zeroable)]
+struct Vertex {
+    position: Vec3,
+    uv_x: f32,
+    normal: Vec3,
+    uv_y: f32,
+    color: Vec4,
+}
+
+struct Mesh {
+    staging: Buffer,
+    index_buffer: Buffer,
+    vertex_buffer: Buffer,
+    vertex_address: BufferAddress,
+}
+
+impl Mesh {
+    pub fn new(device: Arc<Device>, indices: &[u32], vertices: &[Vertex]) -> Self {
+        let indices_size = indices.len() * std::mem::size_of::<u32>();
+        let vertices_size = vertices.len() * std::mem::size_of::<Vertex>();
+
+        let mut staging = Buffer::new(
+            indices_size + vertices_size,
+            BufferUsage::Staging,
+            device.clone(),
+        );
+
+        let index_buffer = Buffer::new(indices_size, BufferUsage::Index, device.clone());
+        let vertex_buffer = Buffer::new(vertices_size, BufferUsage::Vertex, device.clone());
+        let vertex_address = vertex_buffer.address(device.clone());
+
+        staging.copy(vertices, 0);
+        staging.copy(indices, vertices_size);
+
+        Mesh {
+            staging,
+            index_buffer,
+            vertex_buffer,
+            vertex_address,
+        }
+    }
+}
+
+#[allow(unused)]
 struct App {
     frame_number: usize,
     frames: [FrameData; FRAMES_IN_FLIGHT],
@@ -65,6 +114,8 @@ struct App {
     bg_pipeline_layout: Arc<PipelineLayout>,
     scene_pipeline: Pipeline,
     scene_pipeline_layout: Arc<PipelineLayout>,
+    scene_data: UniformData,
+    mesh: Mesh,
 }
 
 impl Run for App {
@@ -112,7 +163,7 @@ impl Run for App {
             .build();
 
         let vertex_shader = Shader::from_file(
-            "examples/shaders/triangle.vert.spv",
+            "examples/shaders/mesh.vert.spv",
             ctx.device.clone(),
             ShaderType::Vertex,
         );
@@ -123,7 +174,20 @@ impl Run for App {
             ShaderType::Fragment,
         );
 
-        let scene_pipeline_layout = PipelineLayout::new(ctx.device.clone(), None);
+        let (indices, vertices) = App::get_mesh();
+
+        let mesh = Mesh::new(ctx.device.clone(), &indices, &vertices);
+
+        let scene_data = UniformData::builder("scene data")
+            .prop(
+                "world_matrix",
+                UniformProp::Mat4F(Mat4::from_scale([0.5, 0.5, 1.].into()).to_cols_array_2d()),
+            )
+            .prop("vertex_buffer", UniformProp::U64(mesh.vertex_address))
+            .build();
+
+        let scene_pipeline_layout =
+            PipelineLayout::with_constants(ctx.device.clone(), None, scene_data.raw().len());
         let scene_pipeline = Pipeline::graphics_builder(ctx.device.clone())
             .layout(scene_pipeline_layout.clone())
             .vertex_shader("main", vertex_shader)
@@ -160,6 +224,8 @@ impl Run for App {
             bg_pipeline_layout,
             scene_pipeline,
             scene_pipeline_layout,
+            scene_data,
+            mesh,
         }
     }
 
@@ -285,6 +351,7 @@ impl Run for App {
 }
 
 impl App {
+    #[allow(unused)]
     fn clear_background(&self, cmd: &CommandBuffer) {
         let flash = (self.frame_number as f32 / 120.).sin().abs();
         cmd.clear_color(&self.draw_image, [flash, 0., 0., 1.]);
@@ -297,11 +364,64 @@ impl App {
     }
 
     fn draw_scene(&self, cmd: &CommandBuffer, draw_extent: ImageExtent2D) {
+        cmd.copy_buffer(
+            &self.mesh.staging,
+            &self.mesh.vertex_buffer,
+            self.mesh.vertex_buffer.size,
+            0,
+        );
+        cmd.copy_buffer(
+            &self.mesh.staging,
+            &self.mesh.index_buffer,
+            self.mesh.index_buffer.size,
+            self.mesh.vertex_buffer.size,
+        );
         cmd.begin_rendering(&self.draw_image, draw_extent, None, false, [1.; 4]);
         cmd.bind_pipeline(&self.scene_pipeline);
+        cmd.push_constants(self.scene_pipeline_layout.clone(), &self.scene_data.raw());
         cmd.set_viewport(draw_extent.width, draw_extent.height);
-        cmd.draw(3);
+        cmd.bind_index_buffer::<u32>(&self.mesh.index_buffer);
+        cmd.draw_indexed(6, 1);
         cmd.end_rendering();
+    }
+
+    fn get_mesh() -> (Vec<u32>, Vec<Vertex>) {
+        let v1 = Vertex {
+            position: [0.5, -0.5, 0.].into(),
+            uv_x: 0.,
+            normal: [0., 0., 0.].into(),
+            uv_y: 0.,
+            color: [0., 0., 0., 1.].into(),
+        };
+
+        let v2 = Vertex {
+            position: [0.5, 0.5, 0.].into(),
+            uv_x: 0.,
+            normal: [0., 0., 0.].into(),
+            uv_y: 0.,
+            color: [0.5, 0.5, 0.5, 1.].into(),
+        };
+
+        let v3 = Vertex {
+            position: [-0.5, -0.5, 0.].into(),
+            uv_x: 0.,
+            normal: [0., 0., 0.].into(),
+            uv_y: 0.,
+            color: [1., 0., 0., 1.].into(),
+        };
+
+        let v4 = Vertex {
+            position: [-0.5, 0.5, 0.].into(),
+            uv_x: 0.,
+            normal: [0., 0., 0.].into(),
+            uv_y: 0.,
+            color: [0., 1., 0., 1.].into(),
+        };
+
+        let vertices = vec![v1, v2, v3, v4];
+        let indices = vec![0, 1, 2, 2, 1, 3];
+
+        (indices, vertices)
     }
 
     fn create_swapchain(ctx: &Context) -> SwapChain {
