@@ -49,6 +49,7 @@ impl Application {
         let mut runnable = R::create(&self.context).await;
 
         log::info!("Start main loop");
+        runnable.start(&self.context);
         let mut close_requested = false;
 
         self.events_loop.run(move |event, _, control_flow| {
@@ -107,6 +108,7 @@ impl Default for Application {
 #[allow(async_fn_in_trait)]
 pub trait Run: Sized {
     async fn create(context: &Context) -> Self;
+    fn start(&mut self, ctx: &Context);
     fn update(&mut self, ctx: &Context, delta: f32);
     fn render(&mut self, ctx: &Context) -> Result<(), RenderError>;
     fn input(&mut self, ctx: &Context, input: Input);

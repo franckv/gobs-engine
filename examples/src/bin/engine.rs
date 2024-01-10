@@ -27,7 +27,7 @@ use gobs::{
             DynamicStateElem, FrontFace, Pipeline, PipelineLayout, Rect2D, Shader, ShaderType,
             Viewport,
         },
-        queue::QueueFamily,
+        queue::Queue,
         swapchain::{PresentationMode, SwapChain},
         sync::{Fence, Semaphore},
     },
@@ -43,9 +43,9 @@ struct FrameData {
 }
 
 impl FrameData {
-    pub fn new(device: Arc<Device>, queue_family: &QueueFamily) -> Self {
-        let command_pool = CommandPool::new(device.clone(), queue_family);
-        let command_buffer = CommandBuffer::new(device.clone(), command_pool);
+    pub fn new(device: Arc<Device>, queue: Arc<Queue>) -> Self {
+        let command_pool = CommandPool::new(device.clone(), &queue.family);
+        let command_buffer = CommandBuffer::new(device.clone(), queue.clone(), command_pool);
 
         let swapchain_semaphore = Semaphore::new(device.clone());
         let render_semaphore = Semaphore::new(device.clone());
@@ -116,6 +116,8 @@ struct App {
     scene_pipeline_layout: Arc<PipelineLayout>,
     scene_data: UniformData,
     mesh_resource: MeshResource,
+    immediate_cmd: CommandBuffer,
+    immediate_fence: Fence,
 }
 
 impl Run for App {
@@ -123,8 +125,8 @@ impl Run for App {
         log::info!("Create");
 
         let frames = [
-            FrameData::new(ctx.device.clone(), ctx.queue.family()),
-            FrameData::new(ctx.device.clone(), ctx.queue.family()),
+            FrameData::new(ctx.device.clone(), ctx.queue.clone()),
+            FrameData::new(ctx.device.clone(), ctx.queue.clone()),
         ];
 
         let swapchain = Self::create_swapchain(ctx);
@@ -213,6 +215,11 @@ impl Run for App {
             .front_face(FrontFace::CW)
             .build();
 
+        let immediate_cmd_pool = CommandPool::new(ctx.device.clone(), &ctx.queue.family);
+        let immediate_cmd =
+            CommandBuffer::new(ctx.device.clone(), ctx.queue.clone(), immediate_cmd_pool);
+        let immediate_fence = Fence::new(ctx.device.clone(), true);
+
         App {
             frame_number: 0,
             frames,
@@ -229,7 +236,26 @@ impl Run for App {
             scene_pipeline_layout,
             scene_data,
             mesh_resource,
+            immediate_cmd,
+            immediate_fence,
         }
+    }
+
+    fn start(&mut self, _ctx: &Context) {
+        self.immediate_submit(|cmd| {
+            cmd.copy_buffer(
+                &self.mesh_resource.staging,
+                &self.mesh_resource.vertex_buffer,
+                self.mesh_resource.vertex_buffer.size,
+                0,
+            );
+            cmd.copy_buffer(
+                &self.mesh_resource.staging,
+                &self.mesh_resource.index_buffer,
+                self.mesh_resource.index_buffer.size,
+                self.mesh_resource.vertex_buffer.size,
+            );
+        });
     }
 
     fn update(&mut self, _ctx: &Context, _delta: f32) {
@@ -306,9 +332,8 @@ impl Run for App {
         frame.command_buffer.end();
 
         frame.command_buffer.submit2(
-            &ctx.queue,
-            &frame.swapchain_semaphore,
-            &frame.render_semaphore,
+            Some(&frame.swapchain_semaphore),
+            Some(&frame.render_semaphore),
             &frame.render_fence,
         );
 
@@ -354,6 +379,29 @@ impl Run for App {
 }
 
 impl App {
+    fn immediate_submit<F>(&self, callback: F)
+    where
+        F: Fn(&CommandBuffer),
+    {
+        log::info!("Submit immediate command");
+        self.immediate_fence.reset();
+        assert!(!self.immediate_fence.signaled());
+
+        self.immediate_cmd.reset();
+
+        self.immediate_cmd.begin();
+
+        callback(&self.immediate_cmd);
+
+        self.immediate_cmd.end();
+
+        self.immediate_cmd
+            .submit2(None, None, &self.immediate_fence);
+
+        self.immediate_fence.wait();
+        log::info!("Immediate command done");
+    }
+
     #[allow(unused)]
     fn clear_background(&self, cmd: &CommandBuffer) {
         let flash = (self.frame_number as f32 / 120.).sin().abs();
@@ -367,18 +415,6 @@ impl App {
     }
 
     fn draw_scene(&self, cmd: &CommandBuffer, draw_extent: ImageExtent2D) {
-        cmd.copy_buffer(
-            &self.mesh_resource.staging,
-            &self.mesh_resource.vertex_buffer,
-            self.mesh_resource.vertex_buffer.size,
-            0,
-        );
-        cmd.copy_buffer(
-            &self.mesh_resource.staging,
-            &self.mesh_resource.index_buffer,
-            self.mesh_resource.index_buffer.size,
-            self.mesh_resource.vertex_buffer.size,
-        );
         cmd.begin_rendering(&self.draw_image, draw_extent, None, false, [1.; 4]);
         cmd.bind_pipeline(&self.scene_pipeline);
         cmd.push_constants(self.scene_pipeline_layout.clone(), &self.scene_data.raw());

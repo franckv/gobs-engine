@@ -17,31 +17,23 @@ pub struct QueueFamily {
 
 /// Queue of commands to be executed on device
 pub struct Queue {
-    device: Arc<Device>,
+    pub device: Arc<Device>,
     pub(crate) queue: vk::Queue,
-    pub(crate) family: QueueFamily,
+    pub family: QueueFamily,
 }
 
 impl Queue {
-    pub fn new(device: Arc<Device>, family: QueueFamily) -> Self {
+    pub fn new(device: Arc<Device>, family: QueueFamily) -> Arc<Self> {
         let queue = unsafe {
             log::debug!("Create queue");
             device.raw().get_device_queue(family.index, 0)
         };
 
-        Queue {
+        Arc::new(Queue {
             device,
             queue,
             family,
-        }
-    }
-
-    pub fn device(&self) -> Arc<Device> {
-        self.device.clone()
-    }
-
-    pub fn family(&self) -> &QueueFamily {
-        &self.family
+        })
     }
 
     pub fn wait(&self) {

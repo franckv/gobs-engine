@@ -7,7 +7,7 @@ use winit::window::Window;
 pub struct Context {
     pub instance: Arc<Instance>,
     pub device: Arc<Device>,
-    pub queue: Queue,
+    pub queue: Arc<Queue>,
     pub surface: Arc<Surface>,
 }
 

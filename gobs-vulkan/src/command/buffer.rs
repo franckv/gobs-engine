@@ -27,12 +27,13 @@ impl IndexType for u32 {
 /// Store command to be executed by a device
 pub struct CommandBuffer {
     device: Arc<Device>,
+    queue: Arc<Queue>,
     pool: Arc<CommandPool>,
     command_buffer: vk::CommandBuffer,
 }
 
 impl CommandBuffer {
-    pub fn new(device: Arc<Device>, pool: Arc<CommandPool>) -> Self {
+    pub fn new(device: Arc<Device>, queue: Arc<Queue>, pool: Arc<CommandPool>) -> Self {
         let buffer_info = vk::CommandBufferAllocateInfo::builder()
             .command_buffer_count(1)
             .command_pool(pool.raw())
@@ -45,6 +46,7 @@ impl CommandBuffer {
 
         CommandBuffer {
             device,
+            queue,
             pool,
             command_buffer: command_buffers.remove(0),
         }
@@ -435,7 +437,7 @@ impl CommandBuffer {
         }
     }
 
-    pub fn submit(&self, queue: &Queue, wait: &Semaphore, signal: &Semaphore, fence: &Fence) {
+    pub fn submit(&self, wait: &Semaphore, signal: &Semaphore, fence: &Fence) {
         let submit_info = vk::SubmitInfo::builder()
             .command_buffers(&[self.command_buffer])
             .wait_semaphores(&[wait.raw()])
@@ -446,52 +448,64 @@ impl CommandBuffer {
         unsafe {
             self.device
                 .raw()
-                .queue_submit(queue.queue, &[submit_info], fence.raw())
+                .queue_submit(self.queue.queue, &[submit_info], fence.raw())
                 .unwrap();
         }
     }
 
-    pub fn submit2(&self, queue: &Queue, wait: &Semaphore, signal: &Semaphore, fence: &Fence) {
-        let command_info = vk::CommandBufferSubmitInfo::builder()
+    pub fn submit2(&self, wait: Option<&Semaphore>, signal: Option<&Semaphore>, fence: &Fence) {
+        let command_info = vec![vk::CommandBufferSubmitInfo::builder()
             .command_buffer(self.command_buffer)
             .device_mask(0)
-            .build();
+            .build()];
 
-        let wait_info = vk::SemaphoreSubmitInfo::builder()
-            .stage_mask(vk::PipelineStageFlags2::COLOR_ATTACHMENT_OUTPUT_KHR)
-            .semaphore(wait.raw())
-            .device_index(0)
-            .value(1)
-            .build();
+        let mut submit_info = vk::SubmitInfo2::builder().command_buffer_infos(&command_info);
 
-        let signal_info = vk::SemaphoreSubmitInfo::builder()
-            .stage_mask(vk::PipelineStageFlags2::ALL_GRAPHICS)
-            .semaphore(signal.raw())
-            .device_index(0)
-            .value(1)
-            .build();
+        let mut wait_info = Vec::new();
+        if let Some(wait) = wait {
+            wait_info.push(
+                vk::SemaphoreSubmitInfo::builder()
+                    .stage_mask(vk::PipelineStageFlags2::COLOR_ATTACHMENT_OUTPUT_KHR)
+                    .semaphore(wait.raw())
+                    .device_index(0)
+                    .value(1)
+                    .build(),
+            );
 
-        let submit_info = vk::SubmitInfo2::builder()
-            .command_buffer_infos(&[command_info])
-            .wait_semaphore_infos(&[wait_info])
-            .signal_semaphore_infos(&[signal_info])
-            .build();
+            submit_info = submit_info.wait_semaphore_infos(&wait_info);
+        };
+
+        let mut signal_info = Vec::new();
+        if let Some(signal) = signal {
+            signal_info.push(
+                vk::SemaphoreSubmitInfo::builder()
+                    .stage_mask(vk::PipelineStageFlags2::ALL_GRAPHICS)
+                    .semaphore(signal.raw())
+                    .device_index(0)
+                    .value(1)
+                    .build(),
+            );
+
+            submit_info = submit_info.signal_semaphore_infos(&signal_info);
+        };
+
+        let submit_info = submit_info.build();
 
         unsafe {
             self.device
                 .raw()
-                .queue_submit2(queue.queue, &[submit_info], fence.raw())
+                .queue_submit2(self.queue.queue, &[submit_info], fence.raw())
                 .unwrap();
         }
     }
 
-    pub fn submit_now(&self, queue: &Queue, wait: &Semaphore) {
-        let wait_command = Semaphore::new(queue.device());
-        let fence = Fence::new(queue.device(), false);
+    pub fn submit_now(&self, wait: &Semaphore) {
+        let wait_command = Semaphore::new(self.device.clone());
+        let fence = Fence::new(self.device.clone(), false);
 
-        self.submit(queue, wait, &wait_command, &fence);
+        self.submit(wait, &wait_command, &fence);
 
-        queue.wait();
+        self.queue.wait();
     }
 }
 
