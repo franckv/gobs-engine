@@ -1,10 +1,12 @@
 use std::collections::HashMap;
 use std::sync::Arc;
 
-use glam::{Vec2, Vec3, Vec4};
+use glam::Vec2;
 use uuid::Uuid;
 
-use crate::geometry::vertex::{VertexData, VertexDataBuilder};
+use crate::geometry::vertex::VertexData;
+
+use super::vertex::VertexFlag;
 
 pub type MeshId = Uuid;
 
@@ -13,6 +15,19 @@ pub struct Mesh {
     pub name: String,
     pub vertices: Vec<VertexData>,
     pub indices: Vec<u32>,
+}
+
+impl Mesh {
+    pub fn builder(name: &str) -> MeshBuilder {
+        MeshBuilder::new(name)
+    }
+
+    pub fn vertices_data(&self, flags: VertexFlag) -> Vec<u8> {
+        self.vertices
+            .iter()
+            .flat_map(|v| v.raw(flags))
+            .collect::<Vec<u8>>()
+    }
 }
 
 pub struct MeshBuilder {
@@ -31,30 +46,19 @@ impl MeshBuilder {
         }
     }
 
-    pub fn add_vertex(
-        mut self,
-        position: Vec3,
-        color: Vec4,
-        texture: Vec2,
-        normal: Vec3,
-        normal_texture: Vec2,
-    ) -> Self {
-        let vertex = VertexDataBuilder::new()
-            .position(position)
-            .color(color)
-            .texture(texture)
-            .normal_texture(normal_texture)
-            .normal(normal)
-            .tangent(Vec3::splat(0.))
-            .bitangent(Vec3::splat(0.))
-            .build();
-
-        self.vertices.push(vertex);
+    pub fn add_vertices(mut self, vertices: &[VertexData]) -> Self {
+        self.vertices.extend_from_slice(vertices);
 
         self
     }
 
-    pub fn add_indices(mut self, indices: &Vec<u32>) -> Self {
+    pub fn add_vertex(mut self, vertex_data: VertexData) -> Self {
+        self.vertices.push(vertex_data);
+
+        self
+    }
+
+    pub fn add_indices(mut self, indices: &[u32]) -> Self {
         self.indices.extend(indices);
 
         self

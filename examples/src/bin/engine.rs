@@ -9,7 +9,10 @@ use gobs::{
     },
     gobs_core::{
         entity::uniform::{UniformData, UniformProp},
-        geometry::vertex::{VertexData, VertexFlag},
+        geometry::{
+            mesh::Mesh,
+            vertex::{VertexData, VertexFlag},
+        },
     },
     vulkan::{
         buffer::{Buffer, BufferAddress, BufferUsage},
@@ -57,29 +60,22 @@ impl FrameData {
     }
 }
 
-struct Mesh {
+struct MeshResource {
     staging: Buffer,
     index_buffer: Buffer,
     vertex_buffer: Buffer,
     vertex_address: BufferAddress,
 }
 
-impl Mesh {
-    pub fn new(device: Arc<Device>, indices: &[u32], vertices: &[VertexData]) -> Self {
-        let vertices_data = vertices
-            .iter()
-            .flat_map(|v| {
-                v.raw(
-                    VertexFlag::POSITION
-                        | VertexFlag::COLOR
-                        | VertexFlag::TEXTURE
-                        | VertexFlag::NORMAL,
-                )
-            })
-            .collect::<Vec<u8>>();
+impl MeshResource {
+    pub fn new(device: Arc<Device>, mesh: Arc<Mesh>) -> Self {
+        let flags =
+            VertexFlag::POSITION | VertexFlag::COLOR | VertexFlag::TEXTURE | VertexFlag::NORMAL;
 
-        let indices_size = indices.len() * std::mem::size_of::<u32>();
+        let vertices_data = mesh.vertices_data(flags);
         let vertices_size = vertices_data.len();
+
+        let indices_size = mesh.indices.len() * std::mem::size_of::<u32>();
 
         let mut staging = Buffer::new(
             indices_size + vertices_size,
@@ -92,9 +88,9 @@ impl Mesh {
         let vertex_address = vertex_buffer.address(device.clone());
 
         staging.copy(&vertices_data, 0);
-        staging.copy(indices, vertices_size);
+        staging.copy(&mesh.indices, vertices_size);
 
-        Mesh {
+        MeshResource {
             staging,
             index_buffer,
             vertex_buffer,
@@ -119,7 +115,7 @@ struct App {
     scene_pipeline: Pipeline,
     scene_pipeline_layout: Arc<PipelineLayout>,
     scene_data: UniformData,
-    mesh: Mesh,
+    mesh_resource: MeshResource,
 }
 
 impl Run for App {
@@ -178,16 +174,19 @@ impl Run for App {
             ShaderType::Fragment,
         );
 
-        let (indices, vertices) = App::get_mesh();
+        let mesh = App::get_mesh();
 
-        let mesh = Mesh::new(ctx.device.clone(), &indices, &vertices);
+        let mesh_resource = MeshResource::new(ctx.device.clone(), mesh);
 
         let scene_data = UniformData::builder("scene data")
             .prop(
                 "world_matrix",
                 UniformProp::Mat4F(Mat4::from_scale([0.5, 0.5, 1.].into()).to_cols_array_2d()),
             )
-            .prop("vertex_buffer", UniformProp::U64(mesh.vertex_address))
+            .prop(
+                "vertex_buffer",
+                UniformProp::U64(mesh_resource.vertex_address),
+            )
             .build();
 
         let scene_pipeline_layout =
@@ -229,7 +228,7 @@ impl Run for App {
             scene_pipeline,
             scene_pipeline_layout,
             scene_data,
-            mesh,
+            mesh_resource,
         }
     }
 
@@ -369,28 +368,29 @@ impl App {
 
     fn draw_scene(&self, cmd: &CommandBuffer, draw_extent: ImageExtent2D) {
         cmd.copy_buffer(
-            &self.mesh.staging,
-            &self.mesh.vertex_buffer,
-            self.mesh.vertex_buffer.size,
+            &self.mesh_resource.staging,
+            &self.mesh_resource.vertex_buffer,
+            self.mesh_resource.vertex_buffer.size,
             0,
         );
         cmd.copy_buffer(
-            &self.mesh.staging,
-            &self.mesh.index_buffer,
-            self.mesh.index_buffer.size,
-            self.mesh.vertex_buffer.size,
+            &self.mesh_resource.staging,
+            &self.mesh_resource.index_buffer,
+            self.mesh_resource.index_buffer.size,
+            self.mesh_resource.vertex_buffer.size,
         );
         cmd.begin_rendering(&self.draw_image, draw_extent, None, false, [1.; 4]);
         cmd.bind_pipeline(&self.scene_pipeline);
         cmd.push_constants(self.scene_pipeline_layout.clone(), &self.scene_data.raw());
         cmd.set_viewport(draw_extent.width, draw_extent.height);
-        cmd.bind_index_buffer::<u32>(&self.mesh.index_buffer);
+        cmd.bind_index_buffer::<u32>(&self.mesh_resource.index_buffer);
         cmd.draw_indexed(6, 1);
         cmd.end_rendering();
     }
 
-    fn get_mesh() -> (Vec<u32>, Vec<VertexData>) {
+    fn get_mesh() -> Arc<Mesh> {
         let v1 = VertexData::builder()
+            .padding(true)
             .position([0.5, -0.5, 0.].into())
             .normal([0., 0., 1.].into())
             .texture([1., 0.].into())
@@ -398,6 +398,7 @@ impl App {
             .build();
 
         let v2 = VertexData::builder()
+            .padding(true)
             .position([0.5, 0.5, 0.].into())
             .normal([0., 0., 1.].into())
             .texture([1., 1.].into())
@@ -405,6 +406,7 @@ impl App {
             .build();
 
         let v3 = VertexData::builder()
+            .padding(true)
             .position([-0.5, -0.5, 0.].into())
             .normal([0., 0., 1.].into())
             .texture([0., 0.].into())
@@ -412,6 +414,7 @@ impl App {
             .build();
 
         let v4 = VertexData::builder()
+            .padding(true)
             .position([-0.5, 0.5, 0.].into())
             .normal([0., 0., 1.].into())
             .texture([0., 1.].into())
@@ -421,7 +424,10 @@ impl App {
         let vertices = vec![v1, v2, v3, v4];
         let indices = vec![0, 1, 2, 2, 1, 3];
 
-        (indices, vertices)
+        Mesh::builder("quad")
+            .add_indices(&indices)
+            .add_vertices(&vertices)
+            .build()
     }
 
     fn create_swapchain(ctx: &Context) -> SwapChain {
