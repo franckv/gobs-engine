@@ -1,6 +1,7 @@
+use std::ffi::CString;
 use std::sync::Arc;
 
-use ash::vk::{self, AttachmentLoadOp, AttachmentStoreOp, RenderingAttachmentInfo, RenderingInfo};
+use ash::vk;
 use bytemuck::Pod;
 
 use crate::buffer::Buffer;
@@ -74,6 +75,27 @@ impl CommandBuffer {
         }
     }
 
+    pub fn begin_label(&self, label: &str) {
+        let label = CString::new(label).unwrap();
+        let label_info = vk::DebugUtilsLabelEXT::builder().label_name(&label).build();
+
+        unsafe {
+            self.device
+                .instance()
+                .debug_utils_loader
+                .cmd_begin_debug_utils_label(self.command_buffer, &label_info);
+        }
+    }
+
+    pub fn end_label(&self) {
+        unsafe {
+            self.device
+                .instance()
+                .debug_utils_loader
+                .cmd_end_debug_utils_label(self.command_buffer);
+        }
+    }
+
     pub fn clear_color(&self, image: &Image, color: [f32; 4]) {
         let color_value = vk::ClearColorValue { float32: color };
 
@@ -103,19 +125,19 @@ impl CommandBuffer {
         clear_color: [f32; 4],
     ) {
         let color_load_op = if clear {
-            AttachmentLoadOp::CLEAR
+            vk::AttachmentLoadOp::CLEAR
         } else {
-            AttachmentLoadOp::LOAD
+            vk::AttachmentLoadOp::LOAD
         };
 
-        let rendering_info = RenderingInfo::builder()
+        let rendering_info = vk::RenderingInfo::builder()
             .render_area(vk::Rect2D::builder().extent(extent.into()).build())
             .layer_count(1)
-            .color_attachments(&[RenderingAttachmentInfo::builder()
+            .color_attachments(&[vk::RenderingAttachmentInfo::builder()
                 .image_view(color.image_view)
                 .image_layout(color.layout.into())
                 .load_op(color_load_op)
-                .store_op(AttachmentStoreOp::STORE)
+                .store_op(vk::AttachmentStoreOp::STORE)
                 .clear_value(vk::ClearValue {
                     color: vk::ClearColorValue {
                         float32: clear_color,
@@ -437,22 +459,6 @@ impl CommandBuffer {
         }
     }
 
-    pub fn submit(&self, wait: &Semaphore, signal: &Semaphore, fence: &Fence) {
-        let submit_info = vk::SubmitInfo::builder()
-            .command_buffers(&[self.command_buffer])
-            .wait_semaphores(&[wait.raw()])
-            .wait_dst_stage_mask(&[vk::PipelineStageFlags::COLOR_ATTACHMENT_OUTPUT])
-            .signal_semaphores(&[signal.raw()])
-            .build();
-
-        unsafe {
-            self.device
-                .raw()
-                .queue_submit(self.queue.queue, &[submit_info], fence.raw())
-                .unwrap();
-        }
-    }
-
     pub fn submit2(&self, wait: Option<&Semaphore>, signal: Option<&Semaphore>, fence: &Fence) {
         let command_info = vec![vk::CommandBufferSubmitInfo::builder()
             .command_buffer(self.command_buffer)
@@ -497,15 +503,6 @@ impl CommandBuffer {
                 .queue_submit2(self.queue.queue, &[submit_info], fence.raw())
                 .unwrap();
         }
-    }
-
-    pub fn submit_now(&self, wait: &Semaphore) {
-        let wait_command = Semaphore::new(self.device.clone());
-        let fence = Fence::new(self.device.clone(), false);
-
-        self.submit(wait, &wait_command, &fence);
-
-        self.queue.wait();
     }
 }
 

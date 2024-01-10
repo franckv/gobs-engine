@@ -84,7 +84,7 @@ pub struct Instance {
     pub(crate) entry: ash::Entry,
     pub(crate) surface_loader: VkSurface,
     debug_call_back: vk::DebugUtilsMessengerEXT,
-    debug_utils_loader: DebugUtils,
+    pub(crate) debug_utils_loader: DebugUtils,
 }
 
 impl Instance {

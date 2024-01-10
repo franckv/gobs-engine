@@ -298,6 +298,10 @@ impl Run for App {
 
         frame
             .command_buffer
+            .begin_label(&format!("Frame {}", self.frame_number));
+
+        frame
+            .command_buffer
             .transition_image_layout(&mut self.draw_image, ImageLayout::General);
 
         self.draw_background(&frame.command_buffer, draw_extent);
@@ -328,6 +332,8 @@ impl Run for App {
         frame
             .command_buffer
             .transition_image_layout(swapchain_image, ImageLayout::Present);
+
+        frame.command_buffer.end_label();
 
         frame.command_buffer.end();
 
