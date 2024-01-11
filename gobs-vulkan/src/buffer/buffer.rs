@@ -1,6 +1,8 @@
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 
 use ash::vk;
+use gpu_allocator::vulkan::Allocator;
+use gpu_allocator::MemoryLocation;
 
 use crate::device::Device;
 use crate::memory::Memory;
@@ -32,6 +34,18 @@ impl Into<vk::MemoryPropertyFlags> for BufferUsage {
     }
 }
 
+impl Into<MemoryLocation> for BufferUsage {
+    fn into(self) -> MemoryLocation {
+        match self {
+            BufferUsage::Staging => MemoryLocation::CpuToGpu,
+            BufferUsage::Vertex => MemoryLocation::GpuOnly,
+            BufferUsage::Instance => MemoryLocation::CpuToGpu,
+            BufferUsage::Index => MemoryLocation::GpuOnly,
+            BufferUsage::Uniform => MemoryLocation::CpuToGpu,
+        }
+    }
+}
+
 pub type BufferAddress = vk::DeviceAddress;
 
 /// Data buffer allocated in memory
@@ -43,7 +57,12 @@ pub struct Buffer {
 }
 
 impl Buffer {
-    pub fn new(size: usize, usage: BufferUsage, device: Arc<Device>) -> Self {
+    pub fn new(
+        size: usize,
+        usage: BufferUsage,
+        device: Arc<Device>,
+        allocator: Arc<Mutex<Allocator>>,
+    ) -> Self {
         let usage_flags = match usage {
             BufferUsage::Staging => vk::BufferUsageFlags::TRANSFER_SRC,
             BufferUsage::Vertex => {
@@ -65,7 +84,7 @@ impl Buffer {
 
         let buffer = unsafe { device.raw().create_buffer(&buffer_info, None).unwrap() };
 
-        let memory = Memory::with_buffer(device.clone(), buffer, usage);
+        let memory = Memory::with_buffer(device.clone(), buffer, usage, allocator);
 
         Buffer {
             device,
@@ -96,7 +115,7 @@ impl Wrap<vk::Buffer> for Buffer {
 
 impl Drop for Buffer {
     fn drop(&mut self) {
-        log::info!("Drop buffer");
+        log::debug!("Drop buffer");
         unsafe {
             self.device.raw().destroy_buffer(self.buffer, None);
         }

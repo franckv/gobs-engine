@@ -14,6 +14,6 @@ pub mod surface;
 pub mod swapchain;
 pub mod sync;
 
-trait Wrap<T> {
+pub trait Wrap<T> {
     fn raw(&self) -> T;
 }

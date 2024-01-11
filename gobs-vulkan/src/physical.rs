@@ -21,7 +21,6 @@ pub struct PhysicalDevice {
     pub name: String,
     pub gpu_type: PhysicalDeviceType,
     pub queue_families: Vec<QueueFamily>,
-    memory_properties: vk::PhysicalDeviceMemoryProperties,
 }
 
 impl PhysicalDevice {
@@ -39,18 +38,11 @@ impl PhysicalDevice {
             _ => panic!("Invalid device type"),
         };
 
-        let memory_properties = unsafe {
-            instance
-                .instance
-                .get_physical_device_memory_properties(p_device)
-        };
-
         PhysicalDevice {
             name: String::from(name),
             gpu_type,
             queue_families: Self::get_queue_families(&p_device, &instance),
             p_device,
-            memory_properties,
         }
     }
 
@@ -94,24 +86,6 @@ impl PhysicalDevice {
         }
 
         results
-    }
-
-    pub(crate) fn find_memory_type(
-        &self,
-        memory_req: &vk::MemoryRequirements,
-        flags: vk::MemoryPropertyFlags,
-    ) -> u32 {
-        let idx = self
-            .memory_properties
-            .memory_types
-            .iter()
-            .enumerate()
-            .position(|(idx, memory_type)| {
-                memory_type.property_flags & flags == flags
-                    && memory_req.memory_type_bits & (1 << idx) != 0
-            });
-
-        idx.unwrap() as u32
     }
 }
 

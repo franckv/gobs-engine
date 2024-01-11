@@ -1,102 +1,122 @@
-use std::mem;
-use std::mem::align_of;
-use std::sync::Arc;
+use std::mem::{self, align_of};
+use std::sync::{Arc, Mutex};
 
-use ash::util::Align;
 use ash::vk;
+use gpu_allocator::vulkan::{Allocation, AllocationCreateDesc, AllocationScheme, Allocator};
+use gpu_allocator::MemoryLocation;
 
 use crate::buffer::BufferUsage;
 use crate::device::Device;
-use crate::Wrap;
 
+#[allow(unused)]
 pub struct Memory {
     device: Arc<Device>,
-    memory: vk::DeviceMemory,
+    allocator: Arc<Mutex<Allocator>>,
+    allocation: Option<Allocation>,
 }
 
 impl Memory {
-    pub(crate) fn with_buffer(device: Arc<Device>, buffer: vk::Buffer, usage: BufferUsage) -> Self {
+    pub(crate) fn with_buffer(
+        device: Arc<Device>,
+        buffer: vk::Buffer,
+        usage: BufferUsage,
+        allocator: Arc<Mutex<Allocator>>,
+    ) -> Self {
         let mem_req = unsafe { device.raw().get_buffer_memory_requirements(buffer) };
+        log::debug!("Allocating buffer: {:?}", mem_req);
 
-        let memory = Self::allocate(&device, mem_req, usage.into());
+        let allocation = allocator
+            .lock()
+            .unwrap()
+            .allocate(&AllocationCreateDesc {
+                name: "buffer",
+                requirements: mem_req,
+                location: usage.into(),
+                linear: true,
+                allocation_scheme: AllocationScheme::GpuAllocatorManaged,
+            })
+            .unwrap();
 
         unsafe {
-            device.raw().bind_buffer_memory(buffer, memory, 0).unwrap();
+            device
+                .raw()
+                .bind_buffer_memory(buffer, allocation.memory(), allocation.offset())
+                .unwrap();
         }
 
-        Memory { device, memory }
+        Memory {
+            device,
+            allocator,
+            allocation: Some(allocation),
+        }
     }
 
-    pub(crate) fn with_image(device: Arc<Device>, image: vk::Image) -> Self {
+    pub(crate) fn with_image(
+        device: Arc<Device>,
+        image: vk::Image,
+        allocator: Arc<Mutex<Allocator>>,
+    ) -> Self {
         let mem_req = unsafe { device.raw().get_image_memory_requirements(image) };
+        log::debug!("Allocating buffer: {:?}", mem_req);
 
-        let mem_flags = vk::MemoryPropertyFlags::DEVICE_LOCAL;
-
-        let memory = Self::allocate(&device, mem_req, mem_flags);
+        let allocation = allocator
+            .lock()
+            .unwrap()
+            .allocate(&AllocationCreateDesc {
+                name: "image",
+                requirements: mem_req,
+                location: MemoryLocation::GpuOnly,
+                linear: true,
+                allocation_scheme: AllocationScheme::GpuAllocatorManaged,
+            })
+            .unwrap();
 
         unsafe {
-            device.raw().bind_image_memory(image, memory, 0).unwrap();
+            device
+                .raw()
+                .bind_image_memory(image, allocation.memory(), 0)
+                .unwrap();
         }
 
-        Memory { device, memory }
+        Memory {
+            device,
+            allocator,
+            allocation: Some(allocation),
+        }
     }
 
-    fn allocate(
-        device: &Arc<Device>,
-        mem_req: vk::MemoryRequirements,
-        mem_flags: vk::MemoryPropertyFlags,
-    ) -> vk::DeviceMemory {
-        let mem_type = device.p_device.find_memory_type(&mem_req, mem_flags);
-
-        let memory_info = vk::MemoryAllocateInfo::builder()
-            .allocation_size(mem_req.size)
-            .memory_type_index(mem_type)
-            .push_next(
-                &mut vk::MemoryAllocateFlagsInfo::builder()
-                    .flags(vk::MemoryAllocateFlags::DEVICE_ADDRESS)
-                    .build(),
-            )
-            .build();
-
-        unsafe { device.raw().allocate_memory(&memory_info, None).unwrap() }
-    }
-
-    pub fn upload<T: Copy>(&self, entries: &[T], offset: usize) {
+    pub fn upload<T: Copy>(&mut self, entries: &[T], offset: usize) {
         let size = (entries.len() * mem::size_of::<T>()) as u64;
 
-        let data = unsafe {
-            self.device
-                .raw()
-                .map_memory(
-                    self.memory,
-                    offset as u64,
-                    size,
-                    vk::MemoryMapFlags::empty(),
-                )
-                .unwrap()
-        };
+        log::debug!(
+            "Uploading data to buffer (Size={}, offset={}, align={}, len={})",
+            size,
+            offset,
+            align_of::<T>(),
+            entries.len()
+        );
 
-        let mut align = unsafe { Align::new(data, align_of::<T>() as u64, size) };
-
-        align.copy_from_slice(entries.as_ref());
-
-        unsafe {
-            self.device.raw().unmap_memory(self.memory);
+        if let Some(allocation) = &mut self.allocation {
+            presser::copy_from_slice_to_offset_with_align(
+                entries,
+                allocation,
+                offset,
+                align_of::<T>(),
+            )
+            .unwrap();
+        } else {
+            panic!("No allocation");
         }
-    }
-}
-
-impl Wrap<vk::DeviceMemory> for Memory {
-    fn raw(&self) -> vk::DeviceMemory {
-        self.memory
     }
 }
 
 impl Drop for Memory {
     fn drop(&mut self) {
-        log::info!("Free memory");
-        unsafe {
-            self.device.raw().free_memory(self.memory, None);
-        }
+        log::debug!("Free memory");
+        self.allocator
+            .lock()
+            .unwrap()
+            .free(self.allocation.take().unwrap())
+            .unwrap();
     }
 }

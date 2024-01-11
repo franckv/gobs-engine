@@ -33,7 +33,7 @@ impl Wrap<vk::Semaphore> for Semaphore {
 
 impl Drop for Semaphore {
     fn drop(&mut self) {
-        log::info!("Drop semaphore");
+        log::debug!("Drop semaphore");
         unsafe {
             self.device.raw().destroy_semaphore(self.semaphore, None);
         }

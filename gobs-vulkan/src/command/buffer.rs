@@ -508,7 +508,7 @@ impl CommandBuffer {
 
 impl Drop for CommandBuffer {
     fn drop(&mut self) {
-        log::info!("Drop command buffer");
+        log::debug!("Drop command buffer");
 
         let buffers = [self.command_buffer];
 

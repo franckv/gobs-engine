@@ -8,6 +8,7 @@ edition = { workspace = true }
 bytemuck = { workspace = true }
 glam = { workspace = true }
 gobs = { workspace = true }
+gpu-allocator = { workspace = true }
 log = { workspace = true }
 simplelog = { workspace = true }
 

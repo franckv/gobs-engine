@@ -67,7 +67,6 @@ impl ShaderStage {
 pub struct Pipeline {
     pub(crate) device: Arc<Device>,
     pub layout: Arc<PipelineLayout>,
-
     pub(crate) pipeline: vk::Pipeline,
     pub(crate) bind_point: vk::PipelineBindPoint,
 }
@@ -80,26 +79,6 @@ impl Pipeline {
     pub fn compute_builder(device: Arc<Device>) -> ComputePipelineBuilder {
         ComputePipelineBuilder::new(device)
     }
-
-    /*
-    pub fn new(device: Arc<Device>,
-            vshader: Shader, fshader: Shader,
-            vertex_layout: VertexLayout,
-            descriptor_layout: Arc<DescriptorSetLayout>,
-            renderpass: Arc<RenderPass>,
-            _subpass: u32) -> Self {
-
-            Self::builder(device)
-            .vertex_shader("main", vshader)
-            .fragment_shader("main", fshader)
-            .vertex_layout(&vertex_layout)
-            .viewports(vec![Viewport::new(0., 0., WIDTH as f32, HEIGHT as f32)])
-            .scissors(vec![Rect2D::new(0, 0, WIDTH, HEIGHT)])
-            .dynamic_states(&vec![DynamicStateElem::Viewport, DynamicStateElem::Scissor])
-            .descriptor_layout(descriptor_layout)
-            .build()
-    }
-    */
 }
 
 impl Wrap<vk::Pipeline> for Pipeline {
@@ -110,7 +89,7 @@ impl Wrap<vk::Pipeline> for Pipeline {
 
 impl Drop for Pipeline {
     fn drop(&mut self) {
-        log::info!("Drop pipeline");
+        log::debug!("Drop pipeline");
         unsafe {
             self.device.raw().destroy_pipeline(self.pipeline, None);
         }

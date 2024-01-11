@@ -212,14 +212,18 @@ impl Instance {
         }
     }
 
-    pub(crate) fn raw(&self) -> &ash::Instance {
+    pub fn raw(&self) -> &ash::Instance {
         &self.instance
+    }
+
+    pub fn cloned(&self) -> ash::Instance {
+        self.instance.clone()
     }
 }
 
 impl Drop for Instance {
     fn drop(&mut self) {
-        log::info!("Drop instance");
+        log::debug!("Drop instance");
         unsafe {
             self.debug_utils_loader
                 .destroy_debug_utils_messenger(self.debug_call_back, None);

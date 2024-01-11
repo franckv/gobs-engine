@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 
 use glam::Mat4;
 use gobs::{
@@ -30,8 +30,10 @@ use gobs::{
         queue::Queue,
         swapchain::{PresentationMode, SwapChain},
         sync::{Fence, Semaphore},
+        Wrap,
     },
 };
+use gpu_allocator::{vulkan::Allocator, vulkan::AllocatorCreateDesc, AllocatorDebugSettings};
 
 const FRAMES_IN_FLIGHT: usize = 2;
 
@@ -68,11 +70,13 @@ struct MeshResource {
 }
 
 impl MeshResource {
-    pub fn new(device: Arc<Device>, mesh: Arc<Mesh>) -> Self {
-        let flags =
-            VertexFlag::POSITION | VertexFlag::COLOR | VertexFlag::TEXTURE | VertexFlag::NORMAL;
-
-        let vertices_data = mesh.vertices_data(flags);
+    pub fn new(
+        device: Arc<Device>,
+        mesh: Arc<Mesh>,
+        vertex_flags: VertexFlag,
+        allocator: Arc<Mutex<Allocator>>,
+    ) -> Self {
+        let vertices_data = mesh.vertices_data(vertex_flags);
         let vertices_size = vertices_data.len();
 
         let indices_size = mesh.indices.len() * std::mem::size_of::<u32>();
@@ -81,10 +85,21 @@ impl MeshResource {
             indices_size + vertices_size,
             BufferUsage::Staging,
             device.clone(),
+            allocator.clone(),
         );
 
-        let index_buffer = Buffer::new(indices_size, BufferUsage::Index, device.clone());
-        let vertex_buffer = Buffer::new(vertices_size, BufferUsage::Vertex, device.clone());
+        let index_buffer = Buffer::new(
+            indices_size,
+            BufferUsage::Index,
+            device.clone(),
+            allocator.clone(),
+        );
+        let vertex_buffer = Buffer::new(
+            vertices_size,
+            BufferUsage::Vertex,
+            device.clone(),
+            allocator.clone(),
+        );
         let vertex_address = vertex_buffer.address(device.clone());
 
         staging.copy(&vertices_data, 0);
@@ -118,6 +133,7 @@ struct App {
     mesh_resource: MeshResource,
     immediate_cmd: CommandBuffer,
     immediate_fence: Fence,
+    allocator: Arc<Mutex<Allocator>>,
 }
 
 impl Run for App {
@@ -132,12 +148,32 @@ impl Run for App {
         let swapchain = Self::create_swapchain(ctx);
         let swapchain_images = swapchain.create_images();
 
+        let allocator = Arc::new(Mutex::new(
+            Allocator::new(&AllocatorCreateDesc {
+                instance: ctx.instance.cloned(),
+                device: ctx.device.cloned(),
+                physical_device: ctx.device.p_device.raw(),
+                debug_settings: AllocatorDebugSettings {
+                    log_memory_information: true,
+                    log_leaks_on_shutdown: true,
+                    store_stack_traces: false,
+                    log_allocations: true,
+                    log_frees: true,
+                    log_stack_traces: false,
+                },
+                buffer_device_address: true,
+                allocation_sizes: Default::default(),
+            })
+            .unwrap(),
+        ));
+
         let extent = ctx.surface.get_extent(ctx.device.clone());
         let draw_image = Image::new(
             ctx.device.clone(),
             ImageFormat::R16g16b16a16Sfloat,
             ImageUsage::Color,
             extent,
+            allocator.clone(),
         );
 
         let draw_ds_layout = DescriptorSetLayoutBuilder::new()
@@ -178,7 +214,11 @@ impl Run for App {
 
         let mesh = App::get_mesh();
 
-        let mesh_resource = MeshResource::new(ctx.device.clone(), mesh);
+        let vertex_flags =
+            VertexFlag::POSITION | VertexFlag::COLOR | VertexFlag::TEXTURE | VertexFlag::NORMAL;
+
+        let mesh_resource =
+            MeshResource::new(ctx.device.clone(), mesh, vertex_flags, allocator.clone());
 
         let scene_data = UniformData::builder("scene data")
             .prop(
@@ -238,6 +278,7 @@ impl Run for App {
             mesh_resource,
             immediate_cmd,
             immediate_fence,
+            allocator,
         }
     }
 
@@ -259,11 +300,11 @@ impl Run for App {
     }
 
     fn update(&mut self, _ctx: &Context, _delta: f32) {
-        log::debug!("Update");
+        log::trace!("Update");
     }
 
     fn render(&mut self, ctx: &Context) -> Result<(), RenderError> {
-        log::debug!("Render frame {}", self.frame_number);
+        log::trace!("Render frame {}", self.frame_number);
 
         let draw_extent = ImageExtent2D::new(
             (self
@@ -352,13 +393,13 @@ impl Run for App {
 
         self.frame_number += 1;
 
-        log::debug!("End render");
+        log::trace!("End render");
 
         Ok(())
     }
 
     fn input(&mut self, _ctx: &Context, input: Input) {
-        log::debug!("Input");
+        log::trace!("Input");
 
         match input {
             Input::KeyPressed(key) => match key {
@@ -371,7 +412,7 @@ impl Run for App {
     }
 
     fn resize(&mut self, ctx: &Context, _width: u32, _height: u32) {
-        log::info!("Resize");
+        log::trace!("Resize");
         self.resize_swapchain(ctx);
     }
 
@@ -465,6 +506,11 @@ impl App {
 
         let vertices = vec![v1, v2, v3, v4];
         let indices = vec![0, 1, 2, 2, 1, 3];
+
+        let vertex_flags =
+            VertexFlag::POSITION | VertexFlag::COLOR | VertexFlag::TEXTURE | VertexFlag::NORMAL;
+
+        log::info!("Vertex size: {}", VertexData::size(vertex_flags, true));
 
         Mesh::builder("quad")
             .add_indices(&indices)

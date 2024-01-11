@@ -1,6 +1,7 @@
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 
 use ash::vk;
+use gpu_allocator::vulkan::Allocator;
 
 use crate::device::Device;
 use crate::image::ImageFormat;
@@ -116,10 +117,11 @@ impl Image {
         format: ImageFormat,
         usage: ImageUsage,
         extent: ImageExtent2D,
+        allocator: Arc<Mutex<Allocator>>,
     ) -> Self {
         let image = Self::create_image(&device, extent, format, usage);
 
-        let memory = Memory::with_image(device.clone(), image);
+        let memory = Memory::with_image(device.clone(), image, allocator);
 
         let image_view = Self::create_image_view(&device, image, format, usage);
 
@@ -233,7 +235,7 @@ impl Wrap<vk::Image> for Image {
 
 impl Drop for Image {
     fn drop(&mut self) {
-        log::info!("Drop image");
+        log::debug!("Drop image");
         unsafe {
             self.device.raw().destroy_image_view(self.image_view, None);
             if self.memory.is_some() {

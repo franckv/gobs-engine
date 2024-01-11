@@ -72,7 +72,7 @@ impl Application {
                 }
                 Event::Redraw => {
                     let delta = timer.delta();
-                    log::debug!("[Redraw] FPS: {}", 1. / delta);
+                    log::trace!("[Redraw] FPS: {}", 1. / delta);
 
                     if !close_requested {
                         runnable.update(&self.context, delta);

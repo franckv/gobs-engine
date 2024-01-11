@@ -85,7 +85,7 @@ impl Wrap<vk::PipelineLayout> for PipelineLayout {
 
 impl Drop for PipelineLayout {
     fn drop(&mut self) {
-        log::info!("Drop pipeline layout");
+        log::debug!("Drop pipeline layout");
         unsafe {
             self.device.raw().destroy_pipeline_layout(self.layout, None);
         }

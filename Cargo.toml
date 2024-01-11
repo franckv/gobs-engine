@@ -42,12 +42,14 @@ bytemuck = { version = "1.14", features = ["derive"] }
 egui = { version = "0.24", features = ["bytemuck"]}
 fs_extra = "1.3"
 glam = { version = "0.25", features = ["bytemuck"] }
+gpu-allocator = "0.25"
 image = "0.24"
 indexmap = "2.1.0"
 itertools = { version = "0.12" }
 log = "0.4"
 naga = {version = "0.14", features = ["glsl-in", "spv-out"]}
 pollster = "0.3"
+presser = "0.3"
 rand = "0.8"
 raw-window-handle = "0.5"
 simplelog = "0.12"

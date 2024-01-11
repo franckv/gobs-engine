@@ -84,7 +84,7 @@ impl SwapChain {
             .queue_family_indices(&[])
             .build();
 
-        let loader = KhrSwapchain::new(device.instance().raw(), device.raw());
+        let loader = KhrSwapchain::new(&device.instance().raw(), device.raw());
 
         let swapchain = unsafe { loader.create_swapchain(&swapchain_info, None).unwrap() };
 
@@ -160,7 +160,7 @@ impl SwapChain {
 
 impl Drop for SwapChain {
     fn drop(&mut self) {
-        log::info!("Drop swapchain");
+        log::debug!("Drop swapchain");
         self.cleanup();
     }
 }

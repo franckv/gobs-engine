@@ -69,14 +69,18 @@ impl Device {
         unsafe { self.device.device_wait_idle().expect("Wait idle") };
     }
 
-    pub(crate) fn raw(&self) -> &ash::Device {
+    pub fn raw(&self) -> &ash::Device {
         &self.device
+    }
+
+    pub fn cloned(&self) -> ash::Device {
+        self.device.clone()
     }
 }
 
 impl Drop for Device {
     fn drop(&mut self) {
-        log::info!("Drop device");
+        log::debug!("Drop device");
         unsafe {
             self.device.destroy_device(None);
         }

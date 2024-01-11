@@ -78,7 +78,7 @@ impl Wrap<vk::DescriptorPool> for DescriptorSetPool {
 
 impl Drop for DescriptorSetPool {
     fn drop(&mut self) {
-        log::info!("Drop descriptor pool");
+        log::debug!("Drop descriptor pool");
 
         unsafe {
             self.device.raw().destroy_descriptor_pool(self.pool, None);

@@ -118,7 +118,7 @@ impl DescriptorSetLayout {
 
 impl Drop for DescriptorSetLayout {
     fn drop(&mut self) {
-        log::info!("Drop DescriptorSetLayout");
+        log::debug!("Drop DescriptorSetLayout");
 
         unsafe {
             self.device
