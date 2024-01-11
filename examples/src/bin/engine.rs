@@ -5,12 +5,15 @@ use gobs::{
         app::{Application, RenderError, Run},
         input::{Input, Key},
     },
-    gobs_core::geometry::{
-        mesh::Mesh,
-        vertex::{VertexData, VertexFlag},
+    gobs_core::{
+        entity::uniform::UniformProp,
+        geometry::{
+            mesh::Mesh,
+            vertex::{VertexData, VertexFlag},
+        },
     },
     render::context::Context,
-    scene::{mesh::MeshResource, scene::Scene},
+    scene::{mesh::MeshResource, model::Model, scene::Scene},
     vulkan::{
         command::{CommandBuffer, CommandPool},
         descriptor::{
@@ -157,11 +160,16 @@ impl Run for App {
 
         let mesh = App::get_mesh();
 
+        let n_indices = mesh.indices.len();
+
         let vertex_flags =
             VertexFlag::POSITION | VertexFlag::COLOR | VertexFlag::TEXTURE | VertexFlag::NORMAL;
         let mesh_resource = MeshResource::new(ctx, mesh, vertex_flags, self.allocator.clone());
 
-        self.scene.add_resource(mesh_resource);
+        let mut model = Model::new(mesh_resource);
+        model.add_mesh(0, n_indices);
+
+        self.scene.models.push(model);
     }
 
     fn update(&mut self, _ctx: &Context, _delta: f32) {
@@ -216,7 +224,7 @@ impl Run for App {
             .command_buffer
             .transition_image_layout(&mut self.draw_image, ImageLayout::Color);
 
-        self.draw_scene(&frame.command_buffer, draw_extent);
+        self.draw_scene(ctx, &frame.command_buffer, draw_extent);
 
         frame
             .command_buffer
@@ -302,16 +310,27 @@ impl App {
         cmd.dispatch(draw_extent.width / 16 + 1, draw_extent.height / 16 + 1, 1);
     }
 
-    fn draw_scene(&self, cmd: &CommandBuffer, draw_extent: ImageExtent2D) {
+    fn draw_scene(&self, ctx: &Context, cmd: &CommandBuffer, draw_extent: ImageExtent2D) {
         cmd.begin_rendering(&self.draw_image, draw_extent, None, false, [1.; 4]);
         cmd.bind_pipeline(&self.scene.pipeline);
-        cmd.push_constants(
-            self.scene.pipeline_layout.clone(),
-            &self.scene.scene_data.raw(),
-        );
         cmd.set_viewport(draw_extent.width, draw_extent.height);
-        cmd.bind_index_buffer::<u32>(&self.scene.mesh_resources[0].index_buffer);
-        cmd.draw_indexed(6, 1);
+
+        for model in &self.scene.models {
+            let mut scene_data = self.scene.scene_data.clone();
+
+            scene_data.update(
+                "vertex_buffer",
+                UniformProp::U64(model.resource.vertex_buffer.address(ctx.device.clone())),
+            );
+
+            cmd.push_constants(self.scene.pipeline_layout.clone(), &scene_data.raw());
+
+            for mesh in &model.meshes {
+                cmd.bind_index_buffer::<u32>(&model.resource.index_buffer, mesh.offset);
+                cmd.draw_indexed(mesh.len, 1);
+            }
+        }
+
         cmd.end_rendering();
     }
 

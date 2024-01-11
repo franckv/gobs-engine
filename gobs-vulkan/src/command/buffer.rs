@@ -220,12 +220,12 @@ impl CommandBuffer {
         }
     }
 
-    pub fn bind_index_buffer<T: IndexType>(&self, buffer: &Buffer) {
+    pub fn bind_index_buffer<T: IndexType>(&self, buffer: &Buffer, offset: usize) {
         unsafe {
             self.device.raw().cmd_bind_index_buffer(
                 self.command_buffer,
                 buffer.raw(),
-                0,
+                offset as vk::DeviceSize,
                 T::get_index_type(),
             )
         }

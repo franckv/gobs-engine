@@ -37,6 +37,7 @@ impl UniformProp {
     }
 }
 
+#[derive(Clone)]
 pub struct UniformData {
     pub name: String,
     pub data: IndexMap<String, UniformProp>,

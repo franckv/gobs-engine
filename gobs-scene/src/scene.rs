@@ -10,10 +10,9 @@ use gobs_vulkan::{
     },
 };
 
-use crate::{mesh::MeshResource, model::Model};
+use crate::model::Model;
 
 pub struct Scene {
-    pub mesh_resources: Vec<MeshResource>,
     pub models: Vec<Model>,
     pub scene_data: UniformData,
     pub pipeline: Pipeline,
@@ -62,19 +61,10 @@ impl Scene {
             .build();
 
         Scene {
-            mesh_resources: Vec::new(),
             models: Vec::new(),
             scene_data,
             pipeline,
             pipeline_layout,
         }
-    }
-
-    pub fn add_resource(&mut self, mesh_resource: MeshResource) {
-        self.scene_data.update(
-            "vertex_buffer",
-            UniformProp::U64(mesh_resource.vertex_address),
-        );
-        self.mesh_resources.push(mesh_resource);
     }
 }

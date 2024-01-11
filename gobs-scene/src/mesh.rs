@@ -4,12 +4,11 @@ use gpu_allocator::vulkan::Allocator;
 
 use gobs_core::geometry::{mesh::Mesh, vertex::VertexFlag};
 use gobs_render::context::Context;
-use gobs_vulkan::buffer::{Buffer, BufferAddress, BufferUsage};
+use gobs_vulkan::buffer::{Buffer, BufferUsage};
 
 pub struct MeshResource {
     pub index_buffer: Buffer,
     pub vertex_buffer: Buffer,
-    pub vertex_address: BufferAddress,
 }
 
 impl MeshResource {
@@ -18,7 +17,7 @@ impl MeshResource {
         mesh: Arc<Mesh>,
         vertex_flags: VertexFlag,
         allocator: Arc<Mutex<Allocator>>,
-    ) -> Self {
+    ) -> Arc<Self> {
         let vertices_data = mesh.vertices_data(vertex_flags);
         let vertices_size = vertices_data.len();
 
@@ -43,7 +42,6 @@ impl MeshResource {
             ctx.device.clone(),
             allocator.clone(),
         );
-        let vertex_address = vertex_buffer.address(ctx.device.clone());
 
         staging.copy(&vertices_data, 0);
         staging.copy(&mesh.indices, vertices_size);
@@ -58,10 +56,9 @@ impl MeshResource {
             );
         });
 
-        MeshResource {
+        Arc::new(MeshResource {
             index_buffer,
             vertex_buffer,
-            vertex_address,
-        }
+        })
     }
 }
