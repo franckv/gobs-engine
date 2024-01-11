@@ -31,6 +31,7 @@ pub struct CommandBuffer {
     queue: Arc<Queue>,
     pool: Arc<CommandPool>,
     command_buffer: vk::CommandBuffer,
+    pub fence: Fence,
 }
 
 impl CommandBuffer {
@@ -46,10 +47,11 @@ impl CommandBuffer {
         assert!(command_buffers.len() == 1);
 
         CommandBuffer {
-            device,
+            device: device.clone(),
             queue,
             pool,
             command_buffer: command_buffers.remove(0),
+            fence: Fence::new(device, true),
         }
     }
 
@@ -459,7 +461,7 @@ impl CommandBuffer {
         }
     }
 
-    pub fn submit2(&self, wait: Option<&Semaphore>, signal: Option<&Semaphore>, fence: &Fence) {
+    pub fn submit2(&self, wait: Option<&Semaphore>, signal: Option<&Semaphore>) {
         let command_info = vec![vk::CommandBufferSubmitInfo::builder()
             .command_buffer(self.command_buffer)
             .device_mask(0)
@@ -500,9 +502,31 @@ impl CommandBuffer {
         unsafe {
             self.device
                 .raw()
-                .queue_submit2(self.queue.queue, &[submit_info], fence.raw())
+                .queue_submit2(self.queue.queue, &[submit_info], self.fence.raw())
                 .unwrap();
         }
+    }
+
+    pub fn immediate<F>(&self, callback: F)
+    where
+        F: Fn(&CommandBuffer),
+    {
+        log::info!("Submit immediate command");
+        self.fence.reset();
+        assert!(!self.fence.signaled());
+
+        self.reset();
+
+        self.begin();
+
+        callback(&self);
+
+        self.end();
+
+        self.submit2(None, None);
+
+        self.fence.wait();
+        log::info!("Immediate command done");
     }
 }
 

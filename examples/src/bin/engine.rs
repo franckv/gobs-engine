@@ -1,21 +1,17 @@
 use std::sync::{Arc, Mutex};
 
-use glam::Mat4;
 use gobs::{
     game::{
         app::{Application, RenderError, Run},
-        context::Context,
         input::{Input, Key},
     },
-    gobs_core::{
-        entity::uniform::{UniformData, UniformProp},
-        geometry::{
-            mesh::Mesh,
-            vertex::{VertexData, VertexFlag},
-        },
+    gobs_core::geometry::{
+        mesh::Mesh,
+        vertex::{VertexData, VertexFlag},
     },
+    render::context::Context,
+    scene::{mesh::MeshResource, scene::Scene},
     vulkan::{
-        buffer::{Buffer, BufferAddress, BufferUsage},
         command::{CommandBuffer, CommandPool},
         descriptor::{
             DescriptorSet, DescriptorSetLayout, DescriptorSetLayoutBuilder, DescriptorSetPool,
@@ -23,13 +19,10 @@ use gobs::{
         },
         device::Device,
         image::{ColorSpace, Image, ImageExtent2D, ImageFormat, ImageLayout, ImageUsage},
-        pipeline::{
-            DynamicStateElem, FrontFace, Pipeline, PipelineLayout, Rect2D, Shader, ShaderType,
-            Viewport,
-        },
+        pipeline::{Pipeline, PipelineLayout, Shader, ShaderType},
         queue::Queue,
         swapchain::{PresentationMode, SwapChain},
-        sync::{Fence, Semaphore},
+        sync::Semaphore,
         Wrap,
     },
 };
@@ -41,7 +34,6 @@ struct FrameData {
     pub command_buffer: CommandBuffer,
     pub swapchain_semaphore: Semaphore,
     pub render_semaphore: Semaphore,
-    pub render_fence: Fence,
 }
 
 impl FrameData {
@@ -51,65 +43,11 @@ impl FrameData {
 
         let swapchain_semaphore = Semaphore::new(device.clone());
         let render_semaphore = Semaphore::new(device.clone());
-        let render_fence = Fence::new(device, true);
 
         FrameData {
             command_buffer,
             swapchain_semaphore,
             render_semaphore,
-            render_fence,
-        }
-    }
-}
-
-struct MeshResource {
-    staging: Buffer,
-    index_buffer: Buffer,
-    vertex_buffer: Buffer,
-    vertex_address: BufferAddress,
-}
-
-impl MeshResource {
-    pub fn new(
-        device: Arc<Device>,
-        mesh: Arc<Mesh>,
-        vertex_flags: VertexFlag,
-        allocator: Arc<Mutex<Allocator>>,
-    ) -> Self {
-        let vertices_data = mesh.vertices_data(vertex_flags);
-        let vertices_size = vertices_data.len();
-
-        let indices_size = mesh.indices.len() * std::mem::size_of::<u32>();
-
-        let mut staging = Buffer::new(
-            indices_size + vertices_size,
-            BufferUsage::Staging,
-            device.clone(),
-            allocator.clone(),
-        );
-
-        let index_buffer = Buffer::new(
-            indices_size,
-            BufferUsage::Index,
-            device.clone(),
-            allocator.clone(),
-        );
-        let vertex_buffer = Buffer::new(
-            vertices_size,
-            BufferUsage::Vertex,
-            device.clone(),
-            allocator.clone(),
-        );
-        let vertex_address = vertex_buffer.address(device.clone());
-
-        staging.copy(&vertices_data, 0);
-        staging.copy(&mesh.indices, vertices_size);
-
-        MeshResource {
-            staging,
-            index_buffer,
-            vertex_buffer,
-            vertex_address,
         }
     }
 }
@@ -127,12 +65,7 @@ struct App {
     draw_ds: DescriptorSet,
     bg_pipeline: Pipeline,
     bg_pipeline_layout: Arc<PipelineLayout>,
-    scene_pipeline: Pipeline,
-    scene_pipeline_layout: Arc<PipelineLayout>,
-    scene_data: UniformData,
-    mesh_resource: MeshResource,
-    immediate_cmd: CommandBuffer,
-    immediate_fence: Fence,
+    scene: Scene,
     allocator: Arc<Mutex<Allocator>>,
 }
 
@@ -200,65 +133,7 @@ impl Run for App {
             .compute_shader("main", compute_shader)
             .build();
 
-        let vertex_shader = Shader::from_file(
-            "examples/shaders/mesh.vert.spv",
-            ctx.device.clone(),
-            ShaderType::Vertex,
-        );
-
-        let fragment_shader = Shader::from_file(
-            "examples/shaders/triangle.frag.spv",
-            ctx.device.clone(),
-            ShaderType::Fragment,
-        );
-
-        let mesh = App::get_mesh();
-
-        let vertex_flags =
-            VertexFlag::POSITION | VertexFlag::COLOR | VertexFlag::TEXTURE | VertexFlag::NORMAL;
-
-        let mesh_resource =
-            MeshResource::new(ctx.device.clone(), mesh, vertex_flags, allocator.clone());
-
-        let scene_data = UniformData::builder("scene data")
-            .prop(
-                "world_matrix",
-                UniformProp::Mat4F(Mat4::from_scale([0.5, 0.5, 1.].into()).to_cols_array_2d()),
-            )
-            .prop(
-                "vertex_buffer",
-                UniformProp::U64(mesh_resource.vertex_address),
-            )
-            .build();
-
-        let scene_pipeline_layout =
-            PipelineLayout::with_constants(ctx.device.clone(), None, scene_data.raw().len());
-        let scene_pipeline = Pipeline::graphics_builder(ctx.device.clone())
-            .layout(scene_pipeline_layout.clone())
-            .vertex_shader("main", vertex_shader)
-            .fragment_shader("main", fragment_shader)
-            .viewports(vec![Viewport::new(
-                0.,
-                0.,
-                draw_image.extent.width as f32,
-                draw_image.extent.height as f32,
-            )])
-            .scissors(vec![Rect2D::new(
-                0,
-                0,
-                draw_image.extent.width,
-                draw_image.extent.height,
-            )])
-            .dynamic_states(&vec![DynamicStateElem::Viewport, DynamicStateElem::Scissor])
-            .attachments(draw_image.format, None)
-            .depth_test_disable()
-            .front_face(FrontFace::CW)
-            .build();
-
-        let immediate_cmd_pool = CommandPool::new(ctx.device.clone(), &ctx.queue.family);
-        let immediate_cmd =
-            CommandBuffer::new(ctx.device.clone(), ctx.queue.clone(), immediate_cmd_pool);
-        let immediate_fence = Fence::new(ctx.device.clone(), true);
+        let scene = Scene::new(ctx, draw_image.extent, draw_image.format);
 
         App {
             frame_number: 0,
@@ -272,31 +147,21 @@ impl Run for App {
             draw_ds,
             bg_pipeline,
             bg_pipeline_layout,
-            scene_pipeline,
-            scene_pipeline_layout,
-            scene_data,
-            mesh_resource,
-            immediate_cmd,
-            immediate_fence,
+            scene,
             allocator,
         }
     }
 
-    fn start(&mut self, _ctx: &Context) {
-        self.immediate_submit(|cmd| {
-            cmd.copy_buffer(
-                &self.mesh_resource.staging,
-                &self.mesh_resource.vertex_buffer,
-                self.mesh_resource.vertex_buffer.size,
-                0,
-            );
-            cmd.copy_buffer(
-                &self.mesh_resource.staging,
-                &self.mesh_resource.index_buffer,
-                self.mesh_resource.index_buffer.size,
-                self.mesh_resource.vertex_buffer.size,
-            );
-        });
+    fn start(&mut self, ctx: &Context) {
+        log::trace!("Start");
+
+        let mesh = App::get_mesh();
+
+        let vertex_flags =
+            VertexFlag::POSITION | VertexFlag::COLOR | VertexFlag::TEXTURE | VertexFlag::NORMAL;
+        let mesh_resource = MeshResource::new(ctx, mesh, vertex_flags, self.allocator.clone());
+
+        self.scene.add_resource(mesh_resource);
     }
 
     fn update(&mut self, _ctx: &Context, _delta: f32) {
@@ -323,8 +188,8 @@ impl Run for App {
 
         let frame = &self.frames[self.frame_number % FRAMES_IN_FLIGHT];
 
-        frame.render_fence.wait_and_reset();
-        assert!(!frame.render_fence.signaled());
+        frame.command_buffer.fence.wait_and_reset();
+        assert!(!frame.command_buffer.fence.signaled());
 
         let Ok(image_index) = self.swapchain.acquire_image(&frame.swapchain_semaphore) else {
             return Err(RenderError::Outdated);
@@ -381,7 +246,6 @@ impl Run for App {
         frame.command_buffer.submit2(
             Some(&frame.swapchain_semaphore),
             Some(&frame.render_semaphore),
-            &frame.render_fence,
         );
 
         let Ok(_) = self
@@ -426,29 +290,6 @@ impl Run for App {
 }
 
 impl App {
-    fn immediate_submit<F>(&self, callback: F)
-    where
-        F: Fn(&CommandBuffer),
-    {
-        log::info!("Submit immediate command");
-        self.immediate_fence.reset();
-        assert!(!self.immediate_fence.signaled());
-
-        self.immediate_cmd.reset();
-
-        self.immediate_cmd.begin();
-
-        callback(&self.immediate_cmd);
-
-        self.immediate_cmd.end();
-
-        self.immediate_cmd
-            .submit2(None, None, &self.immediate_fence);
-
-        self.immediate_fence.wait();
-        log::info!("Immediate command done");
-    }
-
     #[allow(unused)]
     fn clear_background(&self, cmd: &CommandBuffer) {
         let flash = (self.frame_number as f32 / 120.).sin().abs();
@@ -463,10 +304,13 @@ impl App {
 
     fn draw_scene(&self, cmd: &CommandBuffer, draw_extent: ImageExtent2D) {
         cmd.begin_rendering(&self.draw_image, draw_extent, None, false, [1.; 4]);
-        cmd.bind_pipeline(&self.scene_pipeline);
-        cmd.push_constants(self.scene_pipeline_layout.clone(), &self.scene_data.raw());
+        cmd.bind_pipeline(&self.scene.pipeline);
+        cmd.push_constants(
+            self.scene.pipeline_layout.clone(),
+            &self.scene.scene_data.raw(),
+        );
         cmd.set_viewport(draw_extent.width, draw_extent.height);
-        cmd.bind_index_buffer::<u32>(&self.mesh_resource.index_buffer);
+        cmd.bind_index_buffer::<u32>(&self.scene.mesh_resources[0].index_buffer);
         cmd.draw_indexed(6, 1);
         cmd.end_rendering();
     }

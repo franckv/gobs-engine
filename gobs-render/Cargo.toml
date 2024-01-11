@@ -1,12 +1,13 @@
 [package]
-name = "gobs-game"
+name = "gobs-render"
 version = { workspace = true }
 authors = { workspace = true }
 edition = { workspace = true }
 
 [dependencies]
+gobs-core = { workspace = true }
 gobs-utils = { workspace = true }
-gobs-render = { workspace = true }
+gobs-vulkan = { workspace = true }
+gpu-allocator = { workspace = true }
 log = { workspace = true }
-pollster = { workspace = true }
 winit = { workspace = true }

@@ -3,11 +3,11 @@ use winit::dpi::LogicalSize;
 use winit::event_loop::{ControlFlow, EventLoop};
 use winit::window::WindowBuilder;
 
+use gobs_render::context::Context;
 use gobs_utils as utils;
 
 use utils::timer::Timer;
 
-use crate::context::Context;
 use crate::input::{Event, Input};
 
 pub struct Application {

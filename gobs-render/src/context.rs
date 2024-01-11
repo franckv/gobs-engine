@@ -1,7 +1,13 @@
 use std::sync::Arc;
 
 use gobs_vulkan as vk;
-use vk::{device::Device, instance::Instance, queue::Queue, surface::Surface};
+use vk::{
+    command::{CommandBuffer, CommandPool},
+    device::Device,
+    instance::Instance,
+    queue::Queue,
+    surface::Surface,
+};
 use winit::window::Window;
 
 pub struct Context {
@@ -9,6 +15,7 @@ pub struct Context {
     pub device: Arc<Device>,
     pub queue: Arc<Queue>,
     pub surface: Arc<Surface>,
+    pub immediate_cmd: CommandBuffer,
 }
 
 impl Context {
@@ -25,11 +32,15 @@ impl Context {
 
         let queue = Queue::new(device.clone(), queue_family);
 
+        let immediate_cmd_pool = CommandPool::new(device.clone(), &queue.family);
+        let immediate_cmd = CommandBuffer::new(device.clone(), queue.clone(), immediate_cmd_pool);
+
         Context {
             instance,
             device,
             queue,
             surface,
+            immediate_cmd,
         }
     }
 }
