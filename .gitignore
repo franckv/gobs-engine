@@ -1,4 +1,5 @@
 target/
+assets/
 Cargo.lock
 *.spv
 .vscode/

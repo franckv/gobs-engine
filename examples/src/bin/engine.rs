@@ -9,11 +9,12 @@ use gobs::{
         entity::uniform::UniformProp,
         geometry::{
             mesh::Mesh,
+            primitive::Primitive,
             vertex::{VertexData, VertexFlag},
         },
     },
     render::context::Context,
-    scene::{mesh::MeshResource, model::Model, scene::Scene},
+    scene::{mesh::MeshBuffer, model::Model, scene::Scene},
     vulkan::{
         command::{CommandBuffer, CommandPool},
         descriptor::{
@@ -32,6 +33,8 @@ use gobs::{
 use gpu_allocator::{vulkan::Allocator, vulkan::AllocatorCreateDesc, AllocatorDebugSettings};
 
 const FRAMES_IN_FLIGHT: usize = 2;
+const SHADER_DIR: &str = "examples/shaders";
+const ASSET_DIR: &str = "examples/assets";
 
 struct FrameData {
     pub command_buffer: CommandBuffer,
@@ -124,7 +127,7 @@ impl Run for App {
             .end();
 
         let compute_shader = Shader::from_file(
-            "examples/shaders/sky.comp.spv",
+            &format!("{}/sky.comp.spv", SHADER_DIR),
             ctx.device.clone(),
             ShaderType::Compute,
         );
@@ -158,16 +161,21 @@ impl Run for App {
     fn start(&mut self, ctx: &Context) {
         log::trace!("Start");
 
-        let mesh = App::get_mesh();
-
-        let n_indices = mesh.indices.len();
+        let meshes = gobs::scene::gltf::load_gltf(&format!("{}/basicmesh.glb", ASSET_DIR));
+        let mesh = meshes[2].clone();
 
         let vertex_flags =
             VertexFlag::POSITION | VertexFlag::COLOR | VertexFlag::TEXTURE | VertexFlag::NORMAL;
-        let mesh_resource = MeshResource::new(ctx, mesh, vertex_flags, self.allocator.clone());
+
+        let mesh_resource =
+            MeshBuffer::new(ctx, mesh.clone(), vertex_flags, self.allocator.clone());
 
         let mut model = Model::new(mesh_resource);
-        model.add_mesh(0, n_indices);
+        let mut start = 0;
+        for p in &mesh.primitives {
+            model.add_surface(start, p.indices.len());
+            start += p.indices.len();
+        }
 
         self.scene.models.push(model);
     }
@@ -320,21 +328,21 @@ impl App {
 
             scene_data.update(
                 "vertex_buffer",
-                UniformProp::U64(model.resource.vertex_buffer.address(ctx.device.clone())),
+                UniformProp::U64(model.buffers.vertex_buffer.address(ctx.device.clone())),
             );
 
             cmd.push_constants(self.scene.pipeline_layout.clone(), &scene_data.raw());
 
-            for mesh in &model.meshes {
-                cmd.bind_index_buffer::<u32>(&model.resource.index_buffer, mesh.offset);
-                cmd.draw_indexed(mesh.len, 1);
+            for surface in &model.surfaces {
+                cmd.bind_index_buffer::<u32>(&model.buffers.index_buffer, surface.offset);
+                cmd.draw_indexed(surface.len, 1);
             }
         }
 
         cmd.end_rendering();
     }
 
-    fn get_mesh() -> Arc<Mesh> {
+    fn _load_mesh() -> Arc<Mesh> {
         let v1 = VertexData::builder()
             .padding(true)
             .position([0.5, -0.5, 0.].into())
@@ -375,10 +383,12 @@ impl App {
 
         log::info!("Vertex size: {}", VertexData::size(vertex_flags, true));
 
-        Mesh::builder("quad")
+        let p = Primitive::builder()
             .add_indices(&indices)
             .add_vertices(&vertices)
-            .build()
+            .build();
+
+        Mesh::builder("quad").add_primitive(p).build()
     }
 
     fn create_swapchain(ctx: &Context) -> SwapChain {

@@ -12,6 +12,8 @@ use gobs_vulkan::{
 
 use crate::model::Model;
 
+const SHADER_DIR: &str = "examples/shaders";
+
 pub struct Scene {
     pub models: Vec<Model>,
     pub scene_data: UniformData,
@@ -22,13 +24,13 @@ pub struct Scene {
 impl Scene {
     pub fn new(ctx: &Context, size: ImageExtent2D, format: ImageFormat) -> Self {
         let vertex_shader = Shader::from_file(
-            "examples/shaders/mesh.vert.spv",
+            &format!("{}/mesh.vert.spv", SHADER_DIR),
             ctx.device.clone(),
             ShaderType::Vertex,
         );
 
         let fragment_shader = Shader::from_file(
-            "examples/shaders/triangle.frag.spv",
+            &format!("{}/triangle.frag.spv", SHADER_DIR),
             ctx.device.clone(),
             ShaderType::Fragment,
         );
