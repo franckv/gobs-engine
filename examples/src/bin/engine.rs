@@ -161,16 +161,16 @@ impl Run for App {
     fn start(&mut self, ctx: &Context) {
         log::trace!("Start");
 
-        let meshes = gobs::scene::gltf::load_gltf(&format!("{}/basicmesh.glb", ASSET_DIR));
+        let meshes = gobs::scene::import::gltf::load_gltf(&format!("{}/basicmesh.glb", ASSET_DIR));
         let mesh = meshes[2].clone();
 
         let vertex_flags =
             VertexFlag::POSITION | VertexFlag::COLOR | VertexFlag::TEXTURE | VertexFlag::NORMAL;
 
-        let mesh_resource =
+        let mesh_buffer =
             MeshBuffer::new(ctx, mesh.clone(), vertex_flags, self.allocator.clone());
 
-        let mut model = Model::new(mesh_resource);
+        let mut model = Model::new(mesh_buffer);
         let mut start = 0;
         for p in &mesh.primitives {
             model.add_surface(start, p.indices.len());
