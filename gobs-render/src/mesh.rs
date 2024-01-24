@@ -6,8 +6,9 @@ use gobs_core::geometry::{
     mesh::Mesh,
     vertex::{VertexData, VertexFlag},
 };
-use gobs_render::context::Context;
 use gobs_vulkan::buffer::{Buffer, BufferUsage};
+
+use crate::context::Context;
 
 pub struct MeshSurface {
     pub offset: usize,

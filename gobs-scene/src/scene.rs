@@ -2,15 +2,13 @@ use std::sync::Arc;
 
 use glam::Mat4;
 use gobs_core::entity::uniform::{UniformData, UniformProp};
-use gobs_render::context::Context;
+use gobs_render::{context::Context, model::Model};
 use gobs_vulkan::{
     image::{ImageExtent2D, ImageFormat},
     pipeline::{
         DynamicStateElem, FrontFace, Pipeline, PipelineLayout, Rect2D, Shader, ShaderType, Viewport,
     },
 };
-
-use crate::model::Model;
 
 const SHADER_DIR: &str = "examples/shaders";
 

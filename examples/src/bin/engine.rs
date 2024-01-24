@@ -13,8 +13,8 @@ use gobs::{
             vertex::{VertexData, VertexFlag},
         },
     },
-    render::context::Context,
-    scene::{mesh::MeshBuffer, model::Model, scene::Scene},
+    render::{context::Context, mesh::MeshBuffer, model::Model},
+    scene::scene::Scene,
     vulkan::{
         command::{CommandBuffer, CommandPool},
         descriptor::{
@@ -167,8 +167,7 @@ impl Run for App {
         let vertex_flags =
             VertexFlag::POSITION | VertexFlag::COLOR | VertexFlag::TEXTURE | VertexFlag::NORMAL;
 
-        let mesh_buffer =
-            MeshBuffer::new(ctx, mesh.clone(), vertex_flags, self.allocator.clone());
+        let mesh_buffer = MeshBuffer::new(ctx, mesh.clone(), vertex_flags, self.allocator.clone());
 
         let mut model = Model::new(mesh_buffer);
         let mut start = 0;
