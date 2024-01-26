@@ -54,6 +54,7 @@ impl Memory {
     pub(crate) fn with_image(
         device: Arc<Device>,
         image: vk::Image,
+        label: &str,
         allocator: Arc<Mutex<Allocator>>,
     ) -> Self {
         let mem_req = unsafe { device.raw().get_image_memory_requirements(image) };
@@ -63,7 +64,7 @@ impl Memory {
             .lock()
             .unwrap()
             .allocate(&AllocationCreateDesc {
-                name: "image",
+                name: label,
                 requirements: mem_req,
                 location: MemoryLocation::GpuOnly,
                 linear: true,
@@ -74,7 +75,7 @@ impl Memory {
         unsafe {
             device
                 .raw()
-                .bind_image_memory(image, allocation.memory(), 0)
+                .bind_image_memory(image, allocation.memory(), allocation.offset())
                 .unwrap();
         }
 

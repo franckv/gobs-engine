@@ -54,6 +54,7 @@ impl MeshBuffer {
         let indices_size = indices.len() * std::mem::size_of::<u32>();
 
         let mut staging = Buffer::new(
+            "staging",
             indices_size + vertices_size,
             BufferUsage::Staging,
             ctx.device.clone(),
@@ -61,12 +62,14 @@ impl MeshBuffer {
         );
 
         let index_buffer = Buffer::new(
+            "index",
             indices_size,
             BufferUsage::Index,
             ctx.device.clone(),
             allocator.clone(),
         );
         let vertex_buffer = Buffer::new(
+            "vertex",
             vertices_size,
             BufferUsage::Vertex,
             ctx.device.clone(),
@@ -77,6 +80,7 @@ impl MeshBuffer {
         staging.copy(&indices, vertices_size);
 
         ctx.immediate_cmd.immediate(|cmd| {
+            cmd.begin_label("Upload buffer");
             cmd.copy_buffer(&staging, &vertex_buffer, vertex_buffer.size, 0);
             cmd.copy_buffer(
                 &staging,
@@ -84,6 +88,7 @@ impl MeshBuffer {
                 index_buffer.size,
                 vertex_buffer.size,
             );
+            cmd.end_label();
         });
 
         Arc::new(MeshBuffer {

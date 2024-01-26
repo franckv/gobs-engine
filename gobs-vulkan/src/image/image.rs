@@ -1,12 +1,13 @@
+use std::fmt::Debug;
 use std::sync::{Arc, Mutex};
 
-use ash::vk;
+use ash::vk::{self, Handle};
 use gpu_allocator::vulkan::Allocator;
 
 use crate::device::Device;
 use crate::image::ImageFormat;
 use crate::memory::Memory;
-use crate::Wrap;
+use crate::{debug, Wrap};
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum ImageLayout {
@@ -28,7 +29,7 @@ impl Into<vk::ImageLayout> for ImageLayout {
             ImageLayout::TransferSrc => vk::ImageLayout::TRANSFER_SRC_OPTIMAL,
             ImageLayout::TransferDst => vk::ImageLayout::TRANSFER_DST_OPTIMAL,
             ImageLayout::Shader => vk::ImageLayout::SHADER_READ_ONLY_OPTIMAL,
-            ImageLayout::Depth => vk::ImageLayout::DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
+            ImageLayout::Depth => vk::ImageLayout::DEPTH_ATTACHMENT_OPTIMAL,
             ImageLayout::Color => vk::ImageLayout::COLOR_ATTACHMENT_OPTIMAL,
             ImageLayout::Present => vk::ImageLayout::PRESENT_SRC_KHR,
         }
@@ -72,7 +73,7 @@ impl Into<vk::ImageAspectFlags> for ImageUsage {
     }
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub struct ImageExtent2D {
     pub width: u32,
     pub height: u32,
@@ -101,6 +102,7 @@ impl From<(u32, u32)> for ImageExtent2D {
 
 /// Image buffer allocated in memory
 pub struct Image {
+    label: String,
     device: Arc<Device>,
     image: vk::Image,
     pub(crate) image_view: vk::ImageView,
@@ -113,21 +115,41 @@ pub struct Image {
 
 impl Image {
     pub fn new(
+        label: &str,
         device: Arc<Device>,
         format: ImageFormat,
         usage: ImageUsage,
         extent: ImageExtent2D,
         allocator: Arc<Mutex<Allocator>>,
     ) -> Self {
+        let image_label = format!("[Image] {}", label);
+
         let image = Self::create_image(&device, extent, format, usage);
 
-        let memory = Memory::with_image(device.clone(), image, allocator);
+        debug::add_label(
+            device.clone(),
+            &image_label,
+            vk::ObjectType::IMAGE,
+            image.as_raw(),
+        );
 
-        let image_view = Self::create_image_view(&device, image, format, usage);
+        let memory = Memory::with_image(device.clone(), image, &image_label, allocator);
+
+        let image_view = Self::create_image_view(device.clone(), image, format, usage);
+
+        let view_label = format!("[Image View] {}", label);
+
+        debug::add_label(
+            device.clone(),
+            &view_label,
+            vk::ObjectType::IMAGE_VIEW,
+            image_view.as_raw(),
+        );
 
         let layout = ImageLayout::Undefined;
 
         Image {
+            label: image_label,
             device,
             image,
             image_view,
@@ -140,16 +162,36 @@ impl Image {
     }
 
     pub(crate) fn with_raw(
+        label: &str,
         device: Arc<Device>,
         image: vk::Image,
         format: ImageFormat,
         usage: ImageUsage,
         extent: ImageExtent2D,
     ) -> Self {
-        let image_view = Self::create_image_view(&device, image, format, usage);
+        let image_label = format!("[Image] {}", label);
+
+        debug::add_label(
+            device.clone(),
+            &image_label,
+            vk::ObjectType::IMAGE,
+            image.as_raw(),
+        );
+
+        let image_view = Self::create_image_view(device.clone(), image, format, usage);
+
+        let view_label = format!("[Image View] {}", label);
+        debug::add_label(
+            device.clone(),
+            &view_label,
+            vk::ObjectType::IMAGE_VIEW,
+            image_view.as_raw(),
+        );
+
         let layout = ImageLayout::Undefined;
 
         Image {
+            label: image_label,
             device,
             image,
             image_view,
@@ -188,14 +230,13 @@ impl Image {
             .usage(usage.into())
             .sharing_mode(vk::SharingMode::EXCLUSIVE)
             .samples(vk::SampleCountFlags::TYPE_1)
-            .queue_family_indices(&[])
-            .build();
+            .queue_family_indices(&[]);
 
         unsafe { device.raw().create_image(&image_info, None).unwrap() }
     }
 
     pub(crate) fn create_image_view(
-        device: &Arc<Device>,
+        device: Arc<Device>,
         image: vk::Image,
         format: ImageFormat,
         usage: ImageUsage,
@@ -213,17 +254,15 @@ impl Image {
                     .layer_count(1)
                     .build(),
             )
-            .components(
-                vk::ComponentMapping::builder()
-                    .r(vk::ComponentSwizzle::R)
-                    .g(vk::ComponentSwizzle::G)
-                    .b(vk::ComponentSwizzle::B)
-                    .a(vk::ComponentSwizzle::A)
-                    .build(),
-            )
             .build();
 
         unsafe { device.raw().create_image_view(&view_info, None).unwrap() }
+    }
+}
+
+impl Debug for Image {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "Image {}", self.label)
     }
 }
 

@@ -66,8 +66,7 @@ impl CommandBuffer {
 
     pub fn begin(&self) {
         let begin_info = vk::CommandBufferBeginInfo::builder()
-            .flags(vk::CommandBufferUsageFlags::ONE_TIME_SUBMIT)
-            .build();
+            .flags(vk::CommandBufferUsageFlags::ONE_TIME_SUBMIT);
 
         unsafe {
             self.device
@@ -79,7 +78,7 @@ impl CommandBuffer {
 
     pub fn begin_label(&self, label: &str) {
         let label = CString::new(label).unwrap();
-        let label_info = vk::DebugUtilsLabelEXT::builder().label_name(&label).build();
+        let label_info = vk::DebugUtilsLabelEXT::builder().label_name(&label);
 
         unsafe {
             self.device
@@ -95,6 +94,18 @@ impl CommandBuffer {
                 .instance()
                 .debug_utils_loader
                 .cmd_end_debug_utils_label(self.command_buffer);
+        }
+    }
+
+    pub fn insert_label(&self, label: &str) {
+        let label = CString::new(label).unwrap();
+        let label_info = vk::DebugUtilsLabelEXT::builder().label_name(&label);
+
+        unsafe {
+            self.device
+                .instance()
+                .debug_utils_loader
+                .cmd_insert_debug_utils_label(self.command_buffer, &label_info);
         }
     }
 
@@ -122,9 +133,10 @@ impl CommandBuffer {
         &self,
         color: &Image,
         extent: ImageExtent2D,
-        _depth: Option<&Image>,
+        depth: Option<&Image>,
         clear: bool,
         clear_color: [f32; 4],
+        depth_clear: f32,
     ) {
         let color_load_op = if clear {
             vk::AttachmentLoadOp::CLEAR
@@ -132,21 +144,43 @@ impl CommandBuffer {
             vk::AttachmentLoadOp::LOAD
         };
 
+        let color_info = vec![vk::RenderingAttachmentInfo::builder()
+            .image_view(color.image_view)
+            .image_layout(color.layout.into())
+            .load_op(color_load_op)
+            .store_op(vk::AttachmentStoreOp::STORE)
+            .clear_value(vk::ClearValue {
+                color: vk::ClearColorValue {
+                    float32: clear_color,
+                },
+            })
+            .build()];
+
+        let mut depth_info = vec![];
+        if let Some(depth) = depth {
+            let depth_attachment = vk::RenderingAttachmentInfo::builder()
+                .image_view(depth.image_view)
+                .image_layout(depth.layout.into())
+                .load_op(vk::AttachmentLoadOp::CLEAR)
+                .store_op(vk::AttachmentStoreOp::STORE)
+                .clear_value(vk::ClearValue {
+                    depth_stencil: vk::ClearDepthStencilValue {
+                        depth: depth_clear,
+                        stencil: 0,
+                    },
+                });
+            depth_info.push(depth_attachment);
+        }
+
         let rendering_info = vk::RenderingInfo::builder()
             .render_area(vk::Rect2D::builder().extent(extent.into()).build())
             .layer_count(1)
-            .color_attachments(&[vk::RenderingAttachmentInfo::builder()
-                .image_view(color.image_view)
-                .image_layout(color.layout.into())
-                .load_op(color_load_op)
-                .store_op(vk::AttachmentStoreOp::STORE)
-                .clear_value(vk::ClearValue {
-                    color: vk::ClearColorValue {
-                        float32: clear_color,
-                    },
-                })
-                .build()])
-            .build();
+            .color_attachments(&color_info);
+
+        let rendering_info = match depth_info.first() {
+            Some(depth_attachment) => rendering_info.depth_attachment(depth_attachment),
+            None => rendering_info,
+        };
 
         unsafe {
             self.device
@@ -373,14 +407,15 @@ impl CommandBuffer {
             )
             .build();
 
+        let blit_region_set = vec![blit_region];
+
         let blit_info = vk::BlitImageInfo2::builder()
             .dst_image(dst.raw())
             .dst_image_layout(vk::ImageLayout::TRANSFER_DST_OPTIMAL)
             .src_image(src.raw())
             .src_image_layout(vk::ImageLayout::TRANSFER_SRC_OPTIMAL)
             .filter(vk::Filter::LINEAR)
-            .regions(&[blit_region])
-            .build();
+            .regions(&blit_region_set);
 
         unsafe {
             self.device
@@ -426,16 +461,16 @@ impl CommandBuffer {
                 vk::ImageSubresourceRange::builder()
                     .aspect_mask(image.usage.into())
                     .base_mip_level(0)
-                    .level_count(1)
+                    .level_count(vk::REMAINING_MIP_LEVELS)
                     .base_array_layer(0)
-                    .layer_count(1)
+                    .layer_count(vk::REMAINING_ARRAY_LAYERS)
                     .build(),
             )
             .build();
 
-        let dep_info = vk::DependencyInfo::builder()
-            .image_memory_barriers(&[barrier_info])
-            .build();
+        let barrier_info_set = vec![barrier_info];
+
+        let dep_info = vk::DependencyInfo::builder().image_memory_barriers(&barrier_info_set);
 
         unsafe {
             self.device
@@ -497,12 +532,12 @@ impl CommandBuffer {
             submit_info = submit_info.signal_semaphore_infos(&signal_info);
         };
 
-        let submit_info = submit_info.build();
+        let submit_info = submit_info;
 
         unsafe {
             self.device
                 .raw()
-                .queue_submit2(self.queue.queue, &[submit_info], self.fence.raw())
+                .queue_submit2(self.queue.queue, &[submit_info.build()], self.fence.raw())
                 .unwrap();
         }
     }

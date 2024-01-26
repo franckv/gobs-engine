@@ -51,9 +51,11 @@ impl DescriptorSetPool {
     }
 
     pub fn allocate(&self, layout: Arc<DescriptorSetLayout>) -> DescriptorSet {
+        let layouts = vec![layout.layout];
+
         let descriptor_info = vk::DescriptorSetAllocateInfo::builder()
             .descriptor_pool(self.pool)
-            .set_layouts(&[layout.layout])
+            .set_layouts(&layouts)
             .build();
 
         let mut ds = unsafe {

@@ -109,6 +109,7 @@ impl SwapChain {
                 .iter()
                 .map(|&image| {
                     Image::with_raw(
+                        "swapchain",
                         self.device.clone(),
                         image,
                         self.format.format,
@@ -136,10 +137,14 @@ impl SwapChain {
     }
 
     pub fn present(&mut self, index: usize, queue: &Queue, wait: &Semaphore) -> Result<(), ()> {
+        let wait_semaphores = vec![wait.raw()];
+        let image_indices = vec![index as u32];
+        let swapchains = vec![self.swapchain];
+
         let present_info = vk::PresentInfoKHR::builder()
-            .wait_semaphores(&[wait.raw()])
-            .image_indices(&[index as u32])
-            .swapchains(&[self.swapchain])
+            .wait_semaphores(&wait_semaphores)
+            .image_indices(&image_indices)
+            .swapchains(&swapchains)
             .build();
 
         unsafe {

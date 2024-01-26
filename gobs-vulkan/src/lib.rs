@@ -1,5 +1,6 @@
 pub mod buffer;
 pub mod command;
+pub(crate) mod debug;
 pub mod descriptor;
 pub mod device;
 pub mod framebuffer;

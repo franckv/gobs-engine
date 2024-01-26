@@ -96,18 +96,25 @@ impl DescriptorSetUpdates {
                     ResourceInfo::ImageCombined(_) => vk::DescriptorType::COMBINED_IMAGE_SAMPLER,
                 });
 
+            let mut buffer_info_set = vec![];
+            let mut image_info_set = vec![];
+
             let write_info = match update {
                 ResourceInfo::Buffer(buffer_info) => {
-                    write_info_builder.buffer_info(&[*buffer_info]).build()
+                    buffer_info_set.push(*buffer_info);
+                    write_info_builder.buffer_info(&buffer_info_set).build()
                 }
                 ResourceInfo::DynamicBuffer(buffer_info) => {
-                    write_info_builder.buffer_info(&[*buffer_info]).build()
+                    buffer_info_set.push(*buffer_info);
+                    write_info_builder.buffer_info(&buffer_info_set).build()
                 }
                 ResourceInfo::ImageCombined(image_info) => {
-                    write_info_builder.image_info(&[*image_info]).build()
+                    image_info_set.push(*image_info);
+                    write_info_builder.image_info(&image_info_set).build()
                 }
                 ResourceInfo::Image(image_info) => {
-                    write_info_builder.image_info(&[*image_info]).build()
+                    image_info_set.push(*image_info);
+                    write_info_builder.image_info(&image_info_set).build()
                 }
             };
 

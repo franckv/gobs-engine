@@ -1,7 +1,9 @@
 use indexmap::IndexMap;
 
+pub enum UniformProp {}
+
 #[derive(Clone, Copy)]
-pub enum UniformProp {
+pub enum UniformPropData {
     F32(f32),
     U32(u32),
     U64(u64),
@@ -11,28 +13,28 @@ pub enum UniformProp {
     Mat4F([[f32; 4]; 4]),
 }
 
-impl UniformProp {
+impl UniformPropData {
     pub fn alignment(&self) -> u32 {
         match self {
-            UniformProp::F32(_) => 4,
-            UniformProp::U32(_) => 4,
-            UniformProp::U64(_) => 16,
-            UniformProp::Vec2F(_) => 8,
-            UniformProp::Vec3F(_) => 16,
-            UniformProp::Vec4F(_) => 16,
-            UniformProp::Mat4F(_) => 16,
+            UniformPropData::F32(_) => 4,
+            UniformPropData::U32(_) => 4,
+            UniformPropData::U64(_) => 16,
+            UniformPropData::Vec2F(_) => 8,
+            UniformPropData::Vec3F(_) => 16,
+            UniformPropData::Vec4F(_) => 16,
+            UniformPropData::Mat4F(_) => 16,
         }
     }
 
     pub fn raw(&self) -> Vec<u8> {
         match self {
-            UniformProp::F32(d) => bytemuck::cast_slice(&[*d]).into(),
-            UniformProp::U32(d) => bytemuck::cast_slice(&[*d]).into(),
-            UniformProp::U64(d) => bytemuck::cast_slice(&[*d]).into(),
-            UniformProp::Vec2F(d) => bytemuck::cast_slice(d).into(),
-            UniformProp::Vec3F(d) => bytemuck::cast_slice(d).into(),
-            UniformProp::Vec4F(d) => bytemuck::cast_slice(d).into(),
-            UniformProp::Mat4F(d) => bytemuck::cast_slice(d).into(),
+            UniformPropData::F32(d) => bytemuck::cast_slice(&[*d]).into(),
+            UniformPropData::U32(d) => bytemuck::cast_slice(&[*d]).into(),
+            UniformPropData::U64(d) => bytemuck::cast_slice(&[*d]).into(),
+            UniformPropData::Vec2F(d) => bytemuck::cast_slice(d).into(),
+            UniformPropData::Vec3F(d) => bytemuck::cast_slice(d).into(),
+            UniformPropData::Vec4F(d) => bytemuck::cast_slice(d).into(),
+            UniformPropData::Mat4F(d) => bytemuck::cast_slice(d).into(),
         }
     }
 }
@@ -40,7 +42,7 @@ impl UniformProp {
 #[derive(Clone)]
 pub struct UniformData {
     pub name: String,
-    pub data: IndexMap<String, UniformProp>,
+    pub data: IndexMap<String, UniformPropData>,
 }
 
 impl UniformData {
@@ -48,11 +50,11 @@ impl UniformData {
         UniformDataBuilder::new(name)
     }
 
-    pub fn prop(&self, name: &str) -> UniformProp {
+    pub fn prop(&self, name: &str) -> UniformPropData {
         self.data[name]
     }
 
-    pub fn update(&mut self, name: &str, prop: UniformProp) {
+    pub fn update(&mut self, name: &str, prop: UniformPropData) {
         self.data[name] = prop;
     }
 
@@ -84,7 +86,7 @@ impl UniformData {
 
 pub struct UniformDataBuilder {
     pub name: String,
-    pub data: IndexMap<String, UniformProp>,
+    pub data: IndexMap<String, UniformPropData>,
 }
 
 impl UniformDataBuilder {
@@ -95,7 +97,7 @@ impl UniformDataBuilder {
         }
     }
 
-    pub fn prop(mut self, name: &str, prop: UniformProp) -> Self {
+    pub fn prop(mut self, name: &str, prop: UniformPropData) -> Self {
         self.data.insert(name.to_string(), prop);
 
         self
@@ -115,7 +117,7 @@ mod tests {
     use glam::{Mat4, Vec4};
 
     use super::UniformDataBuilder;
-    use super::UniformProp;
+    use super::UniformPropData;
 
     #[repr(C)]
     #[derive(Debug, Copy, Clone, bytemuck::Pod, bytemuck::Zeroable)]
@@ -143,9 +145,9 @@ mod tests {
         let camera = UniformDataBuilder::new("camera")
             .prop(
                 "view_position",
-                UniformProp::Vec4F(camera_data.view_position),
+                UniformPropData::Vec4F(camera_data.view_position),
             )
-            .prop("view_proj", UniformProp::Mat4F(camera_data.view_proj))
+            .prop("view_proj", UniformPropData::Mat4F(camera_data.view_proj))
             .build();
 
         assert_eq!(camera.raw(), bytemuck::cast_slice(&[camera_data]));
@@ -158,8 +160,8 @@ mod tests {
         };
 
         let light = UniformDataBuilder::new("light")
-            .prop("position", UniformProp::Vec3F(light_data.position))
-            .prop("colour", UniformProp::Vec3F(light_data.colour))
+            .prop("position", UniformPropData::Vec3F(light_data.position))
+            .prop("colour", UniformPropData::Vec3F(light_data.colour))
             .build();
 
         assert_eq!(light.raw(), bytemuck::cast_slice(&[light_data]));

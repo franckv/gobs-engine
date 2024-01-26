@@ -533,6 +533,12 @@ impl GraphicsPipelineBuilder {
         self
     }
 
+    pub fn depth_test_enable(mut self, write_enable: bool, op: CompareOp) -> Self {
+        self.depth_stencil = Some(DepthStencilState::new(true, write_enable, op));
+
+        self
+    }
+
     pub fn build(mut self) -> Pipeline {
         let device = self.device.unwrap();
 

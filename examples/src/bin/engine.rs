@@ -1,20 +1,25 @@
 use std::sync::{Arc, Mutex};
 
+use glam::{Quat, Vec3};
 use gobs::{
     game::{
         app::{Application, RenderError, Run},
         input::{Input, Key},
     },
     gobs_core::{
-        entity::uniform::UniformProp,
+        entity::uniform::{UniformData, UniformPropData},
         geometry::{
             mesh::Mesh,
             primitive::Primitive,
             vertex::{VertexData, VertexFlag},
+            Transform,
         },
     },
     render::{context::Context, mesh::MeshBuffer, model::Model},
-    scene::scene::Scene,
+    scene::{
+        graph::scenegraph::{Node, NodeValue},
+        scene::Scene,
+    },
     vulkan::{
         command::{CommandBuffer, CommandPool},
         descriptor::{
@@ -65,6 +70,7 @@ struct App {
     swapchain: SwapChain,
     swapchain_images: Vec<Image>,
     draw_image: Image,
+    depth_image: Image,
     render_scaling: f32,
     ds_pool: DescriptorSetPool,
     draw_ds_layout: Arc<DescriptorSetLayout>,
@@ -108,9 +114,19 @@ impl Run for App {
 
         let extent = ctx.surface.get_extent(ctx.device.clone());
         let draw_image = Image::new(
+            "color",
             ctx.device.clone(),
             ImageFormat::R16g16b16a16Sfloat,
             ImageUsage::Color,
+            extent,
+            allocator.clone(),
+        );
+
+        let depth_image = Image::new(
+            "depth",
+            ctx.device.clone(),
+            ImageFormat::D32Sfloat,
+            ImageUsage::Depth,
             extent,
             allocator.clone(),
         );
@@ -139,7 +155,12 @@ impl Run for App {
             .compute_shader("main", compute_shader)
             .build();
 
-        let scene = Scene::new(ctx, draw_image.extent, draw_image.format);
+        let scene = Scene::new(
+            ctx,
+            draw_image.extent,
+            draw_image.format,
+            Some(depth_image.format),
+        );
 
         App {
             frame_number: 0,
@@ -147,6 +168,7 @@ impl Run for App {
             swapchain,
             swapchain_images,
             draw_image,
+            depth_image,
             render_scaling: 1.,
             ds_pool,
             draw_ds_layout,
@@ -176,7 +198,15 @@ impl Run for App {
             start += p.indices.len();
         }
 
-        self.scene.models.push(model);
+        let view = Transform::new(
+            [0., 0., -3.].into(),
+            Quat::from_rotation_y((15. as f32).to_radians()),
+            Vec3::new(1., -1., 1.),
+        );
+
+        let node = Node::new(NodeValue::Model(model), view);
+
+        self.scene.graph.insert(self.scene.graph.root, node);
     }
 
     fn update(&mut self, _ctx: &Context, _delta: f32) {
@@ -185,6 +215,8 @@ impl Run for App {
 
     fn render(&mut self, ctx: &Context) -> Result<(), RenderError> {
         log::trace!("Render frame {}", self.frame_number);
+
+        debug_assert_eq!(self.draw_image.extent, self.depth_image.extent);
 
         let draw_extent = ImageExtent2D::new(
             (self
@@ -204,13 +236,14 @@ impl Run for App {
         let frame = &self.frames[self.frame_number % FRAMES_IN_FLIGHT];
 
         frame.command_buffer.fence.wait_and_reset();
-        assert!(!frame.command_buffer.fence.signaled());
+        debug_assert!(!frame.command_buffer.fence.signaled());
 
         let Ok(image_index) = self.swapchain.acquire_image(&frame.swapchain_semaphore) else {
             return Err(RenderError::Outdated);
         };
 
         self.draw_image.invalidate();
+        self.depth_image.invalidate();
         self.swapchain_images[image_index as usize].invalidate();
 
         frame.command_buffer.reset();
@@ -225,13 +258,21 @@ impl Run for App {
             .command_buffer
             .transition_image_layout(&mut self.draw_image, ImageLayout::General);
 
+        frame.command_buffer.begin_label("Draw background");
         self.draw_background(&frame.command_buffer, draw_extent);
+        frame.command_buffer.end_label();
 
         frame
             .command_buffer
             .transition_image_layout(&mut self.draw_image, ImageLayout::Color);
 
+        frame
+            .command_buffer
+            .transition_image_layout(&mut self.depth_image, ImageLayout::Depth);
+
+        frame.command_buffer.begin_label("Draw scene");
         self.draw_scene(ctx, &frame.command_buffer, draw_extent);
+        frame.command_buffer.end_label();
 
         frame
             .command_buffer
@@ -318,25 +359,43 @@ impl App {
     }
 
     fn draw_scene(&self, ctx: &Context, cmd: &CommandBuffer, draw_extent: ImageExtent2D) {
-        cmd.begin_rendering(&self.draw_image, draw_extent, None, false, [1.; 4]);
+        cmd.begin_rendering(
+            &self.draw_image,
+            draw_extent,
+            Some(&self.depth_image),
+            false,
+            [0.; 4],
+            1.,
+        );
         cmd.bind_pipeline(&self.scene.pipeline);
         cmd.set_viewport(draw_extent.width, draw_extent.height);
 
-        for model in &self.scene.models {
-            let mut scene_data = self.scene.scene_data.clone();
+        self.scene
+            .graph
+            .visit(self.scene.graph.root, &|transform, model| {
+                if let NodeValue::Model(model) = model {
+                    let world_matrix = self.scene.camera.view_proj() * transform.matrix;
 
-            scene_data.update(
-                "vertex_buffer",
-                UniformProp::U64(model.buffers.vertex_buffer.address(ctx.device.clone())),
-            );
+                    let scene_data = UniformData::builder("scene data")
+                        .prop(
+                            "world_matrix",
+                            UniformPropData::Mat4F(world_matrix.to_cols_array_2d()),
+                        )
+                        .prop(
+                            "vertex_buffer",
+                            UniformPropData::U64(
+                                model.buffers.vertex_buffer.address(ctx.device.clone()),
+                            ),
+                        )
+                        .build();
+                    cmd.push_constants(self.scene.pipeline_layout.clone(), &scene_data.raw());
 
-            cmd.push_constants(self.scene.pipeline_layout.clone(), &scene_data.raw());
-
-            for surface in &model.surfaces {
-                cmd.bind_index_buffer::<u32>(&model.buffers.index_buffer, surface.offset);
-                cmd.draw_indexed(surface.len, 1);
-            }
-        }
+                    for surface in &model.surfaces {
+                        cmd.bind_index_buffer::<u32>(&model.buffers.index_buffer, surface.offset);
+                        cmd.draw_indexed(surface.len, 1);
+                    }
+                }
+            });
 
         cmd.end_rendering();
     }

@@ -1,3 +1,4 @@
+use std::fmt::Debug;
 use std::sync::{Arc, Mutex};
 
 use ash::vk;
@@ -6,7 +7,7 @@ use gpu_allocator::MemoryLocation;
 
 use crate::device::Device;
 use crate::memory::Memory;
-use crate::Wrap;
+use crate::{debug, Wrap};
 
 pub enum BufferUsage {
     Staging,
@@ -50,6 +51,7 @@ pub type BufferAddress = vk::DeviceAddress;
 
 /// Data buffer allocated in memory
 pub struct Buffer {
+    label: String,
     device: Arc<Device>,
     buffer: vk::Buffer,
     memory: Memory,
@@ -58,6 +60,7 @@ pub struct Buffer {
 
 impl Buffer {
     pub fn new(
+        label: &str,
         size: usize,
         usage: BufferUsage,
         device: Arc<Device>,
@@ -84,9 +87,19 @@ impl Buffer {
 
         let buffer = unsafe { device.raw().create_buffer(&buffer_info, None).unwrap() };
 
+        let buffer_label = format!("[Buffer] {}", label);
+
+        debug::add_label(
+            device.clone(),
+            &buffer_label,
+            vk::ObjectType::BUFFER,
+            vk::Handle::as_raw(buffer),
+        );
+
         let memory = Memory::with_buffer(device.clone(), buffer, usage, allocator);
 
         Buffer {
+            label: buffer_label,
             device,
             buffer,
             memory,
@@ -104,6 +117,12 @@ impl Buffer {
 
     pub fn copy<T: Copy>(&mut self, entries: &[T], offset: usize) {
         self.memory.upload(entries, offset);
+    }
+}
+
+impl Debug for Buffer {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "Buffer {}", self.label)
     }
 }
 

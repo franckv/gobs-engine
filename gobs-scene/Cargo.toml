@@ -13,3 +13,4 @@ gobs-render = { workspace = true }
 gobs-vulkan = { workspace = true }
 gpu-allocator = { workspace = true }
 log = { workspace = true }
+slotmap = { workspace = true }
