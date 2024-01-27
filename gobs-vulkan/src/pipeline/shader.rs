@@ -6,8 +6,6 @@ use std::sync::Arc;
 
 use ash::vk;
 
-use log::trace;
-
 use crate::device::Device;
 use crate::Wrap;
 
@@ -56,7 +54,7 @@ impl Wrap<vk::ShaderModule> for Shader {
 
 impl Drop for Shader {
     fn drop(&mut self) {
-        trace!("Drop shader");
+        log::debug!("Drop shader");
         unsafe {
             self.device.raw().destroy_shader_module(self.shader, None);
         }

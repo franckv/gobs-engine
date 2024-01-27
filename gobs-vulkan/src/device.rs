@@ -10,7 +10,7 @@ use crate::Wrap;
 
 /// Logical device
 pub struct Device {
-    instance: Arc<Instance>,
+    pub instance: Arc<Instance>,
     device: ash::Device,
     pub p_device: PhysicalDevice,
 }

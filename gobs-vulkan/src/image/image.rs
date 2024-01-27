@@ -1,9 +1,9 @@
 use std::fmt::Debug;
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 
 use ash::vk::{self, Handle};
-use gpu_allocator::vulkan::Allocator;
 
+use crate::alloc::Allocator;
 use crate::device::Device;
 use crate::image::ImageFormat;
 use crate::memory::Memory;
@@ -120,7 +120,7 @@ impl Image {
         format: ImageFormat,
         usage: ImageUsage,
         extent: ImageExtent2D,
-        allocator: Arc<Mutex<Allocator>>,
+        allocator: Arc<Allocator>,
     ) -> Self {
         let image_label = format!("[Image] {}", label);
 
@@ -133,7 +133,7 @@ impl Image {
             image.as_raw(),
         );
 
-        let memory = Memory::with_image(device.clone(), image, &image_label, allocator);
+        let memory = allocator.allocate_image(image, &image_label);
 
         let image_view = Self::create_image_view(device.clone(), image, format, usage);
 
@@ -274,10 +274,11 @@ impl Wrap<vk::Image> for Image {
 
 impl Drop for Image {
     fn drop(&mut self) {
-        log::debug!("Drop image");
+        log::debug!("Drop image {}", self.label);
         unsafe {
             self.device.raw().destroy_image_view(self.image_view, None);
             if self.memory.is_some() {
+                log::debug!("Destroy image {}", self.label);
                 self.device.raw().destroy_image(self.image, None);
             }
         }

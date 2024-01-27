@@ -1,12 +1,13 @@
-use std::sync::{Arc, Mutex};
-
-use gpu_allocator::vulkan::Allocator;
+use std::sync::Arc;
 
 use gobs_core::geometry::{
     mesh::Mesh,
     vertex::{VertexData, VertexFlag},
 };
-use gobs_vulkan::buffer::{Buffer, BufferUsage};
+use gobs_vulkan::{
+    alloc::Allocator,
+    buffer::{Buffer, BufferUsage},
+};
 
 use crate::context::Context;
 
@@ -25,7 +26,7 @@ impl MeshBuffer {
         ctx: &Context,
         mesh: Arc<Mesh>,
         vertex_flags: VertexFlag,
-        allocator: Arc<Mutex<Allocator>>,
+        allocator: Arc<Allocator>,
     ) -> Arc<Self> {
         let vertices_data = mesh
             .primitives

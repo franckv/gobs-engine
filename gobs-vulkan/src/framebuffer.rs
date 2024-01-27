@@ -3,8 +3,6 @@ use std::sync::Arc;
 
 use ash::vk;
 
-use log::trace;
-
 use crate::device::Device;
 use crate::image::{Image, ImageExtent2D};
 use crate::renderpass::RenderPass;
@@ -70,7 +68,7 @@ impl Wrap<vk::Framebuffer> for Framebuffer {
 
 impl Drop for Framebuffer {
     fn drop(&mut self) {
-        trace!("Drop framebuffer");
+        log::debug!("Drop framebuffer");
         unsafe {
             self.device
                 .raw()

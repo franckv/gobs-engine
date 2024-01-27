@@ -1,10 +1,10 @@
 use std::fmt::Debug;
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 
-use ash::vk;
-use gpu_allocator::vulkan::Allocator;
+use ash::vk::{self, Handle};
 use gpu_allocator::MemoryLocation;
 
+use crate::alloc::Allocator;
 use crate::device::Device;
 use crate::memory::Memory;
 use crate::{debug, Wrap};
@@ -64,7 +64,7 @@ impl Buffer {
         size: usize,
         usage: BufferUsage,
         device: Arc<Device>,
-        allocator: Arc<Mutex<Allocator>>,
+        allocator: Arc<Allocator>,
     ) -> Self {
         let usage_flags = match usage {
             BufferUsage::Staging => vk::BufferUsageFlags::TRANSFER_SRC,
@@ -96,7 +96,9 @@ impl Buffer {
             vk::Handle::as_raw(buffer),
         );
 
-        let memory = Memory::with_buffer(device.clone(), buffer, usage, allocator);
+        let memory = allocator.allocate_buffer(usage, buffer, &buffer_label);
+
+        log::debug!("Create buffer {} [{:x}]", buffer_label, buffer.as_raw());
 
         Buffer {
             label: buffer_label,
@@ -134,7 +136,7 @@ impl Wrap<vk::Buffer> for Buffer {
 
 impl Drop for Buffer {
     fn drop(&mut self) {
-        log::debug!("Drop buffer");
+        log::debug!("Drop buffer {}", self.label);
         unsafe {
             self.device.raw().destroy_buffer(self.buffer, None);
         }

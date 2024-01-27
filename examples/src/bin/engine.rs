@@ -1,4 +1,4 @@
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 
 use glam::{Quat, Vec3};
 use gobs::{
@@ -15,7 +15,7 @@ use gobs::{
             Transform,
         },
     },
-    render::{context::Context, mesh::MeshBuffer, model::Model},
+    render::{context::Context, model::Model},
     scene::{
         graph::scenegraph::{Node, NodeValue},
         scene::Scene,
@@ -32,10 +32,8 @@ use gobs::{
         queue::Queue,
         swapchain::{PresentationMode, SwapChain},
         sync::Semaphore,
-        Wrap,
     },
 };
-use gpu_allocator::{vulkan::Allocator, vulkan::AllocatorCreateDesc, AllocatorDebugSettings};
 
 const FRAMES_IN_FLIGHT: usize = 2;
 const SHADER_DIR: &str = "examples/shaders";
@@ -78,7 +76,6 @@ struct App {
     bg_pipeline: Pipeline,
     bg_pipeline_layout: Arc<PipelineLayout>,
     scene: Scene,
-    allocator: Arc<Mutex<Allocator>>,
 }
 
 impl Run for App {
@@ -93,25 +90,6 @@ impl Run for App {
         let swapchain = Self::create_swapchain(ctx);
         let swapchain_images = swapchain.create_images();
 
-        let allocator = Arc::new(Mutex::new(
-            Allocator::new(&AllocatorCreateDesc {
-                instance: ctx.instance.cloned(),
-                device: ctx.device.cloned(),
-                physical_device: ctx.device.p_device.raw(),
-                debug_settings: AllocatorDebugSettings {
-                    log_memory_information: true,
-                    log_leaks_on_shutdown: true,
-                    store_stack_traces: false,
-                    log_allocations: true,
-                    log_frees: true,
-                    log_stack_traces: false,
-                },
-                buffer_device_address: true,
-                allocation_sizes: Default::default(),
-            })
-            .unwrap(),
-        ));
-
         let extent = ctx.surface.get_extent(ctx.device.clone());
         let draw_image = Image::new(
             "color",
@@ -119,7 +97,7 @@ impl Run for App {
             ImageFormat::R16g16b16a16Sfloat,
             ImageUsage::Color,
             extent,
-            allocator.clone(),
+            ctx.allocator.clone(),
         );
 
         let depth_image = Image::new(
@@ -128,7 +106,7 @@ impl Run for App {
             ImageFormat::D32Sfloat,
             ImageUsage::Depth,
             extent,
-            allocator.clone(),
+            ctx.allocator.clone(),
         );
 
         let draw_ds_layout = DescriptorSetLayoutBuilder::new()
@@ -176,7 +154,6 @@ impl Run for App {
             bg_pipeline,
             bg_pipeline_layout,
             scene,
-            allocator,
         }
     }
 
@@ -189,14 +166,7 @@ impl Run for App {
         let vertex_flags =
             VertexFlag::POSITION | VertexFlag::COLOR | VertexFlag::TEXTURE | VertexFlag::NORMAL;
 
-        let mesh_buffer = MeshBuffer::new(ctx, mesh.clone(), vertex_flags, self.allocator.clone());
-
-        let mut model = Model::new(mesh_buffer);
-        let mut start = 0;
-        for p in &mesh.primitives {
-            model.add_surface(start, p.indices.len());
-            start += p.indices.len();
-        }
+        let model = Model::new(ctx, mesh, vertex_flags);
 
         let view = Transform::new(
             [0., 0., -3.].into(),
@@ -318,13 +288,14 @@ impl Run for App {
         Ok(())
     }
 
-    fn input(&mut self, _ctx: &Context, input: Input) {
+    fn input(&mut self, ctx: &Context, input: Input) {
         log::trace!("Input");
 
         match input {
             Input::KeyPressed(key) => match key {
                 Key::E => self.render_scaling = (self.render_scaling + 0.1).min(1.),
                 Key::A => self.render_scaling = (self.render_scaling - 0.1).max(0.1),
+                Key::D => log::info!("{:?}", ctx.allocator.allocator.lock().unwrap()),
                 _ => (),
             },
             _ => (),

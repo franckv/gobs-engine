@@ -1,91 +1,20 @@
 use std::mem::{self, align_of};
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 
-use ash::vk;
-use gpu_allocator::vulkan::{Allocation, AllocationCreateDesc, AllocationScheme, Allocator};
-use gpu_allocator::MemoryLocation;
+use ash::vk::Handle;
+use gpu_allocator::vulkan;
 
-use crate::buffer::BufferUsage;
+use crate::alloc::Allocator;
 use crate::device::Device;
 
 #[allow(unused)]
 pub struct Memory {
-    device: Arc<Device>,
-    allocator: Arc<Mutex<Allocator>>,
-    allocation: Option<Allocation>,
+    pub device: Arc<Device>,
+    pub allocator: Arc<Allocator>,
+    pub allocation: Option<vulkan::Allocation>,
 }
 
 impl Memory {
-    pub(crate) fn with_buffer(
-        device: Arc<Device>,
-        buffer: vk::Buffer,
-        usage: BufferUsage,
-        allocator: Arc<Mutex<Allocator>>,
-    ) -> Self {
-        let mem_req = unsafe { device.raw().get_buffer_memory_requirements(buffer) };
-        log::debug!("Allocating buffer: {:?}", mem_req);
-
-        let allocation = allocator
-            .lock()
-            .unwrap()
-            .allocate(&AllocationCreateDesc {
-                name: "buffer",
-                requirements: mem_req,
-                location: usage.into(),
-                linear: true,
-                allocation_scheme: AllocationScheme::GpuAllocatorManaged,
-            })
-            .unwrap();
-
-        unsafe {
-            device
-                .raw()
-                .bind_buffer_memory(buffer, allocation.memory(), allocation.offset())
-                .unwrap();
-        }
-
-        Memory {
-            device,
-            allocator,
-            allocation: Some(allocation),
-        }
-    }
-
-    pub(crate) fn with_image(
-        device: Arc<Device>,
-        image: vk::Image,
-        label: &str,
-        allocator: Arc<Mutex<Allocator>>,
-    ) -> Self {
-        let mem_req = unsafe { device.raw().get_image_memory_requirements(image) };
-        log::debug!("Allocating buffer: {:?}", mem_req);
-
-        let allocation = allocator
-            .lock()
-            .unwrap()
-            .allocate(&AllocationCreateDesc {
-                name: label,
-                requirements: mem_req,
-                location: MemoryLocation::GpuOnly,
-                linear: true,
-                allocation_scheme: AllocationScheme::GpuAllocatorManaged,
-            })
-            .unwrap();
-
-        unsafe {
-            device
-                .raw()
-                .bind_image_memory(image, allocation.memory(), allocation.offset())
-                .unwrap();
-        }
-
-        Memory {
-            device,
-            allocator,
-            allocation: Some(allocation),
-        }
-    }
-
     pub fn upload<T: Copy>(&mut self, entries: &[T], offset: usize) {
         let size = (entries.len() * mem::size_of::<T>()) as u64;
 
@@ -113,8 +42,12 @@ impl Memory {
 
 impl Drop for Memory {
     fn drop(&mut self) {
-        log::debug!("Free memory");
+        if let Some(allocation) = &self.allocation {
+            unsafe { log::debug!("Free memory: {:x}", allocation.memory().as_raw()) };
+        }
+
         self.allocator
+            .allocator
             .lock()
             .unwrap()
             .free(self.allocation.take().unwrap())

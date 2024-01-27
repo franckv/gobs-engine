@@ -1,3 +1,4 @@
+pub mod alloc;
 pub mod buffer;
 pub mod command;
 pub(crate) mod debug;

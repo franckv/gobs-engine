@@ -1,16 +1,19 @@
 use std::sync::Arc;
 
+use winit::window::Window;
+
 use gobs_vulkan as vk;
 use vk::{
+    alloc::Allocator,
     command::{CommandBuffer, CommandPool},
     device::Device,
     instance::Instance,
     queue::Queue,
     surface::Surface,
 };
-use winit::window::Window;
 
 pub struct Context {
+    pub allocator: Arc<Allocator>,
     pub instance: Arc<Instance>,
     pub device: Arc<Device>,
     pub queue: Arc<Queue>,
@@ -35,12 +38,21 @@ impl Context {
         let immediate_cmd_pool = CommandPool::new(device.clone(), &queue.family);
         let immediate_cmd = CommandBuffer::new(device.clone(), queue.clone(), immediate_cmd_pool);
 
+        let allocator = Allocator::new(device.clone());
+
         Context {
+            allocator,
             instance,
             device,
             queue,
             surface,
             immediate_cmd,
         }
+    }
+}
+
+impl Drop for Context {
+    fn drop(&mut self) {
+        log::debug!("Drop context");
     }
 }
