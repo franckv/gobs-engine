@@ -6,8 +6,8 @@ use gpu_allocator::{vulkan, AllocatorDebugSettings, MemoryLocation};
 use crate::{buffer::BufferUsage, device::Device, memory::Memory, Wrap};
 
 pub struct Allocator {
-    pub device: Arc<Device>,
     pub allocator: Mutex<vulkan::Allocator>,
+    pub device: Arc<Device>,
 }
 
 impl Allocator {
@@ -30,8 +30,8 @@ impl Allocator {
         .unwrap();
 
         Arc::new(Allocator {
-            device,
             allocator: Mutex::new(allocator),
+            device,
         })
     }
 

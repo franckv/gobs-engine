@@ -13,12 +13,12 @@ use vk::{
 };
 
 pub struct Context {
-    pub allocator: Arc<Allocator>,
     pub instance: Arc<Instance>,
     pub device: Arc<Device>,
     pub queue: Arc<Queue>,
     pub surface: Arc<Surface>,
     pub immediate_cmd: CommandBuffer,
+    pub allocator: Arc<Allocator>,
 }
 
 impl Context {
@@ -41,12 +41,12 @@ impl Context {
         let allocator = Allocator::new(device.clone());
 
         Context {
-            allocator,
             instance,
             device,
             queue,
             surface,
             immediate_cmd,
+            allocator,
         }
     }
 }
