@@ -24,7 +24,7 @@ pub struct MeshBuilder {
 }
 
 impl MeshBuilder {
-    pub fn new(name: &str) -> Self {
+    fn new(name: &str) -> Self {
         MeshBuilder {
             name: name.to_string(),
             primitives: Vec::new(),

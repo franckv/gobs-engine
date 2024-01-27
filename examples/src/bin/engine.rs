@@ -18,8 +18,7 @@ use gobs::{
     vulkan::{
         command::{CommandBuffer, CommandPool},
         descriptor::{
-            DescriptorSet, DescriptorSetLayout, DescriptorSetLayoutBuilder, DescriptorSetPool,
-            DescriptorStage, DescriptorType,
+            DescriptorSet, DescriptorSetLayout, DescriptorSetPool, DescriptorStage, DescriptorType,
         },
         device::Device,
         image::{ColorSpace, Image, ImageExtent2D, ImageFormat, ImageLayout, ImageUsage},
@@ -104,7 +103,7 @@ impl Run for App {
             ctx.allocator.clone(),
         );
 
-        let draw_ds_layout = DescriptorSetLayoutBuilder::new()
+        let draw_ds_layout = DescriptorSetLayout::builder()
             .binding(DescriptorType::StorageImage, DescriptorStage::Compute)
             .build(ctx.device.clone());
         let ds_pool = DescriptorSetPool::new(ctx.device.clone(), draw_ds_layout.clone(), 10);
@@ -326,18 +325,16 @@ impl App {
                 if let NodeValue::Model(model) = model {
                     let world_matrix = self.scene.camera.view_proj() * transform.matrix;
 
-                    let scene_data = UniformData::builder("scene data")
-                        .prop(
-                            "world_matrix",
+                    let scene_data = UniformData::new(
+                        &self.scene.scene_data_layout,
+                        &[
                             UniformPropData::Mat4F(world_matrix.to_cols_array_2d()),
-                        )
-                        .prop(
-                            "vertex_buffer",
                             UniformPropData::U64(
                                 model.buffers.vertex_buffer.address(ctx.device.clone()),
                             ),
-                        )
-                        .build();
+                        ],
+                    );
+
                     cmd.push_constants(self.scene.pipeline_layout.clone(), &scene_data.raw());
 
                     for surface in &model.surfaces {

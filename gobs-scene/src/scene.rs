@@ -1,9 +1,9 @@
 use std::sync::Arc;
 
-use glam::{Mat4, Vec3};
+use glam::Vec3;
 use gobs_core::entity::{
     camera::Camera,
-    uniform::{UniformData, UniformPropData},
+    uniform::{UniformLayout, UniformProp},
 };
 use gobs_render::context::Context;
 use gobs_vulkan::{
@@ -23,6 +23,7 @@ pub struct Scene {
     pub camera: Camera,
     pub pipeline: Pipeline,
     pub pipeline_layout: Arc<PipelineLayout>,
+    pub scene_data_layout: UniformLayout,
 }
 
 impl Scene {
@@ -44,16 +45,13 @@ impl Scene {
             ShaderType::Fragment,
         );
 
-        let scene_data = UniformData::builder("scene data")
-            .prop(
-                "world_matrix",
-                UniformPropData::Mat4F(Mat4::IDENTITY.to_cols_array_2d()),
-            )
-            .prop("vertex_buffer", UniformPropData::U64(0))
+        let scene_data_layout = UniformLayout::builder()
+            .prop(UniformProp::Mat4F)
+            .prop(UniformProp::U64)
             .build();
 
         let pipeline_layout =
-            PipelineLayout::with_constants(ctx.device.clone(), None, scene_data.raw().len());
+            PipelineLayout::with_constants(ctx.device.clone(), None, scene_data_layout.size());
         let pipeline = Pipeline::graphics_builder(ctx.device.clone())
             .layout(pipeline_layout.clone())
             .vertex_shader("main", vertex_shader)
@@ -88,6 +86,7 @@ impl Scene {
             camera,
             pipeline,
             pipeline_layout,
+            scene_data_layout,
         }
     }
 }

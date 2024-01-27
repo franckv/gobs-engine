@@ -9,7 +9,6 @@ bitflags = { workspace = true }
 bytemuck = { workspace = true }
 gobs-utils = { workspace = true }
 image = { workspace = true }
-indexmap = { workspace = true }
 glam = { workspace = true }
 log = { workspace = true }
 uuid = { workspace = true }

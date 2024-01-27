@@ -55,7 +55,7 @@ pub struct InstanceDataBuilder {
 }
 
 impl InstanceDataBuilder {
-    pub fn new() -> Self {
+    fn new() -> Self {
         InstanceDataBuilder {
             model: None,
             normal: None,

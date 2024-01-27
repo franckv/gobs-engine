@@ -441,7 +441,7 @@ pub struct GraphicsPipelineBuilder {
 }
 
 impl GraphicsPipelineBuilder {
-    pub fn new(device: Arc<Device>) -> Self {
+    pub(crate) fn new(device: Arc<Device>) -> Self {
         GraphicsPipelineBuilder {
             device: Some(device),
             ..Default::default()

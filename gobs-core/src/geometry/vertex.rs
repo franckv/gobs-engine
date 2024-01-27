@@ -162,7 +162,7 @@ pub struct VertexDataBuilder {
 }
 
 impl VertexDataBuilder {
-    pub fn new() -> Self {
+    fn new() -> Self {
         VertexDataBuilder {
             padding: false,
             position: None,

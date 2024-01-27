@@ -56,7 +56,6 @@ glam = { version = "0.25", features = ["bytemuck"] }
 gltf = "1"
 gpu-allocator = "0.25"
 image = "0.24"
-indexmap = "2.1.0"
 itertools = { version = "0.12" }
 log = "0.4"
 naga = {version = "0.19", features = ["glsl-in", "spv-out"]}

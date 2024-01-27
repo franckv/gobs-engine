@@ -69,6 +69,10 @@ pub struct VertexLayout {
 }
 
 impl VertexLayout {
+    pub fn builder() -> VertexLayoutBuilder {
+        VertexLayoutBuilder::new()
+    }
+
     pub(crate) fn binding_description(&self) -> Vec<vk::VertexInputBindingDescription> {
         let mut desc = Vec::new();
 
@@ -110,7 +114,7 @@ pub struct VertexLayoutBuilder {
 }
 
 impl VertexLayoutBuilder {
-    pub fn new() -> Self {
+    fn new() -> Self {
         VertexLayoutBuilder {
             bindings: Vec::new(),
             index: 0,

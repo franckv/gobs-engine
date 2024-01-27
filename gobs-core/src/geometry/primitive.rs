@@ -35,7 +35,7 @@ pub struct PrimitiveBuilder {
 }
 
 impl PrimitiveBuilder {
-    pub fn new() -> Self {
+    fn new() -> Self {
         PrimitiveBuilder {
             vertices: Vec::new(),
             indices: Vec::new(),

@@ -53,7 +53,7 @@ pub struct DescriptorSetLayoutBuilder {
 }
 
 impl DescriptorSetLayoutBuilder {
-    pub fn new() -> Self {
+    fn new() -> Self {
         DescriptorSetLayoutBuilder {
             bindings: Vec::new(),
         }
@@ -80,7 +80,11 @@ pub struct DescriptorSetLayout {
 }
 
 impl DescriptorSetLayout {
-    pub fn new(device: Arc<Device>, bindings: Vec<DescriptorSetLayoutBinding>) -> Arc<Self> {
+    pub fn builder() -> DescriptorSetLayoutBuilder {
+        DescriptorSetLayoutBuilder::new()
+    }
+
+    fn new(device: Arc<Device>, bindings: Vec<DescriptorSetLayoutBinding>) -> Arc<Self> {
         let bindings: Vec<vk::DescriptorSetLayoutBinding> = bindings
             .iter()
             .enumerate()

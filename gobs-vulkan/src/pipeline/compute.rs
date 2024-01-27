@@ -13,7 +13,7 @@ pub struct ComputePipelineBuilder {
 }
 
 impl ComputePipelineBuilder {
-    pub fn new(device: Arc<Device>) -> Self {
+    pub(crate) fn new(device: Arc<Device>) -> Self {
         ComputePipelineBuilder {
             device: Some(device),
             ..Default::default()
