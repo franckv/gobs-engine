@@ -75,7 +75,7 @@ impl Scene {
         let camera = Camera::perspective(
             Vec3::splat(0.),
             size.width as f32 / size.height as f32,
-            (70. as f32).to_radians(),
+            (60. as f32).to_radians(),
             0.1,
             100.,
             (-90. as f32).to_radians(),
