@@ -177,6 +177,26 @@ impl Instance {
         p_devices.remove(idx)
     }
 
+    pub fn find_headless_adapter(&self) -> PhysicalDevice {
+        let mut p_devices = PhysicalDevice::enumerate(self);
+
+        let idx = {
+            let p_device = p_devices.iter().enumerate().find(|(_, p_device)| {
+                let family = self.find_headless_family(p_device);
+                let features = self.check_features(p_device);
+
+                family.is_some() && features
+            });
+
+            match p_device {
+                Some((idx, _)) => idx,
+                None => panic!("No suitable device"),
+            }
+        };
+
+        p_devices.remove(idx)
+    }
+
     fn check_features(&self, p_device: &PhysicalDevice) -> bool {
         let mut features12: vk::PhysicalDeviceVulkan12Features =
             vk::PhysicalDeviceVulkan12Features::default();
@@ -205,6 +225,18 @@ impl Instance {
             .queue_families
             .iter()
             .find(|family| family.graphics_bit && surface.family_supported(&p_device, &family));
+
+        match family {
+            Some(family) => Some(family.clone()),
+            None => None,
+        }
+    }
+
+    pub fn find_headless_family(&self, p_device: &PhysicalDevice) -> Option<QueueFamily> {
+        let family = p_device
+            .queue_families
+            .iter()
+            .find(|family| family.graphics_bit);
 
         match family {
             Some(family) => Some(family.clone()),

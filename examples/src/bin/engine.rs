@@ -106,8 +106,8 @@ impl Run for App {
         let draw_ds_layout = DescriptorSetLayout::builder()
             .binding(DescriptorType::StorageImage, DescriptorStage::Compute)
             .build(ctx.device.clone());
-        let ds_pool = DescriptorSetPool::new(ctx.device.clone(), draw_ds_layout.clone(), 10);
-        let draw_ds = ds_pool.allocate(draw_ds_layout.clone());
+        let mut ds_pool = DescriptorSetPool::new(ctx.device.clone(), draw_ds_layout.clone(), 10);
+        let draw_ds = ds_pool.allocate();
 
         draw_ds
             .update()

@@ -16,6 +16,9 @@ pub mod surface;
 pub mod swapchain;
 pub mod sync;
 
+#[cfg(test)]
+mod headless;
+
 pub trait Wrap<T> {
     fn raw(&self) -> T;
 }
