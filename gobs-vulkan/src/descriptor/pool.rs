@@ -80,6 +80,7 @@ impl DescriptorSetPool {
     }
 
     pub fn reset(&mut self) {
+        log::debug!("Reset all descriptor pool");
         Self::reset_pool(self.device.clone(), self.current_pool);
 
         for pool in self.full_pools.drain(..) {
@@ -89,6 +90,7 @@ impl DescriptorSetPool {
     }
 
     pub fn reset_pool(device: Arc<Device>, pool: vk::DescriptorPool) {
+        log::debug!("Reset descriptor pool");
         unsafe {
             device
                 .raw()
@@ -98,6 +100,7 @@ impl DescriptorSetPool {
     }
 
     pub fn destroy_pool(device: Arc<Device>, pool: vk::DescriptorPool) {
+        log::debug!("Destroy descriptor pool");
         unsafe {
             device.raw().destroy_descriptor_pool(pool, None);
         }
@@ -115,6 +118,7 @@ impl DescriptorSetPool {
     }
 
     pub fn allocate(&mut self) -> DescriptorSet {
+        log::debug!("Allocate descriptor set");
         let results = self.allocate_ds();
 
         let results = match results {
@@ -166,6 +170,10 @@ mod tests {
 
     #[test]
     fn test_alloc() {
+        env_logger::Builder::new()
+            .filter_module("gobs_vulkan::descriptor::pool", log::LevelFilter::Debug)
+            .init();
+
         let ctx = crate::headless::Context::new("test");
 
         let layout = DescriptorSetLayout::builder()
