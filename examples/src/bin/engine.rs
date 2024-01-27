@@ -8,12 +8,7 @@ use gobs::{
     },
     gobs_core::{
         entity::uniform::{UniformData, UniformPropData},
-        geometry::{
-            mesh::Mesh,
-            primitive::Primitive,
-            vertex::{VertexData, VertexFlag},
-            Transform,
-        },
+        geometry::{vertex::VertexFlag, Transform},
     },
     render::{context::Context, model::Model},
     scene::{
@@ -160,23 +155,7 @@ impl Run for App {
     fn start(&mut self, ctx: &Context) {
         log::trace!("Start");
 
-        let meshes = gobs::scene::import::gltf::load_gltf(&format!("{}/basicmesh.glb", ASSET_DIR));
-        let mesh = meshes[2].clone();
-
-        let vertex_flags =
-            VertexFlag::POSITION | VertexFlag::COLOR | VertexFlag::TEXTURE | VertexFlag::NORMAL;
-
-        let model = Model::new(ctx, mesh, vertex_flags);
-
-        let view = Transform::new(
-            [0., 0., -3.].into(),
-            Quat::from_rotation_y((15. as f32).to_radians()),
-            Vec3::new(1., -1., 1.),
-        );
-
-        let node = Node::new(NodeValue::Model(model), view);
-
-        self.scene.graph.insert(self.scene.graph.root, node);
+        self.load_scene(ctx);
     }
 
     fn update(&mut self, _ctx: &Context, _delta: f32) {
@@ -371,53 +350,26 @@ impl App {
         cmd.end_rendering();
     }
 
-    fn _load_mesh() -> Arc<Mesh> {
-        let v1 = VertexData::builder()
-            .padding(true)
-            .position([0.5, -0.5, 0.].into())
-            .normal([0., 0., 1.].into())
-            .texture([1., 0.].into())
-            .color([1., 0., 0., 1.].into())
-            .build();
-
-        let v2 = VertexData::builder()
-            .padding(true)
-            .position([0.5, 0.5, 0.].into())
-            .normal([0., 0., 1.].into())
-            .texture([1., 1.].into())
-            .color([0.5, 0.5, 0.5, 1.].into())
-            .build();
-
-        let v3 = VertexData::builder()
-            .padding(true)
-            .position([-0.5, -0.5, 0.].into())
-            .normal([0., 0., 1.].into())
-            .texture([0., 0.].into())
-            .color([0., 0., 1., 1.].into())
-            .build();
-
-        let v4 = VertexData::builder()
-            .padding(true)
-            .position([-0.5, 0.5, 0.].into())
-            .normal([0., 0., 1.].into())
-            .texture([0., 1.].into())
-            .color([0., 1., 0., 1.].into())
-            .build();
-
-        let vertices = vec![v1, v2, v3, v4];
-        let indices = vec![0, 1, 2, 2, 1, 3];
+    fn load_scene(&mut self, ctx: &Context) {
+        let meshes = gobs::scene::import::gltf::load_gltf(&format!("{}/basicmesh.glb", ASSET_DIR));
 
         let vertex_flags =
             VertexFlag::POSITION | VertexFlag::COLOR | VertexFlag::TEXTURE | VertexFlag::NORMAL;
 
-        log::info!("Vertex size: {}", VertexData::size(vertex_flags, true));
-
-        let p = Primitive::builder()
-            .add_indices(&indices)
-            .add_vertices(&vertices)
-            .build();
-
-        Mesh::builder("quad").add_primitive(p).build()
+        for i in 0..5 {
+            for j in 0..4 {
+                let model = Model::new(ctx, meshes[2].clone(), vertex_flags);
+                let x = -6. + 3. * (i as f32);
+                let y = -3. + 2. * (j as f32);
+                let transform = Transform::new(
+                    [x, y, -7.].into(),
+                    Quat::from_rotation_y((0. as f32).to_radians()),
+                    Vec3::new(0.7, -0.7, 0.7),
+                );
+                let node = Node::new(NodeValue::Model(model), transform);
+                self.scene.graph.insert(self.scene.graph.root, node);
+            }
+        }
     }
 
     fn create_swapchain(ctx: &Context) -> SwapChain {
