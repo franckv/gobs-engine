@@ -36,7 +36,12 @@ impl Context {
         let queue = Queue::new(device.clone(), queue_family);
 
         let immediate_cmd_pool = CommandPool::new(device.clone(), &queue.family);
-        let immediate_cmd = CommandBuffer::new(device.clone(), queue.clone(), immediate_cmd_pool);
+        let immediate_cmd = CommandBuffer::new(
+            device.clone(),
+            queue.clone(),
+            immediate_cmd_pool,
+            "Immediate",
+        );
 
         let allocator = Allocator::new(device.clone());
 

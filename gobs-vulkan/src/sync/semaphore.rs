@@ -3,7 +3,7 @@ use std::sync::Arc;
 use ash::vk;
 
 use crate::device::Device;
-use crate::Wrap;
+use crate::{debug, Wrap};
 
 pub struct Semaphore {
     device: Arc<Device>,
@@ -11,7 +11,7 @@ pub struct Semaphore {
 }
 
 impl Semaphore {
-    pub fn new(device: Arc<Device>) -> Self {
+    pub fn new(device: Arc<Device>, label: &str) -> Self {
         let semaphore_info = vk::SemaphoreCreateInfo::default();
 
         let semaphore = unsafe {
@@ -20,6 +20,15 @@ impl Semaphore {
                 .create_semaphore(&semaphore_info, None)
                 .unwrap()
         };
+
+        let semaphore_label = format!("[Semaphore] {}", label);
+
+        debug::add_label(
+            device.clone(),
+            &semaphore_label,
+            vk::ObjectType::SEMAPHORE,
+            vk::Handle::as_raw(semaphore),
+        );
 
         Semaphore { device, semaphore }
     }

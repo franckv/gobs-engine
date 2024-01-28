@@ -4,7 +4,7 @@ use std::sync::Arc;
 use ash::vk;
 
 use crate::device::Device;
-use crate::Wrap;
+use crate::{debug, Wrap};
 
 pub struct Fence {
     device: Arc<Device>,
@@ -12,7 +12,7 @@ pub struct Fence {
 }
 
 impl Fence {
-    pub fn new(device: Arc<Device>, signaled: bool) -> Self {
+    pub fn new(device: Arc<Device>, signaled: bool, label: &str) -> Self {
         let flags = if signaled {
             vk::FenceCreateFlags::SIGNALED
         } else {
@@ -22,6 +22,15 @@ impl Fence {
         let fence_info = vk::FenceCreateInfo::builder().flags(flags).build();
 
         let fence = unsafe { device.raw().create_fence(&fence_info, None).unwrap() };
+
+        let fence_label = format!("[Fence] {}", label);
+
+        debug::add_label(
+            device.clone(),
+            &fence_label,
+            vk::ObjectType::FENCE,
+            vk::Handle::as_raw(fence),
+        );
 
         Fence { device, fence }
     }

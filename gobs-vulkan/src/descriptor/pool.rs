@@ -89,7 +89,7 @@ impl DescriptorSetPool {
         }
     }
 
-    pub fn reset_pool(device: Arc<Device>, pool: vk::DescriptorPool) {
+    fn reset_pool(device: Arc<Device>, pool: vk::DescriptorPool) {
         log::debug!("Reset descriptor pool");
         unsafe {
             device
@@ -99,7 +99,7 @@ impl DescriptorSetPool {
         }
     }
 
-    pub fn destroy_pool(device: Arc<Device>, pool: vk::DescriptorPool) {
+    fn destroy_pool(device: Arc<Device>, pool: vk::DescriptorPool) {
         log::debug!("Destroy descriptor pool");
         unsafe {
             device.raw().destroy_descriptor_pool(pool, None);

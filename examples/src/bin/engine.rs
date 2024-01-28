@@ -42,10 +42,11 @@ struct FrameData {
 impl FrameData {
     pub fn new(device: Arc<Device>, queue: Arc<Queue>) -> Self {
         let command_pool = CommandPool::new(device.clone(), &queue.family);
-        let command_buffer = CommandBuffer::new(device.clone(), queue.clone(), command_pool);
+        let command_buffer =
+            CommandBuffer::new(device.clone(), queue.clone(), command_pool, "Frame");
 
-        let swapchain_semaphore = Semaphore::new(device.clone());
-        let render_semaphore = Semaphore::new(device.clone());
+        let swapchain_semaphore = Semaphore::new(device.clone(), "Swapchain");
+        let render_semaphore = Semaphore::new(device.clone(), "Render");
 
         FrameData {
             command_buffer,

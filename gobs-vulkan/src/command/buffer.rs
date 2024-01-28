@@ -13,7 +13,7 @@ use crate::image::{Image, ImageExtent2D, ImageLayout};
 use crate::pipeline::{Pipeline, PipelineLayout};
 use crate::queue::Queue;
 use crate::sync::{Fence, Semaphore};
-use crate::Wrap;
+use crate::{debug, Wrap};
 
 pub trait IndexType: Copy {
     fn get_index_type() -> vk::IndexType;
@@ -35,7 +35,12 @@ pub struct CommandBuffer {
 }
 
 impl CommandBuffer {
-    pub fn new(device: Arc<Device>, queue: Arc<Queue>, pool: Arc<CommandPool>) -> Self {
+    pub fn new(
+        device: Arc<Device>,
+        queue: Arc<Queue>,
+        pool: Arc<CommandPool>,
+        label: &str,
+    ) -> Self {
         let buffer_info = vk::CommandBufferAllocateInfo::builder()
             .command_buffer_count(1)
             .command_pool(pool.raw())
@@ -46,12 +51,23 @@ impl CommandBuffer {
 
         assert!(command_buffers.len() == 1);
 
+        let command_buffer = command_buffers.remove(0);
+
+        let command_label = format!("[Command Buffer] {}", label);
+
+        debug::add_label(
+            device.clone(),
+            &command_label,
+            vk::ObjectType::COMMAND_BUFFER,
+            vk::Handle::as_raw(command_buffer),
+        );
+
         CommandBuffer {
             device: device.clone(),
             queue,
             pool,
-            command_buffer: command_buffers.remove(0),
-            fence: Fence::new(device, true),
+            command_buffer,
+            fence: Fence::new(device, true, "Command buffer"),
         }
     }
 

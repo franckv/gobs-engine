@@ -1,18 +1,11 @@
 use std::sync::Arc;
 
-use crate::{
-    alloc::Allocator,
-    command::{CommandBuffer, CommandPool},
-    device::Device,
-    instance::Instance,
-    queue::Queue,
-};
+use crate::{alloc::Allocator, device::Device, instance::Instance, queue::Queue};
 
 pub struct Context {
     pub instance: Arc<Instance>,
     pub device: Arc<Device>,
     pub queue: Arc<Queue>,
-    pub immediate_cmd: CommandBuffer,
     pub allocator: Arc<Allocator>,
 }
 
@@ -29,16 +22,12 @@ impl Context {
 
         let queue = Queue::new(device.clone(), queue_family);
 
-        let immediate_cmd_pool = CommandPool::new(device.clone(), &queue.family);
-        let immediate_cmd = CommandBuffer::new(device.clone(), queue.clone(), immediate_cmd_pool);
-
         let allocator = Allocator::new(device.clone());
 
         Context {
             instance,
             device,
             queue,
-            immediate_cmd,
             allocator,
         }
     }
