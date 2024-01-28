@@ -24,7 +24,7 @@ pub struct DescriptorSetUpdates {
 }
 
 impl DescriptorSetUpdates {
-    pub fn bind_buffer<T: Copy>(mut self, buffer: &Buffer, start: usize, len: usize) -> Self {
+    pub fn bind_buffer(mut self, buffer: &Buffer, start: usize, len: usize) -> Self {
         let buffer_info = vk::DescriptorBufferInfo::builder()
             .buffer(buffer.raw())
             .offset(start as u64)
@@ -36,12 +36,7 @@ impl DescriptorSetUpdates {
         self
     }
 
-    pub fn bind_dynamic_buffer<T: Copy>(
-        mut self,
-        buffer: &Buffer,
-        start: usize,
-        len: usize,
-    ) -> Self {
+    pub fn bind_dynamic_buffer(mut self, buffer: &Buffer, start: usize, len: usize) -> Self {
         let buffer_info = vk::DescriptorBufferInfo::builder()
             .buffer(buffer.raw())
             .offset(start as u64)
@@ -133,7 +128,7 @@ impl DescriptorSetUpdates {
 #[allow(unused)]
 pub struct DescriptorSet {
     device: Arc<Device>,
-    layout: Arc<DescriptorSetLayout>,
+    pub layout: Arc<DescriptorSetLayout>,
     set: vk::DescriptorSet,
 }
 

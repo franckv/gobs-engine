@@ -7,10 +7,10 @@ use gobs::{
         input::{Input, Key},
     },
     gobs_core::{
-        entity::uniform::{UniformData, UniformPropData},
+        entity::uniform::{UniformData, UniformLayout, UniformPropData},
         geometry::{vertex::VertexFlag, Transform},
     },
-    render::{context::Context, model::Model},
+    render::{context::Context, model::Model, uniform_buffer::UniformBuffer},
     scene::{
         graph::scenegraph::{Node, NodeValue},
         scene::Scene,
@@ -20,10 +20,8 @@ use gobs::{
         descriptor::{
             DescriptorSet, DescriptorSetLayout, DescriptorSetPool, DescriptorStage, DescriptorType,
         },
-        device::Device,
         image::{ColorSpace, Image, ImageExtent2D, ImageFormat, ImageLayout, ImageUsage},
         pipeline::{Pipeline, PipelineLayout, Shader, ShaderType},
-        queue::Queue,
         swapchain::{PresentationMode, SwapChain},
         sync::Semaphore,
     },
@@ -37,50 +35,70 @@ struct FrameData {
     pub command_buffer: CommandBuffer,
     pub swapchain_semaphore: Semaphore,
     pub render_semaphore: Semaphore,
+    pub uniform_ds: DescriptorSet,
+    pub uniform_buffer: UniformBuffer,
 }
 
 impl FrameData {
-    pub fn new(device: Arc<Device>, queue: Arc<Queue>) -> Self {
-        let command_pool = CommandPool::new(device.clone(), &queue.family);
+    pub fn new(
+        ctx: &Context,
+        uniform_layout: Arc<UniformLayout>,
+        uniform_ds: DescriptorSet,
+    ) -> Self {
+        let command_pool = CommandPool::new(ctx.device.clone(), &ctx.queue.family);
         let command_buffer =
-            CommandBuffer::new(device.clone(), queue.clone(), command_pool, "Frame");
+            CommandBuffer::new(ctx.device.clone(), ctx.queue.clone(), command_pool, "Frame");
 
-        let swapchain_semaphore = Semaphore::new(device.clone(), "Swapchain");
-        let render_semaphore = Semaphore::new(device.clone(), "Render");
+        let swapchain_semaphore = Semaphore::new(ctx.device.clone(), "Swapchain");
+        let render_semaphore = Semaphore::new(ctx.device.clone(), "Render");
+
+        let uniform_buffer = UniformBuffer::new(
+            ctx,
+            uniform_ds.layout.clone(),
+            uniform_layout.size(),
+            ctx.allocator.clone(),
+        );
+
+        uniform_ds
+            .update()
+            .bind_buffer(&uniform_buffer.buffer, 0, uniform_buffer.buffer.size)
+            .end();
 
         FrameData {
             command_buffer,
             swapchain_semaphore,
             render_semaphore,
+            uniform_ds,
+            uniform_buffer,
         }
+    }
+
+    pub fn reset(&mut self) {
+        self.command_buffer.reset();
     }
 }
 
 #[allow(unused)]
 struct App {
     frame_number: usize,
-    frames: [FrameData; FRAMES_IN_FLIGHT],
+    frames: Vec<FrameData>,
     swapchain: SwapChain,
     swapchain_images: Vec<Image>,
     draw_image: Image,
     depth_image: Image,
     render_scaling: f32,
-    ds_pool: DescriptorSetPool,
+    draw_ds_pool: DescriptorSetPool,
     draw_ds_layout: Arc<DescriptorSetLayout>,
     draw_ds: DescriptorSet,
     bg_pipeline: Pipeline,
     bg_pipeline_layout: Arc<PipelineLayout>,
     scene: Scene,
+    scene_ds_pool: DescriptorSetPool,
 }
 
 impl Run for App {
     async fn create(ctx: &Context) -> Self {
         log::info!("Create");
-
-        let frames = [
-            FrameData::new(ctx.device.clone(), ctx.queue.clone()),
-            FrameData::new(ctx.device.clone(), ctx.queue.clone()),
-        ];
 
         let swapchain = Self::create_swapchain(ctx);
         let swapchain_images = swapchain.create_images();
@@ -107,8 +125,9 @@ impl Run for App {
         let draw_ds_layout = DescriptorSetLayout::builder()
             .binding(DescriptorType::StorageImage, DescriptorStage::Compute)
             .build(ctx.device.clone());
-        let mut ds_pool = DescriptorSetPool::new(ctx.device.clone(), draw_ds_layout.clone(), 10);
-        let draw_ds = ds_pool.allocate();
+        let mut draw_ds_pool =
+            DescriptorSetPool::new(ctx.device.clone(), draw_ds_layout.clone(), 10);
+        let draw_ds = draw_ds_pool.allocate();
 
         draw_ds
             .update()
@@ -135,6 +154,21 @@ impl Run for App {
             Some(depth_image.format),
         );
 
+        let mut scene_ds_pool = DescriptorSetPool::new(
+            ctx.device.clone(),
+            scene.scene_descriptor_layout.clone(),
+            FRAMES_IN_FLIGHT as u32,
+        );
+        let frames = (0..FRAMES_IN_FLIGHT)
+            .map(|_| {
+                FrameData::new(
+                    ctx,
+                    scene.scene_data_layout.clone(),
+                    scene_ds_pool.allocate(),
+                )
+            })
+            .collect();
+
         App {
             frame_number: 0,
             frames,
@@ -143,12 +177,13 @@ impl Run for App {
             draw_image,
             depth_image,
             render_scaling: 1.,
-            ds_pool,
+            draw_ds_pool,
             draw_ds_layout,
             draw_ds,
             bg_pipeline,
             bg_pipeline_layout,
             scene,
+            scene_ds_pool,
         }
     }
 
@@ -182,10 +217,11 @@ impl Run for App {
                 * self.render_scaling) as u32,
         );
 
-        let frame = &self.frames[self.frame_number % FRAMES_IN_FLIGHT];
+        self.new_frame();
+        self.update_scene_buffers();
 
-        frame.command_buffer.fence.wait_and_reset();
-        debug_assert!(!frame.command_buffer.fence.signaled());
+        let frame = &self.frames[self.current_frame_id()];
+        let cmd = &frame.command_buffer;
 
         let Ok(image_index) = self.swapchain.acquire_image(&frame.swapchain_semaphore) else {
             return Err(RenderError::Outdated);
@@ -195,60 +231,43 @@ impl Run for App {
         self.depth_image.invalidate();
         self.swapchain_images[image_index as usize].invalidate();
 
-        frame.command_buffer.reset();
+        cmd.begin();
 
-        frame.command_buffer.begin();
+        cmd.begin_label(&format!("Frame {}", self.frame_number));
 
-        frame
-            .command_buffer
-            .begin_label(&format!("Frame {}", self.frame_number));
+        cmd.transition_image_layout(&mut self.draw_image, ImageLayout::General);
 
-        frame
-            .command_buffer
-            .transition_image_layout(&mut self.draw_image, ImageLayout::General);
+        cmd.begin_label("Draw background");
+        self.draw_background(cmd, draw_extent);
+        cmd.end_label();
 
-        frame.command_buffer.begin_label("Draw background");
-        self.draw_background(&frame.command_buffer, draw_extent);
-        frame.command_buffer.end_label();
+        cmd.transition_image_layout(&mut self.draw_image, ImageLayout::Color);
+        cmd.transition_image_layout(&mut self.depth_image, ImageLayout::Depth);
 
-        frame
-            .command_buffer
-            .transition_image_layout(&mut self.draw_image, ImageLayout::Color);
+        cmd.begin_label("Draw scene");
+        self.draw_scene(ctx, cmd, draw_extent);
+        cmd.end_label();
 
-        frame
-            .command_buffer
-            .transition_image_layout(&mut self.depth_image, ImageLayout::Depth);
-
-        frame.command_buffer.begin_label("Draw scene");
-        self.draw_scene(ctx, &frame.command_buffer, draw_extent);
-        frame.command_buffer.end_label();
-
-        frame
-            .command_buffer
-            .transition_image_layout(&mut self.draw_image, ImageLayout::TransferSrc);
+        cmd.transition_image_layout(&mut self.draw_image, ImageLayout::TransferSrc);
 
         let swapchain_image = &mut self.swapchain_images[image_index as usize];
 
-        frame
-            .command_buffer
-            .transition_image_layout(swapchain_image, ImageLayout::TransferDst);
+        cmd.transition_image_layout(swapchain_image, ImageLayout::TransferDst);
 
-        frame.command_buffer.copy_image_to_image(
+        cmd.copy_image_to_image(
             &self.draw_image,
             draw_extent,
             swapchain_image,
             swapchain_image.extent,
         );
 
-        frame
-            .command_buffer
-            .transition_image_layout(swapchain_image, ImageLayout::Present);
+        cmd.transition_image_layout(swapchain_image, ImageLayout::Present);
 
-        frame.command_buffer.end_label();
+        cmd.end_label();
 
-        frame.command_buffer.end();
+        cmd.end();
 
-        frame.command_buffer.submit2(
+        cmd.submit2(
             Some(&frame.swapchain_semaphore),
             Some(&frame.render_semaphore),
         );
@@ -296,6 +315,44 @@ impl Run for App {
 }
 
 impl App {
+    fn current_frame_id(&self) -> usize {
+        self.frame_number % FRAMES_IN_FLIGHT
+    }
+
+    fn current_frame(&self) -> &FrameData {
+        let frame_id = self.frame_number % FRAMES_IN_FLIGHT;
+
+        &self.frames[frame_id]
+    }
+
+    fn current_frame_mut(&mut self) -> &mut FrameData {
+        let frame_id = self.frame_number % FRAMES_IN_FLIGHT;
+
+        &mut self.frames[frame_id]
+    }
+
+    fn new_frame(&mut self) {
+        let frame = self.current_frame_mut();
+        let cmd = &frame.command_buffer;
+
+        cmd.fence.wait_and_reset();
+        debug_assert!(!cmd.fence.signaled());
+
+        frame.reset();
+    }
+
+    fn update_scene_buffers(&mut self) {
+        let scene_data = UniformData::new(
+            &self.scene.scene_data_layout,
+            &[
+                UniformPropData::Vec3F(self.scene.camera.position.into()),
+                UniformPropData::Mat4F(self.scene.camera.view_proj().to_cols_array_2d()),
+            ],
+        );
+
+        self.current_frame_mut().uniform_buffer.update(&scene_data);
+    }
+
     #[allow(unused)]
     fn clear_background(&self, cmd: &CommandBuffer) {
         let flash = (self.frame_number as f32 / 120.).sin().abs();
@@ -319,15 +376,16 @@ impl App {
         );
         cmd.bind_pipeline(&self.scene.pipeline);
         cmd.set_viewport(draw_extent.width, draw_extent.height);
+        cmd.bind_descriptor_set(&self.current_frame().uniform_ds, &self.scene.pipeline);
 
         self.scene
             .graph
             .visit(self.scene.graph.root, &|transform, model| {
                 if let NodeValue::Model(model) = model {
-                    let world_matrix = self.scene.camera.view_proj() * transform.matrix;
+                    let world_matrix = transform.matrix;
 
-                    let scene_data = UniformData::new(
-                        &self.scene.scene_data_layout,
+                    let model_data = UniformData::new(
+                        &self.scene.model_data_layout,
                         &[
                             UniformPropData::Mat4F(world_matrix.to_cols_array_2d()),
                             UniformPropData::U64(
@@ -336,7 +394,7 @@ impl App {
                         ],
                     );
 
-                    cmd.push_constants(self.scene.pipeline_layout.clone(), &scene_data.raw());
+                    cmd.push_constants(self.scene.pipeline_layout.clone(), &model_data.raw());
 
                     for surface in &model.surfaces {
                         cmd.bind_index_buffer::<u32>(&model.buffers.index_buffer, surface.offset);

@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum UniformProp {
     F32,
@@ -77,16 +79,16 @@ impl UniformLayoutBuilder {
         UniformLayoutBuilder { layout: Vec::new() }
     }
 
-    pub fn prop(mut self, prop: UniformProp) -> Self {
+    pub fn prop(mut self, _label: &str, prop: UniformProp) -> Self {
         self.layout.push(prop);
 
         self
     }
 
-    pub fn build(self) -> UniformLayout {
-        UniformLayout {
+    pub fn build(self) -> Arc<UniformLayout> {
+        Arc::new(UniformLayout {
             layout: self.layout,
-        }
+        })
     }
 }
 
@@ -187,25 +189,16 @@ mod tests {
         view_proj: [[f32; 4]; 4],
     }
 
-    #[repr(C)]
-    #[derive(Debug, Copy, Clone, bytemuck::Pod, bytemuck::Zeroable)]
-    struct _LightUniform {
-        position: [f32; 3],
-        _padding: u32,
-        colour: [f32; 3],
-        _padding2: u32,
-    }
-
     #[test]
-    fn test_raw() {
+    fn test_camera() {
         let camera_data = CameraUniform {
             view_position: Vec4::ONE.into(),
             view_proj: Mat4::IDENTITY.to_cols_array_2d(),
         };
 
         let camera_layout = UniformLayout::builder()
-            .prop(UniformProp::Vec4F)
-            .prop(UniformProp::Mat4F)
+            .prop("position", UniformProp::Vec4F)
+            .prop("view_proj", UniformProp::Mat4F)
             .build();
 
         let camera = UniformData::new(
@@ -219,7 +212,19 @@ mod tests {
         assert_eq!(camera_layout.size(), camera.raw().len());
 
         assert_eq!(camera.raw(), bytemuck::cast_slice(&[camera_data]));
+    }
 
+    #[repr(C)]
+    #[derive(Debug, Copy, Clone, bytemuck::Pod, bytemuck::Zeroable)]
+    struct _LightUniform {
+        position: [f32; 3],
+        _padding: u32,
+        colour: [f32; 3],
+        _padding2: u32,
+    }
+
+    #[test]
+    fn test_light() {
         let mut light_data = _LightUniform {
             position: Vec3::ZERO.into(),
             _padding: 0,
@@ -228,8 +233,8 @@ mod tests {
         };
 
         let light_layout = UniformLayout::builder()
-            .prop(UniformProp::Vec3F)
-            .prop(UniformProp::Vec3F)
+            .prop("position", UniformProp::Vec3F)
+            .prop("colour", UniformProp::Vec3F)
             .build();
 
         let light = UniformData::new(

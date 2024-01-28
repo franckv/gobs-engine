@@ -562,7 +562,7 @@ impl CommandBuffer {
     where
         F: Fn(&CommandBuffer),
     {
-        log::info!("Submit immediate command");
+        log::debug!("Submit immediate command");
         self.fence.reset();
         assert!(!self.fence.signaled());
 
@@ -577,7 +577,7 @@ impl CommandBuffer {
         self.submit2(None, None);
 
         self.fence.wait();
-        log::info!("Immediate command done");
+        log::debug!("Immediate command done");
     }
 }
 

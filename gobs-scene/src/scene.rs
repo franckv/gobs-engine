@@ -7,6 +7,7 @@ use gobs_core::entity::{
 };
 use gobs_render::context::Context;
 use gobs_vulkan::{
+    descriptor::{DescriptorSetLayout, DescriptorStage, DescriptorType},
     image::{ImageExtent2D, ImageFormat},
     pipeline::{
         CompareOp, CullMode, DynamicStateElem, FrontFace, Pipeline, PipelineLayout, Rect2D, Shader,
@@ -23,7 +24,9 @@ pub struct Scene {
     pub camera: Camera,
     pub pipeline: Pipeline,
     pub pipeline_layout: Arc<PipelineLayout>,
-    pub scene_data_layout: UniformLayout,
+    pub scene_descriptor_layout: Arc<DescriptorSetLayout>,
+    pub scene_data_layout: Arc<UniformLayout>,
+    pub model_data_layout: Arc<UniformLayout>,
 }
 
 impl Scene {
@@ -45,13 +48,25 @@ impl Scene {
             ShaderType::Fragment,
         );
 
+        let scene_descriptor_layout = DescriptorSetLayout::builder()
+            .binding(DescriptorType::Uniform, DescriptorStage::All)
+            .build(ctx.device.clone());
+
         let scene_data_layout = UniformLayout::builder()
-            .prop(UniformProp::Mat4F)
-            .prop(UniformProp::U64)
+            .prop("camera_position", UniformProp::Vec3F)
+            .prop("view_proj", UniformProp::Mat4F)
             .build();
 
-        let pipeline_layout =
-            PipelineLayout::with_constants(ctx.device.clone(), None, scene_data_layout.size());
+        let model_data_layout = UniformLayout::builder()
+            .prop("world_matrix", UniformProp::Mat4F)
+            .prop("vertex_buffer_address", UniformProp::U64)
+            .build();
+
+        let pipeline_layout = PipelineLayout::with_constants(
+            ctx.device.clone(),
+            Some(scene_descriptor_layout.clone()),
+            model_data_layout.size(),
+        );
         let pipeline = Pipeline::graphics_builder(ctx.device.clone())
             .layout(pipeline_layout.clone())
             .vertex_shader("main", vertex_shader)
@@ -86,7 +101,9 @@ impl Scene {
             camera,
             pipeline,
             pipeline_layout,
+            scene_descriptor_layout,
             scene_data_layout,
+            model_data_layout,
         }
     }
 }

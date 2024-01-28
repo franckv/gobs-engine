@@ -9,6 +9,7 @@ use crate::device::Device;
 use crate::memory::Memory;
 use crate::{debug, Wrap};
 
+#[derive(Clone, Copy, Debug)]
 pub enum BufferUsage {
     Staging,
     Vertex,
@@ -47,6 +48,24 @@ impl Into<MemoryLocation> for BufferUsage {
     }
 }
 
+impl Into<vk::BufferUsageFlags> for BufferUsage {
+    fn into(self) -> vk::BufferUsageFlags {
+        match self {
+            BufferUsage::Staging => vk::BufferUsageFlags::TRANSFER_SRC,
+            BufferUsage::Vertex => {
+                vk::BufferUsageFlags::TRANSFER_DST
+                    | vk::BufferUsageFlags::VERTEX_BUFFER
+                    | vk::BufferUsageFlags::SHADER_DEVICE_ADDRESS
+            }
+            BufferUsage::Instance => vk::BufferUsageFlags::VERTEX_BUFFER,
+            BufferUsage::Index => {
+                vk::BufferUsageFlags::TRANSFER_DST | vk::BufferUsageFlags::INDEX_BUFFER
+            }
+            BufferUsage::Uniform => vk::BufferUsageFlags::UNIFORM_BUFFER,
+        }
+    }
+}
+
 pub type BufferAddress = vk::DeviceAddress;
 
 /// Data buffer allocated in memory
@@ -66,19 +85,7 @@ impl Buffer {
         device: Arc<Device>,
         allocator: Arc<Allocator>,
     ) -> Self {
-        let usage_flags = match usage {
-            BufferUsage::Staging => vk::BufferUsageFlags::TRANSFER_SRC,
-            BufferUsage::Vertex => {
-                vk::BufferUsageFlags::TRANSFER_DST
-                    | vk::BufferUsageFlags::VERTEX_BUFFER
-                    | vk::BufferUsageFlags::SHADER_DEVICE_ADDRESS
-            }
-            BufferUsage::Instance => vk::BufferUsageFlags::VERTEX_BUFFER,
-            BufferUsage::Index => {
-                vk::BufferUsageFlags::TRANSFER_DST | vk::BufferUsageFlags::INDEX_BUFFER
-            }
-            BufferUsage::Uniform => vk::BufferUsageFlags::UNIFORM_BUFFER,
-        };
+        let usage_flags = usage.into();
 
         let buffer_info = vk::BufferCreateInfo::builder()
             .size(size as u64)
