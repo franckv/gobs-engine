@@ -14,7 +14,7 @@ pub struct RenderPass {
 }
 
 impl RenderPass {
-    pub fn new(device: Arc<Device>, format: ImageFormat) -> Arc<Self> {
+    pub fn new(device: Arc<Device>, format: ImageFormat, depth_format: ImageFormat) -> Arc<Self> {
         let color_attach = vk::AttachmentDescription::builder()
             .format(format.into())
             .samples(vk::SampleCountFlags::TYPE_1)
@@ -27,7 +27,7 @@ impl RenderPass {
             .build();
 
         let depth_attach = vk::AttachmentDescription::builder()
-            .format(vk::Format::D32_SFLOAT)
+            .format(depth_format.into())
             .samples(vk::SampleCountFlags::TYPE_1)
             .load_op(vk::AttachmentLoadOp::CLEAR)
             .store_op(vk::AttachmentStoreOp::DONT_CARE)

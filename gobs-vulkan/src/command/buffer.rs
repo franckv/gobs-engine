@@ -579,6 +579,28 @@ impl CommandBuffer {
         self.fence.wait();
         log::debug!("Immediate command done");
     }
+
+    pub fn immediate_mut<F>(&self, mut callback: F)
+    where
+        F: FnMut(&CommandBuffer),
+    {
+        log::debug!("Submit immediate command");
+        self.fence.reset();
+        assert!(!self.fence.signaled());
+
+        self.reset();
+
+        self.begin();
+
+        callback(&self);
+
+        self.end();
+
+        self.submit2(None, None);
+
+        self.fence.wait();
+        log::debug!("Immediate command done");
+    }
 }
 
 impl Drop for CommandBuffer {

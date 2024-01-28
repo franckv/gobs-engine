@@ -10,4 +10,5 @@ gobs-utils = { workspace = true }
 gobs-vulkan = { workspace = true }
 gpu-allocator = { workspace = true }
 log = { workspace = true }
+uuid = { workspace = true }
 winit = { workspace = true }

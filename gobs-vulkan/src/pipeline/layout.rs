@@ -9,63 +9,42 @@ use crate::Wrap;
 #[allow(unused)]
 pub struct PipelineLayout {
     device: Arc<Device>,
-    descriptor_layout: Option<Arc<DescriptorSetLayout>>,
+    descriptor_layouts: Vec<Arc<DescriptorSetLayout>>,
     pub(crate) layout: vk::PipelineLayout,
 }
 
 impl PipelineLayout {
     pub fn new(
         device: Arc<Device>,
-        descriptor_layout: Option<Arc<DescriptorSetLayout>>,
+        descriptor_layouts: &[Arc<DescriptorSetLayout>],
+        push_constant_size: usize,
     ) -> Arc<Self> {
         let mut layout_info = vk::PipelineLayoutCreateInfo::builder();
 
         let mut set_layout = vec![];
-
-        if let Some(descriptor_layout) = &descriptor_layout {
+        for descriptor_layout in descriptor_layouts {
             set_layout.push(descriptor_layout.layout);
+        }
+        if !set_layout.is_empty() {
             layout_info = layout_info.set_layouts(&set_layout);
+        }
+
+        let mut push_constant_range = vec![];
+        if push_constant_size > 0 {
+            push_constant_range.push(
+                vk::PushConstantRange::builder()
+                    .offset(0)
+                    .size(push_constant_size as u32)
+                    .stage_flags(vk::ShaderStageFlags::VERTEX)
+                    .build(),
+            );
+            layout_info = layout_info.push_constant_ranges(&push_constant_range);
         }
 
         let layout = unsafe {
             PipelineLayout {
                 device: device.clone(),
-                descriptor_layout,
-                layout: device
-                    .raw()
-                    .create_pipeline_layout(&layout_info, None)
-                    .unwrap(),
-            }
-        };
-
-        Arc::new(layout)
-    }
-
-    pub fn with_constants(
-        device: Arc<Device>,
-        descriptor_layout: Option<Arc<DescriptorSetLayout>>,
-        size: usize,
-    ) -> Arc<Self> {
-        let push_constant_range = vec![vk::PushConstantRange::builder()
-            .offset(0)
-            .size(size as u32)
-            .stage_flags(vk::ShaderStageFlags::VERTEX)
-            .build()];
-
-        let mut layout_info =
-            vk::PipelineLayoutCreateInfo::builder().push_constant_ranges(&push_constant_range);
-
-        let mut set_layout = vec![];
-
-        if let Some(descriptor_layout) = &descriptor_layout {
-            set_layout.push(descriptor_layout.layout);
-            layout_info = layout_info.set_layouts(&set_layout);
-        }
-
-        let layout = unsafe {
-            PipelineLayout {
-                device: device.clone(),
-                descriptor_layout,
+                descriptor_layouts: descriptor_layouts.to_vec(),
                 layout: device
                     .raw()
                     .create_pipeline_layout(&layout_info, None)

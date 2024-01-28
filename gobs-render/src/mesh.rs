@@ -4,10 +4,7 @@ use gobs_core::geometry::{
     mesh::Mesh,
     vertex::{VertexData, VertexFlag},
 };
-use gobs_vulkan::{
-    alloc::Allocator,
-    buffer::{Buffer, BufferUsage},
-};
+use gobs_vulkan::buffer::{Buffer, BufferUsage};
 
 use crate::context::Context;
 
@@ -22,12 +19,7 @@ pub struct MeshBuffer {
 }
 
 impl MeshBuffer {
-    pub fn new(
-        ctx: &Context,
-        mesh: Arc<Mesh>,
-        vertex_flags: VertexFlag,
-        allocator: Arc<Allocator>,
-    ) -> Arc<Self> {
+    pub fn new(ctx: &Context, mesh: Arc<Mesh>, vertex_flags: VertexFlag) -> Arc<Self> {
         let vertices_data = mesh
             .primitives
             .iter()
@@ -59,7 +51,7 @@ impl MeshBuffer {
             indices_size + vertices_size,
             BufferUsage::Staging,
             ctx.device.clone(),
-            allocator.clone(),
+            ctx.allocator.clone(),
         );
 
         let index_buffer = Buffer::new(
@@ -67,14 +59,14 @@ impl MeshBuffer {
             indices_size,
             BufferUsage::Index,
             ctx.device.clone(),
-            allocator.clone(),
+            ctx.allocator.clone(),
         );
         let vertex_buffer = Buffer::new(
             "vertex",
             vertices_size,
             BufferUsage::Vertex,
             ctx.device.clone(),
-            allocator.clone(),
+            ctx.allocator.clone(),
         );
 
         staging.copy(&vertices_data, 0);

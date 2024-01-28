@@ -14,7 +14,7 @@ pub struct Model {
 
 impl Model {
     pub fn new(ctx: &Context, mesh: Arc<Mesh>, vertex_flags: VertexFlag) -> Self {
-        let buffers = MeshBuffer::new(ctx, mesh.clone(), vertex_flags, ctx.allocator.clone());
+        let buffers = MeshBuffer::new(ctx, mesh.clone(), vertex_flags);
         let mut surfaces = Vec::new();
 
         let mut offset = 0;

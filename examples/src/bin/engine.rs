@@ -141,7 +141,7 @@ impl Run for App {
         );
 
         let bg_pipeline_layout =
-            PipelineLayout::new(ctx.device.clone(), Some(draw_ds_layout.clone()));
+            PipelineLayout::new(ctx.device.clone(), &[draw_ds_layout.clone()], 0);
         let bg_pipeline = Pipeline::compute_builder(ctx.device.clone())
             .layout(bg_pipeline_layout.clone())
             .compute_shader("main", compute_shader)

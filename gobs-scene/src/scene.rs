@@ -62,9 +62,9 @@ impl Scene {
             .prop("vertex_buffer_address", UniformProp::U64)
             .build();
 
-        let pipeline_layout = PipelineLayout::with_constants(
+        let pipeline_layout = PipelineLayout::new(
             ctx.device.clone(),
-            Some(scene_descriptor_layout.clone()),
+            &[scene_descriptor_layout.clone()],
             model_data_layout.size(),
         );
         let pipeline = Pipeline::graphics_builder(ctx.device.clone())

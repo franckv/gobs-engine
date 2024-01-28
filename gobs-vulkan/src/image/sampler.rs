@@ -1,12 +1,24 @@
-use std::ptr;
 use std::sync::Arc;
 
 use ash::vk;
 
-use log::trace;
-
 use crate::device::Device;
 use crate::Wrap;
+
+#[derive(Clone, Copy, Debug)]
+pub enum SamplerFilter {
+    FilterNearest,
+    FilterLinear,
+}
+
+impl Into<vk::Filter> for SamplerFilter {
+    fn into(self) -> vk::Filter {
+        match self {
+            SamplerFilter::FilterNearest => vk::Filter::NEAREST,
+            SamplerFilter::FilterLinear => vk::Filter::LINEAR,
+        }
+    }
+}
 
 pub struct Sampler {
     device: Arc<Device>,
@@ -14,27 +26,10 @@ pub struct Sampler {
 }
 
 impl Sampler {
-    pub fn new(device: Arc<Device>) -> Self {
-        let sampler_info = vk::SamplerCreateInfo {
-            s_type: vk::StructureType::SAMPLER_CREATE_INFO,
-            p_next: ptr::null(),
-            flags: Default::default(),
-            mag_filter: vk::Filter::LINEAR,
-            min_filter: vk::Filter::LINEAR,
-            address_mode_u: vk::SamplerAddressMode::REPEAT,
-            address_mode_v: vk::SamplerAddressMode::REPEAT,
-            address_mode_w: vk::SamplerAddressMode::REPEAT,
-            anisotropy_enable: 0,
-            max_anisotropy: 1.,
-            border_color: vk::BorderColor::INT_OPAQUE_BLACK,
-            unnormalized_coordinates: 0,
-            compare_enable: 0,
-            compare_op: vk::CompareOp::ALWAYS,
-            mipmap_mode: vk::SamplerMipmapMode::LINEAR,
-            mip_lod_bias: 0.,
-            min_lod: 0.,
-            max_lod: 0.,
-        };
+    pub fn new(device: Arc<Device>, filter: SamplerFilter) -> Self {
+        let sampler_info = vk::SamplerCreateInfo::builder()
+            .mag_filter(filter.into())
+            .min_filter(filter.into());
 
         let sampler = unsafe { device.raw().create_sampler(&sampler_info, None).unwrap() };
 
@@ -50,7 +45,7 @@ impl Wrap<vk::Sampler> for Sampler {
 
 impl Drop for Sampler {
     fn drop(&mut self) {
-        trace!("Drop sampler");
+        log::debug!("Drop sampler");
         unsafe {
             self.device.raw().destroy_sampler(self.sampler, None);
         }
