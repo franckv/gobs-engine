@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use gobs_render::model::Model;
 use slotmap::{DefaultKey, SlotMap};
 
@@ -5,7 +7,7 @@ use gobs_core::geometry::Transform;
 
 pub enum NodeValue {
     None,
-    Model(Model),
+    Model(Arc<Model>),
 }
 
 pub type NodeId = DefaultKey;

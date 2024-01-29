@@ -396,9 +396,9 @@ impl App {
 
                     cmd.push_constants(self.scene.pipeline_layout.clone(), &model_data.raw());
 
-                    for surface in &model.surfaces {
-                        cmd.bind_index_buffer::<u32>(&model.buffers.index_buffer, surface.offset);
-                        cmd.draw_indexed(surface.len, 1);
+                    for primitive in &model.primitives {
+                        cmd.bind_index_buffer::<u32>(&model.buffers.index_buffer, primitive.offset);
+                        cmd.draw_indexed(primitive.len, 1);
                     }
                 }
             });
@@ -418,9 +418,10 @@ impl App {
         let y_range = (-3., 3.);
         let scale = 0.7;
 
+        let model = Model::new(ctx, meshes[2].clone(), vertex_flags);
+
         for i in 0..=i_max {
             for j in 0..=j_max {
-                let model = Model::new(ctx, meshes[2].clone(), vertex_flags);
                 let x = x_range.0 + (i as f32) * (x_range.1 - x_range.0) / (i_max as f32);
                 let y = y_range.0 + (j as f32) * (y_range.1 - y_range.0) / (j_max as f32);
                 let transform = Transform::new(
@@ -428,7 +429,7 @@ impl App {
                     Quat::IDENTITY,
                     Vec3::new(scale, -scale, scale),
                 );
-                let node = Node::new(NodeValue::Model(model), transform);
+                let node = Node::new(NodeValue::Model(model.clone()), transform);
                 self.scene.graph.insert(self.scene.graph.root, node);
             }
         }

@@ -1,32 +1,27 @@
 use std::sync::Arc;
 
-use gobs_core::geometry::{mesh::Mesh, vertex::VertexFlag};
-
-use crate::{
-    context::Context,
-    mesh::{MeshBuffer, MeshSurface},
+use gobs_core::geometry::{
+    mesh::{Mesh, Primitive},
+    vertex::VertexFlag,
 };
+
+use crate::{context::Context, mesh_buffer::MeshBuffer};
 
 pub struct Model {
     pub buffers: Arc<MeshBuffer>,
-    pub surfaces: Vec<MeshSurface>,
+    pub primitives: Vec<Primitive>,
 }
 
 impl Model {
-    pub fn new(ctx: &Context, mesh: Arc<Mesh>, vertex_flags: VertexFlag) -> Self {
+    pub fn new(ctx: &Context, mesh: Arc<Mesh>, vertex_flags: VertexFlag) -> Arc<Self> {
+        log::debug!("New model from mesh {}", mesh.name);
+
         let buffers = MeshBuffer::new(ctx, mesh.clone(), vertex_flags);
-        let mut surfaces = Vec::new();
 
-        let mut offset = 0;
-        for p in &mesh.primitives {
-            surfaces.push(MeshSurface {
-                offset,
-                len: p.indices.len(),
-            });
-            offset += p.indices.len();
-        }
-
-        Model { buffers, surfaces }
+        Arc::new(Model {
+            buffers,
+            primitives: mesh.primitives.clone(),
+        })
     }
 }
 

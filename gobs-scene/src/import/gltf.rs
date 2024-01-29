@@ -1,25 +1,29 @@
 use std::sync::Arc;
 
 use gltf::mesh::util::{ReadColors, ReadIndices};
-use gobs_core::geometry::{mesh::Mesh, primitive::Primitive, vertex::VertexData};
+use gobs_core::geometry::{mesh::Mesh, vertex::VertexData};
 
 pub fn load_gltf(file: &str) -> Vec<Arc<Mesh>> {
     let (doc, buffers, _) = gltf::import(file).unwrap();
 
-    let mut indices = Vec::new();
-    let mut vertices = Vec::new();
     let mut meshes = Vec::new();
 
     for m in doc.meshes() {
-        log::info!("Mesh #{}: {:?}", m.index(), m.name().unwrap_or_default());
+        log::info!(
+            "Mesh #{}: {:?}, {} primitives",
+            m.index(),
+            m.name().unwrap_or_default(),
+            m.primitives().len()
+        );
 
         let mut mesh = Mesh::builder(m.name().unwrap_or_default());
 
-        for p in m.primitives() {
-            log::info!("Primitive: {}", p.index());
+        let mut indices = Vec::new();
+        let mut vertices = Vec::new();
 
-            indices.clear();
-            vertices.clear();
+        for p in m.primitives() {
+            let start_idx = vertices.len() as u32;
+            let offset = indices.len();
 
             let reader = p.reader(|buffer| Some(&buffers[buffer.index()]));
 
@@ -27,17 +31,17 @@ pub fn load_gltf(file: &str) -> Vec<Arc<Mesh>> {
                 match read_indices {
                     ReadIndices::U8(iter) => {
                         for idx in iter {
-                            indices.push(idx as u32);
+                            indices.push(start_idx + idx as u32);
                         }
                     }
                     ReadIndices::U16(iter) => {
                         for idx in iter {
-                            indices.push(idx as u32);
+                            indices.push(start_idx + idx as u32);
                         }
                     }
                     ReadIndices::U32(iter) => {
                         for idx in iter {
-                            indices.push(idx);
+                            indices.push(start_idx + idx);
                         }
                     }
                 }
@@ -93,15 +97,10 @@ pub fn load_gltf(file: &str) -> Vec<Arc<Mesh>> {
                 }
             }
 
-            mesh = mesh.add_primitive(
-                Primitive::builder()
-                    .add_indices(&indices)
-                    .add_vertices(&vertices)
-                    .build(),
-            )
+            mesh = mesh.add_primitive(offset, indices.len() - offset);
         }
 
-        meshes.push(mesh.build());
+        meshes.push(mesh.indices(indices).vertices(vertices).build());
     }
 
     meshes
