@@ -2,7 +2,9 @@ use uuid::Uuid;
 
 use gobs_core::color::Color;
 use gobs_vulkan::buffer::{Buffer, BufferUsage};
-use gobs_vulkan::image::{Image, ImageExtent2D, ImageFormat, ImageLayout, ImageUsage};
+use gobs_vulkan::image::{
+    Image, ImageExtent2D, ImageFormat, ImageLayout, ImageUsage, Sampler, SamplerFilter,
+};
 
 use crate::context::Context;
 
@@ -11,10 +13,17 @@ pub type TextureId = Uuid;
 pub struct Texture {
     pub id: TextureId,
     pub image: Image,
+    pub sampler: Sampler,
 }
 
 impl Texture {
-    pub fn new(ctx: &Context, name: &str, data: &[u8], extent: ImageExtent2D) -> Self {
+    pub fn new(
+        ctx: &Context,
+        name: &str,
+        data: &[u8],
+        extent: ImageExtent2D,
+        filter: SamplerFilter,
+    ) -> Self {
         let mut image = Image::new(
             name,
             ctx.device.clone(),
@@ -42,23 +51,31 @@ impl Texture {
             cmd.end_label();
         });
 
-        Self::with_image(image)
+        Self::with_image(ctx, image, filter)
     }
 
-    pub fn with_image(image: Image) -> Self {
+    pub fn with_image(ctx: &Context, image: Image, filter: SamplerFilter) -> Self {
+        let sampler = Sampler::new(ctx.device.clone(), filter);
+
         Texture {
             id: Uuid::new_v4(),
             image,
+            sampler,
         }
     }
 
-    pub fn with_color(ctx: &Context, color: Color) -> Self {
+    pub fn with_color(ctx: &Context, color: Color, filter: SamplerFilter) -> Self {
         let data: [u8; 4] = color.into();
-        Self::new(ctx, "color", &data, ImageExtent2D::new(1, 1))
+        Self::new(ctx, "color", &data, ImageExtent2D::new(1, 1), filter)
     }
 
-    const CHECKER_SIZE: usize = 16;
-    pub fn with_checker(ctx: &Context, color1: Color, color2: Color) -> Self {
+    const CHECKER_SIZE: usize = 8;
+    pub fn with_checker(
+        ctx: &Context,
+        color1: Color,
+        color2: Color,
+        filter: SamplerFilter,
+    ) -> Self {
         let mut data: [u8; 4 * Self::CHECKER_SIZE * Self::CHECKER_SIZE] =
             [0; 4 * Self::CHECKER_SIZE * Self::CHECKER_SIZE];
 
@@ -70,13 +87,19 @@ impl Texture {
                     color2.into()
                 };
 
-                data[y * Self::CHECKER_SIZE + 4 * x] = color[0];
-                data[y * Self::CHECKER_SIZE + 4 * x + 1] = color[1];
-                data[y * Self::CHECKER_SIZE + 4 * x + 2] = color[2];
-                data[y * Self::CHECKER_SIZE + 4 * x + 3] = color[3];
+                data[4 * y * Self::CHECKER_SIZE + 4 * x] = color[0];
+                data[4 * y * Self::CHECKER_SIZE + 4 * x + 1] = color[1];
+                data[4 * y * Self::CHECKER_SIZE + 4 * x + 2] = color[2];
+                data[4 * y * Self::CHECKER_SIZE + 4 * x + 3] = color[3];
             }
         }
 
-        Self::new(ctx, "checker", &data, ImageExtent2D::new(16, 16))
+        Self::new(
+            ctx,
+            "checker",
+            &data,
+            ImageExtent2D::new(Self::CHECKER_SIZE as u32, Self::CHECKER_SIZE as u32),
+            filter,
+        )
     }
 }

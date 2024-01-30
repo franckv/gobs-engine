@@ -281,13 +281,13 @@ impl CommandBuffer {
         }
     }
 
-    pub fn bind_descriptor_set(&self, set: &DescriptorSet, pipeline: &Pipeline) {
+    pub fn bind_descriptor_set(&self, set: &DescriptorSet, first_set: u32, pipeline: &Pipeline) {
         unsafe {
             self.device.raw().cmd_bind_descriptor_sets(
                 self.command_buffer,
                 pipeline.bind_point,
                 pipeline.layout.raw(),
-                0,
+                first_set,
                 &[set.raw()],
                 &[],
             );

@@ -1,14 +1,17 @@
 use std::sync::Arc;
 
 use glam::Vec3;
-use gobs_core::entity::{
-    camera::Camera,
-    uniform::{UniformLayout, UniformProp},
+use gobs_core::{
+    entity::{
+        camera::Camera,
+        uniform::{UniformLayout, UniformProp},
+    },
+    Color,
 };
-use gobs_render::context::Context;
+use gobs_render::{context::Context, texture::Texture};
 use gobs_vulkan::{
     descriptor::{DescriptorSetLayout, DescriptorStage, DescriptorType},
-    image::{ImageExtent2D, ImageFormat},
+    image::{ImageExtent2D, ImageFormat, SamplerFilter},
     pipeline::{
         CompareOp, CullMode, DynamicStateElem, FrontFace, Pipeline, PipelineLayout, Rect2D, Shader,
         ShaderType, Viewport,
@@ -25,8 +28,10 @@ pub struct Scene {
     pub pipeline: Pipeline,
     pub pipeline_layout: Arc<PipelineLayout>,
     pub scene_descriptor_layout: Arc<DescriptorSetLayout>,
+    pub material_descriptor_layout: Arc<DescriptorSetLayout>,
     pub scene_data_layout: Arc<UniformLayout>,
     pub model_data_layout: Arc<UniformLayout>,
+    pub texture: Texture,
 }
 
 impl Scene {
@@ -49,7 +54,11 @@ impl Scene {
         );
 
         let scene_descriptor_layout = DescriptorSetLayout::builder()
-            .binding(DescriptorType::Uniform, DescriptorStage::All)
+            .binding(DescriptorType::Uniform, DescriptorStage::Vertex)
+            .build(ctx.device.clone());
+
+        let material_descriptor_layout = DescriptorSetLayout::builder()
+            .binding(DescriptorType::ImageSampler, DescriptorStage::Fragment)
             .build(ctx.device.clone());
 
         let scene_data_layout = UniformLayout::builder()
@@ -62,9 +71,18 @@ impl Scene {
             .prop("vertex_buffer_address", UniformProp::U64)
             .build();
 
+        let texture = Texture::with_color(
+            ctx,
+            Color::from_rgba8(200, 200, 150, 255),
+            SamplerFilter::FilterLinear,
+        );
+
         let pipeline_layout = PipelineLayout::new(
             ctx.device.clone(),
-            &[scene_descriptor_layout.clone()],
+            &[
+                scene_descriptor_layout.clone(),
+                material_descriptor_layout.clone(),
+            ],
             model_data_layout.size(),
         );
         let pipeline = Pipeline::graphics_builder(ctx.device.clone())
@@ -102,8 +120,10 @@ impl Scene {
             pipeline,
             pipeline_layout,
             scene_descriptor_layout,
+            material_descriptor_layout,
             scene_data_layout,
             model_data_layout,
+            texture,
         }
     }
 }

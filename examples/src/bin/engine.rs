@@ -10,7 +10,7 @@ use gobs::{
         entity::uniform::{UniformData, UniformLayout, UniformPropData},
         geometry::{vertex::VertexFlag, Transform},
     },
-    render::{context::Context, model::Model, uniform_buffer::UniformBuffer},
+    render::{context::Context, model::Model, texture::Texture, uniform_buffer::UniformBuffer},
     scene::{
         graph::scenegraph::{Node, NodeValue},
         scene::Scene,
@@ -37,6 +37,7 @@ struct FrameData {
     pub render_semaphore: Semaphore,
     pub uniform_ds: DescriptorSet,
     pub uniform_buffer: UniformBuffer,
+    pub material_ds: DescriptorSet,
 }
 
 impl FrameData {
@@ -44,6 +45,8 @@ impl FrameData {
         ctx: &Context,
         uniform_layout: Arc<UniformLayout>,
         uniform_ds: DescriptorSet,
+        material_ds: DescriptorSet,
+        texture: &Texture,
     ) -> Self {
         let command_pool = CommandPool::new(ctx.device.clone(), &ctx.queue.family);
         let command_buffer =
@@ -64,12 +67,18 @@ impl FrameData {
             .bind_buffer(&uniform_buffer.buffer, 0, uniform_buffer.buffer.size)
             .end();
 
+        material_ds
+            .update()
+            .bind_image_combined(&texture.image, &texture.sampler, ImageLayout::Shader)
+            .end();
+
         FrameData {
             command_buffer,
             swapchain_semaphore,
             render_semaphore,
             uniform_ds,
             uniform_buffer,
+            material_ds,
         }
     }
 
@@ -94,6 +103,7 @@ struct App {
     bg_pipeline_layout: Arc<PipelineLayout>,
     scene: Scene,
     scene_ds_pool: DescriptorSetPool,
+    material_ds_pool: DescriptorSetPool,
 }
 
 impl Run for App {
@@ -159,12 +169,21 @@ impl Run for App {
             scene.scene_descriptor_layout.clone(),
             FRAMES_IN_FLIGHT as u32,
         );
+
+        let mut material_ds_pool = DescriptorSetPool::new(
+            ctx.device.clone(),
+            scene.material_descriptor_layout.clone(),
+            FRAMES_IN_FLIGHT as u32,
+        );
+
         let frames = (0..FRAMES_IN_FLIGHT)
             .map(|_| {
                 FrameData::new(
                     ctx,
                     scene.scene_data_layout.clone(),
                     scene_ds_pool.allocate(),
+                    material_ds_pool.allocate(),
+                    &scene.texture,
                 )
             })
             .collect();
@@ -184,6 +203,7 @@ impl Run for App {
             bg_pipeline_layout,
             scene,
             scene_ds_pool,
+            material_ds_pool,
         }
     }
 
@@ -361,7 +381,7 @@ impl App {
 
     fn draw_background(&self, cmd: &CommandBuffer, draw_extent: ImageExtent2D) {
         cmd.bind_pipeline(&self.bg_pipeline);
-        cmd.bind_descriptor_set(&self.draw_ds, &self.bg_pipeline);
+        cmd.bind_descriptor_set(&self.draw_ds, 0, &self.bg_pipeline);
         cmd.dispatch(draw_extent.width / 16 + 1, draw_extent.height / 16 + 1, 1);
     }
 
@@ -376,7 +396,8 @@ impl App {
         );
         cmd.bind_pipeline(&self.scene.pipeline);
         cmd.set_viewport(draw_extent.width, draw_extent.height);
-        cmd.bind_descriptor_set(&self.current_frame().uniform_ds, &self.scene.pipeline);
+        cmd.bind_descriptor_set(&self.current_frame().uniform_ds, 0, &self.scene.pipeline);
+        cmd.bind_descriptor_set(&self.current_frame().material_ds, 1, &self.scene.pipeline);
 
         self.scene
             .graph
@@ -406,6 +427,7 @@ impl App {
         cmd.end_rendering();
     }
 
+    #[allow(unused)]
     fn load_scene(&mut self, ctx: &Context) {
         let meshes = gobs::scene::import::gltf::load_gltf(&format!("{}/basicmesh.glb", ASSET_DIR));
 
@@ -433,6 +455,26 @@ impl App {
                 self.scene.graph.insert(self.scene.graph.root, node);
             }
         }
+    }
+
+    #[allow(unused)]
+    fn load_scene2(&mut self, ctx: &Context) {
+        let meshes = gobs::scene::import::gltf::load_gltf(&format!("{}/basicmesh.glb", ASSET_DIR));
+
+        let vertex_flags =
+            VertexFlag::POSITION | VertexFlag::COLOR | VertexFlag::TEXTURE | VertexFlag::NORMAL;
+
+        let scale = 1.;
+
+        let model = Model::new(ctx, meshes[2].clone(), vertex_flags);
+
+        let transform = Transform::new(
+            [0., 0., -5.].into(),
+            Quat::IDENTITY,
+            Vec3::new(scale, -scale, scale),
+        );
+        let node = Node::new(NodeValue::Model(model.clone()), transform);
+        self.scene.graph.insert(self.scene.graph.root, node);
     }
 
     fn create_swapchain(ctx: &Context) -> SwapChain {
