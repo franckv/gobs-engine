@@ -1,6 +1,7 @@
 use std::{ffi::CString, sync::Arc};
 
 use ash::vk;
+use uuid::Uuid;
 
 use crate::device::Device;
 use crate::pipeline::PipelineLayout;
@@ -64,7 +65,10 @@ impl ShaderStage {
     }
 }
 
+pub type PipelineId = Uuid;
+
 pub struct Pipeline {
+    pub id: PipelineId,
     pub(crate) device: Arc<Device>,
     pub layout: Arc<PipelineLayout>,
     pub(crate) pipeline: vk::Pipeline,

@@ -1,9 +1,9 @@
 use std::sync::Arc;
 
-use gobs_core::geometry::{mesh::Mesh, vertex::VertexFlag};
+use gobs_render::context::Context;
 use gobs_vulkan::buffer::{Buffer, BufferUsage};
 
-use crate::context::Context;
+use crate::geometry::{mesh::Mesh, vertex::VertexFlag};
 
 pub struct MeshBuffer {
     pub index_buffer: Buffer,

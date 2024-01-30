@@ -1,9 +1,10 @@
 use std::sync::Arc;
 
-use gobs_render::model::Model;
 use slotmap::{DefaultKey, SlotMap};
 
-use gobs_core::geometry::Transform;
+use gobs_core::Transform;
+
+use crate::model::Model;
 
 pub enum NodeValue {
     None,
@@ -64,9 +65,9 @@ impl SceneGraph {
         }
     }
 
-    pub fn visit<F>(&self, root: NodeId, f: &F)
+    pub fn visit<F>(&self, root: NodeId, f: &mut F)
     where
-        F: Fn(&Transform, &NodeValue),
+        F: FnMut(&Transform, &NodeValue),
     {
         if let Some(node) = self.arena.get(root) {
             for &child in &node.children {

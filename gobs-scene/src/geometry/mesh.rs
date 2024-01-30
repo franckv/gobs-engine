@@ -15,6 +15,7 @@ pub struct Primitive {
     pub ty: PrimitiveType,
     pub offset: usize,
     pub len: usize,
+    pub material: usize,
 }
 
 pub type MeshId = Uuid;
@@ -69,11 +70,12 @@ impl MeshBuilder {
         self
     }
 
-    pub fn add_primitive(mut self, offset: usize, len: usize) -> Self {
+    pub fn add_primitive(mut self, offset: usize, len: usize, material: usize) -> Self {
         self.primitives.push(Primitive {
             ty: PrimitiveType::Triangle,
             offset,
             len,
+            material,
         });
 
         self

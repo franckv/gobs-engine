@@ -7,6 +7,7 @@ use vk::{
     alloc::Allocator,
     command::{CommandBuffer, CommandPool},
     device::Device,
+    image::ImageFormat,
     instance::Instance,
     queue::Queue,
     surface::Surface,
@@ -19,6 +20,8 @@ pub struct Context {
     pub surface: Arc<Surface>,
     pub immediate_cmd: CommandBuffer,
     pub allocator: Arc<Allocator>,
+    pub color_format: ImageFormat,
+    pub depth_format: ImageFormat,
 }
 
 impl Context {
@@ -52,6 +55,8 @@ impl Context {
             surface,
             immediate_cmd,
             allocator,
+            color_format: ImageFormat::R16g16b16a16Sfloat,
+            depth_format: ImageFormat::D32Sfloat,
         }
     }
 }

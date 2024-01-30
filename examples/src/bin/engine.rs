@@ -7,13 +7,17 @@ use gobs::{
         input::{Input, Key},
     },
     gobs_core::{
-        entity::uniform::{UniformData, UniformLayout, UniformPropData},
-        geometry::{vertex::VertexFlag, Transform},
+        entity::uniform::{UniformData, UniformLayout, UniformProp, UniformPropData},
+        Transform,
     },
-    render::{context::Context, model::Model, texture::Texture, uniform_buffer::UniformBuffer},
+    material::Material,
+    render::context::Context,
     scene::{
+        geometry::vertex::VertexFlag,
         graph::scenegraph::{Node, NodeValue},
+        model::Model,
         scene::Scene,
+        uniform_buffer::UniformBuffer,
     },
     vulkan::{
         command::{CommandBuffer, CommandPool},
@@ -26,6 +30,7 @@ use gobs::{
         sync::Semaphore,
     },
 };
+use uuid::Uuid;
 
 const FRAMES_IN_FLIGHT: usize = 2;
 const SHADER_DIR: &str = "examples/shaders";
@@ -37,7 +42,6 @@ struct FrameData {
     pub render_semaphore: Semaphore,
     pub uniform_ds: DescriptorSet,
     pub uniform_buffer: UniformBuffer,
-    pub material_ds: DescriptorSet,
 }
 
 impl FrameData {
@@ -45,8 +49,6 @@ impl FrameData {
         ctx: &Context,
         uniform_layout: Arc<UniformLayout>,
         uniform_ds: DescriptorSet,
-        material_ds: DescriptorSet,
-        texture: &Texture,
     ) -> Self {
         let command_pool = CommandPool::new(ctx.device.clone(), &ctx.queue.family);
         let command_buffer =
@@ -67,18 +69,12 @@ impl FrameData {
             .bind_buffer(&uniform_buffer.buffer, 0, uniform_buffer.buffer.size)
             .end();
 
-        material_ds
-            .update()
-            .bind_image_combined(&texture.image, &texture.sampler, ImageLayout::Shader)
-            .end();
-
         FrameData {
             command_buffer,
             swapchain_semaphore,
             render_semaphore,
             uniform_ds,
             uniform_buffer,
-            material_ds,
         }
     }
 
@@ -103,7 +99,6 @@ struct App {
     bg_pipeline_layout: Arc<PipelineLayout>,
     scene: Scene,
     scene_ds_pool: DescriptorSetPool,
-    material_ds_pool: DescriptorSetPool,
 }
 
 impl Run for App {
@@ -117,7 +112,7 @@ impl Run for App {
         let draw_image = Image::new(
             "color",
             ctx.device.clone(),
-            ImageFormat::R16g16b16a16Sfloat,
+            ctx.color_format,
             ImageUsage::Color,
             extent,
             ctx.allocator.clone(),
@@ -126,7 +121,7 @@ impl Run for App {
         let depth_image = Image::new(
             "depth",
             ctx.device.clone(),
-            ImageFormat::D32Sfloat,
+            ctx.depth_format,
             ImageUsage::Depth,
             extent,
             ctx.allocator.clone(),
@@ -157,22 +152,11 @@ impl Run for App {
             .compute_shader("main", compute_shader)
             .build();
 
-        let scene = Scene::new(
-            ctx,
-            draw_image.extent,
-            draw_image.format,
-            Some(depth_image.format),
-        );
+        let scene = Scene::new(ctx, draw_image.extent);
 
         let mut scene_ds_pool = DescriptorSetPool::new(
             ctx.device.clone(),
             scene.scene_descriptor_layout.clone(),
-            FRAMES_IN_FLIGHT as u32,
-        );
-
-        let mut material_ds_pool = DescriptorSetPool::new(
-            ctx.device.clone(),
-            scene.material_descriptor_layout.clone(),
             FRAMES_IN_FLIGHT as u32,
         );
 
@@ -182,8 +166,6 @@ impl Run for App {
                     ctx,
                     scene.scene_data_layout.clone(),
                     scene_ds_pool.allocate(),
-                    material_ds_pool.allocate(),
-                    &scene.texture,
                 )
             })
             .collect();
@@ -203,7 +185,6 @@ impl Run for App {
             bg_pipeline_layout,
             scene,
             scene_ds_pool,
-            material_ds_pool,
         }
     }
 
@@ -394,19 +375,18 @@ impl App {
             [0.; 4],
             1.,
         );
-        cmd.bind_pipeline(&self.scene.pipeline);
-        cmd.set_viewport(draw_extent.width, draw_extent.height);
-        cmd.bind_descriptor_set(&self.current_frame().uniform_ds, 0, &self.scene.pipeline);
-        cmd.bind_descriptor_set(&self.current_frame().material_ds, 1, &self.scene.pipeline);
 
+        cmd.set_viewport(draw_extent.width, draw_extent.height);
+
+        let mut last_material = Uuid::nil();
         self.scene
             .graph
-            .visit(self.scene.graph.root, &|transform, model| {
+            .visit(self.scene.graph.root, &mut |transform, model| {
                 if let NodeValue::Model(model) = model {
                     let world_matrix = transform.matrix;
 
                     let model_data = UniformData::new(
-                        &self.scene.model_data_layout,
+                        &model.model_data_layout,
                         &[
                             UniformPropData::Mat4F(world_matrix.to_cols_array_2d()),
                             UniformPropData::U64(
@@ -415,9 +395,18 @@ impl App {
                         ],
                     );
 
-                    cmd.push_constants(self.scene.pipeline_layout.clone(), &model_data.raw());
-
                     for primitive in &model.primitives {
+                        let material = &model.materials[primitive.material];
+                        let pipeline = &material.pipeline;
+
+                        if last_material != material.id {
+                            cmd.bind_pipeline(&material.pipeline);
+                            cmd.bind_descriptor_set(&self.current_frame().uniform_ds, 0, pipeline);
+                            cmd.bind_descriptor_set(&material.material_ds, 1, pipeline);
+                            last_material = material.id;
+                        }
+
+                        cmd.push_constants(material.pipeline.layout.clone(), &model_data.raw());
                         cmd.bind_index_buffer::<u32>(&model.buffers.index_buffer, primitive.offset);
                         cmd.draw_indexed(primitive.len, 1);
                     }
@@ -440,7 +429,16 @@ impl App {
         let y_range = (-3., 3.);
         let scale = 0.7;
 
-        let model = Model::new(ctx, meshes[2].clone(), vertex_flags);
+        let mesh = meshes[2].clone();
+
+        let model_data_layout = UniformLayout::builder()
+            .prop("world_matrix", UniformProp::Mat4F)
+            .prop("vertex_buffer_address", UniformProp::U64)
+            .build();
+
+        let material = Material::new(ctx, model_data_layout.clone());
+
+        let model = Model::new(ctx, mesh, model_data_layout, vertex_flags, vec![material]);
 
         for i in 0..=i_max {
             for j in 0..=j_max {
@@ -466,7 +464,16 @@ impl App {
 
         let scale = 1.;
 
-        let model = Model::new(ctx, meshes[2].clone(), vertex_flags);
+        let mesh = meshes[2].clone();
+
+        let model_data_layout = UniformLayout::builder()
+            .prop("world_matrix", UniformProp::Mat4F)
+            .prop("vertex_buffer_address", UniformProp::U64)
+            .build();
+
+        let material = Material::new(ctx, model_data_layout.clone());
+
+        let model = Model::new(ctx, mesh, model_data_layout, vertex_flags, vec![material]);
 
         let transform = Transform::new(
             [0., 0., -5.].into(),

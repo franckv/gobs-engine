@@ -1,6 +1,7 @@
 use std::sync::Arc;
 
 use ash::vk;
+use uuid::Uuid;
 
 use crate::image::ImageFormat;
 use crate::pipeline::{Pipeline, PipelineLayout, Rect2D, Shader, ShaderStage, VertexLayout};
@@ -539,7 +540,7 @@ impl GraphicsPipelineBuilder {
         self
     }
 
-    pub fn build(mut self) -> Pipeline {
+    pub fn build(mut self) -> Arc<Pipeline> {
         let device = self.device.unwrap();
 
         let rendering_state = self.rendering_state.unwrap();
@@ -614,11 +615,12 @@ impl GraphicsPipelineBuilder {
                 .unwrap()[0]
         };
 
-        Pipeline {
+        Arc::new(Pipeline {
+            id: Uuid::new_v4(),
             device: device,
             layout: pipeline_layout,
             pipeline,
             bind_point,
-        }
+        })
     }
 }

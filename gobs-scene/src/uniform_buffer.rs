@@ -1,13 +1,12 @@
 use std::sync::Arc;
 
 use gobs_core::entity::uniform::UniformData;
+use gobs_render::context::Context;
 use gobs_vulkan::{
     alloc::Allocator,
     buffer::{Buffer, BufferUsage},
     descriptor::DescriptorSetLayout,
 };
-
-use crate::context::Context;
 
 pub struct UniformBuffer {
     pub ds_layout: Arc<DescriptorSetLayout>,

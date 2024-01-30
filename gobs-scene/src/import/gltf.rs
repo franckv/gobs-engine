@@ -1,7 +1,8 @@
 use std::sync::Arc;
 
 use gltf::mesh::util::{ReadColors, ReadIndices};
-use gobs_core::geometry::{mesh::Mesh, vertex::VertexData};
+
+use crate::geometry::{mesh::Mesh, vertex::VertexData};
 
 pub fn load_gltf(file: &str) -> Vec<Arc<Mesh>> {
     let (doc, buffers, _) = gltf::import(file).unwrap();
@@ -97,7 +98,7 @@ pub fn load_gltf(file: &str) -> Vec<Arc<Mesh>> {
                 }
             }
 
-            mesh = mesh.add_primitive(offset, indices.len() - offset);
+            mesh = mesh.add_primitive(offset, indices.len() - offset, 0);
         }
 
         meshes.push(mesh.indices(indices).vertices(vertices).build());
