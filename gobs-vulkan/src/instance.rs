@@ -200,21 +200,23 @@ impl Instance {
     }
 
     fn check_features(&self, p_device: &PhysicalDevice) -> bool {
-        let mut features12: vk::PhysicalDeviceVulkan12Features =
-            vk::PhysicalDeviceVulkan12Features::default();
-        let mut features13: vk::PhysicalDeviceVulkan13Features =
-            vk::PhysicalDeviceVulkan13Features::default();
+        let mut features12 = vk::PhysicalDeviceVulkan12Features::default();
+        let mut features13 = vk::PhysicalDeviceVulkan13Features::default();
         let mut features = vk::PhysicalDeviceFeatures2::builder()
             .push_next(&mut features12)
-            .push_next(&mut features13)
-            .build();
+            .push_next(&mut features13);
 
         unsafe {
             self.instance
                 .get_physical_device_features2(p_device.raw(), &mut features);
         };
 
-        log::debug!("Features: {:?},{:?},{:?}", features, features12, features13);
+        log::debug!(
+            "Features: {:?},{:?},{:?}",
+            features.build(),
+            features12,
+            features13
+        );
 
         features12.buffer_device_address == 1
             && features12.descriptor_indexing == 1

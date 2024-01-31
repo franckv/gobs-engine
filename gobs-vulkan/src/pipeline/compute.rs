@@ -41,12 +41,16 @@ impl ComputePipelineBuilder {
         let compute_stage_info = compute_stage.info();
 
         let pipeline_info = vk::ComputePipelineCreateInfo::builder()
-            .stage(compute_stage_info.build())
+            .stage(*compute_stage_info)
             .layout(pipeline_layout.raw());
         let pipeline = unsafe {
             device
                 .raw()
-                .create_compute_pipelines(vk::PipelineCache::null(), &[pipeline_info.build()], None)
+                .create_compute_pipelines(
+                    vk::PipelineCache::null(),
+                    std::slice::from_ref(&pipeline_info),
+                    None,
+                )
                 .unwrap()[0]
         };
 

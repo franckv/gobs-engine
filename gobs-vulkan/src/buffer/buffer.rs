@@ -117,9 +117,7 @@ impl Buffer {
     }
 
     pub fn address(&self, device: Arc<Device>) -> BufferAddress {
-        let address_info = vk::BufferDeviceAddressInfo::builder()
-            .buffer(self.buffer)
-            .build();
+        let address_info = vk::BufferDeviceAddressInfo::builder().buffer(self.buffer);
 
         unsafe { device.raw().get_buffer_device_address(&address_info) }
     }

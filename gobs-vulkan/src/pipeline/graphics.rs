@@ -552,7 +552,7 @@ impl GraphicsPipelineBuilder {
         let fragment_stage = self.fragment_stage.unwrap();
         let fragment_stage_info = fragment_stage.info();
 
-        let shader_stages = [vertex_stage_info.build(), fragment_stage_info.build()];
+        let shader_stages = [*vertex_stage_info, *fragment_stage_info];
 
         if self.vertex_input_state.is_none() {
             self.vertex_input_state = Some(VertexInputState::default());
@@ -609,7 +609,7 @@ impl GraphicsPipelineBuilder {
                 .raw()
                 .create_graphics_pipelines(
                     vk::PipelineCache::null(),
-                    &[pipeline_info.build()],
+                    std::slice::from_ref(&pipeline_info),
                     None,
                 )
                 .unwrap()[0]

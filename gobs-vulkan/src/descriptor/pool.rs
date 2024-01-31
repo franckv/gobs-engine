@@ -53,8 +53,7 @@ impl DescriptorSetPool {
 
         let pool_info = vk::DescriptorPoolCreateInfo::builder()
             .pool_sizes(&pool_size)
-            .max_sets(max_sets)
-            .build();
+            .max_sets(max_sets);
 
         unsafe {
             device
@@ -107,12 +106,11 @@ impl DescriptorSetPool {
     }
 
     fn allocate_ds(&mut self) -> Result<Vec<vk::DescriptorSet>, vk::Result> {
-        let layouts = vec![self.descriptor_layout.layout];
+        let layout = self.descriptor_layout.layout;
 
         let descriptor_info = vk::DescriptorSetAllocateInfo::builder()
             .descriptor_pool(self.current_pool)
-            .set_layouts(&layouts)
-            .build();
+            .set_layouts(std::slice::from_ref(&layout));
 
         unsafe { self.device.raw().allocate_descriptor_sets(&descriptor_info) }
     }

@@ -39,19 +39,16 @@ impl RenderPass {
 
         let color_ref = vk::AttachmentReference::builder()
             .attachment(0)
-            .layout(vk::ImageLayout::COLOR_ATTACHMENT_OPTIMAL)
-            .build();
+            .layout(vk::ImageLayout::COLOR_ATTACHMENT_OPTIMAL);
 
         let depth_ref = vk::AttachmentReference::builder()
             .attachment(1)
-            .layout(vk::ImageLayout::DEPTH_STENCIL_ATTACHMENT_OPTIMAL)
-            .build();
+            .layout(vk::ImageLayout::DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
 
         let subpass = vk::SubpassDescription::builder()
             .pipeline_bind_point(vk::PipelineBindPoint::GRAPHICS)
-            .color_attachments(&[color_ref])
-            .depth_stencil_attachment(&depth_ref)
-            .build();
+            .color_attachments(std::slice::from_ref(&color_ref))
+            .depth_stencil_attachment(&depth_ref);
 
         let dependency = vk::SubpassDependency::builder()
             .src_subpass(vk::SUBPASS_EXTERNAL)
@@ -59,14 +56,13 @@ impl RenderPass {
             .dst_stage_mask(vk::PipelineStageFlags::COLOR_ATTACHMENT_OUTPUT)
             .dst_access_mask(
                 vk::AccessFlags::COLOR_ATTACHMENT_READ | vk::AccessFlags::COLOR_ATTACHMENT_WRITE,
-            )
-            .build();
+            );
 
+        let attachments = [color_attach, depth_attach];
         let renderpass_info = vk::RenderPassCreateInfo::builder()
-            .attachments(&[color_attach, depth_attach])
-            .subpasses(&[subpass])
-            .dependencies(&[dependency])
-            .build();
+            .attachments(&attachments)
+            .subpasses(std::slice::from_ref(&subpass))
+            .dependencies(std::slice::from_ref(&dependency));
 
         let renderpass = unsafe {
             debug!("Create renderpass");

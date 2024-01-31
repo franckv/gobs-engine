@@ -81,8 +81,7 @@ impl SwapChain {
                 None => vk::SwapchainKHR::null(),
             })
             .image_array_layers(1)
-            .queue_family_indices(&[])
-            .build();
+            .queue_family_indices(&[]);
 
         let loader = KhrSwapchain::new(&device.instance().raw(), device.raw());
 
@@ -137,15 +136,14 @@ impl SwapChain {
     }
 
     pub fn present(&mut self, index: usize, queue: &Queue, wait: &Semaphore) -> Result<(), ()> {
-        let wait_semaphores = vec![wait.raw()];
-        let image_indices = vec![index as u32];
-        let swapchains = vec![self.swapchain];
+        let wait_semaphore = wait.raw();
+        let image_indice = index as u32;
+        let swapchains = self.swapchain;
 
         let present_info = vk::PresentInfoKHR::builder()
-            .wait_semaphores(&wait_semaphores)
-            .image_indices(&image_indices)
-            .swapchains(&swapchains)
-            .build();
+            .wait_semaphores(std::slice::from_ref(&wait_semaphore))
+            .image_indices(std::slice::from_ref(&image_indice))
+            .swapchains(std::slice::from_ref(&swapchains));
 
         unsafe {
             match self.loader.queue_present(queue.queue, &present_info) {

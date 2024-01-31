@@ -19,7 +19,7 @@ impl Fence {
             Default::default()
         };
 
-        let fence_info = vk::FenceCreateInfo::builder().flags(flags).build();
+        let fence_info = vk::FenceCreateInfo::builder().flags(flags);
 
         let fence = unsafe { device.raw().create_fence(&fence_info, None).unwrap() };
 

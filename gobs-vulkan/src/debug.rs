@@ -15,8 +15,7 @@ pub(crate) fn add_label(
     let name_info = vk::DebugUtilsObjectNameInfoEXT::builder()
         .object_type(object_type)
         .object_handle(object_handle)
-        .object_name(&label)
-        .build();
+        .object_name(&label);
 
     unsafe {
         device

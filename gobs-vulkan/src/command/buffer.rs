@@ -160,7 +160,7 @@ impl CommandBuffer {
             vk::AttachmentLoadOp::LOAD
         };
 
-        let color_info = vec![vk::RenderingAttachmentInfo::builder()
+        let color_info = vk::RenderingAttachmentInfo::builder()
             .image_view(color.image_view)
             .image_layout(color.layout.into())
             .load_op(color_load_op)
@@ -169,8 +169,7 @@ impl CommandBuffer {
                 color: vk::ClearColorValue {
                     float32: clear_color,
                 },
-            })
-            .build()];
+            });
 
         let mut depth_info = vec![];
         if let Some(depth) = depth {
@@ -189,9 +188,9 @@ impl CommandBuffer {
         }
 
         let rendering_info = vk::RenderingInfo::builder()
-            .render_area(vk::Rect2D::builder().extent(extent.into()).build())
+            .render_area(*vk::Rect2D::builder().extent(extent.into()))
             .layer_count(1)
-            .color_attachments(&color_info);
+            .color_attachments(std::slice::from_ref(&color_info));
 
         let rendering_info = match depth_info.first() {
             Some(depth_attachment) => rendering_info.depth_attachment(depth_attachment),
@@ -391,39 +390,32 @@ impl CommandBuffer {
         let blit_region = vk::ImageBlit2::builder()
             .src_offsets([
                 vk::Offset3D::default(),
-                vk::Offset3D::builder()
+                *vk::Offset3D::builder()
                     .x(src_size.width as i32)
                     .y(src_size.height as i32)
-                    .z(1)
-                    .build(),
+                    .z(1),
             ])
             .dst_offsets([
                 vk::Offset3D::default(),
-                vk::Offset3D::builder()
+                *vk::Offset3D::builder()
                     .x(dst_size.width as i32)
                     .y(dst_size.height as i32)
-                    .z(1)
-                    .build(),
+                    .z(1),
             ])
             .src_subresource(
-                vk::ImageSubresourceLayers::builder()
+                *vk::ImageSubresourceLayers::builder()
                     .aspect_mask(src.usage.into())
                     .base_array_layer(0)
                     .layer_count(1)
-                    .mip_level(0)
-                    .build(),
+                    .mip_level(0),
             )
             .dst_subresource(
-                vk::ImageSubresourceLayers::builder()
+                *vk::ImageSubresourceLayers::builder()
                     .aspect_mask(dst.usage.into())
                     .base_array_layer(0)
                     .layer_count(1)
-                    .mip_level(0)
-                    .build(),
-            )
-            .build();
-
-        let blit_region_set = vec![blit_region];
+                    .mip_level(0),
+            );
 
         let blit_info = vk::BlitImageInfo2::builder()
             .dst_image(dst.raw())
@@ -431,7 +423,7 @@ impl CommandBuffer {
             .src_image(src.raw())
             .src_image_layout(vk::ImageLayout::TRANSFER_SRC_OPTIMAL)
             .filter(vk::Filter::LINEAR)
-            .regions(&blit_region_set);
+            .regions(std::slice::from_ref(&blit_region));
 
         unsafe {
             self.device
@@ -474,19 +466,16 @@ impl CommandBuffer {
             .src_stage_mask(vk::PipelineStageFlags2::ALL_COMMANDS)
             .dst_stage_mask(vk::PipelineStageFlags2::ALL_COMMANDS)
             .subresource_range(
-                vk::ImageSubresourceRange::builder()
+                *vk::ImageSubresourceRange::builder()
                     .aspect_mask(image.usage.into())
                     .base_mip_level(0)
                     .level_count(vk::REMAINING_MIP_LEVELS)
                     .base_array_layer(0)
-                    .layer_count(vk::REMAINING_ARRAY_LAYERS)
-                    .build(),
-            )
-            .build();
+                    .layer_count(vk::REMAINING_ARRAY_LAYERS),
+            );
 
-        let barrier_info_set = vec![barrier_info];
-
-        let dep_info = vk::DependencyInfo::builder().image_memory_barriers(&barrier_info_set);
+        let dep_info = vk::DependencyInfo::builder()
+            .image_memory_barriers(std::slice::from_ref(&barrier_info));
 
         unsafe {
             self.device
@@ -513,12 +502,12 @@ impl CommandBuffer {
     }
 
     pub fn submit2(&self, wait: Option<&Semaphore>, signal: Option<&Semaphore>) {
-        let command_info = vec![vk::CommandBufferSubmitInfo::builder()
+        let command_info = vk::CommandBufferSubmitInfo::builder()
             .command_buffer(self.command_buffer)
-            .device_mask(0)
-            .build()];
+            .device_mask(0);
 
-        let mut submit_info = vk::SubmitInfo2::builder().command_buffer_infos(&command_info);
+        let mut submit_info =
+            vk::SubmitInfo2::builder().command_buffer_infos(std::slice::from_ref(&command_info));
 
         let mut wait_info = Vec::new();
         if let Some(wait) = wait {
@@ -548,12 +537,14 @@ impl CommandBuffer {
             submit_info = submit_info.signal_semaphore_infos(&signal_info);
         };
 
-        let submit_info = submit_info;
-
         unsafe {
             self.device
                 .raw()
-                .queue_submit2(self.queue.queue, &[submit_info.build()], self.fence.raw())
+                .queue_submit2(
+                    self.queue.queue,
+                    std::slice::from_ref(&submit_info),
+                    self.fence.raw(),
+                )
                 .unwrap();
         }
     }

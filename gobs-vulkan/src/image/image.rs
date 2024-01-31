@@ -216,11 +216,10 @@ impl Image {
         let image_info = vk::ImageCreateInfo::builder()
             .image_type(vk::ImageType::TYPE_2D)
             .extent(
-                vk::Extent3D::builder()
+                *vk::Extent3D::builder()
                     .width(extent.width)
                     .height(extent.height)
-                    .depth(1)
-                    .build(),
+                    .depth(1),
             )
             .mip_levels(1)
             .array_layers(1)
@@ -229,8 +228,7 @@ impl Image {
             .initial_layout(vk::ImageLayout::UNDEFINED)
             .usage(usage.into())
             .sharing_mode(vk::SharingMode::EXCLUSIVE)
-            .samples(vk::SampleCountFlags::TYPE_1)
-            .queue_family_indices(&[]);
+            .samples(vk::SampleCountFlags::TYPE_1);
 
         unsafe { device.raw().create_image(&image_info, None).unwrap() }
     }
@@ -246,15 +244,13 @@ impl Image {
             .view_type(vk::ImageViewType::TYPE_2D)
             .format(format.into())
             .subresource_range(
-                vk::ImageSubresourceRange::builder()
+                *vk::ImageSubresourceRange::builder()
                     .aspect_mask(usage.into())
                     .base_mip_level(0)
                     .level_count(1)
                     .base_array_layer(0)
-                    .layer_count(1)
-                    .build(),
-            )
-            .build();
+                    .layer_count(1),
+            );
 
         unsafe { device.raw().create_image_view(&view_info, None).unwrap() }
     }

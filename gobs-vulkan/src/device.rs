@@ -29,16 +29,12 @@ impl Device {
 
         let extensions = [Swapchain::name().as_ptr()];
 
-        let mut features12: PhysicalDeviceVulkan12Features =
-            PhysicalDeviceVulkan12Features::builder()
-                .buffer_device_address(true)
-                .descriptor_indexing(true)
-                .build();
-        let mut features13: PhysicalDeviceVulkan13Features =
-            PhysicalDeviceVulkan13Features::builder()
-                .dynamic_rendering(true)
-                .synchronization2(true)
-                .build();
+        let mut features12 = PhysicalDeviceVulkan12Features::builder()
+            .buffer_device_address(true)
+            .descriptor_indexing(true);
+        let mut features13 = PhysicalDeviceVulkan13Features::builder()
+            .dynamic_rendering(true)
+            .synchronization2(true);
 
         let device_info = vk::DeviceCreateInfo::builder()
             .queue_create_infos(std::slice::from_ref(&queue_info))

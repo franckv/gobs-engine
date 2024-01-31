@@ -16,8 +16,7 @@ impl CommandPool {
     pub fn new(device: Arc<Device>, queue_family: &QueueFamily) -> Arc<Self> {
         let pool_info = vk::CommandPoolCreateInfo::builder()
             .flags(vk::CommandPoolCreateFlags::RESET_COMMAND_BUFFER)
-            .queue_family_index(queue_family.index)
-            .build();
+            .queue_family_index(queue_family.index);
 
         let pool = unsafe {
             log::debug!("Create command pool");
