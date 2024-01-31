@@ -15,7 +15,6 @@ use gobs::{
         graph::scenegraph::{Node, NodeValue},
         import::gltf,
         scene::Scene,
-        uniform_buffer::UniformBuffer,
     },
     vulkan::{
         command::{CommandBuffer, CommandPool},
@@ -30,7 +29,6 @@ use gobs::{
 };
 use uuid::Uuid;
 
-const FRAMES_IN_FLIGHT: usize = 2;
 const SHADER_DIR: &str = "examples/shaders";
 const ASSET_DIR: &str = "examples/assets";
 
@@ -38,16 +36,10 @@ struct FrameData {
     pub command_buffer: CommandBuffer,
     pub swapchain_semaphore: Semaphore,
     pub render_semaphore: Semaphore,
-    pub uniform_ds: DescriptorSet,
-    pub uniform_buffer: UniformBuffer,
 }
 
 impl FrameData {
-    pub fn new(
-        ctx: &Context,
-        uniform_layout: Arc<UniformLayout>,
-        uniform_ds: DescriptorSet,
-    ) -> Self {
+    pub fn new(ctx: &Context) -> Self {
         let command_pool = CommandPool::new(ctx.device.clone(), &ctx.queue.family);
         let command_buffer =
             CommandBuffer::new(ctx.device.clone(), ctx.queue.clone(), command_pool, "Frame");
@@ -55,24 +47,10 @@ impl FrameData {
         let swapchain_semaphore = Semaphore::new(ctx.device.clone(), "Swapchain");
         let render_semaphore = Semaphore::new(ctx.device.clone(), "Render");
 
-        let uniform_buffer = UniformBuffer::new(
-            ctx,
-            uniform_ds.layout.clone(),
-            uniform_layout.size(),
-            ctx.allocator.clone(),
-        );
-
-        uniform_ds
-            .update()
-            .bind_buffer(&uniform_buffer.buffer, 0, uniform_buffer.buffer.size)
-            .end();
-
         FrameData {
             command_buffer,
             swapchain_semaphore,
             render_semaphore,
-            uniform_ds,
-            uniform_buffer,
         }
     }
 
@@ -96,7 +74,6 @@ struct App {
     bg_pipeline: Pipeline,
     bg_pipeline_layout: Arc<PipelineLayout>,
     scene: Scene,
-    scene_ds_pool: DescriptorSetPool,
 }
 
 impl Run for App {
@@ -152,20 +129,8 @@ impl Run for App {
 
         let scene = Scene::new(ctx, draw_image.extent);
 
-        let mut scene_ds_pool = DescriptorSetPool::new(
-            ctx.device.clone(),
-            scene.scene_descriptor_layout.clone(),
-            FRAMES_IN_FLIGHT as u32,
-        );
-
-        let frames = (0..FRAMES_IN_FLIGHT)
-            .map(|_| {
-                FrameData::new(
-                    ctx,
-                    scene.scene_data_layout.clone(),
-                    scene_ds_pool.allocate(),
-                )
-            })
+        let frames = (0..ctx.frames_in_flight)
+            .map(|_| FrameData::new(ctx))
             .collect();
 
         App {
@@ -182,7 +147,6 @@ impl Run for App {
             bg_pipeline,
             bg_pipeline_layout,
             scene,
-            scene_ds_pool,
         }
     }
 
@@ -192,8 +156,10 @@ impl Run for App {
         self.load_scene(ctx);
     }
 
-    fn update(&mut self, _ctx: &Context, _delta: f32) {
+    fn update(&mut self, ctx: &Context, _delta: f32) {
         log::trace!("Update");
+
+        self.scene.update(ctx, self.frame_number);
     }
 
     fn render(&mut self, ctx: &Context) -> Result<(), RenderError> {
@@ -216,10 +182,9 @@ impl Run for App {
                 * self.render_scaling) as u32,
         );
 
-        self.new_frame();
-        self.update_scene_buffers();
+        self.new_frame(ctx);
 
-        let frame = &self.frames[self.current_frame_id()];
+        let frame = &self.frames[self.current_frame_id(ctx)];
         let cmd = &frame.command_buffer;
 
         let Ok(image_index) = self.swapchain.acquire_image(&frame.swapchain_semaphore) else {
@@ -314,42 +279,19 @@ impl Run for App {
 }
 
 impl App {
-    fn current_frame_id(&self) -> usize {
-        self.frame_number % FRAMES_IN_FLIGHT
+    fn current_frame_id(&self, ctx: &Context) -> usize {
+        self.frame_number % ctx.frames_in_flight
     }
 
-    fn current_frame(&self) -> &FrameData {
-        let frame_id = self.frame_number % FRAMES_IN_FLIGHT;
-
-        &self.frames[frame_id]
-    }
-
-    fn current_frame_mut(&mut self) -> &mut FrameData {
-        let frame_id = self.frame_number % FRAMES_IN_FLIGHT;
-
-        &mut self.frames[frame_id]
-    }
-
-    fn new_frame(&mut self) {
-        let frame = self.current_frame_mut();
+    fn new_frame(&mut self, ctx: &Context) {
+        let frame_id = self.frame_number % ctx.frames_in_flight;
+        let frame = &mut self.frames[frame_id];
         let cmd = &frame.command_buffer;
 
         cmd.fence.wait_and_reset();
         debug_assert!(!cmd.fence.signaled());
 
         frame.reset();
-    }
-
-    fn update_scene_buffers(&mut self) {
-        let scene_data = UniformData::new(
-            &self.scene.scene_data_layout,
-            &[
-                UniformPropData::Vec3F(self.scene.camera.position.into()),
-                UniformPropData::Mat4F(self.scene.camera.view_proj().to_cols_array_2d()),
-            ],
-        );
-
-        self.current_frame_mut().uniform_buffer.update(&scene_data);
     }
 
     #[allow(unused)]
@@ -399,7 +341,11 @@ impl App {
 
                         if last_material != material.id {
                             cmd.bind_pipeline(&material.pipeline);
-                            cmd.bind_descriptor_set(&self.current_frame().uniform_ds, 0, pipeline);
+                            cmd.bind_descriptor_set(
+                                &self.scene.uniform_ds(ctx, self.frame_number),
+                                0,
+                                pipeline,
+                            );
                             cmd.bind_descriptor_set(&material.material_ds, 1, pipeline);
                             last_material = material.id;
                         }

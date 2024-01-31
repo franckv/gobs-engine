@@ -22,6 +22,7 @@ pub struct Context {
     pub allocator: Arc<Allocator>,
     pub color_format: ImageFormat,
     pub depth_format: ImageFormat,
+    pub frames_in_flight: usize,
 }
 
 impl Context {
@@ -57,6 +58,7 @@ impl Context {
             allocator,
             color_format: ImageFormat::R16g16b16a16Sfloat,
             depth_format: ImageFormat::D32Sfloat,
+            frames_in_flight: 2,
         }
     }
 }
