@@ -13,7 +13,9 @@ enum ResourceInfo {
     Buffer(vk::DescriptorBufferInfo),
     DynamicBuffer(vk::DescriptorBufferInfo),
     Image(vk::DescriptorImageInfo),
+    SampledImage(vk::DescriptorImageInfo),
     ImageCombined(vk::DescriptorImageInfo),
+    Sampler(vk::DescriptorImageInfo),
 }
 
 /// List of updates to apply on a descriptor set
@@ -59,6 +61,17 @@ impl DescriptorSetUpdates {
         self
     }
 
+    pub fn bind_sampled_image(mut self, image: &Image, layout: ImageLayout) -> Self {
+        let image_info = vk::DescriptorImageInfo::builder()
+            .image_layout(layout.into())
+            .image_view(image.image_view)
+            .build();
+
+        self.updates.push(ResourceInfo::SampledImage(image_info));
+
+        self
+    }
+
     pub fn bind_image_combined(
         mut self,
         image: &Image,
@@ -76,6 +89,16 @@ impl DescriptorSetUpdates {
         self
     }
 
+    pub fn bind_sampler(mut self, sampler: &Sampler) -> Self {
+        let image_info = vk::DescriptorImageInfo::builder()
+            .sampler(sampler.raw())
+            .build();
+
+        self.updates.push(ResourceInfo::Sampler(image_info));
+
+        self
+    }
+
     pub fn end(self) {
         let mut updates = Vec::new();
 
@@ -88,7 +111,9 @@ impl DescriptorSetUpdates {
                     ResourceInfo::Buffer(_) => vk::DescriptorType::UNIFORM_BUFFER,
                     ResourceInfo::DynamicBuffer(_) => vk::DescriptorType::UNIFORM_BUFFER_DYNAMIC,
                     ResourceInfo::Image(_) => vk::DescriptorType::STORAGE_IMAGE,
+                    ResourceInfo::SampledImage(_) => vk::DescriptorType::SAMPLED_IMAGE,
                     ResourceInfo::ImageCombined(_) => vk::DescriptorType::COMBINED_IMAGE_SAMPLER,
+                    ResourceInfo::Sampler(_) => vk::DescriptorType::SAMPLER,
                 });
 
             let mut buffer_info_set = vec![];
@@ -107,7 +132,15 @@ impl DescriptorSetUpdates {
                     image_info_set.push(*image_info);
                     write_info_builder.image_info(&image_info_set).build()
                 }
+                ResourceInfo::SampledImage(image_info) => {
+                    image_info_set.push(*image_info);
+                    write_info_builder.image_info(&image_info_set).build()
+                }
                 ResourceInfo::Image(image_info) => {
+                    image_info_set.push(*image_info);
+                    write_info_builder.image_info(&image_info_set).build()
+                }
+                ResourceInfo::Sampler(image_info) => {
                     image_info_set.push(*image_info);
                     write_info_builder.image_info(&image_info_set).build()
                 }

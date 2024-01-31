@@ -11,6 +11,8 @@ pub enum DescriptorType {
     UniformDynamic,
     ImageSampler,
     StorageImage,
+    Sampler,
+    SampledImage,
 }
 
 impl Into<vk::DescriptorType> for DescriptorType {
@@ -20,6 +22,8 @@ impl Into<vk::DescriptorType> for DescriptorType {
             DescriptorType::UniformDynamic => vk::DescriptorType::UNIFORM_BUFFER_DYNAMIC,
             DescriptorType::ImageSampler => vk::DescriptorType::COMBINED_IMAGE_SAMPLER,
             DescriptorType::StorageImage => vk::DescriptorType::STORAGE_IMAGE,
+            DescriptorType::Sampler => vk::DescriptorType::SAMPLER,
+            DescriptorType::SampledImage => vk::DescriptorType::SAMPLED_IMAGE,
         }
     }
 }

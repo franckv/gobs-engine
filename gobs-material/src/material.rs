@@ -36,7 +36,8 @@ impl Material {
             .build(ctx.device.clone());
 
         let material_descriptor_layout = DescriptorSetLayout::builder()
-            .binding(DescriptorType::ImageSampler, DescriptorStage::Fragment)
+            .binding(DescriptorType::SampledImage, DescriptorStage::Fragment)
+            .binding(DescriptorType::Sampler, DescriptorStage::Fragment)
             .build(ctx.device.clone());
 
         let vertex_shader = Shader::from_file(
@@ -85,7 +86,8 @@ impl Material {
 
         material_ds
             .update()
-            .bind_image_combined(&texture.image, &texture.sampler, ImageLayout::Shader)
+            .bind_sampled_image(&texture.image, ImageLayout::Shader)
+            .bind_sampler(&texture.sampler)
             .end();
 
         Material {
