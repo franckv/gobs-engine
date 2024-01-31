@@ -5,8 +5,6 @@ authors = { workspace = true }
 edition = { workspace = true }
 
 [dependencies]
-gobs-core = { workspace = true }
-gobs-utils = { workspace = true }
 gobs-vulkan = { workspace = true }
 gpu-allocator = { workspace = true }
 log = { workspace = true }

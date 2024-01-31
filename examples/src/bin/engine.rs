@@ -10,12 +10,10 @@ use gobs::{
         entity::uniform::{UniformData, UniformLayout, UniformProp, UniformPropData},
         Transform,
     },
-    material::Material,
     render::context::Context,
     scene::{
-        geometry::vertex::VertexFlag,
         graph::scenegraph::{Node, NodeValue},
-        model::Model,
+        import::gltf,
         scene::Scene,
         uniform_buffer::UniformBuffer,
     },
@@ -390,12 +388,12 @@ impl App {
                         &[
                             UniformPropData::Mat4F(world_matrix.to_cols_array_2d()),
                             UniformPropData::U64(
-                                model.buffers.vertex_buffer.address(ctx.device.clone()),
+                                model.mesh.vertex_buffer.address(ctx.device.clone()),
                             ),
                         ],
                     );
 
-                    for primitive in &model.primitives {
+                    for primitive in &model.mesh.primitives {
                         let material = &model.materials[primitive.material];
                         let pipeline = &material.pipeline;
 
@@ -407,7 +405,7 @@ impl App {
                         }
 
                         cmd.push_constants(material.pipeline.layout.clone(), &model_data.raw());
-                        cmd.bind_index_buffer::<u32>(&model.buffers.index_buffer, primitive.offset);
+                        cmd.bind_index_buffer::<u32>(&model.mesh.index_buffer, primitive.offset);
                         cmd.draw_indexed(primitive.len, 1);
                     }
                 }
@@ -418,10 +416,7 @@ impl App {
 
     #[allow(unused)]
     fn load_scene(&mut self, ctx: &Context) {
-        let meshes = gobs::scene::import::gltf::load_gltf(&format!("{}/basicmesh.glb", ASSET_DIR));
-
-        let vertex_flags =
-            VertexFlag::POSITION | VertexFlag::COLOR | VertexFlag::TEXTURE | VertexFlag::NORMAL;
+        let models = gltf::load_gltf(ctx, &format!("{}/basicmesh.glb", ASSET_DIR));
 
         let i_max = 3;
         let j_max = 3;
@@ -429,16 +424,7 @@ impl App {
         let y_range = (-3., 3.);
         let scale = 0.7;
 
-        let mesh = meshes[2].clone();
-
-        let model_data_layout = UniformLayout::builder()
-            .prop("world_matrix", UniformProp::Mat4F)
-            .prop("vertex_buffer_address", UniformProp::U64)
-            .build();
-
-        let material = Material::new(ctx, model_data_layout.clone());
-
-        let model = Model::new(ctx, mesh, model_data_layout, vertex_flags, vec![material]);
+        let model = models[2].clone();
 
         for i in 0..=i_max {
             for j in 0..=j_max {
@@ -457,23 +443,16 @@ impl App {
 
     #[allow(unused)]
     fn load_scene2(&mut self, ctx: &Context) {
-        let meshes = gobs::scene::import::gltf::load_gltf(&format!("{}/basicmesh.glb", ASSET_DIR));
-
-        let vertex_flags =
-            VertexFlag::POSITION | VertexFlag::COLOR | VertexFlag::TEXTURE | VertexFlag::NORMAL;
+        let models = gltf::load_gltf(ctx, &format!("{}/basicmesh.glb", ASSET_DIR));
 
         let scale = 1.;
 
-        let mesh = meshes[2].clone();
+        let model = models[2].clone();
 
         let model_data_layout = UniformLayout::builder()
             .prop("world_matrix", UniformProp::Mat4F)
             .prop("vertex_buffer_address", UniformProp::U64)
             .build();
-
-        let material = Material::new(ctx, model_data_layout.clone());
-
-        let model = Model::new(ctx, mesh, model_data_layout, vertex_flags, vec![material]);
 
         let transform = Transform::new(
             [0., 0., -5.].into(),

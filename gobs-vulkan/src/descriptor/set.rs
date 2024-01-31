@@ -9,6 +9,7 @@ use crate::Wrap;
 
 use super::DescriptorSetLayout;
 
+#[derive(Debug)]
 enum ResourceInfo {
     Buffer(vk::DescriptorBufferInfo),
     DynamicBuffer(vk::DescriptorBufferInfo),
@@ -102,6 +103,9 @@ impl DescriptorSetUpdates {
     pub fn end(self) {
         let mut updates = Vec::new();
 
+        let mut buffer_info_set = vec![];
+        let mut image_info_set = vec![];
+
         for (idx, update) in self.updates.iter().enumerate() {
             let write_info_builder = vk::WriteDescriptorSet::builder()
                 .dst_set(self.set)
@@ -116,33 +120,42 @@ impl DescriptorSetUpdates {
                     ResourceInfo::Sampler(_) => vk::DescriptorType::SAMPLER,
                 });
 
-            let mut buffer_info_set = vec![];
-            let mut image_info_set = vec![];
-
             let write_info = match update {
                 ResourceInfo::Buffer(buffer_info) => {
                     buffer_info_set.push(*buffer_info);
-                    write_info_builder.buffer_info(&buffer_info_set).build()
+                    write_info_builder
+                        .buffer_info(std::slice::from_ref(buffer_info_set.last().unwrap()))
+                        .build()
                 }
                 ResourceInfo::DynamicBuffer(buffer_info) => {
                     buffer_info_set.push(*buffer_info);
-                    write_info_builder.buffer_info(&buffer_info_set).build()
+                    write_info_builder
+                        .buffer_info(std::slice::from_ref(buffer_info_set.last().unwrap()))
+                        .build()
                 }
                 ResourceInfo::ImageCombined(image_info) => {
                     image_info_set.push(*image_info);
-                    write_info_builder.image_info(&image_info_set).build()
+                    write_info_builder
+                        .image_info(std::slice::from_ref(image_info_set.last().unwrap()))
+                        .build()
                 }
                 ResourceInfo::SampledImage(image_info) => {
                     image_info_set.push(*image_info);
-                    write_info_builder.image_info(&image_info_set).build()
+                    write_info_builder
+                        .image_info(std::slice::from_ref(image_info_set.last().unwrap()))
+                        .build()
                 }
                 ResourceInfo::Image(image_info) => {
                     image_info_set.push(*image_info);
-                    write_info_builder.image_info(&image_info_set).build()
+                    write_info_builder
+                        .image_info(std::slice::from_ref(image_info_set.last().unwrap()))
+                        .build()
                 }
                 ResourceInfo::Sampler(image_info) => {
                     image_info_set.push(*image_info);
-                    write_info_builder.image_info(&image_info_set).build()
+                    write_info_builder
+                        .image_info(std::slice::from_ref(image_info_set.last().unwrap()))
+                        .build()
                 }
             };
 

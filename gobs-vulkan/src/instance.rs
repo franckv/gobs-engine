@@ -72,6 +72,8 @@ unsafe extern "system" fn debug_cb(
                 &message_id_number.to_string(),
                 message,
             );
+            #[cfg(debug)]
+            panic!();
         }
     }
 

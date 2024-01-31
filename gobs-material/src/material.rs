@@ -15,7 +15,7 @@ use gobs_vulkan::{
     },
 };
 
-use crate::texture::Texture;
+use crate::{texture::Texture, vertex::VertexFlag};
 
 const SHADER_DIR: &str = "examples/shaders";
 
@@ -23,6 +23,7 @@ pub type MaterialId = Uuid;
 
 pub struct Material {
     pub id: MaterialId,
+    pub vertex_flags: VertexFlag,
     pub pipeline: Arc<Pipeline>,
     pub texture: Texture,
     pub material_ds_pool: DescriptorSetPool,
@@ -30,7 +31,7 @@ pub struct Material {
 }
 
 impl Material {
-    pub fn new(ctx: &Context, model_data_layout: Arc<UniformLayout>) -> Self {
+    pub fn new(ctx: &Context, model_data_layout: Arc<UniformLayout>) -> Arc<Self> {
         let scene_descriptor_layout = DescriptorSetLayout::builder()
             .binding(DescriptorType::Uniform, DescriptorStage::Vertex)
             .build(ctx.device.clone());
@@ -39,6 +40,9 @@ impl Material {
             .binding(DescriptorType::SampledImage, DescriptorStage::Fragment)
             .binding(DescriptorType::Sampler, DescriptorStage::Fragment)
             .build(ctx.device.clone());
+
+        let vertex_flags =
+            VertexFlag::POSITION | VertexFlag::COLOR | VertexFlag::TEXTURE | VertexFlag::NORMAL;
 
         let vertex_shader = Shader::from_file(
             &format!("{}/mesh.vert.spv", SHADER_DIR),
@@ -90,12 +94,19 @@ impl Material {
             .bind_sampler(&texture.sampler)
             .end();
 
-        Material {
+        Arc::new(Material {
             id: Uuid::new_v4(),
+            vertex_flags,
             pipeline,
             texture,
             material_ds_pool,
             material_ds,
-        }
+        })
+    }
+}
+
+impl Drop for Material {
+    fn drop(&mut self) {
+        log::debug!("Drop material");
     }
 }

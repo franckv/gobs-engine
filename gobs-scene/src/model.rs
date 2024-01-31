@@ -2,39 +2,26 @@ use std::sync::Arc;
 
 use gobs_core::entity::uniform::UniformLayout;
 use gobs_material::Material;
-use gobs_render::context::Context;
 
-use crate::{
-    geometry::{
-        mesh::{Mesh, Primitive},
-        vertex::VertexFlag,
-    },
-    mesh_buffer::MeshBuffer,
-};
+use crate::mesh::Mesh;
 
 pub struct Model {
-    pub buffers: Arc<MeshBuffer>,
-    pub materials: Vec<Material>,
-    pub primitives: Vec<Primitive>,
+    pub mesh: Arc<Mesh>,
+    pub materials: Vec<Arc<Material>>,
     pub model_data_layout: Arc<UniformLayout>,
 }
 
 impl Model {
     pub fn new(
-        ctx: &Context,
         mesh: Arc<Mesh>,
         model_data_layout: Arc<UniformLayout>,
-        vertex_flags: VertexFlag,
-        materials: Vec<Material>,
+        materials: Vec<Arc<Material>>,
     ) -> Arc<Self> {
         log::debug!("New model from mesh {}", mesh.name);
 
-        let buffers = MeshBuffer::new(ctx, mesh.clone(), vertex_flags);
-
         Arc::new(Model {
-            buffers,
+            mesh,
             materials,
-            primitives: mesh.primitives.clone(),
             model_data_layout,
         })
     }

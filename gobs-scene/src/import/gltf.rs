@@ -2,25 +2,39 @@ use std::sync::Arc;
 
 use gltf::mesh::util::{ReadColors, ReadIndices};
 
-use crate::geometry::{mesh::Mesh, vertex::VertexData};
+use gobs_core::entity::uniform::{UniformLayout, UniformProp};
+use gobs_material::{vertex::VertexData, Material};
+use gobs_render::context::Context;
 
-pub fn load_gltf(file: &str) -> Vec<Arc<Mesh>> {
+use crate::{
+    mesh::{Mesh, Primitive, PrimitiveType},
+    model::Model,
+};
+
+pub fn load_gltf(ctx: &Context, file: &str) -> Vec<Arc<Model>> {
     let (doc, buffers, _) = gltf::import(file).unwrap();
 
-    let mut meshes = Vec::new();
+    let mut models = Vec::new();
+
+    let model_data_layout = UniformLayout::builder()
+        .prop("world_matrix", UniformProp::Mat4F)
+        .prop("vertex_buffer_address", UniformProp::U64)
+        .build();
+
+    let material = Material::new(ctx, model_data_layout.clone());
 
     for m in doc.meshes() {
+        let name = m.name().unwrap_or_default();
         log::info!(
             "Mesh #{}: {:?}, {} primitives",
             m.index(),
-            m.name().unwrap_or_default(),
+            name,
             m.primitives().len()
         );
 
-        let mut mesh = Mesh::builder(m.name().unwrap_or_default());
-
         let mut indices = Vec::new();
         let mut vertices = Vec::new();
+        let mut primitives = Vec::new();
 
         for p in m.primitives() {
             let start_idx = vertices.len() as u32;
@@ -98,11 +112,26 @@ pub fn load_gltf(file: &str) -> Vec<Arc<Mesh>> {
                 }
             }
 
-            mesh = mesh.add_primitive(offset, indices.len() - offset, 0);
+            primitives.push(Primitive::new(
+                PrimitiveType::Triangle,
+                offset,
+                indices.len() - offset,
+                0,
+            ));
         }
 
-        meshes.push(mesh.indices(indices).vertices(vertices).build());
+        let mesh = Mesh::new(
+            ctx,
+            name,
+            &vertices,
+            &indices,
+            primitives,
+            material.vertex_flags,
+        );
+
+        let model = Model::new(mesh, model_data_layout.clone(), vec![material.clone()]);
+        models.push(model);
     }
 
-    meshes
+    models
 }
