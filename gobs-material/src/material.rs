@@ -33,7 +33,7 @@ pub struct Material {
 impl Material {
     pub fn new(ctx: &Context, model_data_layout: Arc<UniformLayout>) -> Arc<Self> {
         let scene_descriptor_layout = DescriptorSetLayout::builder()
-            .binding(DescriptorType::Uniform, DescriptorStage::Vertex)
+            .binding(DescriptorType::Uniform, DescriptorStage::All)
             .build(ctx.device.clone());
 
         let material_descriptor_layout = DescriptorSetLayout::builder()

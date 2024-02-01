@@ -1,9 +1,13 @@
 use std::sync::Arc;
 
 use glam::Vec3;
-use gobs_core::entity::{
-    camera::Camera,
-    uniform::{UniformData, UniformLayout, UniformProp, UniformPropData},
+use gobs_core::{
+    entity::{
+        camera::Camera,
+        light::Light,
+        uniform::{UniformData, UniformLayout, UniformProp, UniformPropData},
+    },
+    Color,
 };
 
 use gobs_render::context::Context;
@@ -50,6 +54,7 @@ impl SceneFrameData {
 pub struct Scene {
     pub graph: SceneGraph,
     pub camera: Camera,
+    pub light: Light,
     pub scene_descriptor_layout: Arc<DescriptorSetLayout>,
     pub scene_data_layout: Arc<UniformLayout>,
     scene_ds_pool: DescriptorSetPool,
@@ -69,13 +74,17 @@ impl Scene {
             Vec3::Y,
         );
 
+        let light = Light::new(Vec3::new(-3., 0., 5.), Color::WHITE);
+
         let scene_descriptor_layout = DescriptorSetLayout::builder()
-            .binding(DescriptorType::Uniform, DescriptorStage::Vertex)
+            .binding(DescriptorType::Uniform, DescriptorStage::All)
             .build(ctx.device.clone());
 
         let scene_data_layout = UniformLayout::builder()
             .prop("camera_position", UniformProp::Vec3F)
             .prop("view_proj", UniformProp::Mat4F)
+            .prop("light_direction", UniformProp::Vec3F)
+            .prop("light_color", UniformProp::Vec4F)
             .build();
 
         let mut scene_ds_pool = DescriptorSetPool::new(
@@ -91,6 +100,7 @@ impl Scene {
         Scene {
             graph: SceneGraph::new(),
             camera,
+            light,
             scene_descriptor_layout,
             scene_data_layout,
             scene_ds_pool,
@@ -104,6 +114,8 @@ impl Scene {
             &[
                 UniformPropData::Vec3F(self.camera.position.into()),
                 UniformPropData::Mat4F(self.camera.view_proj().to_cols_array_2d()),
+                UniformPropData::Vec3F(self.light.position.into()),
+                UniformPropData::Vec4F(self.light.colour.into()),
             ],
         );
 

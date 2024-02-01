@@ -65,7 +65,13 @@ impl Texture {
 
     pub fn with_color(ctx: &Context, color: Color, filter: SamplerFilter) -> Self {
         let data: [u8; 4] = color.into();
-        Self::new(ctx, "color", &data, ImageExtent2D::new(1, 1), filter)
+        Self::new(
+            ctx,
+            "color texture",
+            &data,
+            ImageExtent2D::new(1, 1),
+            filter,
+        )
     }
 
     const CHECKER_SIZE: usize = 8;
