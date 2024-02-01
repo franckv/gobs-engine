@@ -6,10 +6,7 @@ use gobs_core::entity::uniform::{UniformLayout, UniformProp};
 use gobs_material::{vertex::VertexData, Material};
 use gobs_render::context::Context;
 
-use crate::{
-    mesh::{Mesh, Primitive, PrimitiveType},
-    model::Model,
-};
+use crate::{mesh::Mesh, model::Model};
 
 pub fn load_gltf(ctx: &Context, file: &str) -> Vec<Arc<Model>> {
     let (doc, buffers, _) = gltf::import(file).unwrap();
@@ -32,13 +29,10 @@ pub fn load_gltf(ctx: &Context, file: &str) -> Vec<Arc<Model>> {
             m.primitives().len()
         );
 
-        let mut indices = Vec::new();
-        let mut vertices = Vec::new();
-        let mut primitives = Vec::new();
+        let mut meshes = Vec::new();
 
         for p in m.primitives() {
-            let start_idx = vertices.len() as u32;
-            let offset = indices.len();
+            let mut mesh_data = Mesh::builder();
 
             let reader = p.reader(|buffer| Some(&buffers[buffer.index()]));
 
@@ -46,17 +40,17 @@ pub fn load_gltf(ctx: &Context, file: &str) -> Vec<Arc<Model>> {
                 match read_indices {
                     ReadIndices::U8(iter) => {
                         for idx in iter {
-                            indices.push(start_idx + idx as u32);
+                            mesh_data = mesh_data.index(idx as u32);
                         }
                     }
                     ReadIndices::U16(iter) => {
                         for idx in iter {
-                            indices.push(start_idx + idx as u32);
+                            mesh_data = mesh_data.index(idx as u32);
                         }
                     }
                     ReadIndices::U32(iter) => {
                         for idx in iter {
-                            indices.push(start_idx + idx);
+                            mesh_data = mesh_data.index(idx as u32);
                         }
                     }
                 }
@@ -64,7 +58,7 @@ pub fn load_gltf(ctx: &Context, file: &str) -> Vec<Arc<Model>> {
 
             if let Some(iter) = reader.read_positions() {
                 for pos in iter {
-                    vertices.push(
+                    mesh_data = mesh_data.vertex(
                         VertexData::builder()
                             .position(pos.into())
                             .padding(true)
@@ -75,7 +69,7 @@ pub fn load_gltf(ctx: &Context, file: &str) -> Vec<Arc<Model>> {
 
             if let Some(iter) = reader.read_normals() {
                 for (i, normal) in iter.enumerate() {
-                    vertices[i].normal = normal.into();
+                    mesh_data.vertices[i].normal = normal.into();
                 }
             }
 
@@ -85,7 +79,7 @@ pub fn load_gltf(ctx: &Context, file: &str) -> Vec<Arc<Model>> {
                     gltf::mesh::util::ReadTexCoords::U16(_) => todo!(),
                     gltf::mesh::util::ReadTexCoords::F32(iter) => {
                         for (i, texture) in iter.enumerate() {
-                            vertices[i].texture = texture.into();
+                            mesh_data.vertices[i].texture = texture.into();
                         }
                     }
                 }
@@ -95,7 +89,7 @@ pub fn load_gltf(ctx: &Context, file: &str) -> Vec<Arc<Model>> {
                 match read_colors {
                     ReadColors::RgbaU8(iter) => {
                         for (i, color) in iter.enumerate() {
-                            vertices[i].color = [
+                            mesh_data.vertices[i].color = [
                                 color[0] as f32 / 255.,
                                 color[1] as f32 / 255.,
                                 color[2] as f32 / 255.,
@@ -107,29 +101,21 @@ pub fn load_gltf(ctx: &Context, file: &str) -> Vec<Arc<Model>> {
                     _ => todo!(),
                 }
             } else {
-                for i in 0..vertices.len() {
-                    vertices[i].color = (vertices[i].normal, 1.).into();
+                for i in 0..mesh_data.vertices.len() {
+                    mesh_data.vertices[i].color = (mesh_data.vertices[i].normal, 1.).into();
                 }
             }
 
-            primitives.push(Primitive::new(
-                PrimitiveType::Triangle,
-                offset,
-                indices.len() - offset,
-                0,
-            ));
+            meshes.push(mesh_data.build());
         }
 
-        let mesh = Mesh::new(
+        let model = Model::new(
             ctx,
             name,
-            &vertices,
-            &indices,
-            primitives,
-            material.vertex_flags,
+            &meshes,
+            &[material.clone()],
+            model_data_layout.clone(),
         );
-
-        let model = Model::new(mesh, model_data_layout.clone(), vec![material.clone()]);
         models.push(model);
     }
 

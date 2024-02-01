@@ -1,106 +1,21 @@
 use std::sync::Arc;
 
 use glam::Vec2;
-use uuid::Uuid;
 
-use gobs_material::vertex::{VertexData, VertexFlag};
-use gobs_render::context::Context;
-use gobs_vulkan::buffer::{Buffer, BufferUsage};
-
-#[derive(Clone, Copy, Debug)]
-pub enum PrimitiveType {
-    Triangle,
-}
-
-#[derive(Clone, Copy, Debug)]
-pub struct Primitive {
-    pub ty: PrimitiveType,
-    pub offset: usize,
-    pub len: usize,
-    pub material: usize,
-}
-
-impl Primitive {
-    pub fn new(ty: PrimitiveType, offset: usize, len: usize, material: usize) -> Self {
-        Primitive {
-            ty,
-            offset,
-            len,
-            material,
-        }
-    }
-}
-
-pub type MeshId = Uuid;
+use gobs_material::vertex::VertexData;
 
 pub struct Mesh {
-    pub name: String,
-    pub index_buffer: Buffer,
-    pub vertex_buffer: Buffer,
-    pub primitives: Vec<Primitive>,
+    pub vertices: Vec<VertexData>,
+    pub indices: Vec<u32>,
 }
 
 impl Mesh {
-    pub fn new(
-        ctx: &Context,
-        name: &str,
-        vertices: &[VertexData],
-        indices: &[u32],
-        primitives: Vec<Primitive>,
-        vertex_flags: VertexFlag,
-    ) -> Arc<Self> {
-        let vertices_data = vertices
-            .iter()
-            .flat_map(|v| v.raw(vertex_flags))
-            .collect::<Vec<u8>>();
-        let vertices_size = vertices_data.len();
-        let indices_size = indices.len() * std::mem::size_of::<u32>();
+    fn new(vertices: Vec<VertexData>, indices: Vec<u32>) -> Arc<Self> {
+        Arc::new(Self { vertices, indices })
+    }
 
-        let mut staging = Buffer::new(
-            "staging",
-            indices_size + vertices_size,
-            BufferUsage::Staging,
-            ctx.device.clone(),
-            ctx.allocator.clone(),
-        );
-
-        let index_buffer = Buffer::new(
-            "index",
-            indices_size,
-            BufferUsage::Index,
-            ctx.device.clone(),
-            ctx.allocator.clone(),
-        );
-        let vertex_buffer = Buffer::new(
-            "vertex",
-            vertices_size,
-            BufferUsage::Vertex,
-            ctx.device.clone(),
-            ctx.allocator.clone(),
-        );
-
-        staging.copy(&vertices_data, 0);
-        staging.copy(indices, vertices_size);
-
-        ctx.immediate_cmd.immediate(|cmd| {
-            cmd.begin_label("Upload buffer");
-
-            cmd.copy_buffer(&staging, &vertex_buffer, vertex_buffer.size, 0);
-            cmd.copy_buffer(
-                &staging,
-                &index_buffer,
-                index_buffer.size,
-                vertex_buffer.size,
-            );
-            cmd.end_label();
-        });
-
-        Arc::new(Mesh {
-            name: name.to_string(),
-            index_buffer,
-            vertex_buffer,
-            primitives,
-        })
+    pub fn builder() -> MeshBuilder {
+        MeshBuilder::new()
     }
 
     pub fn update_tangent(vertices: &mut [VertexData], indices: &[u32]) {
@@ -148,5 +63,35 @@ impl Mesh {
             v.tangent = v.tangent * denom;
             v.bitangent = v.bitangent * denom;
         }
+    }
+}
+
+pub struct MeshBuilder {
+    pub vertices: Vec<VertexData>,
+    pub indices: Vec<u32>,
+}
+
+impl MeshBuilder {
+    fn new() -> Self {
+        Self {
+            vertices: Vec::new(),
+            indices: Vec::new(),
+        }
+    }
+
+    pub fn vertex(mut self, data: VertexData) -> Self {
+        self.vertices.push(data);
+
+        self
+    }
+
+    pub fn index(mut self, idx: u32) -> Self {
+        self.indices.push(idx);
+
+        self
+    }
+
+    pub fn build(self) -> Arc<Mesh> {
+        Mesh::new(self.vertices, self.indices)
     }
 }

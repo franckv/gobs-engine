@@ -329,13 +329,11 @@ impl App {
                         &model.model_data_layout,
                         &[
                             UniformPropData::Mat4F(world_matrix.to_cols_array_2d()),
-                            UniformPropData::U64(
-                                model.mesh.vertex_buffer.address(ctx.device.clone()),
-                            ),
+                            UniformPropData::U64(model.vertex_buffer.address(ctx.device.clone())),
                         ],
                     );
 
-                    for primitive in &model.mesh.primitives {
+                    for primitive in &model.primitives {
                         let material = &model.materials[primitive.material];
                         let pipeline = &material.pipeline;
 
@@ -351,7 +349,7 @@ impl App {
                         }
 
                         cmd.push_constants(material.pipeline.layout.clone(), &model_data.raw());
-                        cmd.bind_index_buffer::<u32>(&model.mesh.index_buffer, primitive.offset);
+                        cmd.bind_index_buffer::<u32>(&model.index_buffer, primitive.offset);
                         cmd.draw_indexed(primitive.len, 1);
                     }
                 }
