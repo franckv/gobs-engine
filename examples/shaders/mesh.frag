@@ -19,5 +19,8 @@ layout(set = 1, binding = 1) uniform sampler u_sampler;
 void main()
 {
 	float light = max(dot(in_normal, scene_data.light_direction), 0.1f);
-	out_color = 0.5 * light * texture(sampler2D(u_texture, u_sampler), in_uv) * scene_data.light_color * vec4(in_color, 1.f);
+	vec3 color = texture(sampler2D(u_texture, u_sampler), in_uv).xyz * in_color;
+	out_color = vec4(
+		(0.5 * light * scene_data.light_color.xyz + scene_data.ambient_color.xyz) * color,
+		1.f);
 }

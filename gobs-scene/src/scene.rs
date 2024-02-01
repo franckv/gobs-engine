@@ -85,6 +85,7 @@ impl Scene {
             .prop("view_proj", UniformProp::Mat4F)
             .prop("light_direction", UniformProp::Vec3F)
             .prop("light_color", UniformProp::Vec4F)
+            .prop("ambient_color", UniformProp::Vec4F)
             .build();
 
         let mut scene_ds_pool = DescriptorSetPool::new(
@@ -116,6 +117,7 @@ impl Scene {
                 UniformPropData::Mat4F(self.camera.view_proj().to_cols_array_2d()),
                 UniformPropData::Vec3F(self.light.position.into()),
                 UniformPropData::Vec4F(self.light.colour.into()),
+                UniformPropData::Vec4F([0.1, 0.1, 0.1, 1.]),
             ],
         );
 
