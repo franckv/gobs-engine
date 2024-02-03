@@ -156,8 +156,14 @@ impl Run for App {
         self.load_scene(ctx);
     }
 
-    fn update(&mut self, ctx: &Context, _delta: f32) {
+    fn update(&mut self, ctx: &Context, delta: f32) {
         log::trace!("Update");
+
+        let angular_speed = 40.;
+
+        let old_position = self.scene.light.position;
+        let position = Quat::from_axis_angle(Vec3::Y, (angular_speed * delta).to_radians()) * old_position;
+        self.scene.light.update(position);
 
         self.scene.update(ctx, self.frame_number);
     }
