@@ -4,9 +4,8 @@ use winit::event_loop::{ControlFlow, EventLoop};
 use winit::window::WindowBuilder;
 
 use gobs_render::context::Context;
-use gobs_utils as utils;
-
-use utils::timer::Timer;
+use gobs_render::graph::RenderError;
+use gobs_utils::timer::Timer;
 
 use crate::input::{Event, Input};
 
@@ -90,13 +89,6 @@ impl Application {
             }
         });
     }
-}
-
-#[derive(Debug)]
-pub enum RenderError {
-    Lost,
-    Outdated,
-    Error,
 }
 
 impl Default for Application {

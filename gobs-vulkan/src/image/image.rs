@@ -102,7 +102,7 @@ impl From<(u32, u32)> for ImageExtent2D {
 
 /// Image buffer allocated in memory
 pub struct Image {
-    label: String,
+    pub label: String,
     device: Arc<Device>,
     image: vk::Image,
     pub(crate) image_view: vk::ImageView,

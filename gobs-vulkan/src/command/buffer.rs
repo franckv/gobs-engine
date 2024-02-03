@@ -457,6 +457,13 @@ impl CommandBuffer {
     }
 
     pub fn transition_image_layout(&self, image: &mut Image, dst_layout: ImageLayout) {
+        log::trace!(
+            "Transition [{}] from {:?} to {:?}",
+            &image.label,
+            image.layout,
+            dst_layout
+        );
+
         let barrier_info = vk::ImageMemoryBarrier2::builder()
             .old_layout(image.layout.into())
             .new_layout(dst_layout.into())

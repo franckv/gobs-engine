@@ -10,15 +10,19 @@ use gobs_core::{
     Color,
 };
 
-use gobs_render::context::Context;
+use gobs_render::{context::Context, CommandBuffer};
 use gobs_vulkan::{
     descriptor::{
         DescriptorSet, DescriptorSetLayout, DescriptorSetPool, DescriptorStage, DescriptorType,
     },
     image::ImageExtent2D,
 };
+use uuid::Uuid;
 
-use crate::{graph::scenegraph::SceneGraph, uniform_buffer::UniformBuffer};
+use crate::{
+    graph::scenegraph::{NodeValue, SceneGraph},
+    uniform_buffer::UniformBuffer,
+};
 
 struct SceneFrameData {
     pub uniform_ds: DescriptorSet,
@@ -124,6 +128,39 @@ impl Scene {
         self.scene_frame_data[frame_number % ctx.frames_in_flight]
             .uniform_buffer
             .update(&scene_data);
+    }
+
+    pub fn draw(&self, ctx: &Context, cmd: &CommandBuffer, frame_number: usize) {
+        let mut last_material = Uuid::nil();
+        self.graph.visit(self.graph.root, &mut |transform, model| {
+            if let NodeValue::Model(model) = model {
+                let world_matrix = transform.matrix;
+
+                let model_data = UniformData::new(
+                    &model.model_data_layout,
+                    &[
+                        UniformPropData::Mat4F(world_matrix.to_cols_array_2d()),
+                        UniformPropData::U64(model.vertex_buffer.address(ctx.device.clone())),
+                    ],
+                );
+
+                for primitive in &model.primitives {
+                    let material = &model.materials[primitive.material];
+                    let pipeline = &material.pipeline;
+
+                    if last_material != material.id {
+                        cmd.bind_pipeline(&material.pipeline);
+                        cmd.bind_descriptor_set(&self.uniform_ds(ctx, frame_number), 0, pipeline);
+                        cmd.bind_descriptor_set(&material.material_ds, 1, pipeline);
+                        last_material = material.id;
+                    }
+
+                    cmd.push_constants(material.pipeline.layout.clone(), &model_data.raw());
+                    cmd.bind_index_buffer::<u32>(&model.index_buffer, primitive.offset);
+                    cmd.draw_indexed(primitive.len, 1);
+                }
+            }
+        });
     }
 
     pub fn uniform_ds(&self, ctx: &Context, frame_number: usize) -> &DescriptorSet {
