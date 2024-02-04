@@ -107,8 +107,12 @@ impl FrameGraph {
         }
     }
 
+    pub fn frame_id(&self, ctx: &Context) -> usize {
+        self.frame_number % ctx.frames_in_flight
+    }
+
     pub fn begin(&mut self, ctx: &Context) -> Result<(), RenderError> {
-        let frame_id = self.frame_number % ctx.frames_in_flight;
+        let frame_id = self.frame_id(ctx);
 
         {
             let frame = &mut self.frames[frame_id];
@@ -171,7 +175,7 @@ impl FrameGraph {
     }
 
     pub fn end(&mut self, ctx: &Context) -> Result<(), RenderError> {
-        let frame_id = self.frame_number % ctx.frames_in_flight;
+        let frame_id = self.frame_id(ctx);
         let frame = &self.frames[frame_id];
         let cmd = &frame.command_buffer;
 
@@ -223,7 +227,7 @@ impl FrameGraph {
     {
         log::debug!("Begin rendering");
 
-        let frame_id = self.frame_number % ctx.frames_in_flight;
+        let frame_id = self.frame_id(ctx);
         let cmd = &self.frames[frame_id].command_buffer;
 
         if let Ok(mut draw_image) = self.draw_image.write() {

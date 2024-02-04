@@ -61,6 +61,7 @@ pub struct Scene {
     pub light: Light,
     pub scene_descriptor_layout: Arc<DescriptorSetLayout>,
     pub scene_data_layout: Arc<UniformLayout>,
+    frame_number: usize,
     scene_ds_pool: DescriptorSetPool,
     scene_frame_data: Vec<SceneFrameData>,
 }
@@ -108,12 +109,22 @@ impl Scene {
             light,
             scene_descriptor_layout,
             scene_data_layout,
+            frame_number: 0,
             scene_ds_pool,
             scene_frame_data,
         }
     }
 
-    pub fn update(&mut self, ctx: &Context, frame_number: usize) {
+    pub fn frame_id(&self, ctx: &Context) -> usize {
+        (self.frame_number - 1) % ctx.frames_in_flight
+    }
+
+    pub fn update(&mut self, ctx: &Context) {
+        log::debug!("Update scene [{}]", self.frame_number);
+
+        self.frame_number += 1;
+        let frame_id = self.frame_id(ctx);
+
         let scene_data = UniformData::new(
             &self.scene_data_layout,
             &[
@@ -125,13 +136,16 @@ impl Scene {
             ],
         );
 
-        self.scene_frame_data[frame_number % ctx.frames_in_flight]
+        self.scene_frame_data[frame_id]
             .uniform_buffer
             .update(&scene_data);
     }
 
-    pub fn draw(&self, ctx: &Context, cmd: &CommandBuffer, frame_number: usize) {
+    pub fn draw(&self, ctx: &Context, cmd: &CommandBuffer) {
+        let frame_id = self.frame_id(ctx);
+
         let mut last_material = Uuid::nil();
+        let uniform_ds = &self.scene_frame_data[frame_id].uniform_ds;
         self.graph.visit(self.graph.root, &mut |transform, model| {
             if let NodeValue::Model(model) = model {
                 let world_matrix = transform.matrix;
@@ -150,7 +164,7 @@ impl Scene {
 
                     if last_material != material.id {
                         cmd.bind_pipeline(&material.pipeline);
-                        cmd.bind_descriptor_set(&self.uniform_ds(ctx, frame_number), 0, pipeline);
+                        cmd.bind_descriptor_set(uniform_ds, 0, pipeline);
                         cmd.bind_descriptor_set(&material.material_ds, 1, pipeline);
                         last_material = material.id;
                     }
@@ -161,9 +175,5 @@ impl Scene {
                 }
             }
         });
-    }
-
-    pub fn uniform_ds(&self, ctx: &Context, frame_number: usize) -> &DescriptorSet {
-        &self.scene_frame_data[frame_number % ctx.frames_in_flight].uniform_ds
     }
 }

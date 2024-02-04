@@ -52,7 +52,7 @@ impl Run for App {
             Quat::from_axis_angle(Vec3::Y, (angular_speed * delta).to_radians()) * old_position;
         self.scene.light.update(position);
 
-        self.scene.update(ctx, self.graph.frame_number);
+        self.scene.update(ctx);
     }
 
     fn render(&mut self, ctx: &Context) -> Result<(), RenderError> {
@@ -70,7 +70,7 @@ impl Run for App {
                     );
                 }
                 PassType::Forward => {
-                    self.scene.draw(ctx, cmd, self.graph.frame_number);
+                    self.scene.draw(ctx, cmd);
                 }
             })?;
 
