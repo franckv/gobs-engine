@@ -2,10 +2,13 @@ use examples::CameraController;
 use glam::{Quat, Vec3};
 
 use gobs::{
-    core::Transform,
+    core::{
+        entity::{camera::Camera, light::Light},
+        Color, Transform,
+    },
     game::{
         app::{Application, Run},
-        input::{Input, Key},
+        input::Input,
     },
     render::{
         context::Context,
@@ -33,7 +36,20 @@ impl Run for App {
 
         let graph = FrameGraph::new(ctx);
 
-        let scene = Scene::new(ctx, graph.draw_extent);
+        let camera = Camera::perspective(
+            Vec3::splat(0.),
+            graph.draw_extent.width as f32 / graph.draw_extent.height as f32,
+            (60. as f32).to_radians(),
+            0.1,
+            100.,
+            0.,
+            0.,
+            Vec3::Y,
+        );
+
+        let light = Light::new(Vec3::new(-3., 0., 5.), Color::WHITE);
+
+        let scene = Scene::new(ctx, camera, light);
 
         let camera_controller = CameraController::new(3., 0.4);
 
@@ -95,25 +111,19 @@ impl Run for App {
     fn input(&mut self, ctx: &Context, input: Input) {
         log::trace!("Input");
 
-        match input {
-            Input::KeyPressed(key) => match key {
-                Key::E => self.graph.render_scaling = (self.graph.render_scaling + 0.1).min(1.),
-                Key::A => self.graph.render_scaling = (self.graph.render_scaling - 0.1).max(0.1),
-                Key::L => log::info!("{:?}", ctx.allocator.allocator.lock().unwrap()),
-                _ => self.camera_controller.key_pressed(key),
-            },
-            Input::KeyReleased(key) => self.camera_controller.key_released(key),
-            Input::MousePressed => self.camera_controller.mouse_pressed(),
-            Input::MouseReleased => self.camera_controller.mouse_released(),
-            Input::MouseWheel(delta) => self.camera_controller.mouse_scroll(delta),
-            Input::MouseMotion(dx, dy) => self.camera_controller.mouse_drag(dx, dy),
-            _ => (),
-        }
+        examples::default_input(
+            ctx,
+            &self.scene,
+            &mut self.graph,
+            &mut self.camera_controller,
+            input,
+        );
     }
 
-    fn resize(&mut self, ctx: &Context, _width: u32, _height: u32) {
+    fn resize(&mut self, ctx: &Context, width: u32, height: u32) {
         log::trace!("Resize");
         self.graph.resize(ctx);
+        self.scene.resize(width, height);
     }
 
     fn close(&mut self, ctx: &Context) {

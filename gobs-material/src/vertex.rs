@@ -58,7 +58,7 @@ impl VertexFlag {
     }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub struct VertexData {
     pub padding: bool,
     pub position: Vec3,

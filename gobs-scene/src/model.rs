@@ -1,6 +1,5 @@
 use std::sync::Arc;
 
-use gobs_core::entity::uniform::UniformLayout;
 use gobs_material::Material;
 use gobs_render::context::Context;
 use gobs_vulkan::buffer::{Buffer, BufferUsage};
@@ -36,8 +35,8 @@ pub struct Model {
     pub index_buffer: Buffer,
     pub vertex_buffer: Buffer,
     pub primitives: Vec<Primitive>,
+    pub meshes: Vec<Arc<Mesh>>,
     pub materials: Vec<Arc<Material>>,
-    pub model_data_layout: Arc<UniformLayout>,
 }
 
 impl Model {
@@ -46,7 +45,6 @@ impl Model {
         name: &str,
         meshes: &[Arc<Mesh>],
         materials: &[Arc<Material>],
-        model_data_layout: Arc<UniformLayout>,
     ) -> Arc<Self> {
         log::debug!("New model");
 
@@ -123,8 +121,8 @@ impl Model {
             index_buffer,
             vertex_buffer,
             primitives,
+            meshes: meshes.to_vec(),
             materials: materials.to_vec(),
-            model_data_layout,
         })
     }
 }

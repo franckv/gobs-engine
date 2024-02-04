@@ -2,7 +2,6 @@ use std::sync::Arc;
 
 use gltf::mesh::util::{ReadColors, ReadIndices};
 
-use gobs_core::entity::uniform::{UniformLayout, UniformProp};
 use gobs_material::{vertex::VertexData, Material};
 use gobs_render::context::Context;
 
@@ -13,12 +12,7 @@ pub fn load_gltf(ctx: &Context, file: &str) -> Vec<Arc<Model>> {
 
     let mut models = Vec::new();
 
-    let model_data_layout = UniformLayout::builder()
-        .prop("world_matrix", UniformProp::Mat4F)
-        .prop("vertex_buffer_address", UniformProp::U64)
-        .build();
-
-    let material = Material::new(ctx, model_data_layout.clone());
+    let material = Material::default(ctx);
 
     for m in doc.meshes() {
         let name = m.name().unwrap_or_default();
@@ -32,7 +26,7 @@ pub fn load_gltf(ctx: &Context, file: &str) -> Vec<Arc<Model>> {
         let mut meshes = Vec::new();
 
         for p in m.primitives() {
-            let mut mesh_data = Mesh::builder();
+            let mut mesh_data = Mesh::builder(name);
 
             let reader = p.reader(|buffer| Some(&buffers[buffer.index()]));
 
@@ -109,13 +103,7 @@ pub fn load_gltf(ctx: &Context, file: &str) -> Vec<Arc<Model>> {
             meshes.push(mesh_data.build());
         }
 
-        let model = Model::new(
-            ctx,
-            name,
-            &meshes,
-            &[material.clone()],
-            model_data_layout.clone(),
-        );
+        let model = Model::new(ctx, name, &meshes, &[material.clone()]);
         models.push(model);
     }
 

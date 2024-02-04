@@ -2,7 +2,10 @@ use std::sync::Arc;
 
 use uuid::Uuid;
 
-use gobs_core::{entity::uniform::UniformLayout, Color};
+use gobs_core::{
+    entity::uniform::{UniformLayout, UniformProp},
+    Color,
+};
 use gobs_render::context::Context;
 use gobs_vulkan::{
     descriptor::{
@@ -28,10 +31,16 @@ pub struct Material {
     pub texture: Texture,
     pub material_ds_pool: DescriptorSetPool,
     pub material_ds: DescriptorSet,
+    pub model_data_layout: Arc<UniformLayout>,
 }
 
 impl Material {
-    pub fn new(ctx: &Context, model_data_layout: Arc<UniformLayout>) -> Arc<Self> {
+    pub fn default(ctx: &Context) -> Arc<Self> {
+        let model_data_layout = UniformLayout::builder()
+            .prop("world_matrix", UniformProp::Mat4F)
+            .prop("vertex_buffer_address", UniformProp::U64)
+            .build();
+
         let scene_descriptor_layout = DescriptorSetLayout::builder()
             .binding(DescriptorType::Uniform, DescriptorStage::All)
             .build(ctx.device.clone());
@@ -77,11 +86,7 @@ impl Material {
             .front_face(FrontFace::CCW)
             .build();
 
-        let texture = Texture::with_color(
-            ctx,
-            Color::from_rgba8(200, 200, 150, 255),
-            SamplerFilter::FilterLinear,
-        );
+        let texture = Texture::with_color(ctx, Color::WHITE, SamplerFilter::FilterLinear);
 
         let mut material_ds_pool =
             DescriptorSetPool::new(ctx.device.clone(), material_descriptor_layout, 1);
@@ -101,6 +106,7 @@ impl Material {
             texture,
             material_ds_pool,
             material_ds,
+            model_data_layout,
         })
     }
 }

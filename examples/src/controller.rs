@@ -101,7 +101,7 @@ impl CameraController {
 
     pub fn mouse_drag(&mut self, mouse_dx: f64, mouse_dy: f64) {
         if self.mouse_pressed {
-            self.rotate_horizontal = mouse_dx as f32;
+            self.rotate_horizontal = -mouse_dx as f32;
             self.rotate_vertical = -mouse_dy as f32;
         }
     }
@@ -112,13 +112,12 @@ impl CameraController {
 
     pub fn update_camera(&mut self, camera: &mut Camera, dt: f32) {
         let (yaw_sin, yaw_cos) = camera.yaw.sin_cos();
-        let forward = Vec3::new(yaw_cos, 0., yaw_sin).normalize();
-        let right = Vec3::new(-yaw_sin, 0., yaw_cos).normalize();
+        let forward = Vec3::new(yaw_sin, 0., -yaw_cos).normalize();
+        let right = Vec3::new(yaw_cos, 0., -yaw_sin).normalize();
         camera.position += forward * (self.amount_forward - self.amount_backward) * self.speed * dt;
         camera.position += right * (self.amount_right - self.amount_left) * self.speed * dt;
 
-        let (pitch_sin, pitch_cos) = camera.pitch.sin_cos();
-        let scrollward = Vec3::new(pitch_cos * yaw_cos, pitch_sin, pitch_cos * yaw_sin).normalize();
+        let scrollward = camera.dir();
         camera.position += scrollward * self.scroll * self.speed * self.sensitivity * dt;
         self.scroll = 0.;
 

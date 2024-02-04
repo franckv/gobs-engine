@@ -1,23 +1,17 @@
 use std::sync::Arc;
 
-use glam::Vec3;
-use gobs_core::{
-    entity::{
-        camera::Camera,
-        light::Light,
-        uniform::{UniformData, UniformLayout, UniformProp, UniformPropData},
-    },
-    Color,
+use uuid::Uuid;
+
+use gobs_core::entity::{
+    camera::Camera,
+    light::Light,
+    uniform::{UniformData, UniformLayout, UniformProp, UniformPropData},
 };
 
 use gobs_render::{context::Context, CommandBuffer};
-use gobs_vulkan::{
-    descriptor::{
-        DescriptorSet, DescriptorSetLayout, DescriptorSetPool, DescriptorStage, DescriptorType,
-    },
-    image::ImageExtent2D,
+use gobs_vulkan::descriptor::{
+    DescriptorSet, DescriptorSetLayout, DescriptorSetPool, DescriptorStage, DescriptorType,
 };
-use uuid::Uuid;
 
 use crate::{
     graph::scenegraph::{NodeValue, SceneGraph},
@@ -67,20 +61,7 @@ pub struct Scene {
 }
 
 impl Scene {
-    pub fn new(ctx: &Context, size: ImageExtent2D) -> Self {
-        let camera = Camera::perspective(
-            Vec3::splat(0.),
-            size.width as f32 / size.height as f32,
-            (60. as f32).to_radians(),
-            0.1,
-            100.,
-            (-90. as f32).to_radians(),
-            0.,
-            Vec3::Y,
-        );
-
-        let light = Light::new(Vec3::new(-3., 0., 5.), Color::WHITE);
-
+    pub fn new(ctx: &Context, camera: Camera, light: Light) -> Self {
         let scene_descriptor_layout = DescriptorSetLayout::builder()
             .binding(DescriptorType::Uniform, DescriptorStage::All)
             .build(ctx.device.clone());
@@ -130,7 +111,7 @@ impl Scene {
             &[
                 UniformPropData::Vec3F(self.camera.position.into()),
                 UniformPropData::Mat4F(self.camera.view_proj().to_cols_array_2d()),
-                UniformPropData::Vec3F(self.light.position.into()),
+                UniformPropData::Vec3F(self.light.position.normalize().into()),
                 UniformPropData::Vec4F(self.light.colour.into()),
                 UniformPropData::Vec4F([0.1, 0.1, 0.1, 1.]),
             ],
@@ -139,6 +120,10 @@ impl Scene {
         self.scene_frame_data[frame_id]
             .uniform_buffer
             .update(&scene_data);
+    }
+
+    pub fn resize(&mut self, width: u32, height: u32) {
+        self.camera.resize(width, height);
     }
 
     pub fn draw(&self, ctx: &Context, cmd: &CommandBuffer) {
@@ -150,17 +135,16 @@ impl Scene {
             if let NodeValue::Model(model) = model {
                 let world_matrix = transform.matrix;
 
-                let model_data = UniformData::new(
-                    &model.model_data_layout,
-                    &[
-                        UniformPropData::Mat4F(world_matrix.to_cols_array_2d()),
-                        UniformPropData::U64(model.vertex_buffer.address(ctx.device.clone())),
-                    ],
-                );
-
                 for primitive in &model.primitives {
                     let material = &model.materials[primitive.material];
                     let pipeline = &material.pipeline;
+                    let model_data = UniformData::new(
+                        &material.model_data_layout,
+                        &[
+                            UniformPropData::Mat4F(world_matrix.to_cols_array_2d()),
+                            UniformPropData::U64(model.vertex_buffer.address(ctx.device.clone())),
+                        ],
+                    );
 
                     if last_material != material.id {
                         cmd.bind_pipeline(&material.pipeline);

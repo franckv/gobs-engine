@@ -117,17 +117,15 @@ impl Camera {
     pub fn dir(&self) -> Vec3 {
         let (sin_pitch, cos_pitch) = self.pitch.sin_cos();
         let (sin_yaw, cos_yaw) = self.yaw.sin_cos();
-        Vec3::new(cos_pitch * cos_yaw, sin_pitch, cos_pitch * sin_yaw).normalize()
+        Vec3::new(sin_yaw * cos_pitch, sin_pitch, -cos_pitch * cos_yaw).normalize()
     }
 
     pub fn view_matrix(&self) -> Mat4 {
-        let dir = self.dir();
-
-        Mat4::look_to_rh(self.position, dir, self.up)
+        Mat4::look_to_rh(self.position, self.dir(), self.up)
     }
 
     pub fn proj_matrix(&self) -> Mat4 {
-        match &self.mode {
+        let proj = match &self.mode {
             ProjectionMode::Ortho(projection) => Mat4::orthographic_rh(
                 -projection.width / 2.,
                 projection.width / 2.,
@@ -142,7 +140,9 @@ impl Camera {
                 projection.near,
                 projection.far,
             ),
-        }
+        };
+
+        proj
     }
 
     pub fn resize(&mut self, width: u32, height: u32) {
@@ -185,5 +185,58 @@ impl fmt::Display for Camera {
                 )
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use glam::Vec3;
+
+    use super::Camera;
+
+    fn check_dir(yaw: f32, pitch: f32, expected: Vec3) {
+        log::debug!("yaw={:?}, pitch={:?}, dir={:?}", yaw, pitch, expected);
+
+        let camera = Camera::ortho(
+            (0., 0., 10.),
+            320. as f32,
+            200. as f32,
+            0.1,
+            100.,
+            yaw.to_radians(),
+            pitch.to_radians(),
+            Vec3::Y,
+        );
+
+        let dir = camera.dir();
+
+        let dx = (dir.x - expected.x).abs();
+        let dy = (dir.y - expected.y).abs();
+        let dz = (dir.z - expected.z).abs();
+
+        let epsilon = 0.00001;
+        assert!(dx < epsilon);
+        assert!(dy < epsilon);
+        assert!(dz < epsilon);
+    }
+
+    #[test]
+    fn test_dir() {
+        env_logger::Builder::new()
+            .filter_module("gobs_core::entity::camera", log::LevelFilter::Debug)
+            .init();
+
+        check_dir(0., 0., Vec3::new(0., 0., -1.));
+        check_dir(0., -90., Vec3::new(0., -1., 0.));
+        check_dir(0., 90., Vec3::new(0., 1., 0.));
+        check_dir(-90., 0., Vec3::new(-1., 0., 0.));
+        check_dir(-90., -90., Vec3::new(0., -1., 0.));
+        check_dir(-90., 90., Vec3::new(0., 1., 0.));
+        check_dir(90., 0., Vec3::new(1., 0., 0.));
+        check_dir(90., 90., Vec3::new(0., 1., 0.));
+        check_dir(90., -90., Vec3::new(0., -1., 0.));
+        check_dir(180., 0., Vec3::new(0., 0., 1.));
+        check_dir(0., 180., Vec3::new(0., 0., 1.));
+        check_dir(180., 180., Vec3::new(0., 0., -1.));
     }
 }
