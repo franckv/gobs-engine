@@ -16,6 +16,10 @@ pub struct Texture {
 }
 
 impl Texture {
+    pub fn default(ctx: &Context) -> Self {
+        Texture::with_color(ctx, Color::WHITE, SamplerFilter::FilterLinear)
+    }
+
     pub fn new(
         ctx: &Context,
         name: &str,
@@ -61,6 +65,24 @@ impl Texture {
             image,
             sampler,
         }
+    }
+
+    pub fn with_data(
+        ctx: &Context,
+        data: Vec<Color>,
+        extent: ImageExtent2D,
+        filter: SamplerFilter,
+    ) -> Self {
+        Self::new(
+            ctx,
+            "framebuffer",
+            &data
+                .iter()
+                .flat_map(|c| Into::<[u8; 4]>::into(*c))
+                .collect::<Vec<u8>>(),
+            extent,
+            filter,
+        )
     }
 
     pub fn with_color(ctx: &Context, color: Color, filter: SamplerFilter) -> Self {

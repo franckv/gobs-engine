@@ -1,24 +1,19 @@
-use std::sync::Arc;
+use std::sync::{Arc, RwLock};
 
 use uuid::Uuid;
 
-use gobs_core::{
-    entity::uniform::{UniformLayout, UniformProp},
-    Color,
-};
+use gobs_core::entity::uniform::{UniformLayout, UniformProp};
 use gobs_render::context::Context;
 use gobs_vulkan::{
-    descriptor::{
-        DescriptorSet, DescriptorSetLayout, DescriptorSetPool, DescriptorStage, DescriptorType,
-    },
-    image::{ImageLayout, SamplerFilter},
+    descriptor::{DescriptorSetLayout, DescriptorSetPool, DescriptorStage, DescriptorType},
+    image::ImageLayout,
     pipeline::{
         CompareOp, CullMode, DynamicStateElem, FrontFace, Pipeline, PipelineLayout, Rect2D, Shader,
         ShaderType, Viewport,
     },
 };
 
-use crate::{texture::Texture, vertex::VertexFlag};
+use crate::{instance::MaterialInstance, texture::Texture, vertex::VertexFlag};
 
 const SHADER_DIR: &str = "examples/shaders";
 
@@ -28,9 +23,8 @@ pub struct Material {
     pub id: MaterialId,
     pub vertex_flags: VertexFlag,
     pub pipeline: Arc<Pipeline>,
-    pub texture: Texture,
-    pub material_ds_pool: DescriptorSetPool,
-    pub material_ds: DescriptorSet,
+
+    pub material_ds_pool: RwLock<DescriptorSetPool>,
     pub model_data_layout: Arc<UniformLayout>,
 }
 
@@ -86,12 +80,20 @@ impl Material {
             .front_face(FrontFace::CCW)
             .build();
 
-        let texture = Texture::with_color(ctx, Color::WHITE, SamplerFilter::FilterLinear);
-
-        let mut material_ds_pool =
+        let material_ds_pool =
             DescriptorSetPool::new(ctx.device.clone(), material_descriptor_layout, 1);
 
-        let material_ds = material_ds_pool.allocate();
+        Arc::new(Material {
+            id: Uuid::new_v4(),
+            vertex_flags,
+            pipeline,
+            material_ds_pool: RwLock::new(material_ds_pool),
+            model_data_layout,
+        })
+    }
+
+    pub fn instanciate(self: Arc<Self>, texture: Texture) -> Arc<MaterialInstance> {
+        let material_ds = self.material_ds_pool.write().unwrap().allocate();
 
         material_ds
             .update()
@@ -99,15 +101,7 @@ impl Material {
             .bind_sampler(&texture.sampler)
             .end();
 
-        Arc::new(Material {
-            id: Uuid::new_v4(),
-            vertex_flags,
-            pipeline,
-            texture,
-            material_ds_pool,
-            material_ds,
-            model_data_layout,
-        })
+        MaterialInstance::new(self.clone(), material_ds, texture)
     }
 }
 

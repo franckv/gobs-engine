@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use gltf::mesh::util::{ReadColors, ReadIndices};
 
-use gobs_material::{vertex::VertexData, Material};
+use gobs_material::{texture::Texture, vertex::VertexData, Material};
 use gobs_render::context::Context;
 
 use crate::{mesh::Mesh, model::Model};
@@ -13,6 +13,8 @@ pub fn load_gltf(ctx: &Context, file: &str) -> Vec<Arc<Model>> {
     let mut models = Vec::new();
 
     let material = Material::default(ctx);
+    let texture = Texture::default(ctx);
+    let material_instance = material.instanciate(texture);
 
     for m in doc.meshes() {
         let name = m.name().unwrap_or_default();
@@ -103,7 +105,7 @@ pub fn load_gltf(ctx: &Context, file: &str) -> Vec<Arc<Model>> {
             meshes.push(mesh_data.build());
         }
 
-        let model = Model::new(ctx, name, &meshes, &[material.clone()]);
+        let model = Model::new(ctx, name, &meshes, &[material_instance.clone()]);
         models.push(model);
     }
 

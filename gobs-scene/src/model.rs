@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use gobs_material::Material;
+use gobs_material::MaterialInstance;
 use gobs_render::context::Context;
 use gobs_vulkan::buffer::{Buffer, BufferUsage};
 
@@ -36,7 +36,7 @@ pub struct Model {
     pub vertex_buffer: Buffer,
     pub primitives: Vec<Primitive>,
     pub meshes: Vec<Arc<Mesh>>,
-    pub materials: Vec<Arc<Material>>,
+    pub materials: Vec<Arc<MaterialInstance>>,
 }
 
 impl Model {
@@ -44,7 +44,7 @@ impl Model {
         ctx: &Context,
         name: &str,
         meshes: &[Arc<Mesh>],
-        materials: &[Arc<Material>],
+        materials: &[Arc<MaterialInstance>],
     ) -> Arc<Self> {
         log::debug!("New model");
 
@@ -72,7 +72,7 @@ impl Model {
 
         let vertices_data = vertices
             .iter()
-            .flat_map(|v| v.raw(materials[0].vertex_flags))
+            .flat_map(|v| v.raw(materials[0].material.vertex_flags))
             .collect::<Vec<u8>>();
         let vertices_size = vertices_data.len();
         let indices_size = indices.len() * std::mem::size_of::<u32>();

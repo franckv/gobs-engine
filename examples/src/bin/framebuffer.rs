@@ -14,6 +14,7 @@ use gobs::{
         context::Context,
         graph::{FrameGraph, RenderError},
         pass::PassType,
+        SamplerFilter,
     },
     scene::{
         graph::scenegraph::{Node, NodeValue},
@@ -112,35 +113,52 @@ impl Run for App {
     }
 
     fn start(&mut self, ctx: &Context) {
+        let extent = self.graph.draw_extent;
+        let (width, height) = (self.graph.draw_extent.width, self.graph.draw_extent.height);
+
+        let framebuffer = Self::generate_framebuffer(width, height);
+
         let material = Material::default(ctx);
-        let texture = Texture::default(ctx);
+
+        let texture = Texture::with_data(ctx, framebuffer, extent, SamplerFilter::FilterLinear);
+
         let material_instance = material.instanciate(texture);
 
-        let triangle = Model::new(
-            ctx,
-            "triangle",
-            &[Shapes::triangle(
-                [1., 0., 0., 1.],
-                [0., 1., 0., 1.],
-                [0., 0., 1., 1.],
-            )],
-            &[material_instance],
-        );
+        let rect = Model::new(ctx, "rect", &[Shapes::quad()], &[material_instance]);
         let transform = Transform::new(
             [0., 0., 0.].into(),
             Quat::IDENTITY,
-            [300., -300., 1.].into(),
+            [width as f32, -(height as f32), 1.].into(),
         );
-        let node = Node::new(NodeValue::Model(triangle), transform);
+        let node = Node::new(NodeValue::Model(rect), transform);
         self.scene.graph.insert(self.scene.graph.root, node);
     }
 
-    fn close(&mut self, ctx: &Context) {
+    fn close(&mut self, ctx: &gobs::render::context::Context) {
         log::info!("Closing");
 
         ctx.device.wait();
 
         log::info!("Closed");
+    }
+}
+
+impl App {
+    fn generate_framebuffer(width: u32, height: u32) -> Vec<Color> {
+        let mut buffer = Vec::new();
+
+        let border = 50;
+
+        for i in 0..height {
+            for j in 0..width {
+                if i < border || i >= height - border || j < border || j >= width - border {
+                    buffer.push(Color::BLUE);
+                } else {
+                    buffer.push(Color::RED);
+                }
+            }
+        }
+        buffer
     }
 }
 
