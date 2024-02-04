@@ -22,8 +22,11 @@ pub struct Shader {
 }
 
 impl Shader {
-    pub fn from_file(filename: &str, device: Arc<Device>, ty: ShaderType) -> Self {
-        let file = File::open(Path::new(filename)).unwrap();
+    pub fn from_file<P>(filename: P, device: Arc<Device>, ty: ShaderType) -> Self
+    where
+        P: AsRef<Path>,
+    {
+        let file = File::open(filename).unwrap();
 
         let data: Vec<u8> = file.bytes().filter_map(|b| b.ok()).collect();
 

@@ -1,5 +1,9 @@
-use glam::Quat;
+use glam::{Quat, Vec3};
 
+use gobs::render::context::Context;
+use gobs::render::graph::RenderError;
+use gobs::render::SamplerFilter;
+use gobs::scene::shape::Shapes;
 use gobs::{
     core::Transform,
     game::{
@@ -7,11 +11,9 @@ use gobs::{
         input::Input,
     },
     material::{texture::Texture, Material},
-    render::{context::Context, graph::RenderError},
     scene::{
         graph::scenegraph::{Node, NodeValue},
         model::Model,
-        shape::Shapes,
     },
 };
 
@@ -23,12 +25,35 @@ struct App {
 
 impl Run for App {
     async fn create(ctx: &Context) -> Self {
-        let common = SampleApp::create_ortho(ctx);
+        let common = SampleApp::create_perspective(ctx);
 
         App { common }
     }
 
+    async fn start(&mut self, ctx: &Context) {
+        self.init(ctx).await;
+    }
+
     fn update(&mut self, ctx: &Context, delta: f32) {
+        let angular_speed = 40.;
+
+        let position = Quat::from_axis_angle(Vec3::Y, (angular_speed * delta).to_radians())
+            * self.common.scene.light.position;
+
+        self.common.scene.light.update(position);
+
+        let root_id = self.common.scene.graph.root;
+        let root = self.common.scene.graph.get(root_id).unwrap();
+
+        let node = root.children[0];
+
+        let child = self.common.scene.graph.get_mut(node).unwrap();
+
+        child.transform.rotate(Quat::from_axis_angle(
+            Vec3::Y,
+            (0.3 * angular_speed * delta).to_radians(),
+        ));
+
         self.common.update(ctx, delta);
     }
 
@@ -44,37 +69,28 @@ impl Run for App {
         self.common.resize(ctx, width, height);
     }
 
-    async fn start(&mut self, ctx: &Context) {
-        self.init(ctx);
-    }
-
     fn close(&mut self, ctx: &Context) {
         self.common.close(ctx);
     }
 }
 
 impl App {
-    fn init(&mut self, ctx: &Context) {
+    async fn init(&mut self, ctx: &Context) {
         let material = Material::default(ctx);
-        let texture = Texture::default(ctx);
+        let texture = Texture::with_file(ctx, examples::WALL_TEXTURE, SamplerFilter::FilterLinear)
+            .await
+            .unwrap();
         let material_instance = material.instanciate(texture);
 
-        let triangle = Model::new(
+        let cube = Model::new(
             ctx,
-            "triangle",
-            &[Shapes::triangle(
-                [1., 0., 0., 1.],
-                [0., 1., 0., 1.],
-                [0., 0., 1., 1.],
-            )],
+            "cube",
+            &[Shapes::cube(1, 1, &[1])],
             &[material_instance],
         );
-        let transform = Transform::new(
-            [0., 0., 0.].into(),
-            Quat::IDENTITY,
-            [300., -300., 1.].into(),
-        );
-        let node = Node::new(NodeValue::Model(triangle), transform);
+
+        let transform = Transform::new([0., 0., -2.].into(), Quat::IDENTITY, [1., -1., 1.].into());
+        let node = Node::new(NodeValue::Model(cube), transform);
         self.common
             .scene
             .graph

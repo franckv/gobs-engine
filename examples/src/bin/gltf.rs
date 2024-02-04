@@ -11,11 +11,10 @@ use gobs::{
         graph::scenegraph::{Node, NodeValue},
         import::gltf,
     },
+    utils::load,
 };
 
 use examples::SampleApp;
-
-const ASSET_DIR: &str = "examples/assets";
 
 struct App {
     common: SampleApp,
@@ -28,16 +27,15 @@ impl Run for App {
         App { common }
     }
 
-    fn start(&mut self, ctx: &Context) {
+    async fn start(&mut self, ctx: &Context) {
         self.init(ctx);
     }
 
     fn update(&mut self, ctx: &Context, delta: f32) {
         let angular_speed = 40.;
 
-        let old_position = self.common.scene.light.position;
-        let position =
-            Quat::from_axis_angle(Vec3::Y, (angular_speed * delta).to_radians()) * old_position;
+        let position = Quat::from_axis_angle(Vec3::Y, (angular_speed * delta).to_radians())
+            * self.common.scene.light.position;
         self.common.scene.light.update(position);
 
         self.common.update(ctx, delta);
@@ -67,7 +65,9 @@ impl App {
 
     #[allow(unused)]
     fn load_scene(&mut self, ctx: &Context) {
-        let models = gltf::load_gltf(ctx, &format!("{}/basicmesh.glb", ASSET_DIR));
+        let file_name = load::get_asset_dir("basicmesh.glb", load::AssetType::MODEL).unwrap();
+
+        let models = gltf::load_gltf(ctx, file_name);
 
         let i_max = 3;
         let j_max = 3;
@@ -97,7 +97,9 @@ impl App {
 
     #[allow(unused)]
     fn load_scene2(&mut self, ctx: &Context) {
-        let models = gltf::load_gltf(ctx, &format!("{}/basicmesh.glb", ASSET_DIR));
+        let file_name = load::get_asset_dir("basicmesh.glb", load::AssetType::MODEL).unwrap();
+
+        let models = gltf::load_gltf(ctx, file_name);
 
         let scale = 1.;
 

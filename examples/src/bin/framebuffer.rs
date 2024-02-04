@@ -44,7 +44,7 @@ impl Run for App {
         self.common.resize(ctx, width, height);
     }
 
-    fn start(&mut self, ctx: &Context) {
+    async fn start(&mut self, ctx: &Context) {
         self.init(ctx);
     }
 

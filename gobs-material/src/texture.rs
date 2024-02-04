@@ -1,7 +1,10 @@
+use anyhow::Result;
+use image::GenericImageView;
 use uuid::Uuid;
 
 use gobs_core::color::Color;
 use gobs_render::context::Context;
+use gobs_utils::load::{self, AssetType};
 use gobs_vulkan::buffer::{Buffer, BufferUsage};
 use gobs_vulkan::image::{
     Image, ImageExtent2D, ImageFormat, ImageLayout, ImageUsage, Sampler, SamplerFilter,
@@ -65,6 +68,21 @@ impl Texture {
             image,
             sampler,
         }
+    }
+
+    pub async fn with_file(ctx: &Context, file_name: &str, filter: SamplerFilter) -> Result<Self> {
+        let img = load::load_image(file_name, AssetType::IMAGE).await?;
+
+        Ok(Self::new(
+            ctx,
+            file_name,
+            &img.to_rgba8().into_raw(),
+            ImageExtent2D {
+                width: img.dimensions().0,
+                height: img.dimensions().1,
+            },
+            filter,
+        ))
     }
 
     pub fn with_data(

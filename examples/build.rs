@@ -1,11 +1,17 @@
+use std::env;
+use std::fs;
+use std::path::PathBuf;
+
+use fs_extra::dir::copy;
+use fs_extra::dir::CopyOptions;
+
 use naga::back::spv;
 use naga::front::glsl;
 use naga::valid::Validator;
 use naga::ShaderStage;
 
-use std::fs;
-
 const SHADERS_DIR: &str = "shaders";
+const ASSETS_DIR: &str = "assets";
 
 #[allow(unused_macros)]
 macro_rules! debug {
@@ -15,9 +21,39 @@ macro_rules! debug {
 }
 
 fn main() {
-    println!("cargo:rerun-if-changed={}/", SHADERS_DIR);
+    copy_files(ASSETS_DIR);
+    copy_files(SHADERS_DIR);
+    compile_shaders(SHADERS_DIR);
+}
 
-    for f in fs::read_dir(SHADERS_DIR).unwrap() {
+fn copy_files(path: &str) {
+    println!("cargo:rerun-if-changed={}/", path);
+
+    let out_dir = env::var("OUT_DIR").unwrap();
+    let profile = env::var("PROFILE").unwrap();
+
+    let mut target = PathBuf::from(out_dir);
+
+    let mut found = false;
+
+    while !found {
+        if target.ends_with(&profile) {
+            found = true;
+        } else {
+            target = target.parent().unwrap().to_path_buf();
+        }
+    }
+
+    let mut copy_options = CopyOptions::new();
+    copy_options.overwrite = true;
+
+    copy(path, target, &copy_options).unwrap();
+}
+
+fn compile_shaders(path: &str) {
+    println!("cargo:rerun-if-changed={}/", path);
+
+    for f in fs::read_dir(path).unwrap() {
         let f = f.unwrap();
         if !f.file_type().unwrap().is_file() {
             continue;

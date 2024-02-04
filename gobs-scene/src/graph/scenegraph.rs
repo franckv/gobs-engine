@@ -52,6 +52,10 @@ impl SceneGraph {
         self.arena.get(key)
     }
 
+    pub fn get_mut(&mut self, key: NodeId) -> Option<&mut Node> {
+        self.arena.get_mut(key)
+    }
+
     pub fn insert(&mut self, parent: NodeId, node: Node) {
         let node = self
             .arena

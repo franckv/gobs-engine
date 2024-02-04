@@ -1,5 +1,6 @@
 use std::sync::Arc;
 
+use gobs_utils::load;
 use gobs_vulkan::{
     descriptor::{
         DescriptorSet, DescriptorSetLayout, DescriptorSetPool, DescriptorStage, DescriptorType,
@@ -11,8 +12,6 @@ use gobs_vulkan::{
 use crate::{context::Context, graph::RenderError, CommandBuffer};
 
 use super::{PassType, RenderPass};
-
-const SHADER_DIR: &str = "examples/shaders";
 
 pub struct ComputePass {
     name: String,
@@ -38,11 +37,9 @@ impl ComputePass {
             .bind_image(render_target, ImageLayout::General)
             .end();
 
-        let compute_shader = Shader::from_file(
-            &format!("{}/sky.comp.spv", SHADER_DIR),
-            ctx.device.clone(),
-            ShaderType::Compute,
-        );
+        let compute_file = load::get_asset_dir("sky.comp.spv", load::AssetType::SHADER).unwrap();
+        let compute_shader =
+            Shader::from_file(compute_file, ctx.device.clone(), ShaderType::Compute);
 
         let _bg_pipeline_layout =
             PipelineLayout::new(ctx.device.clone(), &[_draw_ds_layout.clone()], 0);

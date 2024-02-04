@@ -4,6 +4,7 @@ use uuid::Uuid;
 
 use gobs_core::entity::uniform::{UniformLayout, UniformProp};
 use gobs_render::context::Context;
+use gobs_utils::load;
 use gobs_vulkan::{
     descriptor::{DescriptorSetLayout, DescriptorSetPool, DescriptorStage, DescriptorType},
     image::ImageLayout,
@@ -14,8 +15,6 @@ use gobs_vulkan::{
 };
 
 use crate::{instance::MaterialInstance, texture::Texture, vertex::VertexFlag};
-
-const SHADER_DIR: &str = "examples/shaders";
 
 pub type MaterialId = Uuid;
 
@@ -47,17 +46,12 @@ impl Material {
         let vertex_flags =
             VertexFlag::POSITION | VertexFlag::COLOR | VertexFlag::TEXTURE | VertexFlag::NORMAL;
 
-        let vertex_shader = Shader::from_file(
-            &format!("{}/mesh.vert.spv", SHADER_DIR),
-            ctx.device.clone(),
-            ShaderType::Vertex,
-        );
+        let vertex_file = load::get_asset_dir("mesh.vert.spv", load::AssetType::SHADER).unwrap();
+        let vertex_shader = Shader::from_file(vertex_file, ctx.device.clone(), ShaderType::Vertex);
 
-        let fragment_shader = Shader::from_file(
-            &format!("{}/mesh.frag.spv", SHADER_DIR),
-            ctx.device.clone(),
-            ShaderType::Fragment,
-        );
+        let fragment_file = load::get_asset_dir("mesh.frag.spv", load::AssetType::SHADER).unwrap();
+        let fragment_shader =
+            Shader::from_file(fragment_file, ctx.device.clone(), ShaderType::Fragment);
 
         let pipeline_layout = PipelineLayout::new(
             ctx.device.clone(),

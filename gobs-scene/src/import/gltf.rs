@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::{path::Path, sync::Arc};
 
 use gltf::mesh::util::{ReadColors, ReadIndices};
 
@@ -7,7 +7,10 @@ use gobs_render::context::Context;
 
 use crate::{mesh::Mesh, model::Model};
 
-pub fn load_gltf(ctx: &Context, file: &str) -> Vec<Arc<Model>> {
+pub fn load_gltf<P>(ctx: &Context, file: P) -> Vec<Arc<Model>>
+where
+    P: AsRef<Path>,
+{
     let (doc, buffers, _) = gltf::import(file).unwrap();
 
     let mut models = Vec::new();
