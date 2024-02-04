@@ -35,7 +35,7 @@ impl Run for App {
 
         let shader = examples::wire_shader(gfx).await;
 
-        let mut scene = Scene::new(gfx, camera, light, &[]).await;
+        let mut scene = Scene::new(gfx, camera, light, &[]);
 
         let cube = ModelBuilder::new()
             .add_mesh(Shapes::cube(3, 2, &[1]), None)

@@ -45,7 +45,7 @@ impl Run for App {
         let solid_shader = examples::solid_shader(gfx).await;
         let wire_shader = examples::wire_shader(gfx).await;
 
-        let mut scene = Scene::new(gfx, camera, light, &[wire_shader.clone()]).await;
+        let mut scene = Scene::new(gfx, camera, light, &[wire_shader.clone()]);
         scene.toggle_pass(&wire_shader.name);
 
         let triangle = ModelBuilder::new()

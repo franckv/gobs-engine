@@ -34,7 +34,7 @@ impl Run for App {
         let light = Light::new((0., 0., 10.), Color::WHITE);
         let shader = examples::ui_shader(gfx).await;
 
-        let scene = Scene::new(gfx, camera, light, &[]).await;
+        let scene = Scene::new(gfx, camera, light, &[]);
 
         let ui = UIRenderer::new(width, height, shader);
 

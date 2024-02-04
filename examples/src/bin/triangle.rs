@@ -37,7 +37,7 @@ impl Run for App {
 
         let solid_shader = examples::solid_shader(gfx).await;
 
-        let mut scene = Scene::new(gfx, camera, light, &[]).await;
+        let mut scene = Scene::new(gfx, camera, light, &[]);
 
         let triangle: Arc<Model> = ModelBuilder::new()
             .add_mesh(

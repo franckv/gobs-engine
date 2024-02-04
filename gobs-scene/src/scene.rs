@@ -42,7 +42,7 @@ impl Scene {
         }
     }
 
-    pub async fn new(gfx: &Gfx, camera: Camera, light: Light, shaders: &[Arc<Shader>]) -> Self {
+    pub fn new(gfx: &Gfx, camera: Camera, light: Light, shaders: &[Arc<Shader>]) -> Self {
         info!("New scene");
 
         let layers = Vec::new();

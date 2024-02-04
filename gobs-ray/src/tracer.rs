@@ -256,7 +256,7 @@ impl TracerBuilder {
             Vec3::Y,
         );
 
-        let scene = Scene::new(gfx, frame_camera, light, &[]).await;
+        let scene = Scene::new(gfx, frame_camera, light, &[]);
 
         let shader = Shader::new(
             gfx,

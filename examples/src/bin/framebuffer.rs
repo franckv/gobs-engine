@@ -43,7 +43,7 @@ impl Run for App {
 
         let shader = examples::ui_shader(gfx).await;
 
-        let mut scene = Scene::new(gfx, camera, light, &[]).await;
+        let mut scene = Scene::new(gfx, camera, light, &[]);
 
         let framebuffer = Self::generate_framebuffer(width, height);
 

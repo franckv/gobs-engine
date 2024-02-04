@@ -37,7 +37,7 @@ impl Run for App {
         let shader = examples::phong_shader(gfx).await;
         let wire = examples::wire_shader(gfx).await;
 
-        let mut scene = Scene::new(gfx, camera, light, &[wire.clone()]).await;
+        let mut scene = Scene::new(gfx, camera, light, &[wire.clone()]);
         scene.toggle_pass(&wire.name);
 
         let material = MaterialBuilder::new("diffuse")
