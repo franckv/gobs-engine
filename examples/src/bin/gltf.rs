@@ -1,141 +1,70 @@
-use examples::CameraController;
 use glam::{Quat, Vec3};
 
 use gobs::{
-    core::{
-        entity::{camera::Camera, light::Light},
-        Color, Transform,
-    },
+    core::Transform,
     game::{
         app::{Application, Run},
         input::Input,
     },
-    render::{
-        context::Context,
-        graph::{FrameGraph, RenderError},
-        pass::PassType,
-    },
+    render::{context::Context, graph::RenderError},
     scene::{
         graph::scenegraph::{Node, NodeValue},
         import::gltf,
-        scene::Scene,
     },
 };
+
+use examples::SampleApp;
 
 const ASSET_DIR: &str = "examples/assets";
 
 struct App {
-    graph: FrameGraph,
-    scene: Scene,
-    camera_controller: CameraController,
+    common: SampleApp,
 }
 
 impl Run for App {
     async fn create(ctx: &Context) -> Self {
-        log::info!("Create");
+        let common = SampleApp::create_perspective(ctx);
 
-        let graph = FrameGraph::new(ctx);
-
-        let camera = Camera::perspective(
-            Vec3::splat(0.),
-            graph.draw_extent.width as f32 / graph.draw_extent.height as f32,
-            (60. as f32).to_radians(),
-            0.1,
-            100.,
-            0.,
-            0.,
-            Vec3::Y,
-        );
-
-        let light = Light::new(Vec3::new(-3., 0., 5.), Color::WHITE);
-
-        let scene = Scene::new(ctx, camera, light);
-
-        let camera_controller = CameraController::new(3., 0.4);
-
-        App {
-            graph,
-            scene,
-            camera_controller,
-        }
+        App { common }
     }
 
     fn start(&mut self, ctx: &Context) {
-        log::trace!("Start");
-
-        self.load_scene(ctx);
+        self.init(ctx);
     }
 
     fn update(&mut self, ctx: &Context, delta: f32) {
-        log::trace!("Update");
-
         let angular_speed = 40.;
 
-        self.camera_controller
-            .update_camera(&mut self.scene.camera, delta);
-
-        let old_position = self.scene.light.position;
+        let old_position = self.common.scene.light.position;
         let position =
             Quat::from_axis_angle(Vec3::Y, (angular_speed * delta).to_radians()) * old_position;
-        self.scene.light.update(position);
+        self.common.scene.light.update(position);
 
-        self.scene.update(ctx);
+        self.common.update(ctx, delta);
     }
 
     fn render(&mut self, ctx: &Context) -> Result<(), RenderError> {
-        log::trace!("Render frame {}", self.graph.frame_number);
-
-        self.graph.begin(ctx)?;
-
-        self.graph
-            .render(ctx, &|pass_type, _, cmd| match pass_type {
-                PassType::Compute => {
-                    cmd.dispatch(
-                        self.graph.draw_extent.width / 16 + 1,
-                        self.graph.draw_extent.height / 16 + 1,
-                        1,
-                    );
-                }
-                PassType::Forward => {
-                    self.scene.draw(ctx, cmd);
-                }
-            })?;
-
-        self.graph.end(ctx)?;
-
-        log::trace!("End render");
-
-        Ok(())
+        self.common.render(ctx)
     }
 
     fn input(&mut self, ctx: &Context, input: Input) {
-        log::trace!("Input");
-
-        examples::default_input(
-            ctx,
-            &self.scene,
-            &mut self.graph,
-            &mut self.camera_controller,
-            input,
-        );
+        self.common.input(ctx, input);
     }
 
     fn resize(&mut self, ctx: &Context, width: u32, height: u32) {
-        log::trace!("Resize");
-        self.graph.resize(ctx);
-        self.scene.resize(width, height);
+        self.common.resize(ctx, width, height);
     }
 
     fn close(&mut self, ctx: &Context) {
-        log::info!("Closing");
-
-        ctx.device.wait();
-
-        log::info!("Closed");
+        self.common.close(ctx);
     }
 }
 
 impl App {
+    fn init(&mut self, ctx: &Context) {
+        self.load_scene(ctx);
+    }
+
     #[allow(unused)]
     fn load_scene(&mut self, ctx: &Context) {
         let models = gltf::load_gltf(ctx, &format!("{}/basicmesh.glb", ASSET_DIR));
@@ -158,7 +87,10 @@ impl App {
                     Vec3::new(scale, -scale, scale),
                 );
                 let node = Node::new(NodeValue::Model(model.clone()), transform);
-                self.scene.graph.insert(self.scene.graph.root, node);
+                self.common
+                    .scene
+                    .graph
+                    .insert(self.common.scene.graph.root, node);
             }
         }
     }
@@ -177,7 +109,10 @@ impl App {
             Vec3::new(scale, -scale, scale),
         );
         let node = Node::new(NodeValue::Model(model.clone()), transform);
-        self.scene.graph.insert(self.scene.graph.root, node);
+        self.common
+            .scene
+            .graph
+            .insert(self.common.scene.graph.root, node);
     }
 }
 

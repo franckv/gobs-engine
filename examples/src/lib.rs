@@ -1,13 +1,16 @@
+mod app;
 mod controller;
 
 use env_logger::Builder;
 
-pub use controller::CameraController;
 use gobs::{
     game::input::{Input, Key},
     render::{context::Context, graph::FrameGraph},
     scene::scene::Scene,
 };
+
+pub use app::SampleApp;
+pub use controller::CameraController;
 
 pub fn init_logger() {
     Builder::new().filter_level(log::LevelFilter::Info).init();

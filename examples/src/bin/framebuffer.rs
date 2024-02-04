@@ -1,120 +1,65 @@
-use glam::{Quat, Vec3};
+use glam::Quat;
 
 use gobs::{
-    core::{
-        entity::{camera::Camera, light::Light},
-        Color, Transform,
-    },
+    core::{Color, Transform},
     game::{
         app::{Application, Run},
         input::Input,
     },
     material::{texture::Texture, Material},
-    render::{
-        context::Context,
-        graph::{FrameGraph, RenderError},
-        pass::PassType,
-        SamplerFilter,
-    },
+    render::{context::Context, graph::RenderError, SamplerFilter},
     scene::{
         graph::scenegraph::{Node, NodeValue},
         model::Model,
-        scene::Scene,
         shape::Shapes,
     },
 };
 
-use examples::CameraController;
+use examples::SampleApp;
 
 struct App {
-    camera_controller: CameraController,
-    graph: FrameGraph,
-    scene: Scene,
+    common: SampleApp,
 }
 
 impl Run for App {
     async fn create(ctx: &Context) -> Self {
-        let graph = FrameGraph::new(ctx);
+        let common = SampleApp::create_ortho(ctx);
 
-        let camera = Camera::ortho(
-            (0., 0., 1.),
-            graph.draw_extent.width as f32,
-            graph.draw_extent.height as f32,
-            0.1,
-            100.,
-            0.,
-            0.,
-            Vec3::Y,
-        );
-
-        let light = Light::new((0., 0., 10.), Color::WHITE);
-
-        let scene = Scene::new(ctx, camera, light);
-
-        let camera_controller = CameraController::new(3., 0.4);
-
-        App {
-            camera_controller,
-            graph,
-            scene,
-        }
+        App { common }
     }
 
     fn update(&mut self, ctx: &Context, delta: f32) {
-        self.camera_controller
-            .update_camera(&mut self.scene.camera, delta);
-
-        self.scene.update(ctx);
+        self.common.update(ctx, delta);
     }
 
     fn render(&mut self, ctx: &Context) -> Result<(), RenderError> {
-        log::trace!("Render frame {}", self.graph.frame_number);
-
-        self.graph.begin(ctx)?;
-
-        self.graph
-            .render(ctx, &|pass_type, _, cmd| match pass_type {
-                PassType::Compute => {
-                    cmd.dispatch(
-                        self.graph.draw_extent.width / 16 + 1,
-                        self.graph.draw_extent.height / 16 + 1,
-                        1,
-                    );
-                }
-                PassType::Forward => {
-                    self.scene.draw(ctx, cmd);
-                }
-            })?;
-
-        self.graph.end(ctx)?;
-
-        log::trace!("End render");
-
-        Ok(())
+        self.common.render(ctx)
     }
 
     fn input(&mut self, ctx: &Context, input: Input) {
-        log::trace!("Input");
-
-        examples::default_input(
-            ctx,
-            &self.scene,
-            &mut self.graph,
-            &mut self.camera_controller,
-            input,
-        );
+        self.common.input(ctx, input);
     }
 
     fn resize(&mut self, ctx: &Context, width: u32, height: u32) {
-        log::trace!("Resize");
-
-        self.graph.resize(ctx);
-        self.scene.resize(width, height)
+        self.common.resize(ctx, width, height);
     }
 
     fn start(&mut self, ctx: &Context) {
-        let extent = self.graph.draw_extent;
-        let (width, height) = (self.graph.draw_extent.width, self.graph.draw_extent.height);
+        self.init(ctx);
+    }
+
+    fn close(&mut self, ctx: &gobs::render::context::Context) {
+        self.common.close(ctx);
+    }
+}
+
+impl App {
+    fn init(&mut self, ctx: &Context) {
+        let extent = self.common.graph.draw_extent;
+        let (width, height) = (
+            self.common.graph.draw_extent.width,
+            self.common.graph.draw_extent.height,
+        );
 
         let framebuffer = Self::generate_framebuffer(width, height);
 
@@ -130,20 +75,13 @@ impl Run for App {
             Quat::IDENTITY,
             [width as f32, -(height as f32), 1.].into(),
         );
-        let node = Node::new(NodeValue::Model(rect), transform);
-        self.scene.graph.insert(self.scene.graph.root, node);
+        let node: Node = Node::new(NodeValue::Model(rect), transform);
+        self.common
+            .scene
+            .graph
+            .insert(self.common.scene.graph.root, node);
     }
 
-    fn close(&mut self, ctx: &gobs::render::context::Context) {
-        log::info!("Closing");
-
-        ctx.device.wait();
-
-        log::info!("Closed");
-    }
-}
-
-impl App {
     fn generate_framebuffer(width: u32, height: u32) -> Vec<Color> {
         let mut buffer = Vec::new();
 
