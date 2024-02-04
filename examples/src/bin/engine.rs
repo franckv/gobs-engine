@@ -1,11 +1,12 @@
+use examples::CameraController;
 use glam::{Quat, Vec3};
 
 use gobs::{
+    core::Transform,
     game::{
         app::{Application, Run},
         input::{Input, Key},
     },
-    gobs_core::Transform,
     render::{
         context::Context,
         graph::{FrameGraph, RenderError},
@@ -23,6 +24,7 @@ const ASSET_DIR: &str = "examples/assets";
 struct App {
     graph: FrameGraph,
     scene: Scene,
+    camera_controller: CameraController,
 }
 
 impl Run for App {
@@ -33,7 +35,13 @@ impl Run for App {
 
         let scene = Scene::new(ctx, graph.draw_extent);
 
-        App { graph, scene }
+        let camera_controller = CameraController::new(3., 0.4);
+
+        App {
+            graph,
+            scene,
+            camera_controller,
+        }
     }
 
     fn start(&mut self, ctx: &Context) {
@@ -46,6 +54,9 @@ impl Run for App {
         log::trace!("Update");
 
         let angular_speed = 40.;
+
+        self.camera_controller
+            .update_camera(&mut self.scene.camera, delta);
 
         let old_position = self.scene.light.position;
         let position =
@@ -88,9 +99,14 @@ impl Run for App {
             Input::KeyPressed(key) => match key {
                 Key::E => self.graph.render_scaling = (self.graph.render_scaling + 0.1).min(1.),
                 Key::A => self.graph.render_scaling = (self.graph.render_scaling - 0.1).max(0.1),
-                Key::D => log::info!("{:?}", ctx.allocator.allocator.lock().unwrap()),
-                _ => (),
+                Key::L => log::info!("{:?}", ctx.allocator.allocator.lock().unwrap()),
+                _ => self.camera_controller.key_pressed(key),
             },
+            Input::KeyReleased(key) => self.camera_controller.key_released(key),
+            Input::MousePressed => self.camera_controller.mouse_pressed(),
+            Input::MouseReleased => self.camera_controller.mouse_released(),
+            Input::MouseWheel(delta) => self.camera_controller.mouse_scroll(delta),
+            Input::MouseMotion(dx, dy) => self.camera_controller.mouse_drag(dx, dy),
             _ => (),
         }
     }
