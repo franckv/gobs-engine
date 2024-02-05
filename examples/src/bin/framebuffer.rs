@@ -6,7 +6,7 @@ use gobs::{
         app::{Application, Run},
         input::Input,
     },
-    material::{texture::Texture, Material},
+    material::{texture::Texture, TextureMaterial},
     render::{context::Context, graph::RenderError, SamplerFilter},
     scene::{
         graph::scenegraph::{Node, NodeValue},
@@ -63,11 +63,11 @@ impl App {
 
         let framebuffer = Self::generate_framebuffer(width, height);
 
-        let material = Material::default(ctx);
+        let material = TextureMaterial::new(ctx);
 
         let texture = Texture::with_data(ctx, framebuffer, extent, SamplerFilter::FilterLinear);
 
-        let material_instance = material.instanciate(texture);
+        let material_instance = TextureMaterial::instanciate(material, texture);
 
         let rect = Model::new(ctx, "rect", &[Shapes::quad()], &[material_instance]);
         let transform = Transform::new(

@@ -137,26 +137,23 @@ impl Scene {
 
                 for primitive in &model.primitives {
                     let material = &model.materials[primitive.material];
-                    let pipeline = &material.material.pipeline;
+                    let pipeline = &material.pipeline();
                     let model_data = UniformData::new(
-                        &material.material.model_data_layout,
+                        &material.model_data_layout(),
                         &[
                             UniformPropData::Mat4F(world_matrix.to_cols_array_2d()),
                             UniformPropData::U64(model.vertex_buffer.address(ctx.device.clone())),
                         ],
                     );
 
-                    if last_material != material.material.id {
-                        cmd.bind_pipeline(&material.material.pipeline);
+                    if last_material != material.id {
+                        cmd.bind_pipeline(&material.pipeline());
                         cmd.bind_descriptor_set(uniform_ds, 0, pipeline);
                         cmd.bind_descriptor_set(&material.material_ds, 1, pipeline);
-                        last_material = material.material.id;
+                        last_material = material.id;
                     }
 
-                    cmd.push_constants(
-                        material.material.pipeline.layout.clone(),
-                        &model_data.raw(),
-                    );
+                    cmd.push_constants(material.pipeline().layout.clone(), &model_data.raw());
                     cmd.bind_index_buffer::<u32>(&model.index_buffer, primitive.offset);
                     cmd.draw_indexed(primitive.len, 1);
                 }

@@ -2,7 +2,7 @@ use std::{path::Path, sync::Arc};
 
 use gltf::mesh::util::{ReadColors, ReadIndices};
 
-use gobs_material::{texture::Texture, vertex::VertexData, Material};
+use gobs_material::{texture::Texture, vertex::VertexData, TextureMaterial};
 use gobs_render::context::Context;
 
 use crate::{mesh::Mesh, model::Model};
@@ -15,9 +15,9 @@ where
 
     let mut models = Vec::new();
 
-    let material = Material::default(ctx);
+    let material = TextureMaterial::new(ctx);
     let texture = Texture::default(ctx);
-    let material_instance = material.instanciate(texture);
+    let material_instance = TextureMaterial::instanciate(material, texture);
 
     for m in doc.meshes() {
         let name = m.name().unwrap_or_default();

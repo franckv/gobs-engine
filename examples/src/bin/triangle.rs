@@ -6,7 +6,7 @@ use gobs::{
         app::{Application, Run},
         input::Input,
     },
-    material::{texture::Texture, Material},
+    material::{texture::Texture, TextureMaterial},
     render::{context::Context, graph::RenderError},
     scene::{
         graph::scenegraph::{Node, NodeValue},
@@ -55,9 +55,9 @@ impl Run for App {
 
 impl App {
     fn init(&mut self, ctx: &Context) {
-        let material = Material::default(ctx);
+        let material = TextureMaterial::new(ctx);
         let texture = Texture::default(ctx);
-        let material_instance = material.instanciate(texture);
+        let material_instance = TextureMaterial::instanciate(material, texture);
 
         let triangle = Model::new(
             ctx,
