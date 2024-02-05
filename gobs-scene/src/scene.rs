@@ -1,5 +1,6 @@
 use std::sync::Arc;
 
+use glam::Mat3;
 use uuid::Uuid;
 
 use gobs_core::entity::{
@@ -134,6 +135,7 @@ impl Scene {
         self.graph.visit(self.graph.root, &mut |transform, model| {
             if let NodeValue::Model(model) = model {
                 let world_matrix = transform.matrix;
+                let normal_matrix = Mat3::from_quat(transform.rotation);
 
                 for primitive in &model.primitives {
                     let material = &model.materials[primitive.material];
@@ -142,6 +144,7 @@ impl Scene {
                         &material.model_data_layout(),
                         &[
                             UniformPropData::Mat4F(world_matrix.to_cols_array_2d()),
+                            UniformPropData::Mat3F(normal_matrix.to_cols_array_2d()),
                             UniformPropData::U64(model.vertex_buffer.address(ctx.device.clone())),
                         ],
                     );

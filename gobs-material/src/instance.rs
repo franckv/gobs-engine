@@ -13,20 +13,23 @@ pub struct MaterialInstance {
     pub id: MaterialInstanceId,
     pub material: Arc<Material>,
     pub material_ds: DescriptorSet,
-    pub texture: RwLock<Texture>,
+    _texture: Vec<RwLock<Texture>>,
 }
 
 impl MaterialInstance {
     pub(crate) fn new(
         material: Arc<Material>,
         material_ds: DescriptorSet,
-        texture: Texture,
+        mut textures: Vec<Texture>,
     ) -> Arc<Self> {
         Arc::new(Self {
             id: Uuid::new_v4(),
             material,
             material_ds,
-            texture: RwLock::new(texture),
+            _texture: textures
+                .drain(..)
+                .map(|texture| RwLock::new(texture))
+                .collect(),
         })
     }
 

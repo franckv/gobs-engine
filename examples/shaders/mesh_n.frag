@@ -15,12 +15,16 @@ layout(location = 5) in vec3 in_tangent_light_dir;
 layout(location = 0) out vec4 out_color;
 
 layout(set = 1, binding = 0) uniform texture2D diffuse_texture;
-layout(set = 1, binding = 1) uniform sampler diffuse_sampler;
+layout(set = 1, binding = 1) uniform texture2D normal_texture;
+layout(set = 1, binding = 2) uniform sampler diffuse_sampler;
+layout(set = 1, binding = 3) uniform sampler normal_sampler;
+
 
 void main() {
 	vec4 object_color = texture(sampler2D(diffuse_texture, diffuse_sampler), in_uv) * vec4(in_color, 1.f);
+	vec4 object_normal = texture(sampler2D(normal_texture, normal_sampler), in_uv);
 
-	vec3 light = phong_reflection(in_normal, in_tangent_position, in_tangent_light_dir, scene_data.light_color.xyz, in_tangent_view_position, scene_data.ambient_color.xyz);
+	vec3 light = phong_reflection_normal(object_normal.xyz, in_tangent_position, in_tangent_light_dir, scene_data.light_color.xyz, in_tangent_view_position, scene_data.ambient_color.xyz);
 
 	out_color = vec4(light * object_color.xyz, object_color.a);
 }

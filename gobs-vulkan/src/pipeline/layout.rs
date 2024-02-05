@@ -31,6 +31,7 @@ impl PipelineLayout {
 
         let mut push_constant_range = vec![];
         if push_constant_size > 0 {
+            debug_assert!(push_constant_size <= 128);
             push_constant_range.push(
                 vk::PushConstantRange::builder()
                     .offset(0)

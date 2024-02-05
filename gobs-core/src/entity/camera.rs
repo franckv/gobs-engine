@@ -194,6 +194,12 @@ mod tests {
 
     use super::Camera;
 
+    fn setup() {
+        let _ = env_logger::Builder::new()
+            .filter_module("gobs_core", log::LevelFilter::Debug)
+            .try_init();
+    }
+
     fn check_dir(yaw: f32, pitch: f32, expected: Vec3) {
         log::debug!("yaw={:?}, pitch={:?}, dir={:?}", yaw, pitch, expected);
 
@@ -222,9 +228,7 @@ mod tests {
 
     #[test]
     fn test_dir() {
-        env_logger::Builder::new()
-            .filter_module("gobs_core::entity::camera", log::LevelFilter::Debug)
-            .init();
+        setup();
 
         check_dir(0., 0., Vec3::new(0., 0., -1.));
         check_dir(0., -90., Vec3::new(0., -1., 0.));

@@ -12,15 +12,36 @@ use gobs_vulkan::image::{
 
 pub type TextureId = Uuid;
 
+#[derive(Clone, Copy, Debug)]
+pub enum TextureType {
+    Diffuse,
+    Normal,
+}
+
+impl Into<ImageFormat> for TextureType {
+    fn into(self) -> ImageFormat {
+        match self {
+            TextureType::Diffuse => ImageFormat::R8g8b8a8Srgb,
+            TextureType::Normal => ImageFormat::R8g8b8a8Unorm,
+        }
+    }
+}
+
 pub struct Texture {
     pub id: TextureId,
     pub image: Image,
+    pub ty: TextureType,
     pub sampler: Sampler,
 }
 
 impl Texture {
     pub fn default(ctx: &Context) -> Self {
-        Texture::with_color(ctx, Color::WHITE, SamplerFilter::FilterLinear)
+        Texture::with_color(
+            ctx,
+            Color::WHITE,
+            TextureType::Diffuse,
+            SamplerFilter::FilterLinear,
+        )
     }
 
     pub fn new(
@@ -28,12 +49,13 @@ impl Texture {
         name: &str,
         data: &[u8],
         extent: ImageExtent2D,
+        ty: TextureType,
         filter: SamplerFilter,
     ) -> Self {
         let mut image = Image::new(
             name,
             ctx.device.clone(),
-            ImageFormat::R8g8b8a8Unorm,
+            ty.into(),
             ImageUsage::Texture,
             extent,
             ctx.allocator.clone(),
@@ -57,20 +79,26 @@ impl Texture {
             cmd.end_label();
         });
 
-        Self::with_image(ctx, image, filter)
+        Self::with_image(ctx, image, ty, filter)
     }
 
-    pub fn with_image(ctx: &Context, image: Image, filter: SamplerFilter) -> Self {
+    pub fn with_image(ctx: &Context, image: Image, ty: TextureType, filter: SamplerFilter) -> Self {
         let sampler = Sampler::new(ctx.device.clone(), filter);
 
         Texture {
             id: Uuid::new_v4(),
             image,
+            ty,
             sampler,
         }
     }
 
-    pub async fn with_file(ctx: &Context, file_name: &str, filter: SamplerFilter) -> Result<Self> {
+    pub async fn with_file(
+        ctx: &Context,
+        file_name: &str,
+        ty: TextureType,
+        filter: SamplerFilter,
+    ) -> Result<Self> {
         let img = load::load_image(file_name, AssetType::IMAGE).await?;
 
         Ok(Self::new(
@@ -81,6 +109,7 @@ impl Texture {
                 width: img.dimensions().0,
                 height: img.dimensions().1,
             },
+            ty,
             filter,
         ))
     }
@@ -89,6 +118,7 @@ impl Texture {
         ctx: &Context,
         data: Vec<Color>,
         extent: ImageExtent2D,
+        ty: TextureType,
         filter: SamplerFilter,
     ) -> Self {
         Self::new(
@@ -99,17 +129,19 @@ impl Texture {
                 .flat_map(|c| Into::<[u8; 4]>::into(*c))
                 .collect::<Vec<u8>>(),
             extent,
+            ty,
             filter,
         )
     }
 
-    pub fn with_color(ctx: &Context, color: Color, filter: SamplerFilter) -> Self {
+    pub fn with_color(ctx: &Context, color: Color, ty: TextureType, filter: SamplerFilter) -> Self {
         let data: [u8; 4] = color.into();
         Self::new(
             ctx,
             "color texture",
             &data,
             ImageExtent2D::new(1, 1),
+            ty,
             filter,
         )
     }
@@ -119,6 +151,7 @@ impl Texture {
         ctx: &Context,
         color1: Color,
         color2: Color,
+        ty: TextureType,
         filter: SamplerFilter,
     ) -> Self {
         let mut data: [u8; 4 * Self::CHECKER_SIZE * Self::CHECKER_SIZE] =
@@ -144,6 +177,7 @@ impl Texture {
             "checker",
             &data,
             ImageExtent2D::new(Self::CHECKER_SIZE as u32, Self::CHECKER_SIZE as u32),
+            ty,
             filter,
         )
     }

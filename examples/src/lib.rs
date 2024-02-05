@@ -13,6 +13,7 @@ pub use app::SampleApp;
 pub use controller::CameraController;
 
 pub const WALL_TEXTURE: &str = "wall.png";
+pub const WALL_TEXTURE_N: &str = "wall_n.png";
 
 pub fn init_logger() {
     Builder::new().filter_level(log::LevelFilter::Info).init();

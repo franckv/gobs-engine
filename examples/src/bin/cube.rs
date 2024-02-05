@@ -1,20 +1,20 @@
 use glam::{Quat, Vec3};
 
-use gobs::material::TextureMaterial;
-use gobs::render::context::Context;
-use gobs::render::graph::RenderError;
-use gobs::render::SamplerFilter;
-use gobs::scene::shape::Shapes;
 use gobs::{
     core::Transform,
     game::{
         app::{Application, Run},
         input::Input,
     },
-    material::texture::Texture,
+    material::{
+        texture::{Texture, TextureType},
+        NormalMaterial,
+    },
+    render::{context::Context, graph::RenderError, SamplerFilter},
     scene::{
         graph::scenegraph::{Node, NodeValue},
         model::Model,
+        shape::Shapes,
     },
 };
 
@@ -77,11 +77,25 @@ impl Run for App {
 
 impl App {
     async fn init(&mut self, ctx: &Context) {
-        let material = TextureMaterial::new(ctx);
-        let texture = Texture::with_file(ctx, examples::WALL_TEXTURE, SamplerFilter::FilterLinear)
-            .await
-            .unwrap();
-        let material_instance = TextureMaterial::instanciate(material, texture);
+        let material = NormalMaterial::new(ctx);
+        let diffuse_texture = Texture::with_file(
+            ctx,
+            examples::WALL_TEXTURE,
+            TextureType::Diffuse,
+            SamplerFilter::FilterLinear,
+        )
+        .await
+        .unwrap();
+        let normal_texture = Texture::with_file(
+            ctx,
+            examples::WALL_TEXTURE_N,
+            TextureType::Normal,
+            SamplerFilter::FilterLinear,
+        )
+        .await
+        .unwrap();
+        let material_instance =
+            NormalMaterial::instanciate(material, diffuse_texture, normal_texture);
 
         let cube = Model::new(
             ctx,

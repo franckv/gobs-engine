@@ -1,14 +1,10 @@
 use std::env;
 use std::fs;
 use std::path::PathBuf;
+use std::process::Command;
 
 use fs_extra::dir::copy;
 use fs_extra::dir::CopyOptions;
-
-use naga::back::spv;
-use naga::front::glsl;
-use naga::valid::Validator;
-use naga::ShaderStage;
 
 const SHADERS_DIR: &str = "shaders";
 const ASSETS_DIR: &str = "assets";
@@ -21,14 +17,18 @@ macro_rules! debug {
 }
 
 fn main() {
+    println!("cargo:rerun-if-changed={}/*.glsl", SHADERS_DIR);
+    println!("cargo:rerun-if-changed={}/*.comp", SHADERS_DIR);
+    println!("cargo:rerun-if-changed={}/*.vert", SHADERS_DIR);
+    println!("cargo:rerun-if-changed={}/*.frag", SHADERS_DIR);
+    println!("cargo:rerun-if-changed={}/", ASSETS_DIR);
+
+    compile_shaders(SHADERS_DIR);
     copy_files(ASSETS_DIR);
     copy_files(SHADERS_DIR);
-    compile_shaders(SHADERS_DIR);
 }
 
 fn copy_files(path: &str) {
-    println!("cargo:rerun-if-changed={}/", path);
-
     let out_dir = env::var("OUT_DIR").unwrap();
     let profile = env::var("PROFILE").unwrap();
 
@@ -51,8 +51,6 @@ fn copy_files(path: &str) {
 }
 
 fn compile_shaders(path: &str) {
-    println!("cargo:rerun-if-changed={}/", path);
-
     for f in fs::read_dir(path).unwrap() {
         let f = f.unwrap();
         if !f.file_type().unwrap().is_file() {
@@ -64,47 +62,24 @@ fn compile_shaders(path: &str) {
 
         let out = format!("{}.spv", file_name);
 
-        if std::path::Path::new(&out).exists() {
-            continue;
-        }
-
-        let stage = match f.path().extension().unwrap().to_string_lossy().as_ref() {
-            "comp" => ShaderStage::Compute,
-            "vert" => ShaderStage::Vertex,
-            "frag" => ShaderStage::Fragment,
+        match f.path().extension().unwrap().to_string_lossy().as_ref() {
+            "comp" | "vert" | "frag" => (),
             _ => continue,
         };
 
-        debug!("Input: {}", file_name);
-        debug!("Output: {}", out);
+        debug!("Shader: {} -> {}", file_name, out);
 
-        let content = fs::read_to_string(f.path()).unwrap();
+        #[cfg(target_os = "windows")]
+        {
+            let output = Command::new("cmd")
+                .arg("/C")
+                .arg(&format!("glslangValidator.exe -V {} -o {}", file_name, out))
+                .output()
+                .expect("Error compiling shader");
 
-        let mut front = glsl::Frontend::default();
-        let module = front.parse(&glsl::Options::from(stage), &content).unwrap();
-        let info = Validator::new(
-            naga::valid::ValidationFlags::all(),
-            naga::valid::Capabilities::all(),
-        )
-        .validate(&module)
-        .unwrap();
-
-        let mut data = Vec::new();
-        let mut options = spv::Options::default();
-        options
-            .flags
-            .remove(spv::WriterFlags::ADJUST_COORDINATE_SPACE);
-        let mut writer = spv::Writer::new(&options).unwrap();
-        writer
-            .write(&module, &info, None, &None, &mut data)
-            .expect("Failed to write shader");
-
-        let bytes: &[u8] = unsafe {
-            std::slice::from_raw_parts(
-                data.as_ptr() as *const u8,
-                data.len() * std::mem::size_of::<u32>(),
-            )
-        };
-        fs::write(&out, bytes).unwrap();
+            if !output.status.success() {
+                panic!("Compile status={:?}", output);
+            }
+        }
     }
 }
