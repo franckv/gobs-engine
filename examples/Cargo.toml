@@ -7,6 +7,7 @@ edition = { workspace = true }
 [dependencies]
 bytemuck = { workspace = true }
 env_logger = { workspace = true }
+futures = { workspace = true }
 glam = { workspace = true }
 gobs = { workspace = true }
 gpu-allocator = { workspace = true }

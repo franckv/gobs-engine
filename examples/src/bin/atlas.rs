@@ -93,16 +93,32 @@ impl App {
     async fn init(&mut self, ctx: &Context) {
         let material = NormalMaterial::new(ctx);
 
-        let diffuse_texture = Texture::with_file(
+        let diffuse_texture = Texture::pack(
             ctx,
-            examples::WALL_TEXTURE,
+            &[
+                "blocks/dirt.png",
+                "blocks/stone.png",
+                "blocks/grass_side.png",
+                "blocks/grass_top.png",
+                "blocks/cobblestone.png",
+                "blocks/mossy_cobblestone.png",
+            ],
+            3,
             TextureType::Diffuse,
             SamplerFilter::FilterLinear,
         );
 
-        let normal_texture = Texture::with_file(
+        let normal_texture = Texture::pack(
             ctx,
-            examples::WALL_TEXTURE_N,
+            &[
+                "blocks/dirt_n.png",
+                "blocks/stone_n.png",
+                "blocks/grass_side_n.png",
+                "blocks/grass_top_n.png",
+                "blocks/cobblestone_n.png",
+                "blocks/mossy_cobblestone_n.png",
+            ],
+            3,
             TextureType::Normal,
             SamplerFilter::FilterLinear,
         );
@@ -115,7 +131,7 @@ impl App {
         let cube = Model::new(
             ctx,
             "cube",
-            &[Shapes::cube(1, 1, &[1])],
+            &[Shapes::cube(3, 2, &[1, 2, 3, 4, 5, 6])],
             &[material_instance],
         );
 

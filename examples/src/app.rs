@@ -1,12 +1,9 @@
 use glam::Vec3;
 
 use gobs::{
-    core::{
-        entity::{camera::Camera, light::Light},
-        Color,
-    },
+    core::entity::{camera::Camera, light::Light},
     game::input::{Input, Key},
-    render::{context::Context, graph::FrameGraph, pass::PassType},
+    render::{context::Context, graph::FrameGraph, pass::PassType, ImageExtent2D},
     scene::scene::Scene,
 };
 
@@ -19,8 +16,10 @@ pub struct SampleApp {
 }
 
 impl SampleApp {
-    pub fn create(ctx: &Context, graph: FrameGraph, camera: Camera) -> Self {
-        let light = Light::new((0., 0., 10.), Color::WHITE);
+    pub fn create(ctx: &Context, camera: Camera, light: Light) -> Self {
+        log::info!("Create");
+
+        let graph = FrameGraph::new(ctx);
 
         let scene = Scene::new(ctx, camera, light);
 
@@ -33,42 +32,38 @@ impl SampleApp {
         }
     }
 
-    pub fn create_ortho(ctx: &Context) -> Self {
-        log::info!("Create");
+    pub fn extent(ctx: &Context) -> ImageExtent2D {
+        ctx.surface.get_extent(ctx.device.clone())
+    }
 
-        let graph = FrameGraph::new(ctx);
+    pub fn ortho_camera(ctx: &Context) -> Camera {
+        let extent = ctx.surface.get_extent(ctx.device.clone());
 
-        let camera = Camera::ortho(
+        Camera::ortho(
             (0., 0., 1.),
-            graph.draw_extent.width as f32,
-            graph.draw_extent.height as f32,
+            extent.width as f32,
+            extent.height as f32,
             0.1,
             100.,
             0.,
             0.,
             Vec3::Y,
-        );
-
-        Self::create(ctx, graph, camera)
+        )
     }
 
-    pub fn create_perspective(ctx: &Context) -> Self {
-        log::info!("Create");
+    pub fn perspective_camera(ctx: &Context) -> Camera {
+        let extent = ctx.surface.get_extent(ctx.device.clone());
 
-        let graph = FrameGraph::new(ctx);
-
-        let camera = Camera::perspective(
+        Camera::perspective(
             Vec3::splat(0.),
-            graph.draw_extent.width as f32 / graph.draw_extent.height as f32,
+            extent.width as f32 / extent.height as f32,
             (60. as f32).to_radians(),
             0.1,
             100.,
             0.,
             0.,
             Vec3::Y,
-        );
-
-        Self::create(ctx, graph, camera)
+        )
     }
 
     pub fn start(&mut self, _ctx: &Context) {}

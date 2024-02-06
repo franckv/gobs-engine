@@ -1,7 +1,7 @@
 use glam::Quat;
 
 use gobs::{
-    core::{Color, Transform},
+    core::{entity::light::Light, Color, Transform},
     game::{
         app::{Application, Run},
         input::Input,
@@ -26,7 +26,9 @@ struct App {
 
 impl Run for App {
     async fn create(ctx: &Context) -> Self {
-        let common = SampleApp::create_ortho(ctx);
+        let light = Light::new((0., 0., 10.), Color::WHITE);
+
+        let common = SampleApp::create(ctx, SampleApp::ortho_camera(ctx), light);
 
         App { common }
     }

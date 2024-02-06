@@ -1,5 +1,7 @@
 use anyhow::Result;
-use image::GenericImageView;
+use futures::future::try_join_all;
+use image::imageops::FilterType;
+use image::{DynamicImage, GenericImage, GenericImageView, ImageBuffer};
 use uuid::Uuid;
 
 use gobs_core::color::Color;
@@ -110,6 +112,60 @@ impl Texture {
                 height: img.dimensions().1,
             },
             ty,
+            filter,
+        ))
+    }
+
+    pub async fn pack(
+        ctx: &Context,
+        texture_files: &[&str],
+        cols: u32,
+        texture_type: TextureType,
+        filter: SamplerFilter,
+    ) -> Result<Texture> {
+        let n = texture_files.len();
+
+        let (mut width, mut height) = (0, 0);
+
+        let images = texture_files
+            .iter()
+            .map(|file| load::load_image(file, AssetType::IMAGE));
+
+        let images = try_join_all(images).await?;
+
+        for img in &images {
+            if img.width() > width {
+                width = img.width();
+            }
+            if img.height() > height {
+                height = img.height();
+            }
+        }
+
+        let mut target = ImageBuffer::new(cols * width, n as u32 / cols * height);
+
+        for (i, img) in images.into_iter().enumerate() {
+            let col = i as u32 % cols;
+            let row = i as u32 / cols;
+
+            target
+                .copy_from(
+                    &img.resize_to_fill(width, height, FilterType::Triangle)
+                        .into_rgba8(),
+                    col * width,
+                    row * height,
+                )
+                .unwrap();
+        }
+
+        let img = &DynamicImage::ImageRgba8(target);
+
+        Ok(Texture::new(
+            ctx,
+            "texture_pack",
+            &img.to_rgba8().into_raw(),
+            ImageExtent2D::new(img.dimensions().0, img.dimensions().1),
+            texture_type,
             filter,
         ))
     }
