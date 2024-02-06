@@ -70,7 +70,7 @@ impl App {
 
         let material = TextureMaterial::new(ctx);
 
-        let texture = Texture::with_data(
+        let texture = Texture::with_colors(
             ctx,
             framebuffer,
             extent,

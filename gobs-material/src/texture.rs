@@ -170,9 +170,9 @@ impl Texture {
         ))
     }
 
-    pub fn with_data(
+    pub fn with_colors(
         ctx: &Context,
-        data: Vec<Color>,
+        colors: Vec<Color>,
         extent: ImageExtent2D,
         ty: TextureType,
         filter: SamplerFilter,
@@ -180,7 +180,7 @@ impl Texture {
         Self::new(
             ctx,
             "framebuffer",
-            &data
+            &colors
                 .iter()
                 .flat_map(|c| Into::<[u8; 4]>::into(*c))
                 .collect::<Vec<u8>>(),

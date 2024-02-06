@@ -95,14 +95,7 @@ impl App {
 
         let diffuse_texture = Texture::pack(
             ctx,
-            &[
-                "blocks/dirt.png",
-                "blocks/stone.png",
-                "blocks/grass_side.png",
-                "blocks/grass_top.png",
-                "blocks/cobblestone.png",
-                "blocks/mossy_cobblestone.png",
-            ],
+            examples::ATLAS,
             3,
             TextureType::Diffuse,
             SamplerFilter::FilterLinear,
@@ -110,15 +103,8 @@ impl App {
 
         let normal_texture = Texture::pack(
             ctx,
-            &[
-                "blocks/dirt_n.png",
-                "blocks/stone_n.png",
-                "blocks/grass_side_n.png",
-                "blocks/grass_top_n.png",
-                "blocks/cobblestone_n.png",
-                "blocks/mossy_cobblestone_n.png",
-            ],
-            3,
+            examples::ATLAS_N,
+            examples::ATLAS_COLS,
             TextureType::Normal,
             SamplerFilter::FilterLinear,
         );
@@ -131,7 +117,11 @@ impl App {
         let cube = Model::new(
             ctx,
             "cube",
-            &[Shapes::cube(3, 2, &[1, 2, 3, 4, 5, 6])],
+            &[Shapes::cube(
+                examples::ATLAS_COLS,
+                examples::ATLAS_ROWS,
+                &[3, 3, 3, 3, 4, 1],
+            )],
             &[material_instance],
         );
 
