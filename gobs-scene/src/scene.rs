@@ -140,6 +140,7 @@ impl Scene {
                 for primitive in &model.primitives {
                     let material = &model.materials[primitive.material];
                     let pipeline = &material.pipeline();
+                    // TODO: hardcoded
                     let model_data = UniformData::new(
                         &material.model_data_layout(),
                         &[
@@ -152,7 +153,10 @@ impl Scene {
                     if last_material != material.id {
                         cmd.bind_pipeline(&material.pipeline());
                         cmd.bind_descriptor_set(uniform_ds, 0, pipeline);
-                        cmd.bind_descriptor_set(&material.material_ds, 1, pipeline);
+                        if let Some(material_ds) = &material.material_ds {
+                            cmd.bind_descriptor_set(material_ds, 1, pipeline);
+                        }
+
                         last_material = material.id;
                     }
 

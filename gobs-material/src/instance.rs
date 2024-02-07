@@ -12,14 +12,14 @@ pub type MaterialInstanceId = Uuid;
 pub struct MaterialInstance {
     pub id: MaterialInstanceId,
     pub material: Arc<Material>,
-    pub material_ds: DescriptorSet,
+    pub material_ds: Option<DescriptorSet>,
     _texture: Vec<RwLock<Texture>>,
 }
 
 impl MaterialInstance {
     pub(crate) fn new(
         material: Arc<Material>,
-        material_ds: DescriptorSet,
+        material_ds: Option<DescriptorSet>,
         mut textures: Vec<Texture>,
     ) -> Arc<Self> {
         Arc::new(Self {

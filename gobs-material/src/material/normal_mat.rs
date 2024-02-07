@@ -98,15 +98,21 @@ impl NormalMaterial {
         diffuse_texture: Texture,
         normal_texture: Texture,
     ) -> Arc<MaterialInstance> {
-        let material_ds = material.ds_pool().write().unwrap().allocate();
+        let material_ds = match material.ds_pool() {
+            Some(ds_pool) => {
+                let material_ds = ds_pool.write().unwrap().allocate();
+                material_ds
+                    .update()
+                    .bind_sampled_image(&diffuse_texture.image, ImageLayout::Shader)
+                    .bind_sampled_image(&normal_texture.image, ImageLayout::Shader)
+                    .bind_sampler(&diffuse_texture.sampler)
+                    .bind_sampler(&normal_texture.sampler)
+                    .end();
 
-        material_ds
-            .update()
-            .bind_sampled_image(&diffuse_texture.image, ImageLayout::Shader)
-            .bind_sampled_image(&normal_texture.image, ImageLayout::Shader)
-            .bind_sampler(&diffuse_texture.sampler)
-            .bind_sampler(&normal_texture.sampler)
-            .end();
+                Some(material_ds)
+            }
+            None => None,
+        };
 
         MaterialInstance::new(
             material.clone(),
