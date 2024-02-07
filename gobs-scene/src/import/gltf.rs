@@ -88,20 +88,14 @@ where
                 match read_colors {
                     ReadColors::RgbaU8(iter) => {
                         for (i, color) in iter.enumerate() {
-                            mesh_data.vertices[i].color = [
-                                color[0] as f32 / 255.,
-                                color[1] as f32 / 255.,
-                                color[2] as f32 / 255.,
-                                color[3] as f32 / 255.,
-                            ]
-                            .into();
+                            mesh_data.vertices[i].color = color.into();
                         }
                     }
                     _ => todo!(),
                 }
             } else {
                 for i in 0..mesh_data.vertices.len() {
-                    mesh_data.vertices[i].color = (mesh_data.vertices[i].normal, 1.).into();
+                    mesh_data.vertices[i].color = mesh_data.vertices[i].normal.into();
                 }
             }
 

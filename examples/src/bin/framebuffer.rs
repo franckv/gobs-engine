@@ -84,7 +84,7 @@ impl App {
         let transform = Transform::new(
             [0., 0., 0.].into(),
             Quat::IDENTITY,
-            [width as f32, -(height as f32), 1.].into(),
+            [width as f32, height as f32, 1.].into(),
         );
         let node: Node = Node::new(NodeValue::Model(rect), transform);
         self.common

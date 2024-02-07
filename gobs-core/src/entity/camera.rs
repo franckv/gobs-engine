@@ -125,7 +125,7 @@ impl Camera {
     }
 
     pub fn proj_matrix(&self) -> Mat4 {
-        let proj = match &self.mode {
+        let mut proj = match &self.mode {
             ProjectionMode::Ortho(projection) => Mat4::orthographic_rh(
                 -projection.width / 2.,
                 projection.width / 2.,
@@ -141,6 +141,8 @@ impl Camera {
                 projection.far,
             ),
         };
+
+        proj.y_axis.y *= -1.;
 
         proj
     }

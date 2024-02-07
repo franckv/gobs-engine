@@ -86,7 +86,7 @@ impl App {
                 let transform = Transform::new(
                     [x, y, -7.].into(),
                     Quat::IDENTITY,
-                    Vec3::new(scale, -scale, scale),
+                    Vec3::new(scale, scale, scale),
                 );
                 let node = Node::new(NodeValue::Model(model.clone()), transform);
                 self.common
@@ -110,7 +110,7 @@ impl App {
         let transform = Transform::new(
             [0., 0., -5.].into(),
             Quat::IDENTITY,
-            Vec3::new(scale, -scale, scale),
+            Vec3::new(scale, scale, scale),
         );
         let node = Node::new(NodeValue::Model(model.clone()), transform);
         self.common

@@ -1,6 +1,7 @@
 use std::sync::Arc;
 
-use glam::{Vec2, Vec4};
+use glam::Vec2;
+use gobs_core::Color;
 use gobs_material::vertex::VertexData;
 
 use crate::mesh::Mesh;
@@ -12,7 +13,7 @@ const PADDING: bool = true;
 pub struct Shapes;
 
 impl Shapes {
-    pub fn triangle(color1: [f32; 4], color2: [f32; 4], color3: [f32; 4]) -> Arc<Mesh> {
+    pub fn triangle(color1: Color, color2: Color, color3: Color) -> Arc<Mesh> {
         let mut builder = Mesh::builder("triangle");
 
         let (top, bottom, left, right) = (0.5, -0.5, -0.5, 0.5);
@@ -44,7 +45,7 @@ impl Shapes {
         for i in 0..vi.len() {
             let vertex_data = VertexData::builder()
                 .position(v[vi[i] - 1].into())
-                .color(c[ci[i] - 1].into())
+                .color(c[ci[i] - 1])
                 .normal(n[ni[i] - 1].into())
                 .texture(t[ti[i] - 1].into())
                 .padding(PADDING)
@@ -162,7 +163,7 @@ impl Shapes {
         for i in 0..vi.len() {
             let vertex_data = VertexData::builder()
                 .position(v[vi[i] - 1].into())
-                .color(Vec4::new(1., 1., 1., 1.))
+                .color(Color::WHITE)
                 .texture(Self::tex_map(
                     t[ti[i] - 1].into(),
                     cols,

@@ -33,13 +33,13 @@ impl Run for App {
         let extent = SampleApp::extent(ctx);
 
         let camera = Camera::perspective(
-            Vec3::new(0., -1., 0.),
+            Vec3::new(0., 1., 0.),
             extent.width as f32 / extent.height as f32,
             (60. as f32).to_radians(),
             0.1,
             100.,
             0.,
-            (25. as f32).to_radians(),
+            (-25. as f32).to_radians(),
             Vec3::Y,
         );
 
@@ -119,7 +119,7 @@ impl App {
             &[material_instance],
         );
 
-        let transform = Transform::new([0., 0., -2.].into(), Quat::IDENTITY, [1., -1., 1.].into());
+        let transform = Transform::new([0., 0., -2.].into(), Quat::IDENTITY, Vec3::splat(1.));
         let node = Node::new(NodeValue::Model(cube), transform);
         self.common
             .scene

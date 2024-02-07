@@ -1,5 +1,7 @@
 use bitflags::bitflags;
-use glam::{Vec2, Vec3, Vec4};
+use glam::{Vec2, Vec3};
+
+use gobs_core::Color;
 
 bitflags! {
     #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -62,7 +64,7 @@ impl VertexFlag {
 pub struct VertexData {
     pub padding: bool,
     pub position: Vec3,
-    pub color: Vec4,
+    pub color: Color,
     pub texture: Vec2,
     pub normal: Vec3,
     pub normal_texture: Vec2,
@@ -85,7 +87,7 @@ impl VertexData {
         };
 
         if flags.contains(VertexFlag::COLOR) {
-            data.extend_from_slice(bytemuck::cast_slice(&self.color.to_array()));
+            data.extend_from_slice(bytemuck::cast_slice(&Into::<[f32; 4]>::into(self.color)));
             Self::pad(&mut data, self.padding, flags, VertexFlag::COLOR);
         };
 
@@ -152,7 +154,7 @@ impl VertexData {
 pub struct VertexDataBuilder {
     pub padding: bool,
     pub position: Option<Vec3>,
-    pub color: Option<Vec4>,
+    pub color: Option<Color>,
     pub texture: Option<Vec2>,
     pub normal: Option<Vec3>,
     pub normal_texture: Option<Vec2>,
@@ -188,7 +190,7 @@ impl VertexDataBuilder {
         self
     }
 
-    pub fn color(mut self, color: Vec4) -> Self {
+    pub fn color(mut self, color: Color) -> Self {
         self.color = Some(color);
 
         self
@@ -234,7 +236,7 @@ impl VertexDataBuilder {
         VertexData {
             padding: self.padding,
             position: self.position.unwrap_or(Vec3::splat(0.)),
-            color: self.color.unwrap_or(Vec4::splat(1.)),
+            color: self.color.unwrap_or(Color::WHITE),
             texture: self.texture.unwrap_or(Vec2::splat(0.)),
             normal: self.normal.unwrap_or(Vec3::splat(0.)),
             normal_texture: self.normal_texture.unwrap_or(Vec2::splat(0.)),

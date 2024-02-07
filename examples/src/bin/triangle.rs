@@ -63,18 +63,11 @@ impl App {
         let triangle = Model::new(
             ctx,
             "triangle",
-            &[Shapes::triangle(
-                [1., 0., 0., 1.],
-                [0., 1., 0., 1.],
-                [0., 0., 1., 1.],
-            )],
+            &[Shapes::triangle(Color::RED, Color::GREEN, Color::BLUE)],
             &[material_instance],
         );
-        let transform = Transform::new(
-            [0., 0., 0.].into(),
-            Quat::IDENTITY,
-            [300., -300., 1.].into(),
-        );
+        let transform =
+            Transform::new([0., 0., 0.].into(), Quat::IDENTITY, [300., 300., 1.].into());
         let node = Node::new(NodeValue::Model(triangle), transform);
         self.common
             .scene

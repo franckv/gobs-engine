@@ -33,13 +33,13 @@ impl Run for App {
         let extent = SampleApp::extent(ctx);
 
         let camera = Camera::perspective(
-            (0., -25., 25.),
+            (0., 25., 25.),
             extent.width as f32 / extent.height as f32,
             (45. as f32).to_radians(),
             0.1,
             150.,
             (0. as f32).to_radians(),
-            (50. as f32).to_radians(),
+            (-50. as f32).to_radians(),
             Vec3::Y,
         );
 
@@ -150,15 +150,15 @@ impl App {
                         z: j - offset,
                     };
 
-                    let transform = Transform::new(position, rotation, [1., -1., 1.].into());
+                    let transform = Transform::new(position, rotation, Vec3::splat(1.));
                     let node = Node::new(NodeValue::Model(wall.clone()), transform);
                     self.common
                         .scene
                         .graph
                         .insert(self.common.scene.graph.root, node);
-                    position.y = examples::TILE_SIZE;
 
-                    let transform = Transform::new(position, rotation, [1., -1., 1.].into());
+                    position.y = -examples::TILE_SIZE;
+                    let transform = Transform::new(position, rotation, Vec3::splat(1.));
                     let node = Node::new(NodeValue::Model(floor.clone()), transform);
                     self.common
                         .scene
@@ -169,10 +169,10 @@ impl App {
                     i += examples::TILE_SIZE;
                     let position = Vec3 {
                         x: i - offset,
-                        y: examples::TILE_SIZE,
+                        y: -examples::TILE_SIZE,
                         z: j - offset,
                     };
-                    let transform = Transform::new(position, rotation, [1., -1., 1.].into());
+                    let transform = Transform::new(position, rotation, Vec3::splat(1.));
                     let node = Node::new(NodeValue::Model(floor.clone()), transform);
                     self.common
                         .scene
@@ -183,10 +183,10 @@ impl App {
                     i += examples::TILE_SIZE;
                     let position = Vec3 {
                         x: i - offset,
-                        y: examples::TILE_SIZE,
+                        y: -examples::TILE_SIZE,
                         z: j - offset,
                     };
-                    let transform = Transform::new(position, rotation, [1., -1., 1.].into());
+                    let transform = Transform::new(position, rotation, Vec3::splat(1.));
                     let node = Node::new(NodeValue::Model(floor.clone()), transform);
                     self.common
                         .scene
