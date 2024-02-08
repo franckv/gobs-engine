@@ -1,10 +1,9 @@
 use std::sync::Arc;
 
 use glam::Vec2;
-use gobs_core::Color;
-use gobs_material::vertex::VertexData;
 
-use crate::mesh::Mesh;
+use gobs_core::Color;
+use gobs_render::geometry::{Mesh, VertexData};
 
 const T_MIN: f32 = 0.01;
 const T_MAX: f32 = 1. - T_MIN;

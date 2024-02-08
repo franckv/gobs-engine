@@ -6,11 +6,9 @@ use gobs::{
         app::{Application, Run},
         input::Input,
     },
-    material::ColorMaterial,
-    render::{context::Context, graph::RenderError},
+    render::{context::Context, geometry::Model, graph::RenderError, material::ColorMaterial},
     scene::{
         graph::scenegraph::{Node, NodeValue},
-        model::Model,
         shape::Shapes,
     },
 };
@@ -60,12 +58,11 @@ impl App {
         let material = ColorMaterial::new(ctx);
         let material_instance = ColorMaterial::instanciate(material);
 
-        let triangle = Model::new(
-            ctx,
-            "triangle",
-            &[Shapes::triangle(Color::RED, Color::GREEN, Color::BLUE)],
-            &[material_instance],
-        );
+        let triangle = Model::builder("triangle")
+            .mesh(Shapes::triangle(Color::RED, Color::GREEN, Color::BLUE), 0)
+            .material(material_instance)
+            .build();
+
         let transform =
             Transform::new([0., 0., 0.].into(), Quat::IDENTITY, [300., 300., 1.].into());
         let node = Node::new(NodeValue::Model(triangle), transform);

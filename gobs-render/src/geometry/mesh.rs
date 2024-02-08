@@ -3,7 +3,7 @@ use std::{collections::HashMap, sync::Arc};
 use glam::Vec2;
 use uuid::Uuid;
 
-use gobs_material::vertex::VertexData;
+use super::VertexData;
 
 pub type MeshId = Uuid;
 

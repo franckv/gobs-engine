@@ -5,12 +5,13 @@ use image::{DynamicImage, GenericImage, GenericImageView, ImageBuffer};
 use uuid::Uuid;
 
 use gobs_core::color::Color;
-use gobs_render::context::Context;
 use gobs_utils::load::{self, AssetType};
 use gobs_vulkan::buffer::{Buffer, BufferUsage};
 use gobs_vulkan::image::{
     Image, ImageExtent2D, ImageFormat, ImageLayout, ImageUsage, Sampler, SamplerFilter,
 };
+
+use crate::context::Context;
 
 pub type TextureId = Uuid;
 

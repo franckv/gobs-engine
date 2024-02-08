@@ -1,6 +1,10 @@
-pub(crate) mod color_mat;
-pub(crate) mod normal_mat;
-pub(crate) mod texture_mat;
+mod instance;
+mod materials;
+mod texture;
+
+pub use instance::MaterialInstance;
+pub use materials::{ColorMaterial, NormalMaterial, TextureMaterial};
+pub use texture::{Texture, TextureType};
 
 use std::sync::{Arc, RwLock};
 
@@ -9,7 +13,7 @@ use uuid::Uuid;
 use gobs_core::entity::uniform::UniformLayout;
 use gobs_vulkan::{descriptor::DescriptorSetPool, pipeline::Pipeline};
 
-use crate::{vertex::VertexFlag, ColorMaterial, NormalMaterial, TextureMaterial};
+use crate::geometry::VertexFlag;
 
 pub type MaterialId = Uuid;
 

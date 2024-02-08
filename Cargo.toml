@@ -3,7 +3,6 @@ members = [
     "examples",
     "gobs-core",
     "gobs-game",
-    "gobs-material",
     "gobs-render",
     "gobs-scene",
     "gobs-utils",
@@ -27,10 +26,6 @@ path = "./gobs-core"
 [workspace.dependencies.gobs-game]
 package = "gobs-game"
 path = "./gobs-game"
-
-[workspace.dependencies.gobs-material]
-package = "gobs-material"
-path = "./gobs-material"
 
 [workspace.dependencies.gobs-render]
 package = "gobs-render"

@@ -10,14 +10,15 @@ use gobs::{
         app::{Application, Run},
         input::Input,
     },
-    material::{
-        texture::{Texture, TextureType},
-        NormalMaterial,
+    render::{
+        context::Context,
+        geometry::Model,
+        graph::RenderError,
+        material::{NormalMaterial, Texture, TextureType},
+        SamplerFilter,
     },
-    render::{context::Context, graph::RenderError, SamplerFilter},
     scene::{
         graph::scenegraph::{Node, NodeValue},
-        model::Model,
         shape::Shapes,
     },
 };
@@ -112,27 +113,25 @@ impl App {
         let material_instance =
             NormalMaterial::instanciate(material, diffuse_texture, normal_texture);
 
-        let wall = Model::new(
-            ctx,
-            "wall",
-            &[Shapes::cube(
-                examples::ATLAS_COLS,
-                examples::ATLAS_ROWS,
-                &[2],
-            )],
-            &[material_instance.clone()],
-        );
+        let wall = Model::builder("wall")
+            .mesh(
+                Shapes::cube(examples::ATLAS_COLS, examples::ATLAS_ROWS, &[2]),
+                0,
+            )
+            .material(material_instance.clone())
+            .build();
 
-        let floor = Model::new(
-            ctx,
-            "floor",
-            &[Shapes::cube(
-                examples::ATLAS_COLS,
-                examples::ATLAS_ROWS,
-                &[3, 3, 3, 3, 4, 1],
-            )],
-            &[material_instance],
-        );
+        let floor = Model::builder("floor")
+            .mesh(
+                Shapes::cube(
+                    examples::ATLAS_COLS,
+                    examples::ATLAS_ROWS,
+                    &[3, 3, 3, 3, 4, 1],
+                ),
+                0,
+            )
+            .material(material_instance.clone())
+            .build();
 
         let offset = 16.;
 

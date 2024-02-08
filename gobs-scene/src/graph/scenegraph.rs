@@ -3,8 +3,7 @@ use std::sync::Arc;
 use slotmap::{DefaultKey, SlotMap};
 
 use gobs_core::Transform;
-
-use crate::model::Model;
+use gobs_render::geometry::Model;
 
 pub enum NodeValue {
     None,

@@ -5,7 +5,7 @@ use uuid::Uuid;
 use gobs_core::entity::uniform::UniformLayout;
 use gobs_vulkan::{descriptor::DescriptorSet, pipeline::Pipeline};
 
-use crate::{texture::Texture, Material};
+use crate::{material::Material, material::Texture};
 
 pub type MaterialInstanceId = Uuid;
 

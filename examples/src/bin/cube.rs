@@ -10,14 +10,15 @@ use gobs::{
         app::{Application, Run},
         input::Input,
     },
-    material::{
-        texture::{Texture, TextureType},
-        NormalMaterial,
+    render::{
+        context::Context,
+        geometry::Model,
+        graph::RenderError,
+        material::{NormalMaterial, Texture, TextureType},
+        SamplerFilter,
     },
-    render::{context::Context, graph::RenderError, SamplerFilter},
     scene::{
         graph::scenegraph::{Node, NodeValue},
-        model::Model,
         shape::Shapes,
     },
 };
@@ -112,12 +113,10 @@ impl App {
         let material_instance =
             NormalMaterial::instanciate(material, diffuse_texture, normal_texture);
 
-        let cube = Model::new(
-            ctx,
-            "cube",
-            &[Shapes::cube(1, 1, &[1])],
-            &[material_instance],
-        );
+        let cube = Model::builder("cube")
+            .mesh(Shapes::cube(1, 1, &[1]), 0)
+            .material(material_instance)
+            .build();
 
         let transform = Transform::new([0., 0., -2.].into(), Quat::IDENTITY, Vec3::splat(1.));
         let node = Node::new(NodeValue::Model(cube), transform);

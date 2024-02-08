@@ -2,10 +2,11 @@ use std::{path::Path, sync::Arc};
 
 use gltf::mesh::util::{ReadColors, ReadIndices};
 
-use gobs_material::{texture::Texture, vertex::VertexData, TextureMaterial};
-use gobs_render::context::Context;
-
-use crate::{mesh::Mesh, model::Model};
+use gobs_render::{
+    context::Context,
+    geometry::{Mesh, Model, VertexData},
+    material::{Texture, TextureMaterial},
+};
 
 pub fn load_gltf<P>(ctx: &Context, file: P) -> Vec<Arc<Model>>
 where
@@ -28,7 +29,7 @@ where
             m.primitives().len()
         );
 
-        let mut meshes = Vec::new();
+        let mut model = Model::builder(name).material(material_instance.clone());
 
         for p in m.primitives() {
             let mut mesh_data = Mesh::builder(name);
@@ -99,11 +100,10 @@ where
                 }
             }
 
-            meshes.push(mesh_data.build());
+            model = model.mesh(mesh_data.build(), 0);
         }
 
-        let model = Model::new(ctx, name, &meshes, &[material_instance.clone()]);
-        models.push(model);
+        models.push(model.build());
     }
 
     models

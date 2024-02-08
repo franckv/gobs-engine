@@ -8,15 +8,15 @@ use gobs_core::entity::{
     light::Light,
     uniform::{UniformData, UniformLayout, UniformProp, UniformPropData},
 };
-
-use gobs_render::{context::Context, CommandBuffer};
+use gobs_render::{context::Context, geometry::ModelId, CommandBuffer};
 use gobs_vulkan::descriptor::{
     DescriptorSet, DescriptorSetLayout, DescriptorSetPool, DescriptorStage, DescriptorType,
 };
 
 use crate::{
     graph::scenegraph::{NodeValue, SceneGraph},
-    uniform_buffer::UniformBuffer,
+    manager::ResourceManager,
+    resources::{ModelResource, UniformBuffer},
 };
 
 struct SceneFrameData {
@@ -59,6 +59,7 @@ pub struct Scene {
     frame_number: usize,
     scene_ds_pool: DescriptorSetPool,
     scene_frame_data: Vec<SceneFrameData>,
+    model_manager: ResourceManager<ModelId, Arc<ModelResource>>,
 }
 
 impl Scene {
@@ -94,6 +95,7 @@ impl Scene {
             frame_number: 0,
             scene_ds_pool,
             scene_frame_data,
+            model_manager: ResourceManager::new(),
         }
     }
 
@@ -121,6 +123,12 @@ impl Scene {
         self.scene_frame_data[frame_id]
             .uniform_buffer
             .update(&scene_data);
+
+        self.graph.visit(self.graph.root, &mut |_, model| {
+            if let NodeValue::Model(model) = model {
+                self.model_manager.add(ctx, model.id, model.clone())
+            }
+        });
     }
 
     pub fn resize(&mut self, width: u32, height: u32) {
@@ -137,8 +145,10 @@ impl Scene {
                 let world_matrix = transform.matrix;
                 let normal_matrix = Mat3::from_quat(transform.rotation);
 
+                let model = self.model_manager.get(model.id);
+
                 for primitive in &model.primitives {
-                    let material = &model.materials[primitive.material];
+                    let material = &model.model.materials[primitive.material];
                     let pipeline = &material.pipeline();
                     // TODO: hardcoded
                     let model_data = UniformData::new(

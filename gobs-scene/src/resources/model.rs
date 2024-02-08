@@ -1,10 +1,7 @@
 use std::sync::Arc;
 
-use gobs_material::MaterialInstance;
-use gobs_render::context::Context;
+use gobs_render::{context::Context, geometry::Model};
 use gobs_vulkan::buffer::{Buffer, BufferUsage};
-
-use crate::mesh::Mesh;
 
 #[derive(Clone, Copy, Debug)]
 pub enum PrimitiveType {
@@ -30,29 +27,22 @@ impl Primitive {
     }
 }
 
-pub struct Model {
-    pub name: String,
+pub struct ModelResource {
+    pub model: Arc<Model>,
     pub index_buffer: Buffer,
     pub vertex_buffer: Buffer,
     pub primitives: Vec<Primitive>,
-    pub meshes: Vec<Arc<Mesh>>,
-    pub materials: Vec<Arc<MaterialInstance>>,
 }
 
-impl Model {
-    pub fn new(
-        ctx: &Context,
-        name: &str,
-        meshes: &[Arc<Mesh>],
-        materials: &[Arc<MaterialInstance>],
-    ) -> Arc<Self> {
+impl ModelResource {
+    pub fn new(ctx: &Context, model: Arc<Model>) -> Arc<Self> {
         log::debug!("New model");
 
         let mut indices = Vec::new();
         let mut vertices = Vec::new();
         let mut primitives = Vec::new();
 
-        for mesh in meshes {
+        for (mesh, material_idx) in &model.meshes {
             let start_idx = vertices.len() as u32;
             let offset = indices.len();
 
@@ -66,13 +56,13 @@ impl Model {
                 PrimitiveType::Triangle,
                 offset,
                 indices.len() - offset,
-                0,
+                *material_idx,
             ));
         }
 
         let vertices_data = vertices
             .iter()
-            .flat_map(|v| v.raw(materials[0].material.vertex_flags()))
+            .flat_map(|v| v.raw(model.materials[0].material.vertex_flags()))
             .collect::<Vec<u8>>();
         let vertices_size = vertices_data.len();
         let indices_size = indices.len() * std::mem::size_of::<u32>();
@@ -117,18 +107,10 @@ impl Model {
         });
 
         Arc::new(Self {
-            name: name.to_string(),
+            model,
             index_buffer,
             vertex_buffer,
             primitives,
-            meshes: meshes.to_vec(),
-            materials: materials.to_vec(),
         })
-    }
-}
-
-impl Drop for Model {
-    fn drop(&mut self) {
-        log::debug!("Drop model");
     }
 }

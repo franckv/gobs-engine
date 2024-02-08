@@ -6,14 +6,15 @@ use gobs::{
         app::{Application, Run},
         input::Input,
     },
-    material::{
-        texture::{Texture, TextureType},
-        TextureMaterial,
+    render::{
+        context::Context,
+        geometry::Model,
+        graph::RenderError,
+        material::{Texture, TextureMaterial, TextureType},
+        SamplerFilter,
     },
-    render::{context::Context, graph::RenderError, SamplerFilter},
     scene::{
         graph::scenegraph::{Node, NodeValue},
-        model::Model,
         shape::Shapes,
     },
 };
@@ -80,12 +81,17 @@ impl App {
 
         let material_instance = TextureMaterial::instanciate(material, texture);
 
-        let rect = Model::new(ctx, "rect", &[Shapes::quad()], &[material_instance]);
+        let rect = Model::builder("rect")
+            .mesh(Shapes::quad(), 0)
+            .material(material_instance)
+            .build();
+
         let transform = Transform::new(
             [0., 0., 0.].into(),
             Quat::IDENTITY,
             [width as f32, height as f32, 1.].into(),
         );
+
         let node: Node = Node::new(NodeValue::Model(rect), transform);
         self.common
             .scene
