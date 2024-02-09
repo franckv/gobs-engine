@@ -18,7 +18,7 @@ impl Timer {
 
         delta.as_seconds_f32()
     }
-    
+
     pub fn peek(&self) -> f32 {
         let tick = time::OffsetDateTime::now_utc();
         let delta = tick - self.last_tick;
