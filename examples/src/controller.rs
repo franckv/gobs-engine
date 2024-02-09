@@ -121,7 +121,7 @@ impl CameraController {
         camera.position += scrollward * self.scroll * self.speed * self.sensitivity * dt;
         self.scroll = 0.;
 
-        camera.position.y -= (self.amount_up - self.amount_down) * self.speed * dt;
+        camera.position.y += (self.amount_up - self.amount_down) * self.speed * dt;
 
         camera.yaw += self.rotate_horizontal * self.sensitivity * dt;
         camera.pitch += self.rotate_vertical * self.sensitivity * dt;

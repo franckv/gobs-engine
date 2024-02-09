@@ -23,7 +23,7 @@ impl SampleApp {
 
         let scene = Scene::new(ctx, camera, light);
 
-        let camera_controller = CameraController::new(3., 0.05);
+        let camera_controller = CameraController::new(3., 0.1);
 
         Self {
             camera_controller,
