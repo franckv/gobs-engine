@@ -6,7 +6,8 @@ use std::process::Command;
 use fs_extra::dir::copy;
 use fs_extra::dir::CopyOptions;
 
-const SHADERS_DIR: &str = "shaders";
+const SHADERS_IN_DIR: &str = "shaders/in";
+const SHADERS_OUT_DIR: &str = "shaders";
 
 #[allow(unused_macros)]
 macro_rules! debug {
@@ -16,13 +17,10 @@ macro_rules! debug {
 }
 
 fn main() {
-    println!("cargo:rerun-if-changed={}/*.glsl", SHADERS_DIR);
-    println!("cargo:rerun-if-changed={}/*.comp", SHADERS_DIR);
-    println!("cargo:rerun-if-changed={}/*.vert", SHADERS_DIR);
-    println!("cargo:rerun-if-changed={}/*.frag", SHADERS_DIR);
+    println!("cargo:rerun-if-changed={}/", SHADERS_IN_DIR);
 
-    compile_shaders(SHADERS_DIR);
-    copy_files(SHADERS_DIR);
+    compile_shaders(SHADERS_IN_DIR, SHADERS_OUT_DIR);
+    copy_files(SHADERS_OUT_DIR);
 }
 
 fn copy_files(path: &str) {
@@ -47,8 +45,8 @@ fn copy_files(path: &str) {
     copy(path, target, &copy_options).unwrap();
 }
 
-fn compile_shaders(path: &str) {
-    for f in fs::read_dir(path).unwrap() {
+fn compile_shaders(path_in: &str, path_out: &str) {
+    for f in fs::read_dir(path_in).unwrap() {
         let f = f.unwrap();
         if !f.file_type().unwrap().is_file() {
             continue;
@@ -57,7 +55,7 @@ fn compile_shaders(path: &str) {
         let file = f.path();
         let file_name = file.to_str().unwrap();
 
-        let out = format!("{}.spv", file_name);
+        let out = format!("{}.spv", file_name.replace(path_in, path_out));
 
         match f.path().extension().unwrap().to_string_lossy().as_ref() {
             "comp" | "vert" | "frag" => (),
