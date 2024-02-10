@@ -9,7 +9,7 @@ use gobs::{
         app::{Application, Run},
         input::Input,
     },
-    render::{context::Context, geometry::Model, graph::RenderError, material::DepthMaterial},
+    render::{context::Context, geometry::Model, graph::RenderError},
     scene::{
         graph::scenegraph::{Node, NodeValue},
         shape::Shapes,
@@ -85,11 +85,11 @@ impl Run for App {
 
 impl App {
     async fn init(&mut self, ctx: &Context) {
-        let material = DepthMaterial::new(ctx);
+        let material = SampleApp::depth_material(ctx);
 
         let material_instance =
             //NormalMaterial::instanciate(material, diffuse_texture, normal_texture);
-            DepthMaterial::instanciate(material);
+            material.instantiate(vec![]);
 
         let cube = Model::builder("cube")
             .mesh(Shapes::cube(1, 1, &[1]), 0)

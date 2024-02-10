@@ -77,6 +77,7 @@ impl DescriptorSetLayoutBuilder {
     }
 }
 
+#[derive(Debug)]
 pub struct DescriptorSetLayout {
     device: Arc<Device>,
     pub(crate) layout: vk::DescriptorSetLayout,

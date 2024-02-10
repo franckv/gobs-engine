@@ -1,5 +1,7 @@
-target/
 assets/
+target/
+scripts/
+
 Cargo.lock
 *.spv
 .vscode/

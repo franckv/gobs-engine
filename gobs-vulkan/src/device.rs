@@ -1,3 +1,4 @@
+use std::fmt::Debug;
 use std::sync::Arc;
 
 use ash::extensions::khr::Swapchain;
@@ -71,6 +72,12 @@ impl Device {
 
     pub fn cloned(&self) -> ash::Device {
         self.device.clone()
+    }
+}
+
+impl Debug for Device {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Device").finish()
     }
 }
 

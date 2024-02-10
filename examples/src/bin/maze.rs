@@ -14,7 +14,7 @@ use gobs::{
         context::Context,
         geometry::Model,
         graph::RenderError,
-        material::{NormalMaterial, Texture, TextureType},
+        material::{Texture, TextureType},
         SamplerFilter,
     },
     scene::{
@@ -90,7 +90,7 @@ impl App {
     async fn load_scene(&mut self, ctx: &Context) {
         log::info!("Load scene");
 
-        let material = NormalMaterial::new(ctx);
+        let material = SampleApp::normal_mapping_material(ctx);
 
         let diffuse_texture = Texture::pack(
             ctx,
@@ -110,8 +110,7 @@ impl App {
 
         let (diffuse_texture, normal_texture) = try_join!(diffuse_texture, normal_texture).unwrap();
 
-        let material_instance =
-            NormalMaterial::instanciate(material, diffuse_texture, normal_texture);
+        let material_instance = material.instantiate(vec![diffuse_texture, normal_texture]);
 
         let wall = Model::builder("wall")
             .mesh(

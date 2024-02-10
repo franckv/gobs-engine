@@ -4,8 +4,8 @@ use gltf::mesh::util::{ReadColors, ReadIndices};
 
 use gobs_render::{
     context::Context,
-    geometry::{Mesh, Model, VertexData},
-    material::{Texture, TextureMaterial},
+    geometry::{Mesh, Model, VertexData, VertexFlag},
+    material::{Material, MaterialProperty, Texture},
 };
 
 pub fn load_gltf<P>(ctx: &Context, file: P) -> Vec<Arc<Model>>
@@ -16,9 +16,20 @@ where
 
     let mut models = Vec::new();
 
-    let material = TextureMaterial::new(ctx);
+    let vertex_flags = VertexFlag::POSITION
+        | VertexFlag::COLOR
+        | VertexFlag::TEXTURE
+        | VertexFlag::NORMAL
+        | VertexFlag::TANGENT
+        | VertexFlag::BITANGENT;
+
+    let material = Material::builder("mesh.vert.spv", "mesh.frag.spv")
+        .vertex_flags(vertex_flags)
+        .prop("diffuse", MaterialProperty::Texture)
+        .build(ctx);
+
     let texture = Texture::default(ctx);
-    let material_instance = TextureMaterial::instanciate(material, texture);
+    let material_instance = material.instantiate(vec![texture]);
 
     for m in doc.meshes() {
         let name = m.name().unwrap_or_default();

@@ -1,9 +1,18 @@
+use std::sync::Arc;
+
 use glam::Vec3;
 
 use gobs::{
     core::entity::{camera::Camera, light::Light},
     game::input::{Input, Key},
-    render::{context::Context, graph::FrameGraph, pass::PassType, ImageExtent2D},
+    render::{
+        context::Context,
+        geometry::VertexFlag,
+        graph::FrameGraph,
+        material::{Material, MaterialProperty},
+        pass::PassType,
+        ImageExtent2D,
+    },
     scene::scene::Scene,
 };
 
@@ -64,6 +73,51 @@ impl SampleApp {
             0.,
             Vec3::Y,
         )
+    }
+
+    pub fn color_material(ctx: &Context) -> Arc<Material> {
+        let vertex_flags = VertexFlag::POSITION | VertexFlag::COLOR;
+
+        Material::builder("color.vert.spv", "color.frag.spv")
+            .vertex_flags(vertex_flags)
+            .build(ctx)
+    }
+
+    pub fn texture_material(ctx: &Context) -> Arc<Material> {
+        let vertex_flags = VertexFlag::POSITION
+            | VertexFlag::COLOR
+            | VertexFlag::TEXTURE
+            | VertexFlag::NORMAL
+            | VertexFlag::TANGENT
+            | VertexFlag::BITANGENT;
+
+        Material::builder("mesh.vert.spv", "mesh.frag.spv")
+            .vertex_flags(vertex_flags)
+            .prop("diffuse", MaterialProperty::Texture)
+            .build(ctx)
+    }
+
+    pub fn normal_mapping_material(ctx: &Context) -> Arc<Material> {
+        let vertex_flags = VertexFlag::POSITION
+            | VertexFlag::COLOR
+            | VertexFlag::TEXTURE
+            | VertexFlag::NORMAL
+            | VertexFlag::TANGENT
+            | VertexFlag::BITANGENT;
+
+        Material::builder("mesh.vert.spv", "mesh_n.frag.spv")
+            .vertex_flags(vertex_flags)
+            .prop("diffuse", MaterialProperty::Texture)
+            .prop("normal", MaterialProperty::Texture)
+            .build(ctx)
+    }
+
+    pub fn depth_material(ctx: &Context) -> Arc<Material> {
+        let vertex_flags = VertexFlag::POSITION | VertexFlag::COLOR;
+
+        Material::builder("color.vert.spv", "depth.frag.spv")
+            .vertex_flags(vertex_flags)
+            .build(ctx)
     }
 
     pub fn start(&mut self, _ctx: &Context) {}

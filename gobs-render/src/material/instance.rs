@@ -5,7 +5,10 @@ use uuid::Uuid;
 use gobs_core::entity::uniform::UniformLayout;
 use gobs_vulkan::{descriptor::DescriptorSet, pipeline::Pipeline};
 
-use crate::{material::Material, material::Texture};
+use crate::{
+    geometry::VertexFlag,
+    material::{Material, Texture},
+};
 
 pub type MaterialInstanceId = Uuid;
 
@@ -34,10 +37,14 @@ impl MaterialInstance {
     }
 
     pub fn pipeline(&self) -> &Pipeline {
-        self.material.pipeline()
+        &self.material.pipeline
     }
 
-    pub fn model_data_layout(&self) -> Arc<UniformLayout> {
-        self.material.model_data_layout()
+    pub fn model_data_layout(&self) -> &UniformLayout {
+        &self.material.model_data_layout
+    }
+
+    pub fn vertex_flags(&self) -> VertexFlag {
+        self.material.vertex_flags
     }
 }

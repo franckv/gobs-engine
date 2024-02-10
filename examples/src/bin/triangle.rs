@@ -6,7 +6,7 @@ use gobs::{
         app::{Application, Run},
         input::Input,
     },
-    render::{context::Context, geometry::Model, graph::RenderError, material::ColorMaterial},
+    render::{context::Context, geometry::Model, graph::RenderError},
     scene::{
         graph::scenegraph::{Node, NodeValue},
         shape::Shapes,
@@ -55,8 +55,8 @@ impl Run for App {
 
 impl App {
     fn init(&mut self, ctx: &Context) {
-        let material = ColorMaterial::new(ctx);
-        let material_instance = ColorMaterial::instanciate(material);
+        let material = SampleApp::color_material(ctx);
+        let material_instance = material.instantiate(vec![]);
 
         let triangle = Model::builder("triangle")
             .mesh(Shapes::triangle(Color::RED, Color::GREEN, Color::BLUE), 0)
@@ -72,6 +72,7 @@ impl App {
             .insert(self.common.scene.graph.root, node);
     }
 }
+
 fn main() {
     examples::init_logger();
 

@@ -10,7 +10,7 @@ use gobs::{
         context::Context,
         geometry::Model,
         graph::RenderError,
-        material::{Texture, TextureMaterial, TextureType},
+        material::{Texture, TextureType},
         SamplerFilter,
     },
     scene::{
@@ -69,7 +69,7 @@ impl App {
 
         let framebuffer = Self::generate_framebuffer(width, height);
 
-        let material = TextureMaterial::new(ctx);
+        let material = SampleApp::texture_material(ctx);
 
         let texture = Texture::with_colors(
             ctx,
@@ -79,7 +79,7 @@ impl App {
             SamplerFilter::FilterLinear,
         );
 
-        let material_instance = TextureMaterial::instanciate(material, texture);
+        let material_instance = material.instantiate(vec![texture]);
 
         let rect = Model::builder("rect")
             .mesh(Shapes::quad(), 0)
