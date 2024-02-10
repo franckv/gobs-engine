@@ -48,6 +48,14 @@ impl ModelBuilder {
         self
     }
 
+    pub fn materials(mut self, materials: &mut Vec<Arc<MaterialInstance>>) -> Self {
+        log::debug!("Create model materials ({:?})", materials);
+
+        self.materials.append(materials);
+
+        self
+    }
+
     pub fn build(self) -> Arc<Model> {
         Arc::new(Model {
             name: self.name,

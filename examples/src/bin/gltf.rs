@@ -34,11 +34,12 @@ impl Run for App {
     }
 
     fn update(&mut self, ctx: &Context, delta: f32) {
-        let angular_speed = 40.;
-
-        let position = Quat::from_axis_angle(Vec3::Y, (angular_speed * delta).to_radians())
-            * self.common.scene.light.position;
-        self.common.scene.light.update(position);
+        if self.common.process_updates {
+            let angular_speed = 40.;
+            let position = Quat::from_axis_angle(Vec3::Y, (angular_speed * delta).to_radians())
+                * self.common.scene.light.position;
+            self.common.scene.light.update(position);
+        }
 
         self.common.update(ctx, delta);
     }
@@ -62,7 +63,7 @@ impl Run for App {
 
 impl App {
     fn init(&mut self, ctx: &Context) {
-        self.load_scene(ctx);
+        self.load_scene2(ctx);
     }
 
     #[allow(unused)]
@@ -99,13 +100,14 @@ impl App {
 
     #[allow(unused)]
     fn load_scene2(&mut self, ctx: &Context) {
-        let file_name = load::get_asset_dir("basicmesh.glb", load::AssetType::MODEL).unwrap();
+        let file_name = load::get_asset_dir("Cube.gltf", load::AssetType::MODEL).unwrap();
+        log::info!("Loading model: {:?}", file_name);
 
         let models = gltf::load_gltf(ctx, file_name);
 
         let scale = 1.;
 
-        let model = models[2].clone();
+        let model = models[0].clone();
 
         let transform = Transform::new(
             [0., 0., -5.].into(),

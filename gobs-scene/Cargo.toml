@@ -16,3 +16,6 @@ gpu-allocator = { workspace = true }
 log = { workspace = true }
 slotmap = { workspace = true }
 uuid = { workspace = true }
+
+[build-dependencies]
+fs_extra = { workspace = true }

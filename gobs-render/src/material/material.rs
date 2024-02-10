@@ -48,8 +48,8 @@ impl Material {
 
                 for texture in &textures {
                     updater = updater
-                        .bind_sampled_image(&texture.image, ImageLayout::Shader)
-                        .bind_sampler(&texture.sampler);
+                        .bind_sampled_image(&texture.read().image, ImageLayout::Shader)
+                        .bind_sampler(&texture.read().sampler);
                 }
 
                 updater.end();

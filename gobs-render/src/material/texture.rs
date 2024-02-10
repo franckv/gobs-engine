@@ -1,3 +1,5 @@
+use std::sync::{Arc, RwLock, RwLockReadGuard};
+
 use anyhow::Result;
 use futures::future::try_join_all;
 use image::imageops::FilterType;
@@ -30,16 +32,12 @@ impl Into<ImageFormat> for TextureType {
     }
 }
 
-pub struct Texture {
-    pub id: TextureId,
-    pub image: Image,
-    pub ty: TextureType,
-    pub sampler: Sampler,
-}
+#[derive(Clone)]
+pub struct Texture(Arc<RwLock<TextureValue>>);
 
 impl Texture {
     pub fn default(ctx: &Context) -> Self {
-        Texture::with_color(
+        Self::with_color(
             ctx,
             Color::WHITE,
             TextureType::Diffuse,
@@ -88,12 +86,12 @@ impl Texture {
     pub fn with_image(ctx: &Context, image: Image, ty: TextureType, filter: SamplerFilter) -> Self {
         let sampler = Sampler::new(ctx.device.clone(), filter);
 
-        Texture {
+        Self(Arc::new(RwLock::new(TextureValue {
             id: Uuid::new_v4(),
             image,
             ty,
             sampler,
-        }
+        })))
     }
 
     pub async fn with_file(
@@ -123,7 +121,7 @@ impl Texture {
         cols: u32,
         texture_type: TextureType,
         filter: SamplerFilter,
-    ) -> Result<Texture> {
+    ) -> Result<Self> {
         let n = texture_files.len();
 
         let (mut width, mut height) = (0, 0);
@@ -161,7 +159,7 @@ impl Texture {
 
         let img = &DynamicImage::ImageRgba8(target);
 
-        Ok(Texture::new(
+        Ok(Self::new(
             ctx,
             "texture_pack",
             &img.to_rgba8().into_raw(),
@@ -177,7 +175,7 @@ impl Texture {
         extent: ImageExtent2D,
         ty: TextureType,
         filter: SamplerFilter,
-    ) -> Self {
+    ) -> Texture {
         Self::new(
             ctx,
             "framebuffer",
@@ -191,7 +189,12 @@ impl Texture {
         )
     }
 
-    pub fn with_color(ctx: &Context, color: Color, ty: TextureType, filter: SamplerFilter) -> Self {
+    pub fn with_color(
+        ctx: &Context,
+        color: Color,
+        ty: TextureType,
+        filter: SamplerFilter,
+    ) -> Texture {
         let data: [u8; 4] = color.into();
         Self::new(
             ctx,
@@ -210,7 +213,7 @@ impl Texture {
         color2: Color,
         ty: TextureType,
         filter: SamplerFilter,
-    ) -> Self {
+    ) -> Texture {
         let mut data: [u8; 4 * Self::CHECKER_SIZE * Self::CHECKER_SIZE] =
             [0; 4 * Self::CHECKER_SIZE * Self::CHECKER_SIZE];
 
@@ -238,4 +241,15 @@ impl Texture {
             filter,
         )
     }
+
+    pub fn read(&self) -> RwLockReadGuard<'_, TextureValue> {
+        self.0.read().expect("Cannot read texture")
+    }
+}
+
+pub struct TextureValue {
+    pub id: TextureId,
+    pub image: Image,
+    pub ty: TextureType,
+    pub sampler: Sampler,
 }

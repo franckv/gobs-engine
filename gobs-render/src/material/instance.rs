@@ -1,3 +1,4 @@
+use std::fmt::Debug;
 use std::sync::{Arc, RwLock};
 
 use uuid::Uuid;
@@ -16,7 +17,7 @@ pub struct MaterialInstance {
     pub id: MaterialInstanceId,
     pub material: Arc<Material>,
     pub material_ds: Option<DescriptorSet>,
-    _texture: Vec<RwLock<Texture>>,
+    _texture: Vec<Arc<RwLock<Texture>>>,
 }
 
 impl MaterialInstance {
@@ -31,7 +32,7 @@ impl MaterialInstance {
             material_ds,
             _texture: textures
                 .drain(..)
-                .map(|texture| RwLock::new(texture))
+                .map(|texture| Arc::new(RwLock::new(texture)))
                 .collect(),
         })
     }
@@ -46,5 +47,14 @@ impl MaterialInstance {
 
     pub fn vertex_flags(&self) -> VertexFlag {
         self.material.vertex_flags
+    }
+}
+
+impl Debug for MaterialInstance {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("MaterialInstance")
+            .field("id", &self.id)
+            .field("material", &self.material.id)
+            .finish()
     }
 }

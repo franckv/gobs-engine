@@ -5,12 +5,11 @@
 #include "light.glsl"
 #include "scene.glsl"
 
-layout(location = 0) in vec3 in_color;
-layout(location = 1) in vec2 in_uv;
-layout(location = 2) in vec3 in_normal;
-layout(location = 3) in vec3 in_tangent_position;
-layout(location = 4) in vec3 in_tangent_view_position;
-layout(location = 5) in vec3 in_tangent_light_dir;
+layout(location = 0) in vec2 in_uv;
+layout(location = 1) in vec3 in_normal;
+layout(location = 2) in vec3 in_tangent_position;
+layout(location = 3) in vec3 in_tangent_view_position;
+layout(location = 4) in vec3 in_tangent_light_dir;
 
 layout(location = 0) out vec4 out_color;
 
@@ -20,7 +19,7 @@ layout(set = 1, binding = 2) uniform texture2D normal_texture;
 layout(set = 1, binding = 3) uniform sampler normal_sampler;
 
 void main() {
-	vec4 object_color = texture(sampler2D(diffuse_texture, diffuse_sampler), in_uv) * vec4(in_color, 1.f);
+	vec4 object_color = texture(sampler2D(diffuse_texture, diffuse_sampler), in_uv);
 	vec4 object_normal = texture(sampler2D(normal_texture, normal_sampler), in_uv);
 
 	vec3 light = phong_reflection_normal(object_normal.xyz, in_tangent_position, in_tangent_light_dir, scene_data.light_color.xyz, in_tangent_view_position, scene_data.ambient_color.xyz);

@@ -22,6 +22,7 @@ pub struct SampleApp {
     camera_controller: CameraController,
     pub graph: FrameGraph,
     pub scene: Scene,
+    pub process_updates: bool,
 }
 
 impl SampleApp {
@@ -38,6 +39,7 @@ impl SampleApp {
             camera_controller,
             graph,
             scene,
+            process_updates: true,
         }
     }
 
@@ -85,7 +87,6 @@ impl SampleApp {
 
     pub fn texture_material(ctx: &Context) -> Arc<Material> {
         let vertex_flags = VertexFlag::POSITION
-            | VertexFlag::COLOR
             | VertexFlag::TEXTURE
             | VertexFlag::NORMAL
             | VertexFlag::TANGENT
@@ -99,7 +100,6 @@ impl SampleApp {
 
     pub fn normal_mapping_material(ctx: &Context) -> Arc<Material> {
         let vertex_flags = VertexFlag::POSITION
-            | VertexFlag::COLOR
             | VertexFlag::TEXTURE
             | VertexFlag::NORMAL
             | VertexFlag::TANGENT
@@ -167,6 +167,7 @@ impl SampleApp {
                 Key::A => self.graph.render_scaling = (self.graph.render_scaling - 0.1).max(0.1),
                 Key::L => log::info!("{:?}", ctx.allocator.allocator.lock().unwrap()),
                 Key::C => log::info!("{:?}", self.scene.camera),
+                Key::P => self.process_updates = !self.process_updates,
                 _ => self.camera_controller.key_pressed(key),
             },
             Input::KeyReleased(key) => self.camera_controller.key_released(key),
