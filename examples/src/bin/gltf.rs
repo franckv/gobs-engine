@@ -1,16 +1,14 @@
 use glam::{Quat, Vec3};
 
 use gobs::{
+    assets::gltf,
     core::{entity::light::Light, Color, Transform},
     game::{
         app::{Application, Run},
         input::Input,
     },
     render::{context::Context, graph::RenderError},
-    scene::{
-        graph::scenegraph::{Node, NodeValue},
-        import::gltf,
-    },
+    scene::graph::scenegraph::{Node, NodeValue},
     utils::load,
 };
 

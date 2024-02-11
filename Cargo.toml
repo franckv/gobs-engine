@@ -1,6 +1,7 @@
 [workspace]
 members = [
     "examples",
+    "gobs-assets",
     "gobs-core",
     "gobs-game",
     "gobs-render",
@@ -18,6 +19,10 @@ version = "0.1.0"
 [workspace.dependencies.gobs]
 package = "gobs"
 path = "./gobs"
+
+[workspace.dependencies.gobs-assets]
+package = "gobs-assets"
+path = "./gobs-assets"
 
 [workspace.dependencies.gobs-core]
 package = "gobs-core"

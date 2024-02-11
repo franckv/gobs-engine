@@ -1,3 +1,4 @@
+pub use gobs_assets as assets;
 pub use gobs_core as core;
 pub use gobs_game as game;
 pub use gobs_render as render;

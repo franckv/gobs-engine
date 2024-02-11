@@ -1,3 +1,4 @@
+use std::fmt::Debug;
 use std::fs::File;
 use std::io::Read;
 use std::path::Path;
@@ -24,9 +25,10 @@ pub struct Shader {
 impl Shader {
     pub fn from_file<P>(filename: P, device: Arc<Device>, ty: ShaderType) -> Self
     where
-        P: AsRef<Path>,
+        P: AsRef<Path> + Debug,
     {
-        let file = File::open(filename).unwrap();
+        let file =
+            File::open(&filename).unwrap_or_else(|_| panic!("File not found {:?}", filename));
 
         let data: Vec<u8> = file.bytes().filter_map(|b| b.ok()).collect();
 
