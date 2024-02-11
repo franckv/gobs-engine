@@ -23,6 +23,7 @@ pub struct SampleApp {
     pub graph: FrameGraph,
     pub scene: Scene,
     pub process_updates: bool,
+    pub draw_wire: bool,
 }
 
 impl SampleApp {
@@ -40,6 +41,7 @@ impl SampleApp {
             graph,
             scene,
             process_updates: true,
+            draw_wire: false,
         }
     }
 
@@ -126,7 +128,7 @@ impl SampleApp {
         self.camera_controller
             .update_camera(&mut self.scene.camera, delta);
 
-        self.scene.update(ctx);
+        self.scene.update(ctx, &self.graph);
     }
 
     pub fn render(
@@ -137,19 +139,23 @@ impl SampleApp {
 
         self.graph.begin(ctx)?;
 
-        self.graph
-            .render(ctx, &|pass_type, _, cmd| match pass_type {
-                PassType::Compute => {
-                    cmd.dispatch(
-                        self.graph.draw_extent.width / 16 + 1,
-                        self.graph.draw_extent.height / 16 + 1,
-                        1,
-                    );
+        self.graph.render(ctx, &|pass, cmd| match pass.ty() {
+            PassType::Compute => {
+                cmd.dispatch(
+                    self.graph.draw_extent.width / 16 + 1,
+                    self.graph.draw_extent.height / 16 + 1,
+                    1,
+                );
+            }
+            PassType::Forward => {
+                self.scene.draw(ctx, pass, cmd);
+            }
+            PassType::Wire => {
+                if self.draw_wire {
+                    self.scene.draw(ctx, pass, cmd);
                 }
-                PassType::Forward => {
-                    self.scene.draw(ctx, cmd);
-                }
-            })?;
+            }
+        })?;
 
         self.graph.end(ctx)?;
 
@@ -168,6 +174,7 @@ impl SampleApp {
                 Key::L => log::info!("{:?}", ctx.allocator.allocator.lock().unwrap()),
                 Key::C => log::info!("{:?}", self.scene.camera),
                 Key::P => self.process_updates = !self.process_updates,
+                Key::W => self.draw_wire = !self.draw_wire,
                 _ => self.camera_controller.key_pressed(key),
             },
             Input::KeyReleased(key) => self.camera_controller.key_released(key),

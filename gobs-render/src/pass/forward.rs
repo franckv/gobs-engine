@@ -1,24 +1,35 @@
-use gobs_vulkan::image::{Image, ImageExtent2D, ImageLayout};
+use std::sync::Arc;
 
-use crate::CommandBuffer;
+use gobs_vulkan::{
+    image::{Image, ImageExtent2D, ImageLayout},
+    pipeline::Pipeline,
+};
 
-use super::{PassType, RenderPass};
+use crate::{context::Context, geometry::VertexFlag, graph::RenderError, CommandBuffer};
+
+use super::{PassId, PassType, RenderPass};
 
 pub struct ForwardPass {
+    id: PassId,
     name: String,
     ty: PassType,
 }
 
 impl ForwardPass {
-    pub fn new(name: &str) -> Self {
-        Self {
+    pub fn new(name: &str) -> Arc<dyn RenderPass> {
+        Arc::new(Self {
+            id: PassId::new_v4(),
             name: name.to_string(),
             ty: PassType::Forward,
-        }
+        })
     }
 }
 
 impl RenderPass for ForwardPass {
+    fn id(&self) -> PassId {
+        self.id
+    }
+
     fn name(&self) -> &str {
         &self.name
     }
@@ -27,17 +38,22 @@ impl RenderPass for ForwardPass {
         self.ty
     }
 
-    fn render<F>(
-        &self,
-        _ctx: &crate::context::Context,
+    fn pipeline(&self) -> Option<Arc<Pipeline>> {
+        None
+    }
+
+    fn vertex_flags(&self) -> Option<VertexFlag> {
+        None
+    }
+
+    fn render(
+        self: Arc<Self>,
+        _ctx: &Context,
         cmd: &CommandBuffer,
         render_targets: &mut [&mut Image],
         draw_extent: ImageExtent2D,
-        draw_cmd: &F,
-    ) -> Result<(), crate::graph::RenderError>
-    where
-        F: Fn(PassType, &str, &crate::CommandBuffer),
-    {
+        draw_cmd: &dyn Fn(Arc<dyn RenderPass>, &CommandBuffer),
+    ) -> Result<(), RenderError> {
         log::debug!("Draw forward");
 
         cmd.begin_label("Draw forward");
@@ -56,7 +72,7 @@ impl RenderPass for ForwardPass {
 
         cmd.set_viewport(draw_extent.width, draw_extent.height);
 
-        draw_cmd(self.ty, &self.name, cmd);
+        draw_cmd(self, cmd);
 
         cmd.end_rendering();
 

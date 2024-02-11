@@ -33,7 +33,7 @@ impl ComputePipelineBuilder {
         self
     }
 
-    pub fn build(self) -> Pipeline {
+    pub fn build(self) -> Arc<Pipeline> {
         let device = self.device.unwrap();
 
         let pipeline_layout = self.pipeline_layout.unwrap();
@@ -56,12 +56,12 @@ impl ComputePipelineBuilder {
 
         let bind_point = vk::PipelineBindPoint::COMPUTE;
 
-        Pipeline {
+        Arc::new(Pipeline {
             id: Uuid::new_v4(),
             device: device,
             layout: pipeline_layout,
             pipeline,
             bind_point,
-        }
+        })
     }
 }

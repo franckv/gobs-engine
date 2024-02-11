@@ -63,7 +63,7 @@ impl Run for App {
 
 impl App {
     fn init(&mut self, ctx: &Context) {
-        self.load_scene2(ctx);
+        self.load_scene(ctx);
     }
 
     #[allow(unused)]
@@ -101,7 +101,38 @@ impl App {
     #[allow(unused)]
     fn load_scene2(&mut self, ctx: &Context) {
         let file_name = load::get_asset_dir("Cube.gltf", load::AssetType::MODEL).unwrap();
-        log::info!("Loading model: {:?}", file_name);
+
+        let models = gltf::load_gltf(ctx, file_name);
+
+        let i_max = 3;
+        let j_max = 3;
+        let x_range = (-5., 5.);
+        let y_range = (-3., 3.);
+        let scale = 0.7;
+
+        let model = models[0].clone();
+
+        for i in 0..=i_max {
+            for j in 0..=j_max {
+                let x = x_range.0 + (i as f32) * (x_range.1 - x_range.0) / (i_max as f32);
+                let y = y_range.0 + (j as f32) * (y_range.1 - y_range.0) / (j_max as f32);
+                let transform = Transform::new(
+                    [x, y, -7.].into(),
+                    Quat::IDENTITY,
+                    Vec3::new(scale, scale, scale),
+                );
+                let node = Node::new(NodeValue::Model(model.clone()), transform);
+                self.common
+                    .scene
+                    .graph
+                    .insert(self.common.scene.graph.root, node);
+            }
+        }
+    }
+
+    #[allow(unused)]
+    fn load_scene3(&mut self, ctx: &Context) {
+        let file_name = load::get_asset_dir("Cube.gltf", load::AssetType::MODEL).unwrap();
 
         let models = gltf::load_gltf(ctx, file_name);
 

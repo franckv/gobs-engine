@@ -200,9 +200,11 @@ impl Instance {
     }
 
     fn check_features(&self, p_device: &PhysicalDevice) -> bool {
+        let mut features11 = vk::PhysicalDeviceVulkan11Features::default();
         let mut features12 = vk::PhysicalDeviceVulkan12Features::default();
         let mut features13 = vk::PhysicalDeviceVulkan13Features::default();
         let mut features = vk::PhysicalDeviceFeatures2::builder()
+            .push_next(&mut features11)
             .push_next(&mut features12)
             .push_next(&mut features13);
 
@@ -211,14 +213,18 @@ impl Instance {
                 .get_physical_device_features2(p_device.raw(), &mut features);
         };
 
+        let features10 = features.build().features;
+
         log::debug!(
-            "Features: {:?},{:?},{:?}",
-            features.build(),
+            "Features: {:?},{:?},{:?},{:?}",
+            features10,
+            features11,
             features12,
             features13
         );
 
-        features12.buffer_device_address == 1
+        features10.fill_mode_non_solid == 1
+            && features12.buffer_device_address == 1
             && features12.descriptor_indexing == 1
             && features13.dynamic_rendering == 1
             && features13.synchronization2 == 1

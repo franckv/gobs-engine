@@ -1,4 +1,4 @@
-use std::sync::RwLock;
+use std::sync::{Arc, RwLock};
 
 use gobs_vulkan::{
     command::{CommandBuffer, CommandPool},
@@ -9,7 +9,7 @@ use gobs_vulkan::{
 
 use crate::{
     context::Context,
-    pass::{compute::ComputePass, forward::ForwardPass, PassType, RenderPass},
+    pass::{compute::ComputePass, forward::ForwardPass, wire::WirePass, RenderPass},
 };
 
 #[derive(Debug)]
@@ -56,8 +56,9 @@ pub struct FrameGraph {
     pub depth_image: RwLock<Image>,
     pub draw_extent: ImageExtent2D,
     pub render_scaling: f32,
-    compute_pass: ComputePass,
-    forward_pass: ForwardPass,
+    pub compute_pass: Arc<dyn RenderPass>,
+    pub forward_pass: Arc<dyn RenderPass>,
+    pub wire_pass: Arc<dyn RenderPass>,
 }
 
 impl FrameGraph {
@@ -91,6 +92,7 @@ impl FrameGraph {
 
         let compute_pass = ComputePass::new(ctx, "bg", &draw_image);
         let forward_pass = ForwardPass::new("scene");
+        let wire_pass = WirePass::new(ctx, "wire");
 
         Self {
             frame_number: 0,
@@ -104,6 +106,7 @@ impl FrameGraph {
             render_scaling: 1.,
             compute_pass,
             forward_pass,
+            wire_pass,
         }
     }
 
@@ -221,17 +224,18 @@ impl FrameGraph {
         Ok(())
     }
 
-    pub fn render<F>(&self, ctx: &Context, draw_cmd: &F) -> Result<(), RenderError>
-    where
-        F: Fn(PassType, &str, &CommandBuffer),
-    {
+    pub fn render(
+        &self,
+        ctx: &Context,
+        draw_cmd: &dyn Fn(Arc<dyn RenderPass>, &CommandBuffer),
+    ) -> Result<(), RenderError> {
         log::debug!("Begin rendering");
 
         let frame_id = self.frame_id(ctx);
         let cmd = &self.frames[frame_id].command_buffer;
 
         if let Ok(mut draw_image) = self.draw_image.write() {
-            self.compute_pass.render(
+            self.compute_pass.clone().render(
                 ctx,
                 cmd,
                 &mut [&mut draw_image],
@@ -244,7 +248,7 @@ impl FrameGraph {
 
         if let Ok(mut draw_image) = self.draw_image.write() {
             if let Ok(mut depth_image) = self.depth_image.write() {
-                self.forward_pass.render(
+                self.forward_pass.clone().render(
                     ctx,
                     cmd,
                     &mut [&mut draw_image, &mut depth_image],
@@ -254,6 +258,18 @@ impl FrameGraph {
             } else {
                 return Err(RenderError::Error);
             }
+        } else {
+            return Err(RenderError::Error);
+        }
+
+        if let Ok(mut draw_image) = self.draw_image.write() {
+            self.wire_pass.clone().render(
+                ctx,
+                cmd,
+                &mut [&mut draw_image],
+                self.draw_extent,
+                draw_cmd,
+            )?;
         } else {
             return Err(RenderError::Error);
         }

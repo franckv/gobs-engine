@@ -1,27 +1,38 @@
-use gobs_vulkan::image::{Image, ImageExtent2D};
+use std::sync::Arc;
 
-use crate::{context::Context, graph::RenderError, CommandBuffer};
+use gobs_vulkan::{
+    image::{Image, ImageExtent2D},
+    pipeline::Pipeline,
+};
+use uuid::Uuid;
+
+use crate::{context::Context, geometry::VertexFlag, graph::RenderError, CommandBuffer};
 
 pub mod compute;
 pub mod forward;
+pub mod wire;
 
 #[derive(Clone, Copy, Debug)]
 pub enum PassType {
     Compute,
     Forward,
+    Wire,
 }
 
+pub type PassId = Uuid;
+
 pub trait RenderPass {
+    fn id(&self) -> PassId;
     fn name(&self) -> &str;
     fn ty(&self) -> PassType;
-    fn render<F>(
-        &self,
+    fn pipeline(&self) -> Option<Arc<Pipeline>>;
+    fn vertex_flags(&self) -> Option<VertexFlag>;
+    fn render(
+        self: Arc<Self>,
         ctx: &Context,
         cmd: &CommandBuffer,
         render_targets: &mut [&mut Image],
         draw_extent: ImageExtent2D,
-        draw_cmd: &F,
-    ) -> Result<(), RenderError>
-    where
-        F: Fn(PassType, &str, &CommandBuffer);
+        draw_cmd: &dyn Fn(Arc<dyn RenderPass>, &CommandBuffer),
+    ) -> Result<(), RenderError>;
 }

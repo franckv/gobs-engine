@@ -5,7 +5,6 @@ use std::{
 
 use uuid::Uuid;
 
-use gobs_core::entity::uniform::{UniformLayout, UniformProp};
 use gobs_utils::load;
 use gobs_vulkan::{
     descriptor::{
@@ -32,7 +31,6 @@ pub struct Material {
     pub vertex_flags: VertexFlag,
     pub pipeline: Arc<Pipeline>,
     pub material_ds_pool: Option<RwLock<DescriptorSetPool>>,
-    pub model_data_layout: Arc<UniformLayout>,
 }
 
 impl Material {
@@ -113,11 +111,7 @@ impl MaterialBuilder {
     }
 
     pub fn build(self, ctx: &Context) -> Arc<Material> {
-        let model_data_layout = UniformLayout::builder()
-            .prop("world_matrix", UniformProp::Mat4F)
-            .prop("normal_matrix", UniformProp::Mat3F)
-            .prop("vertex_buffer_address", UniformProp::U64)
-            .build();
+        let model_data_layout = ctx.push_layout.clone();
 
         let scene_descriptor_layout = DescriptorSetLayout::builder()
             .binding(DescriptorType::Uniform, DescriptorStage::All)
@@ -164,7 +158,6 @@ impl MaterialBuilder {
             vertex_flags: self.vertex_flags,
             pipeline,
             material_ds_pool,
-            model_data_layout,
         })
     }
 }

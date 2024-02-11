@@ -3,6 +3,7 @@ use std::{collections::HashMap, sync::Arc};
 use gobs_render::{
     context::Context,
     geometry::{Model, ModelId},
+    pass::{PassId, RenderPass},
 };
 
 use crate::resources::ModelResource;
@@ -19,14 +20,23 @@ impl<I, R> ResourceManager<I, R> {
     }
 }
 
-impl ResourceManager<ModelId, Arc<ModelResource>> {
-    pub fn add(&mut self, ctx: &Context, id: ModelId, model: Arc<Model>) {
+impl ResourceManager<(ModelId, PassId), Arc<ModelResource>> {
+    pub fn add(
+        &mut self,
+        ctx: &Context,
+        id: ModelId,
+        pass: Arc<dyn RenderPass>,
+        model: Arc<Model>,
+    ) {
+        let key = (id, pass.id());
         self.resources
-            .entry(id)
-            .or_insert_with(|| ModelResource::new(ctx, model));
+            .entry(key)
+            .or_insert_with(|| ModelResource::new(ctx, model, pass));
     }
 
-    pub fn get(&self, id: ModelId) -> Arc<ModelResource> {
-        self.resources.get(&id).expect("Missing model").clone()
+    pub fn get(&self, id: ModelId, pass_id: PassId) -> Arc<ModelResource> {
+        let key = (id, pass_id);
+
+        self.resources.get(&key).expect("Missing model").clone()
     }
 }

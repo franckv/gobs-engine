@@ -9,22 +9,21 @@ use gobs_vulkan::{
     pipeline::{Pipeline, PipelineLayout, Shader, ShaderType},
 };
 
-use crate::{context::Context, graph::RenderError, CommandBuffer};
+use crate::{context::Context, geometry::VertexFlag, graph::RenderError, CommandBuffer};
 
-use super::{PassType, RenderPass};
+use super::{PassId, PassType, RenderPass};
 
 pub struct ComputePass {
+    id: PassId,
     name: String,
     ty: PassType,
     _draw_ds_pool: DescriptorSetPool,
-    _draw_ds_layout: Arc<DescriptorSetLayout>,
     pub draw_ds: DescriptorSet,
-    pub bg_pipeline: Pipeline,
-    _bg_pipeline_layout: Arc<PipelineLayout>,
+    pub pipeline: Arc<Pipeline>,
 }
 
 impl ComputePass {
-    pub fn new(ctx: &Context, name: &str, render_target: &Image) -> Self {
+    pub fn new(ctx: &Context, name: &str, render_target: &Image) -> Arc<dyn RenderPass> {
         let _draw_ds_layout = DescriptorSetLayout::builder()
             .binding(DescriptorType::StorageImage, DescriptorStage::Compute)
             .build(ctx.device.clone());
@@ -41,26 +40,29 @@ impl ComputePass {
         let compute_shader =
             Shader::from_file(compute_file, ctx.device.clone(), ShaderType::Compute);
 
-        let _bg_pipeline_layout =
+        let pipeline_layout =
             PipelineLayout::new(ctx.device.clone(), &[_draw_ds_layout.clone()], 0);
-        let bg_pipeline = Pipeline::compute_builder(ctx.device.clone())
-            .layout(_bg_pipeline_layout.clone())
+        let pipeline = Pipeline::compute_builder(ctx.device.clone())
+            .layout(pipeline_layout.clone())
             .compute_shader("main", compute_shader)
             .build();
 
-        Self {
+        Arc::new(Self {
+            id: PassId::new_v4(),
             name: name.to_string(),
             ty: PassType::Compute,
             _draw_ds_pool,
-            _draw_ds_layout,
             draw_ds,
-            bg_pipeline,
-            _bg_pipeline_layout,
-        }
+            pipeline,
+        })
     }
 }
 
 impl RenderPass for ComputePass {
+    fn id(&self) -> PassId {
+        self.id
+    }
+
     fn name(&self) -> &str {
         &self.name
     }
@@ -69,26 +71,31 @@ impl RenderPass for ComputePass {
         self.ty
     }
 
-    fn render<F>(
-        &self,
+    fn pipeline(&self) -> Option<Arc<Pipeline>> {
+        Some(self.pipeline.clone())
+    }
+
+    fn vertex_flags(&self) -> Option<VertexFlag> {
+        None
+    }
+
+    fn render(
+        self: Arc<Self>,
         _ctx: &Context,
         cmd: &CommandBuffer,
         render_targets: &mut [&mut Image],
         _draw_extent: ImageExtent2D,
-        draw_cmd: &F,
-    ) -> Result<(), RenderError>
-    where
-        F: Fn(PassType, &str, &CommandBuffer),
-    {
+        draw_cmd: &dyn Fn(Arc<dyn RenderPass>, &CommandBuffer),
+    ) -> Result<(), RenderError> {
         log::debug!("Draw compute");
         cmd.begin_label("Draw compute");
 
         cmd.transition_image_layout(&mut render_targets[0], ImageLayout::General);
 
-        cmd.bind_pipeline(&self.bg_pipeline);
-        cmd.bind_descriptor_set(&self.draw_ds, 0, &self.bg_pipeline);
+        cmd.bind_pipeline(&self.pipeline);
+        cmd.bind_descriptor_set(&self.draw_ds, 0, &self.pipeline);
 
-        draw_cmd(self.ty, &self.name, cmd);
+        draw_cmd(self, cmd);
 
         cmd.end_label();
 

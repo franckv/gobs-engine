@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use gobs_render::{context::Context, geometry::Model};
+use gobs_render::{context::Context, geometry::Model, pass::RenderPass};
 use gobs_vulkan::buffer::{Buffer, BufferUsage};
 
 #[derive(Clone, Copy, Debug)]
@@ -35,23 +35,29 @@ pub struct ModelResource {
 }
 
 impl ModelResource {
-    pub fn new(ctx: &Context, model: Arc<Model>) -> Arc<Self> {
+    pub fn new(ctx: &Context, model: Arc<Model>, pass: Arc<dyn RenderPass>) -> Arc<Self> {
         log::debug!("New model");
 
         let mut indices = Vec::new();
         let mut vertices = Vec::new();
         let mut primitives = Vec::new();
 
+        let mut start_idx = 0;
+
         for (mesh, material_idx) in &model.meshes {
-            let start_idx = vertices.len() as u32;
             let offset = indices.len();
 
-            for vertex in &mesh.vertices {
-                vertices.push(vertex);
+            let vertex_flags = match pass.vertex_flags() {
+                Some(vertex_flags) => vertex_flags,
+                None => model.materials[*material_idx].vertex_flags(),
+            };
+            for vertice in &mesh.vertices {
+                vertices.append(&mut vertice.raw(vertex_flags));
             }
             for index in &mesh.indices {
                 indices.push(start_idx + index);
             }
+            start_idx += mesh.vertices.len() as u32;
             primitives.push(Primitive::new(
                 PrimitiveType::Triangle,
                 offset,
@@ -60,11 +66,7 @@ impl ModelResource {
             ));
         }
 
-        let vertices_data = vertices
-            .iter()
-            .flat_map(|v| v.raw(model.materials[0].vertex_flags()))
-            .collect::<Vec<u8>>();
-        let vertices_size = vertices_data.len();
+        let vertices_size = vertices.len();
         let indices_size = indices.len() * std::mem::size_of::<u32>();
 
         let mut staging = Buffer::new(
@@ -90,7 +92,7 @@ impl ModelResource {
             ctx.allocator.clone(),
         );
 
-        staging.copy(&vertices_data, 0);
+        staging.copy(&vertices, 0);
         staging.copy(&indices, vertices_size);
 
         ctx.immediate_cmd.immediate(|cmd| {

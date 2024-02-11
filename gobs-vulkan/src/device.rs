@@ -2,7 +2,9 @@ use std::fmt::Debug;
 use std::sync::Arc;
 
 use ash::extensions::khr::Swapchain;
-use ash::vk::{self, PhysicalDeviceVulkan12Features, PhysicalDeviceVulkan13Features};
+use ash::vk::{
+    self, PhysicalDeviceFeatures, PhysicalDeviceVulkan12Features, PhysicalDeviceVulkan13Features,
+};
 
 use crate::instance::Instance;
 use crate::physical::PhysicalDevice;
@@ -30,6 +32,7 @@ impl Device {
 
         let extensions = [Swapchain::name().as_ptr()];
 
+        let features10 = PhysicalDeviceFeatures::builder().fill_mode_non_solid(true);
         let mut features12 = PhysicalDeviceVulkan12Features::builder()
             .buffer_device_address(true)
             .descriptor_indexing(true);
@@ -40,6 +43,7 @@ impl Device {
         let device_info = vk::DeviceCreateInfo::builder()
             .queue_create_infos(std::slice::from_ref(&queue_info))
             .enabled_extension_names(&extensions)
+            .enabled_features(&features10)
             .push_next(&mut features12)
             .push_next(&mut features13);
 

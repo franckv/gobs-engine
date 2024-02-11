@@ -3,7 +3,6 @@ use std::sync::{Arc, RwLock};
 
 use uuid::Uuid;
 
-use gobs_core::entity::uniform::UniformLayout;
 use gobs_vulkan::{descriptor::DescriptorSet, pipeline::Pipeline};
 
 use crate::{
@@ -37,12 +36,8 @@ impl MaterialInstance {
         })
     }
 
-    pub fn pipeline(&self) -> &Pipeline {
-        &self.material.pipeline
-    }
-
-    pub fn model_data_layout(&self) -> &UniformLayout {
-        &self.material.model_data_layout
+    pub fn pipeline(&self) -> Arc<Pipeline> {
+        self.material.pipeline.clone()
     }
 
     pub fn vertex_flags(&self) -> VertexFlag {
