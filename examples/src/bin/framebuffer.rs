@@ -82,8 +82,7 @@ impl App {
         let material_instance = material.instantiate(vec![texture]);
 
         let rect = Model::builder("rect")
-            .mesh(Shapes::quad(), 0)
-            .material(material_instance)
+            .mesh(Shapes::quad(), material_instance)
             .build();
 
         let transform = Transform::new(

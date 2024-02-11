@@ -59,8 +59,10 @@ impl App {
         let material_instance = material.instantiate(vec![]);
 
         let triangle = Model::builder("triangle")
-            .mesh(Shapes::triangle(Color::RED, Color::GREEN, Color::BLUE), 0)
-            .material(material_instance)
+            .mesh(
+                Shapes::triangle(Color::RED, Color::GREEN, Color::BLUE),
+                material_instance,
+            )
             .build();
 
         let transform =

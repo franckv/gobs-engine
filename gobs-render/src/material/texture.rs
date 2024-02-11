@@ -1,4 +1,4 @@
-use std::sync::{Arc, RwLock, RwLockReadGuard};
+use std::sync::{Arc, RwLock, RwLockReadGuard, RwLockWriteGuard};
 
 use anyhow::Result;
 use futures::future::try_join_all;
@@ -244,6 +244,10 @@ impl Texture {
 
     pub fn read(&self) -> RwLockReadGuard<'_, TextureValue> {
         self.0.read().expect("Cannot read texture")
+    }
+
+    pub fn write(&self) -> RwLockWriteGuard<'_, TextureValue> {
+        self.0.write().expect("Cannot read texture")
     }
 }
 

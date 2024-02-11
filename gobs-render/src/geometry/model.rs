@@ -1,18 +1,19 @@
+use std::collections::hash_map::Entry;
+use std::collections::HashMap;
 use std::sync::Arc;
 
 use uuid::Uuid;
 
 use crate::geometry::Mesh;
-use crate::material::MaterialInstance;
+use crate::material::{MaterialInstance, MaterialInstanceId};
 
 pub type ModelId = Uuid;
-pub type MaterialIndex = usize;
 
 pub struct Model {
     pub name: String,
     pub id: Uuid,
-    pub meshes: Vec<(Arc<Mesh>, MaterialIndex)>,
-    pub materials: Vec<Arc<MaterialInstance>>,
+    pub meshes: Vec<(Arc<Mesh>, MaterialInstanceId)>,
+    pub materials: HashMap<MaterialInstanceId, Arc<MaterialInstance>>,
 }
 
 impl Model {
@@ -23,8 +24,8 @@ impl Model {
 
 pub struct ModelBuilder {
     pub name: String,
-    pub meshes: Vec<(Arc<Mesh>, MaterialIndex)>,
-    pub materials: Vec<Arc<MaterialInstance>>,
+    pub meshes: Vec<(Arc<Mesh>, MaterialInstanceId)>,
+    pub materials: HashMap<MaterialInstanceId, Arc<MaterialInstance>>,
 }
 
 impl ModelBuilder {
@@ -32,26 +33,16 @@ impl ModelBuilder {
         ModelBuilder {
             name: name.to_string(),
             meshes: Vec::new(),
-            materials: Vec::new(),
+            materials: HashMap::new(),
         }
     }
 
-    pub fn mesh(mut self, mesh: Arc<Mesh>, material_idx: MaterialIndex) -> Self {
-        self.meshes.push((mesh, material_idx));
+    pub fn mesh(mut self, mesh: Arc<Mesh>, material_instance: Arc<MaterialInstance>) -> Self {
+        self.meshes.push((mesh, material_instance.id));
 
-        self
-    }
-
-    pub fn material(mut self, material: Arc<MaterialInstance>) -> Self {
-        self.materials.push(material);
-
-        self
-    }
-
-    pub fn materials(mut self, materials: &mut Vec<Arc<MaterialInstance>>) -> Self {
-        log::debug!("Create model materials ({:?})", materials);
-
-        self.materials.append(materials);
+        if let Entry::Vacant(entry) = self.materials.entry(material_instance.id) {
+            entry.insert(material_instance);
+        }
 
         self
     }

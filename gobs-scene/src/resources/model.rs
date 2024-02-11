@@ -1,6 +1,8 @@
 use std::sync::Arc;
 
-use gobs_render::{context::Context, geometry::Model, pass::RenderPass};
+use gobs_render::{
+    context::Context, geometry::Model, material::MaterialInstanceId, pass::RenderPass,
+};
 use gobs_vulkan::buffer::{Buffer, BufferUsage};
 
 #[derive(Clone, Copy, Debug)]
@@ -13,11 +15,11 @@ pub struct Primitive {
     pub ty: PrimitiveType,
     pub offset: usize,
     pub len: usize,
-    pub material: usize,
+    pub material: MaterialInstanceId,
 }
 
 impl Primitive {
-    pub fn new(ty: PrimitiveType, offset: usize, len: usize, material: usize) -> Self {
+    pub fn new(ty: PrimitiveType, offset: usize, len: usize, material: MaterialInstanceId) -> Self {
         Primitive {
             ty,
             offset,
@@ -44,12 +46,12 @@ impl ModelResource {
 
         let mut start_idx = 0;
 
-        for (mesh, material_idx) in &model.meshes {
+        for (mesh, material_id) in &model.meshes {
             let offset = indices.len();
 
             let vertex_flags = match pass.vertex_flags() {
                 Some(vertex_flags) => vertex_flags,
-                None => model.materials[*material_idx].vertex_flags(),
+                None => model.materials[material_id].vertex_flags(),
             };
             for vertice in &mesh.vertices {
                 vertices.append(&mut vertice.raw(vertex_flags));
@@ -62,7 +64,7 @@ impl ModelResource {
                 PrimitiveType::Triangle,
                 offset,
                 indices.len() - offset,
-                *material_idx,
+                *material_id,
             ));
         }
 

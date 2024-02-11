@@ -173,7 +173,7 @@ impl Scene {
                             pipeline
                         }
                         None => {
-                            let material = &model.model.materials[primitive.material];
+                            let material = &model.model.materials[&primitive.material];
                             let pipeline = material.pipeline();
 
                             if last_material != material.id {

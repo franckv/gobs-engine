@@ -121,9 +121,8 @@ impl App {
                     examples::ATLAS_ROWS,
                     &[3, 3, 3, 3, 4, 1],
                 ),
-                0,
+                material_instance,
             )
-            .material(material_instance)
             .build();
 
         let transform = Transform::new([0., 0., -2.].into(), Quat::IDENTITY, Vec3::splat(1.));

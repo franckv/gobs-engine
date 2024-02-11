@@ -1,5 +1,5 @@
 use std::fmt::Debug;
-use std::sync::{Arc, RwLock};
+use std::sync::Arc;
 
 use uuid::Uuid;
 
@@ -16,23 +16,20 @@ pub struct MaterialInstance {
     pub id: MaterialInstanceId,
     pub material: Arc<Material>,
     pub material_ds: Option<DescriptorSet>,
-    _texture: Vec<Arc<RwLock<Texture>>>,
+    pub textures: Vec<Texture>,
 }
 
 impl MaterialInstance {
     pub(crate) fn new(
         material: Arc<Material>,
         material_ds: Option<DescriptorSet>,
-        mut textures: Vec<Texture>,
+        textures: Vec<Texture>,
     ) -> Arc<Self> {
         Arc::new(Self {
             id: Uuid::new_v4(),
             material,
             material_ds,
-            _texture: textures
-                .drain(..)
-                .map(|texture| Arc::new(RwLock::new(texture)))
-                .collect(),
+            textures,
         })
     }
 

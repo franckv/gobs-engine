@@ -38,7 +38,7 @@ impl Material {
         MaterialBuilder::new(vertex_shader, fragment_shader)
     }
 
-    pub fn instantiate(self: Arc<Self>, textures: Vec<Texture>) -> Arc<MaterialInstance> {
+    pub fn instantiate(self: &Arc<Self>, textures: Vec<Texture>) -> Arc<MaterialInstance> {
         let material_ds = match &self.material_ds_pool {
             Some(ds_pool) => {
                 let material_ds = ds_pool.write().unwrap().allocate();

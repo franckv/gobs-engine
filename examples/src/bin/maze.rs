@@ -115,9 +115,8 @@ impl App {
         let wall = Model::builder("wall")
             .mesh(
                 Shapes::cube(examples::ATLAS_COLS, examples::ATLAS_ROWS, &[2]),
-                0,
+                material_instance.clone(),
             )
-            .material(material_instance.clone())
             .build();
 
         let floor = Model::builder("floor")
@@ -127,9 +126,8 @@ impl App {
                     examples::ATLAS_ROWS,
                     &[3, 3, 3, 3, 4, 1],
                 ),
-                0,
+                material_instance.clone(),
             )
-            .material(material_instance.clone())
             .build();
 
         let offset = 16.;

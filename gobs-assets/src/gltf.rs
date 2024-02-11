@@ -1,8 +1,4 @@
-use std::{
-    collections::{hash_map::Entry, HashMap},
-    path::Path,
-    sync::Arc,
-};
+use std::{path::Path, sync::Arc};
 
 use gltf::mesh::util::{ReadColors, ReadIndices};
 
@@ -10,7 +6,7 @@ use gobs_core::Color;
 use gobs_render::{
     context::Context,
     geometry::{Mesh, Model, VertexData, VertexFlag},
-    material::{Material, MaterialInstanceId, MaterialProperty, Texture, TextureType},
+    material::{Material, MaterialProperty, Texture, TextureType},
     ImageExtent2D, SamplerFilter,
 };
 
@@ -102,7 +98,7 @@ where
                         tex_info.texture().name().unwrap_or_default()
                     );
                     let texture = textures[tex_info.texture().index()].clone();
-                    let material_instance = texture_material.clone().instantiate(vec![texture]);
+                    let material_instance = texture_material.instantiate(vec![texture]);
                     materials.push(material_instance.clone());
                 }
                 None => {
@@ -126,22 +122,11 @@ where
         );
 
         let mut model = Model::builder(name);
-        let mut used_materials = Vec::new();
-        let mut material_map: HashMap<MaterialInstanceId, usize> = HashMap::new();
 
         for p in m.primitives() {
             let material = match p.material().index() {
                 Some(mat_idx) => materials[mat_idx].clone(),
                 None => default_material_instance.clone(),
-            };
-
-            let material_idx = match material_map.entry(material.id) {
-                Entry::Occupied(entry) => *entry.get(),
-                Entry::Vacant(entry) => {
-                    let idx = used_materials.len();
-                    used_materials.push(material.clone());
-                    *entry.insert(idx)
-                }
             };
 
             let mut mesh_data = Mesh::builder(name);
@@ -212,10 +197,8 @@ where
                 }
             }
 
-            model = model.mesh(mesh_data.build(), material_idx);
+            model = model.mesh(mesh_data.build(), material);
         }
-
-        model = model.materials(&mut used_materials);
 
         models.push(model.build());
     }
