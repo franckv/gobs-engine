@@ -53,7 +53,7 @@ impl Texture {
         ty: TextureType,
         filter: SamplerFilter,
     ) -> Self {
-        let mut image = Image::new(
+        let image = Image::new(
             name,
             ctx.device.clone(),
             ty.into(),
@@ -62,36 +62,19 @@ impl Texture {
             ctx.allocator.clone(),
         );
 
-        let mut staging = Buffer::new(
-            "image staging",
-            data.len(),
-            BufferUsage::Staging,
-            ctx.device.clone(),
-            ctx.allocator.clone(),
-        );
-
-        staging.copy(data, 0);
-
-        ctx.immediate_cmd.immediate_mut(|cmd| {
-            cmd.begin_label("Upload image");
-            cmd.transition_image_layout(&mut image, ImageLayout::TransferDst);
-            cmd.copy_buffer_to_image(&staging, &image, extent.width, extent.height);
-            cmd.transition_image_layout(&mut image, ImageLayout::Shader);
-            cmd.end_label();
-        });
-
-        Self::with_image(ctx, image, ty, filter)
-    }
-
-    pub fn with_image(ctx: &Context, image: Image, ty: TextureType, filter: SamplerFilter) -> Self {
         let sampler = Sampler::new(ctx.device.clone(), filter);
 
-        Self(Arc::new(RwLock::new(TextureValue {
+        let mut texture_value = TextureValue {
             id: Uuid::new_v4(),
             image,
+            data: data.to_vec(),
             ty,
             sampler,
-        })))
+        };
+
+        texture_value.upload_data(ctx);
+
+        Self(Arc::new(RwLock::new(texture_value)))
     }
 
     pub async fn with_file(
@@ -249,11 +232,69 @@ impl Texture {
     pub fn write(&self) -> RwLockWriteGuard<'_, TextureValue> {
         self.0.write().expect("Cannot read texture")
     }
+
+    pub fn patch(
+        &self,
+        ctx: &Context,
+        start_x: u32,
+        start_y: u32,
+        width: u32,
+        height: u32,
+        data: &[u8],
+    ) {
+        let extent = self.0.read().unwrap().image.extent;
+
+        {
+            let new_data = &mut self.0.write().unwrap().data;
+
+            for x in 0..width {
+                for y in 0..height {
+                    let local_idx = (x + y * width) as usize;
+                    let global_idx = ((start_x + x) + (start_y + y) * extent.width) as usize;
+
+                    new_data[4 * global_idx] = data[4 * local_idx];
+                    new_data[4 * global_idx + 1] = data[4 * local_idx + 1];
+                    new_data[4 * global_idx + 2] = data[4 * local_idx + 2];
+                    new_data[4 * global_idx + 3] = data[4 * local_idx + 3];
+                }
+            }
+        }
+
+        self.0.write().unwrap().upload_data(ctx);
+    }
 }
 
 pub struct TextureValue {
     pub id: TextureId,
     pub image: Image,
+    pub data: Vec<u8>,
     pub ty: TextureType,
     pub sampler: Sampler,
+}
+
+impl TextureValue {
+    fn upload_data(&mut self, ctx: &Context) {
+        let mut staging = Buffer::new(
+            "image staging",
+            self.data.len(),
+            BufferUsage::Staging,
+            ctx.device.clone(),
+            ctx.allocator.clone(),
+        );
+
+        staging.copy(&self.data, 0);
+
+        ctx.immediate_cmd.immediate_mut(|cmd| {
+            cmd.begin_label("Upload image");
+            cmd.transition_image_layout(&mut self.image, ImageLayout::TransferDst);
+            cmd.copy_buffer_to_image(
+                &staging,
+                &self.image,
+                self.image.extent.width,
+                self.image.extent.height,
+            );
+            cmd.transition_image_layout(&mut self.image, ImageLayout::Shader);
+            cmd.end_label();
+        });
+    }
 }

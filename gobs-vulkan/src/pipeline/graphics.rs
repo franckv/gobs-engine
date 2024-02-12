@@ -337,11 +337,11 @@ impl ColorBlendAttachmentState {
     fn info(&self) -> vk::PipelineColorBlendAttachmentStateBuilder {
         vk::PipelineColorBlendAttachmentState::builder()
             .blend_enable(self.blend_enable)
-            .src_color_blend_factor(vk::BlendFactor::ONE_MINUS_DST_ALPHA)
-            .dst_color_blend_factor(vk::BlendFactor::DST_ALPHA)
+            .src_color_blend_factor(vk::BlendFactor::ONE)
+            .dst_color_blend_factor(vk::BlendFactor::ONE_MINUS_SRC_ALPHA)
             .color_blend_op(vk::BlendOp::ADD)
-            .src_alpha_blend_factor(vk::BlendFactor::ONE)
-            .dst_alpha_blend_factor(vk::BlendFactor::ZERO)
+            .src_alpha_blend_factor(vk::BlendFactor::ONE_MINUS_DST_ALPHA)
+            .dst_alpha_blend_factor(vk::BlendFactor::ONE)
             .alpha_blend_op(vk::BlendOp::ADD)
             .color_write_mask(vk::ColorComponentFlags::RGBA)
     }

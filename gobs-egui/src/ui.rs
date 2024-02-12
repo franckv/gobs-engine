@@ -304,6 +304,7 @@ impl UIRenderer {
             if img.pos.is_some() {
                 log::info!("Patching texture");
                 self.patch_texture(
+                    ctx,
                     self.font_texture
                         .get(id)
                         .cloned()
@@ -348,7 +349,12 @@ impl UIRenderer {
         }
     }
 
-    async fn patch_texture(&self, material: Arc<MaterialInstance>, img: &ImageDelta) {
+    async fn patch_texture(
+        &self,
+        ctx: &Context,
+        material: Arc<MaterialInstance>,
+        img: &ImageDelta,
+    ) {
         match &img.image {
             egui::ImageData::Color(_) => todo!(),
             egui::ImageData::Font(font) => {
@@ -370,15 +376,14 @@ impl UIRenderer {
                     material.textures[0].read().image.extent
                 );
 
-                todo!();
-
-                /*material.textures[0].write().patch_texture(
+                material.textures[0].patch(
+                    ctx,
                     pos[0] as u32,
                     pos[1] as u32,
                     font.width() as u32,
                     font.height() as u32,
                     bytes,
-                );*/
+                );
             }
         }
     }
