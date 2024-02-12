@@ -1,5 +1,6 @@
 use std::sync::Arc;
 
+use gobs_core::entity::uniform::UniformLayout;
 use gobs_utils::load;
 use gobs_vulkan::{
     descriptor::{
@@ -76,6 +77,10 @@ impl RenderPass for ComputePass {
     }
 
     fn vertex_flags(&self) -> Option<VertexFlag> {
+        None
+    }
+
+    fn push_layout(&self) -> Option<Arc<UniformLayout>> {
         None
     }
 

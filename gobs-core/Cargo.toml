@@ -9,6 +9,7 @@ bitflags = { workspace = true }
 bytemuck = { workspace = true }
 image = { workspace = true }
 glam = { workspace = true }
+log = { workspace = true }
 uuid = { workspace = true }
 
 [dev-dependencies]

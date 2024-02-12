@@ -190,16 +190,20 @@ impl Scene {
                         }
                     };
 
-                    // TODO: hardcoded
-                    let model_data = UniformData::new(
-                        &ctx.push_layout,
-                        &[
-                            UniformPropData::Mat4F(world_matrix.to_cols_array_2d()),
-                            UniformPropData::Mat3F(normal_matrix.to_cols_array_2d()),
-                            UniformPropData::U64(model.vertex_buffer.address(ctx.device.clone())),
-                        ],
-                    );
-                    cmd.push_constants(pipeline.layout.clone(), &model_data.raw());
+                    if let Some(push_layout) = pass.push_layout() {
+                        // TODO: hardcoded
+                        let model_data = UniformData::new(
+                            &push_layout,
+                            &[
+                                UniformPropData::Mat4F(world_matrix.to_cols_array_2d()),
+                                UniformPropData::Mat3F(normal_matrix.to_cols_array_2d()),
+                                UniformPropData::U64(
+                                    model.vertex_buffer.address(ctx.device.clone()),
+                                ),
+                            ],
+                        );
+                        cmd.push_constants(pipeline.layout.clone(), &model_data.raw());
+                    }
 
                     cmd.bind_index_buffer::<u32>(&model.index_buffer, primitive.offset);
                     cmd.draw_indexed(primitive.len, 1);

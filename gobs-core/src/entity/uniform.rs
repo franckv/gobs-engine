@@ -40,6 +40,7 @@ impl UniformProp {
     }
 }
 
+#[derive(Debug)]
 pub struct UniformLayout {
     layout: Vec<UniformProp>,
 }
@@ -95,7 +96,7 @@ impl UniformLayoutBuilder {
     }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub enum UniformPropData {
     F32(f32),
     U32(u32),

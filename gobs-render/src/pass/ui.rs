@@ -1,5 +1,6 @@
 use std::sync::Arc;
 
+use gobs_core::entity::uniform::{UniformLayout, UniformProp};
 use gobs_vulkan::{
     image::{Image, ImageExtent2D, ImageLayout},
     pipeline::Pipeline,
@@ -13,14 +14,20 @@ pub struct UiPass {
     id: PassId,
     name: String,
     ty: PassType,
+    push_layout: Arc<UniformLayout>,
 }
 
 impl UiPass {
     pub fn new(name: &str) -> Arc<dyn RenderPass> {
+        let push_layout = UniformLayout::builder()
+            .prop("vertex_buffer_address", UniformProp::U64)
+            .build();
+
         Arc::new(Self {
             id: PassId::new_v4(),
             name: name.to_string(),
             ty: PassType::Ui,
+            push_layout,
         })
     }
 }
@@ -44,6 +51,10 @@ impl RenderPass for UiPass {
 
     fn vertex_flags(&self) -> Option<VertexFlag> {
         None
+    }
+
+    fn push_layout(&self) -> Option<Arc<UniformLayout>> {
+        Some(self.push_layout.clone())
     }
 
     fn render(

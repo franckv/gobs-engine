@@ -22,6 +22,7 @@ use crate::{
     context::Context,
     geometry::VertexFlag,
     material::{MaterialInstance, Texture},
+    pass::RenderPass,
 };
 
 pub type MaterialId = Uuid;
@@ -126,9 +127,7 @@ impl MaterialBuilder {
         self
     }
 
-    pub fn build(self, ctx: &Context) -> Arc<Material> {
-        let model_data_layout = ctx.push_layout.clone();
-
+    pub fn build(self, ctx: &Context, pass: Arc<dyn RenderPass>) -> Arc<Material> {
         let scene_descriptor_layout = DescriptorSetLayout::builder()
             .binding(DescriptorType::Uniform, DescriptorStage::All)
             .build(ctx.device.clone());
@@ -142,8 +141,14 @@ impl MaterialBuilder {
             ds_layouts.push(material_layout.clone());
         }
 
-        let pipeline_layout =
-            PipelineLayout::new(ctx.device.clone(), &ds_layouts, model_data_layout.size());
+        let pipeline_layout = PipelineLayout::new(
+            ctx.device.clone(),
+            &ds_layouts,
+            match pass.push_layout() {
+                Some(push_layout) => push_layout.size(),
+                None => 0,
+            },
+        );
 
         let vertex_shader =
             Shader::from_file(self.vertex_shader, ctx.device.clone(), ShaderType::Vertex);

@@ -90,7 +90,7 @@ impl App {
     async fn load_scene(&mut self, ctx: &Context) {
         log::info!("Load scene");
 
-        let material = SampleApp::normal_mapping_material(ctx);
+        let material = self.common.normal_mapping_material(ctx);
 
         let diffuse_texture = Texture::pack(
             ctx,

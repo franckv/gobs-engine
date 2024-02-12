@@ -69,7 +69,7 @@ impl App {
 
         let framebuffer = Self::generate_framebuffer(width, height);
 
-        let material = SampleApp::texture_material(ctx);
+        let material = self.common.texture_material(ctx);
 
         let texture = Texture::with_colors(
             ctx,

@@ -55,7 +55,7 @@ impl Run for App {
 
 impl App {
     fn init(&mut self, ctx: &Context) {
-        let material = SampleApp::color_material(ctx);
+        let material = self.common.color_material(ctx);
         let material_instance = material.instantiate(vec![]);
 
         let triangle = Model::builder("triangle")

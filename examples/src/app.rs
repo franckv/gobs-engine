@@ -35,7 +35,7 @@ impl SampleApp {
 
         let graph = FrameGraph::new(ctx);
 
-        let ui = UIRenderer::new(ctx);
+        let ui = UIRenderer::new(ctx, graph.ui_pass.clone());
 
         let scene = Scene::new(ctx, camera, light);
 
@@ -86,15 +86,15 @@ impl SampleApp {
         )
     }
 
-    pub fn color_material(ctx: &Context) -> Arc<Material> {
+    pub fn color_material(&self, ctx: &Context) -> Arc<Material> {
         let vertex_flags = VertexFlag::POSITION | VertexFlag::COLOR;
 
         Material::builder("color.vert.spv", "color.frag.spv")
             .vertex_flags(vertex_flags)
-            .build(ctx)
+            .build(ctx, self.graph.forward_pass.clone())
     }
 
-    pub fn texture_material(ctx: &Context) -> Arc<Material> {
+    pub fn texture_material(&self, ctx: &Context) -> Arc<Material> {
         let vertex_flags = VertexFlag::POSITION
             | VertexFlag::TEXTURE
             | VertexFlag::NORMAL
@@ -104,10 +104,10 @@ impl SampleApp {
         Material::builder("mesh.vert.spv", "mesh.frag.spv")
             .vertex_flags(vertex_flags)
             .prop("diffuse", MaterialProperty::Texture)
-            .build(ctx)
+            .build(ctx, self.graph.forward_pass.clone())
     }
 
-    pub fn normal_mapping_material(ctx: &Context) -> Arc<Material> {
+    pub fn normal_mapping_material(&self, ctx: &Context) -> Arc<Material> {
         let vertex_flags = VertexFlag::POSITION
             | VertexFlag::TEXTURE
             | VertexFlag::NORMAL
@@ -118,15 +118,15 @@ impl SampleApp {
             .vertex_flags(vertex_flags)
             .prop("diffuse", MaterialProperty::Texture)
             .prop("normal", MaterialProperty::Texture)
-            .build(ctx)
+            .build(ctx, self.graph.forward_pass.clone())
     }
 
-    pub fn depth_material(ctx: &Context) -> Arc<Material> {
+    pub fn depth_material(&self, ctx: &Context) -> Arc<Material> {
         let vertex_flags = VertexFlag::POSITION | VertexFlag::COLOR;
 
         Material::builder("color.vert.spv", "depth.frag.spv")
             .vertex_flags(vertex_flags)
-            .build(ctx)
+            .build(ctx, self.graph.forward_pass.clone())
     }
 
     pub fn start(&mut self, _ctx: &Context) {}

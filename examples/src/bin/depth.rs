@@ -85,7 +85,7 @@ impl Run for App {
 
 impl App {
     async fn init(&mut self, ctx: &Context) {
-        let material = SampleApp::depth_material(ctx);
+        let material = self.common.depth_material(ctx);
 
         let material_instance =
             //NormalMaterial::instanciate(material, diffuse_texture, normal_texture);

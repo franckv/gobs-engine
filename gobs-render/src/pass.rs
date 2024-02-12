@@ -1,5 +1,6 @@
 use std::sync::Arc;
 
+use gobs_core::entity::uniform::UniformLayout;
 use gobs_vulkan::{
     image::{Image, ImageExtent2D},
     pipeline::Pipeline,
@@ -29,6 +30,7 @@ pub trait RenderPass {
     fn ty(&self) -> PassType;
     fn pipeline(&self) -> Option<Arc<Pipeline>>;
     fn vertex_flags(&self) -> Option<VertexFlag>;
+    fn push_layout(&self) -> Option<Arc<UniformLayout>>;
     fn render(
         self: Arc<Self>,
         ctx: &Context,

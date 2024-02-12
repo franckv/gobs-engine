@@ -4,11 +4,8 @@ use egui::{
     epaint::{ImageDelta, Primitive},
     Event, FullOutput, Modifiers, PointerButton, RawInput, Rect, Rgba, TextureId,
 };
-use glam::{Mat3, Mat4, Vec2, Vec3};
-use gobs_core::entity::{
-    camera::Camera,
-    uniform::{UniformData, UniformLayout, UniformProp, UniformPropData},
-};
+use glam::{Vec2, Vec3};
+use gobs_core::entity::uniform::{UniformData, UniformLayout, UniformProp, UniformPropData};
 use gobs_scene::resources::{ModelResource, UniformBuffer};
 use gobs_vulkan::{
     descriptor::{
@@ -16,7 +13,6 @@ use gobs_vulkan::{
     },
     pipeline::PipelineId,
 };
-use log::info;
 
 use gobs_game::input::{Input, Key};
 use gobs_render::{
@@ -68,7 +64,6 @@ pub struct UIRenderer {
     width: f32,
     height: f32,
     material: Arc<Material>,
-    camera: Camera,
     pub scene_data_layout: Arc<UniformLayout>,
     frame_number: usize,
     _scene_ds_pool: DescriptorSetPool,
@@ -79,7 +74,7 @@ pub struct UIRenderer {
 }
 
 impl UIRenderer {
-    pub fn new(ctx: &Context) -> Self {
+    pub fn new(ctx: &Context, pass: Arc<dyn RenderPass>) -> Self {
         let ectx = egui::Context::default();
 
         let (width, height): (f32, f32) = ctx.surface.get_extent(ctx.device.clone()).into();
@@ -93,15 +88,14 @@ impl UIRenderer {
             .prop("diffuse", MaterialProperty::Texture)
             .no_culling()
             .blending_enabled()
-            .build(ctx);
+            .build(ctx, pass);
 
         let scene_descriptor_layout = DescriptorSetLayout::builder()
             .binding(DescriptorType::Uniform, DescriptorStage::All)
             .build(ctx.device.clone());
 
         let scene_data_layout = UniformLayout::builder()
-            .prop("camera_position", UniformProp::Vec3F)
-            .prop("view_proj", UniformProp::Mat4F)
+            .prop("screen_size", UniformProp::Vec2F)
             .build();
 
         let mut _scene_ds_pool = DescriptorSetPool::new(
@@ -114,23 +108,11 @@ impl UIRenderer {
             .map(|_| SceneFrameData::new(ctx, scene_data_layout.clone(), _scene_ds_pool.allocate()))
             .collect();
 
-        let camera = Camera::ortho(
-            (width / 2., height / 2., 1.),
-            width,
-            height,
-            0.1,
-            10.,
-            (0. as f32).to_radians(),
-            (0. as f32).to_radians(),
-            Vec3::Y,
-        );
-
         UIRenderer {
             ectx,
             width,
             height,
             material,
-            camera,
             scene_data_layout,
             frame_number: 0,
             _scene_ds_pool,
@@ -154,10 +136,7 @@ impl UIRenderer {
 
         let scene_data = UniformData::new(
             &self.scene_data_layout,
-            &[
-                UniformPropData::Vec3F(self.camera.position.into()),
-                UniformPropData::Mat4F(self.camera.view_proj().to_cols_array_2d()),
-            ],
+            &[UniformPropData::Vec2F([self.width, self.height])],
         );
 
         self.scene_frame_data[frame_id]
@@ -179,11 +158,9 @@ impl UIRenderer {
         self.cleanup_textures(to_remove);
     }
 
-    pub fn draw(&self, ctx: &Context, _pass: Arc<dyn RenderPass>, cmd: &CommandBuffer) {
+    pub fn draw(&self, ctx: &Context, pass: Arc<dyn RenderPass>, cmd: &CommandBuffer) {
         let frame_id = self.frame_id(ctx);
 
-        let world_matrix = Mat4::IDENTITY;
-        let normal_matrix = Mat3::IDENTITY;
         let model = self.scene_frame_data[frame_id].ui_model.clone().unwrap();
 
         let mut last_material = MaterialInstanceId::nil();
@@ -208,15 +185,15 @@ impl UIRenderer {
                 last_material = material.id;
             }
 
-            let model_data = UniformData::new(
-                &ctx.push_layout,
-                &[
-                    UniformPropData::Mat4F(world_matrix.to_cols_array_2d()),
-                    UniformPropData::Mat3F(normal_matrix.to_cols_array_2d()),
-                    UniformPropData::U64(model.vertex_buffer.address(ctx.device.clone())),
-                ],
-            );
-            cmd.push_constants(pipeline.layout.clone(), &model_data.raw());
+            if let Some(push_layout) = pass.push_layout() {
+                let model_data = UniformData::new(
+                    &push_layout,
+                    &[UniformPropData::U64(
+                        model.vertex_buffer.address(ctx.device.clone()),
+                    )],
+                );
+                cmd.push_constants(pipeline.layout.clone(), &model_data.raw());
+            }
 
             cmd.bind_index_buffer::<u32>(&model.index_buffer, primitive.offset);
             cmd.draw_indexed(primitive.len, 1);
@@ -224,7 +201,6 @@ impl UIRenderer {
     }
 
     pub fn resize(&mut self, width: u32, height: u32) {
-        self.camera.resize(width, height);
         self.width = width as f32;
         self.height = height as f32;
     }
@@ -324,9 +300,9 @@ impl UIRenderer {
 
     async fn update_textures(&mut self, ctx: &Context, output: &FullOutput) {
         for (id, img) in &output.textures_delta.set {
-            info!("New texture {:?}", id);
+            log::info!("New texture {:?}", id);
             if img.pos.is_some() {
-                info!("Patching texture");
+                log::info!("Patching texture");
                 self.patch_texture(
                     self.font_texture
                         .get(id)
@@ -336,7 +312,7 @@ impl UIRenderer {
                 )
                 .await;
             } else {
-                info!("Allocate new texture");
+                log::info!("Allocate new texture");
                 let texture = self.decode_texture(ctx, img).await;
                 self.font_texture.insert(*id, texture);
             }
@@ -345,7 +321,7 @@ impl UIRenderer {
 
     fn cleanup_textures(&mut self, to_remove: Vec<TextureId>) {
         for id in &to_remove {
-            info!("Remove texture {:?}", id);
+            log::info!("Remove texture {:?}", id);
 
             self.font_texture.remove(id);
         }
@@ -381,7 +357,7 @@ impl UIRenderer {
 
                 let pos = img.pos.expect("Can only patch texture with start position");
 
-                info!(
+                log::info!(
                     "Patching texture origin: {}/{}, size: {}/{}, len={}",
                     pos[0],
                     pos[1],
@@ -389,7 +365,7 @@ impl UIRenderer {
                     font.height(),
                     bytes.len()
                 );
-                info!(
+                log::info!(
                     "Patching texture original size: {:?}",
                     material.textures[0].read().image.extent
                 );

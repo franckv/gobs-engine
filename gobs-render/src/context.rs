@@ -1,6 +1,5 @@
 use std::sync::Arc;
 
-use gobs_core::entity::uniform::{UniformLayout, UniformProp};
 use winit::window::Window;
 
 use gobs_vulkan as vk;
@@ -24,7 +23,6 @@ pub struct Context {
     pub color_format: ImageFormat,
     pub depth_format: ImageFormat,
     pub frames_in_flight: usize,
-    pub push_layout: Arc<UniformLayout>,
 }
 
 impl Context {
@@ -51,12 +49,6 @@ impl Context {
 
         let allocator = Allocator::new(device.clone());
 
-        let push_layout = UniformLayout::builder()
-            .prop("world_matrix", UniformProp::Mat4F)
-            .prop("normal_matrix", UniformProp::Mat3F)
-            .prop("vertex_buffer_address", UniformProp::U64)
-            .build();
-
         Context {
             instance,
             device,
@@ -67,7 +59,6 @@ impl Context {
             color_format: ImageFormat::R16g16b16a16Sfloat,
             depth_format: ImageFormat::D32Sfloat,
             frames_in_flight: 2,
-            push_layout,
         }
     }
 }

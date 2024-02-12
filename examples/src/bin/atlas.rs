@@ -92,7 +92,7 @@ impl Run for App {
 
 impl App {
     async fn init(&mut self, ctx: &Context) {
-        let material = SampleApp::normal_mapping_material(ctx);
+        let material = self.common.normal_mapping_material(ctx);
 
         let diffuse_texture = Texture::pack(
             ctx,

@@ -1,5 +1,6 @@
 use std::sync::Arc;
 
+use gobs_core::entity::uniform::{UniformLayout, UniformProp};
 use gobs_utils::load;
 use gobs_vulkan::{
     descriptor::{DescriptorSetLayout, DescriptorStage, DescriptorType},
@@ -20,13 +21,18 @@ pub struct WirePass {
     ty: PassType,
     pipeline: Arc<Pipeline>,
     vertex_flags: VertexFlag,
+    push_layout: Arc<UniformLayout>,
 }
 
 impl WirePass {
     pub fn new(ctx: &Context, name: &str) -> Arc<dyn RenderPass> {
-        let model_data_layout = ctx.push_layout.clone();
-
         let vertex_flags = VertexFlag::POSITION | VertexFlag::COLOR;
+
+        let push_layout = UniformLayout::builder()
+            .prop("world_matrix", UniformProp::Mat4F)
+            .prop("normal_matrix", UniformProp::Mat3F)
+            .prop("vertex_buffer_address", UniformProp::U64)
+            .build();
 
         let scene_descriptor_layout = DescriptorSetLayout::builder()
             .binding(DescriptorType::Uniform, DescriptorStage::All)
@@ -35,7 +41,7 @@ impl WirePass {
         let ds_layouts = vec![scene_descriptor_layout.clone()];
 
         let pipeline_layout =
-            PipelineLayout::new(ctx.device.clone(), &ds_layouts, model_data_layout.size());
+            PipelineLayout::new(ctx.device.clone(), &ds_layouts, push_layout.size());
 
         let vertex_file = load::get_asset_dir("wire.vert.spv", load::AssetType::SHADER).unwrap();
         let vertex_shader = Shader::from_file(vertex_file, ctx.device.clone(), ShaderType::Vertex);
@@ -64,6 +70,7 @@ impl WirePass {
             ty: PassType::Wire,
             pipeline,
             vertex_flags,
+            push_layout,
         })
     }
 }
@@ -87,6 +94,10 @@ impl RenderPass for WirePass {
 
     fn vertex_flags(&self) -> Option<VertexFlag> {
         Some(self.vertex_flags)
+    }
+
+    fn push_layout(&self) -> Option<Arc<UniformLayout>> {
+        Some(self.push_layout.clone())
     }
 
     fn render(

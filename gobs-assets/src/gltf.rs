@@ -7,10 +7,11 @@ use gobs_render::{
     context::Context,
     geometry::{Mesh, Model, VertexData, VertexFlag},
     material::{Material, MaterialProperty, Texture, TextureType},
+    pass::RenderPass,
     ImageExtent2D, SamplerFilter,
 };
 
-pub fn load_gltf<P>(ctx: &Context, file: P) -> Vec<Arc<Model>>
+pub fn load_gltf<P>(ctx: &Context, file: P, pass: Arc<dyn RenderPass>) -> Vec<Arc<Model>>
 where
     P: AsRef<Path>,
 {
@@ -27,13 +28,13 @@ where
     let texture_material = Material::builder("gltf.texture.vert.spv", "gltf.texture.frag.spv")
         .vertex_flags(vertex_flags)
         .prop("diffuse", MaterialProperty::Texture)
-        .build(ctx);
+        .build(ctx, pass.clone());
 
     let vertex_flags = VertexFlag::POSITION | VertexFlag::COLOR;
 
     let color_material = Material::builder("gltf.color.vert.spv", "gltf.color.frag.spv")
         .vertex_flags(vertex_flags)
-        .build(ctx);
+        .build(ctx, pass);
 
     let default_texture = Texture::default(ctx);
     let default_material_instance = texture_material
