@@ -194,6 +194,7 @@ impl From<vk::Format> for ImageFormat {
         match format {
             vk::Format::R8G8B8A8_UNORM => ImageFormat::R8g8b8a8Unorm,
             vk::Format::R16G16B16A16_SFLOAT => ImageFormat::R16g16b16a16Sfloat,
+            vk::Format::R16G16B16A16_UNORM => ImageFormat::R16g16b16a16Unorm,
             vk::Format::B8G8R8A8_SRGB => ImageFormat::B8g8r8a8Srgb,
             vk::Format::R8G8B8A8_SRGB => ImageFormat::R8g8b8a8Srgb,
             vk::Format::B8G8R8A8_UNORM => ImageFormat::B8g8r8a8Unorm,
@@ -212,6 +213,7 @@ impl Into<vk::Format> for ImageFormat {
         match self {
             ImageFormat::R8g8b8a8Unorm => vk::Format::R8G8B8A8_UNORM,
             ImageFormat::R16g16b16a16Sfloat => vk::Format::R16G16B16A16_SFLOAT,
+            ImageFormat::R16g16b16a16Unorm => vk::Format::R16G16B16A16_UNORM,
             ImageFormat::B8g8r8a8Srgb => vk::Format::B8G8R8A8_SRGB,
             ImageFormat::R8g8b8a8Srgb => vk::Format::R8G8B8A8_SRGB,
             ImageFormat::B8g8r8a8Unorm => vk::Format::B8G8R8A8_UNORM,
