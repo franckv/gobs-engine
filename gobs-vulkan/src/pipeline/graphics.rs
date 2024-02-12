@@ -325,18 +325,20 @@ impl DepthStencilState {
     }
 }
 
-struct ColorBlendAttachmentState;
+struct ColorBlendAttachmentState {
+    blend_enable: bool,
+}
 
 impl ColorBlendAttachmentState {
-    fn new() -> Self {
-        ColorBlendAttachmentState
+    fn new(blend_enable: bool) -> Self {
+        ColorBlendAttachmentState { blend_enable }
     }
 
     fn info(&self) -> vk::PipelineColorBlendAttachmentStateBuilder {
         vk::PipelineColorBlendAttachmentState::builder()
-            .blend_enable(false)
-            .src_color_blend_factor(vk::BlendFactor::ONE)
-            .dst_color_blend_factor(vk::BlendFactor::ZERO)
+            .blend_enable(self.blend_enable)
+            .src_color_blend_factor(vk::BlendFactor::ONE_MINUS_DST_ALPHA)
+            .dst_color_blend_factor(vk::BlendFactor::DST_ALPHA)
             .color_blend_op(vk::BlendOp::ADD)
             .src_alpha_blend_factor(vk::BlendFactor::ONE)
             .dst_alpha_blend_factor(vk::BlendFactor::ZERO)
@@ -435,6 +437,7 @@ pub struct GraphicsPipelineBuilder {
     pipeline_layout: Option<Arc<PipelineLayout>>,
     rendering_state: Option<RenderingState>,
     depth_stencil: Option<DepthStencilState>,
+    blending_state: Option<ColorBlendAttachmentState>,
     polygon_mode: PolygonMode,
     front_face: FrontFace,
     cull_mode: CullMode,
@@ -505,6 +508,12 @@ impl GraphicsPipelineBuilder {
 
     pub fn cull_mode(mut self, cull_mode: CullMode) -> Self {
         self.cull_mode = cull_mode;
+
+        self
+    }
+
+    pub fn blending_enabled(mut self, blending_enabled: bool) -> Self {
+        self.blending_state = Some(ColorBlendAttachmentState::new(blending_enabled));
 
         self
     }
@@ -583,7 +592,10 @@ impl GraphicsPipelineBuilder {
         let depth_stencil_state = self.depth_stencil.unwrap();
         let depth_stencil_state_info = depth_stencil_state.info();
 
-        let color_blend_attachment = ColorBlendAttachmentState::new();
+        let color_blend_attachment = match self.blending_state {
+            Some(color_blend_attachment) => color_blend_attachment,
+            None => ColorBlendAttachmentState::new(false),
+        };
         let color_blend_state = ColorBlendState::new(color_blend_attachment);
         let color_blend_state_info = color_blend_state.info();
 

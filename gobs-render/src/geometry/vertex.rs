@@ -152,7 +152,7 @@ impl VertexData {
 }
 
 pub struct VertexDataBuilder {
-    pub padding: bool,
+    pub padding: Option<bool>,
     pub position: Option<Vec3>,
     pub color: Option<Color>,
     pub texture: Option<Vec2>,
@@ -166,7 +166,7 @@ pub struct VertexDataBuilder {
 impl VertexDataBuilder {
     fn new() -> Self {
         VertexDataBuilder {
-            padding: false,
+            padding: None,
             position: None,
             color: None,
             texture: None,
@@ -179,7 +179,7 @@ impl VertexDataBuilder {
     }
 
     pub fn padding(mut self, padding: bool) -> Self {
-        self.padding = padding;
+        self.padding = Some(padding);
 
         self
     }
@@ -234,7 +234,7 @@ impl VertexDataBuilder {
 
     pub fn build(self) -> VertexData {
         VertexData {
-            padding: self.padding,
+            padding: self.padding.expect("Missing padding"),
             position: self.position.unwrap_or(Vec3::splat(0.)),
             color: self.color.unwrap_or(Color::WHITE),
             texture: self.texture.unwrap_or(Vec2::splat(0.)),

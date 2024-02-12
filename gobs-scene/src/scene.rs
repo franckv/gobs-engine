@@ -55,15 +55,13 @@ impl SceneFrameData {
     }
 }
 
-#[allow(unused)]
 pub struct Scene {
     pub graph: SceneGraph,
     pub camera: Camera,
     pub light: Light,
-    pub scene_descriptor_layout: Arc<DescriptorSetLayout>,
     pub scene_data_layout: Arc<UniformLayout>,
     frame_number: usize,
-    scene_ds_pool: DescriptorSetPool,
+    _scene_ds_pool: DescriptorSetPool,
     scene_frame_data: Vec<SceneFrameData>,
     model_manager: ResourceManager<(ModelId, PassId), Arc<ModelResource>>,
 }
@@ -82,30 +80,29 @@ impl Scene {
             .prop("ambient_color", UniformProp::Vec4F)
             .build();
 
-        let mut scene_ds_pool = DescriptorSetPool::new(
+        let mut _scene_ds_pool = DescriptorSetPool::new(
             ctx.device.clone(),
             scene_descriptor_layout.clone(),
             ctx.frames_in_flight as u32,
         );
 
         let scene_frame_data = (0..ctx.frames_in_flight)
-            .map(|_| SceneFrameData::new(ctx, scene_data_layout.clone(), scene_ds_pool.allocate()))
+            .map(|_| SceneFrameData::new(ctx, scene_data_layout.clone(), _scene_ds_pool.allocate()))
             .collect();
 
         Scene {
             graph: SceneGraph::new(),
             camera,
             light,
-            scene_descriptor_layout,
             scene_data_layout,
             frame_number: 0,
-            scene_ds_pool,
+            _scene_ds_pool,
             scene_frame_data,
             model_manager: ResourceManager::new(),
         }
     }
 
-    pub fn frame_id(&self, ctx: &Context) -> usize {
+    fn frame_id(&self, ctx: &Context) -> usize {
         (self.frame_number - 1) % ctx.frames_in_flight
     }
 

@@ -17,11 +17,15 @@ use crate::{debug, Wrap};
 
 pub trait IndexType: Copy {
     fn get_index_type() -> vk::IndexType;
+    fn size() -> usize;
 }
 
 impl IndexType for u32 {
     fn get_index_type() -> vk::IndexType {
         vk::IndexType::UINT32
+    }
+    fn size() -> usize {
+        4
     }
 }
 
@@ -270,11 +274,13 @@ impl CommandBuffer {
     }
 
     pub fn bind_index_buffer<T: IndexType>(&self, buffer: &Buffer, offset: usize) {
+        let index_size = T::size();
+
         unsafe {
             self.device.raw().cmd_bind_index_buffer(
                 self.command_buffer,
                 buffer.raw(),
-                offset as vk::DeviceSize,
+                (index_size * offset) as vk::DeviceSize,
                 T::get_index_type(),
             )
         }

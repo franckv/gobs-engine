@@ -14,6 +14,7 @@ use gobs::{
         ImageExtent2D,
     },
     scene::scene::Scene,
+    ui::UIRenderer,
 };
 
 use crate::CameraController;
@@ -21,8 +22,10 @@ use crate::CameraController;
 pub struct SampleApp {
     camera_controller: CameraController,
     pub graph: FrameGraph,
+    pub ui: UIRenderer,
     pub scene: Scene,
     pub process_updates: bool,
+    pub draw_ui: bool,
     pub draw_wire: bool,
 }
 
@@ -32,6 +35,8 @@ impl SampleApp {
 
         let graph = FrameGraph::new(ctx);
 
+        let ui = UIRenderer::new(ctx);
+
         let scene = Scene::new(ctx, camera, light);
 
         let camera_controller = CameraController::new(3., 0.1);
@@ -39,8 +44,10 @@ impl SampleApp {
         Self {
             camera_controller,
             graph,
+            ui,
             scene,
             process_updates: true,
+            draw_ui: false,
             draw_wire: false,
         }
     }
@@ -129,6 +136,15 @@ impl SampleApp {
             .update_camera(&mut self.scene.camera, delta);
 
         self.scene.update(ctx, &self.graph);
+        if self.draw_ui {
+            self.ui.update(ctx, self.graph.ui_pass.clone(), |ectx| {
+                egui::CentralPanel::default().show(ectx, |ui| {
+                    ui.visuals_mut().override_text_color = Some(egui::Color32::GREEN);
+                    ui.heading("Demo Application");
+                    ectx.inspection_ui(ui);
+                });
+            });
+        }
     }
 
     pub fn render(
@@ -155,6 +171,11 @@ impl SampleApp {
                     self.scene.draw(ctx, pass, cmd);
                 }
             }
+            PassType::Ui => {
+                if self.draw_ui {
+                    self.ui.draw(ctx, pass, cmd);
+                }
+            }
         })?;
 
         self.graph.end(ctx)?;
@@ -164,8 +185,10 @@ impl SampleApp {
         Ok(())
     }
 
-    pub fn input(&mut self, ctx: &gobs::render::context::Context, input: gobs::game::input::Input) {
+    pub fn input(&mut self, ctx: &Context, input: Input) {
         log::trace!("Input");
+
+        self.ui.input(input);
 
         match input {
             Input::KeyPressed(key) => match key {
@@ -175,6 +198,7 @@ impl SampleApp {
                 Key::C => log::info!("{:?}", self.scene.camera),
                 Key::P => self.process_updates = !self.process_updates,
                 Key::W => self.draw_wire = !self.draw_wire,
+                Key::U => self.draw_ui = !self.draw_ui,
                 _ => self.camera_controller.key_pressed(key),
             },
             Input::KeyReleased(key) => self.camera_controller.key_released(key),

@@ -10,6 +10,7 @@ use crate::{context::Context, geometry::VertexFlag, graph::RenderError, CommandB
 
 pub mod compute;
 pub mod forward;
+pub mod ui;
 pub mod wire;
 
 #[derive(Clone, Copy, Debug)]
@@ -17,6 +18,7 @@ pub enum PassType {
     Compute,
     Forward,
     Wire,
+    Ui,
 }
 
 pub type PassId = Uuid;

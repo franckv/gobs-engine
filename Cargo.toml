@@ -3,6 +3,7 @@ members = [
     "examples",
     "gobs-assets",
     "gobs-core",
+    "gobs-egui",
     "gobs-game",
     "gobs-render",
     "gobs-scene",
@@ -27,6 +28,10 @@ path = "./gobs-assets"
 [workspace.dependencies.gobs-core]
 package = "gobs-core"
 path = "./gobs-core"
+
+[workspace.dependencies.gobs-egui]
+package = "gobs-egui"
+path = "./gobs-egui"
 
 [workspace.dependencies.gobs-game]
 package = "gobs-game"

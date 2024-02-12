@@ -9,7 +9,7 @@ use gobs_vulkan::{
 
 use crate::{
     context::Context,
-    pass::{compute::ComputePass, forward::ForwardPass, wire::WirePass, RenderPass},
+    pass::{compute::ComputePass, forward::ForwardPass, ui::UiPass, wire::WirePass, RenderPass},
 };
 
 #[derive(Debug)]
@@ -58,6 +58,7 @@ pub struct FrameGraph {
     pub render_scaling: f32,
     pub compute_pass: Arc<dyn RenderPass>,
     pub forward_pass: Arc<dyn RenderPass>,
+    pub ui_pass: Arc<dyn RenderPass>,
     pub wire_pass: Arc<dyn RenderPass>,
 }
 
@@ -92,6 +93,7 @@ impl FrameGraph {
 
         let compute_pass = ComputePass::new(ctx, "bg", &draw_image);
         let forward_pass = ForwardPass::new("scene");
+        let ui_pass = UiPass::new("ui");
         let wire_pass = WirePass::new(ctx, "wire");
 
         Self {
@@ -106,6 +108,7 @@ impl FrameGraph {
             render_scaling: 1.,
             compute_pass,
             forward_pass,
+            ui_pass,
             wire_pass,
         }
     }
@@ -264,6 +267,18 @@ impl FrameGraph {
 
         if let Ok(mut draw_image) = self.draw_image.write() {
             self.wire_pass.clone().render(
+                ctx,
+                cmd,
+                &mut [&mut draw_image],
+                self.draw_extent,
+                draw_cmd,
+            )?;
+        } else {
+            return Err(RenderError::Error);
+        }
+
+        if let Ok(mut draw_image) = self.draw_image.write() {
+            self.ui_pass.clone().render(
                 ctx,
                 cmd,
                 &mut [&mut draw_image],

@@ -7,6 +7,7 @@ use super::VertexData;
 
 pub type MeshId = Uuid;
 
+#[derive(Debug)]
 pub struct Mesh {
     pub id: MeshId,
     pub name: String,
@@ -52,6 +53,12 @@ impl MeshBuilder {
 
     pub fn index(mut self, idx: u32) -> Self {
         self.indices.push(idx);
+
+        self
+    }
+
+    pub fn indices(mut self, indices: &[u32]) -> Self {
+        self.indices.extend(indices);
 
         self
     }

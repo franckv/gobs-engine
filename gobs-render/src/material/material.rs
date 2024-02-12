@@ -69,6 +69,8 @@ pub struct MaterialBuilder {
     pub vertex_shader: PathBuf,
     pub fragment_shader: PathBuf,
     pub vertex_flags: VertexFlag,
+    pub cull_mode: CullMode,
+    pub blending_enabled: bool,
     pub material_descriptor_layout: Option<DescriptorSetLayoutBuilder>,
 }
 
@@ -82,12 +84,26 @@ impl MaterialBuilder {
             vertex_shader,
             fragment_shader,
             vertex_flags: VertexFlag::empty(),
+            cull_mode: CullMode::Back,
+            blending_enabled: false,
             material_descriptor_layout: None,
         }
     }
 
     pub fn vertex_flags(mut self, vertex_flags: VertexFlag) -> Self {
         self.vertex_flags = vertex_flags;
+
+        self
+    }
+
+    pub fn no_culling(mut self) -> Self {
+        self.cull_mode = CullMode::None;
+
+        self
+    }
+
+    pub fn blending_enabled(mut self) -> Self {
+        self.blending_enabled = true;
 
         self
     }
@@ -146,7 +162,8 @@ impl MaterialBuilder {
             .dynamic_states(&vec![DynamicStateElem::Viewport, DynamicStateElem::Scissor])
             .attachments(ctx.color_format, Some(ctx.depth_format))
             .depth_test_enable(true, CompareOp::Less)
-            .cull_mode(CullMode::Back)
+            .cull_mode(self.cull_mode)
+            .blending_enabled(self.blending_enabled)
             .front_face(FrontFace::CCW)
             .build();
 
