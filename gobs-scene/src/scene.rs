@@ -1,6 +1,7 @@
-use std::sync::Arc;
+use std::sync::{Arc, RwLock};
 
 use glam::Mat3;
+use gobs_utils::timer::Timer;
 use uuid::Uuid;
 
 use gobs_core::entity::{
@@ -65,7 +66,7 @@ pub struct Scene {
     _scene_ds_pool: DescriptorSetPool,
     scene_frame_data: Vec<SceneFrameData>,
     model_manager: ResourceManager<(ModelId, PassId), Arc<ModelResource>>,
-    stats: RenderStats,
+    stats: RwLock<RenderStats>,
 }
 
 impl Scene {
@@ -101,7 +102,7 @@ impl Scene {
             _scene_ds_pool,
             scene_frame_data,
             model_manager: ResourceManager::new(),
-            stats: RenderStats::default(),
+            stats: RwLock::new(RenderStats::default()),
         }
     }
 
@@ -111,6 +112,7 @@ impl Scene {
 
     pub fn update(&mut self, ctx: &Context, framegraph: &FrameGraph) {
         log::debug!("Update scene [{}]", self.frame_number);
+        let timer = Timer::new();
 
         self.frame_number += 1;
         let frame_id = self.frame_id(ctx);
@@ -130,11 +132,11 @@ impl Scene {
             .uniform_buffer
             .update(&scene_data);
 
-        self.stats.reset();
+        self.stats.write().unwrap().reset();
 
         self.graph.visit(self.graph.root, &mut |_, model| {
             if let NodeValue::Model(model) = model {
-                self.stats.add_model(model);
+                self.stats.write().unwrap().add_model(model);
 
                 self.model_manager.add(
                     ctx,
@@ -146,6 +148,8 @@ impl Scene {
                     .add(ctx, model.id, framegraph.wire_pass.clone(), model.clone());
             }
         });
+
+        self.stats.write().unwrap().update_time = timer.peek();
     }
 }
 
@@ -155,6 +159,8 @@ impl Renderable for Scene {
     }
 
     fn draw(&self, ctx: &Context, pass: Arc<dyn RenderPass>, cmd: &CommandBuffer) {
+        let timer = Timer::new();
+
         let frame_id = self.frame_id(ctx);
 
         let mut last_model = Uuid::nil();
@@ -224,9 +230,11 @@ impl Renderable for Scene {
                     }
                 }
             });
+
+        self.stats.write().unwrap().cpu_draw_time = timer.peek();
     }
 
     fn stats(&self) -> RenderStats {
-        self.stats.clone()
+        self.stats.read().unwrap().clone()
     }
 }

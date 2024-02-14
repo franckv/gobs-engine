@@ -15,6 +15,8 @@ pub struct RenderStats {
     pub textures: u32,
     pub instances: u32,
     pub draws: u32,
+    pub cpu_draw_time: f32,
+    pub update_time: f32,
     models_set: HashSet<ModelId>,
 }
 
@@ -26,6 +28,8 @@ impl RenderStats {
         self.textures = 0;
         self.instances = 0;
         self.draws = 0;
+        self.cpu_draw_time = 0.;
+        self.update_time = 0.;
         self.models_set.clear();
     }
 

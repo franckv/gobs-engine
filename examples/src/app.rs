@@ -138,11 +138,10 @@ impl SampleApp {
         self.camera_controller
             .update_camera(&mut self.scene.camera, delta);
 
+        let ui_stats = self.ui.stats();
+        let scene_stats = self.scene.stats();
         self.scene.update(ctx, &self.graph);
         if self.draw_ui {
-            let ui_stats = self.ui.stats();
-            let scene_stats = self.scene.stats();
-
             self.ui.update(ctx, self.graph.ui_pass.clone(), |ectx| {
                 egui::CentralPanel::default()
                     .frame(egui::Frame::none())
@@ -171,6 +170,11 @@ impl SampleApp {
             ui.label(format!("  Instances: {}", stats.instances));
             ui.label(format!("  Draws: {}", stats.draws));
             ui.label(format!("  Textures: {}", stats.textures));
+            ui.label(format!(
+                "  CPU draw time: {:.2}ms",
+                1000. * stats.cpu_draw_time
+            ));
+            ui.label(format!("  Update time: {:.2}ms", 1000. * stats.update_time));
         });
     }
 

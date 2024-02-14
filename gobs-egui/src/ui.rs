@@ -1,4 +1,7 @@
-use std::{collections::HashMap, sync::Arc};
+use std::{
+    collections::HashMap,
+    sync::{Arc, RwLock},
+};
 
 use egui::{
     epaint::{ImageDelta, Primitive},
@@ -10,6 +13,7 @@ use gobs_scene::{
     renderable::{RenderStats, Renderable},
     resources::{ModelResource, UniformBuffer},
 };
+use gobs_utils::timer::Timer;
 use gobs_vulkan::{
     descriptor::{
         DescriptorSet, DescriptorSetLayout, DescriptorSetPool, DescriptorStage, DescriptorType,
@@ -74,7 +78,7 @@ pub struct UIRenderer {
     font_texture: HashMap<TextureId, Arc<MaterialInstance>>,
     input: Vec<Input>,
     mouse_position: (f32, f32),
-    stats: RenderStats,
+    stats: RwLock<RenderStats>,
 }
 
 impl UIRenderer {
@@ -124,7 +128,7 @@ impl UIRenderer {
             font_texture: HashMap::new(),
             input: Vec::new(),
             mouse_position: (0., 0.),
-            stats: RenderStats::default(),
+            stats: RwLock::new(RenderStats::default()),
         }
     }
 
@@ -136,6 +140,8 @@ impl UIRenderer {
     where
         F: FnMut(&egui::Context),
     {
+        let timer = Timer::new();
+
         self.frame_number += 1;
         let frame_id = self.frame_id(ctx);
 
@@ -156,15 +162,17 @@ impl UIRenderer {
 
         let to_remove = output.textures_delta.free.clone();
 
-        self.stats.reset();
+        self.stats.write().unwrap().reset();
 
         let model = self.load_models(output);
 
-        self.stats.add_model(&model);
+        self.stats.write().unwrap().add_model(&model);
 
         self.scene_frame_data[frame_id].ui_model = Some(ModelResource::new(ctx, model, pass));
 
         self.cleanup_textures(to_remove);
+
+        self.stats.write().unwrap().update_time = timer.peek();
     }
 
     fn get_key(key: Key) -> egui::Key {
@@ -395,6 +403,8 @@ impl Renderable for UIRenderer {
     }
 
     fn draw(&self, ctx: &Context, pass: Arc<dyn RenderPass>, cmd: &CommandBuffer) {
+        let timer = Timer::new();
+
         let frame_id = self.frame_id(ctx);
 
         let model = self.scene_frame_data[frame_id].ui_model.clone().unwrap();
@@ -434,9 +444,11 @@ impl Renderable for UIRenderer {
             cmd.bind_index_buffer::<u32>(&model.index_buffer, primitive.offset);
             cmd.draw_indexed(primitive.len, 1);
         }
+
+        self.stats.write().unwrap().cpu_draw_time = timer.peek();
     }
 
     fn stats(&self) -> RenderStats {
-        self.stats.clone()
+        self.stats.read().unwrap().clone()
     }
 }
