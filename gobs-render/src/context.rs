@@ -14,6 +14,7 @@ use vk::{
 };
 
 pub struct Context {
+    pub app_name: String,
     pub instance: Arc<Instance>,
     pub device: Arc<Device>,
     pub queue: Arc<Queue>,
@@ -50,6 +51,7 @@ impl Context {
         let allocator = Allocator::new(device.clone());
 
         Context {
+            app_name: name.to_string(),
             instance,
             device,
             queue,

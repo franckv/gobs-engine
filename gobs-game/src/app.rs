@@ -25,7 +25,7 @@ impl Application {
             .build(&events_loop)
             .unwrap();
 
-        let context = Context::new("engine", window);
+        let context = Context::new(title, window);
 
         Application {
             context,

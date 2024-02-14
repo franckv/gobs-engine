@@ -13,7 +13,10 @@ use gobs::{
         pass::PassType,
         ImageExtent2D,
     },
-    scene::scene::Scene,
+    scene::{
+        renderable::{RenderStats, Renderable},
+        scene::Scene,
+    },
     ui::UIRenderer,
 };
 
@@ -47,7 +50,7 @@ impl SampleApp {
             ui,
             scene,
             process_updates: true,
-            draw_ui: false,
+            draw_ui: true,
             draw_wire: false,
         }
     }
@@ -137,14 +140,54 @@ impl SampleApp {
 
         self.scene.update(ctx, &self.graph);
         if self.draw_ui {
+            let ui_stats = self.ui.stats();
+            let scene_stats = self.scene.stats();
+
             self.ui.update(ctx, self.graph.ui_pass.clone(), |ectx| {
-                egui::CentralPanel::default().show(ectx, |ui| {
-                    ui.visuals_mut().override_text_color = Some(egui::Color32::GREEN);
-                    ui.heading("Demo Application");
-                    ectx.inspection_ui(ui);
-                });
+                egui::CentralPanel::default()
+                    .frame(egui::Frame::none())
+                    .show(ectx, |ui| {
+                        ui.visuals_mut().override_text_color = Some(egui::Color32::GREEN);
+                        ui.heading(&ctx.app_name);
+                        ui.separator();
+                        Self::show_fps(ui, delta);
+                        Self::show_stats(ui, "UI Stats", &ui_stats);
+                        Self::show_stats(ui, "Scene Stats", &scene_stats);
+                        Self::show_camera(ui, &self.scene.camera);
+                    });
             });
         }
+    }
+
+    fn show_fps(ui: &mut egui::Ui, delta: f32) {
+        ui.label(format!("FPS: {}", (1. / delta).round()));
+    }
+
+    fn show_stats(ui: &mut egui::Ui, header: &str, stats: &RenderStats) {
+        ui.collapsing(header, |ui| {
+            ui.label(format!("  Vertices: {}", stats.vertices));
+            ui.label(format!("  Indices: {}", stats.indices));
+            ui.label(format!("  Models: {}", stats.models));
+            ui.label(format!("  Instances: {}", stats.instances));
+            ui.label(format!("  Draws: {}", stats.draws));
+            ui.label(format!("  Textures: {}", stats.textures));
+        });
+    }
+
+    fn show_camera(ui: &mut egui::Ui, camera: &Camera) {
+        ui.collapsing("Camera", |ui| {
+            ui.label(format!(
+                "  Position: [{:.2}, {:.2}, {:.2}]",
+                camera.position.x, camera.position.y, camera.position.z
+            ));
+            let dir = camera.dir();
+            ui.label(format!(
+                "  Direction: [{:.2}, {:.2}, {:.2}]",
+                dir.x, dir.y, dir.z
+            ));
+            ui.label(format!("  Yaw: {:.1}°", camera.yaw.to_degrees()));
+            ui.label(format!("  Pitch: {:.1}°", camera.pitch.to_degrees()));
+        });
     }
 
     pub fn render(

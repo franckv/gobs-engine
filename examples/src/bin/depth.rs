@@ -108,5 +108,5 @@ fn main() {
 
     log::info!("Engine start");
 
-    Application::new("examples", 1600, 900).run::<App>();
+    Application::new("Depth test", 1600, 900).run::<App>();
 }

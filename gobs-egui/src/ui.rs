@@ -6,7 +6,10 @@ use egui::{
 };
 use glam::{Vec2, Vec3};
 use gobs_core::entity::uniform::{UniformData, UniformLayout, UniformProp, UniformPropData};
-use gobs_scene::resources::{ModelResource, UniformBuffer};
+use gobs_scene::{
+    renderable::{RenderStats, Renderable},
+    resources::{ModelResource, UniformBuffer},
+};
 use gobs_vulkan::{
     descriptor::{
         DescriptorSet, DescriptorSetLayout, DescriptorSetPool, DescriptorStage, DescriptorType,
@@ -71,6 +74,7 @@ pub struct UIRenderer {
     font_texture: HashMap<TextureId, Arc<MaterialInstance>>,
     input: Vec<Input>,
     mouse_position: (f32, f32),
+    stats: RenderStats,
 }
 
 impl UIRenderer {
@@ -120,6 +124,7 @@ impl UIRenderer {
             font_texture: HashMap::new(),
             input: Vec::new(),
             mouse_position: (0., 0.),
+            stats: RenderStats::default(),
         }
     }
 
@@ -151,58 +156,15 @@ impl UIRenderer {
 
         let to_remove = output.textures_delta.free.clone();
 
+        self.stats.reset();
+
         let model = self.load_models(output);
+
+        self.stats.add_model(&model);
 
         self.scene_frame_data[frame_id].ui_model = Some(ModelResource::new(ctx, model, pass));
 
         self.cleanup_textures(to_remove);
-    }
-
-    pub fn draw(&self, ctx: &Context, pass: Arc<dyn RenderPass>, cmd: &CommandBuffer) {
-        let frame_id = self.frame_id(ctx);
-
-        let model = self.scene_frame_data[frame_id].ui_model.clone().unwrap();
-
-        let mut last_material = MaterialInstanceId::nil();
-        let mut last_pipeline = PipelineId::nil();
-
-        let scene_data_ds = &self.scene_frame_data[frame_id].uniform_ds;
-
-        for primitive in &model.primitives {
-            let material = &model.model.materials[&primitive.material];
-            let pipeline = material.pipeline();
-
-            if last_material != material.id {
-                if last_pipeline != pipeline.id {
-                    cmd.bind_pipeline(&pipeline);
-                    last_pipeline = pipeline.id;
-                }
-                cmd.bind_descriptor_set(scene_data_ds, 0, &pipeline);
-                if let Some(material_ds) = &material.material_ds {
-                    cmd.bind_descriptor_set(material_ds, 1, &pipeline);
-                }
-
-                last_material = material.id;
-            }
-
-            if let Some(push_layout) = pass.push_layout() {
-                let model_data = UniformData::new(
-                    &push_layout,
-                    &[UniformPropData::U64(
-                        model.vertex_buffer.address(ctx.device.clone()),
-                    )],
-                );
-                cmd.push_constants(pipeline.layout.clone(), &model_data.raw());
-            }
-
-            cmd.bind_index_buffer::<u32>(&model.index_buffer, primitive.offset);
-            cmd.draw_indexed(primitive.len, 1);
-        }
-    }
-
-    pub fn resize(&mut self, width: u32, height: u32) {
-        self.width = width as f32;
-        self.height = height as f32;
     }
 
     fn get_key(key: Key) -> egui::Key {
@@ -423,5 +385,58 @@ impl UIRenderer {
         }
 
         model.build()
+    }
+}
+
+impl Renderable for UIRenderer {
+    fn resize(&mut self, width: u32, height: u32) {
+        self.width = width as f32;
+        self.height = height as f32;
+    }
+
+    fn draw(&self, ctx: &Context, pass: Arc<dyn RenderPass>, cmd: &CommandBuffer) {
+        let frame_id = self.frame_id(ctx);
+
+        let model = self.scene_frame_data[frame_id].ui_model.clone().unwrap();
+
+        let mut last_material = MaterialInstanceId::nil();
+        let mut last_pipeline = PipelineId::nil();
+
+        let scene_data_ds = &self.scene_frame_data[frame_id].uniform_ds;
+
+        for primitive in &model.primitives {
+            let material = &model.model.materials[&primitive.material];
+            let pipeline = material.pipeline();
+
+            if last_material != material.id {
+                if last_pipeline != pipeline.id {
+                    cmd.bind_pipeline(&pipeline);
+                    last_pipeline = pipeline.id;
+                }
+                cmd.bind_descriptor_set(scene_data_ds, 0, &pipeline);
+                if let Some(material_ds) = &material.material_ds {
+                    cmd.bind_descriptor_set(material_ds, 1, &pipeline);
+                }
+
+                last_material = material.id;
+            }
+
+            if let Some(push_layout) = pass.push_layout() {
+                let model_data = UniformData::new(
+                    &push_layout,
+                    &[UniformPropData::U64(
+                        model.vertex_buffer.address(ctx.device.clone()),
+                    )],
+                );
+                cmd.push_constants(pipeline.layout.clone(), &model_data.raw());
+            }
+
+            cmd.bind_index_buffer::<u32>(&model.index_buffer, primitive.offset);
+            cmd.draw_indexed(primitive.len, 1);
+        }
+    }
+
+    fn stats(&self) -> RenderStats {
+        self.stats.clone()
     }
 }

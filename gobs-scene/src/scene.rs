@@ -22,6 +22,7 @@ use gobs_vulkan::descriptor::{
 use crate::{
     graph::scenegraph::{NodeValue, SceneGraph},
     manager::ResourceManager,
+    renderable::{RenderStats, Renderable},
     resources::{ModelResource, UniformBuffer},
 };
 
@@ -60,10 +61,11 @@ pub struct Scene {
     pub camera: Camera,
     pub light: Light,
     pub scene_data_layout: Arc<UniformLayout>,
-    frame_number: usize,
+    pub frame_number: usize,
     _scene_ds_pool: DescriptorSetPool,
     scene_frame_data: Vec<SceneFrameData>,
     model_manager: ResourceManager<(ModelId, PassId), Arc<ModelResource>>,
+    stats: RenderStats,
 }
 
 impl Scene {
@@ -99,6 +101,7 @@ impl Scene {
             _scene_ds_pool,
             scene_frame_data,
             model_manager: ResourceManager::new(),
+            stats: RenderStats::default(),
         }
     }
 
@@ -127,8 +130,12 @@ impl Scene {
             .uniform_buffer
             .update(&scene_data);
 
+        self.stats.reset();
+
         self.graph.visit(self.graph.root, &mut |_, model| {
             if let NodeValue::Model(model) = model {
+                self.stats.add_model(model);
+
                 self.model_manager.add(
                     ctx,
                     model.id,
@@ -140,75 +147,86 @@ impl Scene {
             }
         });
     }
+}
 
-    pub fn resize(&mut self, width: u32, height: u32) {
+impl Renderable for Scene {
+    fn resize(&mut self, width: u32, height: u32) {
         self.camera.resize(width, height);
     }
 
-    pub fn draw(&self, ctx: &Context, pass: Arc<dyn RenderPass>, cmd: &CommandBuffer) {
+    fn draw(&self, ctx: &Context, pass: Arc<dyn RenderPass>, cmd: &CommandBuffer) {
         let frame_id = self.frame_id(ctx);
 
+        let mut last_model = Uuid::nil();
         let mut last_material = Uuid::nil();
         let mut last_pipeline = Uuid::nil();
 
         let scene_data_ds = &self.scene_frame_data[frame_id].uniform_ds;
-        self.graph.visit(self.graph.root, &mut |transform, model| {
-            if let NodeValue::Model(model) = model {
-                let world_matrix = transform.matrix;
-                let normal_matrix = Mat3::from_quat(transform.rotation);
+        self.graph
+            .visit_sorted(self.graph.root, &mut |transform, model| {
+                if let NodeValue::Model(model) = model {
+                    let world_matrix = transform.matrix;
+                    let normal_matrix = Mat3::from_quat(transform.rotation);
 
-                let model = self.model_manager.get(model.id, pass.id());
+                    let model = self.model_manager.get(model.id, pass.id());
 
-                for primitive in &model.primitives {
-                    let pipeline = match pass.pipeline() {
-                        Some(pipeline) => {
-                            if last_pipeline != pipeline.id {
-                                cmd.bind_pipeline(&pipeline);
-                                last_pipeline = pipeline.id;
-                            }
-
-                            pipeline
-                        }
-                        None => {
-                            let material = &model.model.materials[&primitive.material];
-                            let pipeline = material.pipeline();
-
-                            if last_material != material.id {
+                    for primitive in &model.primitives {
+                        let pipeline = match pass.pipeline() {
+                            Some(pipeline) => {
                                 if last_pipeline != pipeline.id {
                                     cmd.bind_pipeline(&pipeline);
                                     last_pipeline = pipeline.id;
                                 }
-                                cmd.bind_descriptor_set(scene_data_ds, 0, &pipeline);
-                                if let Some(material_ds) = &material.material_ds {
-                                    cmd.bind_descriptor_set(material_ds, 1, &pipeline);
+
+                                pipeline
+                            }
+                            None => {
+                                let material = &model.model.materials[&primitive.material];
+                                let pipeline = material.pipeline();
+
+                                if last_material != material.id {
+                                    if last_pipeline != pipeline.id {
+                                        cmd.bind_pipeline(&pipeline);
+                                        last_pipeline = pipeline.id;
+                                    }
+                                    cmd.bind_descriptor_set(scene_data_ds, 0, &pipeline);
+                                    if let Some(material_ds) = &material.material_ds {
+                                        cmd.bind_descriptor_set(material_ds, 1, &pipeline);
+                                    }
+
+                                    last_material = material.id;
                                 }
 
-                                last_material = material.id;
+                                pipeline
                             }
+                        };
 
-                            pipeline
+                        if let Some(push_layout) = pass.push_layout() {
+                            // TODO: hardcoded
+                            let model_data = UniformData::new(
+                                &push_layout,
+                                &[
+                                    UniformPropData::Mat4F(world_matrix.to_cols_array_2d()),
+                                    UniformPropData::Mat3F(normal_matrix.to_cols_array_2d()),
+                                    UniformPropData::U64(
+                                        model.vertex_buffer.address(ctx.device.clone()),
+                                    ),
+                                ],
+                            );
+                            cmd.push_constants(pipeline.layout.clone(), &model_data.raw());
                         }
-                    };
 
-                    if let Some(push_layout) = pass.push_layout() {
-                        // TODO: hardcoded
-                        let model_data = UniformData::new(
-                            &push_layout,
-                            &[
-                                UniformPropData::Mat4F(world_matrix.to_cols_array_2d()),
-                                UniformPropData::Mat3F(normal_matrix.to_cols_array_2d()),
-                                UniformPropData::U64(
-                                    model.vertex_buffer.address(ctx.device.clone()),
-                                ),
-                            ],
-                        );
-                        cmd.push_constants(pipeline.layout.clone(), &model_data.raw());
+                        if last_model != model.model.id {
+                            cmd.bind_index_buffer::<u32>(&model.index_buffer, primitive.offset);
+                            last_model = model.model.id;
+                        }
+                        cmd.draw_indexed(primitive.len, 1);
                     }
-
-                    cmd.bind_index_buffer::<u32>(&model.index_buffer, primitive.offset);
-                    cmd.draw_indexed(primitive.len, 1);
                 }
-            }
-        });
+            });
+    }
+
+    fn stats(&self) -> RenderStats {
+        self.stats.clone()
     }
 }

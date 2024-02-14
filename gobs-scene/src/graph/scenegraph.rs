@@ -1,10 +1,14 @@
-use std::sync::Arc;
+use std::{
+    collections::{hash_map::Entry, HashMap},
+    sync::Arc,
+};
 
 use slotmap::{DefaultKey, SlotMap};
 
 use gobs_core::Transform;
-use gobs_render::geometry::Model;
+use gobs_render::geometry::{Model, ModelId};
 
+#[derive(Clone)]
 pub enum NodeValue {
     None,
     Model(Arc<Model>),
@@ -77,6 +81,31 @@ impl SceneGraph {
                 Self::visit(&self, child, f);
             }
             f(&node.transform, &node.value);
+        }
+    }
+
+    pub fn visit_sorted<F>(&self, root: NodeId, f: &mut F)
+    where
+        F: FnMut(&Transform, &NodeValue),
+    {
+        let mut map: HashMap<ModelId, Vec<(Transform, NodeValue)>> = HashMap::new();
+
+        self.visit(root, &mut |transform, node| {
+            if let NodeValue::Model(model) = node {
+                match map.entry(model.id) {
+                    Entry::Occupied(mut entry) => entry.get_mut().push((*transform, node.clone())),
+                    Entry::Vacant(entry) => {
+                        let values = vec![(*transform, node.clone())];
+                        entry.insert(values);
+                    }
+                }
+            }
+        });
+
+        for model_id in map.keys() {
+            for (transform, node) in map.get(model_id).unwrap() {
+                f(transform, node);
+            }
         }
     }
 }
