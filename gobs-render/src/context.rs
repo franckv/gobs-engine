@@ -24,6 +24,7 @@ pub struct Context {
     pub color_format: ImageFormat,
     pub depth_format: ImageFormat,
     pub frames_in_flight: usize,
+    pub stats_refresh: usize,
 }
 
 impl Context {
@@ -61,6 +62,7 @@ impl Context {
             color_format: ImageFormat::R16g16b16a16Sfloat,
             depth_format: ImageFormat::D32Sfloat,
             frames_in_flight: 2,
+            stats_refresh: 60,
         }
     }
 }

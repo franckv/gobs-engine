@@ -1,13 +1,12 @@
-use std::{
-    collections::HashMap,
-    sync::{Arc, RwLock},
-};
+use std::{collections::HashMap, sync::Arc};
 
 use egui::{
     epaint::{ImageDelta, Primitive},
     Event, FullOutput, Modifiers, PointerButton, RawInput, Rect, Rgba, TextureId,
 };
 use glam::{Vec2, Vec3};
+use parking_lot::RwLock;
+
 use gobs_core::entity::uniform::{UniformData, UniformLayout, UniformProp, UniformPropData};
 use gobs_scene::{
     renderable::{RenderStats, Renderable},
@@ -162,17 +161,23 @@ impl UIRenderer {
 
         let to_remove = output.textures_delta.free.clone();
 
-        self.stats.write().unwrap().reset();
+        if self.frame_number % ctx.stats_refresh == 0 {
+            self.stats.write().reset();
+        }
 
         let model = self.load_models(output);
 
-        self.stats.write().unwrap().add_model(&model);
+        if self.frame_number % ctx.stats_refresh == 0 {
+            self.stats.write().add_model(&model);
+        }
 
         self.scene_frame_data[frame_id].ui_model = Some(ModelResource::new(ctx, model, pass));
 
         self.cleanup_textures(to_remove);
 
-        self.stats.write().unwrap().update_time = timer.peek();
+        if self.frame_number % ctx.stats_refresh == 0 {
+            self.stats.write().update_time = timer.peek();
+        }
     }
 
     fn get_key(key: Key) -> egui::Key {
@@ -445,10 +450,12 @@ impl Renderable for UIRenderer {
             cmd.draw_indexed(primitive.len, 1);
         }
 
-        self.stats.write().unwrap().cpu_draw_time = timer.peek();
+        if self.frame_number % ctx.stats_refresh == 0 {
+            self.stats.write().cpu_draw_time = timer.peek();
+        }
     }
 
     fn stats(&self) -> RenderStats {
-        self.stats.read().unwrap().clone()
+        self.stats.read().clone()
     }
 }

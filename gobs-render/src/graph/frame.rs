@@ -1,4 +1,6 @@
-use std::sync::{Arc, RwLock};
+use std::sync::Arc;
+
+use parking_lot::RwLock;
 
 use gobs_vulkan::{
     command::{CommandBuffer, CommandPool},
@@ -140,26 +142,16 @@ impl FrameGraph {
         let frame = &self.frames[frame_id];
         let cmd = &frame.command_buffer;
 
-        if self.frame_number >= ctx.frames_in_flight {
+        if self.frame_number >= ctx.frames_in_flight && self.frame_number % ctx.stats_refresh == 0 {
             let mut buf = [0 as u64; 2];
             frame.query_pool.get_query_pool_results(0, 2, &mut buf);
 
             self.gpu_time = ((buf[1] - buf[0]) as f32 * frame.query_pool.period) / 1_000_000_000.;
         }
 
-        let draw_image_extent = self
-            .draw_image
-            .read()
-            .map_err(|_| RenderError::Error)?
-            .extent;
+        let draw_image_extent = self.draw_image.read().extent;
 
-        debug_assert_eq!(
-            draw_image_extent,
-            self.depth_image
-                .read()
-                .map_err(|_| { RenderError::Error })?
-                .extent
-        );
+        debug_assert_eq!(draw_image_extent, self.depth_image.read().extent);
 
         self.draw_extent = ImageExtent2D::new(
             (draw_image_extent
@@ -178,14 +170,8 @@ impl FrameGraph {
 
         self.swapchain_idx = image_index;
 
-        self.draw_image
-            .write()
-            .map_err(|_| RenderError::Error)?
-            .invalidate();
-        self.depth_image
-            .write()
-            .map_err(|_| RenderError::Error)?
-            .invalidate();
+        self.draw_image.write().invalidate();
+        self.depth_image.write().invalidate();
         self.swapchain_images[image_index as usize].invalidate();
 
         cmd.begin();
@@ -205,24 +191,20 @@ impl FrameGraph {
 
         log::debug!("Present");
 
-        if let Ok(mut draw_image) = self.draw_image.write() {
-            cmd.transition_image_layout(&mut draw_image, ImageLayout::TransferSrc);
+        cmd.transition_image_layout(&mut self.draw_image.write(), ImageLayout::TransferSrc);
 
-            let swapchain_image = &mut self.swapchain_images[self.swapchain_idx];
+        let swapchain_image = &mut self.swapchain_images[self.swapchain_idx];
 
-            cmd.transition_image_layout(swapchain_image, ImageLayout::TransferDst);
+        cmd.transition_image_layout(swapchain_image, ImageLayout::TransferDst);
 
-            cmd.copy_image_to_image(
-                &draw_image,
-                self.draw_extent,
-                swapchain_image,
-                swapchain_image.extent,
-            );
+        cmd.copy_image_to_image(
+            &self.draw_image.read(),
+            self.draw_extent,
+            swapchain_image,
+            swapchain_image.extent,
+        );
 
-            cmd.transition_image_layout(swapchain_image, ImageLayout::Present);
-        } else {
-            return Err(RenderError::Error);
-        }
+        cmd.transition_image_layout(swapchain_image, ImageLayout::Present);
 
         cmd.write_timestamp(&frame.query_pool, PipelineStage::BottomOfPipe, 1);
 
@@ -257,57 +239,37 @@ impl FrameGraph {
         let frame_id = self.frame_id(ctx);
         let cmd = &self.frames[frame_id].command_buffer;
 
-        if let Ok(mut draw_image) = self.draw_image.write() {
-            self.compute_pass.clone().render(
-                ctx,
-                cmd,
-                &mut [&mut draw_image],
-                self.draw_extent,
-                draw_cmd,
-            )?;
-        } else {
-            return Err(RenderError::Error);
-        }
+        self.compute_pass.clone().render(
+            ctx,
+            cmd,
+            &mut [&mut self.draw_image.write()],
+            self.draw_extent,
+            draw_cmd,
+        )?;
 
-        if let Ok(mut draw_image) = self.draw_image.write() {
-            if let Ok(mut depth_image) = self.depth_image.write() {
-                self.forward_pass.clone().render(
-                    ctx,
-                    cmd,
-                    &mut [&mut draw_image, &mut depth_image],
-                    self.draw_extent,
-                    draw_cmd,
-                )?;
-            } else {
-                return Err(RenderError::Error);
-            }
-        } else {
-            return Err(RenderError::Error);
-        }
+        self.forward_pass.clone().render(
+            ctx,
+            cmd,
+            &mut [&mut self.draw_image.write(), &mut self.depth_image.write()],
+            self.draw_extent,
+            draw_cmd,
+        )?;
 
-        if let Ok(mut draw_image) = self.draw_image.write() {
-            self.wire_pass.clone().render(
-                ctx,
-                cmd,
-                &mut [&mut draw_image],
-                self.draw_extent,
-                draw_cmd,
-            )?;
-        } else {
-            return Err(RenderError::Error);
-        }
+        self.wire_pass.clone().render(
+            ctx,
+            cmd,
+            &mut [&mut self.draw_image.write()],
+            self.draw_extent,
+            draw_cmd,
+        )?;
 
-        if let Ok(mut draw_image) = self.draw_image.write() {
-            self.ui_pass.clone().render(
-                ctx,
-                cmd,
-                &mut [&mut draw_image],
-                self.draw_extent,
-                draw_cmd,
-            )?;
-        } else {
-            return Err(RenderError::Error);
-        }
+        self.ui_pass.clone().render(
+            ctx,
+            cmd,
+            &mut [&mut self.draw_image.write()],
+            self.draw_extent,
+            draw_cmd,
+        )?;
 
         log::debug!("End rendering");
 

@@ -1,7 +1,8 @@
-use std::sync::{Arc, RwLock};
+use std::sync::Arc;
 
 use glam::Mat3;
 use gobs_utils::timer::Timer;
+use parking_lot::RwLock;
 use uuid::Uuid;
 
 use gobs_core::entity::{
@@ -132,11 +133,15 @@ impl Scene {
             .uniform_buffer
             .update(&scene_data);
 
-        self.stats.write().unwrap().reset();
+        if self.frame_number % ctx.stats_refresh == 0 {
+            self.stats.write().reset();
+        }
 
         self.graph.visit(self.graph.root, &mut |_, model| {
             if let NodeValue::Model(model) = model {
-                self.stats.write().unwrap().add_model(model);
+                if self.frame_number % ctx.stats_refresh == 0 {
+                    self.stats.write().add_model(model);
+                }
 
                 self.model_manager.add(
                     ctx,
@@ -149,7 +154,9 @@ impl Scene {
             }
         });
 
-        self.stats.write().unwrap().update_time = timer.peek();
+        if self.frame_number % ctx.stats_refresh == 0 {
+            self.stats.write().update_time = timer.peek();
+        }
     }
 }
 
@@ -231,10 +238,12 @@ impl Renderable for Scene {
                 }
             });
 
-        self.stats.write().unwrap().cpu_draw_time = timer.peek();
+        if self.frame_number % ctx.stats_refresh == 0 {
+            self.stats.write().cpu_draw_time = timer.peek();
+        }
     }
 
     fn stats(&self) -> RenderStats {
-        self.stats.read().unwrap().clone()
+        self.stats.read().clone()
     }
 }

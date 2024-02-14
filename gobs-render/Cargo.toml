@@ -16,5 +16,6 @@ gobs-vulkan = { workspace = true }
 gpu-allocator = { workspace = true }
 image = { workspace = true }
 log = { workspace = true }
+parking_lot = { workspace = true }
 uuid = { workspace = true }
 winit = { workspace = true }

@@ -30,6 +30,7 @@ pub struct SampleApp {
     pub process_updates: bool,
     pub draw_ui: bool,
     pub draw_wire: bool,
+    pub fps: u32,
 }
 
 impl SampleApp {
@@ -52,6 +53,7 @@ impl SampleApp {
             process_updates: true,
             draw_ui: true,
             draw_wire: false,
+            fps: 0,
         }
     }
 
@@ -140,6 +142,10 @@ impl SampleApp {
 
         let ui_stats = self.ui.stats();
         let scene_stats = self.scene.stats();
+        if self.graph.frame_number % ctx.stats_refresh == 0 {
+            self.fps = (1. / delta).round() as u32;
+        }
+
         self.scene.update(ctx, &self.graph);
         if self.draw_ui {
             self.ui.update(ctx, self.graph.ui_pass.clone(), |ectx| {
@@ -149,7 +155,7 @@ impl SampleApp {
                         ui.visuals_mut().override_text_color = Some(egui::Color32::GREEN);
                         ui.heading(&ctx.app_name);
                         ui.separator();
-                        Self::show_fps(ui, delta);
+                        Self::show_fps(ui, self.fps);
                         Self::show_gpu_stats(ui, self.graph.gpu_time);
                         Self::show_stats(ui, "UI Stats", &ui_stats);
                         Self::show_stats(ui, "Scene Stats", &scene_stats);
@@ -160,8 +166,8 @@ impl SampleApp {
         }
     }
 
-    fn show_fps(ui: &mut egui::Ui, delta: f32) {
-        ui.label(format!("FPS: {}", (1. / delta).round()));
+    fn show_fps(ui: &mut egui::Ui, fps: u32) {
+        ui.label(format!("FPS: {}", fps));
     }
 
     fn show_gpu_stats(ui: &mut egui::Ui, gpu_time: f32) {

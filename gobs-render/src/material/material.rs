@@ -1,8 +1,6 @@
-use std::{
-    path::PathBuf,
-    sync::{Arc, RwLock},
-};
+use std::{path::PathBuf, sync::Arc};
 
+use parking_lot::RwLock;
 use uuid::Uuid;
 
 use gobs_utils::load;
@@ -42,7 +40,7 @@ impl Material {
     pub fn instantiate(self: &Arc<Self>, textures: Vec<Texture>) -> Arc<MaterialInstance> {
         let material_ds = match &self.material_ds_pool {
             Some(ds_pool) => {
-                let material_ds = ds_pool.write().unwrap().allocate();
+                let material_ds = ds_pool.write().allocate();
                 let mut updater = material_ds.update();
 
                 for texture in &textures {
