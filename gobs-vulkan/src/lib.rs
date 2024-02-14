@@ -10,6 +10,7 @@ pub mod instance;
 pub mod memory;
 pub mod physical;
 pub mod pipeline;
+pub mod query;
 pub mod queue;
 pub mod renderpass;
 pub mod surface;

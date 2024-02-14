@@ -40,6 +40,30 @@ impl Rect2D {
     }
 }
 
+pub enum PipelineStage {
+    AllCommands,
+    AllGraphics,
+    TopOfPipe,
+    Compute,
+    Vertex,
+    Fragment,
+    BottomOfPipe,
+}
+
+impl Into<vk::PipelineStageFlags> for PipelineStage {
+    fn into(self) -> vk::PipelineStageFlags {
+        match self {
+            PipelineStage::AllCommands => vk::PipelineStageFlags::ALL_COMMANDS,
+            PipelineStage::AllGraphics => vk::PipelineStageFlags::ALL_GRAPHICS,
+            PipelineStage::TopOfPipe => vk::PipelineStageFlags::TOP_OF_PIPE,
+            PipelineStage::Compute => vk::PipelineStageFlags::COMPUTE_SHADER,
+            PipelineStage::Vertex => vk::PipelineStageFlags::VERTEX_SHADER,
+            PipelineStage::Fragment => vk::PipelineStageFlags::FRAGMENT_SHADER,
+            PipelineStage::BottomOfPipe => vk::PipelineStageFlags::BOTTOM_OF_PIPE,
+        }
+    }
+}
+
 pub struct ShaderStage {
     entry: CString,
     shader: Shader,

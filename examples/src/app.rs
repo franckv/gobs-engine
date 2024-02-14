@@ -150,9 +150,11 @@ impl SampleApp {
                         ui.heading(&ctx.app_name);
                         ui.separator();
                         Self::show_fps(ui, delta);
+                        Self::show_gpu_stats(ui, self.graph.gpu_time);
                         Self::show_stats(ui, "UI Stats", &ui_stats);
                         Self::show_stats(ui, "Scene Stats", &scene_stats);
                         Self::show_camera(ui, &self.scene.camera);
+                        Self::show_memory(ui, ctx);
                     });
             });
         }
@@ -160,6 +162,10 @@ impl SampleApp {
 
     fn show_fps(ui: &mut egui::Ui, delta: f32) {
         ui.label(format!("FPS: {}", (1. / delta).round()));
+    }
+
+    fn show_gpu_stats(ui: &mut egui::Ui, gpu_time: f32) {
+        ui.label(format!("GPU time: {:.2}ms", 1000. * gpu_time));
     }
 
     fn show_stats(ui: &mut egui::Ui, header: &str, stats: &RenderStats) {
@@ -191,6 +197,12 @@ impl SampleApp {
             ));
             ui.label(format!("  Yaw: {:.1}°", camera.yaw.to_degrees()));
             ui.label(format!("  Pitch: {:.1}°", camera.pitch.to_degrees()));
+        });
+    }
+
+    fn show_memory(ui: &mut egui::Ui, ctx: &Context) {
+        ui.collapsing("Memory", |ui| {
+            ui.label(format!("{:?}", ctx.allocator.allocator.lock().unwrap()));
         });
     }
 
@@ -242,7 +254,6 @@ impl SampleApp {
                 Key::E => self.graph.render_scaling = (self.graph.render_scaling + 0.1).min(1.),
                 Key::A => self.graph.render_scaling = (self.graph.render_scaling - 0.1).max(0.1),
                 Key::L => log::info!("{:?}", ctx.allocator.allocator.lock().unwrap()),
-                Key::C => log::info!("{:?}", self.scene.camera),
                 Key::P => self.process_updates = !self.process_updates,
                 Key::W => self.draw_wire = !self.draw_wire,
                 Key::U => self.draw_ui = !self.draw_ui,

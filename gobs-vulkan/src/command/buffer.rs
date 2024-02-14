@@ -10,7 +10,8 @@ use crate::descriptor::DescriptorSet;
 use crate::device::Device;
 use crate::framebuffer::Framebuffer;
 use crate::image::{Image, ImageExtent2D, ImageLayout};
-use crate::pipeline::{Pipeline, PipelineLayout};
+use crate::pipeline::{Pipeline, PipelineLayout, PipelineStage};
+use crate::query::QueryPool;
 use crate::queue::Queue;
 use crate::sync::{Fence, Semaphore};
 use crate::{debug, Wrap};
@@ -332,6 +333,28 @@ impl CommandBuffer {
                 vk::ShaderStageFlags::VERTEX,
                 0,
                 bytemuck::cast_slice(constants),
+            );
+        }
+    }
+
+    pub fn reset_query_pool(&self, pool: &QueryPool, first_query: u32, query_count: u32) {
+        unsafe {
+            self.device.raw().cmd_reset_query_pool(
+                self.command_buffer,
+                pool.pool,
+                first_query,
+                query_count,
+            );
+        }
+    }
+
+    pub fn write_timestamp(&self, pool: &QueryPool, stage: PipelineStage, query: u32) {
+        unsafe {
+            self.device.raw().cmd_write_timestamp(
+                self.command_buffer,
+                stage.into(),
+                pool.pool,
+                query,
             );
         }
     }

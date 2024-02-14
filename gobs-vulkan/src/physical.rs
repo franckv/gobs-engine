@@ -21,6 +21,7 @@ pub struct PhysicalDevice {
     pub name: String,
     pub gpu_type: PhysicalDeviceType,
     pub queue_families: Vec<QueueFamily>,
+    pub(crate) props: vk::PhysicalDeviceProperties,
 }
 
 impl PhysicalDevice {
@@ -43,6 +44,7 @@ impl PhysicalDevice {
             gpu_type,
             queue_families: Self::get_queue_families(&p_device, &instance),
             p_device,
+            props,
         }
     }
 

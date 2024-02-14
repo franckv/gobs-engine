@@ -3,6 +3,8 @@ use std::sync::{Arc, RwLock};
 use gobs_vulkan::{
     command::{CommandBuffer, CommandPool},
     image::{ColorSpace, Image, ImageExtent2D, ImageFormat, ImageLayout, ImageUsage},
+    pipeline::PipelineStage,
+    query::{QueryPool, QueryType},
     swapchain::{PresentationMode, SwapChain},
     sync::Semaphore,
 };
@@ -23,6 +25,7 @@ pub struct FrameData {
     pub command_buffer: CommandBuffer,
     pub swapchain_semaphore: Semaphore,
     pub render_semaphore: Semaphore,
+    pub query_pool: QueryPool,
 }
 
 impl FrameData {
@@ -34,10 +37,13 @@ impl FrameData {
         let swapchain_semaphore = Semaphore::new(ctx.device.clone(), "Swapchain");
         let render_semaphore = Semaphore::new(ctx.device.clone(), "Render");
 
+        let query_pool = QueryPool::new(ctx.device.clone(), QueryType::Timestamp, 2);
+
         FrameData {
             command_buffer,
             swapchain_semaphore,
             render_semaphore,
+            query_pool,
         }
     }
 
@@ -60,6 +66,7 @@ pub struct FrameGraph {
     pub forward_pass: Arc<dyn RenderPass>,
     pub ui_pass: Arc<dyn RenderPass>,
     pub wire_pass: Arc<dyn RenderPass>,
+    pub gpu_time: f32,
 }
 
 impl FrameGraph {
@@ -110,6 +117,7 @@ impl FrameGraph {
             forward_pass,
             ui_pass,
             wire_pass,
+            gpu_time: 0.,
         }
     }
 
@@ -131,6 +139,13 @@ impl FrameGraph {
 
         let frame = &self.frames[frame_id];
         let cmd = &frame.command_buffer;
+
+        if self.frame_number >= ctx.frames_in_flight {
+            let mut buf = [0 as u64; 2];
+            frame.query_pool.get_query_pool_results(0, 2, &mut buf);
+
+            self.gpu_time = ((buf[1] - buf[0]) as f32 * frame.query_pool.period) / 1_000_000_000.;
+        }
 
         let draw_image_extent = self
             .draw_image
@@ -177,6 +192,9 @@ impl FrameGraph {
 
         cmd.begin_label(&format!("Frame {}", self.frame_number));
 
+        cmd.reset_query_pool(&frame.query_pool, 0, 2);
+        cmd.write_timestamp(&frame.query_pool, PipelineStage::TopOfPipe, 0);
+
         Ok(())
     }
 
@@ -205,6 +223,8 @@ impl FrameGraph {
         } else {
             return Err(RenderError::Error);
         }
+
+        cmd.write_timestamp(&frame.query_pool, PipelineStage::BottomOfPipe, 1);
 
         cmd.end_label();
 
