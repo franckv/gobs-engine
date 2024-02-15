@@ -53,8 +53,10 @@ impl ModelResource {
                 Some(vertex_flags) => vertex_flags,
                 None => model.materials[material_id].vertex_flags(),
             };
+            // TODO: hot path
+            let alignment = vertex_flags.alignment();
             for vertice in &mesh.vertices {
-                vertices.append(&mut vertice.raw(vertex_flags));
+                vertices.append(&mut vertice.raw(vertex_flags, alignment));
             }
             for index in &mesh.indices {
                 indices.push(start_idx + index);

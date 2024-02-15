@@ -138,5 +138,5 @@ fn main() {
 
     log::info!("Engine start");
 
-    Application::new("Atlas", 1600, 900).run::<App>();
+    Application::new("Atlas", 1920, 1080).run::<App>();
 }

@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::{collections::HashMap, sync::Arc};
 
 use parking_lot::RwLock;
 
@@ -60,8 +60,6 @@ pub struct FrameGraph {
     pub swapchain: SwapChain,
     pub swapchain_images: Vec<Image>,
     pub swapchain_idx: usize,
-    pub draw_image: RwLock<Image>,
-    pub depth_image: RwLock<Image>,
     pub draw_extent: ImageExtent2D,
     pub render_scaling: f32,
     pub compute_pass: Arc<dyn RenderPass>,
@@ -69,6 +67,7 @@ pub struct FrameGraph {
     pub ui_pass: Arc<dyn RenderPass>,
     pub wire_pass: Arc<dyn RenderPass>,
     pub gpu_time: f32,
+    resource_manager: HashMap<String, RwLock<Image>>,
 }
 
 impl FrameGraph {
@@ -96,11 +95,16 @@ impl FrameGraph {
             ctx.allocator.clone(),
         );
 
+        let mut resource_manager = HashMap::new();
+
+        resource_manager.insert("draw".to_string(), RwLock::new(draw_image));
+        resource_manager.insert("depth".to_string(), RwLock::new(depth_image));
+
         let frames = (0..ctx.frames_in_flight)
             .map(|_| FrameData::new(ctx))
             .collect();
 
-        let compute_pass = ComputePass::new(ctx, "bg", &draw_image);
+        let compute_pass = ComputePass::new(ctx, "bg", &resource_manager["draw"].read());
         let forward_pass = ForwardPass::new("scene");
         let ui_pass = UiPass::new("ui");
         let wire_pass = WirePass::new(ctx, "wire");
@@ -111,8 +115,6 @@ impl FrameGraph {
             swapchain,
             swapchain_images,
             swapchain_idx: 0,
-            draw_image: RwLock::new(draw_image),
-            depth_image: RwLock::new(depth_image),
             draw_extent: extent,
             render_scaling: 1.,
             compute_pass,
@@ -120,6 +122,7 @@ impl FrameGraph {
             ui_pass,
             wire_pass,
             gpu_time: 0.,
+            resource_manager,
         }
     }
 
@@ -149,9 +152,11 @@ impl FrameGraph {
             self.gpu_time = ((buf[1] - buf[0]) as f32 * frame.query_pool.period) / 1_000_000_000.;
         }
 
-        let draw_image_extent = self.draw_image.read().extent;
+        let draw_image = &self.resource_manager["draw"];
+        let depth_image = &self.resource_manager["draw"];
 
-        debug_assert_eq!(draw_image_extent, self.depth_image.read().extent);
+        let draw_image_extent = draw_image.read().extent;
+        debug_assert_eq!(draw_image_extent, depth_image.read().extent);
 
         self.draw_extent = ImageExtent2D::new(
             (draw_image_extent
@@ -170,8 +175,8 @@ impl FrameGraph {
 
         self.swapchain_idx = image_index;
 
-        self.draw_image.write().invalidate();
-        self.depth_image.write().invalidate();
+        draw_image.write().invalidate();
+        depth_image.write().invalidate();
         self.swapchain_images[image_index as usize].invalidate();
 
         cmd.begin();
@@ -191,14 +196,15 @@ impl FrameGraph {
 
         log::debug!("Present");
 
-        cmd.transition_image_layout(&mut self.draw_image.write(), ImageLayout::TransferSrc);
+        let draw_image = &self.resource_manager["draw"];
+        cmd.transition_image_layout(&mut draw_image.write(), ImageLayout::TransferSrc);
 
         let swapchain_image = &mut self.swapchain_images[self.swapchain_idx];
 
         cmd.transition_image_layout(swapchain_image, ImageLayout::TransferDst);
 
         cmd.copy_image_to_image(
-            &self.draw_image.read(),
+            &draw_image.read(),
             self.draw_extent,
             swapchain_image,
             swapchain_image.extent,
@@ -239,10 +245,13 @@ impl FrameGraph {
         let frame_id = self.frame_id(ctx);
         let cmd = &self.frames[frame_id].command_buffer;
 
+        let draw_image = &self.resource_manager["draw"];
+        let depth_image = &self.resource_manager["depth"];
+
         self.compute_pass.clone().render(
             ctx,
             cmd,
-            &mut [&mut self.draw_image.write()],
+            &mut [&mut draw_image.write()],
             self.draw_extent,
             draw_cmd,
         )?;
@@ -250,7 +259,7 @@ impl FrameGraph {
         self.forward_pass.clone().render(
             ctx,
             cmd,
-            &mut [&mut self.draw_image.write(), &mut self.depth_image.write()],
+            &mut [&mut draw_image.write(), &mut depth_image.write()],
             self.draw_extent,
             draw_cmd,
         )?;
@@ -258,7 +267,7 @@ impl FrameGraph {
         self.wire_pass.clone().render(
             ctx,
             cmd,
-            &mut [&mut self.draw_image.write()],
+            &mut [&mut draw_image.write()],
             self.draw_extent,
             draw_cmd,
         )?;
@@ -266,7 +275,7 @@ impl FrameGraph {
         self.ui_pass.clone().render(
             ctx,
             cmd,
-            &mut [&mut self.draw_image.write()],
+            &mut [&mut draw_image.write()],
             self.draw_extent,
             draw_cmd,
         )?;

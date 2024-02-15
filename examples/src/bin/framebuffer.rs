@@ -121,5 +121,5 @@ fn main() {
 
     log::info!("Engine start");
 
-    Application::new("Framebuffer", 1600, 900).run::<App>();
+    Application::new("Framebuffer", 1920, 1080).run::<App>();
 }

@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::{collections::HashMap, sync::Arc};
 
 use glam::Mat3;
 use gobs_utils::timer::Timer;
@@ -23,7 +23,6 @@ use gobs_vulkan::descriptor::{
 
 use crate::{
     graph::scenegraph::{NodeValue, SceneGraph},
-    manager::ResourceManager,
     renderable::{RenderStats, Renderable},
     resources::{ModelResource, UniformBuffer},
 };
@@ -66,7 +65,7 @@ pub struct Scene {
     pub frame_number: usize,
     _scene_ds_pool: DescriptorSetPool,
     scene_frame_data: Vec<SceneFrameData>,
-    model_manager: ResourceManager<(ModelId, PassId), Arc<ModelResource>>,
+    model_manager: HashMap<(ModelId, PassId), Arc<ModelResource>>,
     stats: RwLock<RenderStats>,
 }
 
@@ -102,7 +101,7 @@ impl Scene {
             frame_number: 0,
             _scene_ds_pool,
             scene_frame_data,
-            model_manager: ResourceManager::new(),
+            model_manager: HashMap::new(),
             stats: RwLock::new(RenderStats::default()),
         }
     }
@@ -143,14 +142,14 @@ impl Scene {
                     self.stats.write().add_model(model);
                 }
 
-                self.model_manager.add(
-                    ctx,
-                    model.id,
+                for pass in [
                     framegraph.forward_pass.clone(),
-                    model.clone(),
-                );
-                self.model_manager
-                    .add(ctx, model.id, framegraph.wire_pass.clone(), model.clone());
+                    framegraph.wire_pass.clone(),
+                ] {
+                    self.model_manager
+                        .entry((model.id, pass.id()))
+                        .or_insert_with(|| ModelResource::new(ctx, model.clone(), pass));
+                }
             }
         });
 
@@ -181,7 +180,10 @@ impl Renderable for Scene {
                     let world_matrix = transform.matrix;
                     let normal_matrix = Mat3::from_quat(transform.rotation);
 
-                    let model = self.model_manager.get(model.id, pass.id());
+                    let model = self
+                        .model_manager
+                        .get(&(model.id, pass.id()))
+                        .expect("Missing model");
 
                     for primitive in &model.primitives {
                         let pipeline = match pass.pipeline() {
