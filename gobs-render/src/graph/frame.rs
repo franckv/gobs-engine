@@ -105,8 +105,8 @@ impl FrameGraph {
             .collect();
 
         let compute_pass = ComputePass::new(ctx, "bg", &resource_manager["draw"].read());
-        let forward_pass = ForwardPass::new("scene");
-        let ui_pass = UiPass::new("ui");
+        let forward_pass = ForwardPass::new(ctx, "scene");
+        let ui_pass = UiPass::new(ctx, "ui");
         let wire_pass = WirePass::new(ctx, "wire");
 
         Self {
@@ -238,7 +238,7 @@ impl FrameGraph {
     pub fn render(
         &self,
         ctx: &Context,
-        draw_cmd: &dyn Fn(Arc<dyn RenderPass>, &CommandBuffer),
+        draw_cmd: &mut dyn FnMut(Arc<dyn RenderPass>, &CommandBuffer),
     ) -> Result<(), RenderError> {
         log::debug!("Begin rendering");
 

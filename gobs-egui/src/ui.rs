@@ -5,65 +5,26 @@ use egui::{
     Event, FullOutput, Modifiers, PointerButton, RawInput, Rect, Rgba, TextureId,
 };
 use glam::{Vec2, Vec3};
-use parking_lot::RwLock;
 
 use gobs_core::{
-    entity::uniform::{UniformData, UniformLayout, UniformProp, UniformPropData},
+    entity::uniform::{UniformData, UniformPropData},
     Transform,
 };
-use gobs_utils::timer::Timer;
-use gobs_vulkan::{
-    descriptor::{
-        DescriptorSet, DescriptorSetLayout, DescriptorSetPool, DescriptorStage, DescriptorType,
-    },
-    pipeline::PipelineId,
-};
-
 use gobs_game::input::{Input, Key};
 use gobs_render::{
     context::Context,
     geometry::{Mesh, Model, VertexData, VertexFlag},
-    material::{
-        Material, MaterialInstance, MaterialInstanceId, MaterialProperty, Texture, TextureType,
-    },
+    material::{Material, MaterialInstance, MaterialProperty, Texture, TextureType},
     pass::RenderPass,
     renderable::{RenderObject, RenderStats, Renderable},
-    resources::{ModelResource, UniformBuffer},
+    resources::ModelResource,
     CommandBuffer, ImageExtent2D, SamplerFilter,
 };
 
 const PIXEL_PER_POINT: f32 = 1.;
 
-struct SceneFrameData {
-    pub uniform_ds: DescriptorSet,
-    pub uniform_buffer: UniformBuffer,
+struct FrameData {
     render_list: Vec<RenderObject>,
-}
-
-impl SceneFrameData {
-    pub fn new(
-        ctx: &Context,
-        uniform_layout: Arc<UniformLayout>,
-        uniform_ds: DescriptorSet,
-    ) -> Self {
-        let uniform_buffer = UniformBuffer::new(
-            ctx,
-            uniform_ds.layout.clone(),
-            uniform_layout.size(),
-            ctx.allocator.clone(),
-        );
-
-        uniform_ds
-            .update()
-            .bind_buffer(&uniform_buffer.buffer, 0, uniform_buffer.buffer.size)
-            .end();
-
-        SceneFrameData {
-            uniform_ds,
-            uniform_buffer,
-            render_list: Vec::new(),
-        }
-    }
 }
 
 pub struct UIRenderer {
@@ -71,14 +32,11 @@ pub struct UIRenderer {
     width: f32,
     height: f32,
     material: Arc<Material>,
-    pub scene_data_layout: Arc<UniformLayout>,
-    frame_number: usize,
-    _scene_ds_pool: DescriptorSetPool,
-    scene_frame_data: Vec<SceneFrameData>,
     font_texture: HashMap<TextureId, Arc<MaterialInstance>>,
     input: Vec<Input>,
     mouse_position: (f32, f32),
-    stats: RwLock<RenderStats>,
+    frame_data: Vec<FrameData>,
+    frame_number: usize,
 }
 
 impl UIRenderer {
@@ -98,22 +56,10 @@ impl UIRenderer {
             .blending_enabled()
             .build(ctx, pass);
 
-        let scene_descriptor_layout = DescriptorSetLayout::builder()
-            .binding(DescriptorType::Uniform, DescriptorStage::All)
-            .build(ctx.device.clone());
-
-        let scene_data_layout = UniformLayout::builder()
-            .prop("screen_size", UniformProp::Vec2F)
-            .build();
-
-        let mut _scene_ds_pool = DescriptorSetPool::new(
-            ctx.device.clone(),
-            scene_descriptor_layout.clone(),
-            ctx.frames_in_flight as u32,
-        );
-
-        let scene_frame_data = (0..ctx.frames_in_flight)
-            .map(|_| SceneFrameData::new(ctx, scene_data_layout.clone(), _scene_ds_pool.allocate()))
+        let frame_data = (0..ctx.frames_in_flight)
+            .map(|_| FrameData {
+                render_list: Vec::new(),
+            })
             .collect();
 
         UIRenderer {
@@ -121,15 +67,17 @@ impl UIRenderer {
             width,
             height,
             material,
-            scene_data_layout,
-            frame_number: 0,
-            _scene_ds_pool,
-            scene_frame_data,
             font_texture: HashMap::new(),
             input: Vec::new(),
             mouse_position: (0., 0.),
-            stats: RwLock::new(RenderStats::default()),
+            frame_data,
+            frame_number: 0,
         }
+    }
+
+    fn new_frame(&mut self, ctx: &Context) -> usize {
+        self.frame_number += 1;
+        (self.frame_number - 1) % ctx.frames_in_flight
     }
 
     fn frame_id(&self, ctx: &Context) -> usize {
@@ -140,19 +88,7 @@ impl UIRenderer {
     where
         F: FnMut(&egui::Context),
     {
-        let timer = Timer::new();
-
-        self.frame_number += 1;
-        let frame_id = self.frame_id(ctx);
-
-        let scene_data = UniformData::new(
-            &self.scene_data_layout,
-            &[UniformPropData::Vec2F([self.width, self.height])],
-        );
-
-        self.scene_frame_data[frame_id]
-            .uniform_buffer
-            .update(&scene_data);
+        let frame_id = self.new_frame(ctx);
 
         let input = self.prepare_inputs();
 
@@ -162,19 +98,11 @@ impl UIRenderer {
 
         let to_remove = output.textures_delta.free.clone();
 
-        if self.frame_number % ctx.stats_refresh == 0 {
-            self.stats.write().reset();
-        }
-
         let model = self.load_models(output);
 
-        if self.frame_number % ctx.stats_refresh == 0 {
-            self.stats.write().add_model(&model);
-        }
-
-        self.scene_frame_data[frame_id].render_list.clear();
-
         let resource = ModelResource::new(ctx, model.clone(), pass.clone());
+
+        self.frame_data[frame_id].render_list.clear();
 
         for primitive in &resource.primitives {
             let render_object = RenderObject {
@@ -186,16 +114,10 @@ impl UIRenderer {
                 indices_len: primitive.len,
             };
 
-            self.scene_frame_data[frame_id]
-                .render_list
-                .push(render_object);
+            self.frame_data[frame_id].render_list.push(render_object);
         }
 
         self.cleanup_textures(to_remove);
-
-        if self.frame_number % ctx.stats_refresh == 0 {
-            self.stats.write().update_time = timer.peek();
-        }
     }
 
     fn get_key(key: Key) -> egui::Key {
@@ -425,71 +347,27 @@ impl Renderable for UIRenderer {
         self.height = height as f32;
     }
 
-    fn draw(&self, ctx: &Context, pass: Arc<dyn RenderPass>, cmd: &CommandBuffer) {
-        let timer = Timer::new();
+    fn draw(
+        &self,
+        ctx: &Context,
+        pass: Arc<dyn RenderPass>,
+        cmd: &CommandBuffer,
+        render_stats: &mut RenderStats,
+    ) {
+        let scene_data = match pass.uniform_data_layout() {
+            Some(data_layout) => Some(UniformData::new(
+                &data_layout,
+                &[UniformPropData::Vec2F([self.width, self.height])],
+            )),
+            None => None,
+        };
 
-        let frame_id = self.frame_id(ctx);
-
-        let mut last_material = MaterialInstanceId::nil();
-        let mut last_pipeline = PipelineId::nil();
-
-        let scene_data_ds = &self.scene_frame_data[frame_id].uniform_ds;
-        let mut binds = 0;
-        let mut draws = 0;
-
-        for render_object in &self.scene_frame_data[frame_id].render_list {
-            if render_object.pass.id() != pass.id() {
-                continue;
-            }
-            let material = &render_object.material;
-            let pipeline = material.pipeline();
-
-            if last_material != material.id {
-                if last_pipeline != pipeline.id {
-                    cmd.bind_pipeline(&pipeline);
-                    last_pipeline = pipeline.id;
-                    binds += 1;
-                }
-                cmd.bind_descriptor_set(scene_data_ds, 0, &pipeline);
-                binds += 1;
-                if let Some(material_ds) = &material.material_ds {
-                    cmd.bind_descriptor_set(material_ds, 1, &pipeline);
-                    binds += 1;
-                }
-
-                last_material = material.id;
-            }
-
-            if let Some(push_layout) = render_object.pass.push_layout() {
-                let model_data = UniformData::new(
-                    &push_layout,
-                    &[UniformPropData::U64(
-                        render_object
-                            .model
-                            .vertex_buffer
-                            .address(ctx.device.clone()),
-                    )],
-                );
-                cmd.push_constants(pipeline.layout.clone(), &model_data.raw());
-            }
-
-            cmd.bind_index_buffer::<u32>(
-                &render_object.model.index_buffer,
-                render_object.indices_offset,
-            );
-            binds += 1;
-            cmd.draw_indexed(render_object.indices_len, 1);
-            draws += 1;
-        }
-
-        if self.frame_number % ctx.stats_refresh == 0 {
-            self.stats.write().binds = binds;
-            self.stats.write().draws = draws;
-            self.stats.write().cpu_draw_time = timer.peek();
-        }
-    }
-
-    fn stats(&self) -> RenderStats {
-        self.stats.read().clone()
+        pass.draw(
+            ctx,
+            cmd,
+            &self.frame_data[self.frame_id(ctx)].render_list,
+            scene_data,
+            render_stats,
+        );
     }
 }

@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use gobs_core::entity::uniform::UniformLayout;
+use gobs_core::entity::uniform::{UniformData, UniformLayout};
 use gobs_utils::load;
 use gobs_vulkan::{
     descriptor::{
@@ -15,6 +15,7 @@ use crate::{
     geometry::VertexFlag,
     graph::RenderError,
     pass::{PassId, PassType, RenderPass},
+    renderable::{RenderObject, RenderStats},
     CommandBuffer,
 };
 
@@ -88,13 +89,17 @@ impl RenderPass for ComputePass {
         None
     }
 
+    fn uniform_data_layout(&self) -> Option<Arc<UniformLayout>> {
+        None
+    }
+
     fn render(
         self: Arc<Self>,
         _ctx: &Context,
         cmd: &CommandBuffer,
         render_targets: &mut [&mut Image],
         _draw_extent: ImageExtent2D,
-        draw_cmd: &dyn Fn(Arc<dyn RenderPass>, &CommandBuffer),
+        draw_cmd: &mut dyn FnMut(Arc<dyn RenderPass>, &CommandBuffer),
     ) -> Result<(), RenderError> {
         log::debug!("Draw compute");
         cmd.begin_label("Draw compute");
@@ -109,5 +114,15 @@ impl RenderPass for ComputePass {
         cmd.end_label();
 
         Ok(())
+    }
+
+    fn draw(
+        &self,
+        _ctx: &Context,
+        _cmd: &CommandBuffer,
+        _render_list: &[RenderObject],
+        _scene_data: Option<UniformData>,
+        _render_stats: &mut RenderStats,
+    ) {
     }
 }

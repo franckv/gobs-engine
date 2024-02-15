@@ -3,10 +3,7 @@ use std::{collections::HashSet, sync::Arc};
 use gobs_core::Transform;
 
 use crate::{
-    context::Context,
-    geometry::{Model, ModelId},
-    material::MaterialInstance,
-    pass::RenderPass,
+    context::Context, geometry::ModelId, material::MaterialInstance, pass::RenderPass,
     CommandBuffer,
 };
 
@@ -35,32 +32,36 @@ impl RenderStats {
         self.instances = 0;
         self.draws = 0;
         self.binds = 0;
-        self.cpu_draw_time = 0.;
-        self.update_time = 0.;
         self.models_set.clear();
     }
 
-    pub fn add_model(&mut self, model: &Arc<Model>) {
-        if !self.models_set.contains(&model.id) {
-            self.models_set.insert(model.id);
-            self.vertices += model
+    pub fn add_object(&mut self, object: &RenderObject) {
+        self.instances += 1;
+        if !self.models_set.contains(&object.model.model.id) {
+            self.models_set.insert(object.model.model.id);
+            self.vertices += object
+                .model
+                .model
                 .meshes
                 .iter()
                 .map(|(m, _)| m.vertices.len() as u32)
                 .sum::<u32>();
-            self.indices += model
+            self.indices += object
+                .model
+                .model
                 .meshes
                 .iter()
                 .map(|(m, _)| m.indices.len() as u32)
                 .sum::<u32>();
             self.models += 1;
-            self.textures += model
+            self.textures += object
+                .model
+                .model
                 .materials
                 .values()
                 .map(|m| m.textures.len() as u32)
                 .sum::<u32>();
         }
-        self.instances += 1;
     }
 }
 
@@ -75,6 +76,11 @@ pub struct RenderObject {
 
 pub trait Renderable {
     fn resize(&mut self, width: u32, height: u32);
-    fn draw(&self, ctx: &Context, pass: Arc<dyn RenderPass>, cmd: &CommandBuffer);
-    fn stats(&self) -> RenderStats;
+    fn draw(
+        &self,
+        ctx: &Context,
+        pass: Arc<dyn RenderPass>,
+        cmd: &CommandBuffer,
+        render_stats: &mut RenderStats,
+    );
 }

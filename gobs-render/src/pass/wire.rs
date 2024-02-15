@@ -1,6 +1,9 @@
 use std::sync::Arc;
 
-use gobs_core::entity::uniform::{UniformLayout, UniformProp};
+use glam::Mat3;
+use uuid::Uuid;
+
+use gobs_core::entity::uniform::{UniformData, UniformLayout, UniformProp, UniformPropData};
 use gobs_utils::load;
 use gobs_vulkan::{
     descriptor::{DescriptorSetLayout, DescriptorStage, DescriptorType},
@@ -16,6 +19,7 @@ use crate::{
     geometry::VertexFlag,
     graph::RenderError,
     pass::{PassId, PassType, RenderPass},
+    renderable::{RenderObject, RenderStats},
     CommandBuffer,
 };
 
@@ -104,13 +108,17 @@ impl RenderPass for WirePass {
         Some(self.push_layout.clone())
     }
 
+    fn uniform_data_layout(&self) -> Option<Arc<UniformLayout>> {
+        None
+    }
+
     fn render(
         self: Arc<Self>,
         _ctx: &Context,
         cmd: &CommandBuffer,
         render_targets: &mut [&mut Image],
         draw_extent: ImageExtent2D,
-        draw_cmd: &dyn Fn(Arc<dyn RenderPass>, &CommandBuffer),
+        draw_cmd: &mut dyn FnMut(Arc<dyn RenderPass>, &CommandBuffer),
     ) -> Result<(), RenderError> {
         log::debug!("Draw wire");
 
@@ -129,5 +137,56 @@ impl RenderPass for WirePass {
         cmd.end_label();
 
         Ok(())
+    }
+
+    fn draw(
+        &self,
+        ctx: &Context,
+        cmd: &CommandBuffer,
+        render_list: &[RenderObject],
+        _scene_data: Option<UniformData>,
+        render_stats: &mut RenderStats,
+    ) {
+        let mut last_model = Uuid::nil();
+
+        cmd.bind_pipeline(&self.pipeline);
+        render_stats.binds += 1;
+
+        for render_object in render_list {
+            if render_object.pass.id() != self.id {
+                continue;
+            }
+            let world_matrix = render_object.transform.matrix;
+            let normal_matrix = Mat3::from_quat(render_object.transform.rotation);
+
+            if let Some(push_layout) = render_object.pass.push_layout() {
+                // TODO: hardcoded
+                let model_data = UniformData::new(
+                    &push_layout,
+                    &[
+                        UniformPropData::Mat4F(world_matrix.to_cols_array_2d()),
+                        UniformPropData::Mat3F(normal_matrix.to_cols_array_2d()),
+                        UniformPropData::U64(
+                            render_object
+                                .model
+                                .vertex_buffer
+                                .address(ctx.device.clone()),
+                        ),
+                    ],
+                );
+                cmd.push_constants(self.pipeline.layout.clone(), &model_data.raw());
+            }
+
+            if last_model != render_object.model.model.id {
+                cmd.bind_index_buffer::<u32>(
+                    &render_object.model.index_buffer,
+                    render_object.indices_offset,
+                );
+                render_stats.binds += 1;
+                last_model = render_object.model.model.id;
+            }
+            cmd.draw_indexed(render_object.indices_len, 1);
+            render_stats.draws += 1;
+        }
     }
 }

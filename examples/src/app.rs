@@ -16,6 +16,7 @@ use gobs::{
     },
     scene::scene::Scene,
     ui::UIRenderer,
+    utils::timer::Timer,
 };
 
 use crate::CameraController;
@@ -29,6 +30,8 @@ pub struct SampleApp {
     pub draw_ui: bool,
     pub draw_wire: bool,
     pub fps: u32,
+    pub ui_render_stats: RenderStats,
+    pub scene_render_stats: RenderStats,
 }
 
 impl SampleApp {
@@ -39,7 +42,7 @@ impl SampleApp {
 
         let ui = UIRenderer::new(ctx, graph.ui_pass.clone());
 
-        let scene = Scene::new(ctx, camera, light);
+        let scene = Scene::new(camera, light);
 
         let camera_controller = CameraController::new(3., 0.1);
 
@@ -52,6 +55,8 @@ impl SampleApp {
             draw_ui: true,
             draw_wire: false,
             fps: 0,
+            ui_render_stats: RenderStats::default(),
+            scene_render_stats: RenderStats::default(),
         }
     }
 
@@ -138,14 +143,14 @@ impl SampleApp {
         self.camera_controller
             .update_camera(&mut self.scene.camera, delta);
 
-        let ui_stats = self.ui.stats();
-        let scene_stats = self.scene.stats();
         if self.graph.frame_number % ctx.stats_refresh == 0 {
             self.fps = (1. / delta).round() as u32;
         }
 
-        self.scene.update(ctx, &self.graph);
+        self.scene
+            .update(ctx, &self.graph, &mut self.scene_render_stats);
         if self.draw_ui {
+            let timer = Timer::new();
             self.ui.update(ctx, self.graph.ui_pass.clone(), |ectx| {
                 egui::CentralPanel::default()
                     .frame(egui::Frame::none())
@@ -155,13 +160,17 @@ impl SampleApp {
                         ui.separator();
                         Self::show_fps(ui, self.fps);
                         Self::show_gpu_stats(ui, self.graph.gpu_time);
-                        Self::show_stats(ui, "UI Stats", &ui_stats);
-                        Self::show_stats(ui, "Scene Stats", &scene_stats);
+                        Self::show_stats(ui, "UI Stats", &self.ui_render_stats);
+                        Self::show_stats(ui, "Scene Stats", &self.scene_render_stats);
                         Self::show_camera(ui, &self.scene.camera);
                         Self::show_memory(ui, ctx);
                     });
             });
+            self.ui_render_stats.update_time = timer.peek();
         }
+
+        self.ui_render_stats.reset();
+        self.scene_render_stats.reset();
     }
 
     fn show_fps(ui: &mut egui::Ui, fps: u32) {
@@ -219,7 +228,7 @@ impl SampleApp {
 
         self.graph.begin(ctx)?;
 
-        self.graph.render(ctx, &|pass, cmd| match pass.ty() {
+        self.graph.render(ctx, &mut |pass, cmd| match pass.ty() {
             PassType::Compute => {
                 cmd.dispatch(
                     self.graph.draw_extent.width / 16 + 1,
@@ -228,16 +237,18 @@ impl SampleApp {
                 );
             }
             PassType::Forward => {
-                self.scene.draw(ctx, pass, cmd);
+                self.scene
+                    .draw(ctx, pass, cmd, &mut self.scene_render_stats);
             }
             PassType::Wire => {
                 if self.draw_wire {
-                    self.scene.draw(ctx, pass, cmd);
+                    self.scene
+                        .draw(ctx, pass, cmd, &mut self.scene_render_stats);
                 }
             }
             PassType::Ui => {
                 if self.draw_ui {
-                    self.ui.draw(ctx, pass, cmd);
+                    self.ui.draw(ctx, pass, cmd, &mut self.ui_render_stats);
                 }
             }
         })?;
