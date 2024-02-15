@@ -15,17 +15,15 @@ use gobs_render::{
     geometry::ModelId,
     graph::FrameGraph,
     pass::{PassId, RenderPass},
+    renderable::{RenderObject, RenderStats, Renderable},
+    resources::{ModelResource, UniformBuffer},
     CommandBuffer,
 };
 use gobs_vulkan::descriptor::{
     DescriptorSet, DescriptorSetLayout, DescriptorSetPool, DescriptorStage, DescriptorType,
 };
 
-use crate::{
-    graph::scenegraph::{NodeValue, SceneGraph},
-    renderable::{RenderStats, Renderable},
-    resources::{ModelResource, UniformBuffer},
-};
+use crate::graph::scenegraph::{NodeValue, SceneGraph};
 
 struct SceneFrameData {
     pub uniform_ds: DescriptorSet,
@@ -67,6 +65,7 @@ pub struct Scene {
     scene_frame_data: Vec<SceneFrameData>,
     model_manager: HashMap<(ModelId, PassId), Arc<ModelResource>>,
     stats: RwLock<RenderStats>,
+    render_list: Vec<RenderObject>,
 }
 
 impl Scene {
@@ -103,6 +102,7 @@ impl Scene {
             scene_frame_data,
             model_manager: HashMap::new(),
             stats: RwLock::new(RenderStats::default()),
+            render_list: Vec::new(),
         }
     }
 
@@ -136,7 +136,9 @@ impl Scene {
             self.stats.write().reset();
         }
 
-        self.graph.visit(self.graph.root, &mut |_, model| {
+        self.render_list.clear();
+
+        self.graph.visit(self.graph.root, &mut |&transform, model| {
             if let NodeValue::Model(model) = model {
                 if self.frame_number % ctx.stats_refresh == 0 {
                     self.stats.write().add_model(model);
@@ -146,10 +148,37 @@ impl Scene {
                     framegraph.forward_pass.clone(),
                     framegraph.wire_pass.clone(),
                 ] {
-                    self.model_manager
+                    let resource = self
+                        .model_manager
                         .entry((model.id, pass.id()))
-                        .or_insert_with(|| ModelResource::new(ctx, model.clone(), pass));
+                        .or_insert_with(|| ModelResource::new(ctx, model.clone(), pass.clone()));
+
+                    for primitive in &resource.primitives {
+                        let render_object = RenderObject {
+                            transform,
+                            pass: pass.clone(),
+                            model: resource.clone(),
+                            material: model.materials[&primitive.material].clone(),
+                            indices_offset: primitive.offset,
+                            indices_len: primitive.len,
+                        };
+
+                        self.render_list.push(render_object);
+                    }
                 }
+            }
+        });
+
+        self.render_list.sort_by(|a, b| {
+            // sort order: pass, material: model
+            if a.pass.id() == b.pass.id() {
+                if a.material.id == b.material.id {
+                    a.model.model.id.cmp(&b.model.model.id)
+                } else {
+                    a.material.id.cmp(&b.material.id)
+                }
+            } else {
+                a.pass.id().cmp(&b.pass.id())
             }
         });
 
@@ -174,73 +203,82 @@ impl Renderable for Scene {
         let mut last_pipeline = Uuid::nil();
 
         let scene_data_ds = &self.scene_frame_data[frame_id].uniform_ds;
-        self.graph
-            .visit_sorted(self.graph.root, &mut |transform, model| {
-                if let NodeValue::Model(model) = model {
-                    let world_matrix = transform.matrix;
-                    let normal_matrix = Mat3::from_quat(transform.rotation);
 
-                    let model = self
-                        .model_manager
-                        .get(&(model.id, pass.id()))
-                        .expect("Missing model");
+        let mut binds = 0;
+        let mut draws = 0;
 
-                    for primitive in &model.primitives {
-                        let pipeline = match pass.pipeline() {
-                            Some(pipeline) => {
-                                if last_pipeline != pipeline.id {
-                                    cmd.bind_pipeline(&pipeline);
-                                    last_pipeline = pipeline.id;
-                                }
-
-                                pipeline
-                            }
-                            None => {
-                                let material = &model.model.materials[&primitive.material];
-                                let pipeline = material.pipeline();
-
-                                if last_material != material.id {
-                                    if last_pipeline != pipeline.id {
-                                        cmd.bind_pipeline(&pipeline);
-                                        last_pipeline = pipeline.id;
-                                    }
-                                    cmd.bind_descriptor_set(scene_data_ds, 0, &pipeline);
-                                    if let Some(material_ds) = &material.material_ds {
-                                        cmd.bind_descriptor_set(material_ds, 1, &pipeline);
-                                    }
-
-                                    last_material = material.id;
-                                }
-
-                                pipeline
-                            }
-                        };
-
-                        if let Some(push_layout) = pass.push_layout() {
-                            // TODO: hardcoded
-                            let model_data = UniformData::new(
-                                &push_layout,
-                                &[
-                                    UniformPropData::Mat4F(world_matrix.to_cols_array_2d()),
-                                    UniformPropData::Mat3F(normal_matrix.to_cols_array_2d()),
-                                    UniformPropData::U64(
-                                        model.vertex_buffer.address(ctx.device.clone()),
-                                    ),
-                                ],
-                            );
-                            cmd.push_constants(pipeline.layout.clone(), &model_data.raw());
-                        }
-
-                        if last_model != model.model.id {
-                            cmd.bind_index_buffer::<u32>(&model.index_buffer, primitive.offset);
-                            last_model = model.model.id;
-                        }
-                        cmd.draw_indexed(primitive.len, 1);
+        for render_object in &self.render_list {
+            if render_object.pass.id() != pass.id() {
+                continue;
+            }
+            let world_matrix = render_object.transform.matrix;
+            let normal_matrix = Mat3::from_quat(render_object.transform.rotation);
+            let pipeline = match render_object.pass.pipeline() {
+                Some(pipeline) => {
+                    if last_pipeline != pipeline.id {
+                        cmd.bind_pipeline(&pipeline);
+                        last_pipeline = pipeline.id;
+                        binds += 1;
                     }
+
+                    pipeline
                 }
-            });
+                None => {
+                    let material = &render_object.material;
+                    let pipeline = material.pipeline();
+
+                    if last_material != material.id {
+                        if last_pipeline != pipeline.id {
+                            cmd.bind_pipeline(&pipeline);
+                            last_pipeline = pipeline.id;
+                            binds += 1;
+                        }
+                        cmd.bind_descriptor_set(scene_data_ds, 0, &pipeline);
+                        binds += 1;
+                        if let Some(material_ds) = &material.material_ds {
+                            cmd.bind_descriptor_set(material_ds, 1, &pipeline);
+                            binds += 1;
+                        }
+
+                        last_material = material.id;
+                    }
+
+                    pipeline
+                }
+            };
+            if let Some(push_layout) = render_object.pass.push_layout() {
+                // TODO: hardcoded
+                let model_data = UniformData::new(
+                    &push_layout,
+                    &[
+                        UniformPropData::Mat4F(world_matrix.to_cols_array_2d()),
+                        UniformPropData::Mat3F(normal_matrix.to_cols_array_2d()),
+                        UniformPropData::U64(
+                            render_object
+                                .model
+                                .vertex_buffer
+                                .address(ctx.device.clone()),
+                        ),
+                    ],
+                );
+                cmd.push_constants(pipeline.layout.clone(), &model_data.raw());
+            }
+
+            if last_model != render_object.model.model.id {
+                cmd.bind_index_buffer::<u32>(
+                    &render_object.model.index_buffer,
+                    render_object.indices_offset,
+                );
+                last_model = render_object.model.model.id;
+                binds += 1;
+            }
+            cmd.draw_indexed(render_object.indices_len, 1);
+            draws += 1;
+        }
 
         if self.frame_number % ctx.stats_refresh == 0 {
+            self.stats.write().binds = binds;
+            self.stats.write().draws = draws;
             self.stats.write().cpu_draw_time = timer.peek();
         }
     }

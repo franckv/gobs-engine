@@ -7,10 +7,9 @@ use egui::{
 use glam::{Vec2, Vec3};
 use parking_lot::RwLock;
 
-use gobs_core::entity::uniform::{UniformData, UniformLayout, UniformProp, UniformPropData};
-use gobs_scene::{
-    renderable::{RenderStats, Renderable},
-    resources::{ModelResource, UniformBuffer},
+use gobs_core::{
+    entity::uniform::{UniformData, UniformLayout, UniformProp, UniformPropData},
+    Transform,
 };
 use gobs_utils::timer::Timer;
 use gobs_vulkan::{
@@ -28,6 +27,8 @@ use gobs_render::{
         Material, MaterialInstance, MaterialInstanceId, MaterialProperty, Texture, TextureType,
     },
     pass::RenderPass,
+    renderable::{RenderObject, RenderStats, Renderable},
+    resources::{ModelResource, UniformBuffer},
     CommandBuffer, ImageExtent2D, SamplerFilter,
 };
 
@@ -36,7 +37,7 @@ const PIXEL_PER_POINT: f32 = 1.;
 struct SceneFrameData {
     pub uniform_ds: DescriptorSet,
     pub uniform_buffer: UniformBuffer,
-    ui_model: Option<Arc<ModelResource>>,
+    render_list: Vec<RenderObject>,
 }
 
 impl SceneFrameData {
@@ -60,7 +61,7 @@ impl SceneFrameData {
         SceneFrameData {
             uniform_ds,
             uniform_buffer,
-            ui_model: None,
+            render_list: Vec::new(),
         }
     }
 }
@@ -171,7 +172,24 @@ impl UIRenderer {
             self.stats.write().add_model(&model);
         }
 
-        self.scene_frame_data[frame_id].ui_model = Some(ModelResource::new(ctx, model, pass));
+        self.scene_frame_data[frame_id].render_list.clear();
+
+        let resource = ModelResource::new(ctx, model.clone(), pass.clone());
+
+        for primitive in &resource.primitives {
+            let render_object = RenderObject {
+                transform: Transform::IDENTITY,
+                pass: pass.clone(),
+                model: resource.clone(),
+                material: model.materials[&primitive.material].clone(),
+                indices_offset: primitive.offset,
+                indices_len: primitive.len,
+            };
+
+            self.scene_frame_data[frame_id]
+                .render_list
+                .push(render_object);
+        }
 
         self.cleanup_textures(to_remove);
 
@@ -412,45 +430,61 @@ impl Renderable for UIRenderer {
 
         let frame_id = self.frame_id(ctx);
 
-        let model = self.scene_frame_data[frame_id].ui_model.clone().unwrap();
-
         let mut last_material = MaterialInstanceId::nil();
         let mut last_pipeline = PipelineId::nil();
 
         let scene_data_ds = &self.scene_frame_data[frame_id].uniform_ds;
+        let mut binds = 0;
+        let mut draws = 0;
 
-        for primitive in &model.primitives {
-            let material = &model.model.materials[&primitive.material];
+        for render_object in &self.scene_frame_data[frame_id].render_list {
+            if render_object.pass.id() != pass.id() {
+                continue;
+            }
+            let material = &render_object.material;
             let pipeline = material.pipeline();
 
             if last_material != material.id {
                 if last_pipeline != pipeline.id {
                     cmd.bind_pipeline(&pipeline);
                     last_pipeline = pipeline.id;
+                    binds += 1;
                 }
                 cmd.bind_descriptor_set(scene_data_ds, 0, &pipeline);
+                binds += 1;
                 if let Some(material_ds) = &material.material_ds {
                     cmd.bind_descriptor_set(material_ds, 1, &pipeline);
+                    binds += 1;
                 }
 
                 last_material = material.id;
             }
 
-            if let Some(push_layout) = pass.push_layout() {
+            if let Some(push_layout) = render_object.pass.push_layout() {
                 let model_data = UniformData::new(
                     &push_layout,
                     &[UniformPropData::U64(
-                        model.vertex_buffer.address(ctx.device.clone()),
+                        render_object
+                            .model
+                            .vertex_buffer
+                            .address(ctx.device.clone()),
                     )],
                 );
                 cmd.push_constants(pipeline.layout.clone(), &model_data.raw());
             }
 
-            cmd.bind_index_buffer::<u32>(&model.index_buffer, primitive.offset);
-            cmd.draw_indexed(primitive.len, 1);
+            cmd.bind_index_buffer::<u32>(
+                &render_object.model.index_buffer,
+                render_object.indices_offset,
+            );
+            binds += 1;
+            cmd.draw_indexed(render_object.indices_len, 1);
+            draws += 1;
         }
 
         if self.frame_number % ctx.stats_refresh == 0 {
+            self.stats.write().binds = binds;
+            self.stats.write().draws = draws;
             self.stats.write().cpu_draw_time = timer.peek();
         }
     }

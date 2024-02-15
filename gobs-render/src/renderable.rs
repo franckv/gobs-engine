@@ -1,11 +1,16 @@
 use std::{collections::HashSet, sync::Arc};
 
-use gobs_render::{
+use gobs_core::Transform;
+
+use crate::{
     context::Context,
     geometry::{Model, ModelId},
+    material::MaterialInstance,
     pass::RenderPass,
     CommandBuffer,
 };
+
+use crate::resources::ModelResource;
 
 #[derive(Clone, Debug, Default)]
 pub struct RenderStats {
@@ -15,6 +20,7 @@ pub struct RenderStats {
     pub textures: u32,
     pub instances: u32,
     pub draws: u32,
+    pub binds: u32,
     pub cpu_draw_time: f32,
     pub update_time: f32,
     models_set: HashSet<ModelId>,
@@ -28,6 +34,7 @@ impl RenderStats {
         self.textures = 0;
         self.instances = 0;
         self.draws = 0;
+        self.binds = 0;
         self.cpu_draw_time = 0.;
         self.update_time = 0.;
         self.models_set.clear();
@@ -54,8 +61,16 @@ impl RenderStats {
                 .sum::<u32>();
         }
         self.instances += 1;
-        self.draws += model.meshes.len() as u32;
     }
+}
+
+pub struct RenderObject {
+    pub transform: Transform,
+    pub pass: Arc<dyn RenderPass>,
+    pub model: Arc<ModelResource>,
+    pub material: Arc<MaterialInstance>,
+    pub indices_offset: usize,
+    pub indices_len: usize,
 }
 
 pub trait Renderable {

@@ -10,9 +10,13 @@ use gobs_vulkan::{
     pipeline::{Pipeline, PipelineLayout, Shader, ShaderType},
 };
 
-use crate::{context::Context, geometry::VertexFlag, graph::RenderError, CommandBuffer};
-
-use super::{PassId, PassType, RenderPass};
+use crate::{
+    context::Context,
+    geometry::VertexFlag,
+    graph::RenderError,
+    pass::{PassId, PassType, RenderPass},
+    CommandBuffer,
+};
 
 pub struct ComputePass {
     id: PassId,

@@ -11,12 +11,10 @@ use gobs::{
         graph::FrameGraph,
         material::{Material, MaterialProperty},
         pass::PassType,
+        renderable::{RenderStats, Renderable},
         ImageExtent2D,
     },
-    scene::{
-        renderable::{RenderStats, Renderable},
-        scene::Scene,
-    },
+    scene::scene::Scene,
     ui::UIRenderer,
 };
 
@@ -181,6 +179,7 @@ impl SampleApp {
             ui.label(format!("  Models: {}", stats.models));
             ui.label(format!("  Instances: {}", stats.instances));
             ui.label(format!("  Draws: {}", stats.draws));
+            ui.label(format!("  Binds: {}", stats.binds));
             ui.label(format!("  Textures: {}", stats.textures));
             ui.label(format!(
                 "  CPU draw time: {:.2}ms",

@@ -11,9 +11,13 @@ use gobs_vulkan::{
     },
 };
 
-use crate::{context::Context, geometry::VertexFlag, graph::RenderError, CommandBuffer};
-
-use super::{PassId, PassType, RenderPass};
+use crate::{
+    context::Context,
+    geometry::VertexFlag,
+    graph::RenderError,
+    pass::{PassId, PassType, RenderPass},
+    CommandBuffer,
+};
 
 pub struct WirePass {
     id: PassId,

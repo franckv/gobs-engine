@@ -6,9 +6,13 @@ use gobs_vulkan::{
     pipeline::Pipeline,
 };
 
-use crate::{context::Context, geometry::VertexFlag, graph::RenderError, CommandBuffer};
-
-use super::{PassId, PassType, RenderPass};
+use crate::{
+    context::Context,
+    geometry::VertexFlag,
+    graph::RenderError,
+    pass::{PassId, PassType, RenderPass},
+    CommandBuffer,
+};
 
 pub struct ForwardPass {
     id: PassId,

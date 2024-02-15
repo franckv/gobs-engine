@@ -1,9 +1,8 @@
 use std::sync::Arc;
 
-use gobs_render::{
-    context::Context, geometry::Model, material::MaterialInstanceId, pass::RenderPass,
-};
 use gobs_vulkan::buffer::{Buffer, BufferUsage};
+
+use crate::{context::Context, geometry::Model, material::MaterialInstanceId, pass::RenderPass};
 
 #[derive(Clone, Copy, Debug)]
 pub enum PrimitiveType {

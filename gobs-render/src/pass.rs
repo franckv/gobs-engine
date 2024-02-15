@@ -1,11 +1,12 @@
 use std::sync::Arc;
 
+use uuid::Uuid;
+
 use gobs_core::entity::uniform::UniformLayout;
 use gobs_vulkan::{
     image::{Image, ImageExtent2D},
     pipeline::Pipeline,
 };
-use uuid::Uuid;
 
 use crate::{context::Context, geometry::VertexFlag, graph::RenderError, CommandBuffer};
 
