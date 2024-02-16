@@ -11,7 +11,7 @@ use gobs::{
         graph::FrameGraph,
         material::{Material, MaterialProperty},
         pass::PassType,
-        renderable::{RenderStats, Renderable},
+        renderable::Renderable,
         ImageExtent2D,
     },
     scene::scene::Scene,
@@ -37,7 +37,7 @@ impl SampleApp {
 
         let graph = FrameGraph::new(ctx);
 
-        let ui = UIRenderer::new(ctx, graph.ui_pass.clone());
+        let ui = UIRenderer::new(ctx, graph.passes["ui"].clone());
 
         let scene = Scene::new(camera, light);
 
@@ -94,7 +94,7 @@ impl SampleApp {
 
         Material::builder("color.vert.spv", "color.frag.spv")
             .vertex_flags(vertex_flags)
-            .build(ctx, self.graph.forward_pass.clone())
+            .build(ctx, self.graph.passes["forward"].clone())
     }
 
     pub fn texture_material(&self, ctx: &Context) -> Arc<Material> {
@@ -107,7 +107,7 @@ impl SampleApp {
         Material::builder("mesh.vert.spv", "mesh.frag.spv")
             .vertex_flags(vertex_flags)
             .prop("diffuse", MaterialProperty::Texture)
-            .build(ctx, self.graph.forward_pass.clone())
+            .build(ctx, self.graph.passes["forward"].clone())
     }
 
     pub fn normal_mapping_material(&self, ctx: &Context) -> Arc<Material> {
@@ -121,7 +121,7 @@ impl SampleApp {
             .vertex_flags(vertex_flags)
             .prop("diffuse", MaterialProperty::Texture)
             .prop("normal", MaterialProperty::Texture)
-            .build(ctx, self.graph.forward_pass.clone())
+            .build(ctx, self.graph.passes["forward"].clone())
     }
 
     pub fn depth_material(&self, ctx: &Context) -> Arc<Material> {
@@ -129,7 +129,7 @@ impl SampleApp {
 
         Material::builder("color.vert.spv", "depth.frag.spv")
             .vertex_flags(vertex_flags)
-            .build(ctx, self.graph.forward_pass.clone())
+            .build(ctx, self.graph.passes["forward"].clone())
     }
 
     pub fn start(&mut self, _ctx: &Context) {}
@@ -144,19 +144,20 @@ impl SampleApp {
 
         self.scene.update(ctx, delta);
         if self.draw_ui {
-            self.ui.update(ctx, self.graph.ui_pass.clone(), |ectx| {
-                egui::CentralPanel::default()
-                    .frame(egui::Frame::none())
-                    .show(ectx, |ui| {
-                        ui.visuals_mut().override_text_color = Some(egui::Color32::GREEN);
-                        ui.heading(&ctx.app_name);
-                        ui.separator();
-                        Self::show_fps(ui, self.fps);
-                        Self::show_stats(ui, "Render Stats", self.graph.render_stats());
-                        Self::show_camera(ui, &self.scene.camera);
-                        Self::show_memory(ui, ctx);
-                    });
-            });
+            self.ui
+                .update(ctx, self.graph.passes["ui"].clone(), |ectx| {
+                    egui::CentralPanel::default()
+                        .frame(egui::Frame::none())
+                        .show(ectx, |ui| {
+                            ui.visuals_mut().override_text_color = Some(egui::Color32::GREEN);
+                            ui.heading(&ctx.app_name);
+                            ui.separator();
+                            Self::show_fps(ui, self.fps);
+                            Self::show_stats(ui, "Render Stats", &self.graph);
+                            Self::show_camera(ui, &self.scene.camera);
+                            Self::show_memory(ui, ctx);
+                        });
+                });
         }
     }
 
@@ -164,20 +165,18 @@ impl SampleApp {
         ui.label(format!("FPS: {}", fps));
     }
 
-    fn show_stats(ui: &mut egui::Ui, header: &str, stats: &RenderStats) {
+    fn show_stats(ui: &mut egui::Ui, header: &str, graph: &FrameGraph) {
+        let stats = graph.render_stats();
         ui.collapsing(header, |ui| {
-            ui.label("UI");
-            ui.label(format!("  Vertices: {}", stats.ui_vertices));
-            ui.label(format!("  Indices: {}", stats.ui_indices));
-            ui.label(format!("  Models: {}", stats.ui_models));
-            ui.label(format!("  Instances: {}", stats.ui_instances));
-            ui.label(format!("  Textures: {}", stats.ui_textures));
-            ui.label("Scene");
-            ui.label(format!("  Vertices: {}", stats.scene_vertices));
-            ui.label(format!("  Indices: {}", stats.scene_indices));
-            ui.label(format!("  Models: {}", stats.scene_models));
-            ui.label(format!("  Instances: {}", stats.scene_instances));
-            ui.label(format!("  Textures: {}", stats.scene_textures));
+            for (pass_id, pass_stats) in &stats.pass_stats {
+                let pass = graph.pass(*pass_id);
+                ui.label(format!("Pass: {}", pass.name()));
+                ui.label(format!("  Vertices: {}", pass_stats.vertices));
+                ui.label(format!("  Indices: {}", pass_stats.indices));
+                ui.label(format!("  Models: {}", pass_stats.models));
+                ui.label(format!("  Instances: {}", pass_stats.instances));
+                ui.label(format!("  Textures: {}", pass_stats.textures));
+            }
             ui.label("Performance");
             ui.label(format!("  Draws: {}", stats.draws));
             ui.label(format!("  Binds: {}", stats.binds));

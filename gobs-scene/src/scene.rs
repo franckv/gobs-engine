@@ -58,7 +58,7 @@ impl Scene {
                         indices_len: primitive.len,
                     };
 
-                    batch.add_object(render_object, false);
+                    batch.add_object(render_object);
                 }
             }
         });

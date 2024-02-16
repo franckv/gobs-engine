@@ -1,95 +1,13 @@
 use std::collections::HashMap;
-use std::{collections::HashSet, sync::Arc};
+use std::sync::Arc;
 
 use gobs_core::entity::uniform::UniformData;
 use gobs_core::Transform;
 
 use crate::pass::PassId;
-use crate::{context::Context, geometry::ModelId, material::MaterialInstance, pass::RenderPass};
-
 use crate::resources::ModelResource;
-
-#[derive(Clone, Debug, Default)]
-pub struct RenderStats {
-    pub ui_vertices: u32,
-    pub scene_vertices: u32,
-    pub ui_indices: u32,
-    pub scene_indices: u32,
-    pub ui_models: u32,
-    pub scene_models: u32,
-    pub ui_textures: u32,
-    pub scene_textures: u32,
-    pub ui_instances: u32,
-    pub scene_instances: u32,
-    pub draws: u32,
-    pub binds: u32,
-    pub cpu_draw_time: f32,
-    pub gpu_draw_time: f32,
-    pub update_time: f32,
-    models_set: HashSet<ModelId>,
-}
-
-impl RenderStats {
-    pub fn reset(&mut self) {
-        self.ui_vertices = 0;
-        self.scene_vertices = 0;
-        self.ui_indices = 0;
-        self.scene_indices = 0;
-        self.ui_models = 0;
-        self.scene_models = 0;
-        self.ui_textures = 0;
-        self.scene_textures = 0;
-        self.ui_instances = 0;
-        self.scene_instances = 0;
-        self.draws = 0;
-        self.binds = 0;
-        self.models_set.clear();
-    }
-
-    pub fn add_object(&mut self, object: &RenderObject, ui: bool) {
-        if !self.models_set.contains(&object.model.model.id) {
-            self.models_set.insert(object.model.model.id);
-            let vertices = object
-                .model
-                .model
-                .meshes
-                .iter()
-                .map(|(m, _)| m.vertices.len() as u32)
-                .sum::<u32>();
-            let indices = object
-                .model
-                .model
-                .meshes
-                .iter()
-                .map(|(m, _)| m.indices.len() as u32)
-                .sum::<u32>();
-            let models = 1;
-            let textures = object
-                .model
-                .model
-                .materials
-                .values()
-                .map(|m| m.textures.len() as u32)
-                .sum::<u32>();
-            if ui {
-                self.ui_vertices += vertices;
-                self.ui_indices += indices;
-                self.ui_models += models;
-                self.ui_textures += textures;
-            } else {
-                self.scene_vertices += vertices;
-                self.scene_indices += indices;
-                self.scene_models += models;
-                self.scene_textures += textures;
-            }
-        }
-        if ui {
-            self.ui_instances += 1;
-        } else {
-            self.scene_instances += 1;
-        }
-    }
-}
+use crate::stats::RenderStats;
+use crate::{context::Context, material::MaterialInstance, pass::RenderPass};
 
 pub struct RenderBatch {
     pub(crate) render_list: Vec<RenderObject>,
@@ -112,8 +30,8 @@ impl RenderBatch {
         self.render_stats.reset();
     }
 
-    pub fn add_object(&mut self, object: RenderObject, ui: bool) {
-        self.render_stats.add_object(&object, ui);
+    pub fn add_object(&mut self, object: RenderObject) {
+        self.render_stats.add_object(&object);
         self.render_list.push(object);
     }
 

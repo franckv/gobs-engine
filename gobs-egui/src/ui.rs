@@ -345,7 +345,7 @@ impl Renderable for UIRenderer {
                     indices_len: primitive.len,
                 };
 
-                batch.add_object(render_object, true);
+                batch.add_object(render_object);
             }
         }
 

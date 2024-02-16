@@ -14,8 +14,11 @@ use gobs_vulkan::{
 
 use crate::{
     context::Context,
-    pass::{compute::ComputePass, forward::ForwardPass, ui::UiPass, wire::WirePass, RenderPass},
-    renderable::{RenderBatch, RenderStats},
+    pass::{
+        compute::ComputePass, forward::ForwardPass, ui::UiPass, wire::WirePass, PassId, RenderPass,
+    },
+    renderable::RenderBatch,
+    stats::RenderStats,
 };
 
 #[derive(Debug)]
@@ -64,10 +67,7 @@ pub struct FrameGraph {
     pub swapchain_idx: usize,
     pub draw_extent: ImageExtent2D,
     pub render_scaling: f32,
-    pub compute_pass: Arc<dyn RenderPass>,
-    pub forward_pass: Arc<dyn RenderPass>,
-    pub ui_pass: Arc<dyn RenderPass>,
-    pub wire_pass: Arc<dyn RenderPass>,
+    pub passes: HashMap<String, Arc<dyn RenderPass>>,
     resource_manager: HashMap<String, RwLock<Image>>,
     pub batch: RenderBatch,
 }
@@ -106,10 +106,15 @@ impl FrameGraph {
             .map(|_| FrameData::new(ctx))
             .collect();
 
-        let compute_pass = ComputePass::new(ctx, "bg", &resource_manager["draw"].read());
-        let forward_pass = ForwardPass::new(ctx, "scene");
-        let ui_pass = UiPass::new(ctx, "ui");
-        let wire_pass = WirePass::new(ctx, "wire");
+        let mut passes = HashMap::new();
+
+        passes.insert(
+            "compute".to_string(),
+            ComputePass::new(ctx, "bg", &resource_manager["draw"].read()),
+        );
+        passes.insert("forward".to_string(), ForwardPass::new(ctx, "scene"));
+        passes.insert("ui".to_string(), UiPass::new(ctx, "ui"));
+        passes.insert("wire".to_string(), WirePass::new(ctx, "wire"));
 
         Self {
             frame_number: 0,
@@ -119,10 +124,7 @@ impl FrameGraph {
             swapchain_idx: 0,
             draw_extent: extent,
             render_scaling: 1.,
-            compute_pass,
-            forward_pass,
-            ui_pass,
-            wire_pass,
+            passes,
             resource_manager,
             batch: RenderBatch::new(),
         }
@@ -135,6 +137,16 @@ impl FrameGraph {
 
     pub fn frame_id(&self, ctx: &Context) -> usize {
         (self.frame_number - 1) % ctx.frames_in_flight
+    }
+
+    pub fn pass(&self, pass_id: PassId) -> Arc<dyn RenderPass> {
+        for (_, pass) in &self.passes {
+            if pass.id() == pass_id {
+                return pass.clone();
+            }
+        }
+
+        return self.passes["forward"].clone();
     }
 
     pub fn render_stats(&self) -> &RenderStats {
@@ -257,10 +269,10 @@ impl FrameGraph {
 
         let mut timer = Timer::new();
 
-        draw_cmd(self.compute_pass.clone(), &mut self.batch);
-        draw_cmd(self.forward_pass.clone(), &mut self.batch);
-        draw_cmd(self.wire_pass.clone(), &mut self.batch);
-        draw_cmd(self.ui_pass.clone(), &mut self.batch);
+        draw_cmd(self.passes["compute"].clone(), &mut self.batch);
+        draw_cmd(self.passes["forward"].clone(), &mut self.batch);
+        draw_cmd(self.passes["wire"].clone(), &mut self.batch);
+        draw_cmd(self.passes["ui"].clone(), &mut self.batch);
 
         self.batch.finish();
 
@@ -271,7 +283,7 @@ impl FrameGraph {
         let draw_image = &self.resource_manager["draw"];
         let depth_image = &self.resource_manager["depth"];
 
-        self.compute_pass.render(
+        self.passes["compute"].render(
             ctx,
             cmd,
             &mut [&mut draw_image.write()],
@@ -279,7 +291,7 @@ impl FrameGraph {
             self.draw_extent,
         )?;
 
-        self.forward_pass.render(
+        self.passes["forward"].render(
             ctx,
             cmd,
             &mut [&mut draw_image.write(), &mut depth_image.write()],
@@ -287,7 +299,7 @@ impl FrameGraph {
             self.draw_extent,
         )?;
 
-        self.wire_pass.render(
+        self.passes["wire"].render(
             ctx,
             cmd,
             &mut [&mut draw_image.write()],
@@ -295,7 +307,7 @@ impl FrameGraph {
             self.draw_extent,
         )?;
 
-        self.ui_pass.render(
+        self.passes["ui"].render(
             ctx,
             cmd,
             &mut [&mut draw_image.write()],
