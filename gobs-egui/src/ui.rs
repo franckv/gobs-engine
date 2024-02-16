@@ -16,15 +16,15 @@ use gobs_render::{
     geometry::{Mesh, Model, VertexData, VertexFlag},
     material::{Material, MaterialInstance, MaterialProperty, Texture, TextureType},
     pass::RenderPass,
-    renderable::{RenderObject, RenderStats, Renderable},
+    renderable::{RenderBatch, RenderObject, Renderable},
     resources::ModelResource,
-    CommandBuffer, ImageExtent2D, SamplerFilter,
+    ImageExtent2D, SamplerFilter,
 };
 
 const PIXEL_PER_POINT: f32 = 1.;
 
 struct FrameData {
-    render_list: Vec<RenderObject>,
+    model: Option<Arc<ModelResource>>,
 }
 
 pub struct UIRenderer {
@@ -57,9 +57,7 @@ impl UIRenderer {
             .build(ctx, pass);
 
         let frame_data = (0..ctx.frames_in_flight)
-            .map(|_| FrameData {
-                render_list: Vec::new(),
-            })
+            .map(|_| FrameData { model: None })
             .collect();
 
         UIRenderer {
@@ -80,7 +78,7 @@ impl UIRenderer {
         (self.frame_number - 1) % ctx.frames_in_flight
     }
 
-    fn frame_id(&self, ctx: &Context) -> usize {
+    pub fn frame_id(&self, ctx: &Context) -> usize {
         (self.frame_number - 1) % ctx.frames_in_flight
     }
 
@@ -99,23 +97,8 @@ impl UIRenderer {
         let to_remove = output.textures_delta.free.clone();
 
         let model = self.load_models(output);
-
         let resource = ModelResource::new(ctx, model.clone(), pass.clone());
-
-        self.frame_data[frame_id].render_list.clear();
-
-        for primitive in &resource.primitives {
-            let render_object = RenderObject {
-                transform: Transform::IDENTITY,
-                pass: pass.clone(),
-                model: resource.clone(),
-                material: model.materials[&primitive.material].clone(),
-                indices_offset: primitive.offset,
-                indices_len: primitive.len,
-            };
-
-            self.frame_data[frame_id].render_list.push(render_object);
-        }
+        self.frame_data[frame_id].model = Some(resource);
 
         self.cleanup_textures(to_remove);
     }
@@ -347,27 +330,33 @@ impl Renderable for UIRenderer {
         self.height = height as f32;
     }
 
-    fn draw(
-        &self,
-        ctx: &Context,
-        pass: Arc<dyn RenderPass>,
-        cmd: &CommandBuffer,
-        render_stats: &mut RenderStats,
-    ) {
-        let scene_data = match pass.uniform_data_layout() {
-            Some(data_layout) => Some(UniformData::new(
-                &data_layout,
-                &[UniformPropData::Vec2F([self.width, self.height])],
-            )),
-            None => None,
-        };
+    fn draw(&mut self, ctx: &Context, pass: Arc<dyn RenderPass>, batch: &mut RenderBatch) {
+        let frame_id = self.frame_id(ctx);
+        let resource = &self.frame_data[frame_id].model;
 
-        pass.draw(
-            ctx,
-            cmd,
-            &self.frame_data[self.frame_id(ctx)].render_list,
-            scene_data,
-            render_stats,
-        );
+        if let Some(resource) = resource {
+            for primitive in &resource.primitives {
+                let render_object = RenderObject {
+                    transform: Transform::IDENTITY,
+                    pass: pass.clone(),
+                    model: resource.clone(),
+                    material: resource.model.materials[&primitive.material].clone(),
+                    indices_offset: primitive.offset,
+                    indices_len: primitive.len,
+                };
+
+                batch.add_object(render_object, true);
+            }
+        }
+
+        if let Some(data_layout) = pass.uniform_data_layout() {
+            batch.add_scene_data(
+                UniformData::new(
+                    &data_layout,
+                    &[UniformPropData::Vec2F([self.width, self.height])],
+                ),
+                pass.id(),
+            );
+        }
     }
 }

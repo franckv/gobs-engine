@@ -2,6 +2,7 @@ use std::{collections::HashMap, sync::Arc};
 
 use parking_lot::RwLock;
 
+use gobs_utils::timer::Timer;
 use gobs_vulkan::{
     command::{CommandBuffer, CommandPool},
     image::{ColorSpace, Image, ImageExtent2D, ImageFormat, ImageLayout, ImageUsage},
@@ -14,6 +15,7 @@ use gobs_vulkan::{
 use crate::{
     context::Context,
     pass::{compute::ComputePass, forward::ForwardPass, ui::UiPass, wire::WirePass, RenderPass},
+    renderable::{RenderBatch, RenderStats},
 };
 
 #[derive(Debug)]
@@ -66,8 +68,8 @@ pub struct FrameGraph {
     pub forward_pass: Arc<dyn RenderPass>,
     pub ui_pass: Arc<dyn RenderPass>,
     pub wire_pass: Arc<dyn RenderPass>,
-    pub gpu_time: f32,
     resource_manager: HashMap<String, RwLock<Image>>,
+    pub batch: RenderBatch,
 }
 
 impl FrameGraph {
@@ -121,17 +123,27 @@ impl FrameGraph {
             forward_pass,
             ui_pass,
             wire_pass,
-            gpu_time: 0.,
             resource_manager,
+            batch: RenderBatch::new(),
         }
     }
 
+    fn new_frame(&mut self, ctx: &Context) -> usize {
+        self.frame_number += 1;
+        (self.frame_number - 1) % ctx.frames_in_flight
+    }
+
     pub fn frame_id(&self, ctx: &Context) -> usize {
-        self.frame_number % ctx.frames_in_flight
+        (self.frame_number - 1) % ctx.frames_in_flight
+    }
+
+    pub fn render_stats(&self) -> &RenderStats {
+        &self.batch.render_stats
     }
 
     pub fn begin(&mut self, ctx: &Context) -> Result<(), RenderError> {
-        let frame_id = self.frame_id(ctx);
+        let frame_id = self.new_frame(ctx);
+        self.batch.reset();
 
         {
             let frame = &mut self.frames[frame_id];
@@ -149,7 +161,8 @@ impl FrameGraph {
             let mut buf = [0 as u64; 2];
             frame.query_pool.get_query_pool_results(0, 2, &mut buf);
 
-            self.gpu_time = ((buf[1] - buf[0]) as f32 * frame.query_pool.period) / 1_000_000_000.;
+            self.batch.render_stats.gpu_draw_time =
+                ((buf[1] - buf[0]) as f32 * frame.query_pool.period) / 1_000_000_000.;
         }
 
         let draw_image = &self.resource_manager["draw"];
@@ -230,55 +243,67 @@ impl FrameGraph {
             return Err(RenderError::Outdated);
         };
 
-        self.frame_number += 1;
-
         Ok(())
     }
 
     pub fn render(
-        &self,
+        &mut self,
         ctx: &Context,
-        draw_cmd: &mut dyn FnMut(Arc<dyn RenderPass>, &CommandBuffer),
+        draw_cmd: &mut dyn FnMut(Arc<dyn RenderPass>, &mut RenderBatch),
     ) -> Result<(), RenderError> {
         log::debug!("Begin rendering");
 
         let frame_id = self.frame_id(ctx);
+
+        let mut timer = Timer::new();
+
+        draw_cmd(self.compute_pass.clone(), &mut self.batch);
+        draw_cmd(self.forward_pass.clone(), &mut self.batch);
+        draw_cmd(self.wire_pass.clone(), &mut self.batch);
+        draw_cmd(self.ui_pass.clone(), &mut self.batch);
+
+        self.batch.finish();
+
+        self.batch.render_stats.update_time = timer.delta();
+
         let cmd = &self.frames[frame_id].command_buffer;
 
         let draw_image = &self.resource_manager["draw"];
         let depth_image = &self.resource_manager["depth"];
 
-        self.compute_pass.clone().render(
+        self.compute_pass.render(
             ctx,
             cmd,
             &mut [&mut draw_image.write()],
+            &mut self.batch,
             self.draw_extent,
-            draw_cmd,
         )?;
 
-        self.forward_pass.clone().render(
+        self.forward_pass.render(
             ctx,
             cmd,
             &mut [&mut draw_image.write(), &mut depth_image.write()],
+            &mut self.batch,
             self.draw_extent,
-            draw_cmd,
         )?;
 
-        self.wire_pass.clone().render(
+        self.wire_pass.render(
             ctx,
             cmd,
             &mut [&mut draw_image.write()],
+            &mut self.batch,
             self.draw_extent,
-            draw_cmd,
         )?;
 
-        self.ui_pass.clone().render(
+        self.ui_pass.render(
             ctx,
             cmd,
             &mut [&mut draw_image.write()],
+            &mut self.batch,
             self.draw_extent,
-            draw_cmd,
         )?;
+
+        self.batch.render_stats.cpu_draw_time = timer.peek();
 
         log::debug!("End rendering");
 

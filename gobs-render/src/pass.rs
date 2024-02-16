@@ -2,17 +2,14 @@ use std::sync::Arc;
 
 use uuid::Uuid;
 
-use gobs_core::entity::uniform::{UniformData, UniformLayout};
+use gobs_core::entity::uniform::UniformLayout;
 use gobs_vulkan::{
     image::{Image, ImageExtent2D},
     pipeline::Pipeline,
 };
 
 use crate::{
-    context::Context,
-    geometry::VertexFlag,
-    graph::RenderError,
-    renderable::{RenderObject, RenderStats},
+    context::Context, geometry::VertexFlag, graph::RenderError, renderable::RenderBatch,
     CommandBuffer,
 };
 
@@ -40,19 +37,12 @@ pub trait RenderPass {
     fn push_layout(&self) -> Option<Arc<UniformLayout>>;
     fn uniform_data_layout(&self) -> Option<Arc<UniformLayout>>;
     fn render(
-        self: Arc<Self>,
-        ctx: &Context,
-        cmd: &CommandBuffer,
-        render_targets: &mut [&mut Image],
-        draw_extent: ImageExtent2D,
-        draw_cmd: &mut dyn FnMut(Arc<dyn RenderPass>, &CommandBuffer),
-    ) -> Result<(), RenderError>;
-    fn draw(
         &self,
         ctx: &Context,
         cmd: &CommandBuffer,
-        render_list: &[RenderObject],
-        scene_data: Option<UniformData>,
-        render_stats: &mut RenderStats,
-    );
+        render_targets: &mut [&mut Image],
+        batch: &mut RenderBatch,
+        draw_extent: ImageExtent2D,
+        //draw_cmd: &mut dyn FnMut(Arc<dyn RenderPass>, &CommandBuffer, &mut Vec<RenderObject>),
+    ) -> Result<(), RenderError>;
 }

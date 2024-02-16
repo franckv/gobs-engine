@@ -16,7 +16,6 @@ use gobs::{
     },
     scene::scene::Scene,
     ui::UIRenderer,
-    utils::timer::Timer,
 };
 
 use crate::CameraController;
@@ -30,8 +29,6 @@ pub struct SampleApp {
     pub draw_ui: bool,
     pub draw_wire: bool,
     pub fps: u32,
-    pub ui_render_stats: RenderStats,
-    pub scene_render_stats: RenderStats,
 }
 
 impl SampleApp {
@@ -55,8 +52,6 @@ impl SampleApp {
             draw_ui: true,
             draw_wire: false,
             fps: 0,
-            ui_render_stats: RenderStats::default(),
-            scene_render_stats: RenderStats::default(),
         }
     }
 
@@ -147,10 +142,8 @@ impl SampleApp {
             self.fps = (1. / delta).round() as u32;
         }
 
-        self.scene
-            .update(ctx, &self.graph, &mut self.scene_render_stats);
+        self.scene.update(ctx, delta);
         if self.draw_ui {
-            let timer = Timer::new();
             self.ui.update(ctx, self.graph.ui_pass.clone(), |ectx| {
                 egui::CentralPanel::default()
                     .frame(egui::Frame::none())
@@ -159,41 +152,40 @@ impl SampleApp {
                         ui.heading(&ctx.app_name);
                         ui.separator();
                         Self::show_fps(ui, self.fps);
-                        Self::show_gpu_stats(ui, self.graph.gpu_time);
-                        Self::show_stats(ui, "UI Stats", &self.ui_render_stats);
-                        Self::show_stats(ui, "Scene Stats", &self.scene_render_stats);
+                        Self::show_stats(ui, "Render Stats", self.graph.render_stats());
                         Self::show_camera(ui, &self.scene.camera);
                         Self::show_memory(ui, ctx);
                     });
             });
-            self.ui_render_stats.update_time = timer.peek();
         }
-
-        self.ui_render_stats.reset();
-        self.scene_render_stats.reset();
     }
 
     fn show_fps(ui: &mut egui::Ui, fps: u32) {
         ui.label(format!("FPS: {}", fps));
     }
 
-    fn show_gpu_stats(ui: &mut egui::Ui, gpu_time: f32) {
-        ui.label(format!("GPU time: {:.2}ms", 1000. * gpu_time));
-    }
-
     fn show_stats(ui: &mut egui::Ui, header: &str, stats: &RenderStats) {
         ui.collapsing(header, |ui| {
-            ui.label(format!("  Vertices: {}", stats.vertices));
-            ui.label(format!("  Indices: {}", stats.indices));
-            ui.label(format!("  Models: {}", stats.models));
-            ui.label(format!("  Instances: {}", stats.instances));
+            ui.label("UI");
+            ui.label(format!("  Vertices: {}", stats.ui_vertices));
+            ui.label(format!("  Indices: {}", stats.ui_indices));
+            ui.label(format!("  Models: {}", stats.ui_models));
+            ui.label(format!("  Instances: {}", stats.ui_instances));
+            ui.label(format!("  Textures: {}", stats.ui_textures));
+            ui.label("Scene");
+            ui.label(format!("  Vertices: {}", stats.scene_vertices));
+            ui.label(format!("  Indices: {}", stats.scene_indices));
+            ui.label(format!("  Models: {}", stats.scene_models));
+            ui.label(format!("  Instances: {}", stats.scene_instances));
+            ui.label(format!("  Textures: {}", stats.scene_textures));
+            ui.label("Performance");
             ui.label(format!("  Draws: {}", stats.draws));
             ui.label(format!("  Binds: {}", stats.binds));
-            ui.label(format!("  Textures: {}", stats.textures));
             ui.label(format!(
                 "  CPU draw time: {:.2}ms",
                 1000. * stats.cpu_draw_time
             ));
+            ui.label(format!("  GPU time: {:.2}ms", 1000. * stats.gpu_draw_time));
             ui.label(format!("  Update time: {:.2}ms", 1000. * stats.update_time));
         });
     }
@@ -228,27 +220,19 @@ impl SampleApp {
 
         self.graph.begin(ctx)?;
 
-        self.graph.render(ctx, &mut |pass, cmd| match pass.ty() {
-            PassType::Compute => {
-                cmd.dispatch(
-                    self.graph.draw_extent.width / 16 + 1,
-                    self.graph.draw_extent.height / 16 + 1,
-                    1,
-                );
-            }
+        self.graph.render(ctx, &mut |pass, batch| match pass.ty() {
+            PassType::Compute => {}
             PassType::Forward => {
-                self.scene
-                    .draw(ctx, pass, cmd, &mut self.scene_render_stats);
+                self.scene.draw(ctx, pass, batch);
             }
             PassType::Wire => {
                 if self.draw_wire {
-                    self.scene
-                        .draw(ctx, pass, cmd, &mut self.scene_render_stats);
+                    self.scene.draw(ctx, pass, batch);
                 }
             }
             PassType::Ui => {
                 if self.draw_ui {
-                    self.ui.draw(ctx, pass, cmd, &mut self.ui_render_stats);
+                    self.ui.draw(ctx, pass, batch);
                 }
             }
         })?;

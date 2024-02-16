@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use gobs_core::entity::uniform::{UniformData, UniformLayout};
+use gobs_core::entity::uniform::UniformLayout;
 use gobs_utils::load;
 use gobs_vulkan::{
     descriptor::{
@@ -15,7 +15,7 @@ use crate::{
     geometry::VertexFlag,
     graph::RenderError,
     pass::{PassId, PassType, RenderPass},
-    renderable::{RenderObject, RenderStats},
+    renderable::RenderBatch,
     CommandBuffer,
 };
 
@@ -94,12 +94,12 @@ impl RenderPass for ComputePass {
     }
 
     fn render(
-        self: Arc<Self>,
+        &self,
         _ctx: &Context,
         cmd: &CommandBuffer,
         render_targets: &mut [&mut Image],
-        _draw_extent: ImageExtent2D,
-        draw_cmd: &mut dyn FnMut(Arc<dyn RenderPass>, &CommandBuffer),
+        _batch: &mut RenderBatch,
+        draw_extent: ImageExtent2D,
     ) -> Result<(), RenderError> {
         log::debug!("Draw compute");
         cmd.begin_label("Draw compute");
@@ -109,20 +109,10 @@ impl RenderPass for ComputePass {
         cmd.bind_pipeline(&self.pipeline);
         cmd.bind_descriptor_set(&self.draw_ds, 0, &self.pipeline);
 
-        draw_cmd(self, cmd);
+        cmd.dispatch(draw_extent.width / 16 + 1, draw_extent.height / 16 + 1, 1);
 
         cmd.end_label();
 
         Ok(())
-    }
-
-    fn draw(
-        &self,
-        _ctx: &Context,
-        _cmd: &CommandBuffer,
-        _render_list: &[RenderObject],
-        _scene_data: Option<UniformData>,
-        _render_stats: &mut RenderStats,
-    ) {
     }
 }

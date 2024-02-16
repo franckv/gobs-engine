@@ -3,7 +3,6 @@ use std::sync::Arc;
 use parking_lot::RwLock;
 
 use gobs_core::entity::uniform::{UniformData, UniformLayout, UniformProp, UniformPropData};
-use gobs_utils::timer::Timer;
 use gobs_vulkan::{
     descriptor::{
         DescriptorSet, DescriptorSetLayout, DescriptorSetPool, DescriptorStage, DescriptorType,
@@ -18,7 +17,7 @@ use crate::{
     graph::RenderError,
     material::MaterialInstanceId,
     pass::{PassId, PassType, RenderPass},
-    renderable::{RenderObject, RenderStats},
+    renderable::RenderBatch,
     resources::UniformBuffer,
     CommandBuffer,
 };
@@ -111,6 +110,67 @@ impl UiPass {
         *frame_number += 1;
         (*frame_number - 1) % ctx.frames_in_flight
     }
+
+    fn render_batch(&self, ctx: &Context, cmd: &CommandBuffer, batch: &mut RenderBatch) {
+        let frame_id = self.new_frame(ctx);
+
+        let mut last_material = MaterialInstanceId::nil();
+        let mut last_pipeline = PipelineId::nil();
+
+        let uniform_data_ds = &self.frame_data[frame_id].uniform_ds;
+
+        if let Some(scene_data) = batch.scene_data(self.id) {
+            self.frame_data[frame_id]
+                .uniform_buffer
+                .write()
+                .update(scene_data);
+        }
+
+        for render_object in &batch.render_list {
+            if render_object.pass.id() != self.id {
+                continue;
+            }
+            let material = &render_object.material;
+            let pipeline = material.pipeline();
+
+            if last_material != material.id {
+                if last_pipeline != pipeline.id {
+                    cmd.bind_pipeline(&pipeline);
+                    batch.render_stats.binds += 1;
+                    last_pipeline = pipeline.id;
+                }
+                cmd.bind_descriptor_set(uniform_data_ds, 0, &pipeline);
+                batch.render_stats.binds += 1;
+                if let Some(material_ds) = &material.material_ds {
+                    cmd.bind_descriptor_set(material_ds, 1, &pipeline);
+                    batch.render_stats.binds += 1;
+                }
+
+                last_material = material.id;
+            }
+
+            if let Some(push_layout) = render_object.pass.push_layout() {
+                let model_data = UniformData::new(
+                    &push_layout,
+                    &[UniformPropData::U64(
+                        render_object
+                            .model
+                            .vertex_buffer
+                            .address(ctx.device.clone()),
+                    )],
+                );
+                cmd.push_constants(pipeline.layout.clone(), &model_data.raw());
+            }
+
+            cmd.bind_index_buffer::<u32>(
+                &render_object.model.index_buffer,
+                render_object.indices_offset,
+            );
+            batch.render_stats.binds += 1;
+            cmd.draw_indexed(render_object.indices_len, 1);
+            batch.render_stats.draws += 1;
+        }
+    }
 }
 
 impl RenderPass for UiPass {
@@ -143,12 +203,12 @@ impl RenderPass for UiPass {
     }
 
     fn render(
-        self: Arc<Self>,
-        _ctx: &Context,
+        &self,
+        ctx: &Context,
         cmd: &CommandBuffer,
         render_targets: &mut [&mut Image],
+        batch: &mut RenderBatch,
         draw_extent: ImageExtent2D,
-        draw_cmd: &mut dyn FnMut(Arc<dyn RenderPass>, &CommandBuffer),
     ) -> Result<(), RenderError> {
         log::debug!("Draw UI");
 
@@ -160,85 +220,12 @@ impl RenderPass for UiPass {
 
         cmd.set_viewport(draw_extent.width, draw_extent.height);
 
-        draw_cmd(self, cmd);
+        self.render_batch(ctx, cmd, batch);
 
         cmd.end_rendering();
 
         cmd.end_label();
 
         Ok(())
-    }
-
-    fn draw(
-        &self,
-        ctx: &Context,
-        cmd: &CommandBuffer,
-        render_list: &[RenderObject],
-        scene_data: Option<UniformData>,
-        render_stats: &mut RenderStats,
-    ) {
-        let timer = Timer::new();
-
-        let frame_id = self.new_frame(ctx);
-
-        let mut last_material = MaterialInstanceId::nil();
-        let mut last_pipeline = PipelineId::nil();
-
-        let uniform_data_ds = &self.frame_data[frame_id].uniform_ds;
-
-        if let Some(scene_data) = scene_data {
-            self.frame_data[frame_id]
-                .uniform_buffer
-                .write()
-                .update(&scene_data);
-        }
-
-        for render_object in render_list {
-            if render_object.pass.id() != self.id {
-                continue;
-            }
-            render_stats.add_object(render_object);
-            let material = &render_object.material;
-            let pipeline = material.pipeline();
-
-            if last_material != material.id {
-                if last_pipeline != pipeline.id {
-                    cmd.bind_pipeline(&pipeline);
-                    render_stats.binds += 1;
-                    last_pipeline = pipeline.id;
-                }
-                cmd.bind_descriptor_set(uniform_data_ds, 0, &pipeline);
-                render_stats.binds += 1;
-                if let Some(material_ds) = &material.material_ds {
-                    cmd.bind_descriptor_set(material_ds, 1, &pipeline);
-                    render_stats.binds += 1;
-                }
-
-                last_material = material.id;
-            }
-
-            if let Some(push_layout) = render_object.pass.push_layout() {
-                let model_data = UniformData::new(
-                    &push_layout,
-                    &[UniformPropData::U64(
-                        render_object
-                            .model
-                            .vertex_buffer
-                            .address(ctx.device.clone()),
-                    )],
-                );
-                cmd.push_constants(pipeline.layout.clone(), &model_data.raw());
-            }
-
-            cmd.bind_index_buffer::<u32>(
-                &render_object.model.index_buffer,
-                render_object.indices_offset,
-            );
-            render_stats.binds += 1;
-            cmd.draw_indexed(render_object.indices_len, 1);
-            render_stats.draws += 1;
-        }
-
-        render_stats.cpu_draw_time = timer.peek();
     }
 }

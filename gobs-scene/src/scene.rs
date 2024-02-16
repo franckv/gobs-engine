@@ -8,11 +8,9 @@ use gobs_core::entity::{
 use gobs_render::{
     context::Context,
     geometry::ModelId,
-    graph::FrameGraph,
     pass::{PassId, RenderPass},
-    renderable::{RenderObject, RenderStats, Renderable},
+    renderable::{RenderBatch, RenderObject, Renderable},
     resources::ModelResource,
-    CommandBuffer,
 };
 use gobs_utils::timer::Timer;
 
@@ -22,9 +20,7 @@ pub struct Scene {
     pub graph: SceneGraph,
     pub camera: Camera,
     pub light: Light,
-    pub frame_number: usize,
     model_manager: HashMap<(ModelId, PassId), Arc<ModelResource>>,
-    render_list: Vec<RenderObject>,
 }
 
 impl Scene {
@@ -33,42 +29,18 @@ impl Scene {
             graph: SceneGraph::new(),
             camera,
             light,
-            frame_number: 0,
             model_manager: HashMap::new(),
-            render_list: Vec::new(),
         }
     }
 
-    pub fn update(
+    pub fn update(&mut self, _ctx: &Context, _delta: f32) {}
+
+    fn generate_draw_list(
         &mut self,
         ctx: &Context,
-        framegraph: &FrameGraph,
-        render_stats: &mut RenderStats,
+        pass: Arc<dyn RenderPass>,
+        batch: &mut RenderBatch,
     ) {
-        let timer = Timer::new();
-
-        self.render_list.clear();
-
-        self.generate_draw_list(ctx, framegraph.forward_pass.clone());
-        self.generate_draw_list(ctx, framegraph.wire_pass.clone());
-
-        self.render_list.sort_by(|a, b| {
-            // sort order: pass, material: model
-            if a.pass.id() == b.pass.id() {
-                if a.material.id == b.material.id {
-                    a.model.model.id.cmp(&b.model.model.id)
-                } else {
-                    a.material.id.cmp(&b.material.id)
-                }
-            } else {
-                a.pass.id().cmp(&b.pass.id())
-            }
-        });
-
-        render_stats.update_time = timer.peek();
-    }
-
-    fn generate_draw_list(&mut self, ctx: &Context, pass: Arc<dyn RenderPass>) {
         self.graph.visit(self.graph.root, &mut |&transform, model| {
             if let NodeValue::Model(model) = model {
                 let resource = self
@@ -86,7 +58,7 @@ impl Scene {
                         indices_len: primitive.len,
                     };
 
-                    self.render_list.push(render_object);
+                    batch.add_object(render_object, false);
                 }
             }
         });
@@ -98,27 +70,27 @@ impl Renderable for Scene {
         self.camera.resize(width, height);
     }
 
-    fn draw(
-        &self,
-        ctx: &Context,
-        pass: Arc<dyn RenderPass>,
-        cmd: &CommandBuffer,
-        render_stats: &mut RenderStats,
-    ) {
-        let scene_data = match pass.uniform_data_layout() {
-            Some(data_layout) => Some(UniformData::new(
-                &data_layout,
-                &[
-                    UniformPropData::Vec3F(self.camera.position.into()),
-                    UniformPropData::Mat4F(self.camera.view_proj().to_cols_array_2d()),
-                    UniformPropData::Vec3F(self.light.position.normalize().into()),
-                    UniformPropData::Vec4F(self.light.colour.into()),
-                    UniformPropData::Vec4F([0.1, 0.1, 0.1, 1.]),
-                ],
-            )),
-            None => None,
-        };
+    fn draw(&mut self, ctx: &Context, pass: Arc<dyn RenderPass>, batch: &mut RenderBatch) {
+        let timer = Timer::new();
 
-        pass.draw(ctx, cmd, &self.render_list, scene_data, render_stats);
+        self.generate_draw_list(ctx, pass.clone(), batch);
+
+        if let Some(data_layout) = pass.uniform_data_layout() {
+            batch.add_scene_data(
+                UniformData::new(
+                    &data_layout,
+                    &[
+                        UniformPropData::Vec3F(self.camera.position.into()),
+                        UniformPropData::Mat4F(self.camera.view_proj().to_cols_array_2d()),
+                        UniformPropData::Vec3F(self.light.position.normalize().into()),
+                        UniformPropData::Vec4F(self.light.colour.into()),
+                        UniformPropData::Vec4F([0.1, 0.1, 0.1, 1.]),
+                    ],
+                ),
+                pass.id(),
+            );
+        }
+
+        batch.stats_mut().update_time = timer.peek();
     }
 }
