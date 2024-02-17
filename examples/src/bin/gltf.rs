@@ -68,7 +68,11 @@ impl App {
     fn load_scene(&mut self, ctx: &Context) {
         let file_name = load::get_asset_dir("basicmesh.glb", load::AssetType::MODEL).unwrap();
 
-        let models = gltf::load_gltf(ctx, file_name, self.common.graph.passes["forward"].clone());
+        let models = gltf::load_gltf(
+            ctx,
+            file_name,
+            self.common.graph.pass_by_name("forward").unwrap(),
+        );
 
         let i_max = 3;
         let j_max = 3;
@@ -100,7 +104,11 @@ impl App {
     fn load_scene2(&mut self, ctx: &Context) {
         let file_name = load::get_asset_dir("Cube.gltf", load::AssetType::MODEL).unwrap();
 
-        let models = gltf::load_gltf(ctx, file_name, self.common.graph.passes["forward"].clone());
+        let models = gltf::load_gltf(
+            ctx,
+            file_name,
+            self.common.graph.pass_by_name("forward").unwrap(),
+        );
 
         let i_max = 3;
         let j_max = 3;
@@ -132,7 +140,11 @@ impl App {
     fn load_scene3(&mut self, ctx: &Context) {
         let file_name = load::get_asset_dir("Cube.gltf", load::AssetType::MODEL).unwrap();
 
-        let models = gltf::load_gltf(ctx, file_name, self.common.graph.passes["forward"].clone());
+        let models = gltf::load_gltf(
+            ctx,
+            file_name,
+            self.common.graph.pass_by_name("forward").unwrap(),
+        );
 
         let scale = 1.;
 

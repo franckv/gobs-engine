@@ -5,14 +5,14 @@ use parking_lot::RwLock;
 use gobs_core::entity::uniform::{UniformLayout, UniformProp, UniformPropData};
 use gobs_vulkan::{
     descriptor::{DescriptorSetLayout, DescriptorSetPool, DescriptorStage, DescriptorType},
-    image::{Image, ImageExtent2D, ImageLayout},
+    image::{ImageExtent2D, ImageLayout},
     pipeline::{Pipeline, PipelineId},
 };
 
 use crate::{
     context::Context,
     geometry::VertexFlag,
-    graph::RenderError,
+    graph::{RenderError, ResourceManager},
     material::MaterialInstanceId,
     pass::{FrameData, PassId, PassType, RenderPass},
     renderable::RenderBatch,
@@ -23,6 +23,7 @@ pub struct UiPass {
     id: PassId,
     name: String,
     ty: PassType,
+    attachments: Vec<String>,
     push_layout: Arc<UniformLayout>,
     frame_data: Vec<FrameData>,
     frame_number: RwLock<usize>,
@@ -64,6 +65,7 @@ impl UiPass {
             id: PassId::new_v4(),
             name: name.to_string(),
             ty: PassType::Ui,
+            attachments: vec![String::from("draw")],
             push_layout,
             frame_data,
             frame_number: RwLock::new(0),
@@ -150,6 +152,10 @@ impl RenderPass for UiPass {
         self.ty
     }
 
+    fn attachments(&self) -> &[String] {
+        &self.attachments
+    }
+
     fn pipeline(&self) -> Option<Arc<Pipeline>> {
         None
     }
@@ -170,7 +176,7 @@ impl RenderPass for UiPass {
         &self,
         ctx: &Context,
         cmd: &CommandBuffer,
-        render_targets: &mut [&mut Image],
+        resource_manager: &ResourceManager,
         batch: &mut RenderBatch,
         draw_extent: ImageExtent2D,
     ) -> Result<(), RenderError> {
@@ -178,9 +184,21 @@ impl RenderPass for UiPass {
 
         cmd.begin_label("Draw UI");
 
-        cmd.transition_image_layout(&mut render_targets[0], ImageLayout::Color);
+        let image_attach = &self.attachments[0];
 
-        cmd.begin_rendering(&render_targets[0], draw_extent, None, false, [0.; 4], 1.);
+        cmd.transition_image_layout(
+            &mut resource_manager.image_write(image_attach),
+            ImageLayout::Color,
+        );
+
+        cmd.begin_rendering(
+            &resource_manager.image_read(image_attach),
+            draw_extent,
+            None,
+            false,
+            [0.; 4],
+            1.,
+        );
 
         cmd.set_viewport(draw_extent.width, draw_extent.height);
 

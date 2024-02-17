@@ -7,7 +7,7 @@ use gobs_core::entity::uniform::{UniformLayout, UniformProp, UniformPropData};
 use gobs_utils::load;
 use gobs_vulkan::{
     descriptor::{DescriptorSetLayout, DescriptorSetPool, DescriptorStage, DescriptorType},
-    image::{Image, ImageExtent2D, ImageLayout},
+    image::{ImageExtent2D, ImageLayout},
     pipeline::{
         CullMode, DynamicStateElem, FrontFace, Pipeline, PipelineLayout, PolygonMode, Rect2D,
         Shader, ShaderType, Viewport,
@@ -17,7 +17,7 @@ use gobs_vulkan::{
 use crate::{
     context::Context,
     geometry::VertexFlag,
-    graph::RenderError,
+    graph::{RenderError, ResourceManager},
     pass::{FrameData, PassId, PassType, RenderPass},
     renderable::RenderBatch,
     CommandBuffer,
@@ -27,6 +27,7 @@ pub struct WirePass {
     id: PassId,
     name: String,
     ty: PassType,
+    attachments: Vec<String>,
     pipeline: Arc<Pipeline>,
     vertex_flags: VertexFlag,
     push_layout: Arc<UniformLayout>,
@@ -100,6 +101,7 @@ impl WirePass {
             id: PassId::new_v4(),
             name: name.to_string(),
             ty: PassType::Wire,
+            attachments: vec![String::from("draw")],
             pipeline,
             vertex_flags,
             push_layout,
@@ -183,6 +185,10 @@ impl RenderPass for WirePass {
         self.ty
     }
 
+    fn attachments(&self) -> &[String] {
+        &self.attachments
+    }
+
     fn pipeline(&self) -> Option<Arc<Pipeline>> {
         Some(self.pipeline.clone())
     }
@@ -203,7 +209,7 @@ impl RenderPass for WirePass {
         &self,
         ctx: &Context,
         cmd: &CommandBuffer,
-        render_targets: &mut [&mut Image],
+        resource_manager: &ResourceManager,
         batch: &mut RenderBatch,
         draw_extent: ImageExtent2D,
     ) -> Result<(), RenderError> {
@@ -211,9 +217,21 @@ impl RenderPass for WirePass {
 
         cmd.begin_label("Draw wire");
 
-        cmd.transition_image_layout(&mut render_targets[0], ImageLayout::Color);
+        let draw_attach = &self.attachments[0];
 
-        cmd.begin_rendering(&render_targets[0], draw_extent, None, false, [0.; 4], 1.);
+        cmd.transition_image_layout(
+            &mut resource_manager.image_write(draw_attach),
+            ImageLayout::Color,
+        );
+
+        cmd.begin_rendering(
+            &resource_manager.image_read(draw_attach),
+            draw_extent,
+            None,
+            false,
+            [0.; 4],
+            1.,
+        );
 
         cmd.set_viewport(draw_extent.width, draw_extent.height);
 

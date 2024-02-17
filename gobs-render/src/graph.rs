@@ -1,3 +1,3 @@
 mod frame;
 
-pub use frame::{FrameGraph, RenderError};
+pub use frame::{FrameGraph, RenderError, ResourceManager};

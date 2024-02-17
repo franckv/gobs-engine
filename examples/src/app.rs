@@ -37,7 +37,7 @@ impl SampleApp {
 
         let graph = FrameGraph::new(ctx);
 
-        let ui = UIRenderer::new(ctx, graph.passes["ui"].clone());
+        let ui = UIRenderer::new(ctx, graph.pass_by_name("ui").unwrap());
 
         let scene = Scene::new(camera, light);
 
@@ -94,7 +94,7 @@ impl SampleApp {
 
         Material::builder("color.vert.spv", "color.frag.spv")
             .vertex_flags(vertex_flags)
-            .build(ctx, self.graph.passes["forward"].clone())
+            .build(ctx, self.graph.pass_by_name("forward").unwrap())
     }
 
     pub fn texture_material(&self, ctx: &Context) -> Arc<Material> {
@@ -107,7 +107,7 @@ impl SampleApp {
         Material::builder("mesh.vert.spv", "mesh.frag.spv")
             .vertex_flags(vertex_flags)
             .prop("diffuse", MaterialProperty::Texture)
-            .build(ctx, self.graph.passes["forward"].clone())
+            .build(ctx, self.graph.pass_by_name("forward").unwrap())
     }
 
     pub fn normal_mapping_material(&self, ctx: &Context) -> Arc<Material> {
@@ -121,7 +121,7 @@ impl SampleApp {
             .vertex_flags(vertex_flags)
             .prop("diffuse", MaterialProperty::Texture)
             .prop("normal", MaterialProperty::Texture)
-            .build(ctx, self.graph.passes["forward"].clone())
+            .build(ctx, self.graph.pass_by_name("forward").unwrap())
     }
 
     pub fn depth_material(&self, ctx: &Context) -> Arc<Material> {
@@ -129,7 +129,7 @@ impl SampleApp {
 
         Material::builder("color.vert.spv", "depth.frag.spv")
             .vertex_flags(vertex_flags)
-            .build(ctx, self.graph.passes["forward"].clone())
+            .build(ctx, self.graph.pass_by_name("forward").unwrap())
     }
 
     pub fn start(&mut self, _ctx: &Context) {}
@@ -145,7 +145,7 @@ impl SampleApp {
         self.scene.update(ctx, delta);
         if self.draw_ui {
             self.ui
-                .update(ctx, self.graph.passes["ui"].clone(), |ectx| {
+                .update(ctx, self.graph.pass_by_name("ui").unwrap(), |ectx| {
                     egui::CentralPanel::default()
                         .frame(egui::Frame::none())
                         .show(ectx, |ui| {
@@ -169,7 +169,7 @@ impl SampleApp {
         let stats = graph.render_stats();
         ui.collapsing(header, |ui| {
             for (pass_id, pass_stats) in &stats.pass_stats {
-                let pass = graph.pass(*pass_id);
+                let pass = graph.pass_by_id(*pass_id).unwrap();
                 ui.label(format!("Pass: {}", pass.name()));
                 ui.label(format!("  Vertices: {}", pass_stats.vertices));
                 ui.label(format!("  Indices: {}", pass_stats.indices));

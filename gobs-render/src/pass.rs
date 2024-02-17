@@ -4,15 +4,15 @@ use parking_lot::RwLock;
 use uuid::Uuid;
 
 use gobs_core::entity::uniform::UniformLayout;
-use gobs_vulkan::{
-    descriptor::DescriptorSet,
-    image::{Image, ImageExtent2D},
-    pipeline::Pipeline,
-};
+use gobs_vulkan::{descriptor::DescriptorSet, image::ImageExtent2D, pipeline::Pipeline};
 
 use crate::{
-    context::Context, geometry::VertexFlag, graph::RenderError, renderable::RenderBatch,
-    resources::UniformBuffer, CommandBuffer,
+    context::Context,
+    geometry::VertexFlag,
+    graph::{RenderError, ResourceManager},
+    renderable::RenderBatch,
+    resources::UniformBuffer,
+    CommandBuffer,
 };
 
 pub mod compute;
@@ -38,11 +38,12 @@ pub trait RenderPass {
     fn vertex_flags(&self) -> Option<VertexFlag>;
     fn push_layout(&self) -> Option<Arc<UniformLayout>>;
     fn uniform_data_layout(&self) -> Option<Arc<UniformLayout>>;
+    fn attachments(&self) -> &[String];
     fn render(
         &self,
         ctx: &Context,
         cmd: &CommandBuffer,
-        render_targets: &mut [&mut Image],
+        resource_manager: &ResourceManager,
         batch: &mut RenderBatch,
         draw_extent: ImageExtent2D,
         //draw_cmd: &mut dyn FnMut(Arc<dyn RenderPass>, &CommandBuffer, &mut Vec<RenderObject>),

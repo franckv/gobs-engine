@@ -7,14 +7,14 @@ use uuid::Uuid;
 use gobs_core::entity::uniform::{UniformLayout, UniformProp, UniformPropData};
 use gobs_vulkan::{
     descriptor::{DescriptorSetLayout, DescriptorSetPool, DescriptorStage, DescriptorType},
-    image::{Image, ImageExtent2D, ImageLayout},
+    image::{ImageExtent2D, ImageLayout},
     pipeline::Pipeline,
 };
 
 use crate::{
     context::Context,
     geometry::VertexFlag,
-    graph::RenderError,
+    graph::{RenderError, ResourceManager},
     pass::{FrameData, PassId, PassType, RenderPass},
     renderable::RenderBatch,
     CommandBuffer,
@@ -24,6 +24,7 @@ pub struct ForwardPass {
     id: PassId,
     name: String,
     ty: PassType,
+    attachments: Vec<String>,
     push_layout: Arc<UniformLayout>,
     frame_data: Vec<FrameData>,
     frame_number: RwLock<usize>,
@@ -65,6 +66,7 @@ impl ForwardPass {
             id: PassId::new_v4(),
             name: name.to_string(),
             ty: PassType::Forward,
+            attachments: vec![String::from("draw"), String::from("depth")],
             push_layout,
             frame_data,
             frame_number: RwLock::new(0),
@@ -164,6 +166,10 @@ impl RenderPass for ForwardPass {
         self.ty
     }
 
+    fn attachments(&self) -> &[String] {
+        &self.attachments
+    }
+
     fn pipeline(&self) -> Option<Arc<Pipeline>> {
         None
     }
@@ -184,7 +190,7 @@ impl RenderPass for ForwardPass {
         &self,
         ctx: &Context,
         cmd: &CommandBuffer,
-        render_targets: &mut [&mut Image],
+        resource_manager: &ResourceManager,
         batch: &mut RenderBatch,
         draw_extent: ImageExtent2D,
     ) -> Result<(), RenderError> {
@@ -192,13 +198,22 @@ impl RenderPass for ForwardPass {
 
         cmd.begin_label("Draw forward");
 
-        cmd.transition_image_layout(&mut render_targets[0], ImageLayout::Color);
-        cmd.transition_image_layout(&mut render_targets[1], ImageLayout::Depth);
+        let draw_attach = &self.attachments[0];
+        let depth_attach = &self.attachments[1];
+
+        cmd.transition_image_layout(
+            &mut resource_manager.image_write(draw_attach),
+            ImageLayout::Color,
+        );
+        cmd.transition_image_layout(
+            &mut resource_manager.image_write(depth_attach),
+            ImageLayout::Depth,
+        );
 
         cmd.begin_rendering(
-            &render_targets[0],
+            &resource_manager.image_read(draw_attach),
             draw_extent,
-            Some(&render_targets[1]),
+            Some(&resource_manager.image_read(depth_attach)),
             false,
             [0.; 4],
             1.,

@@ -1,6 +1,7 @@
 use std::{collections::HashMap, sync::Arc};
 
-use parking_lot::RwLock;
+use anyhow::Result;
+use parking_lot::{RwLock, RwLockReadGuard, RwLockWriteGuard};
 
 use gobs_utils::timer::Timer;
 use gobs_vulkan::{
@@ -59,6 +60,52 @@ impl FrameData {
     }
 }
 
+pub struct ResourceManager {
+    resources: HashMap<String, RwLock<Image>>,
+}
+
+impl ResourceManager {
+    pub fn new() -> Self {
+        Self {
+            resources: HashMap::new(),
+        }
+    }
+
+    pub fn register_image(
+        &mut self,
+        ctx: &Context,
+        label: &str,
+        format: ImageFormat,
+        usage: ImageUsage,
+        extent: ImageExtent2D,
+    ) {
+        let image = Image::new(
+            label,
+            ctx.device.clone(),
+            format,
+            usage,
+            extent,
+            ctx.allocator.clone(),
+        );
+
+        self.resources.insert(label.to_string(), RwLock::new(image));
+    }
+
+    pub fn invalidate(&self) {
+        for (_, image) in &self.resources {
+            image.write().invalidate();
+        }
+    }
+
+    pub fn image_read(&self, label: &str) -> RwLockReadGuard<'_, Image> {
+        self.resources[label].read()
+    }
+
+    pub fn image_write(&self, label: &str) -> RwLockWriteGuard<'_, Image> {
+        self.resources[label].write()
+    }
+}
+
 pub struct FrameGraph {
     pub frame_number: usize,
     pub frames: Vec<FrameData>,
@@ -67,8 +114,8 @@ pub struct FrameGraph {
     pub swapchain_idx: usize,
     pub draw_extent: ImageExtent2D,
     pub render_scaling: f32,
-    pub passes: HashMap<String, Arc<dyn RenderPass>>,
-    resource_manager: HashMap<String, RwLock<Image>>,
+    pub passes: Vec<Arc<dyn RenderPass>>,
+    resource_manager: ResourceManager,
     pub batch: RenderBatch,
 }
 
@@ -79,42 +126,33 @@ impl FrameGraph {
 
         let extent = ctx.surface.get_extent(ctx.device.clone());
 
-        let draw_image = Image::new(
-            "color",
-            ctx.device.clone(),
-            ctx.color_format,
-            ImageUsage::Color,
-            extent,
-            ctx.allocator.clone(),
-        );
-
-        let depth_image = Image::new(
-            "depth",
-            ctx.device.clone(),
-            ctx.depth_format,
-            ImageUsage::Depth,
-            extent,
-            ctx.allocator.clone(),
-        );
-
-        let mut resource_manager = HashMap::new();
-
-        resource_manager.insert("draw".to_string(), RwLock::new(draw_image));
-        resource_manager.insert("depth".to_string(), RwLock::new(depth_image));
-
         let frames = (0..ctx.frames_in_flight)
             .map(|_| FrameData::new(ctx))
             .collect();
 
-        let mut passes = HashMap::new();
+        let mut resource_manager = ResourceManager::new();
 
-        passes.insert(
-            "compute".to_string(),
-            ComputePass::new(ctx, "bg", &resource_manager["draw"].read()),
+        resource_manager.register_image(ctx, "draw", ctx.color_format, ImageUsage::Color, extent);
+        resource_manager.register_image(ctx, "depth", ctx.depth_format, ImageUsage::Depth, extent);
+
+        let mut passes = Vec::new();
+
+        Self::register_pass(
+            ComputePass::new(ctx, "compute"),
+            &mut passes,
+            &mut resource_manager,
         );
-        passes.insert("forward".to_string(), ForwardPass::new(ctx, "scene"));
-        passes.insert("ui".to_string(), UiPass::new(ctx, "ui"));
-        passes.insert("wire".to_string(), WirePass::new(ctx, "wire"));
+        Self::register_pass(
+            ForwardPass::new(ctx, "forward"),
+            &mut passes,
+            &mut resource_manager,
+        );
+        Self::register_pass(UiPass::new(ctx, "ui"), &mut passes, &mut resource_manager);
+        Self::register_pass(
+            WirePass::new(ctx, "wire"),
+            &mut passes,
+            &mut resource_manager,
+        );
 
         Self {
             frame_number: 0,
@@ -130,6 +168,18 @@ impl FrameGraph {
         }
     }
 
+    fn register_pass(
+        pass: Arc<dyn RenderPass>,
+        passes: &mut Vec<Arc<dyn RenderPass>>,
+        resource_manager: &mut ResourceManager,
+    ) {
+        for attach in pass.attachments() {
+            assert!(resource_manager.resources.contains_key(attach));
+        }
+
+        passes.push(pass);
+    }
+
     fn new_frame(&mut self, ctx: &Context) -> usize {
         self.frame_number += 1;
         (self.frame_number - 1) % ctx.frames_in_flight
@@ -139,14 +189,25 @@ impl FrameGraph {
         (self.frame_number - 1) % ctx.frames_in_flight
     }
 
-    pub fn pass(&self, pass_id: PassId) -> Arc<dyn RenderPass> {
-        for (_, pass) in &self.passes {
-            if pass.id() == pass_id {
-                return pass.clone();
+    pub fn get_pass<F>(&self, cmp: F) -> Result<Arc<dyn RenderPass>, ()>
+    where
+        F: Fn(&Arc<dyn RenderPass>) -> bool,
+    {
+        for pass in &self.passes {
+            if cmp(pass) {
+                return Ok(pass.clone());
             }
         }
 
-        return self.passes["forward"].clone();
+        Err(())
+    }
+
+    pub fn pass_by_id(&self, pass_id: PassId) -> Result<Arc<dyn RenderPass>, ()> {
+        self.get_pass(|pass| pass.id() == pass_id)
+    }
+
+    pub fn pass_by_name(&self, pass_name: &str) -> Result<Arc<dyn RenderPass>, ()> {
+        self.get_pass(|pass| pass.name() == pass_name)
     }
 
     pub fn render_stats(&self) -> &RenderStats {
@@ -177,11 +238,11 @@ impl FrameGraph {
                 ((buf[1] - buf[0]) as f32 * frame.query_pool.period) / 1_000_000_000.;
         }
 
-        let draw_image = &self.resource_manager["draw"];
-        let depth_image = &self.resource_manager["draw"];
-
-        let draw_image_extent = draw_image.read().extent;
-        debug_assert_eq!(draw_image_extent, depth_image.read().extent);
+        let draw_image_extent = self.resource_manager.image_read("draw").extent;
+        debug_assert_eq!(
+            draw_image_extent,
+            self.resource_manager.image_read("depth").extent
+        );
 
         self.draw_extent = ImageExtent2D::new(
             (draw_image_extent
@@ -200,8 +261,7 @@ impl FrameGraph {
 
         self.swapchain_idx = image_index;
 
-        draw_image.write().invalidate();
-        depth_image.write().invalidate();
+        self.resource_manager.invalidate();
         self.swapchain_images[image_index as usize].invalidate();
 
         cmd.begin();
@@ -221,15 +281,17 @@ impl FrameGraph {
 
         log::debug!("Present");
 
-        let draw_image = &self.resource_manager["draw"];
-        cmd.transition_image_layout(&mut draw_image.write(), ImageLayout::TransferSrc);
+        cmd.transition_image_layout(
+            &mut self.resource_manager.image_write("draw"),
+            ImageLayout::TransferSrc,
+        );
 
         let swapchain_image = &mut self.swapchain_images[self.swapchain_idx];
 
         cmd.transition_image_layout(swapchain_image, ImageLayout::TransferDst);
 
         cmd.copy_image_to_image(
-            &draw_image.read(),
+            &self.resource_manager.image_read("draw"),
             self.draw_extent,
             swapchain_image,
             swapchain_image.extent,
@@ -269,10 +331,9 @@ impl FrameGraph {
 
         let mut timer = Timer::new();
 
-        draw_cmd(self.passes["compute"].clone(), &mut self.batch);
-        draw_cmd(self.passes["forward"].clone(), &mut self.batch);
-        draw_cmd(self.passes["wire"].clone(), &mut self.batch);
-        draw_cmd(self.passes["ui"].clone(), &mut self.batch);
+        for pass in &self.passes {
+            draw_cmd(pass.clone(), &mut self.batch);
+        }
 
         self.batch.finish();
 
@@ -282,40 +343,15 @@ impl FrameGraph {
 
         let cmd = &self.frames[frame_id].command_buffer;
 
-        let draw_image = &self.resource_manager["draw"];
-        let depth_image = &self.resource_manager["depth"];
-
-        self.passes["compute"].render(
-            ctx,
-            cmd,
-            &mut [&mut draw_image.write()],
-            &mut self.batch,
-            self.draw_extent,
-        )?;
-
-        self.passes["forward"].render(
-            ctx,
-            cmd,
-            &mut [&mut draw_image.write(), &mut depth_image.write()],
-            &mut self.batch,
-            self.draw_extent,
-        )?;
-
-        self.passes["wire"].render(
-            ctx,
-            cmd,
-            &mut [&mut draw_image.write()],
-            &mut self.batch,
-            self.draw_extent,
-        )?;
-
-        self.passes["ui"].render(
-            ctx,
-            cmd,
-            &mut [&mut draw_image.write()],
-            &mut self.batch,
-            self.draw_extent,
-        )?;
+        for pass in &self.passes {
+            pass.render(
+                ctx,
+                cmd,
+                &self.resource_manager,
+                &mut self.batch,
+                self.draw_extent,
+            )?;
+        }
 
         if self.frame_number % ctx.stats_refresh == 0 {
             self.batch.render_stats.cpu_draw_time = timer.peek();

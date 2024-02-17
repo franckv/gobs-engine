@@ -6,14 +6,14 @@ use gobs_vulkan::{
     descriptor::{
         DescriptorSet, DescriptorSetLayout, DescriptorSetPool, DescriptorStage, DescriptorType,
     },
-    image::{Image, ImageExtent2D, ImageLayout},
+    image::{ImageExtent2D, ImageLayout},
     pipeline::{Pipeline, PipelineLayout, Shader, ShaderType},
 };
 
 use crate::{
     context::Context,
     geometry::VertexFlag,
-    graph::RenderError,
+    graph::{RenderError, ResourceManager},
     pass::{PassId, PassType, RenderPass},
     renderable::RenderBatch,
     CommandBuffer,
@@ -23,24 +23,20 @@ pub struct ComputePass {
     id: PassId,
     name: String,
     ty: PassType,
+    attachments: Vec<String>,
     _draw_ds_pool: DescriptorSetPool,
     pub draw_ds: DescriptorSet,
     pub pipeline: Arc<Pipeline>,
 }
 
 impl ComputePass {
-    pub fn new(ctx: &Context, name: &str, render_target: &Image) -> Arc<dyn RenderPass> {
+    pub fn new(ctx: &Context, name: &str) -> Arc<dyn RenderPass> {
         let _draw_ds_layout = DescriptorSetLayout::builder()
             .binding(DescriptorType::StorageImage, DescriptorStage::Compute)
             .build(ctx.device.clone());
         let mut _draw_ds_pool =
             DescriptorSetPool::new(ctx.device.clone(), _draw_ds_layout.clone(), 10);
         let draw_ds = _draw_ds_pool.allocate();
-
-        draw_ds
-            .update()
-            .bind_image(render_target, ImageLayout::General)
-            .end();
 
         let compute_file = load::get_asset_dir("sky.comp.spv", load::AssetType::SHADER).unwrap();
         let compute_shader =
@@ -57,6 +53,7 @@ impl ComputePass {
             id: PassId::new_v4(),
             name: name.to_string(),
             ty: PassType::Compute,
+            attachments: vec![String::from("draw")],
             _draw_ds_pool,
             draw_ds,
             pipeline,
@@ -75,6 +72,10 @@ impl RenderPass for ComputePass {
 
     fn ty(&self) -> PassType {
         self.ty
+    }
+
+    fn attachments(&self) -> &[String] {
+        &self.attachments
     }
 
     fn pipeline(&self) -> Option<Arc<Pipeline>> {
@@ -97,19 +98,35 @@ impl RenderPass for ComputePass {
         &self,
         _ctx: &Context,
         cmd: &CommandBuffer,
-        render_targets: &mut [&mut Image],
-        _batch: &mut RenderBatch,
+        resource_manager: &ResourceManager,
+        batch: &mut RenderBatch,
         draw_extent: ImageExtent2D,
     ) -> Result<(), RenderError> {
         log::debug!("Draw compute");
         cmd.begin_label("Draw compute");
 
-        cmd.transition_image_layout(&mut render_targets[0], ImageLayout::General);
+        let draw_attach = &self.attachments[0];
+
+        self.draw_ds
+            .update()
+            .bind_image(
+                &resource_manager.image_read(draw_attach),
+                ImageLayout::General,
+            )
+            .end();
+        batch.stats_mut().binds += 1;
+
+        cmd.transition_image_layout(
+            &mut resource_manager.image_write(draw_attach),
+            ImageLayout::General,
+        );
 
         cmd.bind_pipeline(&self.pipeline);
         cmd.bind_descriptor_set(&self.draw_ds, 0, &self.pipeline);
+        batch.stats_mut().binds += 2;
 
         cmd.dispatch(draw_extent.width / 16 + 1, draw_extent.height / 16 + 1, 1);
+        batch.stats_mut().draws += 1;
 
         cmd.end_label();
 
