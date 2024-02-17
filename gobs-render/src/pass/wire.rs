@@ -1,12 +1,12 @@
 use std::sync::Arc;
 
-use glam::Mat3;
+use parking_lot::RwLock;
 use uuid::Uuid;
 
-use gobs_core::entity::uniform::{UniformData, UniformLayout, UniformProp, UniformPropData};
+use gobs_core::entity::uniform::{UniformLayout, UniformProp, UniformPropData};
 use gobs_utils::load;
 use gobs_vulkan::{
-    descriptor::{DescriptorSetLayout, DescriptorStage, DescriptorType},
+    descriptor::{DescriptorSetLayout, DescriptorSetPool, DescriptorStage, DescriptorType},
     image::{Image, ImageExtent2D, ImageLayout},
     pipeline::{
         CullMode, DynamicStateElem, FrontFace, Pipeline, PipelineLayout, PolygonMode, Rect2D,
@@ -18,7 +18,7 @@ use crate::{
     context::Context,
     geometry::VertexFlag,
     graph::RenderError,
-    pass::{PassId, PassType, RenderPass},
+    pass::{FrameData, PassId, PassType, RenderPass},
     renderable::RenderBatch,
     CommandBuffer,
 };
@@ -30,6 +30,10 @@ pub struct WirePass {
     pipeline: Arc<Pipeline>,
     vertex_flags: VertexFlag,
     push_layout: Arc<UniformLayout>,
+    frame_data: Vec<FrameData>,
+    frame_number: RwLock<usize>,
+    _uniform_ds_pool: DescriptorSetPool,
+    uniform_data_layout: Arc<UniformLayout>,
 }
 
 impl WirePass {
@@ -38,15 +42,35 @@ impl WirePass {
 
         let push_layout = UniformLayout::builder()
             .prop("world_matrix", UniformProp::Mat4F)
-            .prop("normal_matrix", UniformProp::Mat3F)
             .prop("vertex_buffer_address", UniformProp::U64)
             .build();
 
-        let scene_descriptor_layout = DescriptorSetLayout::builder()
+        let uniform_descriptor_layout = DescriptorSetLayout::builder()
             .binding(DescriptorType::Uniform, DescriptorStage::All)
             .build(ctx.device.clone());
 
-        let ds_layouts = vec![scene_descriptor_layout.clone()];
+        let uniform_data_layout = UniformLayout::builder()
+            .prop("camera_position", UniformProp::Vec3F)
+            .prop("view_proj", UniformProp::Mat4F)
+            .build();
+
+        let mut _uniform_ds_pool = DescriptorSetPool::new(
+            ctx.device.clone(),
+            uniform_descriptor_layout.clone(),
+            ctx.frames_in_flight as u32,
+        );
+
+        let frame_data = (0..ctx.frames_in_flight)
+            .map(|_| {
+                FrameData::new(
+                    ctx,
+                    uniform_data_layout.clone(),
+                    _uniform_ds_pool.allocate(),
+                )
+            })
+            .collect();
+
+        let ds_layouts = vec![uniform_descriptor_layout.clone()];
 
         let pipeline_layout =
             PipelineLayout::new(ctx.device.clone(), &ds_layouts, push_layout.size());
@@ -79,13 +103,37 @@ impl WirePass {
             pipeline,
             vertex_flags,
             push_layout,
+            frame_data,
+            frame_number: RwLock::new(0),
+            _uniform_ds_pool,
+            uniform_data_layout,
         })
     }
 
+    fn new_frame(&self, ctx: &Context) -> usize {
+        let mut frame_number = self.frame_number.write();
+        *frame_number += 1;
+        (*frame_number - 1) % ctx.frames_in_flight
+    }
+
     fn render_batch(&self, ctx: &Context, cmd: &CommandBuffer, batch: &mut RenderBatch) {
+        let frame_id = self.new_frame(ctx);
+
         let mut last_model = Uuid::nil();
 
         cmd.bind_pipeline(&self.pipeline);
+        batch.render_stats.binds += 1;
+
+        let uniform_data_ds = &self.frame_data[frame_id].uniform_ds;
+
+        if let Some(scene_data) = batch.scene_data(self.id) {
+            self.frame_data[frame_id]
+                .uniform_buffer
+                .write()
+                .update(scene_data);
+        }
+
+        cmd.bind_descriptor_set(uniform_data_ds, 0, &self.pipeline);
         batch.render_stats.binds += 1;
 
         for render_object in &batch.render_list {
@@ -93,24 +141,19 @@ impl WirePass {
                 continue;
             }
             let world_matrix = render_object.transform.matrix;
-            let normal_matrix = Mat3::from_quat(render_object.transform.rotation);
 
-            if let Some(push_layout) = render_object.pass.push_layout() {
+            if let Some(push_layout) = self.push_layout() {
                 // TODO: hardcoded
-                let model_data = UniformData::new(
-                    &push_layout,
-                    &[
-                        UniformPropData::Mat4F(world_matrix.to_cols_array_2d()),
-                        UniformPropData::Mat3F(normal_matrix.to_cols_array_2d()),
-                        UniformPropData::U64(
-                            render_object
-                                .model
-                                .vertex_buffer
-                                .address(ctx.device.clone()),
-                        ),
-                    ],
-                );
-                cmd.push_constants(self.pipeline.layout.clone(), &model_data.raw());
+                let model_data = push_layout.data(&[
+                    UniformPropData::Mat4F(world_matrix.to_cols_array_2d()),
+                    UniformPropData::U64(
+                        render_object
+                            .model
+                            .vertex_buffer
+                            .address(ctx.device.clone()),
+                    ),
+                ]);
+                cmd.push_constants(self.pipeline.layout.clone(), &model_data);
             }
 
             if last_model != render_object.model.model.id {
@@ -153,7 +196,7 @@ impl RenderPass for WirePass {
     }
 
     fn uniform_data_layout(&self) -> Option<Arc<UniformLayout>> {
-        None
+        Some(self.uniform_data_layout.clone())
     }
 
     fn render(

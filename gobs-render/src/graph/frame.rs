@@ -276,7 +276,9 @@ impl FrameGraph {
 
         self.batch.finish();
 
-        self.batch.render_stats.update_time = timer.delta();
+        if self.frame_number % ctx.stats_refresh == 0 {
+            self.batch.render_stats.update_time = timer.delta();
+        }
 
         let cmd = &self.frames[frame_id].command_buffer;
 
@@ -315,7 +317,9 @@ impl FrameGraph {
             self.draw_extent,
         )?;
 
-        self.batch.render_stats.cpu_draw_time = timer.peek();
+        if self.frame_number % ctx.stats_refresh == 0 {
+            self.batch.render_stats.cpu_draw_time = timer.peek();
+        }
 
         log::debug!("End rendering");
 

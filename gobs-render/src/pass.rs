@@ -1,16 +1,18 @@
 use std::sync::Arc;
 
+use parking_lot::RwLock;
 use uuid::Uuid;
 
 use gobs_core::entity::uniform::UniformLayout;
 use gobs_vulkan::{
+    descriptor::DescriptorSet,
     image::{Image, ImageExtent2D},
     pipeline::Pipeline,
 };
 
 use crate::{
     context::Context, geometry::VertexFlag, graph::RenderError, renderable::RenderBatch,
-    CommandBuffer,
+    resources::UniformBuffer, CommandBuffer,
 };
 
 pub mod compute;
@@ -18,7 +20,7 @@ pub mod forward;
 pub mod ui;
 pub mod wire;
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub enum PassType {
     Compute,
     Forward,
@@ -45,4 +47,34 @@ pub trait RenderPass {
         draw_extent: ImageExtent2D,
         //draw_cmd: &mut dyn FnMut(Arc<dyn RenderPass>, &CommandBuffer, &mut Vec<RenderObject>),
     ) -> Result<(), RenderError>;
+}
+
+pub(crate) struct FrameData {
+    pub uniform_ds: DescriptorSet,
+    pub uniform_buffer: RwLock<UniformBuffer>,
+}
+
+impl FrameData {
+    pub fn new(
+        ctx: &Context,
+        uniform_layout: Arc<UniformLayout>,
+        uniform_ds: DescriptorSet,
+    ) -> Self {
+        let uniform_buffer = UniformBuffer::new(
+            ctx,
+            uniform_ds.layout.clone(),
+            uniform_layout.size(),
+            ctx.allocator.clone(),
+        );
+
+        uniform_ds
+            .update()
+            .bind_buffer(&uniform_buffer.buffer, 0, uniform_buffer.buffer.size)
+            .end();
+
+        FrameData {
+            uniform_ds,
+            uniform_buffer: RwLock::new(uniform_buffer),
+        }
+    }
 }

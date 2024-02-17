@@ -1,6 +1,5 @@
 use std::sync::Arc;
 
-use gobs_core::entity::uniform::UniformData;
 use gobs_vulkan::{
     alloc::Allocator,
     buffer::{Buffer, BufferUsage},
@@ -32,7 +31,7 @@ impl UniformBuffer {
         UniformBuffer { ds_layout, buffer }
     }
 
-    pub fn update(&mut self, uniform_data: &UniformData) {
-        self.buffer.copy(&uniform_data.raw(), 0);
+    pub fn update(&mut self, uniform_data: &[u8]) {
+        self.buffer.copy(uniform_data, 0);
     }
 }

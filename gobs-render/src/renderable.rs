@@ -1,7 +1,6 @@
 use std::collections::HashMap;
 use std::sync::Arc;
 
-use gobs_core::entity::uniform::UniformData;
 use gobs_core::Transform;
 
 use crate::pass::PassId;
@@ -11,7 +10,7 @@ use crate::{context::Context, material::MaterialInstance, pass::RenderPass};
 
 pub struct RenderBatch {
     pub(crate) render_list: Vec<RenderObject>,
-    pub(crate) scene_data: HashMap<PassId, UniformData>,
+    pub(crate) scene_data: HashMap<PassId, Vec<u8>>,
     pub(crate) render_stats: RenderStats,
 }
 
@@ -35,11 +34,11 @@ impl RenderBatch {
         self.render_list.push(object);
     }
 
-    pub fn add_scene_data(&mut self, scene_data: UniformData, pass_id: PassId) {
+    pub fn add_scene_data(&mut self, scene_data: Vec<u8>, pass_id: PassId) {
         self.scene_data.insert(pass_id, scene_data);
     }
 
-    pub fn scene_data(&self, pass_id: PassId) -> Option<&UniformData> {
+    pub fn scene_data(&self, pass_id: PassId) -> Option<&Vec<u8>> {
         self.scene_data.get(&pass_id)
     }
 

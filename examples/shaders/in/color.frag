@@ -2,7 +2,7 @@
 
 #extension GL_GOOGLE_include_directive: require
 
-#include "scene.glsl"
+#include "scene_light.glsl"
 
 layout(location = 0) in vec4 in_color;
 

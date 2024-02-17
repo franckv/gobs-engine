@@ -2,11 +2,9 @@ use std::sync::Arc;
 
 use parking_lot::RwLock;
 
-use gobs_core::entity::uniform::{UniformData, UniformLayout, UniformProp, UniformPropData};
+use gobs_core::entity::uniform::{UniformLayout, UniformProp, UniformPropData};
 use gobs_vulkan::{
-    descriptor::{
-        DescriptorSet, DescriptorSetLayout, DescriptorSetPool, DescriptorStage, DescriptorType,
-    },
+    descriptor::{DescriptorSetLayout, DescriptorSetPool, DescriptorStage, DescriptorType},
     image::{Image, ImageExtent2D, ImageLayout},
     pipeline::{Pipeline, PipelineId},
 };
@@ -16,41 +14,10 @@ use crate::{
     geometry::VertexFlag,
     graph::RenderError,
     material::MaterialInstanceId,
-    pass::{PassId, PassType, RenderPass},
+    pass::{FrameData, PassId, PassType, RenderPass},
     renderable::RenderBatch,
-    resources::UniformBuffer,
     CommandBuffer,
 };
-
-struct FrameData {
-    pub uniform_ds: DescriptorSet,
-    pub uniform_buffer: RwLock<UniformBuffer>,
-}
-
-impl FrameData {
-    pub fn new(
-        ctx: &Context,
-        uniform_layout: Arc<UniformLayout>,
-        uniform_ds: DescriptorSet,
-    ) -> Self {
-        let uniform_buffer = UniformBuffer::new(
-            ctx,
-            uniform_ds.layout.clone(),
-            uniform_layout.size(),
-            ctx.allocator.clone(),
-        );
-
-        uniform_ds
-            .update()
-            .bind_buffer(&uniform_buffer.buffer, 0, uniform_buffer.buffer.size)
-            .end();
-
-        FrameData {
-            uniform_ds,
-            uniform_buffer: RwLock::new(uniform_buffer),
-        }
-    }
-}
 
 pub struct UiPass {
     id: PassId,
@@ -150,16 +117,13 @@ impl UiPass {
             }
 
             if let Some(push_layout) = render_object.pass.push_layout() {
-                let model_data = UniformData::new(
-                    &push_layout,
-                    &[UniformPropData::U64(
-                        render_object
-                            .model
-                            .vertex_buffer
-                            .address(ctx.device.clone()),
-                    )],
-                );
-                cmd.push_constants(pipeline.layout.clone(), &model_data.raw());
+                let model_data = push_layout.data(&[UniformPropData::U64(
+                    render_object
+                        .model
+                        .vertex_buffer
+                        .address(ctx.device.clone()),
+                )]);
+                cmd.push_constants(pipeline.layout.clone(), &model_data);
             }
 
             cmd.bind_index_buffer::<u32>(

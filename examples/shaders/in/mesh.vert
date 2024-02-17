@@ -4,7 +4,7 @@
 #extension GL_EXT_buffer_reference: require
 
 #include "light.glsl"
-#include "scene.glsl"
+#include "scene_light.glsl"
 
 layout(location = 0) out vec2 out_uv;
 layout(location = 1) out vec3 out_normal;

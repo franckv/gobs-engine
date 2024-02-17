@@ -3,7 +3,7 @@
 #extension GL_GOOGLE_include_directive: require
 #extension GL_EXT_buffer_reference: require
 
-#include "scene.glsl"
+#include "scene_nolight.glsl"
 
 layout(location = 0) out vec4 out_color;
 
@@ -18,7 +18,6 @@ layout(buffer_reference, std430) readonly buffer VertexBuffer {
 
 layout(push_constant) uniform constants {
 	mat4 world_matrix;
-	mat3 normal_matrix;
 	VertexBuffer vertex_buffer_address;
 } push_constants;
 

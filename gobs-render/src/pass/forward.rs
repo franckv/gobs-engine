@@ -4,11 +4,9 @@ use glam::Mat3;
 use parking_lot::RwLock;
 use uuid::Uuid;
 
-use gobs_core::entity::uniform::{UniformData, UniformLayout, UniformProp, UniformPropData};
+use gobs_core::entity::uniform::{UniformLayout, UniformProp, UniformPropData};
 use gobs_vulkan::{
-    descriptor::{
-        DescriptorSet, DescriptorSetLayout, DescriptorSetPool, DescriptorStage, DescriptorType,
-    },
+    descriptor::{DescriptorSetLayout, DescriptorSetPool, DescriptorStage, DescriptorType},
     image::{Image, ImageExtent2D, ImageLayout},
     pipeline::Pipeline,
 };
@@ -17,41 +15,10 @@ use crate::{
     context::Context,
     geometry::VertexFlag,
     graph::RenderError,
-    pass::{PassId, PassType, RenderPass},
+    pass::{FrameData, PassId, PassType, RenderPass},
     renderable::RenderBatch,
-    resources::UniformBuffer,
     CommandBuffer,
 };
-
-struct FrameData {
-    pub uniform_ds: DescriptorSet,
-    pub uniform_buffer: RwLock<UniformBuffer>,
-}
-
-impl FrameData {
-    pub fn new(
-        ctx: &Context,
-        uniform_layout: Arc<UniformLayout>,
-        uniform_ds: DescriptorSet,
-    ) -> Self {
-        let uniform_buffer = UniformBuffer::new(
-            ctx,
-            uniform_ds.layout.clone(),
-            uniform_layout.size(),
-            ctx.allocator.clone(),
-        );
-
-        uniform_ds
-            .update()
-            .bind_buffer(&uniform_buffer.buffer, 0, uniform_buffer.buffer.size)
-            .end();
-
-        FrameData {
-            uniform_ds,
-            uniform_buffer: RwLock::new(uniform_buffer),
-        }
-    }
-}
 
 pub struct ForwardPass {
     id: PassId,
@@ -141,11 +108,11 @@ impl ForwardPass {
             if last_material != material.id {
                 if last_pipeline != pipeline.id {
                     cmd.bind_pipeline(&pipeline);
-                    batch.render_stats.binds += 1;
+                    cmd.bind_descriptor_set(uniform_data_ds, 0, &pipeline);
+                    batch.render_stats.binds += 2;
                     last_pipeline = pipeline.id;
                 }
-                cmd.bind_descriptor_set(uniform_data_ds, 0, &pipeline);
-                batch.render_stats.binds += 1;
+
                 if let Some(material_ds) = &material.material_ds {
                     cmd.bind_descriptor_set(material_ds, 1, &pipeline);
                     batch.render_stats.binds += 1;
@@ -156,20 +123,18 @@ impl ForwardPass {
 
             if let Some(push_layout) = render_object.pass.push_layout() {
                 // TODO: hardcoded
-                let model_data = UniformData::new(
-                    &push_layout,
-                    &[
-                        UniformPropData::Mat4F(world_matrix.to_cols_array_2d()),
-                        UniformPropData::Mat3F(normal_matrix.to_cols_array_2d()),
-                        UniformPropData::U64(
-                            render_object
-                                .model
-                                .vertex_buffer
-                                .address(ctx.device.clone()),
-                        ),
-                    ],
-                );
-                cmd.push_constants(pipeline.layout.clone(), &model_data.raw());
+                let model_data = push_layout.data(&[
+                    UniformPropData::Mat4F(world_matrix.to_cols_array_2d()),
+                    UniformPropData::Mat3F(normal_matrix.to_cols_array_2d()),
+                    UniformPropData::U64(
+                        render_object
+                            .model
+                            .vertex_buffer
+                            .address(ctx.device.clone()),
+                    ),
+                ]);
+
+                cmd.push_constants(pipeline.layout.clone(), &model_data);
             }
 
             if last_model != render_object.model.model.id {
