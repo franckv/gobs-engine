@@ -16,7 +16,8 @@ use gobs_vulkan::{
 use crate::{
     context::Context,
     pass::{
-        compute::ComputePass, forward::ForwardPass, ui::UiPass, wire::WirePass, PassId, RenderPass,
+        compute::ComputePass, forward::ForwardPass, ui::UiPass, wire::WirePass, PassId, PassType,
+        RenderPass,
     },
     renderable::RenderBatch,
     stats::RenderStats,
@@ -204,6 +205,10 @@ impl FrameGraph {
 
     pub fn pass_by_id(&self, pass_id: PassId) -> Result<Arc<dyn RenderPass>, ()> {
         self.get_pass(|pass| pass.id() == pass_id)
+    }
+
+    pub fn pass_by_type(&self, pass_type: PassType) -> Result<Arc<dyn RenderPass>, ()> {
+        self.get_pass(|pass| pass.ty() == pass_type)
     }
 
     pub fn pass_by_name(&self, pass_name: &str) -> Result<Arc<dyn RenderPass>, ()> {

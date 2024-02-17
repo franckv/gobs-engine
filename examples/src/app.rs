@@ -37,7 +37,7 @@ impl SampleApp {
 
         let graph = FrameGraph::default(ctx);
 
-        let ui = UIRenderer::new(ctx, graph.pass_by_name("ui").unwrap());
+        let ui = UIRenderer::new(ctx, graph.pass_by_type(PassType::Ui).unwrap());
 
         let scene = Scene::new(camera, light);
 
@@ -94,7 +94,7 @@ impl SampleApp {
 
         Material::builder("color.vert.spv", "color.frag.spv")
             .vertex_flags(vertex_flags)
-            .build(ctx, self.graph.pass_by_name("forward").unwrap())
+            .build(ctx, self.graph.pass_by_type(PassType::Forward).unwrap())
     }
 
     pub fn texture_material(&self, ctx: &Context) -> Arc<Material> {
@@ -107,7 +107,7 @@ impl SampleApp {
         Material::builder("mesh.vert.spv", "mesh.frag.spv")
             .vertex_flags(vertex_flags)
             .prop("diffuse", MaterialProperty::Texture)
-            .build(ctx, self.graph.pass_by_name("forward").unwrap())
+            .build(ctx, self.graph.pass_by_type(PassType::Forward).unwrap())
     }
 
     pub fn normal_mapping_material(&self, ctx: &Context) -> Arc<Material> {
@@ -121,7 +121,7 @@ impl SampleApp {
             .vertex_flags(vertex_flags)
             .prop("diffuse", MaterialProperty::Texture)
             .prop("normal", MaterialProperty::Texture)
-            .build(ctx, self.graph.pass_by_name("forward").unwrap())
+            .build(ctx, self.graph.pass_by_type(PassType::Forward).unwrap())
     }
 
     pub fn depth_material(&self, ctx: &Context) -> Arc<Material> {
@@ -129,7 +129,7 @@ impl SampleApp {
 
         Material::builder("color.vert.spv", "depth.frag.spv")
             .vertex_flags(vertex_flags)
-            .build(ctx, self.graph.pass_by_name("forward").unwrap())
+            .build(ctx, self.graph.pass_by_type(PassType::Forward).unwrap())
     }
 
     pub fn start(&mut self, _ctx: &Context) {}
@@ -144,8 +144,10 @@ impl SampleApp {
 
         self.scene.update(ctx, delta);
         if self.draw_ui {
-            self.ui
-                .update(ctx, self.graph.pass_by_name("ui").unwrap(), |ectx| {
+            self.ui.update(
+                ctx,
+                self.graph.pass_by_type(PassType::Ui).unwrap(),
+                |ectx| {
                     egui::CentralPanel::default()
                         .frame(egui::Frame::none())
                         .show(ectx, |ui| {
@@ -157,7 +159,8 @@ impl SampleApp {
                             Self::show_camera(ui, &self.scene.camera);
                             Self::show_memory(ui, ctx);
                         });
-                });
+                },
+            );
         }
     }
 

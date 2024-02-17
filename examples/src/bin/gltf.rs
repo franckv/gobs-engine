@@ -7,7 +7,7 @@ use gobs::{
         app::{Application, Run},
         input::Input,
     },
-    render::{context::Context, graph::RenderError},
+    render::{context::Context, graph::RenderError, pass::PassType},
     scene::graph::scenegraph::{Node, NodeValue},
     utils::load,
 };
@@ -71,7 +71,7 @@ impl App {
         let models = gltf::load_gltf(
             ctx,
             file_name,
-            self.common.graph.pass_by_name("forward").unwrap(),
+            self.common.graph.pass_by_type(PassType::Forward).unwrap(),
         );
 
         let i_max = 3;
@@ -107,7 +107,7 @@ impl App {
         let models = gltf::load_gltf(
             ctx,
             file_name,
-            self.common.graph.pass_by_name("forward").unwrap(),
+            self.common.graph.pass_by_type(PassType::Forward).unwrap(),
         );
 
         let i_max = 3;
@@ -143,7 +143,7 @@ impl App {
         let models = gltf::load_gltf(
             ctx,
             file_name,
-            self.common.graph.pass_by_name("forward").unwrap(),
+            self.common.graph.pass_by_type(PassType::Forward).unwrap(),
         );
 
         let scale = 1.;
