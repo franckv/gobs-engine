@@ -124,35 +124,11 @@ impl FrameGraph {
         let swapchain = Self::create_swapchain(ctx);
         let swapchain_images = swapchain.create_images();
 
-        let extent = ctx.surface.get_extent(ctx.device.clone());
+        let draw_extent = ctx.surface.get_extent(ctx.device.clone());
 
         let frames = (0..ctx.frames_in_flight)
             .map(|_| FrameData::new(ctx))
             .collect();
-
-        let mut resource_manager = ResourceManager::new();
-
-        resource_manager.register_image(ctx, "draw", ctx.color_format, ImageUsage::Color, extent);
-        resource_manager.register_image(ctx, "depth", ctx.depth_format, ImageUsage::Depth, extent);
-
-        let mut passes = Vec::new();
-
-        Self::register_pass(
-            ComputePass::new(ctx, "compute"),
-            &mut passes,
-            &mut resource_manager,
-        );
-        Self::register_pass(
-            ForwardPass::new(ctx, "forward"),
-            &mut passes,
-            &mut resource_manager,
-        );
-        Self::register_pass(UiPass::new(ctx, "ui"), &mut passes, &mut resource_manager);
-        Self::register_pass(
-            WirePass::new(ctx, "wire"),
-            &mut passes,
-            &mut resource_manager,
-        );
 
         Self {
             frame_number: 0,
@@ -160,24 +136,48 @@ impl FrameGraph {
             swapchain,
             swapchain_images,
             swapchain_idx: 0,
-            draw_extent: extent,
+            draw_extent,
             render_scaling: 1.,
-            passes,
-            resource_manager,
+            passes: Vec::new(),
+            resource_manager: ResourceManager::new(),
             batch: RenderBatch::new(),
         }
     }
 
-    fn register_pass(
-        pass: Arc<dyn RenderPass>,
-        passes: &mut Vec<Arc<dyn RenderPass>>,
-        resource_manager: &mut ResourceManager,
-    ) {
+    pub fn default(ctx: &Context) -> Self {
+        let mut graph = Self::new(ctx);
+
+        let extent = ctx.surface.get_extent(ctx.device.clone());
+
+        graph.resource_manager.register_image(
+            ctx,
+            "draw",
+            ctx.color_format,
+            ImageUsage::Color,
+            extent,
+        );
+        graph.resource_manager.register_image(
+            ctx,
+            "depth",
+            ctx.depth_format,
+            ImageUsage::Depth,
+            extent,
+        );
+
+        graph.register_pass(ComputePass::new(ctx, "compute"));
+        graph.register_pass(ForwardPass::new(ctx, "forward"));
+        graph.register_pass(UiPass::new(ctx, "ui"));
+        graph.register_pass(WirePass::new(ctx, "wire"));
+
+        graph
+    }
+
+    fn register_pass(&mut self, pass: Arc<dyn RenderPass>) {
         for attach in pass.attachments() {
-            assert!(resource_manager.resources.contains_key(attach));
+            assert!(self.resource_manager.resources.contains_key(attach));
         }
 
-        passes.push(pass);
+        self.passes.push(pass);
     }
 
     fn new_frame(&mut self, ctx: &Context) -> usize {

@@ -35,7 +35,7 @@ impl SampleApp {
     pub fn create(ctx: &Context, camera: Camera, light: Light) -> Self {
         log::info!("Create");
 
-        let graph = FrameGraph::new(ctx);
+        let graph = FrameGraph::default(ctx);
 
         let ui = UIRenderer::new(ctx, graph.pass_by_name("ui").unwrap());
 
