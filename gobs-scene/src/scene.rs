@@ -69,7 +69,7 @@ impl Renderable for Scene {
         self.generate_draw_list(ctx, pass.clone(), batch);
 
         if let Some(data_layout) = pass.uniform_data_layout() {
-            if pass.ty() == PassType::Wire {
+            if pass.ty() == PassType::Wire || pass.ty() == PassType::Depth {
                 batch.add_scene_data(
                     data_layout.data(&[
                         UniformPropData::Vec3F(self.camera.position.into()),

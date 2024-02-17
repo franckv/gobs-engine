@@ -16,8 +16,8 @@ use gobs_vulkan::{
 use crate::{
     context::Context,
     pass::{
-        compute::ComputePass, forward::ForwardPass, ui::UiPass, wire::WirePass, PassId, PassType,
-        RenderPass,
+        compute::ComputePass, depth::DepthPass, forward::ForwardPass, ui::UiPass, wire::WirePass,
+        PassId, PassType, RenderPass,
     },
     renderable::RenderBatch,
     stats::RenderStats,
@@ -166,6 +166,7 @@ impl FrameGraph {
         );
 
         graph.register_pass(ComputePass::new(ctx, "compute"));
+        graph.register_pass(DepthPass::new(ctx, "depth"));
         graph.register_pass(ForwardPass::new(ctx, "forward"));
         graph.register_pass(UiPass::new(ctx, "ui"));
         graph.register_pass(WirePass::new(ctx, "wire"));

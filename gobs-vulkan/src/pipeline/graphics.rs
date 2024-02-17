@@ -526,13 +526,14 @@ impl GraphicsPipelineBuilder {
 
     pub fn attachments(
         mut self,
-        color_format: ImageFormat,
+        color_format: Option<ImageFormat>,
         depth_format: Option<ImageFormat>,
     ) -> Self {
-        self.rendering_state = Some(RenderingState::new(
-            vec![color_format.into()],
-            depth_format.into(),
-        ));
+        let mut color_formats = vec![];
+        if let Some(color_format) = color_format {
+            color_formats.push(color_format);
+        }
+        self.rendering_state = Some(RenderingState::new(color_formats, depth_format));
 
         self
     }
@@ -555,13 +556,17 @@ impl GraphicsPipelineBuilder {
         let rendering_state = self.rendering_state.unwrap();
         let mut rendering_state_info = rendering_state.info();
 
-        let vertex_stage = self.vertex_stage.unwrap();
-        let vertex_stage_info = vertex_stage.info();
-
-        let fragment_stage = self.fragment_stage.unwrap();
-        let fragment_stage_info = fragment_stage.info();
-
-        let shader_stages = [*vertex_stage_info, *fragment_stage_info];
+        let mut shader_stages = vec![];
+        if let Some(vertex_stage) = self.vertex_stage {
+            shader_stages.push(vertex_stage);
+        }
+        if let Some(fragment_stage) = self.fragment_stage {
+            shader_stages.push(fragment_stage);
+        }
+        let shader_stages_info = shader_stages
+            .iter()
+            .map(|stage| *stage.info())
+            .collect::<Vec<vk::PipelineShaderStageCreateInfo>>();
 
         if self.vertex_input_state.is_none() {
             self.vertex_input_state = Some(VertexInputState::default());
@@ -603,7 +608,7 @@ impl GraphicsPipelineBuilder {
 
         let pipeline_info = vk::GraphicsPipelineCreateInfo::builder()
             .push_next(&mut rendering_state_info)
-            .stages(&shader_stages)
+            .stages(&shader_stages_info)
             .vertex_input_state(&vertex_input_state_info)
             .viewport_state(&viewport_state_info)
             .dynamic_state(&dynamic_states_info)

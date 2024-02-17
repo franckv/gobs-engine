@@ -224,6 +224,9 @@ impl SampleApp {
 
         self.graph.render(ctx, &mut |pass, batch| match pass.ty() {
             PassType::Compute => {}
+            PassType::Depth => {
+                self.scene.draw(ctx, pass, batch);
+            }
             PassType::Forward => {
                 self.scene.draw(ctx, pass, batch);
             }

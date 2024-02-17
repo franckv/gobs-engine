@@ -91,7 +91,7 @@ impl WirePass {
             .viewports(vec![Viewport::new(0., 0., 0., 0.)])
             .scissors(vec![Rect2D::new(0, 0, 0, 0)])
             .dynamic_states(&vec![DynamicStateElem::Viewport, DynamicStateElem::Scissor])
-            .attachments(ctx.color_format, Some(ctx.depth_format))
+            .attachments(Some(ctx.color_format), Some(ctx.depth_format))
             .depth_test_disable()
             .cull_mode(CullMode::Back)
             .front_face(FrontFace::CCW)
@@ -225,9 +225,10 @@ impl RenderPass for WirePass {
         );
 
         cmd.begin_rendering(
-            &resource_manager.image_read(draw_attach),
+            Some(&resource_manager.image_read(draw_attach)),
             draw_extent,
             None,
+            false,
             false,
             [0.; 4],
             1.,

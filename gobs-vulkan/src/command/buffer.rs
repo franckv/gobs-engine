@@ -152,40 +152,51 @@ impl CommandBuffer {
 
     pub fn begin_rendering(
         &self,
-        color: &Image,
+        color: Option<&Image>,
         extent: ImageExtent2D,
         depth: Option<&Image>,
-        clear: bool,
+        color_clear: bool,
+        depth_clear: bool,
         clear_color: [f32; 4],
-        depth_clear: f32,
+        depth_clear_color: f32,
     ) {
-        let color_load_op = if clear {
+        let color_load_op = if color_clear {
             vk::AttachmentLoadOp::CLEAR
         } else {
             vk::AttachmentLoadOp::LOAD
         };
 
-        let color_info = vk::RenderingAttachmentInfo::builder()
-            .image_view(color.image_view)
-            .image_layout(color.layout.into())
-            .load_op(color_load_op)
-            .store_op(vk::AttachmentStoreOp::STORE)
-            .clear_value(vk::ClearValue {
-                color: vk::ClearColorValue {
-                    float32: clear_color,
-                },
-            });
+        let mut color_info = vec![];
+        if let Some(color) = color {
+            let color_attachment = vk::RenderingAttachmentInfo::builder()
+                .image_view(color.image_view)
+                .image_layout(color.layout.into())
+                .load_op(color_load_op)
+                .store_op(vk::AttachmentStoreOp::STORE)
+                .clear_value(vk::ClearValue {
+                    color: vk::ClearColorValue {
+                        float32: clear_color,
+                    },
+                });
+            color_info.push(color_attachment);
+        }
+
+        let depth_load_op = if depth_clear {
+            vk::AttachmentLoadOp::CLEAR
+        } else {
+            vk::AttachmentLoadOp::LOAD
+        };
 
         let mut depth_info = vec![];
         if let Some(depth) = depth {
             let depth_attachment = vk::RenderingAttachmentInfo::builder()
                 .image_view(depth.image_view)
                 .image_layout(depth.layout.into())
-                .load_op(vk::AttachmentLoadOp::CLEAR)
+                .load_op(depth_load_op)
                 .store_op(vk::AttachmentStoreOp::STORE)
                 .clear_value(vk::ClearValue {
                     depth_stencil: vk::ClearDepthStencilValue {
-                        depth: depth_clear,
+                        depth: depth_clear_color,
                         stencil: 0,
                     },
                 });
@@ -194,8 +205,14 @@ impl CommandBuffer {
 
         let rendering_info = vk::RenderingInfo::builder()
             .render_area(*vk::Rect2D::builder().extent(extent.into()))
-            .layer_count(1)
-            .color_attachments(std::slice::from_ref(&color_info));
+            .layer_count(1);
+
+        let rendering_info = match color_info.first() {
+            Some(color_attachment) => {
+                rendering_info.color_attachments(std::slice::from_ref(&color_attachment))
+            }
+            None => rendering_info,
+        };
 
         let rendering_info = match depth_info.first() {
             Some(depth_attachment) => rendering_info.depth_attachment(depth_attachment),

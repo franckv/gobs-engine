@@ -192,9 +192,10 @@ impl RenderPass for UiPass {
         );
 
         cmd.begin_rendering(
-            &resource_manager.image_read(image_attach),
+            Some(&resource_manager.image_read(image_attach)),
             draw_extent,
             None,
+            false,
             false,
             [0.; 4],
             1.,
