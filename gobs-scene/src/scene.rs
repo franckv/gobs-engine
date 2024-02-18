@@ -71,10 +71,9 @@ impl Renderable for Scene {
         if let Some(data_layout) = pass.uniform_data_layout() {
             if pass.ty() == PassType::Wire || pass.ty() == PassType::Depth {
                 batch.add_scene_data(
-                    data_layout.data(&[
-                        UniformPropData::Vec3F(self.camera.position.into()),
-                        UniformPropData::Mat4F(self.camera.view_proj().to_cols_array_2d()),
-                    ]),
+                    data_layout.data(&[UniformPropData::Mat4F(
+                        self.camera.view_proj().to_cols_array_2d(),
+                    )]),
                     pass.id(),
                 );
             } else {

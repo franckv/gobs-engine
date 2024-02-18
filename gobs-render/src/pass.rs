@@ -48,7 +48,6 @@ pub trait RenderPass {
         resource_manager: &ResourceManager,
         batch: &mut RenderBatch,
         draw_extent: ImageExtent2D,
-        //draw_cmd: &mut dyn FnMut(Arc<dyn RenderPass>, &CommandBuffer, &mut Vec<RenderObject>),
     ) -> Result<(), RenderError>;
 }
 

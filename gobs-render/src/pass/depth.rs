@@ -4,7 +4,7 @@ use parking_lot::RwLock;
 use uuid::Uuid;
 
 use gobs_core::entity::uniform::{UniformLayout, UniformProp, UniformPropData};
-use gobs_utils::load;
+use gobs_utils::{load, timer::Timer};
 use gobs_vulkan::{
     descriptor::{DescriptorSetLayout, DescriptorSetPool, DescriptorStage, DescriptorType},
     image::{ImageExtent2D, ImageLayout},
@@ -51,7 +51,6 @@ impl DepthPass {
             .build(ctx.device.clone());
 
         let uniform_data_layout = UniformLayout::builder()
-            .prop("camera_position", UniformProp::Vec3F)
             .prop("view_proj", UniformProp::Mat4F)
             .build();
 
@@ -114,6 +113,8 @@ impl DepthPass {
     }
 
     fn render_batch(&self, ctx: &Context, cmd: &CommandBuffer, batch: &mut RenderBatch) {
+        let mut timer = Timer::new();
+
         let frame_id = self.new_frame(ctx);
 
         let mut last_model = Uuid::nil();
@@ -133,6 +134,8 @@ impl DepthPass {
         cmd.bind_descriptor_set(uniform_data_ds, 0, &self.pipeline);
         batch.render_stats.binds += 1;
 
+        let mut model_data = Vec::new();
+
         for render_object in &batch.render_list {
             if render_object.pass.id() != self.id {
                 continue;
@@ -140,18 +143,27 @@ impl DepthPass {
             let world_matrix = render_object.transform.matrix;
 
             if let Some(push_layout) = self.push_layout() {
+                model_data.clear();
                 // TODO: hardcoded
-                let model_data = push_layout.data(&[
-                    UniformPropData::Mat4F(world_matrix.to_cols_array_2d()),
-                    UniformPropData::U64(
-                        render_object
-                            .model
-                            .vertex_buffer
-                            .address(ctx.device.clone()),
-                    ),
-                ]);
+                push_layout.data_buf(
+                    &[
+                        UniformPropData::Mat4F(world_matrix.to_cols_array_2d()),
+                        UniformPropData::U64(
+                            render_object
+                                .model
+                                .vertex_buffer
+                                .address(ctx.device.clone()),
+                        ),
+                    ],
+                    &mut model_data,
+                );
+
+                batch.render_stats.cpu_draw_pre += timer.delta();
+
                 cmd.push_constants(self.pipeline.layout.clone(), &model_data);
             }
+
+            batch.render_stats.cpu_draw_mid += timer.delta();
 
             if last_model != render_object.model.model.id {
                 cmd.bind_index_buffer::<u32>(
@@ -163,6 +175,8 @@ impl DepthPass {
             }
             cmd.draw_indexed(render_object.indices_len, 1);
             batch.render_stats.draws += 1;
+
+            batch.render_stats.cpu_draw_post += timer.delta();
         }
     }
 }

@@ -4,7 +4,7 @@ use parking_lot::RwLock;
 use uuid::Uuid;
 
 use gobs_core::entity::uniform::{UniformLayout, UniformProp, UniformPropData};
-use gobs_utils::load;
+use gobs_utils::{load, timer::Timer};
 use gobs_vulkan::{
     descriptor::{DescriptorSetLayout, DescriptorSetPool, DescriptorStage, DescriptorType},
     image::{ImageExtent2D, ImageLayout},
@@ -39,7 +39,7 @@ pub struct WirePass {
 
 impl WirePass {
     pub fn new(ctx: &Context, name: &str) -> Arc<dyn RenderPass> {
-        let vertex_flags = VertexFlag::POSITION | VertexFlag::COLOR;
+        let vertex_flags = VertexFlag::POSITION;
 
         let push_layout = UniformLayout::builder()
             .prop("world_matrix", UniformProp::Mat4F)
@@ -51,7 +51,6 @@ impl WirePass {
             .build(ctx.device.clone());
 
         let uniform_data_layout = UniformLayout::builder()
-            .prop("camera_position", UniformProp::Vec3F)
             .prop("view_proj", UniformProp::Mat4F)
             .build();
 
@@ -119,6 +118,8 @@ impl WirePass {
     }
 
     fn render_batch(&self, ctx: &Context, cmd: &CommandBuffer, batch: &mut RenderBatch) {
+        let mut timer = Timer::new();
+
         let frame_id = self.new_frame(ctx);
 
         let mut last_model = Uuid::nil();
@@ -155,8 +156,13 @@ impl WirePass {
                             .address(ctx.device.clone()),
                     ),
                 ]);
+
+                batch.render_stats.cpu_draw_pre += timer.delta();
+
                 cmd.push_constants(self.pipeline.layout.clone(), &model_data);
             }
+
+            batch.render_stats.cpu_draw_mid += timer.delta();
 
             if last_model != render_object.model.model.id {
                 cmd.bind_index_buffer::<u32>(
@@ -168,6 +174,8 @@ impl WirePass {
             }
             cmd.draw_indexed(render_object.indices_len, 1);
             batch.render_stats.draws += 1;
+
+            batch.render_stats.cpu_draw_post += timer.delta();
         }
     }
 }

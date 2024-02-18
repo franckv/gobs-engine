@@ -16,6 +16,9 @@ pub struct RenderStats {
     pub draws: u32,
     pub binds: u32,
     pub cpu_draw_time: f32,
+    pub cpu_draw_pre: f32,
+    pub cpu_draw_mid: f32,
+    pub cpu_draw_post: f32,
     pub gpu_draw_time: f32,
     pub update_time: f32,
     pub pass_stats: HashMap<PassId, PassStats>,
@@ -26,6 +29,9 @@ impl RenderStats {
     pub fn reset(&mut self) {
         self.draws = 0;
         self.binds = 0;
+        self.cpu_draw_pre = 0.;
+        self.cpu_draw_mid = 0.;
+        self.cpu_draw_post = 0.;
         self.pass_stats.clear();
         self.models_set.clear();
     }

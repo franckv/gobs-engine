@@ -1,6 +1,7 @@
 use std::sync::Arc;
 
 use glam::Mat3;
+use gobs_utils::timer::Timer;
 use parking_lot::RwLock;
 use uuid::Uuid;
 
@@ -82,6 +83,8 @@ impl ForwardPass {
     }
 
     fn render_batch(&self, ctx: &Context, cmd: &CommandBuffer, batch: &mut RenderBatch) {
+        let mut timer = Timer::new();
+
         let frame_id = self.new_frame(ctx);
 
         let mut last_model = Uuid::nil();
@@ -96,6 +99,8 @@ impl ForwardPass {
                 .write()
                 .update(scene_data);
         }
+
+        let mut model_data = Vec::new();
 
         for render_object in &batch.render_list {
             if render_object.pass.id() != self.id {
@@ -124,20 +129,28 @@ impl ForwardPass {
             }
 
             if let Some(push_layout) = render_object.pass.push_layout() {
+                model_data.clear();
                 // TODO: hardcoded
-                let model_data = push_layout.data(&[
-                    UniformPropData::Mat4F(world_matrix.to_cols_array_2d()),
-                    UniformPropData::Mat3F(normal_matrix.to_cols_array_2d()),
-                    UniformPropData::U64(
-                        render_object
-                            .model
-                            .vertex_buffer
-                            .address(ctx.device.clone()),
-                    ),
-                ]);
+                push_layout.data_buf(
+                    &[
+                        UniformPropData::Mat4F(world_matrix.to_cols_array_2d()),
+                        UniformPropData::Mat3F(normal_matrix.to_cols_array_2d()),
+                        UniformPropData::U64(
+                            render_object
+                                .model
+                                .vertex_buffer
+                                .address(ctx.device.clone()),
+                        ),
+                    ],
+                    &mut model_data,
+                );
+
+                batch.render_stats.cpu_draw_pre += timer.delta();
 
                 cmd.push_constants(pipeline.layout.clone(), &model_data);
             }
+
+            batch.render_stats.cpu_draw_mid += timer.delta();
 
             if last_model != render_object.model.model.id {
                 cmd.bind_index_buffer::<u32>(
@@ -149,6 +162,8 @@ impl ForwardPass {
             }
             cmd.draw_indexed(render_object.indices_len, 1);
             batch.render_stats.draws += 1;
+
+            batch.render_stats.cpu_draw_post += timer.delta();
         }
     }
 }

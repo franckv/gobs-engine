@@ -1,5 +1,6 @@
 use std::sync::Arc;
 
+use gobs_utils::timer::Timer;
 use parking_lot::RwLock;
 
 use gobs_core::entity::uniform::{UniformLayout, UniformProp, UniformPropData};
@@ -81,6 +82,8 @@ impl UiPass {
     }
 
     fn render_batch(&self, ctx: &Context, cmd: &CommandBuffer, batch: &mut RenderBatch) {
+        let mut timer = Timer::new();
+
         let frame_id = self.new_frame(ctx);
 
         let mut last_material = MaterialInstanceId::nil();
@@ -94,6 +97,8 @@ impl UiPass {
                 .write()
                 .update(scene_data);
         }
+
+        let mut model_data = Vec::new();
 
         for render_object in &batch.render_list {
             if render_object.pass.id() != self.id {
@@ -119,14 +124,23 @@ impl UiPass {
             }
 
             if let Some(push_layout) = render_object.pass.push_layout() {
-                let model_data = push_layout.data(&[UniformPropData::U64(
-                    render_object
-                        .model
-                        .vertex_buffer
-                        .address(ctx.device.clone()),
-                )]);
+                model_data.clear();
+                push_layout.data_buf(
+                    &[UniformPropData::U64(
+                        render_object
+                            .model
+                            .vertex_buffer
+                            .address(ctx.device.clone()),
+                    )],
+                    &mut model_data,
+                );
+
+                batch.render_stats.cpu_draw_pre += timer.delta();
+
                 cmd.push_constants(pipeline.layout.clone(), &model_data);
             }
+
+            batch.render_stats.cpu_draw_mid += timer.delta();
 
             cmd.bind_index_buffer::<u32>(
                 &render_object.model.index_buffer,
@@ -135,6 +149,8 @@ impl UiPass {
             batch.render_stats.binds += 1;
             cmd.draw_indexed(render_object.indices_len, 1);
             batch.render_stats.draws += 1;
+
+            batch.render_stats.cpu_draw_post += timer.delta();
         }
     }
 }

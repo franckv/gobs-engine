@@ -43,6 +43,7 @@ impl UniformProp {
 #[derive(Debug)]
 pub struct UniformLayout {
     layout: Vec<UniformProp>,
+    alignment: usize,
 }
 
 impl UniformLayout {
@@ -54,19 +55,11 @@ impl UniformLayout {
         self.layout.len()
     }
 
-    fn alignment(&self) -> usize {
-        let alignment = self.layout.iter().map(|p| p.alignment()).max();
-
-        alignment.unwrap()
-    }
-
     pub fn size(&self) -> usize {
-        let alignment = self.alignment();
-
         self.layout
             .iter()
             .map(|p| {
-                let padding = (alignment - p.size() % alignment) % alignment;
+                let padding = (self.alignment - p.size() % self.alignment) % self.alignment;
 
                 p.size() + padding
             })
@@ -74,22 +67,23 @@ impl UniformLayout {
     }
 
     pub fn data(&self, props: &[UniformPropData]) -> Vec<u8> {
+        let mut data = Vec::new();
+
+        self.data_buf(props, &mut data);
+
+        data
+    }
+
+    pub fn data_buf(&self, props: &[UniformPropData], mut data: &mut Vec<u8>) {
         assert_eq!(self.len(), props.len(), "Invalid uniform layout");
 
-        let mut data = Vec::new();
-        let alignment = self.alignment();
-
-        for (&prop, &prop_data) in self.layout.iter().zip(props.iter()) {
-            assert_eq!(prop, prop_data.ty(), "Invalid uniform layout");
-
-            prop_data.copy(&mut data);
-            let pad = (alignment - prop.size() % alignment) % alignment;
+        for prop in props {
+            prop.copy(&mut data);
+            let pad = (self.alignment - prop.ty().size() % self.alignment) % self.alignment;
             for _ in 0..pad {
                 data.push(0 as u8);
             }
         }
-
-        data
     }
 }
 
@@ -109,8 +103,11 @@ impl UniformLayoutBuilder {
     }
 
     pub fn build(self) -> Arc<UniformLayout> {
+        let alignment = self.layout.iter().map(|p| p.alignment()).max().unwrap();
+
         Arc::new(UniformLayout {
             layout: self.layout,
+            alignment,
         })
     }
 }
