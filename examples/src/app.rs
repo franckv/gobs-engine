@@ -282,7 +282,8 @@ impl SampleApp {
         log::trace!("Resize");
 
         self.graph.resize(ctx);
-        self.scene.resize(width, height)
+        self.scene.resize(width, height);
+        self.ui.resize(width, height);
     }
 
     pub fn close(&mut self, ctx: &gobs::render::context::Context) {
