@@ -112,6 +112,12 @@ impl Into<(f32, f32)> for ImageExtent2D {
     }
 }
 
+impl Into<[f32; 2]> for ImageExtent2D {
+    fn into(self) -> [f32; 2] {
+        [self.width as f32, self.height as f32]
+    }
+}
+
 /// Image buffer allocated in memory
 pub struct Image {
     pub label: String,

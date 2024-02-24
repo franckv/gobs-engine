@@ -1,12 +1,19 @@
 use std::collections::HashMap;
 use std::sync::Arc;
 
-use gobs_core::Transform;
+use gobs_core::{
+    entity::{camera::Camera, light::Light, uniform::UniformPropData},
+    Transform,
+};
+use gobs_vulkan::image::ImageExtent2D;
 
-use crate::pass::PassId;
-use crate::resources::ModelResource;
-use crate::stats::RenderStats;
-use crate::{context::Context, material::MaterialInstance, pass::RenderPass};
+use crate::{
+    context::Context,
+    material::MaterialInstance,
+    pass::{PassId, PassType, RenderPass},
+    resources::ModelResource,
+    stats::RenderStats,
+};
 
 pub struct RenderBatch {
     pub(crate) render_list: Vec<RenderObject>,
@@ -34,8 +41,30 @@ impl RenderBatch {
         self.render_list.push(object);
     }
 
-    pub fn add_scene_data(&mut self, scene_data: Vec<u8>, pass_id: PassId) {
-        self.scene_data.insert(pass_id, scene_data);
+    pub fn add_camera_data(&mut self, camera: &Camera, light: &Light, pass: Arc<dyn RenderPass>) {
+        if let Some(data_layout) = pass.uniform_data_layout() {
+            let scene_data = match pass.ty() {
+                PassType::Wire | PassType::Depth => data_layout.data(&[UniformPropData::Mat4F(
+                    camera.view_proj().to_cols_array_2d(),
+                )]),
+                _ => data_layout.data(&[
+                    UniformPropData::Vec3F(camera.position.into()),
+                    UniformPropData::Mat4F(camera.view_proj().to_cols_array_2d()),
+                    UniformPropData::Vec3F(light.position.normalize().into()),
+                    UniformPropData::Vec4F(light.colour.into()),
+                    UniformPropData::Vec4F([0.1, 0.1, 0.1, 1.]),
+                ]),
+            };
+            self.scene_data.insert(pass.id(), scene_data);
+        }
+    }
+
+    pub fn add_extent_data(&mut self, extent: ImageExtent2D, pass: Arc<dyn RenderPass>) {
+        if let Some(data_layout) = pass.uniform_data_layout() {
+            let scene_data = data_layout.data(&[UniformPropData::Vec2F(extent.into())]);
+
+            self.scene_data.insert(pass.id(), scene_data);
+        }
     }
 
     pub fn scene_data(&self, pass_id: PassId) -> Option<&Vec<u8>> {

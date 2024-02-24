@@ -1,10 +1,10 @@
 use std::{collections::HashMap, sync::Arc};
 
-use gobs_core::entity::{camera::Camera, light::Light, uniform::UniformPropData};
+use gobs_core::entity::{camera::Camera, light::Light};
 use gobs_render::{
     context::Context,
     geometry::ModelId,
-    pass::{PassId, PassType, RenderPass},
+    pass::{PassId, RenderPass},
     renderable::{RenderBatch, RenderObject, Renderable},
     resources::ModelResource,
 };
@@ -68,26 +68,6 @@ impl Renderable for Scene {
     fn draw(&mut self, ctx: &Context, pass: Arc<dyn RenderPass>, batch: &mut RenderBatch) {
         self.generate_draw_list(ctx, pass.clone(), batch);
 
-        if let Some(data_layout) = pass.uniform_data_layout() {
-            if pass.ty() == PassType::Wire || pass.ty() == PassType::Depth {
-                batch.add_scene_data(
-                    data_layout.data(&[UniformPropData::Mat4F(
-                        self.camera.view_proj().to_cols_array_2d(),
-                    )]),
-                    pass.id(),
-                );
-            } else {
-                batch.add_scene_data(
-                    data_layout.data(&[
-                        UniformPropData::Vec3F(self.camera.position.into()),
-                        UniformPropData::Mat4F(self.camera.view_proj().to_cols_array_2d()),
-                        UniformPropData::Vec3F(self.light.position.normalize().into()),
-                        UniformPropData::Vec4F(self.light.colour.into()),
-                        UniformPropData::Vec4F([0.1, 0.1, 0.1, 1.]),
-                    ]),
-                    pass.id(),
-                );
-            }
-        }
+        batch.add_camera_data(&self.camera, &self.light, pass);
     }
 }

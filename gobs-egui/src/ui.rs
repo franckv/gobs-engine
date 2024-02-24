@@ -6,7 +6,7 @@ use egui::{
 };
 use glam::{Vec2, Vec3};
 
-use gobs_core::{entity::uniform::UniformPropData, Transform};
+use gobs_core::Transform;
 use gobs_game::input::{Input, Key};
 use gobs_render::{
     context::Context,
@@ -346,11 +346,9 @@ impl Renderable for UIRenderer {
             }
         }
 
-        if let Some(data_layout) = pass.uniform_data_layout() {
-            batch.add_scene_data(
-                data_layout.data(&[UniformPropData::Vec2F([self.width, self.height])]),
-                pass.id(),
-            );
-        }
+        batch.add_extent_data(
+            ImageExtent2D::new(self.width as u32, self.height as u32),
+            pass,
+        );
     }
 }
