@@ -8,7 +8,7 @@ use slotmap::{DefaultKey, SlotMap};
 use gobs_core::Transform;
 use gobs_render::geometry::{Model, ModelId};
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum NodeValue {
     None,
     Model(Arc<Model>),
@@ -16,6 +16,7 @@ pub enum NodeValue {
 
 pub type NodeId = DefaultKey;
 
+#[derive(Clone)]
 pub struct Node {
     pub value: NodeValue,
     pub transform: Transform,
@@ -59,28 +60,43 @@ impl SceneGraph {
         self.arena.get_mut(key)
     }
 
-    pub fn insert(&mut self, parent: NodeId, node: Node) {
+    pub fn insert(
+        &mut self,
+        parent: NodeId,
+        value: NodeValue,
+        transform: Transform,
+    ) -> Option<NodeId> {
         let node = self
             .arena
             .contains_key(parent)
-            .then_some(self.arena.insert(node));
+            .then_some(self.arena.insert(Node::new(value, transform)));
 
         if let Some(parent) = self.arena.get_mut(parent) {
             if let Some(node) = node {
                 parent.children.push(node);
             }
         }
+
+        node
     }
 
     pub fn visit<F>(&self, root: NodeId, f: &mut F)
     where
         F: FnMut(&Transform, &NodeValue),
     {
+        self.visit_local(root, Transform::IDENTITY, f);
+    }
+
+    fn visit_local<F>(&self, root: NodeId, parent_transform: Transform, f: &mut F)
+    where
+        F: FnMut(&Transform, &NodeValue),
+    {
         if let Some(node) = self.arena.get(root) {
+            let local_transform = parent_transform * node.transform;
             for &child in &node.children {
-                Self::visit(&self, child, f);
+                self.visit_local(child, local_transform, f);
             }
-            f(&node.transform, &node.value);
+            f(&local_transform, &node.value);
         }
     }
 

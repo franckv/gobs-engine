@@ -1,5 +1,6 @@
 use std::collections::hash_map::Entry;
 use std::collections::HashMap;
+use std::fmt::Debug;
 use std::sync::Arc;
 
 use uuid::Uuid;
@@ -19,6 +20,12 @@ pub struct Model {
 impl Model {
     pub fn builder(name: &str) -> ModelBuilder {
         ModelBuilder::new(name)
+    }
+}
+
+impl Debug for Model {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "Model({})", self.name)
     }
 }
 

@@ -10,10 +10,7 @@ use gobs::{
         input::Input,
     },
     render::{context::Context, geometry::Model, graph::RenderError},
-    scene::{
-        graph::scenegraph::{Node, NodeValue},
-        shape::Shapes,
-    },
+    scene::{graph::scenegraph::NodeValue, shape::Shapes},
 };
 
 use examples::SampleApp;
@@ -96,11 +93,11 @@ impl App {
             .build();
 
         let transform = Transform::new([0., 0., -2.].into(), Quat::IDENTITY, Vec3::splat(1.));
-        let node = Node::new(NodeValue::Model(cube), transform);
-        self.common
-            .scene
-            .graph
-            .insert(self.common.scene.graph.root, node);
+        self.common.scene.graph.insert(
+            self.common.scene.graph.root,
+            NodeValue::Model(cube),
+            transform,
+        );
     }
 }
 fn main() {

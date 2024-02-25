@@ -17,10 +17,7 @@ use gobs::{
         material::{Texture, TextureType},
         SamplerFilter,
     },
-    scene::{
-        graph::scenegraph::{Node, NodeValue},
-        shape::Shapes,
-    },
+    scene::{graph::scenegraph::NodeValue, shape::Shapes},
 };
 
 use examples::SampleApp;
@@ -147,19 +144,19 @@ impl App {
                     };
 
                     let transform = Transform::new(position, rotation, Vec3::splat(1.));
-                    let node = Node::new(NodeValue::Model(wall.clone()), transform);
-                    self.common
-                        .scene
-                        .graph
-                        .insert(self.common.scene.graph.root, node);
+                    self.common.scene.graph.insert(
+                        self.common.scene.graph.root,
+                        NodeValue::Model(wall.clone()),
+                        transform,
+                    );
 
                     position.y = -examples::TILE_SIZE;
                     let transform = Transform::new(position, rotation, Vec3::splat(1.));
-                    let node = Node::new(NodeValue::Model(floor.clone()), transform);
-                    self.common
-                        .scene
-                        .graph
-                        .insert(self.common.scene.graph.root, node);
+                    self.common.scene.graph.insert(
+                        self.common.scene.graph.root,
+                        NodeValue::Model(floor.clone()),
+                        transform,
+                    );
                 }
                 '@' => {
                     i += examples::TILE_SIZE;
@@ -169,11 +166,11 @@ impl App {
                         z: j - offset,
                     };
                     let transform = Transform::new(position, rotation, Vec3::splat(1.));
-                    let node = Node::new(NodeValue::Model(floor.clone()), transform);
-                    self.common
-                        .scene
-                        .graph
-                        .insert(self.common.scene.graph.root, node);
+                    self.common.scene.graph.insert(
+                        self.common.scene.graph.root,
+                        NodeValue::Model(floor.clone()),
+                        transform,
+                    );
                 }
                 '.' => {
                     i += examples::TILE_SIZE;
@@ -183,11 +180,11 @@ impl App {
                         z: j - offset,
                     };
                     let transform = Transform::new(position, rotation, Vec3::splat(1.));
-                    let node = Node::new(NodeValue::Model(floor.clone()), transform);
-                    self.common
-                        .scene
-                        .graph
-                        .insert(self.common.scene.graph.root, node);
+                    self.common.scene.graph.insert(
+                        self.common.scene.graph.root,
+                        NodeValue::Model(floor.clone()),
+                        transform,
+                    );
                 }
                 '\n' => {
                     j += examples::TILE_SIZE;

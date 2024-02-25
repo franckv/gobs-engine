@@ -22,7 +22,7 @@ pub struct RenderStats {
     pub gpu_draw_time: f32,
     pub update_time: f32,
     pub pass_stats: HashMap<PassId, PassStats>,
-    models_set: HashSet<ModelId>,
+    models_set: HashSet<(PassId, ModelId)>,
 }
 
 impl RenderStats {
@@ -37,8 +37,12 @@ impl RenderStats {
     }
 
     pub fn add_object(&mut self, object: &RenderObject) {
-        if !self.models_set.contains(&object.model.model.id) {
-            self.models_set.insert(object.model.model.id);
+        if !self
+            .models_set
+            .contains(&(object.pass.id(), object.model.model.id))
+        {
+            self.models_set
+                .insert((object.pass.id(), object.model.model.id));
             let vertices = object
                 .model
                 .model

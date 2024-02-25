@@ -13,10 +13,7 @@ use gobs::{
         material::{Texture, TextureType},
         SamplerFilter,
     },
-    scene::{
-        graph::scenegraph::{Node, NodeValue},
-        shape::Shapes,
-    },
+    scene::{graph::scenegraph::NodeValue, shape::Shapes},
 };
 
 use examples::SampleApp;
@@ -91,11 +88,11 @@ impl App {
             [width as f32, height as f32, 1.].into(),
         );
 
-        let node: Node = Node::new(NodeValue::Model(rect), transform);
-        self.common
-            .scene
-            .graph
-            .insert(self.common.scene.graph.root, node);
+        self.common.scene.graph.insert(
+            self.common.scene.graph.root,
+            NodeValue::Model(rect),
+            transform,
+        );
     }
 
     fn generate_framebuffer(width: u32, height: u32) -> Vec<Color> {

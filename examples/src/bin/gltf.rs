@@ -8,7 +8,7 @@ use gobs::{
         input::Input,
     },
     render::{context::Context, graph::RenderError, pass::PassType},
-    scene::graph::scenegraph::{Node, NodeValue},
+    scene::graph::scenegraph::NodeValue,
     utils::load,
 };
 
@@ -91,11 +91,11 @@ impl App {
                     Quat::IDENTITY,
                     Vec3::new(scale, scale, scale),
                 );
-                let node = Node::new(NodeValue::Model(model.clone()), transform);
-                self.common
-                    .scene
-                    .graph
-                    .insert(self.common.scene.graph.root, node);
+                self.common.scene.graph.insert(
+                    self.common.scene.graph.root,
+                    NodeValue::Model(model.clone()),
+                    transform,
+                );
             }
         }
     }
@@ -127,11 +127,11 @@ impl App {
                     Quat::IDENTITY,
                     Vec3::new(scale, scale, scale),
                 );
-                let node = Node::new(NodeValue::Model(model.clone()), transform);
-                self.common
-                    .scene
-                    .graph
-                    .insert(self.common.scene.graph.root, node);
+                self.common.scene.graph.insert(
+                    self.common.scene.graph.root,
+                    NodeValue::Model(model.clone()),
+                    transform,
+                );
             }
         }
     }
@@ -155,11 +155,11 @@ impl App {
             Quat::IDENTITY,
             Vec3::new(scale, scale, scale),
         );
-        let node = Node::new(NodeValue::Model(model.clone()), transform);
-        self.common
-            .scene
-            .graph
-            .insert(self.common.scene.graph.root, node);
+        self.common.scene.graph.insert(
+            self.common.scene.graph.root,
+            NodeValue::Model(model.clone()),
+            transform,
+        );
     }
 }
 

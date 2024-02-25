@@ -1,6 +1,8 @@
+use std::{fmt::Debug, ops::Mul};
+
 use glam::{Mat4, Quat, Vec3};
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy)]
 pub struct Transform {
     pub translation: Vec3,
     pub rotation: Quat,
@@ -35,8 +37,18 @@ impl Transform {
         Self::new(Vec3::ZERO, rotation, Vec3::ONE)
     }
 
+    pub fn translate(&mut self, translation: Vec3) {
+        self.translation = translation + self.translation;
+        self.update_matrix();
+    }
+
     pub fn rotate(&mut self, rotation: Quat) {
         self.rotation = rotation * self.rotation;
+        self.update_matrix();
+    }
+
+    pub fn scale(&mut self, scale: Vec3) {
+        self.scale = scale * self.scale;
         self.update_matrix();
     }
 
@@ -44,6 +56,36 @@ impl Transform {
         self.matrix = Mat4::from_translation(self.translation)
             * Mat4::from_quat(self.rotation)
             * Mat4::from_scale(self.scale);
+    }
+}
+
+impl Debug for Transform {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let mut builder = &mut f.debug_struct("Transform");
+
+        if self.translation != Vec3::ZERO {
+            builder = builder.field("T", &self.translation);
+        }
+        if self.rotation != Quat::IDENTITY {
+            builder = builder.field("R", &self.rotation);
+        }
+        if self.scale != Vec3::ONE {
+            builder = builder.field("S", &self.scale);
+        }
+
+        builder.finish()
+    }
+}
+
+impl Mul for Transform {
+    type Output = Self;
+
+    fn mul(self, rhs: Self) -> Self {
+        Self::new(
+            self.translation + rhs.translation,
+            self.rotation * rhs.rotation,
+            self.scale * rhs.scale,
+        )
     }
 }
 

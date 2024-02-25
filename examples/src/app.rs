@@ -1,6 +1,7 @@
-use std::sync::Arc;
+use std::{collections::VecDeque, sync::Arc};
 
 use glam::Vec3;
+use slotmap::Key as _;
 
 use gobs::{
     core::entity::{camera::Camera, light::Light},
@@ -14,7 +15,7 @@ use gobs::{
         renderable::Renderable,
         ImageExtent2D,
     },
-    scene::scene::Scene,
+    scene::{graph::scenegraph::SceneGraph, scene::Scene},
     ui::UIRenderer,
 };
 
@@ -158,6 +159,7 @@ impl SampleApp {
                             Self::show_stats(ui, "Render Stats", &self.graph);
                             Self::show_camera(ui, &self.scene.camera);
                             Self::show_memory(ui, ctx);
+                            Self::show_scene(ui, &self.scene.graph);
                         });
                 },
             );
@@ -171,14 +173,16 @@ impl SampleApp {
     fn show_stats(ui: &mut egui::Ui, header: &str, graph: &FrameGraph) {
         let stats = graph.render_stats();
         ui.collapsing(header, |ui| {
-            for (pass_id, pass_stats) in &stats.pass_stats {
-                let pass = graph.pass_by_id(*pass_id).unwrap();
-                ui.label(format!("Pass: {}", pass.name()));
-                ui.label(format!("  Vertices: {}", pass_stats.vertices));
-                ui.label(format!("  Indices: {}", pass_stats.indices));
-                ui.label(format!("  Models: {}", pass_stats.models));
-                ui.label(format!("  Instances: {}", pass_stats.instances));
-                ui.label(format!("  Textures: {}", pass_stats.textures));
+            for pass in &graph.passes {
+                ui.collapsing(format!("Pass: {}", pass.name()), |ui| {
+                    if let Some(pass_stats) = stats.pass_stats.get(&pass.id()) {
+                        ui.label(format!("  Vertices: {}", pass_stats.vertices));
+                        ui.label(format!("  Indices: {}", pass_stats.indices));
+                        ui.label(format!("  Models: {}", pass_stats.models));
+                        ui.label(format!("  Instances: {}", pass_stats.instances));
+                        ui.label(format!("  Textures: {}", pass_stats.textures));
+                    }
+                });
             }
             ui.label("Performance");
             ui.label(format!("  Draws: {}", stats.draws));
@@ -216,6 +220,31 @@ impl SampleApp {
     fn show_memory(ui: &mut egui::Ui, ctx: &Context) {
         ui.collapsing("Memory", |ui| {
             ui.label(format!("{:?}", ctx.allocator.allocator.lock().unwrap()));
+        });
+    }
+
+    fn show_scene(ui: &mut egui::Ui, graph: &SceneGraph) {
+        let mut nodes = VecDeque::from([(0, graph.root)]);
+
+        ui.collapsing("Scene", |ui| {
+            while !nodes.is_empty() {
+                let (d, node_key) = nodes.pop_front().unwrap();
+                let node = graph.get(node_key).unwrap();
+                let transform = node.transform;
+                let value = &node.value;
+                ui.label(format!(
+                    "{:>pad$}[{:?}] Node: {:?} ({:?})",
+                    "",
+                    node_key.data(),
+                    value,
+                    transform,
+                    pad = 5 * d
+                ));
+
+                for child in graph.get(node_key).unwrap().children.iter().rev() {
+                    nodes.push_front((d + 1, *child));
+                }
+            }
         });
     }
 
