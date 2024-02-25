@@ -125,7 +125,7 @@ impl UiPass {
 
             if let Some(push_layout) = render_object.pass.push_layout() {
                 model_data.clear();
-                push_layout.data_buf(
+                push_layout.copy_data(
                     &[UniformPropData::U64(
                         render_object
                             .model

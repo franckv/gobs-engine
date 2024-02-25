@@ -131,7 +131,7 @@ impl ForwardPass {
             if let Some(push_layout) = render_object.pass.push_layout() {
                 model_data.clear();
                 // TODO: hardcoded
-                push_layout.data_buf(
+                push_layout.copy_data(
                     &[
                         UniformPropData::Mat4F(world_matrix.to_cols_array_2d()),
                         UniformPropData::Mat3F(normal_matrix.to_cols_array_2d()),

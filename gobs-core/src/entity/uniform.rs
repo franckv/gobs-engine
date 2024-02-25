@@ -69,12 +69,12 @@ impl UniformLayout {
     pub fn data(&self, props: &[UniformPropData]) -> Vec<u8> {
         let mut data = Vec::new();
 
-        self.data_buf(props, &mut data);
+        self.copy_data(props, &mut data);
 
         data
     }
 
-    pub fn data_buf(&self, props: &[UniformPropData], mut data: &mut Vec<u8>) {
+    pub fn copy_data(&self, props: &[UniformPropData], mut data: &mut Vec<u8>) {
         assert_eq!(self.len(), props.len(), "Invalid uniform layout");
 
         for prop in props {
