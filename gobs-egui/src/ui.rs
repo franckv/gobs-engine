@@ -121,6 +121,7 @@ impl UIRenderer {
                     pressed: true,
                     repeat: false,
                     modifiers: Modifiers::NONE,
+                    physical_key: None,
                 });
             }
             Input::KeyReleased(key) => {
@@ -129,6 +130,7 @@ impl UIRenderer {
                     pressed: false,
                     repeat: false,
                     modifiers: Modifiers::NONE,
+                    physical_key: None,
                 });
             }
             Input::MousePressed => {
