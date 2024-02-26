@@ -221,6 +221,8 @@ impl FrameGraph {
     }
 
     pub fn begin(&mut self, ctx: &Context) -> Result<(), RenderError> {
+        log::debug!("Begin new frame");
+
         let frame_id = self.new_frame(ctx);
         self.batch.reset();
 
@@ -281,6 +283,8 @@ impl FrameGraph {
     }
 
     pub fn end(&mut self, ctx: &Context) -> Result<(), RenderError> {
+        log::debug!("End frame");
+
         let frame_id = self.frame_id(ctx);
         let frame = &self.frames[frame_id];
         let cmd = &frame.command_buffer;

@@ -1,5 +1,7 @@
 use std::sync::Arc;
 
+use parking_lot::RwLock;
+
 use gobs_core::entity::uniform::UniformLayout;
 use gobs_utils::load;
 use gobs_vulkan::{
@@ -19,13 +21,24 @@ use crate::{
     CommandBuffer,
 };
 
+pub(crate) struct FrameData {
+    pub draw_ds: DescriptorSet,
+}
+
+impl FrameData {
+    pub fn new(draw_ds: DescriptorSet) -> Self {
+        FrameData { draw_ds }
+    }
+}
+
 pub struct ComputePass {
     id: PassId,
     name: String,
     ty: PassType,
     attachments: Vec<String>,
+    frame_data: Vec<FrameData>,
+    frame_number: RwLock<usize>,
     _draw_ds_pool: DescriptorSetPool,
-    pub draw_ds: DescriptorSet,
     pub pipeline: Arc<Pipeline>,
 }
 
@@ -36,7 +49,10 @@ impl ComputePass {
             .build(ctx.device.clone());
         let mut _draw_ds_pool =
             DescriptorSetPool::new(ctx.device.clone(), _draw_ds_layout.clone(), 10);
-        let draw_ds = _draw_ds_pool.allocate();
+
+        let frame_data = (0..ctx.frames_in_flight)
+            .map(|_| FrameData::new(_draw_ds_pool.allocate()))
+            .collect();
 
         let compute_file = load::get_asset_dir("sky.comp.spv", load::AssetType::SHADER).unwrap();
         let compute_shader =
@@ -54,10 +70,17 @@ impl ComputePass {
             name: name.to_string(),
             ty: PassType::Compute,
             attachments: vec![String::from("draw")],
+            frame_data,
+            frame_number: RwLock::new(0),
             _draw_ds_pool,
-            draw_ds,
             pipeline,
         })
+    }
+
+    fn new_frame(&self, ctx: &Context) -> usize {
+        let mut frame_number = self.frame_number.write();
+        *frame_number += 1;
+        (*frame_number - 1) % ctx.frames_in_flight
     }
 }
 
@@ -96,7 +119,7 @@ impl RenderPass for ComputePass {
 
     fn render(
         &self,
-        _ctx: &Context,
+        ctx: &Context,
         cmd: &CommandBuffer,
         resource_manager: &ResourceManager,
         batch: &mut RenderBatch,
@@ -107,13 +130,17 @@ impl RenderPass for ComputePass {
 
         let draw_attach = &self.attachments[0];
 
-        self.draw_ds
+        let frame_id = self.new_frame(ctx);
+        let draw_ds = &self.frame_data[frame_id].draw_ds;
+
+        draw_ds
             .update()
             .bind_image(
                 &resource_manager.image_read(draw_attach),
                 ImageLayout::General,
             )
             .end();
+
         batch.stats_mut().binds += 1;
 
         cmd.transition_image_layout(
@@ -122,7 +149,7 @@ impl RenderPass for ComputePass {
         );
 
         cmd.bind_pipeline(&self.pipeline);
-        cmd.bind_descriptor_set(&self.draw_ds, 0, &self.pipeline);
+        cmd.bind_descriptor_set(&draw_ds, 0, &self.pipeline);
         batch.stats_mut().binds += 2;
 
         cmd.dispatch(draw_extent.width / 16 + 1, draw_extent.height / 16 + 1, 1);

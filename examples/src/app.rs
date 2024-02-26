@@ -50,7 +50,7 @@ impl SampleApp {
             ui,
             scene,
             process_updates: true,
-            draw_ui: true,
+            draw_ui: false,
             draw_wire: false,
             fps: 0,
         }

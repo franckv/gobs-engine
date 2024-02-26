@@ -59,10 +59,7 @@ impl Run for App {
 impl App {
     fn init(&mut self, ctx: &Context) {
         let extent = self.common.graph.draw_extent;
-        let (width, height) = (
-            self.common.graph.draw_extent.width,
-            self.common.graph.draw_extent.height,
-        );
+        let (width, height) = (extent.width, extent.height);
 
         let framebuffer = Self::generate_framebuffer(width, height);
 
