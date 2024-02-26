@@ -1,21 +1,21 @@
 use std::sync::Arc;
 
-use glam::{Vec2, Vec4};
+use glam::Vec2;
 
-use gobs_core as core;
-
-use core::geometry::mesh::{Mesh, MeshBuilder};
+use gobs_core::Color;
+use gobs_render::geometry::{Mesh, VertexData};
 
 const T_MIN: f32 = 0.01;
 const T_MAX: f32 = 1. - T_MIN;
+const PADDING: bool = true;
 
 pub struct Shapes;
 
 impl Shapes {
-    pub fn triangle(color1: [f32; 4], color2: [f32; 4], color3: [f32; 4]) -> Arc<Mesh> {
-        let mut builder = MeshBuilder::new("triangle");
+    pub fn triangle(color1: Color, color2: Color, color3: Color, size: f32) -> Arc<Mesh> {
+        let mut builder = Mesh::builder("triangle");
 
-        let (top, bottom, left, right) = (0.5, -0.5, -0.5, 0.5);
+        let (top, bottom, left, right) = (size / 2., -size / 2., -size / 2., size / 2.);
 
         let v = [
             [left, bottom, 0.],
@@ -42,20 +42,22 @@ impl Shapes {
         let ti = [1, 2, 3];
 
         for i in 0..vi.len() {
-            builder = builder.add_vertex(
-                v[vi[i] - 1].into(),
-                c[ci[i] - 1].into(),
-                t[ti[i] - 1].into(),
-                n[ni[i] - 1].into(),
-                t[ti[i] - 1].into(),
-            )
+            let vertex_data = VertexData::builder()
+                .position(v[vi[i] - 1].into())
+                .color(c[ci[i] - 1])
+                .normal(n[ni[i] - 1].into())
+                .texture(t[ti[i] - 1].into())
+                .padding(PADDING)
+                .build();
+
+            builder = builder.vertex(vertex_data)
         }
 
         builder.build()
     }
 
     pub fn rect(top: f32, bottom: f32, left: f32, right: f32) -> Arc<Mesh> {
-        let mut builder = MeshBuilder::new("rect");
+        let mut builder = Mesh::builder("rect");
 
         let v = [
             [left, top, 0.],
@@ -80,13 +82,15 @@ impl Shapes {
         let ti = [1, 3, 4, 4, 2, 1];
 
         for i in 0..vi.len() {
-            builder = builder.add_vertex(
-                v[vi[i] - 1].into(),
-                [1., 1., 1., 1.].into(),
-                t[ti[i] - 1].into(),
-                n[ni[i] - 1].into(),
-                t[ti[i] - 1].into(),
-            )
+            let vertex_data = VertexData::builder()
+                .position(v[vi[i] - 1].into())
+                .color([1., 1., 1., 1.].into())
+                .texture(t[ti[i] - 1].into())
+                .normal(n[ni[i] - 1].into())
+                .padding(PADDING)
+                .build();
+
+            builder = builder.vertex(vertex_data);
         }
 
         builder.build()
@@ -96,10 +100,17 @@ impl Shapes {
         Self::rect(0.5, -0.5, -0.5, 0.5)
     }
 
-    pub fn cube(cols: u32, rows: u32, index: &[u32]) -> Arc<Mesh> {
-        let mut builder = MeshBuilder::new("cube");
+    pub fn cube(cols: u32, rows: u32, index: &[u32], size: f32) -> Arc<Mesh> {
+        let mut builder = Mesh::builder("cube");
 
-        let (top, bottom, left, right, front, back) = (0.5, -0.5, -0.5, 0.5, 0.5, -0.5);
+        let (top, bottom, left, right, front, back) = (
+            size / 2.,
+            -size / 2.,
+            -size / 2.,
+            size / 2.,
+            size / 2.,
+            -size / 2.,
+        );
 
         let v = [
             [left, top, front],
@@ -138,28 +149,38 @@ impl Shapes {
         ];
 
         let ni = [
-            1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 5, 5, 5, 5, 5,
-            5, 6, 6, 6, 6, 6, 6,
+            1, 1, 1, 1, 1, 1, // F
+            2, 2, 2, 2, 2, 2, // B
+            3, 3, 3, 3, 3, 3, // L
+            4, 4, 4, 4, 4, 4, // R
+            5, 5, 5, 5, 5, 5, // U
+            6, 6, 6, 6, 6, 6, // D
         ];
 
         let ti = [
-            3, 4, 2, 3, 2, 1, 3, 4, 2, 3, 2, 1, 3, 4, 2, 3, 2, 1, 3, 4, 2, 3, 2, 1, 3, 4, 2, 3, 2,
-            1, 3, 4, 2, 3, 2, 1,
+            3, 4, 2, 3, 2, 1, // F
+            3, 4, 2, 3, 2, 1, // B
+            3, 4, 2, 3, 2, 1, // L
+            3, 4, 2, 3, 2, 1, // R
+            3, 4, 2, 3, 2, 1, // U
+            3, 4, 2, 3, 2, 1, // D
         ];
 
         for i in 0..vi.len() {
-            builder = builder.add_vertex(
-                v[vi[i] - 1].into(),
-                Vec4::new(1., 1., 1., 1.),
-                Self::tex_map(
+            let vertex_data = VertexData::builder()
+                .position(v[vi[i] - 1].into())
+                .color(Color::WHITE)
+                .texture(Self::tex_map(
                     t[ti[i] - 1].into(),
                     cols,
                     rows,
                     index[(i / index.len()) % index.len()],
-                ),
-                n[ni[i] - 1].into(),
-                t[ti[i] - 1].into(),
-            )
+                ))
+                .normal(n[ni[i] - 1].into())
+                .padding(PADDING)
+                .build();
+
+            builder = builder.vertex(vertex_data);
         }
 
         builder.build()

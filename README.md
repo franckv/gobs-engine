@@ -6,7 +6,6 @@ Game engine written in Rust based on Vulkan.
 * gobs-render: rendering engine
 * gobs-scene: scene graph
 * gobs-game: main loop and input management
-* gobs-egui: UI management
 
 ## Examples
 

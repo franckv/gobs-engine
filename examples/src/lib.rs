@@ -1,95 +1,68 @@
+mod app;
 mod controller;
 
-use std::sync::Arc;
+use env_logger::Builder;
 
-use simplelog::{
-    ColorChoice, CombinedLogger, ConfigBuilder, LevelFilter, TermLogger, TerminalMode,
+use gobs::{
+    game::input::{Input, Key},
+    render::{context::Context, graph::FrameGraph},
+    scene::scene::Scene,
 };
 
-use gobs::core::entity::instance::InstanceFlag;
-use gobs::core::geometry::vertex::VertexFlag;
-use gobs::scene::{Gfx, PipelineFlag, Shader};
-
+pub use app::SampleApp;
 pub use controller::CameraController;
 
-pub const MAP: &str = include_str!("../assets/dungeon.map");
-pub const CUBE: &str = "cube.obj";
-pub const LIGHT: &str = "sphere.obj";
-pub const TILE_SIZE: f32 = 1.;
 pub const WALL_TEXTURE: &str = "wall.png";
 pub const WALL_TEXTURE_N: &str = "wall_n.png";
-pub const FLOOR_TEXTURE: &str = "floor.png";
-pub const FLOOR_TEXTURE_N: &str = "floor_n.png";
-pub const WIRE_PASS: &str = "Wire";
+pub const ATLAS: &[&str] = &[
+    "blocks/dirt.png",
+    "blocks/stone.png",
+    "blocks/grass_side.png",
+    "blocks/grass_top.png",
+    "blocks/cobblestone.png",
+    "blocks/mossy_cobblestone.png",
+];
+pub const ATLAS_N: &[&str] = &[
+    "blocks/dirt_n.png",
+    "blocks/stone_n.png",
+    "blocks/grass_side_n.png",
+    "blocks/grass_top_n.png",
+    "blocks/cobblestone_n.png",
+    "blocks/mossy_cobblestone_n.png",
+];
+pub const ATLAS_COLS: u32 = 3;
+pub const ATLAS_ROWS: u32 = 2;
+pub const MAP: &str = include_str!("../assets/dungeon.map");
+pub const TILE_SIZE: f32 = 1.;
 
-pub fn init_logger(path: &str) {
-    let config_other = ConfigBuilder::new().add_filter_allow_str("gobs").build();
-    let config_self = ConfigBuilder::new()
-        .add_filter_allow(path.to_string())
-        .build();
+pub fn init_logger() {
+    Builder::new().filter_level(log::LevelFilter::Info).init();
 
-    let _ = CombinedLogger::init(vec![
-        TermLogger::new(
-            LevelFilter::Info,
-            config_other,
-            TerminalMode::Mixed,
-            ColorChoice::Auto,
-        ),
-        TermLogger::new(
-            LevelFilter::Debug,
-            config_self,
-            TerminalMode::Mixed,
-            ColorChoice::Auto,
-        ),
-    ]);
-
-    log::debug!("Logger initialized");
+    log::info!("Logger initialized");
 }
 
-pub async fn ui_shader(gfx: &Gfx) -> Arc<Shader> {
-    Shader::new(
-        gfx,
-        "UI",
-        "ui.wgsl",
-        VertexFlag::POSITION | VertexFlag::COLOR | VertexFlag::TEXTURE,
-        InstanceFlag::MODEL,
-        PipelineFlag::ALPHA,
-    )
-    .await
-}
+pub fn default_input(
+    ctx: &Context,
+    scene: &Scene,
+    graph: &mut FrameGraph,
+    camera_controller: &mut CameraController,
+    input: Input,
+) {
+    log::trace!("Input");
 
-pub async fn phong_shader(gfx: &Gfx) -> Arc<Shader> {
-    Shader::new(
-        gfx,
-        "Phong",
-        "phong.wgsl",
-        VertexFlag::POSITION | VertexFlag::TEXTURE | VertexFlag::NORMAL,
-        InstanceFlag::MODEL | InstanceFlag::NORMAL,
-        PipelineFlag::CULLING | PipelineFlag::DEPTH_TEST | PipelineFlag::DEPTH_WRITE,
-    )
-    .await
-}
-
-pub async fn solid_shader(gfx: &Gfx) -> Arc<Shader> {
-    Shader::new(
-        gfx,
-        "Solid",
-        "solid.wgsl",
-        VertexFlag::POSITION | VertexFlag::COLOR,
-        InstanceFlag::MODEL,
-        PipelineFlag::CULLING | PipelineFlag::DEPTH_TEST | PipelineFlag::DEPTH_WRITE,
-    )
-    .await
-}
-
-pub async fn wire_shader(gfx: &Gfx) -> Arc<Shader> {
-    Shader::new(
-        gfx,
-        WIRE_PASS,
-        "wire.wgsl",
-        VertexFlag::POSITION,
-        InstanceFlag::MODEL,
-        PipelineFlag::CULLING | PipelineFlag::DEPTH_TEST | PipelineFlag::LINE | PipelineFlag::ALPHA,
-    )
-    .await
+    match input {
+        Input::KeyPressed(key) => match key {
+            Key::E => graph.render_scaling = (graph.render_scaling + 0.1).min(1.),
+            Key::A => graph.render_scaling = (graph.render_scaling - 0.1).max(0.1),
+            Key::L => log::info!("{:?}", ctx.allocator.allocator.lock().unwrap()),
+            Key::C => log::info!("{:?}", scene.camera),
+            _ => camera_controller.key_pressed(key),
+        },
+        Input::KeyReleased(key) => camera_controller.key_released(key),
+        Input::MousePressed => camera_controller.mouse_pressed(),
+        Input::MouseReleased => camera_controller.mouse_released(),
+        Input::MouseWheel(delta) => camera_controller.mouse_scroll(delta),
+        Input::MouseMotion(dx, dy) => camera_controller.mouse_drag(dx, dy),
+        _ => (),
+    }
 }

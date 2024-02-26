@@ -162,6 +162,28 @@ impl Into<Rgba<u8>> for Color {
     }
 }
 
+impl From<[f32; 4]> for Color {
+    fn from(value: [f32; 4]) -> Self {
+        Color {
+            r: value[0],
+            g: value[1],
+            b: value[2],
+            a: value[3],
+        }
+    }
+}
+
+impl From<[u8; 4]> for Color {
+    fn from(value: [u8; 4]) -> Self {
+        Color {
+            r: value[0] as f32 / 255.,
+            g: value[1] as f32 / 255.,
+            b: value[2] as f32 / 255.,
+            a: value[3] as f32 / 255.,
+        }
+    }
+}
+
 impl From<Vec3> for Color {
     fn from(value: Vec3) -> Self {
         Color {

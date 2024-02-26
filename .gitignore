@@ -1,10 +1,7 @@
-**/target/
-**/*.rs.bk
-**/*.spv
+assets/
+target/
+scripts/
+
 Cargo.lock
-*.iml
-.idea/
+*.spv
 .vscode/
-**/assets/
-**/docs/
-*.txt

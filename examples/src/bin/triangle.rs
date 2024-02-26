@@ -1,110 +1,81 @@
-use std::sync::Arc;
+use glam::Quat;
 
-use glam::{Quat, Vec3};
-
-use gobs::core::entity::{camera::Camera, light::Light};
-use gobs::core::Color;
-use gobs::game::{
-    app::{Application, Run},
-    input::{Input, Key},
+use gobs::{
+    core::{entity::light::Light, Color, Transform},
+    game::{
+        app::{Application, Run},
+        input::Input,
+    },
+    render::{context::Context, geometry::Model, graph::RenderError},
+    scene::{graph::scenegraph::NodeValue, shape::Shapes},
 };
-use gobs::scene::shape::Shapes;
-use gobs::scene::{Gfx, Model, ModelBuilder, RenderError, Scene};
 
-use examples::CameraController;
-
-const TRIANGLE_LAYER: &str = "triangle";
+use examples::SampleApp;
 
 struct App {
-    camera_controller: CameraController,
-    scene: Scene,
+    common: SampleApp,
 }
 
 impl Run for App {
-    async fn create(gfx: &Gfx) -> Self {
-        let camera = Camera::ortho(
-            (0., 0., 10.),
-            gfx.width() as f32,
-            gfx.height() as f32,
-            0.1,
-            100.,
-            (-90. as f32).to_radians(),
-            (0. as f32).to_radians(),
-            Vec3::Y,
-        );
-
+    async fn create(ctx: &Context) -> Self {
         let light = Light::new((0., 0., 10.), Color::WHITE);
 
-        let solid_shader = examples::solid_shader(gfx).await;
+        let common = SampleApp::create(ctx, SampleApp::ortho_camera(ctx), light);
 
-        let mut scene = Scene::new(gfx, camera, light, &[]);
+        App { common }
+    }
 
-        let triangle: Arc<Model> = ModelBuilder::new()
-            .add_mesh(
-                Shapes::triangle([1., 0., 0., 0.5], [0., 1., 0., 0.5], [0., 0., 1., 0.5]),
-                None,
+    fn update(&mut self, ctx: &Context, delta: f32) {
+        self.common.update(ctx, delta);
+    }
+
+    fn render(&mut self, ctx: &Context) -> Result<(), RenderError> {
+        self.common.render(ctx)
+    }
+
+    fn input(&mut self, ctx: &Context, input: Input) {
+        self.common.input(ctx, input);
+    }
+
+    fn resize(&mut self, ctx: &Context, width: u32, height: u32) {
+        self.common.resize(ctx, width, height);
+    }
+
+    async fn start(&mut self, ctx: &Context) {
+        self.init(ctx);
+    }
+
+    fn close(&mut self, ctx: &Context) {
+        self.common.close(ctx);
+    }
+}
+
+impl App {
+    fn init(&mut self, ctx: &Context) {
+        let material = self.common.color_material(ctx);
+        let material_instance = material.instantiate(vec![]);
+
+        let triangle = Model::builder("triangle")
+            .mesh(
+                Shapes::triangle(Color::RED, Color::GREEN, Color::BLUE, 1.),
+                material_instance,
             )
-            .build(solid_shader);
+            .build();
 
-        scene.add_node(
-            TRIANGLE_LAYER,
-            [0., 0., 0.].into(),
-            Quat::IDENTITY,
-            [300., 300., 1.].into(),
-            triangle,
+        let transform =
+            Transform::new([0., 0., 0.].into(), Quat::IDENTITY, [300., 300., 1.].into());
+        self.common.scene.graph.insert(
+            self.common.scene.graph.root,
+            NodeValue::Model(triangle),
+            transform,
         );
-
-        let camera_controller = CameraController::new(3., 0.4);
-
-        App {
-            camera_controller,
-            scene,
-        }
-    }
-
-    fn update(&mut self, delta: f32, gfx: &Gfx) {
-        self.camera_controller
-            .update_camera(&mut self.scene.camera, delta);
-
-        self.scene.update(gfx);
-    }
-
-    fn render(&mut self, gfx: &Gfx) -> Result<(), RenderError> {
-        self.scene.render(gfx)
-    }
-
-    fn input(&mut self, _gfx: &Gfx, input: Input) {
-        match input {
-            Input::KeyPressed(key) => match key {
-                Key::W => self.scene.toggle_pass(examples::WIRE_PASS),
-                _ => self.camera_controller.key_pressed(key),
-            },
-            Input::KeyReleased(key) => {
-                self.camera_controller.key_released(key);
-            }
-            Input::MousePressed => {
-                self.camera_controller.mouse_pressed();
-            }
-            Input::MouseReleased => {
-                self.camera_controller.mouse_released();
-            }
-            Input::MouseWheel(delta) => {
-                self.camera_controller.mouse_scroll(delta);
-            }
-            Input::MouseMotion(dx, dy) => {
-                self.camera_controller.mouse_drag(dx, dy);
-            }
-            _ => (),
-        }
-    }
-
-    fn resize(&mut self, width: u32, height: u32, _gfx: &Gfx) {
-        self.scene.resize(width, height)
     }
 }
 
 fn main() {
-    examples::init_logger(module_path!());
+    examples::init_logger();
 
-    Application::new().run::<App>();
+    log::info!("Engine start");
+
+    Application::new("Triangle", 1920, 1080).run::<App>();
 }

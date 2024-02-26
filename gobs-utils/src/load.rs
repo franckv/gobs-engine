@@ -38,7 +38,7 @@ pub async fn load_string(file_name: &str, ty: AssetType) -> Result<String> {
 pub async fn load_binary(file_name: &str, ty: AssetType) -> Result<Vec<u8>> {
     let path = get_asset_dir(file_name, ty)?;
 
-    log::debug!("Loading bin: {:?}", path);
+    log::info!("Loading bin: {:?}", path);
 
     let data = std::fs::read(path)?;
 

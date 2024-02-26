@@ -1,100 +1,162 @@
-use indexmap::IndexMap;
+use std::sync::Arc;
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub enum UniformProp {
-    F32(f32),
-    Vec2F([f32; 2]),
-    Vec3F([f32; 3]),
-    Vec4F([f32; 4]),
-    Mat4F([[f32; 4]; 4]),
+    F32,
+    U32,
+    U64,
+    Vec2F,
+    Vec3F,
+    Vec4F,
+    Mat3F,
+    Mat4F,
 }
 
 impl UniformProp {
-    pub fn alignment(&self) -> u32 {
+    fn alignment(&self) -> usize {
         match self {
-            UniformProp::F32(_) => 4,
-            UniformProp::Vec2F(_) => 8,
-            UniformProp::Vec3F(_) => 16,
-            UniformProp::Vec4F(_) => 16,
-            UniformProp::Mat4F(_) => 16,
+            UniformProp::F32 => 4,
+            UniformProp::U32 => 4,
+            UniformProp::U64 => 16,
+            UniformProp::Vec2F => 8,
+            UniformProp::Vec3F => 16,
+            UniformProp::Vec4F => 16,
+            UniformProp::Mat3F => 16,
+            UniformProp::Mat4F => 16,
         }
     }
 
-    pub fn raw(&self) -> Vec<u8> {
+    fn size(&self) -> usize {
         match self {
-            UniformProp::F32(d) => bytemuck::cast_slice(&[*d]).into(),
-            UniformProp::Vec2F(d) => bytemuck::cast_slice(d).into(),
-            UniformProp::Vec3F(d) => bytemuck::cast_slice(d).into(),
-            UniformProp::Vec4F(d) => bytemuck::cast_slice(d).into(),
-            UniformProp::Mat4F(d) => bytemuck::cast_slice(d).into(),
+            UniformProp::F32 => 4,
+            UniformProp::U32 => 4,
+            UniformProp::U64 => 8,
+            UniformProp::Vec2F => 8,
+            UniformProp::Vec3F => 12,
+            UniformProp::Vec4F => 16,
+            UniformProp::Mat3F => 48,
+            UniformProp::Mat4F => 64,
         }
     }
 }
 
-pub struct UniformData {
-    pub name: String,
-    pub data: IndexMap<String, UniformProp>,
+#[derive(Debug)]
+pub struct UniformLayout {
+    layout: Vec<UniformProp>,
+    alignment: usize,
 }
 
-impl UniformData {
-    pub fn prop(&self, name: &str) -> UniformProp {
-        self.data[name]
+impl UniformLayout {
+    pub fn builder() -> UniformLayoutBuilder {
+        UniformLayoutBuilder::new()
     }
 
-    pub fn update(&mut self, name: &str, prop: UniformProp) {
-        self.data[name] = prop;
+    pub fn len(&self) -> usize {
+        self.layout.len()
     }
 
-    pub fn raw(&self) -> Vec<u8> {
-        let alignment = self.alignment() as usize;
+    pub fn size(&self) -> usize {
+        self.layout
+            .iter()
+            .map(|p| {
+                let padding = (self.alignment - p.size() % self.alignment) % self.alignment;
 
-        self.data
-            .values()
-            .flat_map(|p| {
-                let mut raw = p.raw();
-
-                let align = (alignment - raw.len() % alignment) % alignment;
-
-                for _ in 0..align {
-                    raw.push(0 as u8);
-                }
-
-                raw
+                p.size() + padding
             })
-            .collect::<Vec<u8>>()
+            .sum()
     }
 
-    pub fn alignment(&self) -> u32 {
-        let alignment = self.data.values().map(|p| p.alignment()).max();
+    pub fn data(&self, props: &[UniformPropData]) -> Vec<u8> {
+        let mut data = Vec::new();
 
-        alignment.unwrap()
+        self.copy_data(props, &mut data);
+
+        data
     }
-}
 
-pub struct UniformDataBuilder {
-    pub name: String,
-    pub data: IndexMap<String, UniformProp>,
-}
+    pub fn copy_data(&self, props: &[UniformPropData], mut data: &mut Vec<u8>) {
+        assert_eq!(self.len(), props.len(), "Invalid uniform layout");
 
-impl UniformDataBuilder {
-    pub fn new(name: &str) -> Self {
-        UniformDataBuilder {
-            name: name.to_string(),
-            data: IndexMap::new(),
+        for prop in props {
+            prop.copy(&mut data);
+            let pad = (self.alignment - prop.ty().size() % self.alignment) % self.alignment;
+            for _ in 0..pad {
+                data.push(0 as u8);
+            }
         }
     }
+}
 
-    pub fn prop(mut self, name: &str, prop: UniformProp) -> Self {
-        self.data.insert(name.to_string(), prop);
+pub struct UniformLayoutBuilder {
+    layout: Vec<UniformProp>,
+}
+
+impl UniformLayoutBuilder {
+    fn new() -> Self {
+        UniformLayoutBuilder { layout: Vec::new() }
+    }
+
+    pub fn prop(mut self, _label: &str, prop: UniformProp) -> Self {
+        self.layout.push(prop);
 
         self
     }
 
-    pub fn build(self) -> UniformData {
-        UniformData {
-            name: self.name,
-            data: self.data,
+    pub fn build(self) -> Arc<UniformLayout> {
+        let alignment = self.layout.iter().map(|p| p.alignment()).max().unwrap();
+
+        Arc::new(UniformLayout {
+            layout: self.layout,
+            alignment,
+        })
+    }
+}
+
+#[derive(Clone, Copy, Debug)]
+pub enum UniformPropData {
+    F32(f32),
+    U32(u32),
+    U64(u64),
+    Vec2F([f32; 2]),
+    Vec3F([f32; 3]),
+    Vec4F([f32; 4]),
+    Mat3F([[f32; 3]; 3]),
+    Mat4F([[f32; 4]; 4]),
+}
+
+impl UniformPropData {
+    fn ty(&self) -> UniformProp {
+        match self {
+            UniformPropData::F32(_) => UniformProp::F32,
+            UniformPropData::U32(_) => UniformProp::U32,
+            UniformPropData::U64(_) => UniformProp::U64,
+            UniformPropData::Vec2F(_) => UniformProp::Vec2F,
+            UniformPropData::Vec3F(_) => UniformProp::Vec3F,
+            UniformPropData::Vec4F(_) => UniformProp::Vec4F,
+            UniformPropData::Mat3F(_) => UniformProp::Mat3F,
+            UniformPropData::Mat4F(_) => UniformProp::Mat4F,
         }
+    }
+
+    fn copy(&self, data: &mut Vec<u8>) {
+        match self {
+            UniformPropData::F32(d) => data.extend_from_slice(bytemuck::cast_slice(&[*d])),
+            UniformPropData::U32(d) => data.extend_from_slice(bytemuck::cast_slice(&[*d])),
+            UniformPropData::U64(d) => data.extend_from_slice(bytemuck::cast_slice(&[*d])),
+            UniformPropData::Vec2F(d) => data.extend_from_slice(bytemuck::cast_slice(d)),
+            UniformPropData::Vec3F(d) => data.extend_from_slice(bytemuck::cast_slice(d)),
+            UniformPropData::Vec4F(d) => data.extend_from_slice(bytemuck::cast_slice(d)),
+            UniformPropData::Mat3F(d) => {
+                // mat3 is padded as mat3x4
+                let d2 = &[
+                    [d[0][0], d[0][1], d[0][2], 0.],
+                    [d[1][0], d[1][1], d[1][2], 0.],
+                    [d[2][0], d[2][1], d[2][2], 0.],
+                ];
+                data.extend_from_slice(bytemuck::cast_slice(d2))
+            }
+            UniformPropData::Mat4F(d) => data.extend_from_slice(bytemuck::cast_slice(d)),
+        };
     }
 }
 
@@ -103,8 +165,13 @@ mod tests {
     use glam::Vec3;
     use glam::{Mat4, Vec4};
 
-    use super::UniformDataBuilder;
-    use super::UniformProp;
+    use crate::entity::uniform::{UniformLayout, UniformProp, UniformPropData};
+
+    fn setup() {
+        let _ = env_logger::Builder::new()
+            .filter_module("gobs_core", log::LevelFilter::Debug)
+            .try_init();
+    }
 
     #[repr(C)]
     #[derive(Debug, Copy, Clone, bytemuck::Pod, bytemuck::Zeroable)]
@@ -113,9 +180,31 @@ mod tests {
         view_proj: [[f32; 4]; 4],
     }
 
+    #[test]
+    fn test_camera() {
+        let camera_data = CameraUniform {
+            view_position: Vec4::ONE.into(),
+            view_proj: Mat4::IDENTITY.to_cols_array_2d(),
+        };
+
+        let camera_layout = UniformLayout::builder()
+            .prop("position", UniformProp::Vec4F)
+            .prop("view_proj", UniformProp::Mat4F)
+            .build();
+
+        let camera = camera_layout.data(&[
+            UniformPropData::Vec4F(camera_data.view_position),
+            UniformPropData::Mat4F(camera_data.view_proj),
+        ]);
+
+        assert_eq!(camera_layout.size(), camera.len());
+
+        assert_eq!(camera, bytemuck::cast_slice(&[camera_data]));
+    }
+
     #[repr(C)]
     #[derive(Debug, Copy, Clone, bytemuck::Pod, bytemuck::Zeroable)]
-    struct _LightUniform {
+    struct LightUniform {
         position: [f32; 3],
         _padding: u32,
         colour: [f32; 3],
@@ -123,37 +212,67 @@ mod tests {
     }
 
     #[test]
-    fn test_raw() {
-        let camera_data = CameraUniform {
-            view_position: Vec4::ONE.into(),
-            view_proj: Mat4::IDENTITY.to_cols_array_2d(),
-        };
-
-        let camera = UniformDataBuilder::new("camera")
-            .prop(
-                "view_position",
-                UniformProp::Vec4F(camera_data.view_position),
-            )
-            .prop("view_proj", UniformProp::Mat4F(camera_data.view_proj))
-            .build();
-
-        assert_eq!(camera.raw(), bytemuck::cast_slice(&[camera_data]));
-
-        let mut light_data = _LightUniform {
+    fn test_light() {
+        let mut light_data = LightUniform {
             position: Vec3::ZERO.into(),
             _padding: 0,
             colour: Vec3::ONE.into(),
             _padding2: 0,
         };
 
-        let light = UniformDataBuilder::new("light")
-            .prop("position", UniformProp::Vec3F(light_data.position))
-            .prop("colour", UniformProp::Vec3F(light_data.colour))
+        let light_layout = UniformLayout::builder()
+            .prop("position", UniformProp::Vec3F)
+            .prop("colour", UniformProp::Vec3F)
             .build();
 
-        assert_eq!(light.raw(), bytemuck::cast_slice(&[light_data]));
+        let light = light_layout.data(&[
+            UniformPropData::Vec3F(light_data.position),
+            UniformPropData::Vec3F(light_data.colour),
+        ]);
+
+        assert_eq!(light_layout.size(), light.len());
+
+        assert_eq!(light, bytemuck::cast_slice(&[light_data]));
 
         light_data._padding = 1;
-        assert_ne!(light.raw(), bytemuck::cast_slice(&[light_data]));
+        assert_ne!(light, bytemuck::cast_slice(&[light_data]));
+    }
+
+    #[test]
+    fn test_align() {
+        setup();
+
+        let mat3 = [[0 as f32; 3]; 3];
+        let layout = UniformLayout::builder()
+            .prop("mat3", UniformProp::Mat3F)
+            .build();
+
+        let mat = layout.data(&[UniformPropData::Mat3F(mat3)]);
+
+        assert_eq!(mat.len(), UniformProp::Mat3F.size());
+    }
+
+    #[test]
+    fn test_push() {
+        setup();
+
+        let mat3 = [[0 as f32; 3]; 3];
+        let mat4 = [[0 as f32; 4]; 4];
+        let u = 0 as u64;
+
+        let layout = UniformLayout::builder()
+            .prop("mat4", UniformProp::Mat4F)
+            .prop("mat3", UniformProp::Mat3F)
+            .prop("u64", UniformProp::U64)
+            .build();
+
+        let uniform = layout.data(&[
+            UniformPropData::Mat4F(mat4),
+            UniformPropData::Mat3F(mat3),
+            UniformPropData::U64(u),
+        ]);
+
+        assert_eq!(uniform.len(), layout.size());
+        assert_eq!(uniform.len(), 128);
     }
 }

@@ -7,10 +7,13 @@ edition = { workspace = true }
 [dependencies]
 bytemuck = { workspace = true }
 gobs-core = { workspace = true }
-gobs-material = { workspace = true }
 gobs-game = { workspace = true }
 gobs-render = { workspace = true }
+gobs-scene = { workspace = true }
+gobs-utils = { workspace = true }
+gobs-vulkan = { workspace = true }
 log = { workspace = true }
 egui = { workspace = true }
 glam = { workspace = true }
+parking_lot = { workspace = true }
 pollster = { workspace = true }

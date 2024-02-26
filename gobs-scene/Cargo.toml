@@ -4,21 +4,19 @@ version = { workspace = true }
 authors = { workspace = true }
 edition = { workspace = true }
 
-[lib]
-name = "gobs_scene"
-path = "src/lib.rs"
-
 [dependencies]
-anyhow = { workspace = true }
+bitflags = { workspace = true }
 bytemuck = { workspace = true }
 glam = { workspace = true }
+gltf = { workspace = true }
 gobs-core = { workspace = true }
-gobs-material = { workspace = true }
-gobs-utils = { workspace = true }
 gobs-render = { workspace = true }
-image = { workspace = true }
+gobs-utils = { workspace = true }
+gobs-vulkan = { workspace = true }
+gpu-allocator = { workspace = true }
 log = { workspace = true }
-tobj = { workspace = true }
+parking_lot = { workspace = true }
+slotmap = { workspace = true }
 uuid = { workspace = true }
 
 [build-dependencies]

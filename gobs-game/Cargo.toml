@@ -5,8 +5,8 @@ authors = { workspace = true }
 edition = { workspace = true }
 
 [dependencies]
-gobs-scene = { workspace = true }
 gobs-utils = { workspace = true }
+gobs-render = { workspace = true }
 log = { workspace = true }
 pollster = { workspace = true }
 winit = { workspace = true }

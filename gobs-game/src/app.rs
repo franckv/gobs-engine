@@ -1,54 +1,36 @@
 use log::*;
 use winit::dpi::LogicalSize;
 use winit::event_loop::{ControlFlow, EventLoop};
-use winit::window::{Window, WindowBuilder};
+use winit::window::WindowBuilder;
 
-use gobs_scene as scene;
-use gobs_utils as utils;
-
-use utils::timer::Timer;
+use gobs_render::context::Context;
+use gobs_render::graph::RenderError;
+use gobs_utils::timer::Timer;
 
 use crate::input::{Event, Input};
 
-use scene::Gfx;
-use scene::RenderError;
-
-const WIDTH: u32 = 1920; // TODO: hardcoded
-const HEIGHT: u32 = 1080;
-
 pub struct Application {
-    pub window: Window,
+    pub context: Context,
     pub events_loop: EventLoop<()>,
-    pub gfx: Gfx,
 }
 
 impl Application {
-    pub fn new() -> Application {
+    pub fn new(title: &str, width: u32, height: u32) -> Application {
         let events_loop = EventLoop::new();
 
         let window = WindowBuilder::new()
-            .with_inner_size(LogicalSize::new(WIDTH, HEIGHT))
-            .with_title("Test")
+            .with_inner_size(LogicalSize::new(width, height))
+            .with_title(title)
             .with_resizable(true)
             .build(&events_loop)
             .unwrap();
 
-        log::debug!("Create Gfx");
-        let gfx = pollster::block_on(Gfx::new(&window));
+        let context = Context::new(title, window);
 
         Application {
-            window,
+            context,
             events_loop,
-            gfx,
         }
-    }
-
-    pub fn renderer(&mut self) -> &mut Gfx {
-        &mut self.gfx
-    }
-
-    pub fn dimensions(&self) -> (u32, u32) {
-        (self.gfx.width(), self.gfx.height())
     }
 
     pub fn run<R>(self)
@@ -63,9 +45,11 @@ impl Application {
         R: Run + 'static,
     {
         let mut timer = Timer::new();
-        let mut runnable = R::create(&self.gfx).await;
+        let mut runnable = R::create(&self.context).await;
 
         log::info!("Start main loop");
+        runnable.start(&self.context).await;
+        let mut close_requested = false;
 
         self.events_loop.run(move |event, _, control_flow| {
             log::trace!("evt={:?}, ctrl={:?}", event, control_flow);
@@ -74,33 +58,32 @@ impl Application {
             match event {
                 Event::Resize(width, height) => {
                     log::debug!("Resize to : {}/{}", width, height);
-                    self.gfx.resize(width, height);
-
-                    runnable.resize(width, height, &self.gfx);
+                    runnable.resize(&self.context, width, height);
                 }
                 Event::Input(input) => {
-                    runnable.input(&self.gfx, input);
+                    runnable.input(&self.context, input);
                 }
                 Event::Close => {
                     log::info!("Stopping");
+                    close_requested = true;
+                    runnable.close(&self.context);
                     *control_flow = ControlFlow::Exit;
                 }
                 Event::Redraw => {
                     let delta = timer.delta();
-                    log::debug!("[Redraw] FPS: {}", 1. / delta);
+                    log::trace!("[Redraw] FPS: {}", 1. / delta);
 
-                    runnable.update(delta, &self.gfx);
-                    match runnable.render(&self.gfx) {
-                        Ok(_) => {}
-                        Err(RenderError::Lost | RenderError::Outdated) => {
-                            self.gfx.resize(self.gfx.width(), self.gfx.height());
-                            runnable.resize(self.gfx.width(), self.gfx.height(), &self.gfx);
+                    if !close_requested {
+                        runnable.update(&self.context, delta);
+                        match runnable.render(&self.context) {
+                            Ok(_) => {}
+                            Err(RenderError::Lost | RenderError::Outdated) => {}
+                            Err(e) => error!("{:?}", e),
                         }
-                        Err(e) => error!("{:?}", e),
                     }
                 }
                 Event::Cleared => {
-                    self.window.request_redraw();
+                    self.context.surface.window.request_redraw();
                 }
                 Event::Continue => (),
             }
@@ -110,15 +93,17 @@ impl Application {
 
 impl Default for Application {
     fn default() -> Self {
-        Self::new()
+        Self::new("Default", 800, 600)
     }
 }
 
 #[allow(async_fn_in_trait)]
 pub trait Run: Sized {
-    async fn create(gfx: &Gfx) -> Self;
-    fn update(&mut self, delta: f32, gfx: &Gfx);
-    fn render(&mut self, gfx: &Gfx) -> Result<(), RenderError>;
-    fn input(&mut self, gfx: &Gfx, input: Input);
-    fn resize(&mut self, width: u32, height: u32, gfx: &Gfx);
+    async fn create(context: &Context) -> Self;
+    async fn start(&mut self, ctx: &Context);
+    fn update(&mut self, ctx: &Context, delta: f32);
+    fn render(&mut self, ctx: &Context) -> Result<(), RenderError>;
+    fn input(&mut self, ctx: &Context, input: Input);
+    fn resize(&mut self, ctx: &Context, width: u32, height: u32);
+    fn close(&mut self, ctx: &Context);
 }

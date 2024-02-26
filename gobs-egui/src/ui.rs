@@ -2,74 +2,102 @@ use std::{collections::HashMap, sync::Arc};
 
 use egui::{
     epaint::{ImageDelta, Primitive},
-    Context, Event, FullOutput, Modifiers, PointerButton, RawInput, Rect, Rgba, TextureId,
+    Event, FullOutput, Modifiers, PointerButton, RawInput, Rect, Rgba, TextureId,
 };
-use glam::{Vec2, Vec3, Vec4};
-use log::info;
+use glam::{Vec2, Vec3};
 
-use gobs_core as core;
+use gobs_core::Transform;
 use gobs_game::input::{Input, Key};
-use gobs_material as material;
-use gobs_render as render;
-
-use core::geometry::mesh::MeshBuilder;
-use material::{Material, MaterialBuilder, Texture, TextureType};
-use render::{
-    model::{Model, ModelBuilder},
-    shader::Shader,
+use gobs_render::{
+    context::Context,
+    geometry::{Mesh, Model, VertexData, VertexFlag},
+    material::{Material, MaterialInstance, MaterialProperty, Texture, TextureType},
+    pass::RenderPass,
+    renderable::{RenderBatch, RenderObject, Renderable},
+    resources::ModelResource,
+    ImageExtent2D, SamplerFilter,
 };
 
 const PIXEL_PER_POINT: f32 = 1.;
 
+struct FrameData {
+    model: Option<Arc<ModelResource>>,
+}
+
 pub struct UIRenderer {
-    ctx: Context,
+    ectx: egui::Context,
     width: f32,
     height: f32,
-    shader: Arc<Shader>,
-    font_texture: HashMap<TextureId, Arc<Material>>,
+    material: Arc<Material>,
+    font_texture: HashMap<TextureId, Arc<MaterialInstance>>,
     input: Vec<Input>,
     mouse_position: (f32, f32),
+    frame_data: Vec<FrameData>,
+    frame_number: usize,
 }
 
 impl UIRenderer {
-    pub fn new(width: f32, height: f32, shader: Arc<Shader>) -> Self {
-        let ctx = egui::Context::default();
+    pub fn new(ctx: &Context, pass: Arc<dyn RenderPass>) -> Self {
+        let ectx = egui::Context::default();
 
-        ctx.set_pixels_per_point(PIXEL_PER_POINT);
+        let (width, height): (f32, f32) = ctx.surface.get_extent(ctx.device.clone()).into();
+
+        ectx.set_pixels_per_point(PIXEL_PER_POINT);
+
+        let vertex_flags = VertexFlag::POSITION | VertexFlag::COLOR | VertexFlag::TEXTURE;
+
+        let material = Material::builder("ui.vert.spv", "ui.frag.spv")
+            .vertex_flags(vertex_flags)
+            .prop("diffuse", MaterialProperty::Texture)
+            .no_culling()
+            .blending_enabled()
+            .build(ctx, pass);
+
+        let frame_data = (0..ctx.frames_in_flight)
+            .map(|_| FrameData { model: None })
+            .collect();
 
         UIRenderer {
-            ctx,
+            ectx,
             width,
             height,
-            shader,
+            material,
             font_texture: HashMap::new(),
             input: Vec::new(),
             mouse_position: (0., 0.),
+            frame_data,
+            frame_number: 0,
         }
     }
 
-    pub fn update<F>(&mut self, callback: F) -> Vec<Arc<Model>>
+    fn new_frame(&mut self, ctx: &Context) -> usize {
+        self.frame_number += 1;
+        (self.frame_number - 1) % ctx.frames_in_flight
+    }
+
+    pub fn frame_id(&self, ctx: &Context) -> usize {
+        (self.frame_number - 1) % ctx.frames_in_flight
+    }
+
+    pub fn update<F>(&mut self, ctx: &Context, pass: Arc<dyn RenderPass>, callback: F)
     where
-        F: FnMut(&Context),
+        F: FnMut(&egui::Context),
     {
+        let frame_id = self.new_frame(ctx);
+
         let input = self.prepare_inputs();
 
-        let output = self.ctx.run(input, callback);
+        let output = self.ectx.run(input, callback);
 
-        pollster::block_on(self.update_textures(&output));
+        pollster::block_on(self.update_textures(ctx, &output));
 
         let to_remove = output.textures_delta.free.clone();
 
-        let models = self.load_models(&self.ctx, self.shader.clone(), output);
+        let model = self.load_models(output);
+        let resource = ModelResource::new(ctx, model.clone(), pass.clone());
+        self.frame_data[frame_id].model = Some(resource);
 
         self.cleanup_textures(to_remove);
-
-        models
-    }
-
-    pub fn resize(&mut self, width: u32, height: u32) {
-        self.width = width as f32;
-        self.height = height as f32;
     }
 
     fn get_key(key: Key) -> egui::Key {
@@ -165,12 +193,13 @@ impl UIRenderer {
         self.input.push(input);
     }
 
-    async fn update_textures(&mut self, output: &FullOutput) {
+    async fn update_textures(&mut self, ctx: &Context, output: &FullOutput) {
         for (id, img) in &output.textures_delta.set {
-            info!("New texture {:?}", id);
+            log::info!("New texture {:?}", id);
             if img.pos.is_some() {
-                info!("Patching texture");
+                log::info!("Patching texture");
                 self.patch_texture(
+                    ctx,
                     self.font_texture
                         .get(id)
                         .cloned()
@@ -179,8 +208,8 @@ impl UIRenderer {
                 )
                 .await;
             } else {
-                info!("Allocate new texture");
-                let texture = self.decode_texture(img).await;
+                log::info!("Allocate new texture");
+                let texture = self.decode_texture(ctx, img).await;
                 self.font_texture.insert(*id, texture);
             }
         }
@@ -188,13 +217,13 @@ impl UIRenderer {
 
     fn cleanup_textures(&mut self, to_remove: Vec<TextureId>) {
         for id in &to_remove {
-            info!("Remove texture {:?}", id);
+            log::info!("Remove texture {:?}", id);
 
             self.font_texture.remove(id);
         }
     }
 
-    async fn decode_texture(&self, img: &ImageDelta) -> Arc<Material> {
+    async fn decode_texture(&self, ctx: &Context, img: &ImageDelta) -> Arc<MaterialInstance> {
         match &img.image {
             egui::ImageData::Color(_) => todo!(),
             egui::ImageData::Font(font) => {
@@ -202,22 +231,25 @@ impl UIRenderer {
                 let bytes: Vec<u8> = bytemuck::cast_slice(pixels.as_slice()).to_vec();
 
                 let texture = Texture::new(
+                    ctx,
                     "egui",
-                    TextureType::IMAGE,
-                    bytes,
-                    img.image.width() as u32,
-                    img.image.height() as u32,
+                    &bytes,
+                    ImageExtent2D::new(img.image.width() as u32, img.image.height() as u32),
+                    TextureType::Diffuse,
+                    SamplerFilter::FilterLinear,
                 );
 
-                MaterialBuilder::new("diffuse")
-                    .diffuse_texture_t(texture)
-                    .await
-                    .build()
+                self.material.instantiate(vec![texture])
             }
         }
     }
 
-    async fn patch_texture(&self, material: Arc<Material>, img: &ImageDelta) {
+    async fn patch_texture(
+        &self,
+        ctx: &Context,
+        material: Arc<MaterialInstance>,
+        img: &ImageDelta,
+    ) {
         match &img.image {
             egui::ImageData::Color(_) => todo!(),
             egui::ImageData::Font(font) => {
@@ -226,7 +258,7 @@ impl UIRenderer {
 
                 let pos = img.pos.expect("Can only patch texture with start position");
 
-                info!(
+                log::info!(
                     "Patching texture origin: {}/{}, size: {}/{}, len={}",
                     pos[0],
                     pos[1],
@@ -234,12 +266,13 @@ impl UIRenderer {
                     font.height(),
                     bytes.len()
                 );
-                info!(
+                log::info!(
                     "Patching texture original size: {:?}",
-                    material.diffuse_texture.read().unwrap().size()
+                    material.textures[0].read().image.extent
                 );
 
-                material.diffuse_texture.write().unwrap().patch_texture(
+                material.textures[0].patch(
+                    ctx,
                     pos[0] as u32,
                     pos[1] as u32,
                     font.width() as u32,
@@ -250,20 +283,14 @@ impl UIRenderer {
         }
     }
 
-    fn load_models(
-        &self,
-        ctx: &Context,
-        shader: Arc<Shader>,
-        output: FullOutput,
-    ) -> Vec<Arc<Model>> {
-        let mut models = Vec::new();
+    fn load_models(&self, output: FullOutput) -> Arc<Model> {
+        let primitives = self.ectx.tessellate(output.shapes, PIXEL_PER_POINT);
 
-        let primitives = ctx.tessellate(output.shapes, PIXEL_PER_POINT);
+        let mut model = Model::builder("ui");
 
-        //println!("{:#?}", primitives);
-        primitives.iter().for_each(|s| {
-            if let Primitive::Mesh(m) = &s.primitive {
-                let mut mesh = MeshBuilder::new("egui").add_indices(&m.indices);
+        for primitive in &primitives {
+            if let Primitive::Mesh(m) = &primitive.primitive {
+                let mut mesh = Mesh::builder("egui").indices(&m.indices);
 
                 for vertex in &m.vertices {
                     let color = Rgba::from_srgba_premultiplied(
@@ -272,24 +299,57 @@ impl UIRenderer {
                         vertex.color.b(),
                         vertex.color.a(),
                     );
-                    mesh = mesh.add_vertex(
-                        Vec3::new(vertex.pos.x, vertex.pos.y, 0.),
-                        Vec4::new(color[0], color[1], color[2], color[3]),
-                        Vec2::new(vertex.uv.x, vertex.uv.y),
-                        Vec3::new(0., 0., 1.),
-                        Vec2::new(vertex.uv.x, vertex.uv.y),
-                    );
+                    let vertex_data = VertexData::builder()
+                        .position(Vec3::new(vertex.pos.x, self.height - vertex.pos.y, 0.))
+                        .color(color.to_array().into())
+                        .texture(Vec2::new(vertex.uv.x, vertex.uv.y))
+                        .normal(Vec3::new(0., 0., 1.))
+                        .padding(true)
+                        .build();
+
+                    mesh = mesh.vertex(vertex_data);
                 }
 
-                let mesh = mesh.build();
-                let model = ModelBuilder::new()
-                    .add_mesh(mesh, self.font_texture.get(&m.texture_id).cloned())
-                    .build(shader.clone());
-
-                models.push(model);
+                model = model.mesh(
+                    mesh.build(),
+                    self.font_texture.get(&m.texture_id).cloned().unwrap(),
+                );
             }
-        });
+        }
 
-        models
+        model.build()
+    }
+}
+
+impl Renderable for UIRenderer {
+    fn resize(&mut self, width: u32, height: u32) {
+        self.width = width as f32;
+        self.height = height as f32;
+    }
+
+    fn draw(&mut self, ctx: &Context, pass: Arc<dyn RenderPass>, batch: &mut RenderBatch) {
+        let frame_id = self.frame_id(ctx);
+        let resource = &self.frame_data[frame_id].model;
+
+        if let Some(resource) = resource {
+            for primitive in &resource.primitives {
+                let render_object = RenderObject {
+                    transform: Transform::IDENTITY,
+                    pass: pass.clone(),
+                    model: resource.clone(),
+                    material: resource.model.materials[&primitive.material].clone(),
+                    vertices_offset: primitive.vertex_offset,
+                    indices_offset: primitive.index_offset,
+                    indices_len: primitive.len,
+                };
+
+                batch.add_object(render_object);
+            }
+        }
+
+        batch.add_extent_data(
+            ImageExtent2D::new(self.width as u32, self.height as u32),
+            pass,
+        );
     }
 }

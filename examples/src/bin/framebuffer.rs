@@ -1,107 +1,100 @@
-use std::sync::Arc;
+use glam::Quat;
 
-use glam::{Quat, Vec3};
-use log::info;
-
-use gobs::core::entity::{camera::Camera, light::Light};
-use gobs::core::Color;
-use gobs::game::{
-    app::{Application, Run},
-    input::{Input, Key},
+use gobs::{
+    core::{entity::light::Light, Color, Transform},
+    game::{
+        app::{Application, Run},
+        input::Input,
+    },
+    render::{
+        context::Context,
+        geometry::Model,
+        graph::RenderError,
+        material::{Texture, TextureType},
+        SamplerFilter,
+    },
+    scene::{graph::scenegraph::NodeValue, shape::Shapes},
 };
-use gobs::material::MaterialBuilder;
-use gobs::scene::shape::Shapes;
-use gobs::scene::{Gfx, Model, ModelBuilder, RenderError, Scene};
 
-use examples::CameraController;
-
-const IMAGE_LAYER: &str = "fb";
+use examples::SampleApp;
 
 struct App {
-    camera_controller: CameraController,
-    scene: Scene,
+    common: SampleApp,
 }
 
 impl Run for App {
-    async fn create(gfx: &Gfx) -> Self {
-        let (width, height) = (gfx.width(), gfx.height());
-
-        let camera = Camera::ortho(
-            (0., 0., 1.),
-            width as f32,
-            height as f32,
-            0.1,
-            100.,
-            (-90. as f32).to_radians(),
-            (0. as f32).to_radians(),
-            Vec3::Y,
-        );
-
-        info!("{}/{}", gfx.width(), gfx.height());
-
+    async fn create(ctx: &Context) -> Self {
         let light = Light::new((0., 0., 10.), Color::WHITE);
 
-        let shader = examples::ui_shader(gfx).await;
+        let common = SampleApp::create(ctx, SampleApp::ortho_camera(ctx), light);
 
-        let mut scene = Scene::new(gfx, camera, light, &[]);
-
-        let framebuffer = Self::generate_framebuffer(width, height);
-
-        let material = MaterialBuilder::new("diffuse")
-            .diffuse_buffer(&framebuffer, width, height)
-            .await
-            .build();
-
-        let image: Arc<Model> = ModelBuilder::new()
-            .add_mesh(Shapes::quad(), Some(material))
-            .build(shader);
-
-        scene.add_node(
-            IMAGE_LAYER,
-            [0., 0., 0.].into(),
-            Quat::IDENTITY,
-            [gfx.width() as f32, gfx.height() as f32, 1.].into(),
-            image,
-        );
-
-        let camera_controller = CameraController::new(3., 0.4);
-
-        App {
-            camera_controller,
-            scene,
-        }
+        App { common }
     }
 
-    fn update(&mut self, delta: f32, gfx: &Gfx) {
-        self.camera_controller
-            .update_camera(&mut self.scene.camera, delta);
-
-        self.scene.update(gfx);
+    fn update(&mut self, ctx: &Context, delta: f32) {
+        self.common.update(ctx, delta);
     }
 
-    fn render(&mut self, gfx: &Gfx) -> Result<(), RenderError> {
-        self.scene.render(gfx)
+    fn render(&mut self, ctx: &Context) -> Result<(), RenderError> {
+        self.common.render(ctx)
     }
 
-    fn input(&mut self, _gfx: &Gfx, input: Input) {
-        match input {
-            Input::KeyPressed(key) => match key {
-                Key::W => self.scene.toggle_pass(examples::WIRE_PASS),
-                _ => self.camera_controller.key_pressed(key),
-            },
-            Input::KeyReleased(key) => {
-                self.camera_controller.key_released(key);
-            }
-            _ => (),
-        }
+    fn input(&mut self, ctx: &Context, input: Input) {
+        self.common.input(ctx, input);
     }
 
-    fn resize(&mut self, width: u32, height: u32, _gfx: &Gfx) {
-        self.scene.resize(width, height)
+    fn resize(&mut self, ctx: &Context, width: u32, height: u32) {
+        self.common.resize(ctx, width, height);
+    }
+
+    async fn start(&mut self, ctx: &Context) {
+        self.init(ctx);
+    }
+
+    fn close(&mut self, ctx: &gobs::render::context::Context) {
+        self.common.close(ctx);
     }
 }
 
 impl App {
+    fn init(&mut self, ctx: &Context) {
+        let extent = self.common.graph.draw_extent;
+        let (width, height) = (
+            self.common.graph.draw_extent.width,
+            self.common.graph.draw_extent.height,
+        );
+
+        let framebuffer = Self::generate_framebuffer(width, height);
+
+        let material = self.common.texture_material(ctx);
+
+        let texture = Texture::with_colors(
+            ctx,
+            framebuffer,
+            extent,
+            TextureType::Diffuse,
+            SamplerFilter::FilterLinear,
+        );
+
+        let material_instance = material.instantiate(vec![texture]);
+
+        let rect = Model::builder("rect")
+            .mesh(Shapes::quad(), material_instance)
+            .build();
+
+        let transform = Transform::new(
+            [0., 0., 0.].into(),
+            Quat::IDENTITY,
+            [width as f32, height as f32, 1.].into(),
+        );
+
+        self.common.scene.graph.insert(
+            self.common.scene.graph.root,
+            NodeValue::Model(rect),
+            transform,
+        );
+    }
+
     fn generate_framebuffer(width: u32, height: u32) -> Vec<Color> {
         let mut buffer = Vec::new();
 
@@ -121,7 +114,9 @@ impl App {
 }
 
 fn main() {
-    examples::init_logger(module_path!());
+    examples::init_logger();
 
-    Application::new().run::<App>();
+    log::info!("Engine start");
+
+    Application::new("Framebuffer", 1920, 1080).run::<App>();
 }

@@ -1,3 +1,3 @@
-pub mod batch;
-pub mod graph;
-pub mod pass;
+mod frame;
+
+pub use frame::{FrameGraph, RenderError, ResourceManager};

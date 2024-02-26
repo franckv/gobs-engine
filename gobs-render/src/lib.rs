@@ -1,8 +1,12 @@
-#![deny(elided_lifetimes_in_paths)]
-
 pub mod context;
+pub mod geometry;
 pub mod graph;
-pub mod model;
-pub mod pipeline;
+pub mod material;
+pub mod pass;
+pub mod renderable;
 pub mod resources;
-pub mod shader;
+pub mod stats;
+
+pub use gobs_vulkan::image::ImageExtent2D;
+pub use gobs_vulkan::image::SamplerFilter;
+pub type CommandBuffer = gobs_vulkan::command::CommandBuffer;

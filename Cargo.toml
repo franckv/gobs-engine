@@ -1,15 +1,14 @@
 [workspace]
 members = [
     "examples",
+    "gobs-assets",
     "gobs-core",
     "gobs-egui",
     "gobs-game",
-    "gobs-material",
-    "gobs-ray",
     "gobs-render",
     "gobs-scene",
     "gobs-utils",
-    "gobs",
+    "gobs-vulkan",
 ]
 resolver = "2"
 
@@ -21,6 +20,10 @@ version = "0.1.0"
 [workspace.dependencies.gobs]
 package = "gobs"
 path = "./gobs"
+
+[workspace.dependencies.gobs-assets]
+package = "gobs-assets"
+path = "./gobs-assets"
 
 [workspace.dependencies.gobs-core]
 package = "gobs-core"
@@ -34,14 +37,6 @@ path = "./gobs-egui"
 package = "gobs-game"
 path = "./gobs-game"
 
-[workspace.dependencies.gobs-material]
-package = "gobs-material"
-path = "./gobs-material"
-
-[workspace.dependencies.gobs-ray]
-package = "gobs-ray"
-path = "./gobs-ray"
-
 [workspace.dependencies.gobs-render]
 package = "gobs-render"
 path = "./gobs-render"
@@ -54,26 +49,33 @@ path = "./gobs-scene"
 package = "gobs-utils"
 path = "./gobs-utils"
 
+[workspace.dependencies.gobs-vulkan]
+package = "gobs-vulkan"
+path = "./gobs-vulkan"
+
 [workspace.dependencies]
+ash = { version = "0.37", features = ["linked", "debug"] }
+ash-window = "0.12"
 anyhow = "1.0"
 bitflags = "2"
 bytemuck = { version = "1.14", features = ["derive"] }
-egui = { version = "0.25", features = ["bytemuck"]}
+egui = { version = "0.26", features = ["bytemuck"]}
+env_logger = "0.11"
+futures = "0.3"
 fs_extra = "1.3"
-glam = { version = "0.24", features = ["bytemuck"] }
+glam = { version = "0.25", features = ["bytemuck"] }
+gltf = "1"
+gpu-allocator = "0.25"
 image = "0.24"
-indexmap = "2.1.0"
 itertools = { version = "0.12" }
 log = "0.4"
-naga = { version = "0.14" }
+naga = {version = "0.19", features = ["glsl-in", "spv-out"]}
+parking_lot = "0.12"
 pollster = "0.3"
+presser = "0.3"
 rand = "0.8"
-rayon = "1.8"
-rusttype = "0.9"
-simplelog = "0.12"
+raw-window-handle = "0.5"
+slotmap = "1.0"
 time = "0.3"
-tobj = { version = "4.0.0", features = ["async"] }
-unicode-normalization = "0.1"
 uuid = { version = "1.3", features = ["v4"] }
 winit = "0.28"
-wgpu = "0.18"

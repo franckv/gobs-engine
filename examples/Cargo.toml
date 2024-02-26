@@ -1,17 +1,19 @@
 [package]
 name = "examples"
-version = { workspace = true }
+version = "0.1.0"
 authors = { workspace = true }
 edition = { workspace = true }
 
 [dependencies]
 bytemuck = { workspace = true }
 egui = { workspace = true }
+env_logger = { workspace = true }
+futures = { workspace = true }
 glam = { workspace = true }
 gobs = { workspace = true }
-image = { workspace = true }
+gpu-allocator = { workspace = true }
 log = { workspace = true }
-simplelog = { workspace = true }
+slotmap = { workspace = true }
 uuid = { workspace = true }
 
 [build-dependencies]

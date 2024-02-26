@@ -1,171 +1,136 @@
-use std::sync::Arc;
-
-use log::*;
-
+use futures::try_join;
 use glam::{Quat, Vec3};
 
-use gobs::core::entity::{camera::Camera, light::Light};
-use gobs::core::Color;
-use gobs::game::{
-    app::{Application, Run},
-    input::{Input, Key},
+use gobs::{
+    core::{
+        entity::{camera::Camera, light::Light},
+        Color, Transform,
+    },
+    game::{
+        app::{Application, Run},
+        input::Input,
+    },
+    render::{
+        context::Context,
+        geometry::Model,
+        graph::RenderError,
+        material::{Texture, TextureType},
+        SamplerFilter,
+    },
+    scene::{graph::scenegraph::NodeValue, shape::Shapes},
 };
-use gobs::material::MaterialBuilder;
-use gobs::scene::shape::Shapes;
-use gobs::scene::{Gfx, Model, ModelBuilder, RenderError, Scene};
 
-use examples::CameraController;
-
-const WALL_LAYER: &str = "wall";
-const FLOOR_LAYER: &str = "floor";
-const LIGHT_LAYER: &str = "light";
+use examples::SampleApp;
 
 struct App {
-    camera_controller: CameraController,
-    scene: Scene,
-    light_model: Arc<Model>,
+    common: SampleApp,
 }
 
 impl Run for App {
-    async fn create(gfx: &Gfx) -> Self {
+    async fn create(ctx: &Context) -> Self {
+        let extent = SampleApp::extent(ctx);
+
         let camera = Camera::perspective(
-            (0., 0., 0.),
-            gfx.width() as f32 / gfx.height() as f32,
+            (0., 25., 25.),
+            extent.width as f32 / extent.height as f32,
             (45. as f32).to_radians(),
             0.1,
             150.,
-            (-90. as f32).to_radians(),
             (0. as f32).to_radians(),
+            (-50. as f32).to_radians(),
             Vec3::Y,
         );
 
-        let light = Light::new((8., 2., 8.), Color::new(1., 1., 0.9, 1.));
-        let light_position = light.position;
+        let light = Light::new((0., 40., -40.), Color::WHITE);
 
-        let phong_shader = examples::phong_shader(gfx).await;
-        let solid_shader = examples::solid_shader(gfx).await;
-        let wire_shader = examples::wire_shader(gfx).await;
+        let common = SampleApp::create(ctx, camera, light);
 
-        let mut scene = Scene::new(gfx, camera, light, &[wire_shader.clone()]);
-        scene.toggle_pass(&wire_shader.name);
-
-        let wall_material = MaterialBuilder::new("diffuse")
-            .diffuse_texture(examples::WALL_TEXTURE)
-            .await
-            .normal_texture(examples::WALL_TEXTURE_N)
-            .await
-            .build();
-
-        let floor_material = MaterialBuilder::new("diffuse")
-            .diffuse_texture(examples::FLOOR_TEXTURE)
-            .await
-            .normal_texture(examples::FLOOR_TEXTURE_N)
-            .await
-            .build();
-
-        let wall_model = ModelBuilder::new()
-            .add_mesh(Shapes::cube(1, 1, &[1]), Some(wall_material.clone()))
-            .build(phong_shader.clone());
-
-        let floor_model = ModelBuilder::new()
-            .add_mesh(Shapes::cube(3, 2, &[4]), Some(floor_material))
-            .build(phong_shader);
-
-        let (pos_x, pos_y, pos_z) = Self::load_scene(&mut scene, wall_model, floor_model);
-
-        scene.camera.position = (pos_x, pos_y, pos_z).into();
-
-        let light_model = scene
-            .load_model(examples::LIGHT, None, solid_shader)
-            .await
-            .unwrap();
-
-        scene.add_node(
-            LIGHT_LAYER,
-            light_position,
-            Quat::from_axis_angle(Vec3::Z, 0.),
-            Vec3::splat(0.3),
-            light_model.clone(),
-        );
-
-        let camera_controller = CameraController::new(3., 0.4);
-
-        App {
-            camera_controller,
-            scene,
-            light_model,
-        }
+        App { common }
     }
 
-    fn update(&mut self, delta: f32, gfx: &Gfx) {
-        let angular_speed = 40.;
-
-        self.camera_controller
-            .update_camera(&mut self.scene.camera, delta);
-
-        let old_position = self.scene.light.position;
-        let position =
-            Quat::from_axis_angle((0., 1., 0.).into(), (angular_speed * delta).to_radians())
-                * old_position;
-
-        self.scene.light.update(position);
-
-        for node in self.scene.layer_mut(LIGHT_LAYER).nodes_mut() {
-            if node.model().id == self.light_model.id {
-                node.move_to_position(position);
-            }
-        }
-
-        self.scene.update(gfx);
+    async fn start(&mut self, ctx: &Context) {
+        self.init(ctx).await;
     }
 
-    fn render(&mut self, gfx: &Gfx) -> Result<(), RenderError> {
-        self.scene.render(gfx)
+    fn update(&mut self, ctx: &Context, delta: f32) {
+        let angular_speed = 10.;
+
+        let position = Quat::from_axis_angle(Vec3::Y, (angular_speed * delta).to_radians())
+            * self.common.scene.light.position;
+        self.common.scene.light.update(position);
+
+        self.common.update(ctx, delta);
     }
 
-    fn input(&mut self, _gfx: &Gfx, input: Input) {
-        match input {
-            Input::KeyPressed(key) => match key {
-                Key::W => self.scene.toggle_pass(examples::WIRE_PASS),
-                _ => self.camera_controller.key_pressed(key),
-            },
-            Input::KeyReleased(key) => {
-                self.camera_controller.key_released(key);
-            }
-            Input::MousePressed => {
-                self.camera_controller.mouse_pressed();
-            }
-            Input::MouseReleased => {
-                self.camera_controller.mouse_released();
-            }
-            Input::MouseWheel(delta) => {
-                self.camera_controller.mouse_scroll(delta);
-            }
-            Input::MouseMotion(dx, dy) => {
-                self.camera_controller.mouse_drag(dx, dy);
-            }
-            _ => (),
-        }
+    fn render(&mut self, ctx: &Context) -> Result<(), RenderError> {
+        self.common.render(ctx)
     }
 
-    fn resize(&mut self, width: u32, height: u32, _gfx: &Gfx) {
-        self.scene.resize(width, height)
+    fn input(&mut self, ctx: &Context, input: Input) {
+        self.common.input(ctx, input);
+    }
+
+    fn resize(&mut self, ctx: &Context, width: u32, height: u32) {
+        self.common.resize(ctx, width, height);
+    }
+
+    fn close(&mut self, ctx: &Context) {
+        self.common.close(ctx);
     }
 }
 
 impl App {
-    fn load_scene(
-        scene: &mut Scene,
-        wall_model: Arc<Model>,
-        floor_model: Arc<Model>,
-    ) -> (f32, f32, f32) {
-        info!("Load scene");
+    async fn init(&mut self, ctx: &Context) {
+        self.load_scene(ctx).await;
+    }
+
+    async fn load_scene(&mut self, ctx: &Context) {
+        log::info!("Load scene");
+
+        let material = self.common.normal_mapping_material(ctx);
+
+        let diffuse_texture = Texture::pack(
+            ctx,
+            examples::ATLAS,
+            3,
+            TextureType::Diffuse,
+            SamplerFilter::FilterLinear,
+        );
+
+        let normal_texture = Texture::pack(
+            ctx,
+            examples::ATLAS_N,
+            examples::ATLAS_COLS,
+            TextureType::Normal,
+            SamplerFilter::FilterLinear,
+        );
+
+        let (diffuse_texture, normal_texture) = try_join!(diffuse_texture, normal_texture).unwrap();
+
+        let material_instance = material.instantiate(vec![diffuse_texture, normal_texture]);
+
+        let wall = Model::builder("wall")
+            .mesh(
+                Shapes::cube(examples::ATLAS_COLS, examples::ATLAS_ROWS, &[2], 1.),
+                material_instance.clone(),
+            )
+            .build();
+
+        let floor = Model::builder("floor")
+            .mesh(
+                Shapes::cube(
+                    examples::ATLAS_COLS,
+                    examples::ATLAS_ROWS,
+                    &[3, 3, 3, 3, 4, 1],
+                    1.,
+                ),
+                material_instance.clone(),
+            )
+            .build();
 
         let offset = 16.;
 
         let (mut i, mut j) = (0., 0.);
-
-        let (mut pos_x, pos_y, mut pos_z) = (0., 0., 0.);
 
         let rotation = Quat::from_axis_angle(Vec3::Z, 0.);
 
@@ -179,20 +144,19 @@ impl App {
                         z: j - offset,
                     };
 
-                    scene.add_node(
-                        WALL_LAYER,
-                        position,
-                        rotation,
-                        Vec3::ONE,
-                        wall_model.clone(),
+                    let transform = Transform::new(position, rotation, Vec3::splat(1.));
+                    self.common.scene.graph.insert(
+                        self.common.scene.graph.root,
+                        NodeValue::Model(wall.clone()),
+                        transform,
                     );
+
                     position.y = -examples::TILE_SIZE;
-                    scene.add_node(
-                        FLOOR_LAYER,
-                        position,
-                        rotation,
-                        Vec3::ONE,
-                        floor_model.clone(),
+                    let transform = Transform::new(position, rotation, Vec3::splat(1.));
+                    self.common.scene.graph.insert(
+                        self.common.scene.graph.root,
+                        NodeValue::Model(floor.clone()),
+                        transform,
                     );
                 }
                 '@' => {
@@ -202,13 +166,11 @@ impl App {
                         y: -examples::TILE_SIZE,
                         z: j - offset,
                     };
-                    (pos_x, pos_z) = (position.x, position.z);
-                    scene.add_node(
-                        FLOOR_LAYER,
-                        position,
-                        rotation,
-                        Vec3::ONE,
-                        floor_model.clone(),
+                    let transform = Transform::new(position, rotation, Vec3::splat(1.));
+                    self.common.scene.graph.insert(
+                        self.common.scene.graph.root,
+                        NodeValue::Model(floor.clone()),
+                        transform,
                     );
                 }
                 '.' => {
@@ -218,12 +180,11 @@ impl App {
                         y: -examples::TILE_SIZE,
                         z: j - offset,
                     };
-                    scene.add_node(
-                        FLOOR_LAYER,
-                        position,
-                        rotation,
-                        Vec3::ONE,
-                        floor_model.clone(),
+                    let transform = Transform::new(position, rotation, Vec3::splat(1.));
+                    self.common.scene.graph.insert(
+                        self.common.scene.graph.root,
+                        NodeValue::Model(floor.clone()),
+                        transform,
                     );
                 }
                 '\n' => {
@@ -233,12 +194,12 @@ impl App {
                 _ => (),
             }
         }
-
-        (pos_x, pos_y, pos_z)
     }
 }
 fn main() {
-    examples::init_logger(module_path!());
+    examples::init_logger();
 
-    Application::new().run::<App>();
+    log::info!("Engine start");
+
+    Application::new("Maze", 1920, 1080).run::<App>();
 }

@@ -1,127 +1,130 @@
+use futures::try_join;
 use glam::{Quat, Vec3};
 
-use gobs::core::entity::{camera::Camera, light::Light};
-use gobs::core::Color;
-use gobs::game::{
-    app::{Application, Run},
-    input::{Input, Key},
+use gobs::{
+    core::{
+        entity::{camera::Camera, light::Light},
+        Color, Transform,
+    },
+    game::{
+        app::{Application, Run},
+        input::Input,
+    },
+    render::{
+        context::Context,
+        geometry::Model,
+        graph::RenderError,
+        material::{Texture, TextureType},
+        SamplerFilter,
+    },
+    scene::{graph::scenegraph::NodeValue, shape::Shapes},
 };
-use gobs::material::MaterialBuilder;
-use gobs::scene::shape::Shapes;
-use gobs::scene::{Gfx, ModelBuilder, RenderError, Scene};
 
-use examples::CameraController;
-
-const CUBE_LAYER: &str = "cube";
+use examples::SampleApp;
 
 struct App {
-    camera_controller: CameraController,
-    scene: Scene,
+    common: SampleApp,
 }
 
 impl Run for App {
-    async fn create(gfx: &Gfx) -> Self {
+    async fn create(ctx: &Context) -> Self {
+        let extent = SampleApp::extent(ctx);
+
         let camera = Camera::perspective(
-            (-2., 2., 2.),
-            gfx.width() as f32 / gfx.height() as f32,
-            (45. as f32).to_radians(),
+            Vec3::new(0., 1., 0.),
+            extent.width as f32 / extent.height as f32,
+            (60. as f32).to_radians(),
             0.1,
-            150.,
-            (-45. as f32).to_radians(),
-            (-34. as f32).to_radians(),
+            100.,
+            0.,
+            (-25. as f32).to_radians(),
             Vec3::Y,
         );
 
-        let light = Light::new((10., 0., 7.), Color::new(1., 1., 0.9, 1.));
+        let light = Light::new((-2., 2.5, 10.), Color::WHITE);
 
-        let shader = examples::phong_shader(gfx).await;
-        let wire = examples::wire_shader(gfx).await;
+        let common = SampleApp::create(ctx, camera, light);
 
-        let mut scene = Scene::new(gfx, camera, light, &[wire.clone()]);
-        scene.toggle_pass(&wire.name);
-
-        let material = MaterialBuilder::new("diffuse")
-            .diffuse_texture(examples::WALL_TEXTURE)
-            .await
-            .normal_texture(examples::WALL_TEXTURE_N)
-            .await
-            .build();
-
-        let cube = ModelBuilder::new()
-            .add_mesh(Shapes::cube(1, 1, &[1]), Some(material))
-            .build(shader);
-
-        scene.add_node(CUBE_LAYER, Vec3::ZERO, Quat::IDENTITY, Vec3::ONE, cube);
-
-        let camera_controller = CameraController::new(3., 0.4);
-
-        App {
-            camera_controller,
-            scene,
-        }
+        App { common }
     }
 
-    fn update(&mut self, delta: f32, gfx: &Gfx) {
+    async fn start(&mut self, ctx: &Context) {
+        self.init(ctx).await;
+    }
+
+    fn update(&mut self, ctx: &Context, delta: f32) {
         let angular_speed = 40.;
 
-        self.camera_controller
-            .update_camera(&mut self.scene.camera, delta);
+        let root_id = self.common.scene.graph.root;
+        let root = self.common.scene.graph.get(root_id).unwrap();
 
-        let rot_delta =
-            Quat::from_axis_angle((0., 1., 0.).into(), (angular_speed * delta).to_radians());
-        let rot_delta_model = Quat::from_axis_angle(
-            (0., 1., 0.).into(),
-            (0.1 * angular_speed * delta).to_radians(),
-        );
+        let node = root.children[0];
 
-        let old_position = self.scene.light.position;
-        let position = rot_delta * old_position;
+        let child = self.common.scene.graph.get_mut(node).unwrap();
 
-        self.scene.light.update(position);
+        child.transform.rotate(Quat::from_axis_angle(
+            Vec3::Y,
+            (0.3 * angular_speed * delta).to_radians(),
+        ));
 
-        for node in self.scene.layer_mut(CUBE_LAYER).nodes_mut() {
-            node.rotate(rot_delta_model);
-        }
-
-        self.scene.update(gfx);
+        self.common.update(ctx, delta);
     }
 
-    fn render(&mut self, gfx: &Gfx) -> Result<(), RenderError> {
-        self.scene.render(gfx)
+    fn render(&mut self, ctx: &Context) -> Result<(), RenderError> {
+        self.common.render(ctx)
     }
 
-    fn input(&mut self, _gfx: &Gfx, input: Input) {
-        match input {
-            Input::KeyPressed(key) => match key {
-                Key::W => self.scene.toggle_pass(examples::WIRE_PASS),
-                _ => self.camera_controller.key_pressed(key),
-            },
-            Input::KeyReleased(key) => {
-                self.camera_controller.key_released(key);
-            }
-            Input::MousePressed => {
-                self.camera_controller.mouse_pressed();
-            }
-            Input::MouseReleased => {
-                self.camera_controller.mouse_released();
-            }
-            Input::MouseWheel(delta) => {
-                self.camera_controller.mouse_scroll(delta);
-            }
-            Input::MouseMotion(dx, dy) => {
-                self.camera_controller.mouse_drag(dx, dy);
-            }
-            _ => (),
-        }
+    fn input(&mut self, ctx: &Context, input: Input) {
+        self.common.input(ctx, input);
     }
 
-    fn resize(&mut self, width: u32, height: u32, _gfx: &Gfx) {
-        self.scene.resize(width, height)
+    fn resize(&mut self, ctx: &Context, width: u32, height: u32) {
+        self.common.resize(ctx, width, height);
+    }
+
+    fn close(&mut self, ctx: &Context) {
+        self.common.close(ctx);
     }
 }
 
-fn main() {
-    examples::init_logger(module_path!());
+impl App {
+    async fn init(&mut self, ctx: &Context) {
+        let material = self.common.normal_mapping_material(ctx);
 
-    Application::new().run::<App>();
+        let diffuse_texture = Texture::with_file(
+            ctx,
+            examples::WALL_TEXTURE,
+            TextureType::Diffuse,
+            SamplerFilter::FilterLinear,
+        );
+
+        let normal_texture = Texture::with_file(
+            ctx,
+            examples::WALL_TEXTURE_N,
+            TextureType::Normal,
+            SamplerFilter::FilterLinear,
+        );
+
+        let (diffuse_texture, normal_texture) = try_join!(diffuse_texture, normal_texture).unwrap();
+
+        let material_instance = material.instantiate(vec![diffuse_texture, normal_texture]);
+
+        let cube = Model::builder("cube")
+            .mesh(Shapes::cube(1, 1, &[1], 1.), material_instance)
+            .build();
+
+        let transform = Transform::new([0., 0., -2.].into(), Quat::IDENTITY, Vec3::splat(1.));
+        self.common.scene.graph.insert(
+            self.common.scene.graph.root,
+            NodeValue::Model(cube),
+            transform,
+        );
+    }
+}
+fn main() {
+    examples::init_logger();
+
+    log::info!("Engine start");
+
+    Application::new("Cube", 1920, 1080).run::<App>();
 }
