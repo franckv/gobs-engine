@@ -56,7 +56,7 @@ impl App {
 
         let triangle = Model::builder("triangle")
             .mesh(
-                Shapes::triangle(Color::RED, Color::GREEN, Color::BLUE),
+                Shapes::triangle(Color::RED, Color::GREEN, Color::BLUE, 1.),
                 material_instance,
             )
             .build();
@@ -170,5 +170,5 @@ fn main() {
 
     log::info!("Engine start");
 
-    Application::new("Triangle", 1920, 1080).run::<App>();
+    Application::new("Scenegraph", 1920, 1080).run::<App>();
 }

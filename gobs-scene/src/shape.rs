@@ -12,10 +12,10 @@ const PADDING: bool = true;
 pub struct Shapes;
 
 impl Shapes {
-    pub fn triangle(color1: Color, color2: Color, color3: Color) -> Arc<Mesh> {
+    pub fn triangle(color1: Color, color2: Color, color3: Color, size: f32) -> Arc<Mesh> {
         let mut builder = Mesh::builder("triangle");
 
-        let (top, bottom, left, right) = (0.5, -0.5, -0.5, 0.5);
+        let (top, bottom, left, right) = (size / 2., -size / 2., -size / 2., size / 2.);
 
         let v = [
             [left, bottom, 0.],
@@ -100,10 +100,17 @@ impl Shapes {
         Self::rect(0.5, -0.5, -0.5, 0.5)
     }
 
-    pub fn cube(cols: u32, rows: u32, index: &[u32]) -> Arc<Mesh> {
+    pub fn cube(cols: u32, rows: u32, index: &[u32], size: f32) -> Arc<Mesh> {
         let mut builder = Mesh::builder("cube");
 
-        let (top, bottom, left, right, front, back) = (0.5, -0.5, -0.5, 0.5, 0.5, -0.5);
+        let (top, bottom, left, right, front, back) = (
+            size / 2.,
+            -size / 2.,
+            -size / 2.,
+            size / 2.,
+            size / 2.,
+            -size / 2.,
+        );
 
         let v = [
             [left, top, front],

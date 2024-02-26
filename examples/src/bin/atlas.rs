@@ -117,6 +117,7 @@ impl App {
                     examples::ATLAS_COLS,
                     examples::ATLAS_ROWS,
                     &[3, 3, 3, 3, 4, 1],
+                    1.,
                 ),
                 material_instance,
             )

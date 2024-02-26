@@ -31,42 +31,24 @@ impl Run for App {
         let extent = SampleApp::extent(ctx);
 
         let camera = Camera::perspective(
-            Vec3::new(0., 1., 0.),
+            Vec3::new(0., 0., 3.),
             extent.width as f32 / extent.height as f32,
             (60. as f32).to_radians(),
             0.1,
             100.,
             0.,
-            (-25. as f32).to_radians(),
+            0.,
             Vec3::Y,
         );
 
-        let light = Light::new((-2., 2.5, 10.), Color::WHITE);
+        let light = Light::new((0., 0., 10.), Color::WHITE);
 
         let common = SampleApp::create(ctx, camera, light);
 
         App { common }
     }
 
-    async fn start(&mut self, ctx: &Context) {
-        self.init(ctx).await;
-    }
-
     fn update(&mut self, ctx: &Context, delta: f32) {
-        let angular_speed = 40.;
-
-        let root_id = self.common.scene.graph.root;
-        let root = self.common.scene.graph.get(root_id).unwrap();
-
-        let node = root.children[0];
-
-        let child = self.common.scene.graph.get_mut(node).unwrap();
-
-        child.transform.rotate(Quat::from_axis_angle(
-            Vec3::Y,
-            (0.3 * angular_speed * delta).to_radians(),
-        ));
-
         self.common.update(ctx, delta);
     }
 
@@ -82,6 +64,10 @@ impl Run for App {
         self.common.resize(ctx, width, height);
     }
 
+    async fn start(&mut self, ctx: &Context) {
+        self.init(ctx).await;
+    }
+
     fn close(&mut self, ctx: &Context) {
         self.common.close(ctx);
     }
@@ -89,42 +75,47 @@ impl Run for App {
 
 impl App {
     async fn init(&mut self, ctx: &Context) {
-        let material = self.common.normal_mapping_material(ctx);
+        let color_material = self.common.color_material(ctx);
+        let color_material_instance = color_material.instantiate(vec![]);
 
+        let diffuse_material = self.common.normal_mapping_material(ctx);
         let diffuse_texture = Texture::with_file(
             ctx,
             examples::WALL_TEXTURE,
             TextureType::Diffuse,
             SamplerFilter::FilterLinear,
         );
-
         let normal_texture = Texture::with_file(
             ctx,
             examples::WALL_TEXTURE_N,
             TextureType::Normal,
             SamplerFilter::FilterLinear,
         );
-
         let (diffuse_texture, normal_texture) = try_join!(diffuse_texture, normal_texture).unwrap();
+        let diffuse_material_instance =
+            diffuse_material.instantiate(vec![diffuse_texture, normal_texture]);
 
-        let material_instance = material.instantiate(vec![diffuse_texture, normal_texture]);
-
-        let cube = Model::builder("cube")
-            .mesh(Shapes::cube(1, 1, &[1], 1.), material_instance)
+        let model = Model::builder("multi")
+            .mesh(
+                Shapes::triangle(Color::RED, Color::GREEN, Color::BLUE, 1.5),
+                color_material_instance,
+            )
+            .mesh(Shapes::cube(1, 1, &[1], 1.), diffuse_material_instance)
             .build();
 
-        let transform = Transform::new([0., 0., -2.].into(), Quat::IDENTITY, Vec3::splat(1.));
+        let transform = Transform::new([0., 0., 0.].into(), Quat::IDENTITY, Vec3::ONE);
         self.common.scene.graph.insert(
             self.common.scene.graph.root,
-            NodeValue::Model(cube),
+            NodeValue::Model(model),
             transform,
         );
     }
 }
+
 fn main() {
     examples::init_logger();
 
     log::info!("Engine start");
 
-    Application::new("Cube", 1920, 1080).run::<App>();
+    Application::new("Multi", 1920, 1080).run::<App>();
 }

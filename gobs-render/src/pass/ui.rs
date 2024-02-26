@@ -130,7 +130,8 @@ impl UiPass {
                         render_object
                             .model
                             .vertex_buffer
-                            .address(ctx.device.clone()),
+                            .address(ctx.device.clone())
+                            + render_object.vertices_offset,
                     )],
                     &mut model_data,
                 );

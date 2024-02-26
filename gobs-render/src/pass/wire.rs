@@ -123,6 +123,7 @@ impl WirePass {
         let frame_id = self.new_frame(ctx);
 
         let mut last_model = Uuid::nil();
+        let mut last_offset = 0;
 
         cmd.bind_pipeline(&self.pipeline);
         batch.render_stats.binds += 1;
@@ -153,7 +154,8 @@ impl WirePass {
                         render_object
                             .model
                             .vertex_buffer
-                            .address(ctx.device.clone()),
+                            .address(ctx.device.clone())
+                            + render_object.vertices_offset,
                     ),
                 ]);
 
@@ -164,13 +166,16 @@ impl WirePass {
 
             batch.render_stats.cpu_draw_mid += timer.delta();
 
-            if last_model != render_object.model.model.id {
+            if last_model != render_object.model.model.id
+                || last_offset != render_object.indices_offset
+            {
                 cmd.bind_index_buffer::<u32>(
                     &render_object.model.index_buffer,
                     render_object.indices_offset,
                 );
                 batch.render_stats.binds += 1;
                 last_model = render_object.model.model.id;
+                last_offset = render_object.indices_offset;
             }
             cmd.draw_indexed(render_object.indices_len, 1);
             batch.render_stats.draws += 1;

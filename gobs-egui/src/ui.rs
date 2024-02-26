@@ -338,7 +338,8 @@ impl Renderable for UIRenderer {
                     pass: pass.clone(),
                     model: resource.clone(),
                     material: resource.model.materials[&primitive.material].clone(),
-                    indices_offset: primitive.offset,
+                    vertices_offset: primitive.vertex_offset,
+                    indices_offset: primitive.index_offset,
                     indices_len: primitive.len,
                 };
 

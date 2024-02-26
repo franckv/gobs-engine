@@ -96,6 +96,7 @@ pub struct RenderObject {
     pub pass: Arc<dyn RenderPass>,
     pub model: Arc<ModelResource>,
     pub material: Arc<MaterialInstance>,
+    pub vertices_offset: u64,
     pub indices_offset: usize,
     pub indices_len: usize,
 }

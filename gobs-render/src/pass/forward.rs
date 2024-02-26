@@ -90,6 +90,7 @@ impl ForwardPass {
         let mut last_model = Uuid::nil();
         let mut last_material = Uuid::nil();
         let mut last_pipeline = Uuid::nil();
+        let mut last_offset = 0;
 
         let uniform_data_ds = &self.frame_data[frame_id].uniform_ds;
 
@@ -139,7 +140,8 @@ impl ForwardPass {
                             render_object
                                 .model
                                 .vertex_buffer
-                                .address(ctx.device.clone()),
+                                .address(ctx.device.clone())
+                                + render_object.vertices_offset,
                         ),
                     ],
                     &mut model_data,
@@ -152,13 +154,16 @@ impl ForwardPass {
 
             batch.render_stats.cpu_draw_mid += timer.delta();
 
-            if last_model != render_object.model.model.id {
+            if last_model != render_object.model.model.id
+                || last_offset != render_object.indices_offset
+            {
                 cmd.bind_index_buffer::<u32>(
                     &render_object.model.index_buffer,
                     render_object.indices_offset,
                 );
                 batch.render_stats.binds += 1;
                 last_model = render_object.model.model.id;
+                last_offset = render_object.indices_offset;
             }
             cmd.draw_indexed(render_object.indices_len, 1);
             batch.render_stats.draws += 1;
