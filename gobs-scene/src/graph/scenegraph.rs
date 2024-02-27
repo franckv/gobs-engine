@@ -60,6 +60,10 @@ impl SceneGraph {
         self.arena.get_mut(key)
     }
 
+    pub fn remove(&mut self, key: NodeId) -> Option<Node> {
+        self.arena.remove(key)
+    }
+
     pub fn insert(
         &mut self,
         parent: NodeId,

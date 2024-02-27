@@ -67,7 +67,7 @@ impl App {
 
         let texture = Texture::with_colors(
             ctx,
-            framebuffer,
+            &framebuffer,
             extent,
             TextureType::Diffuse,
             SamplerFilter::FilterLinear,

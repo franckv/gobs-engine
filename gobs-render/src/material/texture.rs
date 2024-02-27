@@ -154,7 +154,7 @@ impl Texture {
 
     pub fn with_colors(
         ctx: &Context,
-        colors: Vec<Color>,
+        colors: &[Color],
         extent: ImageExtent2D,
         ty: TextureType,
         filter: SamplerFilter,
