@@ -1,5 +1,5 @@
-use std::collections::HashMap;
 use std::sync::Arc;
+use std::{cmp::Ordering, collections::HashMap};
 
 use gobs_core::{
     entity::{camera::Camera, light::Light, uniform::UniformPropData},
@@ -77,12 +77,18 @@ impl RenderBatch {
 
     pub fn finish(&mut self) {
         self.render_list.sort_by(|a, b| {
-            // sort order: pass, material: model
+            // sort order: pass, transparent, material: model
             if a.pass.id() == b.pass.id() {
-                if a.material.id == b.material.id {
-                    a.model.model.id.cmp(&b.model.model.id)
+                if a.material.material.blending_enabled == b.material.material.blending_enabled {
+                    if a.material.id == b.material.id {
+                        a.model.model.id.cmp(&b.model.model.id)
+                    } else {
+                        a.material.id.cmp(&b.material.id)
+                    }
+                } else if a.material.material.blending_enabled {
+                    Ordering::Greater
                 } else {
-                    a.material.id.cmp(&b.material.id)
+                    Ordering::Less
                 }
             } else {
                 a.pass.id().cmp(&b.pass.id())

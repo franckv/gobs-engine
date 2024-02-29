@@ -64,6 +64,16 @@ impl SceneGraph {
         self.arena.remove(key)
     }
 
+    pub fn add(&mut self, value: NodeValue, transform: Transform) -> NodeId {
+        self.arena.insert(Node::new(value, transform))
+    }
+
+    pub fn add_child(&mut self, parent: NodeId, child: NodeId) {
+        if let Some(parent) = self.arena.get_mut(parent) {
+            parent.children.push(child);
+        }
+    }
+
     pub fn insert(
         &mut self,
         parent: NodeId,

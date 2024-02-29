@@ -236,6 +236,7 @@ impl UIRenderer {
                     &bytes,
                     ImageExtent2D::new(img.image.width() as u32, img.image.height() as u32),
                     TextureType::Diffuse,
+                    TextureType::Diffuse.into(),
                     SamplerFilter::FilterLinear,
                 );
 

@@ -115,6 +115,8 @@ impl ForwardPass {
 
             if last_material != material.id {
                 if last_pipeline != pipeline.id {
+                    log::debug!("Transparent: {}", material.material.blending_enabled);
+
                     cmd.bind_pipeline(&pipeline);
                     cmd.bind_descriptor_set(uniform_data_ds, 0, &pipeline);
                     batch.render_stats.binds += 2;

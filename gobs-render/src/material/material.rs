@@ -29,6 +29,7 @@ pub struct Material {
     pub id: MaterialId,
     pub vertex_flags: VertexFlag,
     pub pipeline: Arc<Pipeline>,
+    pub blending_enabled: bool,
     pub material_ds_pool: Option<RwLock<DescriptorSetPool>>,
 }
 
@@ -177,6 +178,7 @@ impl MaterialBuilder {
             id: Uuid::new_v4(),
             vertex_flags: self.vertex_flags,
             pipeline,
+            blending_enabled: self.blending_enabled,
             material_ds_pool,
         })
     }

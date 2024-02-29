@@ -61,7 +61,7 @@ impl Run for App {
 
 impl App {
     fn init(&mut self, ctx: &Context) {
-        self.load_scene(ctx);
+        self.load_scene3(ctx);
     }
 
     #[allow(unused)]
@@ -138,27 +138,12 @@ impl App {
 
     #[allow(unused)]
     fn load_scene3(&mut self, ctx: &Context) {
-        let file_name = load::get_asset_dir("Cube.gltf", load::AssetType::MODEL).unwrap();
+        let file_name = load::get_asset_dir("house2.glb", load::AssetType::MODEL).unwrap();
 
-        let models = gltf::load_gltf(
+        self.common.scene.graph = gltf::load_gltf_scene(
             ctx,
             file_name,
             self.common.graph.pass_by_type(PassType::Forward).unwrap(),
-        );
-
-        let scale = 1.;
-
-        let model = models[0].clone();
-
-        let transform = Transform::new(
-            [0., 0., -5.].into(),
-            Quat::IDENTITY,
-            Vec3::new(scale, scale, scale),
-        );
-        self.common.scene.graph.insert(
-            self.common.scene.graph.root,
-            NodeValue::Model(model.clone()),
-            transform,
         );
     }
 }

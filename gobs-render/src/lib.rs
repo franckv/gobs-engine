@@ -7,6 +7,5 @@ pub mod renderable;
 pub mod resources;
 pub mod stats;
 
-pub use gobs_vulkan::image::ImageExtent2D;
-pub use gobs_vulkan::image::SamplerFilter;
+pub use gobs_vulkan::image::{ImageExtent2D, ImageFormat, SamplerFilter};
 pub type CommandBuffer = gobs_vulkan::command::CommandBuffer;

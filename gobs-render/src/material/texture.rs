@@ -51,12 +51,13 @@ impl Texture {
         data: &[u8],
         extent: ImageExtent2D,
         ty: TextureType,
+        format: ImageFormat,
         filter: SamplerFilter,
     ) -> Self {
         let image = Image::new(
             name,
             ctx.device.clone(),
-            ty.into(),
+            format,
             ImageUsage::Texture,
             extent,
             ctx.allocator.clone(),
@@ -94,6 +95,7 @@ impl Texture {
                 height: img.dimensions().1,
             },
             ty,
+            ty.into(),
             filter,
         ))
     }
@@ -148,6 +150,7 @@ impl Texture {
             &img.to_rgba8().into_raw(),
             ImageExtent2D::new(img.dimensions().0, img.dimensions().1),
             texture_type,
+            texture_type.into(),
             filter,
         ))
     }
@@ -168,6 +171,7 @@ impl Texture {
                 .collect::<Vec<u8>>(),
             extent,
             ty,
+            ty.into(),
             filter,
         )
     }
@@ -185,6 +189,7 @@ impl Texture {
             &data,
             ImageExtent2D::new(1, 1),
             ty,
+            ty.into(),
             filter,
         )
     }
@@ -221,6 +226,7 @@ impl Texture {
             &data,
             ImageExtent2D::new(Self::CHECKER_SIZE as u32, Self::CHECKER_SIZE as u32),
             ty,
+            ty.into(),
             filter,
         )
     }

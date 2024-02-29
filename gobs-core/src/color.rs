@@ -184,6 +184,17 @@ impl From<[u8; 4]> for Color {
     }
 }
 
+impl From<[u16; 4]> for Color {
+    fn from(value: [u16; 4]) -> Self {
+        Color {
+            r: value[0] as f32 / u16::MAX as f32,
+            g: value[1] as f32 / u16::MAX as f32,
+            b: value[2] as f32 / u16::MAX as f32,
+            a: value[3] as f32 / u16::MAX as f32,
+        }
+    }
+}
+
 impl From<Vec3> for Color {
     fn from(value: Vec3) -> Self {
         Color {
