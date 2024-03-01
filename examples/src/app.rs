@@ -159,6 +159,11 @@ impl SampleApp {
     pub fn start(&mut self, _ctx: &Context) {}
 
     pub fn update(&mut self, ctx: &Context, delta: f32) {
+        self.update_scene(ctx, delta);
+        self.update_ui(ctx, |_| {});
+    }
+
+    fn update_scene(&mut self, ctx: &Context, delta: f32) {
         self.camera_controller
             .update_camera(&mut self.scene.camera, delta);
 
@@ -167,6 +172,12 @@ impl SampleApp {
         }
 
         self.scene.update(ctx, delta);
+    }
+
+    pub fn update_ui<F>(&mut self, ctx: &Context, mut cb: F)
+    where
+        F: FnMut(&mut egui::Ui),
+    {
         if self.draw_ui {
             self.ui.update(
                 ctx,
@@ -183,6 +194,7 @@ impl SampleApp {
                             Self::show_camera(ui, &self.scene.camera);
                             Self::show_memory(ui, ctx);
                             Self::show_scene(ui, &self.scene.graph);
+                            cb(ui);
                         });
                 },
             );

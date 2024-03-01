@@ -39,6 +39,7 @@ impl Node {
     }
 }
 
+#[derive(Clone)]
 pub struct SceneGraph {
     pub root: NodeId,
     arena: SlotMap<NodeId, Node>,
