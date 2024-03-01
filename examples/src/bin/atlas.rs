@@ -13,22 +13,29 @@ use gobs::{
     render::{
         context::Context,
         geometry::Model,
-        graph::RenderError,
+        graph::{FrameGraph, RenderError},
         material::{Texture, TextureType},
+        pass::PassType,
+        renderable::Renderable,
         SamplerFilter,
     },
-    scene::{graph::scenegraph::NodeValue, shape::Shapes},
+    scene::{graph::scenegraph::NodeValue, scene::Scene, shape::Shapes},
+    ui::UIRenderer,
 };
 
-use examples::SampleApp;
+use examples::{CameraController, SampleApp};
 
 struct App {
     common: SampleApp,
+    camera_controller: CameraController,
+    graph: FrameGraph,
+    ui: UIRenderer,
+    scene: Scene,
 }
 
 impl Run for App {
     async fn create(ctx: &Context) -> Self {
-        let extent = SampleApp::extent(ctx);
+        let extent = ctx.extent();
 
         let camera = Camera::perspective(
             Vec3::new(0., 1., 0.),
@@ -43,9 +50,21 @@ impl Run for App {
 
         let light = Light::new((-2., 2.5, 10.), Color::WHITE);
 
-        let common = SampleApp::create(ctx, camera, light);
+        let common = SampleApp::new();
 
-        App { common }
+        let camera_controller = CameraController::new(3., 0.1);
+
+        let graph = FrameGraph::default(ctx);
+        let ui = UIRenderer::new(ctx, graph.pass_by_type(PassType::Ui).unwrap());
+        let scene = Scene::new(camera, light);
+
+        App {
+            common,
+            camera_controller,
+            graph,
+            ui,
+            scene,
+        }
     }
 
     async fn start(&mut self, ctx: &Context) {
@@ -55,41 +74,61 @@ impl Run for App {
     fn update(&mut self, ctx: &Context, delta: f32) {
         let angular_speed = 40.;
 
-        let root_id = self.common.scene.graph.root;
-        let root = self.common.scene.graph.get(root_id).unwrap();
+        let root_id = self.scene.graph.root;
+        let root = self.scene.graph.get(root_id).unwrap();
 
         let node = root.children[0];
 
-        let child = self.common.scene.graph.get_mut(node).unwrap();
+        let child = self.scene.graph.get_mut(node).unwrap();
 
         child.transform.rotate(Quat::from_axis_angle(
             Vec3::Y,
             (0.3 * angular_speed * delta).to_radians(),
         ));
 
-        self.common.update(ctx, delta);
+        self.camera_controller
+            .update_camera(&mut self.scene.camera, delta);
+
+        self.graph.update(ctx, delta);
+        self.scene.update(ctx, delta);
+
+        self.common
+            .update_ui(ctx, &self.graph, &self.scene, &mut self.ui);
     }
 
     fn render(&mut self, ctx: &Context) -> Result<(), RenderError> {
-        self.common.render(ctx)
+        self.common
+            .render(ctx, &mut self.graph, &mut self.scene, &mut self.ui)
     }
 
     fn input(&mut self, ctx: &Context, input: Input) {
-        self.common.input(ctx, input);
+        self.common.input(
+            ctx,
+            input,
+            &mut self.graph,
+            &mut self.ui,
+            &mut self.camera_controller,
+        );
     }
 
     fn resize(&mut self, ctx: &Context, width: u32, height: u32) {
-        self.common.resize(ctx, width, height);
+        self.graph.resize(ctx);
+        self.scene.resize(width, height);
+        self.ui.resize(width, height);
     }
 
     fn close(&mut self, ctx: &Context) {
-        self.common.close(ctx);
+        log::info!("Closing");
+
+        ctx.device.wait();
+
+        log::info!("Closed");
     }
 }
 
 impl App {
     async fn init(&mut self, ctx: &Context) {
-        let material = self.common.normal_mapping_material(ctx);
+        let material = self.common.normal_mapping_material(ctx, &self.graph);
 
         let diffuse_texture = Texture::pack(
             ctx,
@@ -124,11 +163,9 @@ impl App {
             .build();
 
         let transform = Transform::new([0., 0., -2.].into(), Quat::IDENTITY, Vec3::splat(1.));
-        self.common.scene.graph.insert(
-            self.common.scene.graph.root,
-            NodeValue::Model(cube),
-            transform,
-        );
+        self.scene
+            .graph
+            .insert(self.scene.graph.root, NodeValue::Model(cube), transform);
     }
 }
 fn main() {

@@ -4,16 +4,16 @@ use glam::Vec3;
 use slotmap::Key as _;
 
 use gobs::{
-    core::entity::{camera::Camera, light::Light},
+    core::entity::camera::Camera,
     game::input::{Input, Key},
     render::{
         context::Context,
         geometry::VertexFlag,
-        graph::FrameGraph,
+        graph::{FrameGraph, RenderError},
         material::{Material, MaterialProperty},
         pass::PassType,
         renderable::Renderable,
-        BlendMode, ImageExtent2D,
+        BlendMode,
     },
     scene::{graph::scenegraph::SceneGraph, scene::Scene},
     ui::UIRenderer,
@@ -22,42 +22,20 @@ use gobs::{
 use crate::CameraController;
 
 pub struct SampleApp {
-    camera_controller: CameraController,
-    pub graph: FrameGraph,
-    pub ui: UIRenderer,
-    pub scene: Scene,
     pub process_updates: bool,
     pub draw_ui: bool,
     pub draw_wire: bool,
-    pub fps: u32,
 }
 
 impl SampleApp {
-    pub fn create(ctx: &Context, camera: Camera, light: Light) -> Self {
+    pub fn new() -> Self {
         log::info!("Create");
 
-        let graph = FrameGraph::default(ctx);
-
-        let ui = UIRenderer::new(ctx, graph.pass_by_type(PassType::Ui).unwrap());
-
-        let scene = Scene::new(camera, light);
-
-        let camera_controller = CameraController::new(3., 0.1);
-
         Self {
-            camera_controller,
-            graph,
-            ui,
-            scene,
             process_updates: true,
             draw_ui: false,
             draw_wire: false,
-            fps: 0,
         }
-    }
-
-    pub fn extent(ctx: &Context) -> ImageExtent2D {
-        ctx.surface.get_extent(ctx.device.clone())
     }
 
     pub fn ortho_camera(ctx: &Context) -> Camera {
@@ -90,24 +68,24 @@ impl SampleApp {
         )
     }
 
-    pub fn color_material(&self, ctx: &Context) -> Arc<Material> {
+    pub fn color_material(&self, ctx: &Context, graph: &FrameGraph) -> Arc<Material> {
         let vertex_flags = VertexFlag::POSITION | VertexFlag::COLOR;
 
         Material::builder("color.vert.spv", "color.frag.spv")
             .vertex_flags(vertex_flags)
-            .build(ctx, self.graph.pass_by_type(PassType::Forward).unwrap())
+            .build(ctx, graph.pass_by_type(PassType::Forward).unwrap())
     }
 
-    pub fn color_material_transparent(&self, ctx: &Context) -> Arc<Material> {
+    pub fn color_material_transparent(&self, ctx: &Context, graph: &FrameGraph) -> Arc<Material> {
         let vertex_flags = VertexFlag::POSITION | VertexFlag::COLOR;
 
         Material::builder("color.vert.spv", "color.frag.spv")
             .vertex_flags(vertex_flags)
             .blend_mode(BlendMode::Alpha)
-            .build(ctx, self.graph.pass_by_type(PassType::Forward).unwrap())
+            .build(ctx, graph.pass_by_type(PassType::Forward).unwrap())
     }
 
-    pub fn texture_material(&self, ctx: &Context) -> Arc<Material> {
+    pub fn texture_material(&self, ctx: &Context, graph: &FrameGraph) -> Arc<Material> {
         let vertex_flags = VertexFlag::POSITION
             | VertexFlag::TEXTURE
             | VertexFlag::NORMAL
@@ -117,10 +95,10 @@ impl SampleApp {
         Material::builder("mesh.vert.spv", "mesh.frag.spv")
             .vertex_flags(vertex_flags)
             .prop("diffuse", MaterialProperty::Texture)
-            .build(ctx, self.graph.pass_by_type(PassType::Forward).unwrap())
+            .build(ctx, graph.pass_by_type(PassType::Forward).unwrap())
     }
 
-    pub fn texture_material_transparent(&self, ctx: &Context) -> Arc<Material> {
+    pub fn texture_material_transparent(&self, ctx: &Context, graph: &FrameGraph) -> Arc<Material> {
         let vertex_flags = VertexFlag::POSITION
             | VertexFlag::TEXTURE
             | VertexFlag::NORMAL
@@ -131,10 +109,10 @@ impl SampleApp {
             .vertex_flags(vertex_flags)
             .prop("diffuse", MaterialProperty::Texture)
             .blend_mode(BlendMode::Alpha)
-            .build(ctx, self.graph.pass_by_type(PassType::Forward).unwrap())
+            .build(ctx, graph.pass_by_type(PassType::Forward).unwrap())
     }
 
-    pub fn normal_mapping_material(&self, ctx: &Context) -> Arc<Material> {
+    pub fn normal_mapping_material(&self, ctx: &Context, graph: &FrameGraph) -> Arc<Material> {
         let vertex_flags = VertexFlag::POSITION
             | VertexFlag::TEXTURE
             | VertexFlag::NORMAL
@@ -145,59 +123,39 @@ impl SampleApp {
             .vertex_flags(vertex_flags)
             .prop("diffuse", MaterialProperty::Texture)
             .prop("normal", MaterialProperty::Texture)
-            .build(ctx, self.graph.pass_by_type(PassType::Forward).unwrap())
+            .build(ctx, graph.pass_by_type(PassType::Forward).unwrap())
     }
 
-    pub fn depth_material(&self, ctx: &Context) -> Arc<Material> {
+    pub fn depth_material(&self, ctx: &Context, graph: &FrameGraph) -> Arc<Material> {
         let vertex_flags = VertexFlag::POSITION | VertexFlag::COLOR;
 
         Material::builder("color.vert.spv", "depth.frag.spv")
             .vertex_flags(vertex_flags)
-            .build(ctx, self.graph.pass_by_type(PassType::Forward).unwrap())
+            .build(ctx, graph.pass_by_type(PassType::Forward).unwrap())
     }
 
-    pub fn start(&mut self, _ctx: &Context) {}
-
-    pub fn update(&mut self, ctx: &Context, delta: f32) {
-        self.update_scene(ctx, delta);
-        self.update_ui(ctx, |_| {});
-    }
-
-    fn update_scene(&mut self, ctx: &Context, delta: f32) {
-        self.camera_controller
-            .update_camera(&mut self.scene.camera, delta);
-
-        if self.graph.frame_number % ctx.stats_refresh == 0 {
-            self.fps = (1. / delta).round() as u32;
-        }
-
-        self.scene.update(ctx, delta);
-    }
-
-    pub fn update_ui<F>(&mut self, ctx: &Context, mut cb: F)
-    where
-        F: FnMut(&mut egui::Ui),
-    {
+    pub fn update_ui(
+        &mut self,
+        ctx: &Context,
+        graph: &FrameGraph,
+        scene: &Scene,
+        ui: &mut UIRenderer,
+    ) {
         if self.draw_ui {
-            self.ui.update(
-                ctx,
-                self.graph.pass_by_type(PassType::Ui).unwrap(),
-                |ectx| {
-                    egui::CentralPanel::default()
-                        .frame(egui::Frame::none())
-                        .show(ectx, |ui| {
-                            ui.visuals_mut().override_text_color = Some(egui::Color32::GREEN);
-                            ui.heading(&ctx.app_name);
-                            ui.separator();
-                            Self::show_fps(ui, self.fps);
-                            Self::show_stats(ui, "Render Stats", &self.graph);
-                            Self::show_camera(ui, &self.scene.camera);
-                            Self::show_memory(ui, ctx);
-                            Self::show_scene(ui, &self.scene.graph);
-                            cb(ui);
-                        });
-                },
-            );
+            ui.update(ctx, graph.pass_by_type(PassType::Ui).unwrap(), |ectx| {
+                egui::CentralPanel::default()
+                    .frame(egui::Frame::none())
+                    .show(ectx, |ui| {
+                        ui.visuals_mut().override_text_color = Some(egui::Color32::GREEN);
+                        ui.heading(&ctx.app_name);
+                        ui.separator();
+                        Self::show_fps(ui, graph.render_stats().fps);
+                        Self::show_stats(ui, "Render Stats", graph);
+                        Self::show_camera(ui, &scene.camera);
+                        Self::show_memory(ui, ctx);
+                        Self::show_scene(ui, &scene.graph);
+                    });
+            });
         }
     }
 
@@ -285,76 +243,70 @@ impl SampleApp {
 
     pub fn render(
         &mut self,
-        ctx: &gobs::render::context::Context,
-    ) -> Result<(), gobs::render::graph::RenderError> {
-        log::trace!("Render frame {}", self.graph.frame_number);
+        ctx: &Context,
+        graph: &mut FrameGraph,
+        scene: &mut Scene,
+        ui: &mut UIRenderer,
+    ) -> Result<(), RenderError> {
+        log::trace!("Render frame {}", graph.frame_number);
 
-        self.graph.begin(ctx)?;
+        graph.begin(ctx)?;
 
-        self.graph.render(ctx, &mut |pass, batch| match pass.ty() {
+        graph.render(ctx, &mut |pass, batch| match pass.ty() {
             PassType::Compute => {}
             PassType::Depth => {
-                self.scene.draw(ctx, pass, batch);
+                scene.draw(ctx, pass, batch);
             }
             PassType::Forward => {
-                self.scene.draw(ctx, pass, batch);
+                scene.draw(ctx, pass, batch);
             }
             PassType::Wire => {
                 if self.draw_wire {
-                    self.scene.draw(ctx, pass, batch);
+                    scene.draw(ctx, pass, batch);
                 }
             }
             PassType::Ui => {
                 if self.draw_ui {
-                    self.ui.draw(ctx, pass, batch);
+                    ui.draw(ctx, pass, batch);
                 }
             }
         })?;
 
-        self.graph.end(ctx)?;
+        graph.end(ctx)?;
 
         log::trace!("End render");
 
         Ok(())
     }
 
-    pub fn input(&mut self, ctx: &Context, input: Input) {
+    pub fn input(
+        &mut self,
+        ctx: &Context,
+        input: Input,
+        graph: &mut FrameGraph,
+        ui: &mut UIRenderer,
+        camera_controller: &mut CameraController,
+    ) {
         log::trace!("Input");
 
-        self.ui.input(input);
+        ui.input(input);
 
         match input {
             Input::KeyPressed(key) => match key {
-                Key::E => self.graph.render_scaling = (self.graph.render_scaling + 0.1).min(1.),
-                Key::A => self.graph.render_scaling = (self.graph.render_scaling - 0.1).max(0.1),
+                Key::E => graph.render_scaling = (graph.render_scaling + 0.1).min(1.),
+                Key::A => graph.render_scaling = (graph.render_scaling - 0.1).max(0.1),
                 Key::L => log::info!("{:?}", ctx.allocator.allocator.lock().unwrap()),
                 Key::P => self.process_updates = !self.process_updates,
                 Key::W => self.draw_wire = !self.draw_wire,
                 Key::U => self.draw_ui = !self.draw_ui,
-                _ => self.camera_controller.key_pressed(key),
+                _ => camera_controller.key_pressed(key),
             },
-            Input::KeyReleased(key) => self.camera_controller.key_released(key),
-            Input::MousePressed => self.camera_controller.mouse_pressed(),
-            Input::MouseReleased => self.camera_controller.mouse_released(),
-            Input::MouseWheel(delta) => self.camera_controller.mouse_scroll(delta),
-            Input::MouseMotion(dx, dy) => self.camera_controller.mouse_drag(dx, dy),
+            Input::KeyReleased(key) => camera_controller.key_released(key),
+            Input::MousePressed => camera_controller.mouse_pressed(),
+            Input::MouseReleased => camera_controller.mouse_released(),
+            Input::MouseWheel(delta) => camera_controller.mouse_scroll(delta),
+            Input::MouseMotion(dx, dy) => camera_controller.mouse_drag(dx, dy),
             _ => (),
         }
-    }
-
-    pub fn resize(&mut self, ctx: &gobs::render::context::Context, width: u32, height: u32) {
-        log::trace!("Resize");
-
-        self.graph.resize(ctx);
-        self.scene.resize(width, height);
-        self.ui.resize(width, height);
-    }
-
-    pub fn close(&mut self, ctx: &gobs::render::context::Context) {
-        log::info!("Closing");
-
-        ctx.device.wait();
-
-        log::info!("Closed");
     }
 }

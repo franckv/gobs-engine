@@ -13,22 +13,29 @@ use gobs::{
     render::{
         context::Context,
         geometry::Model,
-        graph::RenderError,
+        graph::{FrameGraph, RenderError},
         material::{Texture, TextureType},
+        pass::PassType,
+        renderable::Renderable,
         SamplerFilter,
     },
-    scene::{graph::scenegraph::NodeValue, shape::Shapes},
+    scene::{graph::scenegraph::NodeValue, scene::Scene, shape::Shapes},
+    ui::UIRenderer,
 };
 
-use examples::SampleApp;
+use examples::{CameraController, SampleApp};
 
 struct App {
     common: SampleApp,
+    camera_controller: CameraController,
+    graph: FrameGraph,
+    ui: UIRenderer,
+    scene: Scene,
 }
 
 impl Run for App {
     async fn create(ctx: &Context) -> Self {
-        let extent = SampleApp::extent(ctx);
+        let extent = ctx.extent();
 
         let camera = Camera::perspective(
             (0., 25., 25.),
@@ -43,9 +50,21 @@ impl Run for App {
 
         let light = Light::new((0., 40., -40.), Color::WHITE);
 
-        let common = SampleApp::create(ctx, camera, light);
+        let common = SampleApp::new();
 
-        App { common }
+        let camera_controller = CameraController::new(3., 0.1);
+
+        let graph = FrameGraph::default(ctx);
+        let ui = UIRenderer::new(ctx, graph.pass_by_type(PassType::Ui).unwrap());
+        let scene = Scene::new(camera, light);
+
+        App {
+            common,
+            camera_controller,
+            graph,
+            ui,
+            scene,
+        }
     }
 
     async fn start(&mut self, ctx: &Context) {
@@ -56,26 +75,46 @@ impl Run for App {
         let angular_speed = 10.;
 
         let position = Quat::from_axis_angle(Vec3::Y, (angular_speed * delta).to_radians())
-            * self.common.scene.light.position;
-        self.common.scene.light.update(position);
+            * self.scene.light.position;
+        self.scene.light.update(position);
 
-        self.common.update(ctx, delta);
+        self.camera_controller
+            .update_camera(&mut self.scene.camera, delta);
+
+        self.graph.update(ctx, delta);
+        self.scene.update(ctx, delta);
+
+        self.common
+            .update_ui(ctx, &self.graph, &self.scene, &mut self.ui);
     }
 
     fn render(&mut self, ctx: &Context) -> Result<(), RenderError> {
-        self.common.render(ctx)
+        self.common
+            .render(ctx, &mut self.graph, &mut self.scene, &mut self.ui)
     }
 
     fn input(&mut self, ctx: &Context, input: Input) {
-        self.common.input(ctx, input);
+        self.common.input(
+            ctx,
+            input,
+            &mut self.graph,
+            &mut self.ui,
+            &mut self.camera_controller,
+        );
     }
 
     fn resize(&mut self, ctx: &Context, width: u32, height: u32) {
-        self.common.resize(ctx, width, height);
+        self.graph.resize(ctx);
+        self.scene.resize(width, height);
+        self.ui.resize(width, height);
     }
 
     fn close(&mut self, ctx: &Context) {
-        self.common.close(ctx);
+        log::info!("Closing");
+
+        ctx.device.wait();
+
+        log::info!("Closed");
     }
 }
 
@@ -87,7 +126,7 @@ impl App {
     async fn load_scene(&mut self, ctx: &Context) {
         log::info!("Load scene");
 
-        let material = self.common.normal_mapping_material(ctx);
+        let material = self.common.normal_mapping_material(ctx, &self.graph);
 
         let diffuse_texture = Texture::pack(
             ctx,
@@ -145,16 +184,16 @@ impl App {
                     };
 
                     let transform = Transform::new(position, rotation, Vec3::splat(1.));
-                    self.common.scene.graph.insert(
-                        self.common.scene.graph.root,
+                    self.scene.graph.insert(
+                        self.scene.graph.root,
                         NodeValue::Model(wall.clone()),
                         transform,
                     );
 
                     position.y = -examples::TILE_SIZE;
                     let transform = Transform::new(position, rotation, Vec3::splat(1.));
-                    self.common.scene.graph.insert(
-                        self.common.scene.graph.root,
+                    self.scene.graph.insert(
+                        self.scene.graph.root,
                         NodeValue::Model(floor.clone()),
                         transform,
                     );
@@ -167,8 +206,8 @@ impl App {
                         z: j - offset,
                     };
                     let transform = Transform::new(position, rotation, Vec3::splat(1.));
-                    self.common.scene.graph.insert(
-                        self.common.scene.graph.root,
+                    self.scene.graph.insert(
+                        self.scene.graph.root,
                         NodeValue::Model(floor.clone()),
                         transform,
                     );
@@ -181,8 +220,8 @@ impl App {
                         z: j - offset,
                     };
                     let transform = Transform::new(position, rotation, Vec3::splat(1.));
-                    self.common.scene.graph.insert(
-                        self.common.scene.graph.root,
+                    self.scene.graph.insert(
+                        self.scene.graph.root,
                         NodeValue::Model(floor.clone()),
                         transform,
                     );

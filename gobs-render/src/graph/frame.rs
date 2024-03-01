@@ -330,6 +330,12 @@ impl FrameGraph {
         Ok(())
     }
 
+    pub fn update(&mut self, ctx: &Context, delta: f32) {
+        if self.frame_number % ctx.stats_refresh == 0 {
+            self.batch.render_stats.fps = (1. / delta).round() as u32;
+        }
+    }
+
     pub fn render(
         &mut self,
         ctx: &Context,

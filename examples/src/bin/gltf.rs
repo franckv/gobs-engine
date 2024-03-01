@@ -7,15 +7,28 @@ use gobs::{
         app::{Application, Run},
         input::{Input, Key},
     },
-    render::{context::Context, graph::RenderError, pass::PassType},
-    scene::graph::scenegraph::{NodeValue, SceneGraph},
+    render::{
+        context::Context,
+        graph::{FrameGraph, RenderError},
+        pass::PassType,
+        renderable::Renderable,
+    },
+    scene::{
+        graph::scenegraph::{NodeValue, SceneGraph},
+        scene::Scene,
+    },
+    ui::UIRenderer,
     utils::load,
 };
 
-use examples::SampleApp;
+use examples::{CameraController, SampleApp};
 
 struct App {
     common: SampleApp,
+    camera_controller: CameraController,
+    graph: FrameGraph,
+    ui: UIRenderer,
+    scene: Scene,
     scenes: Vec<SceneGraph>,
     current_scene: usize,
 }
@@ -24,10 +37,22 @@ impl Run for App {
     async fn create(ctx: &Context) -> Self {
         let light = Light::new((0., 0., 10.), Color::WHITE);
 
-        let common = SampleApp::create(ctx, SampleApp::perspective_camera(ctx), light);
+        let common = SampleApp::new();
+
+        let camera = SampleApp::perspective_camera(ctx);
+
+        let camera_controller = CameraController::new(3., 0.1);
+
+        let graph = FrameGraph::default(ctx);
+        let ui = UIRenderer::new(ctx, graph.pass_by_type(PassType::Ui).unwrap());
+        let scene = Scene::new(camera, light);
 
         App {
             common,
+            camera_controller,
+            graph,
+            ui,
+            scene,
             scenes: vec![],
             current_scene: 0,
         }
@@ -41,25 +66,39 @@ impl Run for App {
         if self.common.process_updates {
             let angular_speed = 40.;
             let position = Quat::from_axis_angle(Vec3::Y, (angular_speed * delta).to_radians())
-                * self.common.scene.light.position;
-            self.common.scene.light.update(position);
+                * self.scene.light.position;
+            self.scene.light.update(position);
         }
 
-        self.common.update(ctx, delta);
+        self.camera_controller
+            .update_camera(&mut self.scene.camera, delta);
+
+        self.graph.update(ctx, delta);
+        self.scene.update(ctx, delta);
+
+        self.common
+            .update_ui(ctx, &self.graph, &self.scene, &mut self.ui);
     }
 
     fn render(&mut self, ctx: &Context) -> Result<(), RenderError> {
-        self.common.render(ctx)
+        self.common
+            .render(ctx, &mut self.graph, &mut self.scene, &mut self.ui)
     }
 
     fn input(&mut self, ctx: &Context, input: Input) {
-        self.common.input(ctx, input);
+        self.common.input(
+            ctx,
+            input,
+            &mut self.graph,
+            &mut self.ui,
+            &mut self.camera_controller,
+        );
 
         match input {
             Input::KeyPressed(key) => match key {
                 Key::N => {
                     self.current_scene = (self.current_scene + 1) % self.scenes.len();
-                    self.common.scene.graph = self.scenes[self.current_scene].clone();
+                    self.scene.graph = self.scenes[self.current_scene].clone();
                 }
                 _ => (),
             },
@@ -68,11 +107,17 @@ impl Run for App {
     }
 
     fn resize(&mut self, ctx: &Context, width: u32, height: u32) {
-        self.common.resize(ctx, width, height);
+        self.graph.resize(ctx);
+        self.scene.resize(width, height);
+        self.ui.resize(width, height);
     }
 
     fn close(&mut self, ctx: &Context) {
-        self.common.close(ctx);
+        log::info!("Closing");
+
+        ctx.device.wait();
+
+        log::info!("Closed");
     }
 }
 
@@ -82,7 +127,7 @@ impl App {
         self.scenes.push(self.load_scene2(ctx));
         self.scenes.push(self.load_scene3(ctx));
 
-        self.common.scene.graph = self.scenes[self.current_scene].clone();
+        self.scene.graph = self.scenes[self.current_scene].clone();
     }
 
     fn load_scene(&self, ctx: &Context) -> SceneGraph {
@@ -90,10 +135,8 @@ impl App {
 
         let file_name = load::get_asset_dir("basicmesh.glb", load::AssetType::MODEL).unwrap();
 
-        let mut gltf_loader = gltf::GLTFLoader::new(
-            ctx,
-            self.common.graph.pass_by_type(PassType::Forward).unwrap(),
-        );
+        let mut gltf_loader =
+            gltf::GLTFLoader::new(ctx, self.graph.pass_by_type(PassType::Forward).unwrap());
 
         gltf_loader.load(ctx, file_name);
 
@@ -115,7 +158,7 @@ impl App {
                     Vec3::new(scale, scale, scale),
                 );
                 scene.insert(
-                    self.common.scene.graph.root,
+                    self.scene.graph.root,
                     NodeValue::Model(model.clone()),
                     transform,
                 );
@@ -130,10 +173,8 @@ impl App {
 
         let file_name = load::get_asset_dir("Cube.gltf", load::AssetType::MODEL).unwrap();
 
-        let mut gltf_loader = gltf::GLTFLoader::new(
-            ctx,
-            self.common.graph.pass_by_type(PassType::Forward).unwrap(),
-        );
+        let mut gltf_loader =
+            gltf::GLTFLoader::new(ctx, self.graph.pass_by_type(PassType::Forward).unwrap());
 
         gltf_loader.load(ctx, file_name);
 
@@ -155,7 +196,7 @@ impl App {
                     Vec3::new(scale, scale, scale),
                 );
                 scene.insert(
-                    self.common.scene.graph.root,
+                    self.scene.graph.root,
                     NodeValue::Model(model.clone()),
                     transform,
                 );
@@ -168,10 +209,8 @@ impl App {
     fn load_scene3(&self, ctx: &Context) -> SceneGraph {
         let file_name = load::get_asset_dir("house2.glb", load::AssetType::MODEL).unwrap();
 
-        let mut gltf_loader = gltf::GLTFLoader::new(
-            ctx,
-            self.common.graph.pass_by_type(PassType::Forward).unwrap(),
-        );
+        let mut gltf_loader =
+            gltf::GLTFLoader::new(ctx, self.graph.pass_by_type(PassType::Forward).unwrap());
 
         gltf_loader.load(ctx, file_name);
 

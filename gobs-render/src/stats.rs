@@ -21,6 +21,7 @@ pub struct RenderStats {
     pub cpu_draw_post: f32,
     pub gpu_draw_time: f32,
     pub update_time: f32,
+    pub fps: u32,
     pub pass_stats: HashMap<PassId, PassStats>,
     models_set: HashSet<(PassId, ModelId)>,
 }

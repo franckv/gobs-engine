@@ -7,7 +7,7 @@ use vk::{
     alloc::Allocator,
     command::{CommandBuffer, CommandPool},
     device::Device,
-    image::ImageFormat,
+    image::{ImageExtent2D, ImageFormat},
     instance::Instance,
     queue::Queue,
     surface::Surface,
@@ -64,6 +64,10 @@ impl Context {
             frames_in_flight: 2,
             stats_refresh: 60,
         }
+    }
+
+    pub fn extent(&self) -> ImageExtent2D {
+        self.surface.get_extent(self.device.clone())
     }
 }
 
