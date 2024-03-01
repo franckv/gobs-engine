@@ -325,25 +325,56 @@ impl DepthStencilState {
     }
 }
 
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub enum BlendMode {
+    None,
+    Additive,
+    Alpha,
+    Premultiplied,
+}
+
 struct ColorBlendAttachmentState {
-    blend_enable: bool,
+    blend_mode: BlendMode,
 }
 
 impl ColorBlendAttachmentState {
-    fn new(blend_enable: bool) -> Self {
-        ColorBlendAttachmentState { blend_enable }
+    fn new(blend_mode: BlendMode) -> Self {
+        ColorBlendAttachmentState { blend_mode }
     }
 
     fn info(&self) -> vk::PipelineColorBlendAttachmentStateBuilder {
-        vk::PipelineColorBlendAttachmentState::builder()
-            .blend_enable(self.blend_enable)
-            .src_color_blend_factor(vk::BlendFactor::ONE)
-            .dst_color_blend_factor(vk::BlendFactor::ONE_MINUS_SRC_ALPHA)
-            .color_blend_op(vk::BlendOp::ADD)
-            .src_alpha_blend_factor(vk::BlendFactor::ONE_MINUS_DST_ALPHA)
-            .dst_alpha_blend_factor(vk::BlendFactor::ONE)
-            .alpha_blend_op(vk::BlendOp::ADD)
-            .color_write_mask(vk::ColorComponentFlags::RGBA)
+        match self.blend_mode {
+            BlendMode::None => vk::PipelineColorBlendAttachmentState::builder()
+                .blend_enable(false)
+                .color_write_mask(vk::ColorComponentFlags::RGBA),
+            BlendMode::Additive => vk::PipelineColorBlendAttachmentState::builder()
+                .blend_enable(true)
+                .src_color_blend_factor(vk::BlendFactor::ONE)
+                .dst_color_blend_factor(vk::BlendFactor::DST_ALPHA)
+                .color_blend_op(vk::BlendOp::ADD)
+                .src_alpha_blend_factor(vk::BlendFactor::ONE)
+                .dst_alpha_blend_factor(vk::BlendFactor::ZERO)
+                .alpha_blend_op(vk::BlendOp::ADD)
+                .color_write_mask(vk::ColorComponentFlags::RGBA),
+            BlendMode::Alpha => vk::PipelineColorBlendAttachmentState::builder()
+                .blend_enable(true)
+                .src_color_blend_factor(vk::BlendFactor::SRC_ALPHA)
+                .dst_color_blend_factor(vk::BlendFactor::ONE_MINUS_SRC_ALPHA)
+                .color_blend_op(vk::BlendOp::ADD)
+                .src_alpha_blend_factor(vk::BlendFactor::ONE)
+                .dst_alpha_blend_factor(vk::BlendFactor::ZERO)
+                .alpha_blend_op(vk::BlendOp::ADD)
+                .color_write_mask(vk::ColorComponentFlags::RGBA),
+            BlendMode::Premultiplied => vk::PipelineColorBlendAttachmentState::builder()
+                .blend_enable(true)
+                .src_color_blend_factor(vk::BlendFactor::ONE)
+                .dst_color_blend_factor(vk::BlendFactor::ONE_MINUS_SRC_ALPHA)
+                .color_blend_op(vk::BlendOp::ADD)
+                .src_alpha_blend_factor(vk::BlendFactor::ONE_MINUS_DST_ALPHA)
+                .dst_alpha_blend_factor(vk::BlendFactor::ONE)
+                .alpha_blend_op(vk::BlendOp::ADD)
+                .color_write_mask(vk::ColorComponentFlags::RGBA),
+        }
     }
 }
 
@@ -512,8 +543,8 @@ impl GraphicsPipelineBuilder {
         self
     }
 
-    pub fn blending_enabled(mut self, blending_enabled: bool) -> Self {
-        self.blending_state = Some(ColorBlendAttachmentState::new(blending_enabled));
+    pub fn blending_enabled(mut self, blend_mode: BlendMode) -> Self {
+        self.blending_state = Some(ColorBlendAttachmentState::new(blend_mode));
 
         self
     }
@@ -599,7 +630,7 @@ impl GraphicsPipelineBuilder {
 
         let color_blend_attachment = match self.blending_state {
             Some(color_blend_attachment) => color_blend_attachment,
-            None => ColorBlendAttachmentState::new(false),
+            None => ColorBlendAttachmentState::new(BlendMode::None),
         };
         let color_blend_state = ColorBlendState::new(color_blend_attachment);
         let color_blend_state_info = color_blend_state.info();

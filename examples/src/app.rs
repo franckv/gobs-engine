@@ -13,7 +13,7 @@ use gobs::{
         material::{Material, MaterialProperty},
         pass::PassType,
         renderable::Renderable,
-        ImageExtent2D,
+        BlendMode, ImageExtent2D,
     },
     scene::{graph::scenegraph::SceneGraph, scene::Scene},
     ui::UIRenderer,
@@ -98,6 +98,15 @@ impl SampleApp {
             .build(ctx, self.graph.pass_by_type(PassType::Forward).unwrap())
     }
 
+    pub fn color_material_transparent(&self, ctx: &Context) -> Arc<Material> {
+        let vertex_flags = VertexFlag::POSITION | VertexFlag::COLOR;
+
+        Material::builder("color.vert.spv", "color.frag.spv")
+            .vertex_flags(vertex_flags)
+            .blend_mode(BlendMode::Alpha)
+            .build(ctx, self.graph.pass_by_type(PassType::Forward).unwrap())
+    }
+
     pub fn texture_material(&self, ctx: &Context) -> Arc<Material> {
         let vertex_flags = VertexFlag::POSITION
             | VertexFlag::TEXTURE
@@ -108,6 +117,20 @@ impl SampleApp {
         Material::builder("mesh.vert.spv", "mesh.frag.spv")
             .vertex_flags(vertex_flags)
             .prop("diffuse", MaterialProperty::Texture)
+            .build(ctx, self.graph.pass_by_type(PassType::Forward).unwrap())
+    }
+
+    pub fn texture_material_transparent(&self, ctx: &Context) -> Arc<Material> {
+        let vertex_flags = VertexFlag::POSITION
+            | VertexFlag::TEXTURE
+            | VertexFlag::NORMAL
+            | VertexFlag::TANGENT
+            | VertexFlag::BITANGENT;
+
+        Material::builder("mesh.vert.spv", "mesh.frag.spv")
+            .vertex_flags(vertex_flags)
+            .prop("diffuse", MaterialProperty::Texture)
+            .blend_mode(BlendMode::Alpha)
             .build(ctx, self.graph.pass_by_type(PassType::Forward).unwrap())
     }
 

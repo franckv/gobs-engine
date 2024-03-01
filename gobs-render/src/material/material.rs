@@ -11,8 +11,8 @@ use gobs_vulkan::{
     },
     image::ImageLayout,
     pipeline::{
-        CompareOp, CullMode, DynamicStateElem, FrontFace, Pipeline, PipelineLayout, Rect2D, Shader,
-        ShaderType, Viewport,
+        BlendMode, CompareOp, CullMode, DynamicStateElem, FrontFace, Pipeline, PipelineLayout,
+        Rect2D, Shader, ShaderType, Viewport,
     },
 };
 
@@ -70,7 +70,7 @@ pub struct MaterialBuilder {
     pub fragment_shader: PathBuf,
     pub vertex_flags: VertexFlag,
     pub cull_mode: CullMode,
-    pub blending_enabled: bool,
+    pub blend_mode: BlendMode,
     pub material_descriptor_layout: Option<DescriptorSetLayoutBuilder>,
 }
 
@@ -85,7 +85,7 @@ impl MaterialBuilder {
             fragment_shader,
             vertex_flags: VertexFlag::empty(),
             cull_mode: CullMode::Back,
-            blending_enabled: false,
+            blend_mode: BlendMode::None,
             material_descriptor_layout: None,
         }
     }
@@ -102,8 +102,8 @@ impl MaterialBuilder {
         self
     }
 
-    pub fn blending_enabled(mut self) -> Self {
-        self.blending_enabled = true;
+    pub fn blend_mode(mut self, blend_mode: BlendMode) -> Self {
+        self.blend_mode = blend_mode;
 
         self
     }
@@ -167,7 +167,7 @@ impl MaterialBuilder {
             .attachments(Some(ctx.color_format), Some(ctx.depth_format))
             .depth_test_enable(false, CompareOp::LessEqual)
             .cull_mode(self.cull_mode)
-            .blending_enabled(self.blending_enabled)
+            .blending_enabled(self.blend_mode)
             .front_face(FrontFace::CCW)
             .build();
 
@@ -178,7 +178,7 @@ impl MaterialBuilder {
             id: Uuid::new_v4(),
             vertex_flags: self.vertex_flags,
             pipeline,
-            blending_enabled: self.blending_enabled,
+            blending_enabled: self.blend_mode != BlendMode::None,
             material_ds_pool,
         })
     }

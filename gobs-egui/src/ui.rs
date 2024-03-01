@@ -15,7 +15,7 @@ use gobs_render::{
     pass::RenderPass,
     renderable::{RenderBatch, RenderObject, Renderable},
     resources::ModelResource,
-    ImageExtent2D, SamplerFilter,
+    BlendMode, ImageExtent2D, SamplerFilter,
 };
 
 const PIXEL_PER_POINT: f32 = 1.;
@@ -50,7 +50,7 @@ impl UIRenderer {
             .vertex_flags(vertex_flags)
             .prop("diffuse", MaterialProperty::Texture)
             .no_culling()
-            .blending_enabled()
+            .blend_mode(BlendMode::Premultiplied)
             .build(ctx, pass);
 
         let frame_data = (0..ctx.frames_in_flight)

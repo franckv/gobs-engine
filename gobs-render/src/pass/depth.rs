@@ -141,6 +141,9 @@ impl DepthPass {
             if render_object.pass.id() != self.id {
                 continue;
             }
+            if render_object.material.material.blending_enabled {
+                continue;
+            }
             let world_matrix = render_object.transform.matrix;
 
             if let Some(push_layout) = self.push_layout() {

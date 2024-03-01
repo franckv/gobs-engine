@@ -56,7 +56,7 @@ impl Shapes {
         builder.build()
     }
 
-    pub fn rect(top: f32, bottom: f32, left: f32, right: f32) -> Arc<Mesh> {
+    pub fn rect(color: Color, top: f32, bottom: f32, left: f32, right: f32) -> Arc<Mesh> {
         let mut builder = Mesh::builder("rect");
 
         let v = [
@@ -84,7 +84,7 @@ impl Shapes {
         for i in 0..vi.len() {
             let vertex_data = VertexData::builder()
                 .position(v[vi[i] - 1].into())
-                .color([1., 1., 1., 1.].into())
+                .color(color)
                 .texture(t[ti[i] - 1].into())
                 .normal(n[ni[i] - 1].into())
                 .padding(PADDING)
@@ -96,8 +96,8 @@ impl Shapes {
         builder.build()
     }
 
-    pub fn quad() -> Arc<Mesh> {
-        Self::rect(0.5, -0.5, -0.5, 0.5)
+    pub fn quad(color: Color) -> Arc<Mesh> {
+        Self::rect(color, 0.5, -0.5, -0.5, 0.5)
     }
 
     pub fn cube(cols: u32, rows: u32, index: &[u32], size: f32) -> Arc<Mesh> {

@@ -14,7 +14,7 @@ use gobs_render::{
     geometry::{Mesh, Model, VertexData, VertexFlag},
     material::{Material, MaterialInstance, MaterialProperty, Texture, TextureType},
     pass::RenderPass,
-    ImageExtent2D, ImageFormat, SamplerFilter,
+    BlendMode, ImageExtent2D, ImageFormat, SamplerFilter,
 };
 use gobs_scene::graph::scenegraph::{NodeValue, SceneGraph};
 
@@ -233,7 +233,7 @@ fn load_materials(
         Material::builder("gltf.texture.vert.spv", "gltf.texture.frag.spv")
             .vertex_flags(vertex_flags)
             .prop("diffuse", MaterialProperty::Texture)
-            .blending_enabled()
+            .blend_mode(BlendMode::Alpha)
             .build(ctx, pass.clone());
 
     let vertex_flags = VertexFlag::POSITION | VertexFlag::COLOR;
@@ -245,7 +245,7 @@ fn load_materials(
     let color_material_transparent =
         Material::builder("gltf.color.vert.spv", "gltf.color.frag.spv")
             .vertex_flags(vertex_flags)
-            .blending_enabled()
+            .blend_mode(BlendMode::Alpha)
             .build(ctx, pass.clone());
 
     let default_material_instance = texture_material
