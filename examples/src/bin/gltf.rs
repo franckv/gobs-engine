@@ -77,7 +77,11 @@ impl Run for App {
         self.scene.update(ctx, delta);
 
         self.common
-            .update_ui(ctx, &self.graph, &self.scene, &mut self.ui);
+            .update_ui(ctx, &self.graph, &self.scene, &mut self.ui, |ui| {
+                ui.collapsing("GLTF", |ui| {
+                    ui.label(format!("Current scene: {}", self.current_scene));
+                });
+            });
     }
 
     fn render(&mut self, ctx: &Context) -> Result<(), RenderError> {

@@ -75,7 +75,7 @@ impl Run for App {
         self.scene.update(ctx, delta);
 
         self.common
-            .update_ui(ctx, &self.graph, &self.scene, &mut self.ui);
+            .update_ui(ctx, &self.graph, &self.scene, &mut self.ui, |_| {});
     }
 
     fn render(&mut self, ctx: &Context) -> Result<(), RenderError> {

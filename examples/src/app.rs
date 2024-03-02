@@ -134,13 +134,16 @@ impl SampleApp {
             .build(ctx, graph.pass_by_type(PassType::Forward).unwrap())
     }
 
-    pub fn update_ui(
+    pub fn update_ui<F>(
         &mut self,
         ctx: &Context,
         graph: &FrameGraph,
         scene: &Scene,
         ui: &mut UIRenderer,
-    ) {
+        mut f: F,
+    ) where
+        F: FnMut(&mut egui::Ui),
+    {
         if self.draw_ui {
             ui.update(ctx, graph.pass_by_type(PassType::Ui).unwrap(), |ectx| {
                 egui::CentralPanel::default()
@@ -154,6 +157,7 @@ impl SampleApp {
                         Self::show_camera(ui, &scene.camera);
                         Self::show_memory(ui, ctx);
                         Self::show_scene(ui, &scene.graph);
+                        f(ui);
                     });
             });
         }
