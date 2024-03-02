@@ -26,10 +26,10 @@ pub struct Sampler {
 }
 
 impl Sampler {
-    pub fn new(device: Arc<Device>, filter: SamplerFilter) -> Self {
+    pub fn new(device: Arc<Device>, mag_filter: SamplerFilter, min_filter: SamplerFilter) -> Self {
         let sampler_info = vk::SamplerCreateInfo::builder()
-            .mag_filter(filter.into())
-            .min_filter(filter.into());
+            .mag_filter(mag_filter.into())
+            .min_filter(min_filter.into());
 
         let sampler = unsafe { device.raw().create_sampler(&sampler_info, None).unwrap() };
 

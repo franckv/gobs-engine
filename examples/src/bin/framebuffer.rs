@@ -111,6 +111,7 @@ impl App {
             extent,
             TextureType::Diffuse,
             SamplerFilter::FilterLinear,
+            SamplerFilter::FilterLinear,
         );
 
         let material_instance = material.instantiate(vec![texture]);

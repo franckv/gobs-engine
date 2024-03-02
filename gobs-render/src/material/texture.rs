@@ -42,6 +42,7 @@ impl Texture {
             Color::WHITE,
             TextureType::Diffuse,
             SamplerFilter::FilterLinear,
+            SamplerFilter::FilterLinear,
         )
     }
 
@@ -52,7 +53,8 @@ impl Texture {
         extent: ImageExtent2D,
         ty: TextureType,
         format: ImageFormat,
-        filter: SamplerFilter,
+        mag_filter: SamplerFilter,
+        min_filter: SamplerFilter,
     ) -> Self {
         let image = Image::new(
             name,
@@ -63,7 +65,7 @@ impl Texture {
             ctx.allocator.clone(),
         );
 
-        let sampler = Sampler::new(ctx.device.clone(), filter);
+        let sampler = Sampler::new(ctx.device.clone(), mag_filter, min_filter);
 
         let mut texture_value = TextureValue {
             id: Uuid::new_v4(),
@@ -82,7 +84,8 @@ impl Texture {
         ctx: &Context,
         file_name: &str,
         ty: TextureType,
-        filter: SamplerFilter,
+        mag_filter: SamplerFilter,
+        min_filter: SamplerFilter,
     ) -> Result<Self> {
         let img = load::load_image(file_name, AssetType::IMAGE).await?;
 
@@ -96,7 +99,8 @@ impl Texture {
             },
             ty,
             ty.into(),
-            filter,
+            mag_filter,
+            min_filter,
         ))
     }
 
@@ -105,7 +109,8 @@ impl Texture {
         texture_files: &[&str],
         cols: u32,
         texture_type: TextureType,
-        filter: SamplerFilter,
+        mag_filter: SamplerFilter,
+        min_filter: SamplerFilter,
     ) -> Result<Self> {
         let n = texture_files.len();
 
@@ -151,7 +156,8 @@ impl Texture {
             ImageExtent2D::new(img.dimensions().0, img.dimensions().1),
             texture_type,
             texture_type.into(),
-            filter,
+            mag_filter,
+            min_filter,
         ))
     }
 
@@ -160,7 +166,8 @@ impl Texture {
         colors: &[Color],
         extent: ImageExtent2D,
         ty: TextureType,
-        filter: SamplerFilter,
+        mag_filter: SamplerFilter,
+        min_filter: SamplerFilter,
     ) -> Texture {
         Self::new(
             ctx,
@@ -172,7 +179,8 @@ impl Texture {
             extent,
             ty,
             ty.into(),
-            filter,
+            mag_filter,
+            min_filter,
         )
     }
 
@@ -180,7 +188,8 @@ impl Texture {
         ctx: &Context,
         color: Color,
         ty: TextureType,
-        filter: SamplerFilter,
+        mag_filter: SamplerFilter,
+        min_filter: SamplerFilter,
     ) -> Texture {
         let data: [u8; 4] = color.into();
         Self::new(
@@ -190,7 +199,8 @@ impl Texture {
             ImageExtent2D::new(1, 1),
             ty,
             ty.into(),
-            filter,
+            mag_filter,
+            min_filter,
         )
     }
 
@@ -200,7 +210,8 @@ impl Texture {
         color1: Color,
         color2: Color,
         ty: TextureType,
-        filter: SamplerFilter,
+        mag_filter: SamplerFilter,
+        min_filter: SamplerFilter,
     ) -> Texture {
         let mut data: [u8; 4 * Self::CHECKER_SIZE * Self::CHECKER_SIZE] =
             [0; 4 * Self::CHECKER_SIZE * Self::CHECKER_SIZE];
@@ -227,7 +238,8 @@ impl Texture {
             ImageExtent2D::new(Self::CHECKER_SIZE as u32, Self::CHECKER_SIZE as u32),
             ty,
             ty.into(),
-            filter,
+            mag_filter,
+            min_filter,
         )
     }
 

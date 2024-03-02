@@ -136,6 +136,7 @@ impl App {
             3,
             TextureType::Diffuse,
             SamplerFilter::FilterLinear,
+            SamplerFilter::FilterLinear,
         );
 
         let normal_texture = Texture::pack(
@@ -143,6 +144,7 @@ impl App {
             examples::ATLAS_N,
             examples::ATLAS_COLS,
             TextureType::Normal,
+            SamplerFilter::FilterLinear,
             SamplerFilter::FilterLinear,
         );
 

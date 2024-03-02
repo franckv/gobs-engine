@@ -238,6 +238,7 @@ impl UIRenderer {
                     TextureType::Diffuse,
                     TextureType::Diffuse.into(),
                     SamplerFilter::FilterLinear,
+                    SamplerFilter::FilterLinear,
                 );
 
                 self.material.instantiate(vec![texture])

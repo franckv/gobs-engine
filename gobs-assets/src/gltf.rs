@@ -339,6 +339,27 @@ impl TextureManager {
             let name = t.name().unwrap_or_default();
             let image = t.source();
             let data = &images[image.index()];
+            let sampler = t.sampler();
+
+            let mag_filter = match sampler.mag_filter() {
+                Some(filter) => match filter {
+                    gltf::texture::MagFilter::Nearest => SamplerFilter::FilterNearest,
+                    gltf::texture::MagFilter::Linear => SamplerFilter::FilterLinear,
+                },
+                None => SamplerFilter::FilterLinear,
+            };
+
+            let min_filter = match sampler.min_filter() {
+                Some(filter) => match filter {
+                    gltf::texture::MinFilter::Nearest => SamplerFilter::FilterNearest,
+                    gltf::texture::MinFilter::Linear => SamplerFilter::FilterLinear,
+                    gltf::texture::MinFilter::NearestMipmapNearest => SamplerFilter::FilterNearest,
+                    gltf::texture::MinFilter::LinearMipmapNearest => SamplerFilter::FilterNearest,
+                    gltf::texture::MinFilter::NearestMipmapLinear => SamplerFilter::FilterLinear,
+                    gltf::texture::MinFilter::LinearMipmapLinear => SamplerFilter::FilterLinear,
+                },
+                None => SamplerFilter::FilterLinear,
+            };
 
             let name = format!("Texture #{}: {}", t.index(), name);
 
@@ -358,7 +379,8 @@ impl TextureManager {
                         ImageExtent2D::new(data.width, data.height),
                         TextureType::Diffuse,
                         ImageFormat::R8g8b8a8Srgb,
-                        SamplerFilter::FilterLinear,
+                        mag_filter,
+                        min_filter,
                     );
 
                     self.add(texture);
@@ -368,7 +390,7 @@ impl TextureManager {
                     for (i, pixel) in data.pixels.iter().enumerate() {
                         pixels.push(*pixel);
                         if i % 3 == 2 {
-                            pixels.push(127);
+                            pixels.push(255);
                         }
                     }
 
@@ -379,7 +401,8 @@ impl TextureManager {
                         ImageExtent2D::new(data.width, data.height),
                         TextureType::Diffuse,
                         ImageFormat::R8g8b8a8Srgb,
-                        SamplerFilter::FilterLinear,
+                        mag_filter,
+                        min_filter,
                     );
 
                     self.add(texture);

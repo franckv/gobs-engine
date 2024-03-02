@@ -123,11 +123,13 @@ impl App {
             examples::WALL_TEXTURE,
             TextureType::Diffuse,
             SamplerFilter::FilterLinear,
+            SamplerFilter::FilterLinear,
         );
         let normal_texture = Texture::with_file(
             ctx,
             examples::WALL_TEXTURE_N,
             TextureType::Normal,
+            SamplerFilter::FilterLinear,
             SamplerFilter::FilterLinear,
         );
         let (diffuse_texture, normal_texture) = try_join!(diffuse_texture, normal_texture).unwrap();
