@@ -136,9 +136,11 @@ impl WirePass {
                 .write()
                 .update(scene_data);
         }
+        batch.render_stats.cpu_draw_update += timer.delta();
 
         cmd.bind_descriptor_set(uniform_data_ds, 0, &self.pipeline);
         batch.render_stats.binds += 1;
+        batch.render_stats.cpu_draw_bind += timer.delta();
 
         for render_object in &batch.render_list {
             if render_object.pass.id() != self.id {
@@ -159,12 +161,9 @@ impl WirePass {
                     ),
                 ]);
 
-                batch.render_stats.cpu_draw_pre += timer.delta();
-
                 cmd.push_constants(self.pipeline.layout.clone(), &model_data);
             }
-
-            batch.render_stats.cpu_draw_mid += timer.delta();
+            batch.render_stats.cpu_draw_push += timer.delta();
 
             if last_model != render_object.model.model.id
                 || last_offset != render_object.indices_offset
@@ -177,10 +176,11 @@ impl WirePass {
                 last_model = render_object.model.model.id;
                 last_offset = render_object.indices_offset;
             }
+            batch.render_stats.cpu_draw_bind += timer.delta();
+
             cmd.draw_indexed(render_object.indices_len, 1);
             batch.render_stats.draws += 1;
-
-            batch.render_stats.cpu_draw_post += timer.delta();
+            batch.render_stats.cpu_draw_submit += timer.delta();
         }
     }
 }

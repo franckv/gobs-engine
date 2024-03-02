@@ -97,6 +97,7 @@ impl UiPass {
                 .write()
                 .update(scene_data);
         }
+        batch.render_stats.cpu_draw_update += timer.delta();
 
         let mut model_data = Vec::new();
 
@@ -122,6 +123,7 @@ impl UiPass {
 
                 last_material = material.id;
             }
+            batch.render_stats.cpu_draw_bind += timer.delta();
 
             if let Some(push_layout) = render_object.pass.push_layout() {
                 model_data.clear();
@@ -136,22 +138,20 @@ impl UiPass {
                     &mut model_data,
                 );
 
-                batch.render_stats.cpu_draw_pre += timer.delta();
-
                 cmd.push_constants(pipeline.layout.clone(), &model_data);
             }
-
-            batch.render_stats.cpu_draw_mid += timer.delta();
+            batch.render_stats.cpu_draw_push += timer.delta();
 
             cmd.bind_index_buffer::<u32>(
                 &render_object.model.index_buffer,
                 render_object.indices_offset,
             );
             batch.render_stats.binds += 1;
+            batch.render_stats.cpu_draw_bind += timer.delta();
+
             cmd.draw_indexed(render_object.indices_len, 1);
             batch.render_stats.draws += 1;
-
-            batch.render_stats.cpu_draw_post += timer.delta();
+            batch.render_stats.cpu_draw_submit += timer.delta();
         }
     }
 }

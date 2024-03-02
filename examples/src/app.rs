@@ -189,9 +189,10 @@ impl SampleApp {
                 1000. * stats.cpu_draw_time
             ));
             ui.collapsing("Details", |ui| {
-                ui.label(format!("  Pre: {:.2}ms", 1000. * stats.cpu_draw_pre));
-                ui.label(format!("  Mid: {:.2}ms", 1000. * stats.cpu_draw_mid));
-                ui.label(format!("  Post: {:.2}ms", 1000. * stats.cpu_draw_post));
+                ui.label(format!("  Update: {:.2}ms", 1000. * stats.cpu_draw_update));
+                ui.label(format!("  Push: {:.2}ms", 1000. * stats.cpu_draw_push));
+                ui.label(format!("  Bind: {:.2}ms", 1000. * stats.cpu_draw_bind));
+                ui.label(format!("  Submit: {:.2}ms", 1000. * stats.cpu_draw_submit));
             });
             ui.label(format!("  GPU time: {:.2}ms", 1000. * stats.gpu_draw_time));
             ui.label(format!("  Update time: {:.2}ms", 1000. * stats.update_time));
