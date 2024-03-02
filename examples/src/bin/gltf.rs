@@ -127,8 +127,11 @@ impl Run for App {
 
 impl App {
     fn init(&mut self, ctx: &Context) {
+        log::info!("Load scene 0");
         self.scenes.push(self.load_scene(ctx));
+        log::info!("Load scene 1");
         self.scenes.push(self.load_scene2(ctx));
+        log::info!("Load scene 2");
         self.scenes.push(self.load_scene3(ctx));
 
         self.scene.graph = self.scenes[self.current_scene].clone();

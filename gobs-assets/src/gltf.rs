@@ -243,16 +243,21 @@ impl MaterialManager {
                 .blend_mode(BlendMode::Alpha)
                 .build(ctx, pass.clone());
 
-        let vertex_flags = VertexFlag::POSITION | VertexFlag::COLOR;
+        let vertex_flags = VertexFlag::POSITION
+            | VertexFlag::COLOR
+            | VertexFlag::NORMAL
+            | VertexFlag::TANGENT
+            | VertexFlag::BITANGENT;
 
-        let color = Material::builder("gltf.color.vert.spv", "gltf.color.frag.spv")
+        let color = Material::builder("gltf.color_light.vert.spv", "gltf.color_light.frag.spv")
             .vertex_flags(vertex_flags)
             .build(ctx, pass.clone());
 
-        let transparent_color = Material::builder("gltf.color.vert.spv", "gltf.color.frag.spv")
-            .vertex_flags(vertex_flags)
-            .blend_mode(BlendMode::Alpha)
-            .build(ctx, pass.clone());
+        let transparent_color =
+            Material::builder("gltf.color_light.vert.spv", "gltf.color_light.frag.spv")
+                .vertex_flags(vertex_flags)
+                .blend_mode(BlendMode::Alpha)
+                .build(ctx, pass.clone());
 
         let default_material_instance = texture
             .clone()
