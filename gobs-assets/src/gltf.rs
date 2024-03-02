@@ -14,7 +14,7 @@ use gobs_render::{
     geometry::{Mesh, Model, VertexData, VertexFlag},
     material::{Material, MaterialInstance, MaterialProperty, Texture, TextureType},
     pass::RenderPass,
-    BlendMode, ImageExtent2D, ImageFormat, SamplerFilter,
+    BlendMode, ImageExtent2D, SamplerFilter,
 };
 use gobs_scene::graph::scenegraph::{NodeValue, SceneGraph};
 
@@ -203,6 +203,8 @@ struct MaterialManager {
     pub default_material_instance: Arc<MaterialInstance>,
     pub texture: Arc<Material>,
     pub transparent_texture: Arc<Material>,
+    pub texture_normal: Arc<Material>,
+    pub transparent_texture_normal: Arc<Material>,
     pub color_instance: Arc<MaterialInstance>,
     pub transparent_color_instance: Arc<MaterialInstance>,
 }
@@ -224,6 +226,20 @@ impl MaterialManager {
             Material::builder("gltf.texture.vert.spv", "gltf.texture.frag.spv")
                 .vertex_flags(vertex_flags)
                 .prop("diffuse", MaterialProperty::Texture)
+                .blend_mode(BlendMode::Alpha)
+                .build(ctx, pass.clone());
+
+        let texture_normal = Material::builder("gltf.texture.vert.spv", "gltf.texture_n.frag.spv")
+            .vertex_flags(vertex_flags)
+            .prop("diffuse", MaterialProperty::Texture)
+            .prop("normal", MaterialProperty::Texture)
+            .build(ctx, pass.clone());
+
+        let transparent_texture_normal =
+            Material::builder("gltf.texture.vert.spv", "gltf.texture_n.frag.spv")
+                .vertex_flags(vertex_flags)
+                .prop("diffuse", MaterialProperty::Texture)
+                .prop("normal", MaterialProperty::Texture)
                 .blend_mode(BlendMode::Alpha)
                 .build(ctx, pass.clone());
 
@@ -254,6 +270,8 @@ impl MaterialManager {
             default_material_instance,
             texture,
             transparent_texture,
+            texture_normal,
+            transparent_texture_normal,
             color_instance,
             transparent_color_instance,
         }
@@ -276,7 +294,18 @@ impl MaterialManager {
                             tex_info.texture().name().unwrap_or_default()
                         );
                         let texture = texture_manager.textures[tex_info.texture().index()].clone();
-                        self.add_texture_instance(mat.alpha_mode(), texture);
+                        match mat.normal_texture() {
+                            Some(normal) => {
+                                let normal_texture =
+                                    texture_manager.textures[normal.texture().index()].clone();
+                                self.add_texture_normal_instance(
+                                    mat.alpha_mode(),
+                                    texture,
+                                    normal_texture,
+                                )
+                            }
+                            None => self.add_texture_instance(mat.alpha_mode(), texture),
+                        };
                     }
                     None => {
                         let color: Color = pbr.base_color_factor().into();
@@ -300,6 +329,23 @@ impl MaterialManager {
         let material_instance = match alpha {
             AlphaMode::Blend => self.transparent_texture.instantiate(vec![texture]),
             _ => self.texture.instantiate(vec![texture]),
+        };
+        self.instances.push(material_instance.clone());
+
+        material_instance
+    }
+
+    fn add_texture_normal_instance(
+        &mut self,
+        alpha: AlphaMode,
+        diffuse: Texture,
+        normal: Texture,
+    ) -> Arc<MaterialInstance> {
+        let material_instance = match alpha {
+            AlphaMode::Blend => self
+                .transparent_texture_normal
+                .instantiate(vec![diffuse, normal]),
+            _ => self.texture_normal.instantiate(vec![diffuse, normal]),
         };
         self.instances.push(material_instance.clone());
 
@@ -361,13 +407,23 @@ impl TextureManager {
                 None => SamplerFilter::FilterLinear,
             };
 
+            let mut ty = TextureType::Diffuse;
+            for mat in doc.materials() {
+                if let Some(normal) = mat.normal_texture() {
+                    if normal.texture().index() == t.index() {
+                        ty = TextureType::Normal;
+                    }
+                }
+            }
+
             let name = format!("Texture #{}: {}", t.index(), name);
 
             log::info!(
-                "{}, image #{}, format: {:?}",
+                "{}, image #{}, format: {:?}, type: {:?}",
                 &name,
                 image.index(),
-                data.format
+                data.format,
+                ty
             );
 
             match data.format {
@@ -377,8 +433,8 @@ impl TextureManager {
                         &name,
                         &data.pixels,
                         ImageExtent2D::new(data.width, data.height),
-                        TextureType::Diffuse,
-                        ImageFormat::R8g8b8a8Srgb,
+                        ty,
+                        ty.into(),
                         mag_filter,
                         min_filter,
                     );
@@ -399,8 +455,8 @@ impl TextureManager {
                         &name,
                         &pixels,
                         ImageExtent2D::new(data.width, data.height),
-                        TextureType::Diffuse,
-                        ImageFormat::R8g8b8a8Srgb,
+                        ty.into(),
+                        ty.into(),
                         mag_filter,
                         min_filter,
                     );
