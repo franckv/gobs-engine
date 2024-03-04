@@ -1,6 +1,6 @@
 use std::{collections::HashMap, sync::Arc};
 
-use glam::Vec2;
+use glam::{Vec2, Vec3};
 use uuid::Uuid;
 
 use super::VertexData;
@@ -97,39 +97,54 @@ impl MeshBuilder {
         self
     }
 
+    fn get_tangents(v0: &VertexData, v1: &VertexData, v2: &VertexData) -> (Vec3, Vec3) {
+        let pos0 = v0.position;
+        let pos1 = v1.position;
+        let pos2 = v2.position;
+
+        let uv0: Vec2 = v0.texture;
+        let uv1: Vec2 = v1.texture;
+        let uv2: Vec2 = v2.texture;
+
+        let delta_pos1 = pos1 - pos0;
+        let delta_pos2 = pos2 - pos0;
+        let delta_uv1 = uv1 - uv0;
+        let delta_uv2 = uv2 - uv0;
+
+        let d = delta_uv1.x * delta_uv2.y - delta_uv1.y * delta_uv2.x;
+        if d == 0. {
+            let normal = (v0.normal + v1.normal + v2.normal).normalize();
+            let tangent = delta_pos1.normalize();
+            let bitangent = normal.cross(tangent);
+
+            (tangent, bitangent)
+        } else {
+            let r = 1. / d;
+            let tangent = (delta_pos1 * delta_uv2.y - delta_pos2 * delta_uv1.y) * r;
+            let bitangent = (delta_pos2 * delta_uv1.x - delta_pos1 * delta_uv2.x) * -r;
+
+            (tangent, bitangent)
+        }
+    }
+
     fn update_tangent(mut self) -> Self {
         log::debug!("Calculating tangents for {} indices", self.indices.len());
 
         let mut triangles_included = vec![0; self.vertices.len()];
 
         for c in self.indices.chunks(3) {
-            let v0 = self.vertices[c[0] as usize].clone();
-            let v1 = self.vertices[c[1] as usize].clone();
-            let v2 = self.vertices[c[2] as usize].clone();
+            let v0 = &mut self.vertices[c[0] as usize].clone();
+            let v1 = &mut self.vertices[c[1] as usize].clone();
+            let v2 = &mut self.vertices[c[2] as usize].clone();
 
-            let pos0 = v0.position;
-            let pos1 = v1.position;
-            let pos2 = v2.position;
+            let (tangent, bitangent) = Self::get_tangents(v0, v1, v2);
 
-            let uv0: Vec2 = v0.texture;
-            let uv1: Vec2 = v1.texture;
-            let uv2: Vec2 = v2.texture;
-
-            let delta_pos1 = pos1 - pos0;
-            let delta_pos2 = pos2 - pos0;
-            let delta_uv1 = uv1 - uv0;
-            let delta_uv2 = uv2 - uv0;
-
-            let r = 1. / (delta_uv1.x * delta_uv2.y - delta_uv1.y * delta_uv2.x);
-            let tangent = (delta_pos1 * delta_uv2.y - delta_pos2 * delta_uv1.y) * r;
-            let bitangent = (delta_pos2 * delta_uv1.x - delta_pos1 * delta_uv2.x) * -r;
-
-            self.vertices[c[0] as usize].tangent = tangent + v0.tangent;
-            self.vertices[c[1] as usize].tangent = tangent + v1.tangent;
-            self.vertices[c[2] as usize].tangent = tangent + v2.tangent;
-            self.vertices[c[0] as usize].bitangent = bitangent + v0.bitangent;
-            self.vertices[c[1] as usize].bitangent = bitangent + v1.bitangent;
-            self.vertices[c[2] as usize].bitangent = bitangent + v2.bitangent;
+            self.vertices[c[0] as usize].tangent += tangent;
+            self.vertices[c[1] as usize].tangent += tangent;
+            self.vertices[c[2] as usize].tangent += tangent;
+            self.vertices[c[0] as usize].bitangent += bitangent;
+            self.vertices[c[1] as usize].bitangent += bitangent;
+            self.vertices[c[2] as usize].bitangent += bitangent;
 
             triangles_included[c[0] as usize] += 1;
             triangles_included[c[1] as usize] += 1;
