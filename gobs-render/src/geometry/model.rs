@@ -12,7 +12,7 @@ pub type ModelId = Uuid;
 
 pub struct Model {
     pub name: String,
-    pub id: Uuid,
+    pub id: ModelId,
     pub meshes: Vec<(Arc<Mesh>, MaterialInstanceId)>,
     pub materials: HashMap<MaterialInstanceId, Arc<MaterialInstance>>,
 }
@@ -31,6 +31,7 @@ impl Debug for Model {
 
 pub struct ModelBuilder {
     pub name: String,
+    pub id: ModelId,
     pub meshes: Vec<(Arc<Mesh>, MaterialInstanceId)>,
     pub materials: HashMap<MaterialInstanceId, Arc<MaterialInstance>>,
 }
@@ -39,9 +40,16 @@ impl ModelBuilder {
     pub fn new(name: &str) -> Self {
         ModelBuilder {
             name: name.to_string(),
+            id: Uuid::new_v4(),
             meshes: Vec::new(),
             materials: HashMap::new(),
         }
+    }
+
+    pub fn id(mut self, model_id: ModelId) -> Self {
+        self.id = model_id;
+
+        self
     }
 
     pub fn mesh(mut self, mesh: Arc<Mesh>, material_instance: Arc<MaterialInstance>) -> Self {
@@ -57,7 +65,7 @@ impl ModelBuilder {
     pub fn build(self) -> Arc<Model> {
         Arc::new(Model {
             name: self.name,
-            id: Uuid::new_v4(),
+            id: self.id,
             meshes: self.meshes,
             materials: self.materials,
         })

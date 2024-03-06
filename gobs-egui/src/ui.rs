@@ -10,18 +10,17 @@ use gobs_core::Transform;
 use gobs_game::input::{Input, Key};
 use gobs_render::{
     context::Context,
-    geometry::{Mesh, Model, VertexData, VertexFlag},
+    geometry::{Mesh, Model, ModelId, VertexData, VertexFlag},
     material::{Material, MaterialInstance, MaterialProperty, Texture, TextureType},
     pass::RenderPass,
-    renderable::{RenderBatch, RenderObject, Renderable},
-    resources::ModelResource,
+    renderable::{RenderBatch, Renderable},
     BlendMode, ImageExtent2D, SamplerFilter,
 };
 
 const PIXEL_PER_POINT: f32 = 1.;
 
 struct FrameData {
-    model: Option<Arc<ModelResource>>,
+    model: Option<Arc<Model>>,
 }
 
 pub struct UIRenderer {
@@ -79,7 +78,7 @@ impl UIRenderer {
         (self.frame_number - 1) % ctx.frames_in_flight
     }
 
-    pub fn update<F>(&mut self, ctx: &Context, pass: Arc<dyn RenderPass>, callback: F)
+    pub fn update<F>(&mut self, ctx: &Context, _pass: Arc<dyn RenderPass>, callback: F)
     where
         F: FnMut(&egui::Context),
     {
@@ -93,9 +92,14 @@ impl UIRenderer {
 
         let to_remove = output.textures_delta.free.clone();
 
-        let model = self.load_models(output);
-        let resource = ModelResource::new(ctx, model.clone(), pass.clone());
-        self.frame_data[frame_id].model = Some(resource);
+        let model_id = match &self.frame_data[frame_id].model {
+            Some(model) => Some(model.id),
+            None => None,
+        };
+
+        let model = self.load_model(output, model_id);
+
+        self.frame_data[frame_id].model = Some(model);
 
         self.cleanup_textures(to_remove);
     }
@@ -285,10 +289,14 @@ impl UIRenderer {
         }
     }
 
-    fn load_models(&self, output: FullOutput) -> Arc<Model> {
+    fn load_model(&self, output: FullOutput, model_id: Option<ModelId>) -> Arc<Model> {
         let primitives = self.ectx.tessellate(output.shapes, PIXEL_PER_POINT);
 
         let mut model = Model::builder("ui");
+
+        if let Some(model_id) = model_id {
+            model = model.id(model_id);
+        }
 
         for primitive in &primitives {
             if let Primitive::Mesh(m) = &primitive.primitive {
@@ -331,22 +339,10 @@ impl Renderable for UIRenderer {
 
     fn draw(&mut self, ctx: &Context, pass: Arc<dyn RenderPass>, batch: &mut RenderBatch) {
         let frame_id = self.frame_id(ctx);
-        let resource = &self.frame_data[frame_id].model;
+        let model = self.frame_data[frame_id].model.clone();
 
-        if let Some(resource) = resource {
-            for primitive in &resource.primitives {
-                let render_object = RenderObject {
-                    transform: Transform::IDENTITY,
-                    pass: pass.clone(),
-                    model: resource.clone(),
-                    material: resource.model.materials[&primitive.material].clone(),
-                    vertices_offset: primitive.vertex_offset,
-                    indices_offset: primitive.index_offset,
-                    indices_len: primitive.len,
-                };
-
-                batch.add_object(render_object);
-            }
+        if let Some(model) = model {
+            batch.add_model(ctx, model, Transform::IDENTITY, pass.clone(), true);
         }
 
         batch.add_extent_data(

@@ -7,6 +7,7 @@ use gobs_core::{
 };
 use gobs_vulkan::image::ImageExtent2D;
 
+use crate::geometry::{Model, ModelId};
 use crate::{
     context::Context,
     material::MaterialInstance,
@@ -19,6 +20,7 @@ pub struct RenderBatch {
     pub(crate) render_list: Vec<RenderObject>,
     pub(crate) scene_data: HashMap<PassId, Vec<u8>>,
     pub(crate) render_stats: RenderStats,
+    model_manager: HashMap<(ModelId, PassId), Arc<ModelResource>>,
 }
 
 impl RenderBatch {
@@ -27,6 +29,7 @@ impl RenderBatch {
             render_list: Vec::new(),
             scene_data: HashMap::new(),
             render_stats: RenderStats::default(),
+            model_manager: HashMap::new(),
         }
     }
 
@@ -36,9 +39,40 @@ impl RenderBatch {
         self.render_stats.reset();
     }
 
-    pub fn add_object(&mut self, object: RenderObject) {
-        self.render_stats.add_object(&object);
-        self.render_list.push(object);
+    pub fn add_model(
+        &mut self,
+        ctx: &Context,
+        model: Arc<Model>,
+        transform: Transform,
+        pass: Arc<dyn RenderPass>,
+        overwrite: bool,
+    ) {
+        let key = (model.id, pass.id());
+        let resource = if overwrite {
+            self.model_manager
+                .insert(key, ModelResource::new(ctx, model.clone(), pass.clone()));
+            self.model_manager.get(&key).unwrap().clone()
+        } else {
+            self.model_manager
+                .entry(key)
+                .or_insert_with(|| ModelResource::new(ctx, model.clone(), pass.clone()))
+                .clone()
+        };
+
+        for primitive in &resource.primitives {
+            let render_object = RenderObject {
+                transform,
+                pass: pass.clone(),
+                model: resource.clone(),
+                material: resource.model.materials[&primitive.material].clone(),
+                vertices_offset: primitive.vertex_offset,
+                indices_offset: primitive.index_offset,
+                indices_len: primitive.len,
+            };
+
+            self.render_stats.add_object(&render_object);
+            self.render_list.push(render_object);
+        }
     }
 
     pub fn add_camera_data(&mut self, camera: &Camera, light: &Light, pass: Arc<dyn RenderPass>) {
