@@ -175,58 +175,65 @@ impl App {
 
         let rotation = Quat::from_axis_angle(Vec3::Z, 0.);
 
+        let wall_node = self
+            .scene
+            .graph
+            .insert(self.scene.graph.root, NodeValue::None, Transform::IDENTITY)
+            .unwrap();
+        let floor_node = self
+            .scene
+            .graph
+            .insert(
+                self.scene.graph.root,
+                NodeValue::None,
+                Transform::translation(-examples::TILE_SIZE * Vec3::Y),
+            )
+            .unwrap();
+
         for c in examples::MAP.chars() {
             match c {
                 'w' => {
                     i += examples::TILE_SIZE;
-                    let mut position = Vec3 {
+                    let position = Vec3 {
                         x: i - offset,
                         y: 0.,
                         z: j - offset,
                     };
 
                     let transform = Transform::new(position, rotation, Vec3::splat(1.));
-                    self.scene.graph.insert(
-                        self.scene.graph.root,
-                        NodeValue::Model(wall.clone()),
-                        transform,
-                    );
+                    self.scene
+                        .graph
+                        .insert(wall_node, NodeValue::Model(wall.clone()), transform);
 
-                    position.y = -examples::TILE_SIZE;
-                    let transform = Transform::new(position, rotation, Vec3::splat(1.));
-                    self.scene.graph.insert(
-                        self.scene.graph.root,
-                        NodeValue::Model(floor.clone()),
-                        transform,
-                    );
+                    self.scene
+                        .graph
+                        .insert(floor_node, NodeValue::Model(floor.clone()), transform);
                 }
                 '@' => {
                     i += examples::TILE_SIZE;
                     let position = Vec3 {
                         x: i - offset,
-                        y: -examples::TILE_SIZE,
+                        y: 0.,
                         z: j - offset,
                     };
+
                     let transform = Transform::new(position, rotation, Vec3::splat(1.));
-                    self.scene.graph.insert(
-                        self.scene.graph.root,
-                        NodeValue::Model(floor.clone()),
-                        transform,
-                    );
+                    self.scene
+                        .graph
+                        .insert(floor_node, NodeValue::Model(floor.clone()), transform);
                 }
                 '.' => {
                     i += examples::TILE_SIZE;
                     let position = Vec3 {
                         x: i - offset,
-                        y: -examples::TILE_SIZE,
+                        y: 0.,
                         z: j - offset,
                     };
+
                     let transform = Transform::new(position, rotation, Vec3::splat(1.));
-                    self.scene.graph.insert(
-                        self.scene.graph.root,
-                        NodeValue::Model(floor.clone()),
-                        transform,
-                    );
+                    self.scene
+                        .graph
+                        .insert(floor_node, NodeValue::Model(floor.clone()), transform);
                 }
                 '\n' => {
                     j += examples::TILE_SIZE;
