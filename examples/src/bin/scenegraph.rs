@@ -49,7 +49,7 @@ impl Run for App {
 
     fn update(&mut self, ctx: &Context, delta: f32) {
         self.camera_controller
-            .update_camera(&mut self.scene.camera, delta);
+            .update_camera(&mut self.scene.camera_mut(), delta);
 
         self.graph.update(ctx, delta);
         self.scene.update(ctx, delta);
@@ -114,10 +114,10 @@ impl App {
         let dy = extent.height as f32 / 6.;
 
         let node1 = graph.root;
-        if let Some(node) = graph.get_mut(node1) {
-            node.transform.translate([0., 2. * dy, 0.].into());
-            node.transform.scale([100., 100., 1.].into());
-        }
+        graph.update(node1, |transform| {
+            transform.translate([0., 2. * dy, 0.].into());
+            transform.scale([100., 100., 1.].into());
+        });
 
         let node2 = graph
             .insert(

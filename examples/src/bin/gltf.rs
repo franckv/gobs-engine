@@ -71,7 +71,7 @@ impl Run for App {
         }
 
         self.camera_controller
-            .update_camera(&mut self.scene.camera, delta);
+            .update_camera(&mut self.scene.camera_mut(), delta);
 
         self.graph.update(ctx, delta);
         self.scene.update(ctx, delta);

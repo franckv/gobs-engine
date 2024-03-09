@@ -19,23 +19,45 @@ pub type NodeId = DefaultKey;
 #[derive(Clone)]
 pub struct Node {
     pub value: NodeValue,
-    pub transform: Transform,
+    transform: Transform,
+    global_transform: Transform,
+    parent: Option<NodeId>,
     pub children: Vec<NodeId>,
 }
 
 impl Default for Node {
     fn default() -> Self {
-        Self::new(NodeValue::None, Transform::IDENTITY)
+        Self::new(
+            NodeValue::None,
+            Transform::IDENTITY,
+            None,
+            Transform::IDENTITY,
+        )
     }
 }
 
 impl Node {
-    pub fn new(value: NodeValue, transform: Transform) -> Self {
+    fn new(
+        value: NodeValue,
+        transform: Transform,
+        parent: Option<NodeId>,
+        parent_transform: Transform,
+    ) -> Self {
         Self {
             value,
             transform,
+            global_transform: parent_transform * transform,
+            parent,
             children: Vec::new(),
         }
+    }
+
+    pub fn local_transform(&self) -> &Transform {
+        &self.transform
+    }
+
+    pub fn global_transform(&self) -> &Transform {
+        &self.global_transform
     }
 }
 
@@ -61,18 +83,48 @@ impl SceneGraph {
         self.arena.get_mut(key)
     }
 
+    pub fn parent(&self, key: NodeId) -> Option<&Node> {
+        self.arena
+            .get(key)
+            .and_then(|node| node.parent)
+            .and_then(|parent| self.arena.get(parent))
+    }
+
+    pub fn update<F>(&mut self, key: NodeId, f: F)
+    where
+        F: Fn(&mut Transform),
+    {
+        if let Some(node) = self.arena.get_mut(key) {
+            f(&mut node.transform);
+        }
+
+        if let Some(parent) = self.parent(key) {
+            self.update_transform(key, parent.global_transform);
+        } else {
+            self.update_transform(key, Transform::IDENTITY);
+        }
+    }
+
+    fn update_transform(&mut self, key: NodeId, parent_transform: Transform) {
+        let mut children = vec![];
+        let mut global_transform = Transform::IDENTITY;
+
+        if let Some(node) = self.arena.get_mut(key) {
+            global_transform = parent_transform * node.transform;
+            node.global_transform = global_transform;
+
+            for &child in &node.children {
+                children.push(child);
+            }
+        }
+
+        for child in children {
+            self.update_transform(child, global_transform);
+        }
+    }
+
     pub fn remove(&mut self, key: NodeId) -> Option<Node> {
         self.arena.remove(key)
-    }
-
-    pub fn add(&mut self, value: NodeValue, transform: Transform) -> NodeId {
-        self.arena.insert(Node::new(value, transform))
-    }
-
-    pub fn add_child(&mut self, parent: NodeId, child: NodeId) {
-        if let Some(parent) = self.arena.get_mut(parent) {
-            parent.children.push(child);
-        }
     }
 
     pub fn insert(
@@ -81,14 +133,19 @@ impl SceneGraph {
         value: NodeValue,
         transform: Transform,
     ) -> Option<NodeId> {
-        let node = self
-            .arena
-            .contains_key(parent)
-            .then_some(self.arena.insert(Node::new(value, transform)));
+        let node = match self.arena.get(parent) {
+            Some(parent_node) => Some(self.arena.insert(Node::new(
+                value,
+                transform,
+                Some(parent),
+                parent_node.global_transform,
+            ))),
+            None => None,
+        };
 
-        if let Some(parent) = self.arena.get_mut(parent) {
+        if let Some(parent_node) = self.arena.get_mut(parent) {
             if let Some(node) = node {
-                parent.children.push(node);
+                parent_node.children.push(node);
             }
         }
 
@@ -99,19 +156,18 @@ impl SceneGraph {
     where
         F: FnMut(&Transform, &NodeValue),
     {
-        self.visit_local(root, Transform::IDENTITY, f);
+        self.visit_local(root, f);
     }
 
-    fn visit_local<F>(&self, root: NodeId, parent_transform: Transform, f: &mut F)
+    fn visit_local<F>(&self, root: NodeId, f: &mut F)
     where
         F: FnMut(&Transform, &NodeValue),
     {
         if let Some(node) = self.arena.get(root) {
-            let local_transform = parent_transform * node.transform;
             for &child in &node.children {
-                self.visit_local(child, local_transform, f);
+                self.visit_local(child, f);
             }
-            f(&local_transform, &node.value);
+            f(&node.global_transform, &node.value);
         }
     }
 

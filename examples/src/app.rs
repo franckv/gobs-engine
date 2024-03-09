@@ -154,7 +154,7 @@ impl SampleApp {
                         ui.separator();
                         Self::show_fps(ui, graph.render_stats().fps);
                         Self::show_stats(ui, "Render Stats", graph);
-                        Self::show_camera(ui, &scene.camera);
+                        Self::show_camera(ui, &scene.camera());
                         Self::show_memory(ui, ctx);
                         Self::show_scene(ui, &scene.graph);
                         f(ui);
@@ -225,24 +225,28 @@ impl SampleApp {
         let mut nodes = VecDeque::from([(0, graph.root)]);
 
         ui.collapsing("Scene", |ui| {
-            while !nodes.is_empty() {
-                let (d, node_key) = nodes.pop_front().unwrap();
-                let node = graph.get(node_key).unwrap();
-                let transform = node.transform;
-                let value = &node.value;
-                ui.label(format!(
-                    "{:>pad$}[{:?}] Node: {:?} ({:?})",
-                    "",
-                    node_key.data(),
-                    value,
-                    transform,
-                    pad = 5 * d
-                ));
+            egui::ScrollArea::vertical().show(ui, |ui| {
+                while !nodes.is_empty() {
+                    let (d, node_key) = nodes.pop_front().unwrap();
+                    let node = graph.get(node_key).unwrap();
+                    let transform = node.local_transform();
+                    let global_transform = node.global_transform();
+                    let value = &node.value;
+                    ui.label(format!(
+                        "{:>pad$}[{:?}] Node: {:?} (L: {:?}, G: {:?})",
+                        "",
+                        node_key.data(),
+                        value,
+                        transform,
+                        global_transform,
+                        pad = 5 * d
+                    ));
 
-                for child in graph.get(node_key).unwrap().children.iter().rev() {
-                    nodes.push_front((d + 1, *child));
+                    for child in graph.get(node_key).unwrap().children.iter().rev() {
+                        nodes.push_front((d + 1, *child));
+                    }
                 }
-            }
+            });
         });
     }
 

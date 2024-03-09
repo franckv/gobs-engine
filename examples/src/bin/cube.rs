@@ -79,15 +79,15 @@ impl Run for App {
 
         let node = root.children[0];
 
-        let child = self.scene.graph.get_mut(node).unwrap();
-
-        child.transform.rotate(Quat::from_axis_angle(
-            Vec3::Y,
-            (0.3 * angular_speed * delta).to_radians(),
-        ));
+        self.scene.graph.update(node, |transform| {
+            transform.rotate(Quat::from_axis_angle(
+                Vec3::Y,
+                (0.3 * angular_speed * delta).to_radians(),
+            ));
+        });
 
         self.camera_controller
-            .update_camera(&mut self.scene.camera, delta);
+            .update_camera(&mut self.scene.camera_mut(), delta);
 
         self.graph.update(ctx, delta);
         self.scene.update(ctx, delta);

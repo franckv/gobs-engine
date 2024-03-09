@@ -3,7 +3,7 @@ use core::fmt;
 use glam::{Mat4, Vec3};
 use uuid::Uuid;
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 #[allow(dead_code)]
 pub enum ProjectionMode {
     Ortho(OrthoProjection),
@@ -26,7 +26,7 @@ impl ProjectionMode {
     }
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct PerspectiveProjection {
     pub aspect: f32,
     pub fovy: f32,
@@ -34,7 +34,7 @@ pub struct PerspectiveProjection {
     pub far: f32,
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct OrthoProjection {
     pub width: f32,
     pub height: f32,
@@ -44,7 +44,7 @@ pub struct OrthoProjection {
 
 pub type CameraId = Uuid;
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct Camera {
     pub id: CameraId,
     pub position: Vec3,

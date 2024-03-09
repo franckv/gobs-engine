@@ -16,7 +16,7 @@ use gobs_render::{
     pass::RenderPass,
     BlendMode, ImageExtent2D, SamplerFilter,
 };
-use gobs_scene::graph::scenegraph::{NodeValue, SceneGraph};
+use gobs_scene::graph::scenegraph::{NodeId, NodeValue, SceneGraph};
 
 pub struct GLTFLoader {
     texture_manager: TextureManager,
@@ -52,38 +52,27 @@ impl GLTFLoader {
     }
 
     fn load_scene(&mut self, doc: &Document) {
-        let mut nodes = vec![];
-
-        for node in doc.nodes() {
-            let (translation, rotation, scale) = node.transform().decomposed();
-            let transform =
-                Transform::new(translation.into(), Quat::from_array(rotation), scale.into());
-
-            let node = match node.mesh() {
-                Some(mesh) => NodeValue::Model(self.models[mesh.index()].clone()),
-                None => NodeValue::None,
-            };
-
-            nodes.push(Some(self.scene.add(node, transform)));
-        }
-
-        for node in doc.nodes() {
-            if let Some(parent_key) = nodes[node.index()] {
-                for child in node.children() {
-                    let child = nodes[child.index()].take();
-                    if let Some(child_key) = child {
-                        self.scene.add_child(parent_key, child_key);
-                    }
-                }
-            }
-        }
-
         if let Some(scene) = doc.default_scene() {
             for node in scene.nodes() {
-                if let Some(node_key) = nodes[node.index()] {
-                    self.scene.add_child(self.scene.root, node_key);
-                }
+                self.add_node(self.scene.root, &node);
             }
+        }
+    }
+
+    fn add_node(&mut self, parent: NodeId, node: &gltf::Node) {
+        let (translation, rotation, scale) = node.transform().decomposed();
+        let transform =
+            Transform::new(translation.into(), Quat::from_array(rotation), scale.into());
+
+        let node_value = match node.mesh() {
+            Some(mesh) => NodeValue::Model(self.models[mesh.index()].clone()),
+            None => NodeValue::None,
+        };
+
+        let node_key = self.scene.insert(parent, node_value, transform).unwrap();
+
+        for child in node.children() {
+            self.add_node(node_key, &child);
         }
     }
 

@@ -11,7 +11,7 @@ use crate::graph::scenegraph::{NodeValue, SceneGraph};
 
 pub struct Scene {
     pub graph: SceneGraph,
-    pub camera: Camera,
+    camera: Camera,
     pub light: Light,
 }
 
@@ -25,6 +25,14 @@ impl Scene {
     }
 
     pub fn update(&mut self, _ctx: &Context, _delta: f32) {}
+
+    pub fn camera(&self) -> &Camera {
+        &self.camera
+    }
+
+    pub fn camera_mut(&mut self) -> &mut Camera {
+        &mut self.camera
+    }
 }
 
 impl Renderable for Scene {
