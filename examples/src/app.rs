@@ -68,6 +68,10 @@ impl SampleApp {
         )
     }
 
+    pub fn controller() -> CameraController {
+        CameraController::new(3., 0.4)
+    }
+
     pub fn color_material(&self, ctx: &Context, graph: &FrameGraph) -> Arc<Material> {
         let vertex_flags = VertexFlag::POSITION | VertexFlag::COLOR;
 
@@ -233,13 +237,14 @@ impl SampleApp {
                     let global_transform = node.global_transform();
                     let value = &node.value;
                     ui.label(format!(
-                        "{:>pad$}[{:?}] Node: {:?} (L: {:?}, G: {:?})",
+                        "{:>pad$}[{:?}] Node: {:?} (L: {:?}, G: {:?}) ({:?})",
                         "",
                         node_key.data(),
                         value,
                         transform,
                         global_transform,
-                        pad = 5 * d
+                        node.enabled,
+                        pad = 5 * d,
                     ));
 
                     for child in graph.get(node_key).unwrap().children.iter().rev() {

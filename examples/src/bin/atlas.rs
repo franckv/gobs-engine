@@ -52,7 +52,7 @@ impl Run for App {
 
         let common = SampleApp::new();
 
-        let camera_controller = CameraController::new(3., 0.1);
+        let camera_controller = SampleApp::controller();
 
         let graph = FrameGraph::default(ctx);
         let ui = UIRenderer::new(ctx, graph.pass_by_type(PassType::Ui).unwrap());

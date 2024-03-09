@@ -5,13 +5,14 @@ use std::{
 
 use slotmap::{DefaultKey, SlotMap};
 
-use gobs_core::Transform;
+use gobs_core::{entity::camera::Camera, Transform};
 use gobs_render::geometry::{Model, ModelId};
 
 #[derive(Clone, Debug)]
 pub enum NodeValue {
     None,
     Model(Arc<Model>),
+    Camera(Camera),
 }
 
 pub type NodeId = DefaultKey;
@@ -21,6 +22,7 @@ pub struct Node {
     pub value: NodeValue,
     transform: Transform,
     global_transform: Transform,
+    pub enabled: bool,
     parent: Option<NodeId>,
     pub children: Vec<NodeId>,
 }
@@ -47,6 +49,7 @@ impl Node {
             value,
             transform,
             global_transform: parent_transform * transform,
+            enabled: true,
             parent,
             children: Vec::new(),
         }
@@ -81,6 +84,12 @@ impl SceneGraph {
 
     pub fn get_mut(&mut self, key: NodeId) -> Option<&mut Node> {
         self.arena.get_mut(key)
+    }
+
+    pub fn toggle(&mut self, key: NodeId) {
+        if let Some(node) = self.arena.get_mut(key) {
+            node.enabled = !node.enabled;
+        }
     }
 
     pub fn parent(&self, key: NodeId) -> Option<&Node> {
@@ -127,6 +136,15 @@ impl SceneGraph {
         self.arena.remove(key)
     }
 
+    pub fn set_root(&mut self, value: NodeValue, transform: Transform) -> NodeId {
+        self.arena.clear();
+        self.root = self
+            .arena
+            .insert(Node::new(value, transform, None, Transform::IDENTITY));
+
+        self.root
+    }
+
     pub fn insert(
         &mut self,
         parent: NodeId,
@@ -152,6 +170,26 @@ impl SceneGraph {
         node
     }
 
+    pub fn insert_subgraph(
+        &mut self,
+        local_root: NodeId,
+        target_root: NodeId,
+        subgraph: &SceneGraph,
+    ) -> Option<NodeId> {
+        if let Some(target_node) = subgraph.get(target_root) {
+            let node = self.insert(local_root, target_node.value.clone(), target_node.transform);
+            if let Some(node) = node {
+                for &child in &target_node.children {
+                    self.insert_subgraph(node, child, subgraph);
+                }
+
+                return Some(node);
+            }
+        }
+
+        None
+    }
+
     pub fn visit<F>(&self, root: NodeId, f: &mut F)
     where
         F: FnMut(&Transform, &NodeValue),
@@ -164,10 +202,12 @@ impl SceneGraph {
         F: FnMut(&Transform, &NodeValue),
     {
         if let Some(node) = self.arena.get(root) {
-            for &child in &node.children {
-                self.visit_local(child, f);
+            if node.enabled {
+                for &child in &node.children {
+                    self.visit_local(child, f);
+                }
+                f(&node.global_transform, &node.value);
             }
-            f(&node.global_transform, &node.value);
         }
     }
 

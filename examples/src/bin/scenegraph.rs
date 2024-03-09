@@ -2,7 +2,7 @@ use gobs::{
     core::{entity::light::Light, Color, Transform},
     game::{
         app::{Application, Run},
-        input::Input,
+        input::{Input, Key},
     },
     render::{
         context::Context,
@@ -11,7 +11,11 @@ use gobs::{
         pass::PassType,
         renderable::Renderable,
     },
-    scene::{graph::scenegraph::NodeValue, scene::Scene, shape::Shapes},
+    scene::{
+        graph::scenegraph::{NodeId, NodeValue, SceneGraph},
+        scene::Scene,
+        shape::Shapes,
+    },
     ui::UIRenderer,
 };
 
@@ -23,6 +27,7 @@ struct App {
     graph: FrameGraph,
     ui: UIRenderer,
     scene: Scene,
+    nodes: Vec<NodeId>,
 }
 
 impl Run for App {
@@ -32,7 +37,7 @@ impl Run for App {
 
         let common = SampleApp::new();
 
-        let camera_controller = CameraController::new(3., 0.1);
+        let camera_controller = SampleApp::controller();
 
         let graph = FrameGraph::default(ctx);
         let ui = UIRenderer::new(ctx, graph.pass_by_type(PassType::Ui).unwrap());
@@ -44,6 +49,7 @@ impl Run for App {
             graph,
             ui,
             scene,
+            nodes: vec![],
         }
     }
 
@@ -71,6 +77,22 @@ impl Run for App {
             &mut self.ui,
             &mut self.camera_controller,
         );
+
+        match input {
+            Input::KeyPressed(key) => match key {
+                Key::N0 => {
+                    self.scene.graph.toggle(self.nodes[0]);
+                }
+                Key::N1 => {
+                    self.scene.graph.toggle(self.nodes[1]);
+                }
+                Key::N2 => {
+                    self.scene.graph.toggle(self.nodes[2]);
+                }
+                _ => (),
+            },
+            _ => (),
+        }
     }
 
     fn resize(&mut self, ctx: &Context, width: u32, height: u32) {
@@ -93,7 +115,6 @@ impl Run for App {
 }
 
 impl App {
-    #[allow(unused)]
     fn init(&mut self, ctx: &Context) {
         let material = self.common.color_material(ctx, &self.graph);
         let material_instance = material.instantiate(vec![]);
@@ -106,6 +127,17 @@ impl App {
             .build();
 
         let graph = &mut self.scene.graph;
+        /*
+                                    0
+                            /               \
+                        1                       2
+                    /       \               /       \
+                3               4       5               6
+            /   |   \                                   |
+            7   8   9                                   10
+            |
+            11
+        */
 
         let node_value = NodeValue::Model(triangle);
 
@@ -113,29 +145,43 @@ impl App {
         let dx = extent.width as f32 / 12.;
         let dy = extent.height as f32 / 6.;
 
-        let node1 = graph.root;
-        graph.update(node1, |transform| {
-            transform.translate([0., 2. * dy, 0.].into());
-            transform.scale([100., 100., 1.].into());
-        });
+        let mut root_transform = Transform::translation([0., 2. * dy, 0.].into());
+        root_transform.scale([100., 100., 1.].into());
 
-        let node2 = graph
+        let node0 = graph
+            .insert(graph.root, node_value.clone(), root_transform)
+            .unwrap();
+        self.nodes.push(node0);
+
+        let mut subgraph1 = SceneGraph::new();
+        let node1 = subgraph1.set_root(
+            node_value.clone(),
+            Transform::translation([-2. * dx, -dy, 0.].into()),
+        );
+
+        let mut subgraph2 = SceneGraph::new();
+        let node2 = subgraph2.set_root(
+            node_value.clone(),
+            Transform::translation([2. * dx, -dy, 0.].into()),
+        );
+
+        let node3 = subgraph1
             .insert(
                 node1,
                 node_value.clone(),
-                Transform::translation([-2. * dx, 0., 0.].into()),
+                Transform::translation([-dx, -dy, 0.].into()),
             )
             .unwrap();
 
-        let node3 = graph
+        let _node4 = subgraph1
             .insert(
                 node1,
                 node_value.clone(),
-                Transform::translation([2. * dx, 0., 0.].into()),
+                Transform::translation([dx, -dy, 0.].into()),
             )
             .unwrap();
 
-        let node4 = graph
+        let _node5 = subgraph2
             .insert(
                 node2,
                 node_value.clone(),
@@ -143,7 +189,7 @@ impl App {
             )
             .unwrap();
 
-        let node5 = graph
+        let node6 = subgraph2
             .insert(
                 node2,
                 node_value.clone(),
@@ -151,7 +197,7 @@ impl App {
             )
             .unwrap();
 
-        let node6 = graph
+        let node7 = subgraph1
             .insert(
                 node3,
                 node_value.clone(),
@@ -159,39 +205,31 @@ impl App {
             )
             .unwrap();
 
-        let node7 = graph
+        let _node8 = subgraph1
             .insert(
                 node3,
-                node_value.clone(),
-                Transform::translation([dx, -dy, 0.].into()),
-            )
-            .unwrap();
-
-        let node8 = graph
-            .insert(
-                node4,
-                node_value.clone(),
-                Transform::translation([-dx, -dy, 0.].into()),
-            )
-            .unwrap();
-
-        let node9 = graph
-            .insert(
-                node4,
                 node_value.clone(),
                 Transform::translation([0., -dy, 0.].into()),
             )
             .unwrap();
 
-        let node10 = graph
+        let _node9 = subgraph1
             .insert(
-                node4,
+                node3,
                 node_value.clone(),
                 Transform::translation([dx, -dy, 0.].into()),
             )
             .unwrap();
 
-        let node11 = graph
+        let _node10 = subgraph2
+            .insert(
+                node6,
+                node_value.clone(),
+                Transform::translation([0., -dy, 0.].into()),
+            )
+            .unwrap();
+
+        let _node11 = subgraph1
             .insert(
                 node7,
                 node_value.clone(),
@@ -199,13 +237,16 @@ impl App {
             )
             .unwrap();
 
-        let node12 = graph
-            .insert(
-                node8,
-                node_value.clone(),
-                Transform::translation([0., -dy, 0.].into()),
-            )
-            .unwrap();
+        self.nodes.push(
+            graph
+                .insert_subgraph(node0, subgraph1.root, &subgraph1)
+                .unwrap(),
+        );
+        self.nodes.push(
+            graph
+                .insert_subgraph(node0, subgraph2.root, &subgraph2)
+                .unwrap(),
+        );
     }
 }
 

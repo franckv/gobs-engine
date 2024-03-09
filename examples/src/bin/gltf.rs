@@ -14,7 +14,7 @@ use gobs::{
         renderable::Renderable,
     },
     scene::{
-        graph::scenegraph::{NodeValue, SceneGraph},
+        graph::scenegraph::{NodeId, NodeValue, SceneGraph},
         scene::Scene,
     },
     ui::UIRenderer,
@@ -29,7 +29,7 @@ struct App {
     graph: FrameGraph,
     ui: UIRenderer,
     scene: Scene,
-    scenes: Vec<SceneGraph>,
+    scenes: Vec<NodeId>,
     current_scene: usize,
 }
 
@@ -41,7 +41,7 @@ impl Run for App {
 
         let camera = SampleApp::perspective_camera(ctx);
 
-        let camera_controller = CameraController::new(3., 0.1);
+        let camera_controller = SampleApp::controller();
 
         let graph = FrameGraph::default(ctx);
         let ui = UIRenderer::new(ctx, graph.pass_by_type(PassType::Ui).unwrap());
@@ -101,8 +101,9 @@ impl Run for App {
         match input {
             Input::KeyPressed(key) => match key {
                 Key::N => {
+                    self.scene.graph.toggle(self.scenes[self.current_scene]);
                     self.current_scene = (self.current_scene + 1) % self.scenes.len();
-                    self.scene.graph = self.scenes[self.current_scene].clone();
+                    self.scene.graph.toggle(self.scenes[self.current_scene]);
                 }
                 _ => (),
             },
@@ -128,13 +129,33 @@ impl Run for App {
 impl App {
     fn init(&mut self, ctx: &Context) {
         log::info!("Load scene 0");
-        self.scenes.push(self.load_scene(ctx));
-        log::info!("Load scene 1");
-        self.scenes.push(self.load_scene2(ctx));
-        log::info!("Load scene 2");
-        self.scenes.push(self.load_scene3(ctx));
+        let graph0 = self.load_scene(ctx);
+        let node0 = self
+            .scene
+            .graph
+            .insert_subgraph(self.scene.graph.root, graph0.root, &graph0)
+            .unwrap();
+        self.scenes.push(node0);
 
-        self.scene.graph = self.scenes[self.current_scene].clone();
+        log::info!("Load scene 1");
+        let graph1 = self.load_scene2(ctx);
+        let node1 = self
+            .scene
+            .graph
+            .insert_subgraph(self.scene.graph.root, graph1.root, &graph1)
+            .unwrap();
+        self.scene.graph.toggle(node1);
+        self.scenes.push(node1);
+
+        log::info!("Load scene 2");
+        let graph2 = self.load_scene3(ctx);
+        let node2 = self
+            .scene
+            .graph
+            .insert_subgraph(self.scene.graph.root, graph2.root, &graph2)
+            .unwrap();
+        self.scene.graph.toggle(node2);
+        self.scenes.push(node2);
     }
 
     fn load_scene(&self, ctx: &Context) -> SceneGraph {
