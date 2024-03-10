@@ -1,4 +1,4 @@
-use glam::Quat;
+use glam::{Quat, Vec3};
 
 use gobs::{
     core::{entity::light::Light, Color, Transform},
@@ -31,8 +31,11 @@ struct App {
 
 impl Run for App {
     async fn create(ctx: &Context) -> Self {
-        let light = Light::new((0., 0., 10.), Color::WHITE);
         let camera = SampleApp::ortho_camera(ctx);
+        let camera_position = Vec3::new(0., 0., 1.);
+
+        let light = Light::new(Color::WHITE);
+        let light_position = Vec3::new(0., 0., 10.);
 
         let common = SampleApp::new();
 
@@ -40,7 +43,7 @@ impl Run for App {
 
         let graph = FrameGraph::default(ctx);
         let ui = UIRenderer::new(ctx, graph.pass_by_type(PassType::Ui).unwrap());
-        let scene = Scene::new(camera, light);
+        let scene = Scene::new(camera, camera_position, light, light_position);
 
         App {
             common,
@@ -52,8 +55,10 @@ impl Run for App {
     }
 
     fn update(&mut self, ctx: &Context, delta: f32) {
-        self.camera_controller
-            .update_camera(&mut self.scene.camera_mut(), delta);
+        self.scene.update_camera(|transform, camera| {
+            self.camera_controller
+                .update_camera(camera, transform, delta);
+        });
 
         self.graph.update(ctx, delta);
         self.scene.update(ctx, delta);

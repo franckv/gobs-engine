@@ -35,7 +35,6 @@ impl Run for App {
         let extent = ctx.extent();
 
         let camera = Camera::perspective(
-            Vec3::new(0., 1., 0.),
             extent.width as f32 / extent.height as f32,
             (60. as f32).to_radians(),
             0.1,
@@ -44,8 +43,10 @@ impl Run for App {
             (-25. as f32).to_radians(),
             Vec3::Y,
         );
+        let camera_position = Vec3::new(0., 1., 0.);
 
-        let light = Light::new((-2., 2.5, 10.), Color::WHITE);
+        let light = Light::new(Color::WHITE);
+        let light_position = Vec3::new(-2., 2.5, 10.);
 
         let common = SampleApp::new();
 
@@ -53,7 +54,7 @@ impl Run for App {
 
         let graph = FrameGraph::default(ctx);
         let ui = UIRenderer::new(ctx, graph.pass_by_type(PassType::Ui).unwrap());
-        let scene = Scene::new(camera, light);
+        let scene = Scene::new(camera, camera_position, light, light_position);
 
         App {
             common,
@@ -69,22 +70,25 @@ impl Run for App {
     }
 
     fn update(&mut self, ctx: &Context, delta: f32) {
-        let angular_speed = 40.;
+        if self.common.process_updates {
+            let angular_speed = 40.;
 
-        let root_id = self.scene.graph.root;
-        let root = self.scene.graph.get(root_id).unwrap();
+            self.scene
+                .graph
+                .visit_update(self.scene.graph.root, &mut |transform, value| {
+                    if let NodeValue::Model(_) = value {
+                        transform.rotate(Quat::from_axis_angle(
+                            Vec3::Y,
+                            (0.3 * angular_speed * delta).to_radians(),
+                        ));
+                    }
+                });
+        }
 
-        let node = root.children[0];
-
-        self.scene.graph.update(node, |transform| {
-            transform.rotate(Quat::from_axis_angle(
-                Vec3::Y,
-                (0.3 * angular_speed * delta).to_radians(),
-            ));
+        self.scene.update_camera(|transform, camera| {
+            self.camera_controller
+                .update_camera(camera, transform, delta);
         });
-
-        self.camera_controller
-            .update_camera(&mut self.scene.camera_mut(), delta);
 
         self.graph.update(ctx, delta);
         self.scene.update(ctx, delta);

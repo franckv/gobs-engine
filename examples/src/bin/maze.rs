@@ -38,7 +38,6 @@ impl Run for App {
         let extent = ctx.extent();
 
         let camera = Camera::perspective(
-            (0., 25., 25.),
             extent.width as f32 / extent.height as f32,
             (45. as f32).to_radians(),
             0.1,
@@ -47,8 +46,10 @@ impl Run for App {
             (-50. as f32).to_radians(),
             Vec3::Y,
         );
+        let camera_position = Vec3::new(0., 25., 25.);
 
-        let light = Light::new((0., 40., -40.), Color::WHITE);
+        let light = Light::new(Color::WHITE);
+        let light_position = Vec3::new(0., 40., -40.);
 
         let common = SampleApp::new();
 
@@ -56,7 +57,7 @@ impl Run for App {
 
         let graph = FrameGraph::default(ctx);
         let ui = UIRenderer::new(ctx, graph.pass_by_type(PassType::Ui).unwrap());
-        let scene = Scene::new(camera, light);
+        let scene = Scene::new(camera, camera_position, light, light_position);
 
         App {
             common,
@@ -72,14 +73,20 @@ impl Run for App {
     }
 
     fn update(&mut self, ctx: &Context, delta: f32) {
-        let angular_speed = 10.;
+        if self.common.process_updates {
+            let angular_speed = 10.;
 
-        let position = Quat::from_axis_angle(Vec3::Y, (angular_speed * delta).to_radians())
-            * self.scene.light.position;
-        self.scene.light.update(position);
+            self.scene.update_light(|transform, _| {
+                transform.translation =
+                    Quat::from_axis_angle(Vec3::Y, (angular_speed * delta).to_radians())
+                        * transform.translation;
+            });
+        }
 
-        self.camera_controller
-            .update_camera(&mut self.scene.camera_mut(), delta);
+        self.scene.update_camera(|transform, camera| {
+            self.camera_controller
+                .update_camera(camera, transform, delta);
+        });
 
         self.graph.update(ctx, delta);
         self.scene.update(ctx, delta);

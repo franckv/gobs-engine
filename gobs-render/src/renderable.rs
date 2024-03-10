@@ -75,16 +75,29 @@ impl RenderBatch {
         }
     }
 
-    pub fn add_camera_data(&mut self, camera: &Camera, light: &Light, pass: Arc<dyn RenderPass>) {
+    pub fn add_camera_data(
+        &mut self,
+        camera: &Camera,
+        camera_transform: &Transform,
+        light: &Light,
+        light_transform: &Transform,
+        pass: Arc<dyn RenderPass>,
+    ) {
         if let Some(data_layout) = pass.uniform_data_layout() {
             let scene_data = match pass.ty() {
                 PassType::Wire | PassType::Depth => data_layout.data(&[UniformPropData::Mat4F(
-                    camera.view_proj().to_cols_array_2d(),
+                    camera
+                        .view_proj(camera_transform.translation)
+                        .to_cols_array_2d(),
                 )]),
                 _ => data_layout.data(&[
-                    UniformPropData::Vec3F(camera.position.into()),
-                    UniformPropData::Mat4F(camera.view_proj().to_cols_array_2d()),
-                    UniformPropData::Vec3F(light.position.normalize().into()),
+                    UniformPropData::Vec3F(camera_transform.translation.into()),
+                    UniformPropData::Mat4F(
+                        camera
+                            .view_proj(camera_transform.translation)
+                            .to_cols_array_2d(),
+                    ),
+                    UniformPropData::Vec3F(light_transform.translation.normalize().into()),
                     UniformPropData::Vec4F(light.colour.into()),
                     UniformPropData::Vec4F([0.1, 0.1, 0.1, 1.]),
                 ]),

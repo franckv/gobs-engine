@@ -5,7 +5,10 @@ use std::{
 
 use slotmap::{DefaultKey, SlotMap};
 
-use gobs_core::{entity::camera::Camera, Transform};
+use gobs_core::{
+    entity::{camera::Camera, light::Light},
+    Transform,
+};
 use gobs_render::geometry::{Model, ModelId};
 
 #[derive(Clone, Debug)]
@@ -13,6 +16,7 @@ pub enum NodeValue {
     None,
     Model(Arc<Model>),
     Camera(Camera),
+    Light(Light),
 }
 
 pub type NodeId = DefaultKey;
@@ -20,7 +24,7 @@ pub type NodeId = DefaultKey;
 #[derive(Clone)]
 pub struct Node {
     pub value: NodeValue,
-    transform: Transform,
+    pub transform: Transform,
     global_transform: Transform,
     pub enabled: bool,
     parent: Option<NodeId>,
@@ -53,10 +57,6 @@ impl Node {
             parent,
             children: Vec::new(),
         }
-    }
-
-    pub fn local_transform(&self) -> &Transform {
-        &self.transform
     }
 
     pub fn global_transform(&self) -> &Transform {
@@ -99,12 +99,12 @@ impl SceneGraph {
             .and_then(|parent| self.arena.get(parent))
     }
 
-    pub fn update<F>(&mut self, key: NodeId, f: F)
+    pub fn update<F>(&mut self, key: NodeId, mut f: F)
     where
-        F: Fn(&mut Transform),
+        F: FnMut(&mut Transform, &mut NodeValue),
     {
         if let Some(node) = self.arena.get_mut(key) {
-            f(&mut node.transform);
+            f(&mut node.transform, &mut node.value);
         }
 
         if let Some(parent) = self.parent(key) {
@@ -207,6 +207,37 @@ impl SceneGraph {
                     self.visit_local(child, f);
                 }
                 f(&node.global_transform, &node.value);
+            }
+        }
+    }
+
+    pub fn visit_update<F>(&mut self, root: NodeId, f: &mut F)
+    where
+        F: FnMut(&mut Transform, &NodeValue),
+    {
+        if let Some(parent) = self.parent(root) {
+            self.visit_update_local(root, parent.global_transform, f);
+        } else {
+            self.visit_update_local(root, Transform::IDENTITY, f);
+        }
+    }
+
+    fn visit_update_local<F>(&mut self, root: NodeId, parent_transform: Transform, f: &mut F)
+    where
+        F: FnMut(&mut Transform, &NodeValue),
+    {
+        if let Some(node) = self.arena.get(root) {
+            if node.enabled {
+                let global_transform = node.global_transform;
+                for &child in &node.children.clone() {
+                    self.visit_update_local(child, global_transform, f);
+                }
+            }
+        }
+        if let Some(node) = self.arena.get_mut(root) {
+            if node.enabled {
+                f(&mut node.transform, &node.value);
+                node.global_transform = parent_transform * node.transform;
             }
         }
     }

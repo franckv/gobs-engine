@@ -1,6 +1,7 @@
 use std::f32::consts::FRAC_PI_2;
 
 use glam::Vec3;
+use gobs::core::Transform;
 use log::*;
 
 use gobs::core::entity::camera::{Camera, ProjectionMode};
@@ -110,18 +111,26 @@ impl CameraController {
         self.scroll = delta;
     }
 
-    pub fn update_camera(&mut self, camera: &mut Camera, dt: f32) {
+    pub fn update_camera(
+        &mut self,
+        camera: &mut Camera,
+        camera_transform: &mut Transform,
+        dt: f32,
+    ) {
         let (yaw_sin, yaw_cos) = camera.yaw.sin_cos();
         let forward = Vec3::new(yaw_sin, 0., -yaw_cos).normalize();
         let right = Vec3::new(yaw_cos, 0., -yaw_sin).normalize();
-        camera.position += forward * (self.amount_forward - self.amount_backward) * self.speed * dt;
-        camera.position += right * (self.amount_right - self.amount_left) * self.speed * dt;
+        camera_transform.translation +=
+            forward * (self.amount_forward - self.amount_backward) * self.speed * dt;
+        camera_transform.translation +=
+            right * (self.amount_right - self.amount_left) * self.speed * dt;
 
         let scrollward = camera.dir();
-        camera.position += scrollward * self.scroll * self.speed * self.sensitivity * dt;
+        camera_transform.translation +=
+            scrollward * self.scroll * self.speed * self.sensitivity * dt;
         self.scroll = 0.;
 
-        camera.position.y += (self.amount_up - self.amount_down) * self.speed * dt;
+        camera_transform.translation.y += (self.amount_up - self.amount_down) * self.speed * dt;
 
         camera.yaw += self.rotate_horizontal * self.sensitivity * dt;
         camera.pitch += self.rotate_vertical * self.sensitivity * dt;

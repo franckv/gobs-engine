@@ -4,7 +4,7 @@ use glam::Vec3;
 use slotmap::Key as _;
 
 use gobs::{
-    core::entity::camera::Camera,
+    core::{entity::camera::Camera, Transform},
     game::input::{Input, Key},
     render::{
         context::Context,
@@ -42,7 +42,6 @@ impl SampleApp {
         let extent = ctx.surface.get_extent(ctx.device.clone());
 
         Camera::ortho(
-            (0., 0., 1.),
             extent.width as f32,
             extent.height as f32,
             0.1,
@@ -57,7 +56,6 @@ impl SampleApp {
         let extent = ctx.surface.get_extent(ctx.device.clone());
 
         Camera::perspective(
-            Vec3::splat(0.),
             extent.width as f32 / extent.height as f32,
             (60. as f32).to_radians(),
             0.1,
@@ -149,6 +147,7 @@ impl SampleApp {
         F: FnMut(&mut egui::Ui),
     {
         if self.draw_ui {
+            let (camera_transform, camera) = scene.camera();
             ui.update(ctx, graph.pass_by_type(PassType::Ui).unwrap(), |ectx| {
                 egui::CentralPanel::default()
                     .frame(egui::Frame::none())
@@ -158,7 +157,7 @@ impl SampleApp {
                         ui.separator();
                         Self::show_fps(ui, graph.render_stats().fps);
                         Self::show_stats(ui, "Render Stats", graph);
-                        Self::show_camera(ui, &scene.camera());
+                        Self::show_camera(ui, camera, camera_transform);
                         Self::show_memory(ui, ctx);
                         Self::show_scene(ui, &scene.graph);
                         f(ui);
@@ -203,11 +202,13 @@ impl SampleApp {
         });
     }
 
-    fn show_camera(ui: &mut egui::Ui, camera: &Camera) {
+    fn show_camera(ui: &mut egui::Ui, camera: &Camera, camera_transform: &Transform) {
         ui.collapsing("Camera", |ui| {
             ui.label(format!(
                 "  Position: [{:.2}, {:.2}, {:.2}]",
-                camera.position.x, camera.position.y, camera.position.z
+                camera_transform.translation.x,
+                camera_transform.translation.y,
+                camera_transform.translation.z
             ));
             let dir = camera.dir();
             ui.label(format!(
@@ -233,7 +234,7 @@ impl SampleApp {
                 while !nodes.is_empty() {
                     let (d, node_key) = nodes.pop_front().unwrap();
                     let node = graph.get(node_key).unwrap();
-                    let transform = node.local_transform();
+                    let transform = node.transform;
                     let global_transform = node.global_transform();
                     let value = &node.value;
                     ui.label(format!(

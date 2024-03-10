@@ -47,7 +47,6 @@ pub type CameraId = Uuid;
 #[derive(Clone, Debug)]
 pub struct Camera {
     pub id: CameraId,
-    pub position: Vec3,
     pub mode: ProjectionMode,
     pub yaw: f32,
     pub pitch: f32,
@@ -55,8 +54,7 @@ pub struct Camera {
 }
 
 impl Camera {
-    pub fn perspective<V: Into<Vec3>>(
-        position: V,
+    pub fn perspective(
         aspect: f32,
         fovy: f32,
         near: f32,
@@ -74,7 +72,6 @@ impl Camera {
 
         Camera {
             id: Uuid::new_v4(),
-            position: position.into(),
             mode: ProjectionMode::Perspective(projection),
             yaw,
             pitch,
@@ -83,8 +80,7 @@ impl Camera {
     }
 
     // Ortho Camera (origin top/left)
-    pub fn ortho<V: Into<Vec3>>(
-        position: V,
+    pub fn ortho(
         width: f32,
         height: f32,
         near: f32,
@@ -102,7 +98,6 @@ impl Camera {
 
         Camera {
             id: Uuid::new_v4(),
-            position: position.into(),
             mode: ProjectionMode::Ortho(projection),
             yaw,
             pitch,
@@ -110,8 +105,8 @@ impl Camera {
         }
     }
 
-    pub fn view_proj(&self) -> Mat4 {
-        self.proj_matrix() * self.view_matrix()
+    pub fn view_proj(&self, position: Vec3) -> Mat4 {
+        self.proj_matrix() * self.view_matrix(position)
     }
 
     pub fn dir(&self) -> Vec3 {
@@ -120,8 +115,8 @@ impl Camera {
         Vec3::new(sin_yaw * cos_pitch, sin_pitch, -cos_pitch * cos_yaw).normalize()
     }
 
-    pub fn view_matrix(&self) -> Mat4 {
-        Mat4::look_to_rh(self.position, self.dir(), self.up)
+    pub fn view_matrix(&self, position: Vec3) -> Mat4 {
+        Mat4::look_to_rh(position, self.dir(), self.up)
     }
 
     pub fn proj_matrix(&self) -> Mat4 {
@@ -166,8 +161,7 @@ impl fmt::Display for Camera {
             ProjectionMode::Ortho(projection) => {
                 write!(
                     f,
-                    "Position={} Yaw={}° Pitch={}° Size={}/{} dir={}",
-                    self.position,
+                    "Yaw={}° Pitch={}° Size={}/{} dir={}",
                     self.yaw.to_degrees(),
                     self.pitch.to_degrees(),
                     projection.width,
@@ -178,8 +172,7 @@ impl fmt::Display for Camera {
             ProjectionMode::Perspective(projection) => {
                 write!(
                     f,
-                    "Position={} Yaw={}° Pitch={}° Fov={}° dir={}",
-                    self.position,
+                    "Yaw={}° Pitch={}° Fov={}° dir={}",
                     self.yaw.to_degrees(),
                     self.pitch.to_degrees(),
                     projection.fovy.to_degrees(),
@@ -206,7 +199,6 @@ mod tests {
         log::debug!("yaw={:?}, pitch={:?}, dir={:?}", yaw, pitch, expected);
 
         let camera = Camera::ortho(
-            (0., 0., 10.),
             320. as f32,
             200. as f32,
             0.1,
