@@ -5,8 +5,10 @@ use std::sync::Arc;
 
 use uuid::Uuid;
 
-use crate::geometry::Mesh;
+use crate::geometry::{BoundingBox, Mesh};
 use crate::material::{MaterialInstance, MaterialInstanceId};
+
+use super::Bounded;
 
 pub type ModelId = Uuid;
 
@@ -26,6 +28,18 @@ impl Model {
 impl Debug for Model {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "Model({})", self.name)
+    }
+}
+
+impl Bounded for Model {
+    fn boundings(&self) -> super::BoundingBox {
+        let mut bounding_box = BoundingBox::default();
+
+        for (mesh, _) in &self.meshes {
+            bounding_box.extends_box(mesh.boundings());
+        }
+
+        bounding_box
     }
 }
 

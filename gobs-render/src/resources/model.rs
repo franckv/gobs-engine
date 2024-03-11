@@ -2,7 +2,12 @@ use std::sync::Arc;
 
 use gobs_vulkan::buffer::{Buffer, BufferUsage};
 
-use crate::{context::Context, geometry::Model, material::MaterialInstanceId, pass::RenderPass};
+use crate::{
+    context::Context,
+    geometry::{Bounded, Mesh, Model, VertexData},
+    material::MaterialInstanceId,
+    pass::{PassType, RenderPass},
+};
 
 #[derive(Clone, Copy, Debug)]
 pub enum PrimitiveType {
@@ -15,7 +20,7 @@ pub struct Primitive {
     pub vertex_offset: u64,
     pub index_offset: usize,
     pub len: usize,
-    pub material: MaterialInstanceId,
+    pub material: Option<MaterialInstanceId>,
 }
 
 impl Primitive {
@@ -24,7 +29,7 @@ impl Primitive {
         vertex_offset: u64,
         index_offset: usize,
         len: usize,
-        material: MaterialInstanceId,
+        material: Option<MaterialInstanceId>,
     ) -> Self {
         Primitive {
             ty,
@@ -47,6 +52,25 @@ impl ModelResource {
     pub fn new(ctx: &Context, model: Arc<Model>, pass: Arc<dyn RenderPass>) -> Arc<Self> {
         log::debug!("New model");
 
+        let (vertices, indices, primitives) = match pass.ty() {
+            PassType::Bounds => Self::compute_aabb_vertices(model.clone(), pass),
+            _ => Self::compute_vertices(model.clone(), pass),
+        };
+
+        let (vertex_buffer, index_buffer) = Self::upload_vertices(ctx, &vertices, &indices);
+
+        Arc::new(Self {
+            model,
+            index_buffer,
+            vertex_buffer,
+            primitives,
+        })
+    }
+
+    fn compute_vertices(
+        model: Arc<Model>,
+        pass: Arc<dyn RenderPass>,
+    ) -> (Vec<u8>, Vec<u32>, Vec<Primitive>) {
         let mut indices = Vec::new();
         let mut vertices = Vec::new();
         let mut primitives = Vec::new();
@@ -73,11 +97,80 @@ impl ModelResource {
                 vertex_offset,
                 offset,
                 indices.len() - offset,
-                *material_id,
+                Some(*material_id),
             ));
             vertex_offset += vertices.len() as u64;
         }
 
+        (vertices, indices, primitives)
+    }
+
+    fn compute_aabb_vertices(
+        model: Arc<Model>,
+        pass: Arc<dyn RenderPass>,
+    ) -> (Vec<u8>, Vec<u32>, Vec<Primitive>) {
+        let mut indices = Vec::new();
+        let mut vertices = Vec::new();
+        let mut primitives = Vec::new();
+
+        let bounding_box = model.boundings();
+        let (left, bottom, back) = bounding_box.bottom_left().into();
+        let (right, top, front) = bounding_box.top_right().into();
+
+        let v = [
+            [left, top, front],
+            [right, top, front],
+            [left, bottom, front],
+            [right, bottom, front],
+            [left, top, back],
+            [right, top, back],
+            [left, bottom, back],
+            [right, bottom, back],
+        ];
+
+        let vi = [
+            3, 4, 2, 3, 2, 1, // F
+            8, 7, 5, 8, 5, 6, // B
+            7, 3, 1, 7, 1, 5, // L
+            4, 8, 6, 4, 6, 2, // R
+            1, 2, 6, 1, 6, 5, // U
+            7, 8, 4, 7, 4, 3, // D
+        ];
+
+        let vertex_flags = pass.vertex_flags().unwrap();
+
+        let mut mesh = Mesh::builder("bounds");
+
+        for i in 0..vi.len() {
+            let vertex_data = VertexData::builder()
+                .position(v[vi[i] - 1].into())
+                .padding(true)
+                .build();
+
+            mesh = mesh.vertex(vertex_data);
+        }
+
+        let mesh = mesh.build();
+
+        let alignment = vertex_flags.alignment();
+        for vertice in &mesh.vertices {
+            vertices.append(&mut vertice.raw(vertex_flags, alignment));
+        }
+        for index in &mesh.indices {
+            indices.push(*index);
+        }
+        primitives.push(Primitive::new(
+            PrimitiveType::Triangle,
+            0,
+            0,
+            indices.len(),
+            None,
+        ));
+
+        (vertices, indices, primitives)
+    }
+
+    fn upload_vertices(ctx: &Context, vertices: &[u8], indices: &[u32]) -> (Buffer, Buffer) {
         let vertices_size = vertices.len();
         let indices_size = indices.len() * std::mem::size_of::<u32>();
 
@@ -120,11 +213,6 @@ impl ModelResource {
             cmd.end_label();
         });
 
-        Arc::new(Self {
-            model,
-            index_buffer,
-            vertex_buffer,
-            primitives,
-        })
+        (vertex_buffer, index_buffer)
     }
 }

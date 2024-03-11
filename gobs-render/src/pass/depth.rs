@@ -144,7 +144,16 @@ impl DepthPass {
             if render_object.pass.id() != self.id {
                 continue;
             }
-            if render_object.material.material.blending_enabled {
+            if render_object.material.is_none() {
+                continue;
+            }
+            if render_object
+                .material
+                .clone()
+                .unwrap()
+                .material
+                .blending_enabled
+            {
                 continue;
             }
 

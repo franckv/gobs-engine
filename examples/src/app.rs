@@ -24,6 +24,7 @@ use crate::CameraController;
 pub struct SampleApp {
     pub process_updates: bool,
     pub draw_ui: bool,
+    pub draw_bounds: bool,
     pub draw_wire: bool,
 }
 
@@ -34,6 +35,7 @@ impl SampleApp {
         Self {
             process_updates: true,
             draw_ui: false,
+            draw_bounds: false,
             draw_wire: false,
         }
     }
@@ -234,16 +236,14 @@ impl SampleApp {
                 while !nodes.is_empty() {
                     let (d, node_key) = nodes.pop_front().unwrap();
                     let node = graph.get(node_key).unwrap();
-                    let transform = node.transform;
-                    let global_transform = node.global_transform();
-                    let value = &node.value;
                     ui.label(format!(
-                        "{:>pad$}[{:?}] Node: {:?} (L: {:?}, G: {:?}) ({:?})",
+                        "{:>pad$}[{:?}] Node: {:?}, B={:?} (L: {:?}, G: {:?}) ({:?})",
                         "",
                         node_key.data(),
-                        value,
-                        transform,
-                        global_transform,
+                        &node.value,
+                        node.bounding_box,
+                        node.transform,
+                        node.global_transform(),
                         node.enabled,
                         pad = 5 * d,
                     ));
@@ -280,6 +280,11 @@ impl SampleApp {
                     scene.draw(ctx, pass, batch);
                 }
             }
+            PassType::Bounds => {
+                if self.draw_bounds {
+                    scene.draw(ctx, pass, batch);
+                }
+            }
             PassType::Ui => {
                 if self.draw_ui {
                     ui.draw(ctx, pass, batch);
@@ -313,6 +318,7 @@ impl SampleApp {
                 Key::L => log::info!("{:?}", ctx.allocator.allocator.lock().unwrap()),
                 Key::P => self.process_updates = !self.process_updates,
                 Key::W => self.draw_wire = !self.draw_wire,
+                Key::B => self.draw_bounds = !self.draw_bounds,
                 Key::U => self.draw_ui = !self.draw_ui,
                 _ => camera_controller.key_pressed(key),
             },

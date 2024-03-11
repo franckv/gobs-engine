@@ -15,7 +15,7 @@ use gobs::{
         renderable::Renderable,
         SamplerFilter,
     },
-    scene::{graph::scenegraph::NodeValue, scene::Scene, shape::Shapes},
+    scene::{graph::node::NodeValue, scene::Scene, shape::Shapes},
     ui::UIRenderer,
 };
 

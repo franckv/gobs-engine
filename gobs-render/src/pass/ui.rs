@@ -105,7 +105,10 @@ impl UiPass {
             if render_object.pass.id() != self.id {
                 continue;
             }
-            let material = &render_object.material;
+            if render_object.material.is_none() {
+                continue;
+            }
+            let material = render_object.material.clone().unwrap();
             let pipeline = material.pipeline();
 
             if last_material != material.id {

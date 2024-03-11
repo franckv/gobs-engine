@@ -16,7 +16,10 @@ use gobs_render::{
     pass::RenderPass,
     BlendMode, ImageExtent2D, SamplerFilter,
 };
-use gobs_scene::graph::scenegraph::{NodeId, NodeValue, SceneGraph};
+use gobs_scene::graph::{
+    node::{NodeId, NodeValue},
+    scenegraph::SceneGraph,
+};
 
 pub struct GLTFLoader {
     texture_manager: TextureManager,

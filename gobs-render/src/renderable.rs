@@ -60,11 +60,15 @@ impl RenderBatch {
         };
 
         for primitive in &resource.primitives {
+            let material = match primitive.material {
+                Some(material) => Some(resource.model.materials[&material].clone()),
+                None => None,
+            };
             let render_object = RenderObject {
                 transform,
                 pass: pass.clone(),
                 model: resource.clone(),
-                material: resource.model.materials[&primitive.material].clone(),
+                material,
                 vertices_offset: primitive.vertex_offset,
                 indices_offset: primitive.index_offset,
                 indices_len: primitive.len,
@@ -85,11 +89,13 @@ impl RenderBatch {
     ) {
         if let Some(data_layout) = pass.uniform_data_layout() {
             let scene_data = match pass.ty() {
-                PassType::Wire | PassType::Depth => data_layout.data(&[UniformPropData::Mat4F(
-                    camera
-                        .view_proj(camera_transform.translation)
-                        .to_cols_array_2d(),
-                )]),
+                PassType::Bounds | PassType::Wire | PassType::Depth => {
+                    data_layout.data(&[UniformPropData::Mat4F(
+                        camera
+                            .view_proj(camera_transform.translation)
+                            .to_cols_array_2d(),
+                    )])
+                }
                 _ => data_layout.data(&[
                     UniformPropData::Vec3F(camera_transform.translation.into()),
                     UniformPropData::Mat4F(
@@ -125,20 +131,34 @@ impl RenderBatch {
     pub fn finish(&mut self) {
         self.render_list.sort_by(|a, b| {
             // sort order: pass, transparent, material: model
-            if a.pass.id() == b.pass.id() {
-                if a.material.material.blending_enabled == b.material.material.blending_enabled {
-                    if a.material.id == b.material.id {
-                        a.model.model.id.cmp(&b.model.model.id)
-                    } else {
-                        a.material.id.cmp(&b.material.id)
-                    }
-                } else if a.material.material.blending_enabled {
-                    Ordering::Greater
-                } else {
-                    Ordering::Less
-                }
-            } else {
+            if a.pass.id() != b.pass.id() {
                 a.pass.id().cmp(&b.pass.id())
+            } else if a.material.is_none() || b.material.is_none() {
+                if a.material.is_some() && a.material.clone().unwrap().material.blending_enabled {
+                    Ordering::Greater
+                } else if b.material.is_some()
+                    && b.material.clone().unwrap().material.blending_enabled
+                {
+                    Ordering::Less
+                } else {
+                    a.model.model.id.cmp(&b.model.model.id)
+                }
+            } else if a.material.clone().unwrap().material.blending_enabled
+                == b.material.clone().unwrap().material.blending_enabled
+            {
+                if a.material.clone().unwrap().id == b.material.clone().unwrap().id {
+                    a.model.model.id.cmp(&b.model.model.id)
+                } else {
+                    a.material
+                        .clone()
+                        .unwrap()
+                        .id
+                        .cmp(&b.material.clone().unwrap().id)
+                }
+            } else if a.material.clone().unwrap().material.blending_enabled {
+                Ordering::Greater
+            } else {
+                Ordering::Less
             }
         });
     }
@@ -148,7 +168,7 @@ pub struct RenderObject {
     pub transform: Transform,
     pub pass: Arc<dyn RenderPass>,
     pub model: Arc<ModelResource>,
-    pub material: Arc<MaterialInstance>,
+    pub material: Option<Arc<MaterialInstance>>,
     pub vertices_offset: u64,
     pub indices_offset: usize,
     pub indices_len: usize,

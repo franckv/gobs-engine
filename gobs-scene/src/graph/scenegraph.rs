@@ -1,68 +1,11 @@
-use std::{
-    collections::{hash_map::Entry, HashMap},
-    sync::Arc,
-};
+use std::collections::{hash_map::Entry, HashMap};
 
-use slotmap::{DefaultKey, SlotMap};
+use slotmap::SlotMap;
 
-use gobs_core::{
-    entity::{camera::Camera, light::Light},
-    Transform,
-};
-use gobs_render::geometry::{Model, ModelId};
+use gobs_core::Transform;
+use gobs_render::geometry::ModelId;
 
-#[derive(Clone, Debug)]
-pub enum NodeValue {
-    None,
-    Model(Arc<Model>),
-    Camera(Camera),
-    Light(Light),
-}
-
-pub type NodeId = DefaultKey;
-
-#[derive(Clone)]
-pub struct Node {
-    pub value: NodeValue,
-    pub transform: Transform,
-    global_transform: Transform,
-    pub enabled: bool,
-    parent: Option<NodeId>,
-    pub children: Vec<NodeId>,
-}
-
-impl Default for Node {
-    fn default() -> Self {
-        Self::new(
-            NodeValue::None,
-            Transform::IDENTITY,
-            None,
-            Transform::IDENTITY,
-        )
-    }
-}
-
-impl Node {
-    fn new(
-        value: NodeValue,
-        transform: Transform,
-        parent: Option<NodeId>,
-        parent_transform: Transform,
-    ) -> Self {
-        Self {
-            value,
-            transform,
-            global_transform: parent_transform * transform,
-            enabled: true,
-            parent,
-            children: Vec::new(),
-        }
-    }
-
-    pub fn global_transform(&self) -> &Transform {
-        &self.global_transform
-    }
-}
+use super::node::{Node, NodeId, NodeValue};
 
 #[derive(Clone)]
 pub struct SceneGraph {
@@ -108,7 +51,7 @@ impl SceneGraph {
         }
 
         if let Some(parent) = self.parent(key) {
-            self.update_transform(key, parent.global_transform);
+            self.update_transform(key, *parent.global_transform());
         } else {
             self.update_transform(key, Transform::IDENTITY);
         }
@@ -120,7 +63,7 @@ impl SceneGraph {
 
         if let Some(node) = self.arena.get_mut(key) {
             global_transform = parent_transform * node.transform;
-            node.global_transform = global_transform;
+            node.set_global_transform(global_transform);
 
             for &child in &node.children {
                 children.push(child);
@@ -156,7 +99,7 @@ impl SceneGraph {
                 value,
                 transform,
                 Some(parent),
-                parent_node.global_transform,
+                *parent_node.global_transform(),
             ))),
             None => None,
         };
@@ -192,21 +135,21 @@ impl SceneGraph {
 
     pub fn visit<F>(&self, root: NodeId, f: &mut F)
     where
-        F: FnMut(&Transform, &NodeValue),
+        F: FnMut(&Node),
     {
         self.visit_local(root, f);
     }
 
     fn visit_local<F>(&self, root: NodeId, f: &mut F)
     where
-        F: FnMut(&Transform, &NodeValue),
+        F: FnMut(&Node),
     {
         if let Some(node) = self.arena.get(root) {
             if node.enabled {
                 for &child in &node.children {
                     self.visit_local(child, f);
                 }
-                f(&node.global_transform, &node.value);
+                f(&node);
             }
         }
     }
@@ -216,7 +159,7 @@ impl SceneGraph {
         F: FnMut(&mut Transform, &NodeValue),
     {
         if let Some(parent) = self.parent(root) {
-            self.visit_update_local(root, parent.global_transform, f);
+            self.visit_update_local(root, *parent.global_transform(), f);
         } else {
             self.visit_update_local(root, Transform::IDENTITY, f);
         }
@@ -228,7 +171,7 @@ impl SceneGraph {
     {
         if let Some(node) = self.arena.get(root) {
             if node.enabled {
-                let global_transform = node.global_transform;
+                let global_transform = *node.global_transform();
                 for &child in &node.children.clone() {
                     self.visit_update_local(child, global_transform, f);
                 }
@@ -237,7 +180,7 @@ impl SceneGraph {
         if let Some(node) = self.arena.get_mut(root) {
             if node.enabled {
                 f(&mut node.transform, &node.value);
-                node.global_transform = parent_transform * node.transform;
+                node.set_global_transform(parent_transform * node.transform);
             }
         }
     }
@@ -248,12 +191,15 @@ impl SceneGraph {
     {
         let mut map: HashMap<ModelId, Vec<(Transform, NodeValue)>> = HashMap::new();
 
-        self.visit(root, &mut |transform, node| {
-            if let NodeValue::Model(model) = node {
+        self.visit(root, &mut |node| {
+            if let NodeValue::Model(model) = &node.value {
+                let transform = node.global_transform();
                 match map.entry(model.id) {
-                    Entry::Occupied(mut entry) => entry.get_mut().push((*transform, node.clone())),
+                    Entry::Occupied(mut entry) => {
+                        entry.get_mut().push((*transform, node.value.clone()))
+                    }
                     Entry::Vacant(entry) => {
-                        let values = vec![(*transform, node.clone())];
+                        let values = vec![(*transform, node.value.clone())];
                         entry.insert(values);
                     }
                 }

@@ -11,7 +11,10 @@ use gobs_render::{
     renderable::{RenderBatch, Renderable},
 };
 
-use crate::graph::scenegraph::{NodeId, NodeValue, SceneGraph};
+use crate::graph::{
+    node::{NodeId, NodeValue},
+    scenegraph::SceneGraph,
+};
 
 pub struct Scene {
     pub graph: SceneGraph,
@@ -98,14 +101,20 @@ impl Renderable for Scene {
     }
 
     fn draw(&mut self, ctx: &Context, pass: Arc<dyn RenderPass>, batch: &mut RenderBatch) {
-        self.graph.visit(self.graph.root, &mut |&transform, model| {
-            if let NodeValue::Model(model) = model {
-                batch.add_model(ctx, model.clone(), transform, pass.clone(), false);
+        self.graph.visit(self.graph.root, &mut |node| {
+            if let NodeValue::Model(model) = &node.value {
+                batch.add_model(
+                    ctx,
+                    model.clone(),
+                    *node.global_transform(),
+                    pass.clone(),
+                    false,
+                );
             }
         });
+
         let (light_transform, light) = self.light();
         let (camera_transform, camera) = self.camera();
-
         batch.add_camera_data(camera, camera_transform, light, light_transform, pass);
     }
 }

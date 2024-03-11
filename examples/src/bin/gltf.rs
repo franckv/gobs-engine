@@ -14,7 +14,8 @@ use gobs::{
         renderable::Renderable,
     },
     scene::{
-        graph::scenegraph::{NodeId, NodeValue, SceneGraph},
+        graph::node::{NodeId, NodeValue},
+        graph::scenegraph::SceneGraph,
         scene::Scene,
     },
     ui::UIRenderer,

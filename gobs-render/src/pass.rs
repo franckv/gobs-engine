@@ -15,6 +15,7 @@ use crate::{
     CommandBuffer,
 };
 
+pub mod bounds;
 pub mod compute;
 pub mod depth;
 pub mod forward;
@@ -23,6 +24,7 @@ pub mod wire;
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum PassType {
+    Bounds,
     Compute,
     Depth,
     Forward,

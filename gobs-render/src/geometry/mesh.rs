@@ -3,7 +3,7 @@ use std::{collections::HashMap, sync::Arc};
 use glam::{Vec2, Vec3};
 use uuid::Uuid;
 
-use super::VertexData;
+use super::{Bounded, BoundingBox, VertexData};
 
 pub type MeshId = Uuid;
 
@@ -27,6 +27,18 @@ impl Mesh {
 
     pub fn builder(name: &str) -> MeshBuilder {
         MeshBuilder::new(name)
+    }
+}
+
+impl Bounded for Mesh {
+    fn boundings(&self) -> BoundingBox {
+        let mut bounding_box = BoundingBox::default();
+
+        for vertex in &self.vertices {
+            bounding_box.extends(vertex.position);
+        }
+
+        bounding_box
     }
 }
 
