@@ -67,7 +67,7 @@ impl Run for App {
 
     fn update(&mut self, ctx: &Context, delta: f32) {
         if self.common.process_updates {
-            let angular_speed = 40.;
+            let angular_speed = 10.;
 
             self.scene.update_light(|transform, _| {
                 transform.translation =
@@ -102,6 +102,7 @@ impl Run for App {
             ctx,
             input,
             &mut self.graph,
+            &mut self.scene,
             &mut self.ui,
             &mut self.camera_controller,
         );

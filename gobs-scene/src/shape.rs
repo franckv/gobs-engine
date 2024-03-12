@@ -100,7 +100,7 @@ impl Shapes {
         Self::rect(color, 0.5, -0.5, -0.5, 0.5)
     }
 
-    pub fn cube(cols: u32, rows: u32, index: &[u32], size: f32) -> Arc<Mesh> {
+    pub fn cubemap(cols: u32, rows: u32, index: &[u32], size: f32) -> Arc<Mesh> {
         let mut builder = Mesh::builder("cube");
 
         let (top, bottom, left, right, front, back) = (

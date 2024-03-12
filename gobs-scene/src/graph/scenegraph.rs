@@ -30,30 +30,33 @@ impl SceneGraph {
     }
 
     pub fn toggle(&mut self, key: NodeId) {
-        if let Some(node) = self.arena.get_mut(key) {
+        if let Some(node) = self.get_mut(key) {
             node.enabled = !node.enabled;
         }
     }
 
     pub fn parent(&self, key: NodeId) -> Option<&Node> {
-        self.arena
-            .get(key)
+        self.get(key)
             .and_then(|node| node.parent)
-            .and_then(|parent| self.arena.get(parent))
+            .and_then(|parent| self.get(parent))
     }
 
     pub fn update<F>(&mut self, key: NodeId, mut f: F)
     where
         F: FnMut(&mut Transform, &mut NodeValue),
     {
-        if let Some(node) = self.arena.get_mut(key) {
+        if let Some(node) = self.get_mut(key) {
             f(&mut node.transform, &mut node.value);
         }
 
-        if let Some(parent) = self.parent(key) {
-            self.update_transform(key, *parent.global_transform());
-        } else {
-            self.update_transform(key, Transform::IDENTITY);
+        if let Some(node) = self.get(key) {
+            if let Some(parent) = self.parent(key) {
+                let parent_key = node.parent.unwrap();
+                self.update_transform(key, *parent.global_transform());
+                self.update_bounding_box(parent_key);
+            } else {
+                self.update_transform(key, Transform::IDENTITY);
+            }
         }
     }
 
@@ -61,9 +64,9 @@ impl SceneGraph {
         let mut children = vec![];
         let mut global_transform = Transform::IDENTITY;
 
-        if let Some(node) = self.arena.get_mut(key) {
-            global_transform = parent_transform * node.transform;
-            node.set_global_transform(global_transform);
+        if let Some(node) = self.get_mut(key) {
+            node.apply_parent_transform(parent_transform);
+            global_transform = *node.global_transform();
 
             for &child in &node.children {
                 children.push(child);
@@ -94,7 +97,7 @@ impl SceneGraph {
         value: NodeValue,
         transform: Transform,
     ) -> Option<NodeId> {
-        let node = match self.arena.get(parent) {
+        let node = match self.get(parent) {
             Some(parent_node) => Some(self.arena.insert(Node::new(
                 value,
                 transform,
@@ -104,13 +107,37 @@ impl SceneGraph {
             None => None,
         };
 
-        if let Some(parent_node) = self.arena.get_mut(parent) {
+        if let Some(parent_node) = self.get_mut(parent) {
             if let Some(node) = node {
                 parent_node.children.push(node);
             }
+            self.update_bounding_box(parent);
         }
 
         node
+    }
+
+    pub fn update_bounding_box(&mut self, key: NodeId) {
+        let bb = match self.get(key) {
+            Some(node) => {
+                let mut bb = node.bounding_box;
+                for &child in &node.children {
+                    if let Some(child) = self.get(child) {
+                        bb.extends_box(child.bounding_box);
+                    }
+                }
+
+                bb
+            }
+            None => return,
+        };
+
+        if let Some(node) = self.get_mut(key) {
+            node.bounding_box = bb;
+            if let Some(parent) = node.parent {
+                self.update_bounding_box(parent);
+            }
+        }
     }
 
     pub fn insert_subgraph(
@@ -144,7 +171,7 @@ impl SceneGraph {
     where
         F: FnMut(&Node),
     {
-        if let Some(node) = self.arena.get(root) {
+        if let Some(node) = self.get(root) {
             if node.enabled {
                 for &child in &node.children {
                     self.visit_local(child, f);
@@ -154,33 +181,33 @@ impl SceneGraph {
         }
     }
 
-    pub fn visit_update<F>(&mut self, root: NodeId, f: &mut F)
+    pub fn visit_update<F>(&mut self, key: NodeId, f: &mut F)
     where
         F: FnMut(&mut Transform, &NodeValue),
     {
-        if let Some(parent) = self.parent(root) {
-            self.visit_update_local(root, *parent.global_transform(), f);
-        } else {
-            self.visit_update_local(root, Transform::IDENTITY, f);
+        if let Some(node) = self.get(key) {
+            if let Some(parent) = self.parent(key) {
+                let parent_key = node.parent.unwrap();
+                self.visit_update_local(key, *parent.global_transform(), f);
+                self.update_bounding_box(parent_key);
+            } else {
+                self.visit_update_local(key, Transform::IDENTITY, f);
+            }
         }
     }
 
-    fn visit_update_local<F>(&mut self, root: NodeId, parent_transform: Transform, f: &mut F)
+    fn visit_update_local<F>(&mut self, key: NodeId, parent_transform: Transform, f: &mut F)
     where
         F: FnMut(&mut Transform, &NodeValue),
     {
-        if let Some(node) = self.arena.get(root) {
-            if node.enabled {
-                let global_transform = *node.global_transform();
-                for &child in &node.children.clone() {
-                    self.visit_update_local(child, global_transform, f);
-                }
-            }
+        if let Some(node) = self.get_mut(key) {
+            f(&mut node.transform, &node.value);
+            node.apply_parent_transform(parent_transform);
         }
-        if let Some(node) = self.arena.get_mut(root) {
-            if node.enabled {
-                f(&mut node.transform, &node.value);
-                node.set_global_transform(parent_transform * node.transform);
+        if let Some(node) = self.get(key) {
+            let global_transform = *node.global_transform();
+            for &child in &node.children.clone() {
+                self.visit_update_local(child, global_transform, f);
             }
         }
     }

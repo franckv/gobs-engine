@@ -41,7 +41,6 @@ impl Run for App {
             100.,
             0.,
             (-25. as f32).to_radians(),
-            Vec3::Y,
         );
         let camera_position = Vec3::new(0., 1., 0.);
 
@@ -71,7 +70,7 @@ impl Run for App {
 
     fn update(&mut self, ctx: &Context, delta: f32) {
         if self.common.process_updates {
-            let angular_speed = 40.;
+            let angular_speed = 10.;
 
             self.scene
                 .graph
@@ -79,7 +78,7 @@ impl Run for App {
                     if let NodeValue::Model(_) = value {
                         transform.rotate(Quat::from_axis_angle(
                             Vec3::Y,
-                            (0.3 * angular_speed * delta).to_radians(),
+                            (angular_speed * delta).to_radians(),
                         ));
                     }
                 });
@@ -107,6 +106,7 @@ impl Run for App {
             ctx,
             input,
             &mut self.graph,
+            &mut self.scene,
             &mut self.ui,
             &mut self.camera_controller,
         );
@@ -136,7 +136,7 @@ impl App {
             material.instantiate(vec![]);
 
         let cube = Model::builder("cube")
-            .mesh(Shapes::cube(1, 1, &[1], 1.), material_instance)
+            .mesh(Shapes::cubemap(1, 1, &[1], 1.), material_instance)
             .build();
 
         let transform = Transform::new([0., 0., -2.].into(), Quat::IDENTITY, Vec3::splat(1.));

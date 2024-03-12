@@ -50,12 +50,6 @@ impl Default for Node {
     }
 }
 
-impl Bounded for Node {
-    fn boundings(&self) -> BoundingBox {
-        self.value.boundings().transform(self.global_transform)
-    }
-}
-
 impl Node {
     pub(crate) fn new(
         value: NodeValue,
@@ -81,8 +75,8 @@ impl Node {
         &self.global_transform
     }
 
-    pub(crate) fn set_global_transform(&mut self, global_transform: Transform) {
-        self.global_transform = global_transform;
-        self.bounding_box = self.boundings();
+    pub(crate) fn apply_parent_transform(&mut self, parent_transform: Transform) {
+        self.global_transform = parent_transform * self.transform;
+        self.bounding_box = self.value.boundings().transform(self.global_transform);
     }
 }

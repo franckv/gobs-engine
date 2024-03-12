@@ -1,6 +1,5 @@
 use std::{collections::VecDeque, sync::Arc};
 
-use glam::Vec3;
 use slotmap::Key as _;
 
 use gobs::{
@@ -43,15 +42,7 @@ impl SampleApp {
     pub fn ortho_camera(ctx: &Context) -> Camera {
         let extent = ctx.surface.get_extent(ctx.device.clone());
 
-        Camera::ortho(
-            extent.width as f32,
-            extent.height as f32,
-            0.1,
-            100.,
-            0.,
-            0.,
-            Vec3::Y,
-        )
+        Camera::ortho(extent.width as f32, extent.height as f32, 0.1, 100., 0., 0.)
     }
 
     pub fn perspective_camera(ctx: &Context) -> Camera {
@@ -64,7 +55,6 @@ impl SampleApp {
             100.,
             0.,
             0.,
-            Vec3::Y,
         )
     }
 
@@ -304,6 +294,7 @@ impl SampleApp {
         ctx: &Context,
         input: Input,
         graph: &mut FrameGraph,
+        scene: &mut Scene,
         ui: &mut UIRenderer,
         camera_controller: &mut CameraController,
     ) {
@@ -320,6 +311,10 @@ impl SampleApp {
                 Key::W => self.draw_wire = !self.draw_wire,
                 Key::B => self.draw_bounds = !self.draw_bounds,
                 Key::U => self.draw_ui = !self.draw_ui,
+                Key::Equals => scene.update_camera(|_, camera| {
+                    camera.pitch = 0.;
+                    camera.yaw = 0.;
+                }),
                 _ => camera_controller.key_pressed(key),
             },
             Input::KeyReleased(key) => camera_controller.key_released(key),

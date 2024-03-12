@@ -44,7 +44,6 @@ impl Run for App {
             100.,
             0.,
             0.,
-            Vec3::Y,
         );
         let camera_position = Vec3::new(0., 0., 3.);
 
@@ -91,6 +90,7 @@ impl Run for App {
             ctx,
             input,
             &mut self.graph,
+            &mut self.scene,
             &mut self.ui,
             &mut self.camera_controller,
         );
@@ -144,7 +144,7 @@ impl App {
                 Shapes::triangle(Color::RED, Color::GREEN, Color::BLUE, 1.5),
                 color_material_instance,
             )
-            .mesh(Shapes::cube(1, 1, &[1], 1.), diffuse_material_instance)
+            .mesh(Shapes::cubemap(1, 1, &[1], 1.), diffuse_material_instance)
             .build();
 
         let transform = Transform::new([0., 0., 0.].into(), Quat::IDENTITY, Vec3::ONE);

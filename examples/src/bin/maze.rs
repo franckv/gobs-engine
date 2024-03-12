@@ -44,7 +44,6 @@ impl Run for App {
             150.,
             (0. as f32).to_radians(),
             (-50. as f32).to_radians(),
-            Vec3::Y,
         );
         let camera_position = Vec3::new(0., 25., 25.);
 
@@ -105,6 +104,7 @@ impl Run for App {
             ctx,
             input,
             &mut self.graph,
+            &mut self.scene,
             &mut self.ui,
             &mut self.camera_controller,
         );
@@ -159,14 +159,14 @@ impl App {
 
         let wall = Model::builder("wall")
             .mesh(
-                Shapes::cube(examples::ATLAS_COLS, examples::ATLAS_ROWS, &[2], 1.),
+                Shapes::cubemap(examples::ATLAS_COLS, examples::ATLAS_ROWS, &[2], 1.),
                 material_instance.clone(),
             )
             .build();
 
         let floor = Model::builder("floor")
             .mesh(
-                Shapes::cube(
+                Shapes::cubemap(
                     examples::ATLAS_COLS,
                     examples::ATLAS_ROWS,
                     &[3, 3, 3, 3, 4, 1],

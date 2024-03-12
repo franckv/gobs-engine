@@ -1,6 +1,11 @@
-use glam::Vec3;
+use futures::try_join;
+use glam::{Quat, Vec3};
+
 use gobs::{
-    core::{entity::light::Light, Color, Transform},
+    core::{
+        entity::{camera::Camera, light::Light},
+        Color, Transform,
+    },
     game::{
         app::{Application, Run},
         input::{Input, Key},
@@ -9,12 +14,16 @@ use gobs::{
         context::Context,
         geometry::Model,
         graph::{FrameGraph, RenderError},
+        material::{Texture, TextureType},
         pass::PassType,
         renderable::Renderable,
+        SamplerFilter,
     },
     scene::{
-        graph::node::{NodeId, NodeValue},
-        graph::scenegraph::SceneGraph,
+        graph::{
+            node::{NodeId, NodeValue},
+            scenegraph::SceneGraph,
+        },
         scene::Scene,
         shape::Shapes,
     },
@@ -34,8 +43,17 @@ struct App {
 
 impl Run for App {
     async fn create(ctx: &Context) -> Self {
-        let camera = SampleApp::ortho_camera(ctx);
-        let camera_position = Vec3::new(0., 0., 1.);
+        let extent = ctx.extent();
+
+        let camera = Camera::perspective(
+            extent.width as f32 / extent.height as f32,
+            (60. as f32).to_radians(),
+            0.1,
+            100.,
+            0.,
+            0.,
+        );
+        let camera_position = Vec3::new(0., 0., 2.);
 
         let light = Light::new(Color::WHITE);
         let light_position = Vec3::new(0., 0., 10.);
@@ -59,6 +77,16 @@ impl Run for App {
     }
 
     fn update(&mut self, ctx: &Context, delta: f32) {
+        if self.common.process_updates {
+            let angular_speed = 10.;
+            self.scene.graph.update(self.nodes[2], |transform, _| {
+                transform.rotate(Quat::from_axis_angle(
+                    Vec3::Y,
+                    (angular_speed * delta).to_radians(),
+                ));
+            });
+        }
+
         self.scene.update_camera(|transform, camera| {
             self.camera_controller
                 .update_camera(camera, transform, delta);
@@ -81,6 +109,7 @@ impl Run for App {
             ctx,
             input,
             &mut self.graph,
+            &mut self.scene,
             &mut self.ui,
             &mut self.camera_controller,
         );
@@ -109,7 +138,7 @@ impl Run for App {
     }
 
     async fn start(&mut self, ctx: &Context) {
-        self.init(ctx);
+        self.init(ctx).await;
     }
 
     fn close(&mut self, ctx: &Context) {
@@ -122,18 +151,35 @@ impl Run for App {
 }
 
 impl App {
-    fn init(&mut self, ctx: &Context) {
-        let material = self.common.color_material(ctx, &self.graph);
-        let material_instance = material.instantiate(vec![]);
+    async fn init(&mut self, ctx: &Context) {
+        let material = self.common.normal_mapping_material(ctx, &self.graph);
 
-        let triangle = Model::builder("triangle")
-            .mesh(
-                Shapes::triangle(Color::RED, Color::GREEN, Color::BLUE, 1.),
-                material_instance,
-            )
+        let diffuse_texture = Texture::with_file(
+            ctx,
+            examples::WALL_TEXTURE,
+            TextureType::Diffuse,
+            SamplerFilter::FilterLinear,
+            SamplerFilter::FilterLinear,
+        );
+
+        let normal_texture = Texture::with_file(
+            ctx,
+            examples::WALL_TEXTURE_N,
+            TextureType::Normal,
+            SamplerFilter::FilterLinear,
+            SamplerFilter::FilterLinear,
+        );
+
+        let (diffuse_texture, normal_texture) = try_join!(diffuse_texture, normal_texture).unwrap();
+
+        let material_instance = material.instantiate(vec![diffuse_texture, normal_texture]);
+
+        let cube = Model::builder("cube")
+            .mesh(Shapes::cubemap(1, 1, &[1], 1.), material_instance)
             .build();
 
         let graph = &mut self.scene.graph;
+
         /*
                                     0
                             /               \
@@ -146,14 +192,13 @@ impl App {
             11
         */
 
-        let node_value = NodeValue::Model(triangle);
+        let node_value = NodeValue::Model(cube);
 
-        let extent = ctx.surface.get_extent(ctx.device.clone());
-        let dx = extent.width as f32 / 12.;
-        let dy = extent.height as f32 / 6.;
+        let dx = 0.4;
+        let dy = 0.4;
 
         let mut root_transform = Transform::translation([0., 2. * dy, 0.].into());
-        root_transform.scale([100., 100., 1.].into());
+        root_transform.scale(Vec3::splat(0.3));
 
         let node0 = graph
             .insert(graph.root, node_value.clone(), root_transform)

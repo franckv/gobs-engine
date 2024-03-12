@@ -50,19 +50,10 @@ pub struct Camera {
     pub mode: ProjectionMode,
     pub yaw: f32,
     pub pitch: f32,
-    pub up: Vec3,
 }
 
 impl Camera {
-    pub fn perspective(
-        aspect: f32,
-        fovy: f32,
-        near: f32,
-        far: f32,
-        yaw: f32,
-        pitch: f32,
-        up: Vec3,
-    ) -> Self {
+    pub fn perspective(aspect: f32, fovy: f32, near: f32, far: f32, yaw: f32, pitch: f32) -> Self {
         let projection = PerspectiveProjection {
             aspect,
             fovy,
@@ -75,20 +66,11 @@ impl Camera {
             mode: ProjectionMode::Perspective(projection),
             yaw,
             pitch,
-            up,
         }
     }
 
     // Ortho Camera (origin top/left)
-    pub fn ortho(
-        width: f32,
-        height: f32,
-        near: f32,
-        far: f32,
-        yaw: f32,
-        pitch: f32,
-        up: Vec3,
-    ) -> Self {
+    pub fn ortho(width: f32, height: f32, near: f32, far: f32, yaw: f32, pitch: f32) -> Self {
         let projection = OrthoProjection {
             width,
             height,
@@ -101,7 +83,6 @@ impl Camera {
             mode: ProjectionMode::Ortho(projection),
             yaw,
             pitch,
-            up,
         }
     }
 
@@ -115,8 +96,17 @@ impl Camera {
         Vec3::new(sin_yaw * cos_pitch, sin_pitch, -cos_pitch * cos_yaw).normalize()
     }
 
+    pub fn right(&self) -> Vec3 {
+        let (sin_yaw, cos_yaw) = self.yaw.sin_cos();
+        Vec3::new(cos_yaw, 0., sin_yaw).normalize()
+    }
+
+    pub fn up(&self) -> Vec3 {
+        -self.dir().cross(self.right())
+    }
+
     pub fn view_matrix(&self, position: Vec3) -> Mat4 {
-        Mat4::look_to_rh(position, self.dir(), self.up)
+        Mat4::look_to_rh(position, self.dir(), self.up())
     }
 
     pub fn proj_matrix(&self) -> Mat4 {
@@ -205,7 +195,6 @@ mod tests {
             100.,
             yaw.to_radians(),
             pitch.to_radians(),
-            Vec3::Y,
         );
 
         let dir = camera.dir();
