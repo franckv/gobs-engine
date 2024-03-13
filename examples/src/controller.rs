@@ -1,6 +1,5 @@
 use std::f32::consts::FRAC_PI_2;
 
-use glam::Vec3;
 use gobs::core::Transform;
 
 use gobs::core::entity::camera::{Camera, ProjectionMode};

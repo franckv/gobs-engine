@@ -134,27 +134,33 @@ impl SampleApp {
         graph: &FrameGraph,
         scene: &Scene,
         ui: &mut UIRenderer,
+        delta: f32,
         mut f: F,
     ) where
         F: FnMut(&mut egui::Ui),
     {
         if self.draw_ui {
             let (camera_transform, camera) = scene.camera();
-            ui.update(ctx, graph.pass_by_type(PassType::Ui).unwrap(), |ectx| {
-                egui::CentralPanel::default()
-                    .frame(egui::Frame::none())
-                    .show(ectx, |ui| {
-                        ui.visuals_mut().override_text_color = Some(egui::Color32::GREEN);
-                        ui.heading(&ctx.app_name);
-                        ui.separator();
-                        Self::show_fps(ui, graph.render_stats().fps);
-                        Self::show_stats(ui, "Render Stats", graph);
-                        Self::show_camera(ui, camera, camera_transform);
-                        Self::show_memory(ui, ctx);
-                        Self::show_scene(ui, &scene.graph);
-                        f(ui);
-                    });
-            });
+            ui.update(
+                ctx,
+                graph.pass_by_type(PassType::Ui).unwrap(),
+                delta,
+                |ectx| {
+                    egui::CentralPanel::default()
+                        .frame(egui::Frame::none())
+                        .show(ectx, |ui| {
+                            ui.visuals_mut().override_text_color = Some(egui::Color32::GREEN);
+                            ui.heading(&ctx.app_name);
+                            ui.separator();
+                            Self::show_fps(ui, graph.render_stats().fps);
+                            Self::show_stats(ui, "Render Stats", graph);
+                            Self::show_camera(ui, camera, camera_transform);
+                            Self::show_memory(ui, ctx);
+                            Self::show_scene(ui, &scene.graph);
+                            f(ui);
+                        });
+                },
+            );
         }
     }
 

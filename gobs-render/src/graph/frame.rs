@@ -391,7 +391,7 @@ impl FrameGraph {
 
         let present = *presents
             .iter()
-            .find(|&&p| p == PresentationMode::Fifo)
+            .find(|&&p| p == PresentationMode::Mailbox)
             .unwrap();
 
         let caps = surface.get_capabilities(device.clone());

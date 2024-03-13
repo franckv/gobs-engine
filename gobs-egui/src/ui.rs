@@ -78,13 +78,13 @@ impl UIRenderer {
         (self.frame_number - 1) % ctx.frames_in_flight
     }
 
-    pub fn update<F>(&mut self, ctx: &Context, _pass: Arc<dyn RenderPass>, callback: F)
+    pub fn update<F>(&mut self, ctx: &Context, _pass: Arc<dyn RenderPass>, delta: f32, callback: F)
     where
         F: FnMut(&egui::Context),
     {
         let frame_id = self.new_frame(ctx);
 
-        let input = self.prepare_inputs();
+        let input = self.prepare_inputs(delta);
 
         let output = self.ectx.run(input, callback);
 
@@ -137,12 +137,13 @@ impl UIRenderer {
         }
     }
 
-    fn prepare_inputs(&mut self) -> RawInput {
+    fn prepare_inputs(&mut self, delta: f32) -> RawInput {
         let mut input = RawInput {
             screen_rect: Some(Rect::from_min_size(
                 Default::default(),
                 [self.width, self.height].into(),
             )),
+            predicted_dt: delta,
             ..Default::default()
         };
 

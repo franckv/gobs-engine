@@ -71,10 +71,10 @@ impl Application {
                 }
                 Event::Redraw => {
                     let delta = timer.delta();
-                    log::trace!("[Redraw] FPS: {}", 1. / delta);
 
                     if !close_requested {
                         runnable.update(&self.context, delta);
+                        log::trace!("[Redraw] FPS: {}", 1. / delta);
                         match runnable.render(&self.context) {
                             Ok(_) => {}
                             Err(RenderError::Lost | RenderError::Outdated) => {}

@@ -85,7 +85,7 @@ impl Run for App {
         self.scene.update(ctx, delta);
 
         self.common
-            .update_ui(ctx, &self.graph, &self.scene, &mut self.ui, |ui| {
+            .update_ui(ctx, &self.graph, &self.scene, &mut self.ui, delta, |ui| {
                 ui.collapsing("GLTF", |ui| {
                     ui.label(format!("Current scene: {}", self.current_scene));
                 });
