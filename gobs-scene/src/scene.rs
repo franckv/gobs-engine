@@ -51,7 +51,7 @@ impl Scene {
 
     pub fn update(&mut self, _ctx: &Context, _delta: f32) {}
 
-    pub fn camera(&self) -> (&Transform, &Camera) {
+    pub fn camera(&self) -> (Transform, &Camera) {
         if let Some(node) = self.graph.get(self.camera) {
             if let NodeValue::Camera(camera) = &node.value {
                 return (node.global_transform(), camera);
@@ -72,7 +72,7 @@ impl Scene {
         });
     }
 
-    pub fn light(&self) -> (&Transform, &Light) {
+    pub fn light(&self) -> (Transform, &Light) {
         if let Some(node) = self.graph.get(self.light) {
             if let NodeValue::Light(light) = &node.value {
                 return (node.global_transform(), light);
@@ -91,6 +91,28 @@ impl Scene {
             }
         });
     }
+
+    pub fn draw_bounds(
+        &mut self,
+        ctx: &Context,
+        pass: Arc<dyn RenderPass>,
+        batch: &mut RenderBatch,
+    ) {
+        self.graph.visit(self.graph.root, &mut |node| {
+            if let NodeValue::Model(_) = node.value {
+                batch.add_bounds(
+                    ctx,
+                    node.bounding_box,
+                    node.global_transform(),
+                    pass.clone(),
+                );
+            }
+        });
+
+        let (light_transform, light) = self.light();
+        let (camera_transform, camera) = self.camera();
+        batch.add_camera_data(camera, &camera_transform, light, &light_transform, pass);
+    }
 }
 
 impl Renderable for Scene {
@@ -106,7 +128,7 @@ impl Renderable for Scene {
                 batch.add_model(
                     ctx,
                     model.clone(),
-                    *node.global_transform(),
+                    node.global_transform(),
                     pass.clone(),
                     false,
                 );
@@ -115,6 +137,6 @@ impl Renderable for Scene {
 
         let (light_transform, light) = self.light();
         let (camera_transform, camera) = self.camera();
-        batch.add_camera_data(camera, camera_transform, light, light_transform, pass);
+        batch.add_camera_data(camera, &camera_transform, light, &light_transform, pass);
     }
 }

@@ -111,7 +111,7 @@ impl App {
         let triangle = Model::builder("triangle")
             .mesh(
                 Shapes::triangle(Color::RED, Color::GREEN, Color::BLUE, 1.),
-                material_instance,
+                Some(material_instance),
             )
             .build();
 
@@ -119,7 +119,7 @@ impl App {
             .mesh(
                 Shapes::quad(Color::new(1., 1., 1., 0.5)),
                 //Shapes::quad(Color::new(1., 1., 1., 0.5)),
-                transparent_material_instance,
+                Some(transparent_material_instance),
             )
             .build();
 

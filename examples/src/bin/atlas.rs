@@ -164,7 +164,7 @@ impl App {
                     &[3, 3, 3, 3, 4, 1],
                     1.,
                 ),
-                material_instance,
+                Some(material_instance),
             )
             .build();
 

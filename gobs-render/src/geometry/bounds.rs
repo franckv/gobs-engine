@@ -12,14 +12,38 @@ pub struct BoundingBox {
 }
 
 impl BoundingBox {
-    pub fn from_corners(bottom_left: Vec3, top_right: Vec3) -> Self {
+    pub fn from_corners(corners: &[Vec3]) -> Self {
+        let (mut x_min, mut y_min, mut z_min) = corners[0].into();
+        let (mut x_max, mut y_max, mut z_max) = corners[0].into();
+
+        for corner in corners {
+            if corner.x < x_min {
+                x_min = corner.x;
+            }
+            if corner.x > x_max {
+                x_max = corner.x;
+            }
+            if corner.y < y_min {
+                y_min = corner.y;
+            }
+            if corner.y > y_max {
+                y_max = corner.y;
+            }
+            if corner.z < z_min {
+                z_min = corner.z;
+            }
+            if corner.z > z_max {
+                z_max = corner.z;
+            }
+        }
+
         Self {
-            x_min: bottom_left.x,
-            x_max: top_right.x,
-            y_min: bottom_left.y,
-            y_max: top_right.y,
-            z_min: bottom_left.z,
-            z_max: top_right.z,
+            x_min,
+            x_max,
+            y_min,
+            y_max,
+            z_min,
+            z_max,
         }
     }
 
@@ -73,14 +97,35 @@ impl BoundingBox {
         }
     }
 
-    pub fn transform(&mut self, transform: Transform) -> Self {
-        let min_pos = Vec4::new(self.x_min, self.y_min, self.z_min, 1.);
-        let max_pos = Vec4::new(self.x_max, self.y_max, self.z_max, 1.);
+    pub fn transform(&self, transform: Transform) -> Self {
+        let c1 = Vec4::new(self.x_min, self.y_min, self.z_min, 1.);
+        let c2 = Vec4::new(self.x_min, self.y_min, self.z_max, 1.);
+        let c3 = Vec4::new(self.x_min, self.y_max, self.z_min, 1.);
+        let c4 = Vec4::new(self.x_min, self.y_max, self.z_max, 1.);
+        let c5 = Vec4::new(self.x_max, self.y_min, self.z_min, 1.);
+        let c6 = Vec4::new(self.x_max, self.y_min, self.z_max, 1.);
+        let c7 = Vec4::new(self.x_max, self.y_max, self.z_min, 1.);
+        let c8 = Vec4::new(self.x_max, self.y_max, self.z_max, 1.);
 
-        let t_min = transform * min_pos;
-        let t_max = transform * max_pos;
+        let tc1 = transform * c1;
+        let tc2 = transform * c2;
+        let tc3 = transform * c3;
+        let tc4 = transform * c4;
+        let tc5 = transform * c5;
+        let tc6 = transform * c6;
+        let tc7 = transform * c7;
+        let tc8 = transform * c8;
 
-        Self::from_corners(t_min.truncate(), t_max.truncate())
+        Self::from_corners(&[
+            tc1.truncate(),
+            tc2.truncate(),
+            tc3.truncate(),
+            tc4.truncate(),
+            tc5.truncate(),
+            tc6.truncate(),
+            tc7.truncate(),
+            tc8.truncate(),
+        ])
     }
 }
 

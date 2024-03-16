@@ -108,7 +108,7 @@ impl App {
         let triangle = Model::builder("triangle")
             .mesh(
                 Shapes::triangle(Color::RED, Color::GREEN, Color::BLUE, 1.),
-                material_instance,
+                Some(material_instance),
             )
             .build();
 

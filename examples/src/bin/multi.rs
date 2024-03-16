@@ -142,9 +142,12 @@ impl App {
         let model = Model::builder("multi")
             .mesh(
                 Shapes::triangle(Color::RED, Color::GREEN, Color::BLUE, 1.5),
-                color_material_instance,
+                Some(color_material_instance),
             )
-            .mesh(Shapes::cubemap(1, 1, &[1], 1.), diffuse_material_instance)
+            .mesh(
+                Shapes::cubemap(1, 1, &[1], 1.),
+                Some(diffuse_material_instance),
+            )
             .build();
 
         let transform = Transform::new([0., 0., 0.].into(), Quat::IDENTITY, Vec3::ONE);

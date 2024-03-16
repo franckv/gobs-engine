@@ -323,7 +323,7 @@ impl UIRenderer {
 
                 model = model.mesh(
                     mesh.build(),
-                    self.font_texture.get(&m.texture_id).cloned().unwrap(),
+                    Some(self.font_texture.get(&m.texture_id).cloned().unwrap()),
                 );
             }
         }

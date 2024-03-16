@@ -176,11 +176,11 @@ impl GLTFLoader {
                     }
                 } else {
                     for i in 0..mesh_data.vertices.len() {
-                        mesh_data.vertices[i].color = mesh_data.vertices[i].normal.into();
+                        mesh_data.vertices[i].color = Color::WHITE;
                     }
                 }
 
-                model = model.mesh(mesh_data.build(), material);
+                model = model.mesh(mesh_data.build(), Some(material));
             }
 
             self.models.push(model.build());

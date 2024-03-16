@@ -160,7 +160,7 @@ impl App {
         let wall = Model::builder("wall")
             .mesh(
                 Shapes::cubemap(examples::ATLAS_COLS, examples::ATLAS_ROWS, &[2], 1.),
-                material_instance.clone(),
+                Some(material_instance.clone()),
             )
             .build();
 
@@ -172,7 +172,7 @@ impl App {
                     &[3, 3, 3, 3, 4, 1],
                     1.,
                 ),
-                material_instance.clone(),
+                Some(material_instance.clone()),
             )
             .build();
 

@@ -5,7 +5,7 @@ use gobs_core::{
     Transform,
 };
 use gobs_render::geometry::{Bounded, BoundingBox, Model};
-use slotmap::DefaultKey;
+use slotmap::{DefaultKey, Key};
 
 #[derive(Clone, Debug)]
 pub enum NodeValue {
@@ -30,9 +30,10 @@ pub type NodeId = DefaultKey;
 
 #[derive(Clone)]
 pub struct Node {
+    pub id: NodeId,
     pub value: NodeValue,
     pub transform: Transform,
-    global_transform: Transform,
+    pub parent_transform: Transform,
     pub enabled: bool,
     pub(crate) parent: Option<NodeId>,
     pub children: Vec<NodeId>,
@@ -57,13 +58,13 @@ impl Node {
         parent: Option<NodeId>,
         parent_transform: Transform,
     ) -> Self {
-        let global_transform = parent_transform * transform;
-        let bounding_box = value.boundings().transform(global_transform);
+        let bounding_box = value.boundings();
 
         Self {
+            id: NodeId::null(),
             value,
             transform,
-            global_transform,
+            parent_transform,
             enabled: true,
             parent,
             children: Vec::new(),
@@ -71,12 +72,17 @@ impl Node {
         }
     }
 
-    pub fn global_transform(&self) -> &Transform {
-        &self.global_transform
+    pub fn reset_bounding_box(&mut self) {
+        self.bounding_box = self.value.boundings();
     }
 
-    pub(crate) fn apply_parent_transform(&mut self, parent_transform: Transform) {
-        self.global_transform = parent_transform * self.transform;
-        self.bounding_box = self.value.boundings().transform(self.global_transform);
+    pub fn global_transform(&self) -> Transform {
+        let matrix = self.parent_transform * self.transform;
+
+        matrix
+    }
+
+    pub(crate) fn set_parent_transform(&mut self, parent_transform: Transform) {
+        self.parent_transform = parent_transform;
     }
 }

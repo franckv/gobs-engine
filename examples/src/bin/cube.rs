@@ -155,7 +155,7 @@ impl App {
         let material_instance = material.instantiate(vec![diffuse_texture, normal_texture]);
 
         let cube = Model::builder("cube")
-            .mesh(Shapes::cubemap(1, 1, &[1], 1.), material_instance)
+            .mesh(Shapes::cubemap(1, 1, &[1], 1.), Some(material_instance))
             .build();
 
         let transform = Transform::new([0., 0., -2.].into(), Quat::IDENTITY, Vec3::splat(1.));

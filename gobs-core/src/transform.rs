@@ -52,7 +52,7 @@ impl Transform {
         self.update_matrix();
     }
 
-    fn update_matrix(&mut self) {
+    pub fn update_matrix(&mut self) {
         self.matrix = Mat4::from_translation(self.translation)
             * Mat4::from_quat(self.rotation)
             * Mat4::from_scale(self.scale);
@@ -81,11 +81,16 @@ impl Mul for Transform {
     type Output = Self;
 
     fn mul(self, rhs: Self) -> Self {
-        Self::new(
+        let matrix = self.matrix * rhs.matrix;
+        let (scale, rotation, translation) = matrix.to_scale_rotation_translation();
+
+        Self::new(translation, rotation, scale)
+
+        /*Self::new(
             self.translation + rhs.translation,
             self.rotation * rhs.rotation,
             self.scale * rhs.scale,
-        )
+        )*/
     }
 }
 

@@ -1,3 +1,4 @@
+use std::collections::hash_map::Entry;
 use std::sync::Arc;
 use std::{cmp::Ordering, collections::HashMap};
 
@@ -7,7 +8,7 @@ use gobs_core::{
 };
 use gobs_vulkan::image::ImageExtent2D;
 
-use crate::geometry::{Model, ModelId};
+use crate::geometry::{BoundingBox, Model, ModelId};
 use crate::{
     context::Context,
     material::MaterialInstance,
@@ -16,27 +17,88 @@ use crate::{
     stats::RenderStats,
 };
 
+struct ModelManager {
+    frame_number: usize,
+    models: HashMap<(ModelId, PassId), Arc<ModelResource>>,
+    transient_models: Vec<Vec<Arc<ModelResource>>>,
+}
+
+impl ModelManager {
+    pub fn new(ctx: &Context) -> Self {
+        Self {
+            frame_number: 0,
+            models: HashMap::new(),
+            transient_models: (0..(ctx.frames_in_flight + 1)).map(|_| vec![]).collect(),
+        }
+    }
+
+    fn new_frame(&mut self, ctx: &Context) -> usize {
+        self.frame_number += 1;
+        self.transient_models[(self.frame_number - 1) % (ctx.frames_in_flight + 1)].clear();
+        (self.frame_number - 1) % (ctx.frames_in_flight + 1)
+    }
+
+    pub fn frame_id(&self, ctx: &Context) -> usize {
+        (self.frame_number - 1) % (ctx.frames_in_flight + 1)
+    }
+
+    pub fn add_model(
+        &mut self,
+        ctx: &Context,
+        model: Arc<Model>,
+        pass: Arc<dyn RenderPass>,
+        overwrite: bool,
+    ) -> Arc<ModelResource> {
+        let key = (model.id, pass.id());
+
+        if overwrite {
+            self.models.remove(&key);
+        }
+        match self.models.entry(key) {
+            Entry::Occupied(entry) => entry.get().clone(),
+            Entry::Vacant(entry) => entry
+                .insert(ModelResource::new(ctx, model.clone(), pass.clone()))
+                .clone(),
+        }
+    }
+
+    pub fn add_bounding_box(
+        &mut self,
+        ctx: &Context,
+        bounding_box: BoundingBox,
+        pass: Arc<dyn RenderPass>,
+    ) -> Arc<ModelResource> {
+        let frame_id = self.frame_id(ctx);
+        let model_manager = &mut self.transient_models[frame_id];
+
+        model_manager.push(ModelResource::new_box(ctx, bounding_box, pass.clone()));
+
+        model_manager.last().unwrap().clone()
+    }
+}
+
 pub struct RenderBatch {
     pub(crate) render_list: Vec<RenderObject>,
     pub(crate) scene_data: HashMap<PassId, Vec<u8>>,
     pub(crate) render_stats: RenderStats,
-    model_manager: HashMap<(ModelId, PassId), Arc<ModelResource>>,
+    model_manager: ModelManager,
 }
 
 impl RenderBatch {
-    pub fn new() -> Self {
+    pub fn new(ctx: &Context) -> Self {
         Self {
             render_list: Vec::new(),
             scene_data: HashMap::new(),
             render_stats: RenderStats::default(),
-            model_manager: HashMap::new(),
+            model_manager: ModelManager::new(ctx),
         }
     }
 
-    pub fn reset(&mut self) {
+    pub fn reset(&mut self, ctx: &Context) {
         self.render_list.clear();
         self.scene_data.clear();
         self.render_stats.reset();
+        self.model_manager.new_frame(ctx);
     }
 
     pub fn add_model(
@@ -47,17 +109,9 @@ impl RenderBatch {
         pass: Arc<dyn RenderPass>,
         overwrite: bool,
     ) {
-        let key = (model.id, pass.id());
-        let resource = if overwrite {
-            self.model_manager
-                .insert(key, ModelResource::new(ctx, model.clone(), pass.clone()));
-            self.model_manager.get(&key).unwrap().clone()
-        } else {
-            self.model_manager
-                .entry(key)
-                .or_insert_with(|| ModelResource::new(ctx, model.clone(), pass.clone()))
-                .clone()
-        };
+        let resource = self
+            .model_manager
+            .add_model(ctx, model, pass.clone(), overwrite);
 
         for primitive in &resource.primitives {
             let material = match primitive.material {
@@ -69,6 +123,33 @@ impl RenderBatch {
                 pass: pass.clone(),
                 model: resource.clone(),
                 material,
+                vertices_offset: primitive.vertex_offset,
+                indices_offset: primitive.index_offset,
+                indices_len: primitive.len,
+            };
+
+            self.render_stats.add_object(&render_object);
+            self.render_list.push(render_object);
+        }
+    }
+
+    pub fn add_bounds(
+        &mut self,
+        ctx: &Context,
+        bounding_box: BoundingBox,
+        transform: Transform,
+        pass: Arc<dyn RenderPass>,
+    ) {
+        let resource = self
+            .model_manager
+            .add_bounding_box(ctx, bounding_box, pass.clone());
+
+        for primitive in &resource.primitives {
+            let render_object = RenderObject {
+                transform,
+                pass: pass.clone(),
+                model: resource.clone(),
+                material: None,
                 vertices_offset: primitive.vertex_offset,
                 indices_offset: primitive.index_offset,
                 indices_len: primitive.len,

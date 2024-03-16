@@ -66,11 +66,19 @@ impl ModelBuilder {
         self
     }
 
-    pub fn mesh(mut self, mesh: Arc<Mesh>, material_instance: Arc<MaterialInstance>) -> Self {
-        self.meshes.push((mesh, material_instance.id));
+    pub fn mesh(
+        mut self,
+        mesh: Arc<Mesh>,
+        material_instance: Option<Arc<MaterialInstance>>,
+    ) -> Self {
+        if let Some(material_instance) = material_instance {
+            self.meshes.push((mesh, material_instance.id));
 
-        if let Entry::Vacant(entry) = self.materials.entry(material_instance.id) {
-            entry.insert(material_instance);
+            if let Entry::Vacant(entry) = self.materials.entry(material_instance.id) {
+                entry.insert(material_instance);
+            }
+        } else {
+            self.meshes.push((mesh, MaterialInstanceId::nil()))
         }
 
         self

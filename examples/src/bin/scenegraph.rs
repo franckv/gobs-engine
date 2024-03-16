@@ -53,10 +53,10 @@ impl Run for App {
             0.,
             0.,
         );
-        let camera_position = Vec3::new(0., 0., 2.);
+        let camera_position = Vec3::new(0., 0., 2.5);
 
         let light = Light::new(Color::WHITE);
-        let light_position = Vec3::new(0., 0., 10.);
+        let light_position = Vec3::new(0., 0., 2.);
 
         let common = SampleApp::new();
 
@@ -175,7 +175,7 @@ impl App {
         let material_instance = material.instantiate(vec![diffuse_texture, normal_texture]);
 
         let cube = Model::builder("cube")
-            .mesh(Shapes::cubemap(1, 1, &[1], 1.), material_instance)
+            .mesh(Shapes::cubemap(1, 1, &[1], 1.), Some(material_instance))
             .build();
 
         let graph = &mut self.scene.graph;
@@ -194,10 +194,10 @@ impl App {
 
         let node_value = NodeValue::Model(cube);
 
-        let dx = 0.4;
-        let dy = 0.4;
+        let dx = 1.4;
+        let dy = 1.4;
 
-        let mut root_transform = Transform::translation([0., 2. * dy, 0.].into());
+        let mut root_transform = Transform::translation([0., 0.6 * dy, 0.].into());
         root_transform.scale(Vec3::splat(0.3));
 
         let node0 = graph

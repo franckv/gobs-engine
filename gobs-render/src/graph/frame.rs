@@ -141,7 +141,7 @@ impl FrameGraph {
             render_scaling: 1.,
             passes: Vec::new(),
             resource_manager: ResourceManager::new(),
-            batch: RenderBatch::new(),
+            batch: RenderBatch::new(ctx),
         }
     }
 
@@ -225,7 +225,7 @@ impl FrameGraph {
         log::debug!("Begin new frame");
 
         let frame_id = self.new_frame(ctx);
-        self.batch.reset();
+        self.batch.reset(ctx);
 
         {
             let frame = &mut self.frames[frame_id];
