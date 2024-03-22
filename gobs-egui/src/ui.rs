@@ -9,11 +9,12 @@ use glam::{Vec2, Vec3};
 use gobs_core::Transform;
 use gobs_game::input::{Input, Key};
 use gobs_render::{
+    batch::RenderBatch,
     context::Context,
     geometry::{Mesh, Model, ModelId, VertexData, VertexFlag},
     material::{Material, MaterialInstance, MaterialProperty, Texture, TextureType},
     pass::RenderPass,
-    renderable::{RenderBatch, Renderable},
+    renderable::Renderable,
     BlendMode, ImageExtent2D, SamplerFilter,
 };
 

@@ -14,12 +14,12 @@ use gobs_vulkan::{
 };
 
 use crate::{
+    batch::RenderBatch,
     context::Context,
     pass::{
         bounds::BoundsPass, compute::ComputePass, depth::DepthPass, forward::ForwardPass,
         ui::UiPass, wire::WirePass, PassId, PassType, RenderPass,
     },
-    renderable::RenderBatch,
     stats::RenderStats,
 };
 

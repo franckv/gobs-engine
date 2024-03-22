@@ -7,10 +7,10 @@ use gobs_core::entity::uniform::UniformLayout;
 use gobs_vulkan::{descriptor::DescriptorSet, image::ImageExtent2D, pipeline::Pipeline};
 
 use crate::{
+    batch::RenderBatch,
     context::Context,
     geometry::VertexFlag,
     graph::{RenderError, ResourceManager},
-    renderable::RenderBatch,
     resources::UniformBuffer,
     CommandBuffer,
 };

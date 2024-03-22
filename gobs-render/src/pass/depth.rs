@@ -15,11 +15,11 @@ use gobs_vulkan::{
 };
 
 use crate::{
+    batch::RenderBatch,
     context::Context,
     geometry::VertexFlag,
     graph::{RenderError, ResourceManager},
     pass::{FrameData, PassId, PassType, RenderPass},
-    renderable::RenderBatch,
     CommandBuffer,
 };
 

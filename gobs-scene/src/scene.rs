@@ -5,11 +5,7 @@ use gobs_core::{
     entity::{camera::Camera, light::Light},
     Transform,
 };
-use gobs_render::{
-    context::Context,
-    pass::RenderPass,
-    renderable::{RenderBatch, Renderable},
-};
+use gobs_render::{batch::RenderBatch, context::Context, pass::RenderPass, renderable::Renderable};
 
 use crate::graph::{
     node::{NodeId, NodeValue},
