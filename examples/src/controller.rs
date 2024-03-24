@@ -119,19 +119,17 @@ impl CameraController {
         let right = camera.right().normalize();
         let up = camera.up().normalize();
 
-        camera_transform.translation +=
-            forward * (self.amount_forward - self.amount_backward) * self.speed * dt;
-        camera_transform.translation +=
-            right * (self.amount_right - self.amount_left) * self.speed * dt;
-
-        camera_transform.translation += forward * self.scroll * self.speed * self.sensitivity * dt;
-        self.scroll = 0.;
-
-        camera_transform.translation += up * (self.amount_up - self.amount_down) * self.speed * dt;
+        camera_transform
+            .translate(forward * (self.amount_forward - self.amount_backward) * self.speed * dt);
+        camera_transform
+            .translate(right * (self.amount_right - self.amount_left) * self.speed * dt);
+        camera_transform.translate(forward * self.scroll * self.speed * self.sensitivity * dt);
+        camera_transform.translate(up * (self.amount_up - self.amount_down) * self.speed * dt);
 
         camera.yaw += self.rotate_horizontal * self.sensitivity * dt;
         camera.pitch += self.rotate_vertical * self.sensitivity * dt;
 
+        self.scroll = 0.;
         self.rotate_horizontal = 0.;
         self.rotate_vertical = 0.;
 

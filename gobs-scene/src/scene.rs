@@ -26,7 +26,7 @@ impl Scene {
             .insert(
                 graph.root,
                 NodeValue::Camera(camera),
-                Transform::translation(camera_position),
+                Transform::from_translation(camera_position),
             )
             .expect("Cannot insert camera");
 
@@ -34,7 +34,7 @@ impl Scene {
             .insert(
                 graph.root,
                 NodeValue::Light(light),
-                Transform::translation(light_position),
+                Transform::from_translation(light_position),
             )
             .expect("Cannot insert light");
 
@@ -61,9 +61,10 @@ impl Scene {
     where
         F: FnMut(&mut Transform, &mut Camera),
     {
-        self.graph.update(self.camera, |transform, value| {
-            if let NodeValue::Camera(camera) = value {
-                f(transform, camera);
+        self.graph.update(self.camera, |node| {
+            if let NodeValue::Camera(ref mut camera) = node.value {
+                f(&mut node.transform, camera);
+                node.updated = true;
             }
         });
     }
@@ -74,6 +75,7 @@ impl Scene {
                 return (node.global_transform(), light);
             }
         }
+
         unreachable!();
     }
 
@@ -81,9 +83,10 @@ impl Scene {
     where
         F: FnMut(&mut Transform, &mut Light),
     {
-        self.graph.update(self.light, |transform, value| {
-            if let NodeValue::Light(light) = value {
-                f(transform, light);
+        self.graph.update(self.light, |node| {
+            if let NodeValue::Light(ref mut light) = node.value {
+                f(&mut node.transform, light);
+                node.updated = true;
             }
         });
     }

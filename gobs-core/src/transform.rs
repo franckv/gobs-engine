@@ -4,10 +4,10 @@ use glam::{Mat4, Quat, Vec3, Vec4};
 
 #[derive(Clone, Copy)]
 pub struct Transform {
-    pub translation: Vec3,
-    pub rotation: Quat,
-    pub scale: Vec3,
-    pub matrix: Mat4,
+    translation: Vec3,
+    rotation: Quat,
+    scale: Vec3,
+    matrix: Mat4,
 }
 
 impl Transform {
@@ -29,12 +29,33 @@ impl Transform {
         }
     }
 
-    pub fn translation(translation: Vec3) -> Self {
+    pub fn from_translation(translation: Vec3) -> Self {
         Self::new(translation, Quat::IDENTITY, Vec3::ONE)
     }
 
-    pub fn rotation(rotation: Quat) -> Self {
+    pub fn from_rotation(rotation: Quat) -> Self {
         Self::new(Vec3::ZERO, rotation, Vec3::ONE)
+    }
+
+    pub fn matrix(&self) -> &Mat4 {
+        &self.matrix
+    }
+
+    pub fn translation(&self) -> Vec3 {
+        self.translation
+    }
+
+    pub fn rotation(&self) -> Quat {
+        self.rotation
+    }
+
+    pub fn scaling(&self) -> Vec3 {
+        self.scale
+    }
+
+    pub fn set_translation(&mut self, translation: Vec3) {
+        self.translation = translation;
+        self.update_matrix();
     }
 
     pub fn translate(&mut self, translation: Vec3) {
@@ -52,7 +73,7 @@ impl Transform {
         self.update_matrix();
     }
 
-    pub fn update_matrix(&mut self) {
+    fn update_matrix(&mut self) {
         self.matrix = Mat4::from_translation(self.translation)
             * Mat4::from_quat(self.rotation)
             * Mat4::from_scale(self.scale);
@@ -85,12 +106,6 @@ impl Mul for Transform {
         let (scale, rotation, translation) = matrix.to_scale_rotation_translation();
 
         Self::new(translation, rotation, scale)
-
-        /*Self::new(
-            self.translation + rhs.translation,
-            self.rotation * rhs.rotation,
-            self.scale * rhs.scale,
-        )*/
     }
 }
 

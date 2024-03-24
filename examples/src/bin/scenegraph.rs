@@ -79,11 +79,13 @@ impl Run for App {
     fn update(&mut self, ctx: &Context, delta: f32) {
         if self.common.process_updates {
             let angular_speed = 10.;
-            self.scene.graph.update(self.nodes[2], |transform, _| {
-                transform.rotate(Quat::from_axis_angle(
-                    Vec3::Y,
-                    (angular_speed * delta).to_radians(),
-                ));
+            self.scene.graph.update(self.nodes[2], |node| {
+                node.update_transform(|transform| {
+                    transform.rotate(Quat::from_axis_angle(
+                        Vec3::Y,
+                        (angular_speed * delta).to_radians(),
+                    ))
+                });
             });
         }
 
@@ -197,7 +199,7 @@ impl App {
         let dx = 1.4;
         let dy = 1.4;
 
-        let mut root_transform = Transform::translation([0., 0.6 * dy, 0.].into());
+        let mut root_transform = Transform::from_translation([0., 0.6 * dy, 0.].into());
         root_transform.scale(Vec3::splat(0.3));
 
         let node0 = graph
@@ -208,20 +210,20 @@ impl App {
         let mut subgraph1 = SceneGraph::new();
         let node1 = subgraph1.set_root(
             node_value.clone(),
-            Transform::translation([-2. * dx, -dy, 0.].into()),
+            Transform::from_translation([-2. * dx, -dy, 0.].into()),
         );
 
         let mut subgraph2 = SceneGraph::new();
         let node2 = subgraph2.set_root(
             node_value.clone(),
-            Transform::translation([2. * dx, -dy, 0.].into()),
+            Transform::from_translation([2. * dx, -dy, 0.].into()),
         );
 
         let node3 = subgraph1
             .insert(
                 node1,
                 node_value.clone(),
-                Transform::translation([-dx, -dy, 0.].into()),
+                Transform::from_translation([-dx, -dy, 0.].into()),
             )
             .unwrap();
 
@@ -229,7 +231,7 @@ impl App {
             .insert(
                 node1,
                 node_value.clone(),
-                Transform::translation([dx, -dy, 0.].into()),
+                Transform::from_translation([dx, -dy, 0.].into()),
             )
             .unwrap();
 
@@ -237,7 +239,7 @@ impl App {
             .insert(
                 node2,
                 node_value.clone(),
-                Transform::translation([-dx, -dy, 0.].into()),
+                Transform::from_translation([-dx, -dy, 0.].into()),
             )
             .unwrap();
 
@@ -245,7 +247,7 @@ impl App {
             .insert(
                 node2,
                 node_value.clone(),
-                Transform::translation([dx, -dy, 0.].into()),
+                Transform::from_translation([dx, -dy, 0.].into()),
             )
             .unwrap();
 
@@ -253,7 +255,7 @@ impl App {
             .insert(
                 node3,
                 node_value.clone(),
-                Transform::translation([-dx, -dy, 0.].into()),
+                Transform::from_translation([-dx, -dy, 0.].into()),
             )
             .unwrap();
 
@@ -261,7 +263,7 @@ impl App {
             .insert(
                 node3,
                 node_value.clone(),
-                Transform::translation([0., -dy, 0.].into()),
+                Transform::from_translation([0., -dy, 0.].into()),
             )
             .unwrap();
 
@@ -269,7 +271,7 @@ impl App {
             .insert(
                 node3,
                 node_value.clone(),
-                Transform::translation([dx, -dy, 0.].into()),
+                Transform::from_translation([dx, -dy, 0.].into()),
             )
             .unwrap();
 
@@ -277,7 +279,7 @@ impl App {
             .insert(
                 node6,
                 node_value.clone(),
-                Transform::translation([0., -dy, 0.].into()),
+                Transform::from_translation([0., -dy, 0.].into()),
             )
             .unwrap();
 
@@ -285,7 +287,7 @@ impl App {
             .insert(
                 node7,
                 node_value.clone(),
-                Transform::translation([0., -dy, 0.].into()),
+                Transform::from_translation([0., -dy, 0.].into()),
             )
             .unwrap();
 

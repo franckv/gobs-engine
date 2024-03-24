@@ -56,17 +56,21 @@ impl SceneGraph {
 
     pub fn update<F>(&mut self, key: NodeId, mut f: F)
     where
-        F: FnMut(&mut Transform, &mut NodeValue),
+        F: FnMut(&mut Node),
     {
-        let parent_transform = self.parent_transform(key);
+        let mut updated = false;
 
         if let Some(node) = self.get_mut(key) {
-            f(&mut node.transform, &mut node.value);
-            node.transform.update_matrix();
+            f(node);
+            updated = node.updated;
+            node.updated = false;
         }
 
-        self.update_global_transform(key, parent_transform);
-        self.update_bounding_box(key);
+        if updated {
+            let parent_transform = self.parent_transform(key);
+            self.update_global_transform(key, parent_transform);
+            self.update_bounding_box(key);
+        }
     }
 
     fn update_global_transform(&mut self, key: NodeId, parent_transform: Transform) {
@@ -214,29 +218,15 @@ impl SceneGraph {
 
     pub fn visit_update<F>(&mut self, key: NodeId, f: &mut F)
     where
-        F: FnMut(&mut Transform, &NodeValue),
+        F: FnMut(&mut Node),
     {
-        self.visit_update_local(key, f);
-    }
-
-    pub fn visit_update_local<F>(&mut self, key: NodeId, f: &mut F)
-    where
-        F: FnMut(&mut Transform, &NodeValue),
-    {
-        let parent_transform = self.parent_transform(key);
-
         if let Some(node) = self.get(key) {
             for &child in &node.children.clone() {
-                self.visit_update_local(child, f);
+                self.visit_update(child, f);
             }
         }
-        if let Some(node) = self.get_mut(key) {
-            f(&mut node.transform, &node.value);
-            node.transform.update_matrix();
-        }
 
-        self.update_global_transform(key, parent_transform);
-        self.update_bounding_box(key);
+        self.update(key, f);
     }
 
     pub fn visit_sorted<F>(&self, root: NodeId, f: &mut F)

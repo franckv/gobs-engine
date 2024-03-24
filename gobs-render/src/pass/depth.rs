@@ -157,7 +157,7 @@ impl DepthPass {
                 continue;
             }
 
-            let world_matrix = render_object.transform.matrix;
+            let world_matrix = render_object.transform.matrix();
 
             if let Some(push_layout) = self.push_layout() {
                 model_data.clear();

@@ -74,12 +74,14 @@ impl Run for App {
 
             self.scene
                 .graph
-                .visit_update(self.scene.graph.root, &mut |transform, value| {
-                    if let NodeValue::Model(_) = value {
-                        transform.rotate(Quat::from_axis_angle(
-                            Vec3::Y,
-                            (angular_speed * delta).to_radians(),
-                        ));
+                .visit_update(self.scene.graph.root, &mut |node| {
+                    if let NodeValue::Model(_) = node.value {
+                        node.update_transform(|transform| {
+                            transform.rotate(Quat::from_axis_angle(
+                                Vec3::Y,
+                                (angular_speed * delta).to_radians(),
+                            ));
+                        });
                     }
                 });
         }

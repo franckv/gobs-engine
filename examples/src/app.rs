@@ -216,11 +216,10 @@ impl SampleApp {
 
     fn show_camera(&self, ui: &mut egui::Ui, camera: &Camera, camera_transform: &Transform) {
         ui.collapsing("Camera", |ui| {
+            let translation = camera_transform.translation();
             ui.label(format!(
                 "  Position: [{:.2}, {:.2}, {:.2}]",
-                camera_transform.translation.x,
-                camera_transform.translation.y,
-                camera_transform.translation.z
+                translation.x, translation.y, translation.z
             ));
             let dir = camera.dir();
             ui.label(format!(
@@ -229,6 +228,7 @@ impl SampleApp {
             ));
             ui.label(format!("  Yaw: {:.1}°", camera.yaw.to_degrees()));
             ui.label(format!("  Pitch: {:.1}°", camera.pitch.to_degrees()));
+            ui.label(format!("  Transform: {:?}", camera_transform));
         });
     }
 
@@ -283,9 +283,9 @@ impl SampleApp {
                         |ui| {
                             let pad = pad + 10;
                             ui.label(format!("{:>pad$}{:?}", "", node.bounding_box));
-                            ui.label(format!("{:>pad$}{:?}", "", node.global_transform()));
-                            ui.label(format!("{:>pad$}{:?}", "", node.parent_transform));
-                            ui.label(format!("{:>pad$}{:?}", "", node.transform));
+                            ui.label(format!("G: {:>pad$}{:?}", "", node.global_transform()));
+                            ui.label(format!("P: {:>pad$}{:?}", "", node.parent_transform));
+                            ui.label(format!("T: {:>pad$}{:?}", "", node.transform()));
                         },
                     );
 

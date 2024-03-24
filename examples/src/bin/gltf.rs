@@ -70,9 +70,11 @@ impl Run for App {
             let angular_speed = 10.;
 
             self.scene.update_light(|transform, _| {
-                transform.translation =
+                let translation =
                     Quat::from_axis_angle(Vec3::Y, (angular_speed * delta).to_radians())
-                        * transform.translation;
+                        * transform.translation();
+
+                transform.set_translation(translation);
             });
         }
 

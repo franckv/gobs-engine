@@ -111,8 +111,8 @@ impl ForwardPass {
             if render_object.material.is_none() {
                 continue;
             }
-            let world_matrix = render_object.transform.matrix;
-            let normal_matrix = Mat3::from_quat(render_object.transform.rotation);
+            let world_matrix = render_object.transform.matrix();
+            let normal_matrix = Mat3::from_quat(render_object.transform.rotation());
 
             let material = &render_object.material.clone().unwrap();
             let pipeline = material.pipeline();

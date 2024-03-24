@@ -32,12 +32,13 @@ pub type NodeId = DefaultKey;
 pub struct Node {
     pub id: NodeId,
     pub value: NodeValue,
-    pub transform: Transform,
+    pub(crate) transform: Transform,
     pub parent_transform: Transform,
     pub enabled: bool,
     pub(crate) parent: Option<NodeId>,
     pub children: Vec<NodeId>,
     pub bounding_box: BoundingBox,
+    pub updated: bool,
 }
 
 impl Default for Node {
@@ -69,7 +70,20 @@ impl Node {
             parent,
             children: Vec::new(),
             bounding_box,
+            updated: true,
         }
+    }
+
+    pub fn transform(&self) -> &Transform {
+        &self.transform
+    }
+
+    pub fn update_transform<F>(&mut self, f: F)
+    where
+        F: Fn(&mut Transform),
+    {
+        f(&mut self.transform);
+        self.updated = true;
     }
 
     pub fn reset_bounding_box(&mut self) {

@@ -173,18 +173,18 @@ impl RenderBatch {
                 PassType::Bounds | PassType::Wire | PassType::Depth => {
                     data_layout.data(&[UniformPropData::Mat4F(
                         camera
-                            .view_proj(camera_transform.translation)
+                            .view_proj(camera_transform.translation())
                             .to_cols_array_2d(),
                     )])
                 }
                 _ => data_layout.data(&[
-                    UniformPropData::Vec3F(camera_transform.translation.into()),
+                    UniformPropData::Vec3F(camera_transform.translation().into()),
                     UniformPropData::Mat4F(
                         camera
-                            .view_proj(camera_transform.translation)
+                            .view_proj(camera_transform.translation())
                             .to_cols_array_2d(),
                     ),
-                    UniformPropData::Vec3F(light_transform.translation.normalize().into()),
+                    UniformPropData::Vec3F(light_transform.translation().normalize().into()),
                     UniformPropData::Vec4F(light.colour.into()),
                     UniformPropData::Vec4F([0.1, 0.1, 0.1, 1.]),
                 ]),
