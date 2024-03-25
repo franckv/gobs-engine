@@ -40,7 +40,7 @@ impl Application {
         pollster::block_on(self.run_async::<R>());
     }
 
-    async fn run_async<R>(self)
+    async fn run_async<R>(mut self)
     where
         R: Run + 'static,
     {
@@ -81,6 +81,7 @@ impl Application {
                             Err(e) => error!("{:?}", e),
                         }
                     }
+                    self.context.frame_number += 1;
                 }
                 Event::Cleared => {
                     self.context.surface.window.request_redraw();

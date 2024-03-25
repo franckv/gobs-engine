@@ -25,6 +25,7 @@ pub struct Context {
     pub depth_format: ImageFormat,
     pub frames_in_flight: usize,
     pub stats_refresh: usize,
+    pub frame_number: usize,
 }
 
 impl Context {
@@ -63,11 +64,16 @@ impl Context {
             depth_format: ImageFormat::D32Sfloat,
             frames_in_flight: 2,
             stats_refresh: 60,
+            frame_number: 0,
         }
     }
 
     pub fn extent(&self) -> ImageExtent2D {
         self.surface.get_extent(self.device.clone())
+    }
+
+    pub fn frame_id(&self) -> usize {
+        self.frame_number % self.frames_in_flight
     }
 }
 

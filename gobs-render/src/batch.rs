@@ -18,7 +18,6 @@ use crate::{
 };
 
 struct ModelManager {
-    frame_number: usize,
     models: HashMap<(ModelId, PassId), Arc<ModelResource>>,
     transient_models: Vec<Vec<Arc<ModelResource>>>,
 }
@@ -26,20 +25,20 @@ struct ModelManager {
 impl ModelManager {
     pub fn new(ctx: &Context) -> Self {
         Self {
-            frame_number: 0,
             models: HashMap::new(),
             transient_models: (0..(ctx.frames_in_flight + 1)).map(|_| vec![]).collect(),
         }
     }
 
     fn new_frame(&mut self, ctx: &Context) -> usize {
-        self.frame_number += 1;
-        self.transient_models[(self.frame_number - 1) % (ctx.frames_in_flight + 1)].clear();
-        (self.frame_number - 1) % (ctx.frames_in_flight + 1)
+        let frame_id = self.frame_id(ctx);
+
+        self.transient_models[frame_id].clear();
+        frame_id
     }
 
     pub fn frame_id(&self, ctx: &Context) -> usize {
-        (self.frame_number - 1) % (ctx.frames_in_flight + 1)
+        ctx.frame_number % (ctx.frames_in_flight + 1)
     }
 
     pub fn add_model(

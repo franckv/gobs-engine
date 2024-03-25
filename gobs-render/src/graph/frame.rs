@@ -108,7 +108,6 @@ impl ResourceManager {
 }
 
 pub struct FrameGraph {
-    pub frame_number: usize,
     pub frames: Vec<FrameData>,
     pub swapchain: SwapChain,
     pub swapchain_images: Vec<Image>,
@@ -132,7 +131,6 @@ impl FrameGraph {
             .collect();
 
         Self {
-            frame_number: 0,
             frames,
             swapchain,
             swapchain_images,
@@ -183,15 +181,6 @@ impl FrameGraph {
         self.passes.push(pass);
     }
 
-    fn new_frame(&mut self, ctx: &Context) -> usize {
-        self.frame_number += 1;
-        (self.frame_number - 1) % ctx.frames_in_flight
-    }
-
-    pub fn frame_id(&self, ctx: &Context) -> usize {
-        (self.frame_number - 1) % ctx.frames_in_flight
-    }
-
     pub fn get_pass<F>(&self, cmp: F) -> Result<Arc<dyn RenderPass>, ()>
     where
         F: Fn(&Arc<dyn RenderPass>) -> bool,
@@ -224,7 +213,7 @@ impl FrameGraph {
     pub fn begin(&mut self, ctx: &Context) -> Result<(), RenderError> {
         log::debug!("Begin new frame");
 
-        let frame_id = self.new_frame(ctx);
+        let frame_id = ctx.frame_id();
         self.batch.reset(ctx);
 
         {
@@ -239,7 +228,7 @@ impl FrameGraph {
         let frame = &self.frames[frame_id];
         let cmd = &frame.command_buffer;
 
-        if self.frame_number >= ctx.frames_in_flight && self.frame_number % ctx.stats_refresh == 0 {
+        if ctx.frame_number >= ctx.frames_in_flight && ctx.frame_number % ctx.stats_refresh == 0 {
             let mut buf = [0 as u64; 2];
             frame.query_pool.get_query_pool_results(0, 2, &mut buf);
 
@@ -275,7 +264,7 @@ impl FrameGraph {
 
         cmd.begin();
 
-        cmd.begin_label(&format!("Frame {}", self.frame_number));
+        cmd.begin_label(&format!("Frame {}", ctx.frame_number));
 
         cmd.reset_query_pool(&frame.query_pool, 0, 2);
         cmd.write_timestamp(&frame.query_pool, PipelineStage::TopOfPipe, 0);
@@ -286,7 +275,7 @@ impl FrameGraph {
     pub fn end(&mut self, ctx: &Context) -> Result<(), RenderError> {
         log::debug!("End frame");
 
-        let frame_id = self.frame_id(ctx);
+        let frame_id = ctx.frame_id();
         let frame = &self.frames[frame_id];
         let cmd = &frame.command_buffer;
 
@@ -332,7 +321,7 @@ impl FrameGraph {
     }
 
     pub fn update(&mut self, ctx: &Context, delta: f32) {
-        if self.frame_number % ctx.stats_refresh == 0 {
+        if ctx.frame_number % ctx.stats_refresh == 0 {
             self.batch.render_stats.fps = (1. / delta).round() as u32;
         }
     }
@@ -344,7 +333,7 @@ impl FrameGraph {
     ) -> Result<(), RenderError> {
         log::debug!("Begin rendering");
 
-        let frame_id = self.frame_id(ctx);
+        let frame_id = ctx.frame_id();
 
         let mut timer = Timer::new();
 
@@ -354,7 +343,7 @@ impl FrameGraph {
 
         self.batch.finish();
 
-        if self.frame_number % ctx.stats_refresh == 0 {
+        if ctx.frame_number % ctx.stats_refresh == 0 {
             self.batch.render_stats.update_time = timer.delta();
         }
 
@@ -370,7 +359,7 @@ impl FrameGraph {
             )?;
         }
 
-        if self.frame_number % ctx.stats_refresh == 0 {
+        if ctx.frame_number % ctx.stats_refresh == 0 {
             self.batch.render_stats.cpu_draw_time = timer.peek();
         }
 

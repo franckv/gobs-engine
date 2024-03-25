@@ -1,6 +1,5 @@
 use std::sync::Arc;
 
-use parking_lot::RwLock;
 use uuid::Uuid;
 
 use gobs_core::{
@@ -39,7 +38,6 @@ pub struct DepthPass {
     vertex_flags: VertexFlag,
     push_layout: Arc<UniformLayout>,
     frame_data: Vec<FrameData>,
-    frame_number: RwLock<usize>,
     _uniform_ds_pool: DescriptorSetPool,
     uniform_data_layout: Arc<UniformLayout>,
 }
@@ -107,22 +105,15 @@ impl DepthPass {
             vertex_flags,
             push_layout,
             frame_data,
-            frame_number: RwLock::new(0),
             _uniform_ds_pool,
             uniform_data_layout,
         })
     }
 
-    fn new_frame(&self, ctx: &Context) -> usize {
-        let mut frame_number = self.frame_number.write();
-        *frame_number += 1;
-        (*frame_number - 1) % ctx.frames_in_flight
-    }
-
     fn render_batch(&self, ctx: &Context, cmd: &CommandBuffer, batch: &mut RenderBatch) {
         let mut timer = Timer::new();
 
-        let frame_id = self.new_frame(ctx);
+        let frame_id = ctx.frame_id();
 
         let mut last_model = Uuid::nil();
         let mut last_offset = 0;

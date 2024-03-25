@@ -304,7 +304,7 @@ impl SampleApp {
         scene: &mut Scene,
         ui: &mut UIRenderer,
     ) -> Result<(), RenderError> {
-        log::trace!("Render frame {}", graph.frame_number);
+        log::trace!("Render frame {}", ctx.frame_number);
 
         graph.begin(ctx)?;
 

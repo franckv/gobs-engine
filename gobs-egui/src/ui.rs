@@ -33,7 +33,6 @@ pub struct UIRenderer {
     input: Vec<Input>,
     mouse_position: (f32, f32),
     frame_data: Vec<FrameData>,
-    frame_number: usize,
 }
 
 impl UIRenderer {
@@ -66,24 +65,14 @@ impl UIRenderer {
             input: Vec::new(),
             mouse_position: (0., 0.),
             frame_data,
-            frame_number: 0,
         }
-    }
-
-    fn new_frame(&mut self, ctx: &Context) -> usize {
-        self.frame_number += 1;
-        (self.frame_number - 1) % ctx.frames_in_flight
-    }
-
-    pub fn frame_id(&self, ctx: &Context) -> usize {
-        (self.frame_number - 1) % ctx.frames_in_flight
     }
 
     pub fn update<F>(&mut self, ctx: &Context, _pass: Arc<dyn RenderPass>, delta: f32, callback: F)
     where
         F: FnMut(&egui::Context),
     {
-        let frame_id = self.new_frame(ctx);
+        let frame_id = ctx.frame_id();
 
         let input = self.prepare_inputs(delta);
 
@@ -340,7 +329,7 @@ impl Renderable for UIRenderer {
     }
 
     fn draw(&mut self, ctx: &Context, pass: Arc<dyn RenderPass>, batch: &mut RenderBatch) {
-        let frame_id = self.frame_id(ctx);
+        let frame_id = ctx.frame_id();
         let model = self.frame_data[frame_id].model.clone();
 
         if let Some(model) = model {

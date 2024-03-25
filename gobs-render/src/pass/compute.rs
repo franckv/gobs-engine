@@ -1,7 +1,5 @@
 use std::sync::Arc;
 
-use parking_lot::RwLock;
-
 use gobs_core::{
     entity::{camera::Camera, light::Light, uniform::UniformLayout},
     Transform,
@@ -40,7 +38,6 @@ pub struct ComputePass {
     ty: PassType,
     attachments: Vec<String>,
     frame_data: Vec<FrameData>,
-    frame_number: RwLock<usize>,
     _draw_ds_pool: DescriptorSetPool,
     pub pipeline: Arc<Pipeline>,
 }
@@ -74,16 +71,9 @@ impl ComputePass {
             ty: PassType::Compute,
             attachments: vec![String::from("draw")],
             frame_data,
-            frame_number: RwLock::new(0),
             _draw_ds_pool,
             pipeline,
         })
-    }
-
-    fn new_frame(&self, ctx: &Context) -> usize {
-        let mut frame_number = self.frame_number.write();
-        *frame_number += 1;
-        (*frame_number - 1) % ctx.frames_in_flight
     }
 }
 
@@ -143,7 +133,7 @@ impl RenderPass for ComputePass {
 
         let draw_attach = &self.attachments[0];
 
-        let frame_id = self.new_frame(ctx);
+        let frame_id = ctx.frame_id();
         let draw_ds = &self.frame_data[frame_id].draw_ds;
 
         draw_ds
