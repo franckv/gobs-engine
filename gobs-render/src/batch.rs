@@ -46,18 +46,24 @@ impl ModelManager {
         ctx: &Context,
         model: Arc<Model>,
         pass: Arc<dyn RenderPass>,
-        overwrite: bool,
+        transient: bool,
     ) -> Arc<ModelResource> {
         let key = (model.id, pass.id());
 
-        if overwrite {
-            self.models.remove(&key);
-        }
-        match self.models.entry(key) {
-            Entry::Occupied(entry) => entry.get().clone(),
-            Entry::Vacant(entry) => entry
-                .insert(ModelResource::new(ctx, model.clone(), pass.clone()))
-                .clone(),
+        if transient {
+            let frame_id = self.frame_id(ctx);
+            let model_manager = &mut self.transient_models[frame_id];
+
+            let resource = ModelResource::new(ctx, model.clone(), pass.clone());
+            model_manager.push(resource.clone());
+            resource
+        } else {
+            match self.models.entry(key) {
+                Entry::Occupied(entry) => entry.get().clone(),
+                Entry::Vacant(entry) => entry
+                    .insert(ModelResource::new(ctx, model.clone(), pass.clone()))
+                    .clone(),
+            }
         }
     }
 
@@ -106,11 +112,11 @@ impl RenderBatch {
         model: Arc<Model>,
         transform: Transform,
         pass: Arc<dyn RenderPass>,
-        overwrite: bool,
+        transient: bool,
     ) {
         let resource = self
             .model_manager
-            .add_model(ctx, model, pass.clone(), overwrite);
+            .add_model(ctx, model, pass.clone(), transient);
 
         for primitive in &resource.primitives {
             let material = match primitive.material {
