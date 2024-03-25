@@ -3,7 +3,14 @@ use std::sync::Arc;
 use gobs_utils::timer::Timer;
 use parking_lot::RwLock;
 
-use gobs_core::entity::uniform::{UniformLayout, UniformProp, UniformPropData};
+use gobs_core::{
+    entity::{
+        camera::Camera,
+        light::Light,
+        uniform::{UniformLayout, UniformProp, UniformPropData},
+    },
+    Transform,
+};
 use gobs_vulkan::{
     descriptor::{DescriptorSetLayout, DescriptorSetPool, DescriptorStage, DescriptorType},
     image::{ImageExtent2D, ImageLayout},
@@ -190,6 +197,16 @@ impl RenderPass for UiPass {
 
     fn uniform_data_layout(&self) -> Option<Arc<UniformLayout>> {
         Some(self.uniform_data_layout.clone())
+    }
+
+    fn get_uniform_data(
+        &self,
+        _camera: &Camera,
+        _camera_transform: &Transform,
+        _light: &Light,
+        _light_transform: &Transform,
+    ) -> Vec<u8> {
+        vec![]
     }
 
     fn render(

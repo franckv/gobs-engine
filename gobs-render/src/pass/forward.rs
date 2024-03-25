@@ -5,7 +5,14 @@ use gobs_utils::timer::Timer;
 use parking_lot::RwLock;
 use uuid::Uuid;
 
-use gobs_core::entity::uniform::{UniformLayout, UniformProp, UniformPropData};
+use gobs_core::{
+    entity::{
+        camera::Camera,
+        light::Light,
+        uniform::{UniformLayout, UniformProp, UniformPropData},
+    },
+    Transform,
+};
 use gobs_vulkan::{
     descriptor::{DescriptorSetLayout, DescriptorSetPool, DescriptorStage, DescriptorType},
     image::{ImageExtent2D, ImageLayout},
@@ -209,6 +216,26 @@ impl RenderPass for ForwardPass {
 
     fn uniform_data_layout(&self) -> Option<Arc<UniformLayout>> {
         Some(self.uniform_data_layout.clone())
+    }
+
+    fn get_uniform_data(
+        &self,
+        camera: &Camera,
+        camera_transform: &Transform,
+        light: &Light,
+        light_transform: &Transform,
+    ) -> Vec<u8> {
+        self.uniform_data_layout.data(&[
+            UniformPropData::Vec3F(camera_transform.translation().into()),
+            UniformPropData::Mat4F(
+                camera
+                    .view_proj(camera_transform.translation())
+                    .to_cols_array_2d(),
+            ),
+            UniformPropData::Vec3F(light_transform.translation().normalize().into()),
+            UniformPropData::Vec4F(light.colour.into()),
+            UniformPropData::Vec4F([0.1, 0.1, 0.1, 1.]),
+        ])
     }
 
     fn render(

@@ -3,7 +3,10 @@ use std::sync::Arc;
 use parking_lot::RwLock;
 use uuid::Uuid;
 
-use gobs_core::entity::uniform::UniformLayout;
+use gobs_core::{
+    entity::{camera::Camera, light::Light, uniform::UniformLayout},
+    Transform,
+};
 use gobs_vulkan::{descriptor::DescriptorSet, image::ImageExtent2D, pipeline::Pipeline};
 
 use crate::{
@@ -51,6 +54,13 @@ pub trait RenderPass {
         batch: &mut RenderBatch,
         draw_extent: ImageExtent2D,
     ) -> Result<(), RenderError>;
+    fn get_uniform_data(
+        &self,
+        camera: &Camera,
+        camera_transform: &Transform,
+        light: &Light,
+        light_transform: &Transform,
+    ) -> Vec<u8>;
 }
 
 pub(crate) struct FrameData {

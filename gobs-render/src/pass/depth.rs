@@ -3,7 +3,14 @@ use std::sync::Arc;
 use parking_lot::RwLock;
 use uuid::Uuid;
 
-use gobs_core::entity::uniform::{UniformLayout, UniformProp, UniformPropData};
+use gobs_core::{
+    entity::{
+        camera::Camera,
+        light::Light,
+        uniform::{UniformLayout, UniformProp, UniformPropData},
+    },
+    Transform,
+};
 use gobs_utils::{load, timer::Timer};
 use gobs_vulkan::{
     descriptor::{DescriptorSetLayout, DescriptorSetPool, DescriptorStage, DescriptorType},
@@ -231,6 +238,20 @@ impl RenderPass for DepthPass {
 
     fn uniform_data_layout(&self) -> Option<Arc<UniformLayout>> {
         Some(self.uniform_data_layout.clone())
+    }
+
+    fn get_uniform_data(
+        &self,
+        camera: &Camera,
+        camera_transform: &Transform,
+        _light: &Light,
+        _light_transform: &Transform,
+    ) -> Vec<u8> {
+        self.uniform_data_layout.data(&[UniformPropData::Mat4F(
+            camera
+                .view_proj(camera_transform.translation())
+                .to_cols_array_2d(),
+        )])
     }
 
     fn render(

@@ -2,7 +2,10 @@ use std::sync::Arc;
 
 use parking_lot::RwLock;
 
-use gobs_core::entity::uniform::UniformLayout;
+use gobs_core::{
+    entity::{camera::Camera, light::Light, uniform::UniformLayout},
+    Transform,
+};
 use gobs_utils::load;
 use gobs_vulkan::{
     descriptor::{
@@ -115,6 +118,16 @@ impl RenderPass for ComputePass {
 
     fn uniform_data_layout(&self) -> Option<Arc<UniformLayout>> {
         None
+    }
+
+    fn get_uniform_data(
+        &self,
+        _camera: &Camera,
+        _camera_transform: &Transform,
+        _light: &Light,
+        _light_transform: &Transform,
+    ) -> Vec<u8> {
+        vec![]
     }
 
     fn render(

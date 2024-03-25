@@ -12,7 +12,7 @@ use crate::geometry::{BoundingBox, Model, ModelId};
 use crate::renderable::RenderObject;
 use crate::{
     context::Context,
-    pass::{PassId, PassType, RenderPass},
+    pass::{PassId, RenderPass},
     resources::ModelResource,
     stats::RenderStats,
 };
@@ -168,27 +168,9 @@ impl RenderBatch {
         light_transform: &Transform,
         pass: Arc<dyn RenderPass>,
     ) {
-        if let Some(data_layout) = pass.uniform_data_layout() {
-            let scene_data = match pass.ty() {
-                PassType::Bounds | PassType::Wire | PassType::Depth => {
-                    data_layout.data(&[UniformPropData::Mat4F(
-                        camera
-                            .view_proj(camera_transform.translation())
-                            .to_cols_array_2d(),
-                    )])
-                }
-                _ => data_layout.data(&[
-                    UniformPropData::Vec3F(camera_transform.translation().into()),
-                    UniformPropData::Mat4F(
-                        camera
-                            .view_proj(camera_transform.translation())
-                            .to_cols_array_2d(),
-                    ),
-                    UniformPropData::Vec3F(light_transform.translation().normalize().into()),
-                    UniformPropData::Vec4F(light.colour.into()),
-                    UniformPropData::Vec4F([0.1, 0.1, 0.1, 1.]),
-                ]),
-            };
+        if let Some(_) = pass.uniform_data_layout() {
+            let scene_data =
+                pass.get_uniform_data(camera, camera_transform, light, light_transform);
             self.scene_data.insert(pass.id(), scene_data);
         }
     }
