@@ -76,5 +76,17 @@ fn compile_shaders(path_in: &str, path_out: &str) {
                 panic!("Compile status={:?}", output);
             }
         }
+        #[cfg(target_os = "linux")]
+        {
+            let output = Command::new("sh")
+                .arg("-c")
+                .arg(&format!("glslangValidator -V {} -o {}", file_name, out))
+                .output()
+                .expect("Error compiling shader");
+
+            if !output.status.success() {
+                panic!("Compile status={:?}", output);
+            }
+        }
     }
 }
