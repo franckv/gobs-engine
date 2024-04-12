@@ -90,7 +90,7 @@ pub struct Instance {
 }
 
 impl Instance {
-    pub fn new(name: &str, version: u32) -> Arc<Self> {
+    pub fn new(name: &str, version: u32, validation: bool) -> Arc<Self> {
         let app_name = CString::new(name).unwrap();
 
         let vk_version = vk::make_api_version(0, 1, 3, 0);
@@ -111,9 +111,13 @@ impl Instance {
             DebugUtils::name().as_ptr(),
         ];
 
-        let validation = CString::new("VK_LAYER_KHRONOS_validation").unwrap();
+        let validation_layer = CString::new("VK_LAYER_KHRONOS_validation").unwrap();
 
-        let layers = [validation.as_ptr()];
+        let layers = if validation {
+            vec![validation_layer.as_ptr()]
+        } else {
+            vec![]
+        };
 
         let instance_info = vk::InstanceCreateInfo::builder()
             .application_info(&app_info)

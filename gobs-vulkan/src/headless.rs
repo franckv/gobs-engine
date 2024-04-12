@@ -11,7 +11,7 @@ pub struct Context {
 
 impl Context {
     pub fn new(name: &str) -> Self {
-        let instance = Instance::new(name, 1);
+        let instance = Instance::new(name, 1, true);
         let physical_device = instance.find_headless_adapter();
 
         log::info!("Using adapter {}", physical_device.name);

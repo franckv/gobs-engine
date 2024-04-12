@@ -30,7 +30,7 @@ pub struct Context {
 
 impl Context {
     pub fn new(name: &str, window: Window) -> Self {
-        let instance = Instance::new(name, 1);
+        let instance = Instance::new(name, 1, true);
         let surface = Surface::new(instance.clone(), window);
         let physical_device = instance.find_adapter(&surface);
 
