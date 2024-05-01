@@ -19,18 +19,13 @@ impl Fence {
             Default::default()
         };
 
-        let fence_info = vk::FenceCreateInfo::builder().flags(flags);
+        let fence_info = vk::FenceCreateInfo::default().flags(flags);
 
         let fence = unsafe { device.raw().create_fence(&fence_info, None).unwrap() };
 
         let fence_label = format!("[Fence] {}", label);
 
-        debug::add_label(
-            device.clone(),
-            &fence_label,
-            vk::ObjectType::FENCE,
-            vk::Handle::as_raw(fence),
-        );
+        debug::add_label(device.clone(), &fence_label, fence);
 
         Fence { device, fence }
     }

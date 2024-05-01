@@ -15,7 +15,7 @@ pub struct RenderPass {
 
 impl RenderPass {
     pub fn new(device: Arc<Device>, format: ImageFormat, depth_format: ImageFormat) -> Arc<Self> {
-        let color_attach = vk::AttachmentDescription::builder()
+        let color_attach = vk::AttachmentDescription::default()
             .format(format.into())
             .samples(vk::SampleCountFlags::TYPE_1)
             .load_op(vk::AttachmentLoadOp::CLEAR)
@@ -23,10 +23,9 @@ impl RenderPass {
             .stencil_load_op(vk::AttachmentLoadOp::DONT_CARE)
             .stencil_store_op(vk::AttachmentStoreOp::DONT_CARE)
             .initial_layout(vk::ImageLayout::UNDEFINED)
-            .final_layout(vk::ImageLayout::PRESENT_SRC_KHR)
-            .build();
+            .final_layout(vk::ImageLayout::PRESENT_SRC_KHR);
 
-        let depth_attach = vk::AttachmentDescription::builder()
+        let depth_attach = vk::AttachmentDescription::default()
             .format(depth_format.into())
             .samples(vk::SampleCountFlags::TYPE_1)
             .load_op(vk::AttachmentLoadOp::CLEAR)
@@ -34,23 +33,22 @@ impl RenderPass {
             .stencil_load_op(vk::AttachmentLoadOp::DONT_CARE)
             .stencil_store_op(vk::AttachmentStoreOp::DONT_CARE)
             .initial_layout(vk::ImageLayout::UNDEFINED)
-            .final_layout(vk::ImageLayout::DEPTH_STENCIL_ATTACHMENT_OPTIMAL)
-            .build();
+            .final_layout(vk::ImageLayout::DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
 
-        let color_ref = vk::AttachmentReference::builder()
+        let color_ref = vk::AttachmentReference::default()
             .attachment(0)
             .layout(vk::ImageLayout::COLOR_ATTACHMENT_OPTIMAL);
 
-        let depth_ref = vk::AttachmentReference::builder()
+        let depth_ref = vk::AttachmentReference::default()
             .attachment(1)
             .layout(vk::ImageLayout::DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
 
-        let subpass = vk::SubpassDescription::builder()
+        let subpass = vk::SubpassDescription::default()
             .pipeline_bind_point(vk::PipelineBindPoint::GRAPHICS)
             .color_attachments(std::slice::from_ref(&color_ref))
             .depth_stencil_attachment(&depth_ref);
 
-        let dependency = vk::SubpassDependency::builder()
+        let dependency = vk::SubpassDependency::default()
             .src_subpass(vk::SUBPASS_EXTERNAL)
             .src_stage_mask(vk::PipelineStageFlags::COLOR_ATTACHMENT_OUTPUT)
             .dst_stage_mask(vk::PipelineStageFlags::COLOR_ATTACHMENT_OUTPUT)
@@ -59,7 +57,7 @@ impl RenderPass {
             );
 
         let attachments = [color_attach, depth_attach];
-        let renderpass_info = vk::RenderPassCreateInfo::builder()
+        let renderpass_info = vk::RenderPassCreateInfo::default()
             .attachments(&attachments)
             .subpasses(std::slice::from_ref(&subpass))
             .dependencies(std::slice::from_ref(&dependency));

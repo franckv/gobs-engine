@@ -87,7 +87,7 @@ impl Buffer {
     ) -> Self {
         let usage_flags = usage.into();
 
-        let buffer_info = vk::BufferCreateInfo::builder()
+        let buffer_info = vk::BufferCreateInfo::default()
             .size(size as u64)
             .usage(usage_flags)
             .sharing_mode(vk::SharingMode::EXCLUSIVE);
@@ -96,12 +96,7 @@ impl Buffer {
 
         let buffer_label = format!("[Buffer] {}", label);
 
-        debug::add_label(
-            device.clone(),
-            &buffer_label,
-            vk::ObjectType::BUFFER,
-            vk::Handle::as_raw(buffer),
-        );
+        debug::add_label(device.clone(), &buffer_label, buffer);
 
         let memory = allocator.allocate_buffer(usage, buffer, &buffer_label);
 
@@ -117,7 +112,7 @@ impl Buffer {
     }
 
     pub fn address(&self, device: Arc<Device>) -> BufferAddress {
-        let address_info = vk::BufferDeviceAddressInfo::builder().buffer(self.buffer);
+        let address_info = vk::BufferDeviceAddressInfo::default().buffer(self.buffer);
 
         unsafe { device.raw().get_buffer_device_address(&address_info) }
     }

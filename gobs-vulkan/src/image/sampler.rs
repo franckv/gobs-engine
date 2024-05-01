@@ -27,7 +27,7 @@ pub struct Sampler {
 
 impl Sampler {
     pub fn new(device: Arc<Device>, mag_filter: SamplerFilter, min_filter: SamplerFilter) -> Self {
-        let sampler_info = vk::SamplerCreateInfo::builder()
+        let sampler_info = vk::SamplerCreateInfo::default()
             .mag_filter(mag_filter.into())
             .min_filter(min_filter.into());
 

@@ -230,7 +230,7 @@ impl FrameGraph {
 
         if ctx.frame_number >= ctx.frames_in_flight && ctx.frame_number % ctx.stats_refresh == 0 {
             let mut buf = [0 as u64; 2];
-            frame.query_pool.get_query_pool_results(0, 2, &mut buf);
+            frame.query_pool.get_query_pool_results(0, &mut buf);
 
             self.batch.render_stats.gpu_draw_time =
                 ((buf[1] - buf[0]) as f32 * frame.query_pool.period) / 1_000_000_000.;

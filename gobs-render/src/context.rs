@@ -30,8 +30,8 @@ pub struct Context {
 
 impl Context {
     pub fn new(name: &str, window: Window) -> Self {
-        let instance = Instance::new(name, 1, true);
-        let surface = Surface::new(instance.clone(), window);
+        let instance = Instance::new(name, 1, Some(&window), true).expect("Cannot create instance");
+        let surface = Surface::new(instance.clone(), window).expect("Cannot create surface");
         let physical_device = instance.find_adapter(&surface);
 
         log::info!("Using adapter {}", physical_device.name);

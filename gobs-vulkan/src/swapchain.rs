@@ -1,7 +1,7 @@
 use std;
 use std::sync::Arc;
 
-use ash::extensions::khr::Swapchain as KhrSwapchain;
+use ash::khr::swapchain;
 use ash::vk;
 
 use crate::device::Device;
@@ -49,7 +49,7 @@ pub struct SwapChain {
     pub format: SurfaceFormat,
     pub present: PresentationMode,
     pub image_count: usize,
-    loader: KhrSwapchain,
+    loader: swapchain::Device,
     swapchain: vk::SwapchainKHR,
 }
 
@@ -64,7 +64,7 @@ impl SwapChain {
     ) -> Self {
         let extent = surface.get_extent(device.clone());
 
-        let swapchain_info = vk::SwapchainCreateInfoKHR::builder()
+        let swapchain_info = vk::SwapchainCreateInfoKHR::default()
             .surface(surface.raw())
             .min_image_count(image_count as u32)
             .image_format(format.format.into())
@@ -83,7 +83,7 @@ impl SwapChain {
             .image_array_layers(1)
             .queue_family_indices(&[]);
 
-        let loader = KhrSwapchain::new(&device.instance().raw(), device.raw());
+        let loader = swapchain::Device::new(&device.instance().raw(), device.raw());
 
         let swapchain = unsafe { loader.create_swapchain(&swapchain_info, None).unwrap() };
 
@@ -140,7 +140,7 @@ impl SwapChain {
         let image_indice = index as u32;
         let swapchains = self.swapchain;
 
-        let present_info = vk::PresentInfoKHR::builder()
+        let present_info = vk::PresentInfoKHR::default()
             .wait_semaphores(std::slice::from_ref(&wait_semaphore))
             .image_indices(std::slice::from_ref(&image_indice))
             .swapchains(std::slice::from_ref(&swapchains));

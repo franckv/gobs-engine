@@ -40,8 +40,8 @@ impl ComputePipelineBuilder {
         let compute_stage = self.compute_stage.unwrap();
         let compute_stage_info = compute_stage.info();
 
-        let pipeline_info = vk::ComputePipelineCreateInfo::builder()
-            .stage(*compute_stage_info)
+        let pipeline_info = vk::ComputePipelineCreateInfo::default()
+            .stage(compute_stage_info)
             .layout(pipeline_layout.raw());
         let pipeline = unsafe {
             device

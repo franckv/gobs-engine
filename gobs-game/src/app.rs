@@ -1,7 +1,6 @@
 use log::*;
-use winit::dpi::LogicalSize;
-use winit::event_loop::{ControlFlow, EventLoop};
-use winit::window::WindowBuilder;
+use winit::event_loop::EventLoop;
+use winit::{dpi::LogicalSize, window::Window};
 
 use gobs_render::context::Context;
 use gobs_render::graph::RenderError;
@@ -11,25 +10,25 @@ use crate::input::{Event, Input};
 
 pub struct Application {
     pub context: Context,
-    pub events_loop: EventLoop<()>,
+    pub events_loop: Option<EventLoop<()>>,
 }
 
 impl Application {
     pub fn new(title: &str, width: u32, height: u32) -> Application {
-        let events_loop = EventLoop::new();
+        let events_loop = EventLoop::new().unwrap();
 
-        let window = WindowBuilder::new()
+        let window_attributes = Window::default_attributes()
             .with_inner_size(LogicalSize::new(width, height))
             .with_title(title)
-            .with_resizable(true)
-            .build(&events_loop)
-            .unwrap();
+            .with_resizable(true);
+
+        let window = events_loop.create_window(window_attributes).unwrap();
 
         let context = Context::new(title, window);
 
         Application {
             context,
-            events_loop,
+            events_loop: Some(events_loop),
         }
     }
 
@@ -51,44 +50,48 @@ impl Application {
         runnable.start(&self.context).await;
         let mut close_requested = false;
 
-        self.events_loop.run(move |event, _, control_flow| {
-            log::trace!("evt={:?}, ctrl={:?}", event, control_flow);
+        self.events_loop
+            .take()
+            .unwrap()
+            .run(|event, event_loop| {
+                log::trace!("evt={:?}", event);
 
-            let event = Event::new(event);
-            match event {
-                Event::Resize(width, height) => {
-                    log::debug!("Resize to : {}/{}", width, height);
-                    runnable.resize(&self.context, width, height);
-                }
-                Event::Input(input) => {
-                    runnable.input(&self.context, input);
-                }
-                Event::Close => {
-                    log::info!("Stopping");
-                    close_requested = true;
-                    runnable.close(&self.context);
-                    *control_flow = ControlFlow::Exit;
-                }
-                Event::Redraw => {
-                    let delta = timer.delta();
-
-                    if !close_requested {
-                        runnable.update(&self.context, delta);
-                        log::trace!("[Redraw] FPS: {}", 1. / delta);
-                        match runnable.render(&self.context) {
-                            Ok(_) => {}
-                            Err(RenderError::Lost | RenderError::Outdated) => {}
-                            Err(e) => error!("{:?}", e),
-                        }
+                let event = Event::new(event);
+                match event {
+                    Event::Resize(width, height) => {
+                        log::debug!("Resize to : {}/{}", width, height);
+                        runnable.resize(&self.context, width, height);
                     }
-                    self.context.frame_number += 1;
+                    Event::Input(input) => {
+                        runnable.input(&self.context, input);
+                    }
+                    Event::Close => {
+                        log::info!("Stopping");
+                        close_requested = true;
+                        runnable.close(&self.context);
+                        event_loop.exit();
+                    }
+                    Event::Redraw => {
+                        let delta = timer.delta();
+
+                        if !close_requested {
+                            runnable.update(&self.context, delta);
+                            log::trace!("[Redraw] FPS: {}", 1. / delta);
+                            match runnable.render(&self.context) {
+                                Ok(_) => {}
+                                Err(RenderError::Lost | RenderError::Outdated) => {}
+                                Err(e) => error!("{:?}", e),
+                            }
+                        }
+                        self.context.frame_number += 1;
+                    }
+                    Event::Cleared => {
+                        self.context.surface.window.request_redraw();
+                    }
+                    Event::Continue => (),
                 }
-                Event::Cleared => {
-                    self.context.surface.window.request_redraw();
-                }
-                Event::Continue => (),
-            }
-        });
+            })
+            .unwrap();
     }
 }
 

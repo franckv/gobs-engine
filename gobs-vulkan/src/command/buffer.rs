@@ -46,7 +46,7 @@ impl CommandBuffer {
         pool: Arc<CommandPool>,
         label: &str,
     ) -> Self {
-        let buffer_info = vk::CommandBufferAllocateInfo::builder()
+        let buffer_info = vk::CommandBufferAllocateInfo::default()
             .command_buffer_count(1)
             .command_pool(pool.raw())
             .level(vk::CommandBufferLevel::PRIMARY);
@@ -60,12 +60,7 @@ impl CommandBuffer {
 
         let command_label = format!("[Command Buffer] {}", label);
 
-        debug::add_label(
-            device.clone(),
-            &command_label,
-            vk::ObjectType::COMMAND_BUFFER,
-            vk::Handle::as_raw(command_buffer),
-        );
+        debug::add_label(device.clone(), &command_label, command_buffer);
 
         CommandBuffer {
             device: device.clone(),
@@ -86,7 +81,7 @@ impl CommandBuffer {
     }
 
     pub fn begin(&self) {
-        let begin_info = vk::CommandBufferBeginInfo::builder()
+        let begin_info = vk::CommandBufferBeginInfo::default()
             .flags(vk::CommandBufferUsageFlags::ONE_TIME_SUBMIT);
 
         unsafe {
@@ -99,12 +94,11 @@ impl CommandBuffer {
 
     pub fn begin_label(&self, label: &str) {
         let label = CString::new(label).unwrap();
-        let label_info = vk::DebugUtilsLabelEXT::builder().label_name(&label);
+        let label_info = vk::DebugUtilsLabelEXT::default().label_name(&label);
 
         unsafe {
             self.device
-                .instance()
-                .debug_utils_loader
+                .debug_utils_device
                 .cmd_begin_debug_utils_label(self.command_buffer, &label_info);
         }
     }
@@ -112,20 +106,18 @@ impl CommandBuffer {
     pub fn end_label(&self) {
         unsafe {
             self.device
-                .instance()
-                .debug_utils_loader
+                .debug_utils_device
                 .cmd_end_debug_utils_label(self.command_buffer);
         }
     }
 
     pub fn insert_label(&self, label: &str) {
         let label = CString::new(label).unwrap();
-        let label_info = vk::DebugUtilsLabelEXT::builder().label_name(&label);
+        let label_info = vk::DebugUtilsLabelEXT::default().label_name(&label);
 
         unsafe {
             self.device
-                .instance()
-                .debug_utils_loader
+                .debug_utils_device
                 .cmd_insert_debug_utils_label(self.command_buffer, &label_info);
         }
     }
@@ -168,7 +160,7 @@ impl CommandBuffer {
 
         let mut color_info = vec![];
         if let Some(color) = color {
-            let color_attachment = vk::RenderingAttachmentInfo::builder()
+            let color_attachment = vk::RenderingAttachmentInfo::default()
                 .image_view(color.image_view)
                 .image_layout(color.layout.into())
                 .load_op(color_load_op)
@@ -189,7 +181,7 @@ impl CommandBuffer {
 
         let mut depth_info = vec![];
         if let Some(depth) = depth {
-            let depth_attachment = vk::RenderingAttachmentInfo::builder()
+            let depth_attachment = vk::RenderingAttachmentInfo::default()
                 .image_view(depth.image_view)
                 .image_layout(depth.layout.into())
                 .load_op(depth_load_op)
@@ -203,8 +195,8 @@ impl CommandBuffer {
             depth_info.push(depth_attachment);
         }
 
-        let rendering_info = vk::RenderingInfo::builder()
-            .render_area(*vk::Rect2D::builder().extent(extent.into()))
+        let rendering_info = vk::RenderingInfo::default()
+            .render_area(vk::Rect2D::default().extent(extent.into()))
             .layer_count(1);
 
         let rendering_info = match color_info.first() {
@@ -249,7 +241,7 @@ impl CommandBuffer {
 
         let dim = framebuffer.dimensions();
 
-        let renderpass_info = vk::RenderPassBeginInfo::builder()
+        let renderpass_info = vk::RenderPassBeginInfo::default()
             .render_pass(framebuffer.renderpass().raw())
             .framebuffer(framebuffer.raw())
             .render_area(vk::Rect2D {
@@ -433,37 +425,37 @@ impl CommandBuffer {
             dst_size.height
         );
 
-        let blit_region = vk::ImageBlit2::builder()
+        let blit_region = vk::ImageBlit2::default()
             .src_offsets([
                 vk::Offset3D::default(),
-                *vk::Offset3D::builder()
+                vk::Offset3D::default()
                     .x(src_size.width as i32)
                     .y(src_size.height as i32)
                     .z(1),
             ])
             .dst_offsets([
                 vk::Offset3D::default(),
-                *vk::Offset3D::builder()
+                vk::Offset3D::default()
                     .x(dst_size.width as i32)
                     .y(dst_size.height as i32)
                     .z(1),
             ])
             .src_subresource(
-                *vk::ImageSubresourceLayers::builder()
+                vk::ImageSubresourceLayers::default()
                     .aspect_mask(src.usage.into())
                     .base_array_layer(0)
                     .layer_count(1)
                     .mip_level(0),
             )
             .dst_subresource(
-                *vk::ImageSubresourceLayers::builder()
+                vk::ImageSubresourceLayers::default()
                     .aspect_mask(dst.usage.into())
                     .base_array_layer(0)
                     .layer_count(1)
                     .mip_level(0),
             );
 
-        let blit_info = vk::BlitImageInfo2::builder()
+        let blit_info = vk::BlitImageInfo2::default()
             .dst_image(dst.raw())
             .dst_image_layout(vk::ImageLayout::TRANSFER_DST_OPTIMAL)
             .src_image(src.raw())
@@ -479,12 +471,12 @@ impl CommandBuffer {
     }
 
     pub fn copy_buffer_to_image(&self, src: &Buffer, dst: &Image, width: u32, height: u32) {
-        let image_subresource = vk::ImageSubresourceLayers::builder()
+        let image_subresource = vk::ImageSubresourceLayers::default()
             .aspect_mask(vk::ImageAspectFlags::COLOR)
             .layer_count(1);
 
-        let copy_info = vk::BufferImageCopy::builder()
-            .image_subresource(*image_subresource)
+        let copy_info = vk::BufferImageCopy::default()
+            .image_subresource(image_subresource)
             .image_extent(vk::Extent3D {
                 width,
                 height,
@@ -510,7 +502,7 @@ impl CommandBuffer {
             dst_layout
         );
 
-        let barrier_info = vk::ImageMemoryBarrier2::builder()
+        let barrier_info = vk::ImageMemoryBarrier2::default()
             .old_layout(image.layout.into())
             .new_layout(dst_layout.into())
             .image(image.raw())
@@ -519,7 +511,7 @@ impl CommandBuffer {
             .src_stage_mask(vk::PipelineStageFlags2::ALL_COMMANDS)
             .dst_stage_mask(vk::PipelineStageFlags2::ALL_COMMANDS)
             .subresource_range(
-                *vk::ImageSubresourceRange::builder()
+                vk::ImageSubresourceRange::default()
                     .aspect_mask(image.usage.into())
                     .base_mip_level(0)
                     .level_count(vk::REMAINING_MIP_LEVELS)
@@ -527,7 +519,7 @@ impl CommandBuffer {
                     .layer_count(vk::REMAINING_ARRAY_LAYERS),
             );
 
-        let dep_info = vk::DependencyInfo::builder()
+        let dep_info = vk::DependencyInfo::default()
             .image_memory_barriers(std::slice::from_ref(&barrier_info));
 
         unsafe {
@@ -555,22 +547,21 @@ impl CommandBuffer {
     }
 
     pub fn submit2(&self, wait: Option<&Semaphore>, signal: Option<&Semaphore>) {
-        let command_info = vk::CommandBufferSubmitInfo::builder()
+        let command_info = vk::CommandBufferSubmitInfo::default()
             .command_buffer(self.command_buffer)
             .device_mask(0);
 
         let mut submit_info =
-            vk::SubmitInfo2::builder().command_buffer_infos(std::slice::from_ref(&command_info));
+            vk::SubmitInfo2::default().command_buffer_infos(std::slice::from_ref(&command_info));
 
         let mut wait_info = Vec::new();
         if let Some(wait) = wait {
             wait_info.push(
-                vk::SemaphoreSubmitInfo::builder()
+                vk::SemaphoreSubmitInfo::default()
                     .stage_mask(vk::PipelineStageFlags2::COLOR_ATTACHMENT_OUTPUT_KHR)
                     .semaphore(wait.raw())
                     .device_index(0)
-                    .value(1)
-                    .build(),
+                    .value(1),
             );
 
             submit_info = submit_info.wait_semaphore_infos(&wait_info);
@@ -579,12 +570,11 @@ impl CommandBuffer {
         let mut signal_info = Vec::new();
         if let Some(signal) = signal {
             signal_info.push(
-                vk::SemaphoreSubmitInfo::builder()
+                vk::SemaphoreSubmitInfo::default()
                     .stage_mask(vk::PipelineStageFlags2::ALL_GRAPHICS)
                     .semaphore(signal.raw())
                     .device_index(0)
-                    .value(1)
-                    .build(),
+                    .value(1),
             );
 
             submit_info = submit_info.signal_semaphore_infos(&signal_info);

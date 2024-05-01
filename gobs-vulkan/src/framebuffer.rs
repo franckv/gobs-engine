@@ -34,6 +34,7 @@ impl Framebuffer {
             width: image.extent.width,
             height: image.extent.height,
             layers: 1,
+            _marker: std::marker::PhantomData,
         };
 
         let framebuffer = unsafe {

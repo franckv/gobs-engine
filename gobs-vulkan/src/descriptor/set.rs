@@ -28,11 +28,10 @@ pub struct DescriptorSetUpdates {
 
 impl DescriptorSetUpdates {
     pub fn bind_buffer(mut self, buffer: &Buffer, start: usize, len: usize) -> Self {
-        let buffer_info = vk::DescriptorBufferInfo::builder()
+        let buffer_info = vk::DescriptorBufferInfo::default()
             .buffer(buffer.raw())
             .offset(start as u64)
-            .range(len as u64)
-            .build();
+            .range(len as u64);
 
         self.updates.push(ResourceInfo::Buffer(buffer_info));
 
@@ -40,11 +39,10 @@ impl DescriptorSetUpdates {
     }
 
     pub fn bind_dynamic_buffer(mut self, buffer: &Buffer, start: usize, len: usize) -> Self {
-        let buffer_info = vk::DescriptorBufferInfo::builder()
+        let buffer_info = vk::DescriptorBufferInfo::default()
             .buffer(buffer.raw())
             .offset(start as u64)
-            .range(len as u64)
-            .build();
+            .range(len as u64);
 
         self.updates.push(ResourceInfo::DynamicBuffer(buffer_info));
 
@@ -52,10 +50,9 @@ impl DescriptorSetUpdates {
     }
 
     pub fn bind_image(mut self, image: &Image, layout: ImageLayout) -> Self {
-        let image_info = vk::DescriptorImageInfo::builder()
+        let image_info = vk::DescriptorImageInfo::default()
             .image_layout(layout.into())
-            .image_view(image.image_view)
-            .build();
+            .image_view(image.image_view);
 
         self.updates.push(ResourceInfo::Image(image_info));
 
@@ -63,10 +60,9 @@ impl DescriptorSetUpdates {
     }
 
     pub fn bind_sampled_image(mut self, image: &Image, layout: ImageLayout) -> Self {
-        let image_info = vk::DescriptorImageInfo::builder()
+        let image_info = vk::DescriptorImageInfo::default()
             .image_layout(layout.into())
-            .image_view(image.image_view)
-            .build();
+            .image_view(image.image_view);
 
         self.updates.push(ResourceInfo::SampledImage(image_info));
 
@@ -79,11 +75,10 @@ impl DescriptorSetUpdates {
         sampler: &Sampler,
         layout: ImageLayout,
     ) -> Self {
-        let image_info = vk::DescriptorImageInfo::builder()
+        let image_info = vk::DescriptorImageInfo::default()
             .image_layout(layout.into())
             .image_view(image.image_view)
-            .sampler(sampler.raw())
-            .build();
+            .sampler(sampler.raw());
 
         self.updates.push(ResourceInfo::ImageCombined(image_info));
 
@@ -91,9 +86,7 @@ impl DescriptorSetUpdates {
     }
 
     pub fn bind_sampler(mut self, sampler: &Sampler) -> Self {
-        let image_info = vk::DescriptorImageInfo::builder()
-            .sampler(sampler.raw())
-            .build();
+        let image_info = vk::DescriptorImageInfo::default().sampler(sampler.raw());
 
         self.updates.push(ResourceInfo::Sampler(image_info));
 
@@ -107,7 +100,7 @@ impl DescriptorSetUpdates {
         let mut image_info_set = vec![];
 
         for (idx, update) in self.updates.iter().enumerate() {
-            let write_info_builder = vk::WriteDescriptorSet::builder()
+            let write_info = vk::WriteDescriptorSet::default()
                 .dst_set(self.set)
                 .dst_binding(idx as u32)
                 .dst_array_element(0)
@@ -120,45 +113,35 @@ impl DescriptorSetUpdates {
                     ResourceInfo::Sampler(_) => vk::DescriptorType::SAMPLER,
                 });
 
-            let write_info = match update {
+            match update {
                 ResourceInfo::Buffer(buffer_info) => {
-                    buffer_info_set.push(*buffer_info);
-                    write_info_builder
-                        .buffer_info(std::slice::from_ref(buffer_info_set.last().unwrap()))
-                        .build()
+                    buffer_info_set.push((write_info, vec![*buffer_info]));
                 }
                 ResourceInfo::DynamicBuffer(buffer_info) => {
-                    buffer_info_set.push(*buffer_info);
-                    write_info_builder
-                        .buffer_info(std::slice::from_ref(buffer_info_set.last().unwrap()))
-                        .build()
+                    buffer_info_set.push((write_info, vec![*buffer_info]));
                 }
                 ResourceInfo::ImageCombined(image_info) => {
-                    image_info_set.push(*image_info);
-                    write_info_builder
-                        .image_info(std::slice::from_ref(image_info_set.last().unwrap()))
-                        .build()
+                    image_info_set.push((write_info, vec![*image_info]));
                 }
                 ResourceInfo::SampledImage(image_info) => {
-                    image_info_set.push(*image_info);
-                    write_info_builder
-                        .image_info(std::slice::from_ref(image_info_set.last().unwrap()))
-                        .build()
+                    image_info_set.push((write_info, vec![*image_info]));
                 }
                 ResourceInfo::Image(image_info) => {
-                    image_info_set.push(*image_info);
-                    write_info_builder
-                        .image_info(std::slice::from_ref(image_info_set.last().unwrap()))
-                        .build()
+                    image_info_set.push((write_info, vec![*image_info]));
                 }
                 ResourceInfo::Sampler(image_info) => {
-                    image_info_set.push(*image_info);
-                    write_info_builder
-                        .image_info(std::slice::from_ref(image_info_set.last().unwrap()))
-                        .build()
+                    image_info_set.push((write_info, vec![*image_info]));
                 }
             };
+        }
 
+        for (write_info, buffer_info) in &buffer_info_set {
+            let write_info = write_info.buffer_info(buffer_info);
+            updates.push(write_info);
+        }
+
+        for (write_info, image_info) in &image_info_set {
+            let write_info = write_info.image_info(image_info);
             updates.push(write_info);
         }
 

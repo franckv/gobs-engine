@@ -1,7 +1,8 @@
 use std::fmt::Debug;
 use std::sync::Arc;
 
-use ash::extensions::khr::Swapchain;
+use ash::ext::debug_utils;
+use ash::khr::swapchain;
 use ash::vk::{
     self, PhysicalDeviceFeatures, PhysicalDeviceVulkan12Features, PhysicalDeviceVulkan13Features,
 };
@@ -16,6 +17,7 @@ pub struct Device {
     pub instance: Arc<Instance>,
     device: ash::Device,
     pub p_device: PhysicalDevice,
+    pub(crate) debug_utils_device: debug_utils::Device,
 }
 
 impl Device {
@@ -26,21 +28,21 @@ impl Device {
     ) -> Arc<Self> {
         let priorities = [1.0];
 
-        let queue_info = vk::DeviceQueueCreateInfo::builder()
+        let queue_info = vk::DeviceQueueCreateInfo::default()
             .queue_family_index(queue_family.index)
             .queue_priorities(&priorities);
 
-        let extensions = [Swapchain::name().as_ptr()];
+        let extensions = [swapchain::NAME.as_ptr()];
 
-        let features10 = PhysicalDeviceFeatures::builder().fill_mode_non_solid(true);
-        let mut features12 = PhysicalDeviceVulkan12Features::builder()
+        let features10 = PhysicalDeviceFeatures::default().fill_mode_non_solid(true);
+        let mut features12 = PhysicalDeviceVulkan12Features::default()
             .buffer_device_address(true)
             .descriptor_indexing(true);
-        let mut features13 = PhysicalDeviceVulkan13Features::builder()
+        let mut features13 = PhysicalDeviceVulkan13Features::default()
             .dynamic_rendering(true)
             .synchronization2(true);
 
-        let device_info = vk::DeviceCreateInfo::builder()
+        let device_info = vk::DeviceCreateInfo::default()
             .queue_create_infos(std::slice::from_ref(&queue_info))
             .enabled_extension_names(&extensions)
             .enabled_features(&features10)
@@ -55,10 +57,13 @@ impl Device {
                 .unwrap()
         };
 
+        let debug_utils_device = debug_utils::Device::new(&instance.instance, &device);
+
         Arc::new(Device {
             instance,
             device,
             p_device,
+            debug_utils_device,
         })
     }
 

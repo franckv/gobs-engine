@@ -14,7 +14,7 @@ pub struct CommandPool {
 
 impl CommandPool {
     pub fn new(device: Arc<Device>, queue_family: &QueueFamily) -> Arc<Self> {
-        let pool_info = vk::CommandPoolCreateInfo::builder()
+        let pool_info = vk::CommandPoolCreateInfo::default()
             .flags(vk::CommandPoolCreateFlags::RESET_COMMAND_BUFFER)
             .queue_family_index(queue_family.index);
 

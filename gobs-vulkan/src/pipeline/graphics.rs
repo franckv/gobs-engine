@@ -59,8 +59,8 @@ impl ViewportState {
         }
     }
 
-    fn info(&self) -> vk::PipelineViewportStateCreateInfoBuilder {
-        vk::PipelineViewportStateCreateInfo::builder()
+    fn info(&self) -> vk::PipelineViewportStateCreateInfo {
+        vk::PipelineViewportStateCreateInfo::default()
             .scissors(&self.scissors)
             .viewports(&self.viewports)
     }
@@ -94,8 +94,8 @@ impl DynamicStates {
         }
     }
 
-    fn info(&self) -> vk::PipelineDynamicStateCreateInfoBuilder {
-        vk::PipelineDynamicStateCreateInfo::builder().dynamic_states(&self.dynamic_states)
+    fn info(&self) -> vk::PipelineDynamicStateCreateInfo {
+        vk::PipelineDynamicStateCreateInfo::default().dynamic_states(&self.dynamic_states)
     }
 }
 
@@ -132,8 +132,8 @@ impl InputAssemblyState {
         InputAssemblyState { primitive_topology }
     }
 
-    fn info(&self) -> vk::PipelineInputAssemblyStateCreateInfoBuilder {
-        vk::PipelineInputAssemblyStateCreateInfo::builder()
+    fn info(&self) -> vk::PipelineInputAssemblyStateCreateInfo {
+        vk::PipelineInputAssemblyStateCreateInfo::default()
             .topology(self.primitive_topology.into())
             .primitive_restart_enable(false)
     }
@@ -223,8 +223,8 @@ impl RasterizationState {
         }
     }
 
-    fn info(&self) -> vk::PipelineRasterizationStateCreateInfoBuilder {
-        vk::PipelineRasterizationStateCreateInfo::builder()
+    fn info(&self) -> vk::PipelineRasterizationStateCreateInfo {
+        vk::PipelineRasterizationStateCreateInfo::default()
             .line_width(1.)
             .front_face(self.front_face.into())
             .cull_mode(self.cull_mode.into())
@@ -239,8 +239,8 @@ impl MultisampleState {
         MultisampleState
     }
 
-    fn info(&self) -> vk::PipelineMultisampleStateCreateInfoBuilder {
-        vk::PipelineMultisampleStateCreateInfo::builder()
+    fn info(&self) -> vk::PipelineMultisampleStateCreateInfo {
+        vk::PipelineMultisampleStateCreateInfo::default()
             .sample_shading_enable(false)
             .rasterization_samples(vk::SampleCountFlags::TYPE_1)
             .min_sample_shading(1.)
@@ -313,8 +313,8 @@ impl DepthStencilState {
         }
     }
 
-    fn info(&self) -> vk::PipelineDepthStencilStateCreateInfoBuilder {
-        vk::PipelineDepthStencilStateCreateInfo::builder()
+    fn info(&self) -> vk::PipelineDepthStencilStateCreateInfo {
+        vk::PipelineDepthStencilStateCreateInfo::default()
             .depth_test_enable(self.test_enable)
             .depth_write_enable(self.write_enable)
             .depth_compare_op(self.compare.into())
@@ -342,12 +342,12 @@ impl ColorBlendAttachmentState {
         ColorBlendAttachmentState { blend_mode }
     }
 
-    fn info(&self) -> vk::PipelineColorBlendAttachmentStateBuilder {
+    fn info(&self) -> vk::PipelineColorBlendAttachmentState {
         match self.blend_mode {
-            BlendMode::None => vk::PipelineColorBlendAttachmentState::builder()
+            BlendMode::None => vk::PipelineColorBlendAttachmentState::default()
                 .blend_enable(false)
                 .color_write_mask(vk::ColorComponentFlags::RGBA),
-            BlendMode::Additive => vk::PipelineColorBlendAttachmentState::builder()
+            BlendMode::Additive => vk::PipelineColorBlendAttachmentState::default()
                 .blend_enable(true)
                 .src_color_blend_factor(vk::BlendFactor::ONE)
                 .dst_color_blend_factor(vk::BlendFactor::DST_ALPHA)
@@ -356,7 +356,7 @@ impl ColorBlendAttachmentState {
                 .dst_alpha_blend_factor(vk::BlendFactor::ZERO)
                 .alpha_blend_op(vk::BlendOp::ADD)
                 .color_write_mask(vk::ColorComponentFlags::RGBA),
-            BlendMode::Alpha => vk::PipelineColorBlendAttachmentState::builder()
+            BlendMode::Alpha => vk::PipelineColorBlendAttachmentState::default()
                 .blend_enable(true)
                 .src_color_blend_factor(vk::BlendFactor::SRC_ALPHA)
                 .dst_color_blend_factor(vk::BlendFactor::ONE_MINUS_SRC_ALPHA)
@@ -365,7 +365,7 @@ impl ColorBlendAttachmentState {
                 .dst_alpha_blend_factor(vk::BlendFactor::ZERO)
                 .alpha_blend_op(vk::BlendOp::ADD)
                 .color_write_mask(vk::ColorComponentFlags::RGBA),
-            BlendMode::Premultiplied => vk::PipelineColorBlendAttachmentState::builder()
+            BlendMode::Premultiplied => vk::PipelineColorBlendAttachmentState::default()
                 .blend_enable(true)
                 .src_color_blend_factor(vk::BlendFactor::ONE)
                 .dst_color_blend_factor(vk::BlendFactor::ONE_MINUS_SRC_ALPHA)
@@ -385,12 +385,12 @@ struct ColorBlendState {
 impl ColorBlendState {
     fn new(attachment_state: ColorBlendAttachmentState) -> Self {
         ColorBlendState {
-            attachment_state: vec![attachment_state.info().build()],
+            attachment_state: vec![attachment_state.info()],
         }
     }
 
-    fn info(&self) -> vk::PipelineColorBlendStateCreateInfoBuilder {
-        vk::PipelineColorBlendStateCreateInfo::builder()
+    fn info(&self) -> vk::PipelineColorBlendStateCreateInfo {
+        vk::PipelineColorBlendStateCreateInfo::default()
             .logic_op(vk::LogicOp::COPY)
             .attachments(&self.attachment_state)
     }
@@ -409,8 +409,8 @@ impl VertexInputState {
         }
     }
 
-    fn info(&self) -> vk::PipelineVertexInputStateCreateInfoBuilder {
-        vk::PipelineVertexInputStateCreateInfo::builder()
+    fn info(&self) -> vk::PipelineVertexInputStateCreateInfo {
+        vk::PipelineVertexInputStateCreateInfo::default()
             .vertex_binding_descriptions(&self.binding_desc)
             .vertex_attribute_descriptions(&self.attribute_desc)
     }
@@ -445,12 +445,12 @@ impl RenderingState {
         }
     }
 
-    fn info(&self) -> vk::PipelineRenderingCreateInfoBuilder {
+    fn info(&self) -> vk::PipelineRenderingCreateInfo {
         match self.depth_format {
-            Some(depth_format) => vk::PipelineRenderingCreateInfo::builder()
+            Some(depth_format) => vk::PipelineRenderingCreateInfo::default()
                 .color_attachment_formats(&self.color_format)
                 .depth_attachment_format(depth_format.into()),
-            None => vk::PipelineRenderingCreateInfo::builder()
+            None => vk::PipelineRenderingCreateInfo::default()
                 .color_attachment_formats(&self.color_format),
         }
     }
@@ -596,7 +596,7 @@ impl GraphicsPipelineBuilder {
         }
         let shader_stages_info = shader_stages
             .iter()
-            .map(|stage| *stage.info())
+            .map(|stage| stage.info())
             .collect::<Vec<vk::PipelineShaderStageCreateInfo>>();
 
         if self.vertex_input_state.is_none() {
@@ -637,7 +637,7 @@ impl GraphicsPipelineBuilder {
 
         let pipeline_layout = self.pipeline_layout.unwrap();
 
-        let pipeline_info = vk::GraphicsPipelineCreateInfo::builder()
+        let pipeline_info = vk::GraphicsPipelineCreateInfo::default()
             .push_next(&mut rendering_state_info)
             .stages(&shader_stages_info)
             .vertex_input_state(&vertex_input_state_info)

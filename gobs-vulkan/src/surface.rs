@@ -1,7 +1,8 @@
 use std;
 use std::sync::Arc;
 
-use raw_window_handle::{HasRawDisplayHandle, HasRawWindowHandle};
+use anyhow::Result;
+use raw_window_handle::{HasDisplayHandle, HasWindowHandle};
 use winit::window::Window;
 
 use ash::vk;
@@ -34,23 +35,23 @@ pub struct Surface {
 }
 
 impl Surface {
-    pub fn new(instance: Arc<Instance>, window: Window) -> Arc<Self> {
+    pub fn new(instance: Arc<Instance>, window: Window) -> Result<Arc<Self>> {
         let surface = unsafe {
             ash_window::create_surface(
                 &instance.entry,
                 &instance.instance,
-                window.raw_display_handle(),
-                window.raw_window_handle(),
+                window.display_handle()?.as_raw(),
+                window.window_handle()?.as_raw(),
                 None,
             )
             .unwrap()
         };
 
-        Arc::new(Surface {
+        Ok(Arc::new(Surface {
             instance: instance,
             window,
             surface,
-        })
+        }))
     }
 
     pub fn family_supported(&self, p_device: &PhysicalDevice, family: &QueueFamily) -> bool {

@@ -9,6 +9,7 @@ name = "gobs_vulkan"
 path = "src/lib.rs"
 
 [dependencies]
+anyhow = { workspace = true }
 ash = { workspace = true }
 ash-window = { workspace = true }
 bytemuck = { workspace = true }

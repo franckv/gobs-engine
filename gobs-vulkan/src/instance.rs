@@ -2,13 +2,10 @@ use std::borrow::Cow;
 use std::ffi::{CStr, CString};
 use std::sync::Arc;
 
-use ash::extensions::ext::DebugUtils;
-use ash::extensions::khr::Surface as VkSurface;
-#[cfg(target_os = "windows")]
-use ash::extensions::khr::Win32Surface;
-#[cfg(all(unix, not(target_os = "android"), not(target_os = "macos")))]
-use ash::extensions::khr::XlibSurface;
-use ash::vk;
+use anyhow::Result;
+use ash::{ext::debug_utils, khr::surface, vk};
+use raw_window_handle::HasDisplayHandle;
+use winit::window::Window;
 
 use crate::physical::PhysicalDevice;
 use crate::queue::QueueFamily;
@@ -84,32 +81,39 @@ unsafe extern "system" fn debug_cb(
 pub struct Instance {
     pub(crate) instance: ash::Instance,
     pub(crate) entry: ash::Entry,
-    pub(crate) surface_loader: VkSurface,
+    pub(crate) surface_loader: surface::Instance,
     debug_call_back: vk::DebugUtilsMessengerEXT,
-    pub(crate) debug_utils_loader: DebugUtils,
+    pub(crate) debug_utils_loader: debug_utils::Instance,
 }
 
 impl Instance {
-    pub fn new(name: &str, version: u32, validation: bool) -> Arc<Self> {
+    pub fn new(
+        name: &str,
+        version: u32,
+        window: Option<&Window>,
+        validation: bool,
+    ) -> Result<Arc<Self>> {
         let app_name = CString::new(name).unwrap();
 
         let vk_version = vk::make_api_version(0, 1, 3, 0);
 
-        let app_info = vk::ApplicationInfo::builder()
+        let app_info = vk::ApplicationInfo::default()
             .application_name(&app_name)
             .application_version(version)
             .engine_name(&app_name)
             .engine_version(version)
             .api_version(vk_version);
 
-        let extensions = [
-            VkSurface::name().as_ptr(),
-            #[cfg(all(unix, not(target_os = "android"), not(target_os = "macos")))]
-            XlibSurface::name().as_ptr(),
-            #[cfg(target_os = "windows")]
-            Win32Surface::name().as_ptr(),
-            DebugUtils::name().as_ptr(),
-        ];
+        let mut extensions = match window {
+            Some(window) => {
+                ash_window::enumerate_required_extensions(window.display_handle()?.as_raw())
+                    .unwrap()
+                    .to_vec()
+            }
+            None => vec![],
+        };
+
+        extensions.push(debug_utils::NAME.as_ptr());
 
         let validation_layer = CString::new("VK_LAYER_KHRONOS_validation").unwrap();
 
@@ -119,7 +123,7 @@ impl Instance {
             vec![]
         };
 
-        let instance_info = vk::InstanceCreateInfo::builder()
+        let instance_info = vk::InstanceCreateInfo::default()
             .application_info(&app_info)
             .enabled_layer_names(&layers)
             .enabled_extension_names(&extensions);
@@ -132,9 +136,9 @@ impl Instance {
             entry.create_instance(&instance_info, None).unwrap()
         };
 
-        let surface_loader = VkSurface::new(&entry, &instance);
+        let surface_loader = surface::Instance::new(&entry, &instance);
 
-        let debug_info = vk::DebugUtilsMessengerCreateInfoEXT::builder()
+        let debug_info = vk::DebugUtilsMessengerCreateInfoEXT::default()
             .message_severity(
                 vk::DebugUtilsMessageSeverityFlagsEXT::ERROR
                     | vk::DebugUtilsMessageSeverityFlagsEXT::WARNING
@@ -147,20 +151,20 @@ impl Instance {
             )
             .pfn_user_callback(Some(debug_cb));
 
-        let debug_utils_loader = DebugUtils::new(&entry, &instance);
+        let debug_utils_loader = debug_utils::Instance::new(&entry, &instance);
         let debug_call_back = unsafe {
             debug_utils_loader
                 .create_debug_utils_messenger(&debug_info, None)
                 .unwrap()
         };
 
-        Arc::new(Instance {
+        Ok(Arc::new(Instance {
             instance,
             entry,
             surface_loader,
             debug_utils_loader,
             debug_call_back,
-        })
+        }))
     }
 
     pub fn find_adapter(&self, surface: &Surface) -> PhysicalDevice {
@@ -207,7 +211,7 @@ impl Instance {
         let mut features11 = vk::PhysicalDeviceVulkan11Features::default();
         let mut features12 = vk::PhysicalDeviceVulkan12Features::default();
         let mut features13 = vk::PhysicalDeviceVulkan13Features::default();
-        let mut features = vk::PhysicalDeviceFeatures2::builder()
+        let mut features = vk::PhysicalDeviceFeatures2::default()
             .push_next(&mut features11)
             .push_next(&mut features12)
             .push_next(&mut features13);
@@ -217,7 +221,7 @@ impl Instance {
                 .get_physical_device_features2(p_device.raw(), &mut features);
         };
 
-        let features10 = features.build().features;
+        let features10 = features.features;
 
         log::debug!(
             "Features: {:?},{:?},{:?},{:?}",

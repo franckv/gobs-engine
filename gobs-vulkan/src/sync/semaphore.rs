@@ -23,12 +23,7 @@ impl Semaphore {
 
         let semaphore_label = format!("[Semaphore] {}", label);
 
-        debug::add_label(
-            device.clone(),
-            &semaphore_label,
-            vk::ObjectType::SEMAPHORE,
-            vk::Handle::as_raw(semaphore),
-        );
+        debug::add_label(device.clone(), &semaphore_label, semaphore);
 
         Semaphore { device, semaphore }
     }

@@ -77,8 +77,8 @@ impl ShaderStage {
         }
     }
 
-    pub fn info(&self) -> vk::PipelineShaderStageCreateInfoBuilder {
-        vk::PipelineShaderStageCreateInfo::builder()
+    pub fn info(&self) -> vk::PipelineShaderStageCreateInfo {
+        vk::PipelineShaderStageCreateInfo::default()
             .stage(match self.shader.ty {
                 ShaderType::Compute => vk::ShaderStageFlags::COMPUTE,
                 ShaderType::Vertex => vk::ShaderStageFlags::VERTEX,

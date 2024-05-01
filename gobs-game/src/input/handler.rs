@@ -1,9 +1,9 @@
-use winit;
 use winit::dpi::PhysicalPosition;
 use winit::event::{
-    DeviceEvent, ElementState, KeyboardInput, MouseButton, MouseScrollDelta, VirtualKeyCode,
-    WindowEvent,
+    DeviceEvent, ElementState, KeyEvent, MouseButton, MouseScrollDelta, WindowEvent,
 };
+use winit::keyboard::NamedKey;
+use winit::{self, keyboard};
 
 use crate::input::Input;
 
@@ -18,7 +18,7 @@ pub enum Event {
 }
 
 impl Event {
-    pub fn new(event: winit::event::Event<'_, ()>) -> Self {
+    pub fn new(event: winit::event::Event<()>) -> Self {
         let mut status = Event::Continue;
 
         match event {
@@ -27,19 +27,19 @@ impl Event {
                 WindowEvent::Resized(physical_size) => {
                     status = Event::Resize(physical_size.width, physical_size.height)
                 }
-                WindowEvent::ScaleFactorChanged { new_inner_size, .. } => {
+                /*WindowEvent::ScaleFactorChanged { new_inner_size, .. } => {
                     status = Event::Resize(new_inner_size.width, new_inner_size.height)
-                }
+                }*/
                 WindowEvent::KeyboardInput {
-                    input:
-                        KeyboardInput {
-                            virtual_keycode: Some(key_code),
+                    event:
+                        KeyEvent {
+                            logical_key: key_code,
                             state,
                             ..
                         },
                     ..
                 } => match key_code {
-                    VirtualKeyCode::Escape => status = Event::Close,
+                    keyboard::Key::Named(NamedKey::Escape) => status = Event::Close,
                     _ => {
                         let key = key_code.into();
                         match state {
@@ -72,14 +72,15 @@ impl Event {
                         ElementState::Released => Event::Input(Input::MouseReleased),
                     }
                 }
+                WindowEvent::RedrawRequested => status = Event::Redraw,
                 _ => (),
             },
             winit::event::Event::DeviceEvent {
                 event: DeviceEvent::MouseMotion { delta },
                 ..
             } => status = Event::Input(Input::MouseMotion(delta.0, delta.1)),
-            winit::event::Event::RedrawRequested(_) => status = Event::Redraw,
-            winit::event::Event::MainEventsCleared {} => status = Event::Cleared,
+
+            winit::event::Event::AboutToWait {} => status = Event::Cleared,
             _ => (),
         }
 

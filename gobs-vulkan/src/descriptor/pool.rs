@@ -46,12 +46,12 @@ impl DescriptorSetPool {
             .bindings
             .iter()
             .map(|binding| vk::DescriptorPoolSize {
-                ty: binding.descriptor_type,
+                ty: binding.ty.into(),
                 descriptor_count: max_sets,
             })
             .collect();
 
-        let pool_info = vk::DescriptorPoolCreateInfo::builder()
+        let pool_info = vk::DescriptorPoolCreateInfo::default()
             .pool_sizes(&pool_size)
             .max_sets(max_sets);
 
@@ -108,7 +108,7 @@ impl DescriptorSetPool {
     fn allocate_ds(&mut self) -> Result<Vec<vk::DescriptorSet>, vk::Result> {
         let layout = self.descriptor_layout.layout;
 
-        let descriptor_info = vk::DescriptorSetAllocateInfo::builder()
+        let descriptor_info = vk::DescriptorSetAllocateInfo::default()
             .descriptor_pool(self.current_pool)
             .set_layouts(std::slice::from_ref(&layout));
 

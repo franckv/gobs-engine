@@ -19,7 +19,7 @@ impl PipelineLayout {
         descriptor_layouts: &[Arc<DescriptorSetLayout>],
         push_constant_size: usize,
     ) -> Arc<Self> {
-        let mut layout_info = vk::PipelineLayoutCreateInfo::builder();
+        let mut layout_info = vk::PipelineLayoutCreateInfo::default();
 
         let mut set_layout = vec![];
         for descriptor_layout in descriptor_layouts {
@@ -33,11 +33,10 @@ impl PipelineLayout {
         if push_constant_size > 0 {
             debug_assert!(push_constant_size <= 128);
             push_constant_range.push(
-                vk::PushConstantRange::builder()
+                vk::PushConstantRange::default()
                     .offset(0)
                     .size(push_constant_size as u32)
-                    .stage_flags(vk::ShaderStageFlags::VERTEX)
-                    .build(),
+                    .stage_flags(vk::ShaderStageFlags::VERTEX),
             );
             layout_info = layout_info.push_constant_ranges(&push_constant_range);
         }

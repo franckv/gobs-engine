@@ -38,6 +38,7 @@ impl Shader {
             flags: Default::default(),
             code_size: data.len(),
             p_code: data.as_ptr() as *const u32,
+            _marker: std::marker::PhantomData,
         };
 
         let shader = unsafe {

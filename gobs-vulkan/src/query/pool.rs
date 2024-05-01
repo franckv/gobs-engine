@@ -24,7 +24,7 @@ pub struct QueryPool {
 
 impl QueryPool {
     pub fn new(device: Arc<Device>, ty: QueryType, count: u32) -> Self {
-        let create_info = vk::QueryPoolCreateInfo::builder()
+        let create_info = vk::QueryPoolCreateInfo::default()
             .query_type(ty.into())
             .query_count(count);
 
@@ -39,17 +39,11 @@ impl QueryPool {
         }
     }
 
-    pub fn get_query_pool_results(&self, first_query: u32, query_count: u32, buf: &mut [u64]) {
+    pub fn get_query_pool_results(&self, first_query: u32, buf: &mut [u64]) {
         unsafe {
             self.device
                 .raw()
-                .get_query_pool_results(
-                    self.pool,
-                    first_query,
-                    query_count,
-                    buf,
-                    vk::QueryResultFlags::TYPE_64,
-                )
+                .get_query_pool_results(self.pool, first_query, buf, vk::QueryResultFlags::TYPE_64)
                 .unwrap();
         }
     }

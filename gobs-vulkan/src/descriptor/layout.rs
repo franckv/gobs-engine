@@ -5,7 +5,7 @@ use ash::vk;
 
 use crate::device::Device;
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Debug)]
 pub enum DescriptorType {
     Uniform,
     UniformDynamic,
@@ -28,7 +28,7 @@ impl Into<vk::DescriptorType> for DescriptorType {
     }
 }
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Debug)]
 pub enum DescriptorStage {
     Compute,
     Vertex,
@@ -47,6 +47,7 @@ impl Into<vk::ShaderStageFlags> for DescriptorStage {
     }
 }
 
+#[derive(Debug)]
 pub struct DescriptorSetLayoutBinding {
     pub ty: DescriptorType,
     pub stage: DescriptorStage,
@@ -81,7 +82,7 @@ impl DescriptorSetLayoutBuilder {
 pub struct DescriptorSetLayout {
     device: Arc<Device>,
     pub(crate) layout: vk::DescriptorSetLayout,
-    pub bindings: Vec<vk::DescriptorSetLayoutBinding>,
+    pub bindings: Vec<DescriptorSetLayoutBinding>,
 }
 
 impl DescriptorSetLayout {
@@ -90,7 +91,7 @@ impl DescriptorSetLayout {
     }
 
     fn new(device: Arc<Device>, bindings: Vec<DescriptorSetLayoutBinding>) -> Arc<Self> {
-        let bindings: Vec<vk::DescriptorSetLayoutBinding> = bindings
+        let vk_bindings: Vec<vk::DescriptorSetLayoutBinding> = bindings
             .iter()
             .enumerate()
             .map(|(idx, binding)| vk::DescriptorSetLayoutBinding {
@@ -99,6 +100,7 @@ impl DescriptorSetLayout {
                 descriptor_count: 1,
                 p_immutable_samplers: ptr::null(),
                 stage_flags: binding.stage.into(),
+                _marker: std::marker::PhantomData,
             })
             .collect();
 
@@ -106,8 +108,9 @@ impl DescriptorSetLayout {
             s_type: vk::StructureType::DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
             p_next: ptr::null(),
             flags: Default::default(),
-            binding_count: bindings.len() as u32,
-            p_bindings: bindings.as_ptr(),
+            binding_count: vk_bindings.len() as u32,
+            p_bindings: vk_bindings.as_ptr(),
+            _marker: std::marker::PhantomData,
         };
 
         let layout = unsafe {

@@ -1,7 +1,7 @@
 use std::fmt::Debug;
 use std::sync::Arc;
 
-use ash::vk::{self, Handle};
+use ash::vk;
 
 use crate::alloc::Allocator;
 use crate::device::Device;
@@ -148,12 +148,7 @@ impl Image {
 
         let image = Self::create_image(&device, extent, format, usage);
 
-        debug::add_label(
-            device.clone(),
-            &image_label,
-            vk::ObjectType::IMAGE,
-            image.as_raw(),
-        );
+        debug::add_label(device.clone(), &image_label, image);
 
         let memory = allocator.allocate_image(image, &image_label);
 
@@ -161,12 +156,7 @@ impl Image {
 
         let view_label = format!("[Image View] {}", label);
 
-        debug::add_label(
-            device.clone(),
-            &view_label,
-            vk::ObjectType::IMAGE_VIEW,
-            image_view.as_raw(),
-        );
+        debug::add_label(device.clone(), &view_label, image_view);
 
         let layout = ImageLayout::Undefined;
 
@@ -193,22 +183,12 @@ impl Image {
     ) -> Self {
         let image_label = format!("[Image] {}", label);
 
-        debug::add_label(
-            device.clone(),
-            &image_label,
-            vk::ObjectType::IMAGE,
-            image.as_raw(),
-        );
+        debug::add_label(device.clone(), &image_label, image);
 
         let image_view = Self::create_image_view(device.clone(), image, format, usage);
 
         let view_label = format!("[Image View] {}", label);
-        debug::add_label(
-            device.clone(),
-            &view_label,
-            vk::ObjectType::IMAGE_VIEW,
-            image_view.as_raw(),
-        );
+        debug::add_label(device.clone(), &view_label, image_view);
 
         let layout = ImageLayout::Undefined;
 
@@ -235,10 +215,10 @@ impl Image {
         format: ImageFormat,
         usage: ImageUsage,
     ) -> vk::Image {
-        let image_info = vk::ImageCreateInfo::builder()
+        let image_info = vk::ImageCreateInfo::default()
             .image_type(vk::ImageType::TYPE_2D)
             .extent(
-                *vk::Extent3D::builder()
+                vk::Extent3D::default()
                     .width(extent.width)
                     .height(extent.height)
                     .depth(1),
@@ -261,12 +241,12 @@ impl Image {
         format: ImageFormat,
         usage: ImageUsage,
     ) -> vk::ImageView {
-        let view_info = vk::ImageViewCreateInfo::builder()
+        let view_info = vk::ImageViewCreateInfo::default()
             .image(image)
             .view_type(vk::ImageViewType::TYPE_2D)
             .format(format.into())
             .subresource_range(
-                *vk::ImageSubresourceRange::builder()
+                vk::ImageSubresourceRange::default()
                     .aspect_mask(usage.into())
                     .base_mip_level(0)
                     .level_count(1)

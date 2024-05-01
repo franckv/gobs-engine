@@ -1,27 +1,20 @@
 use std::{ffi::CString, sync::Arc};
 
-use ash::vk;
+use ash::vk::{self, Handle};
 
 use crate::device::Device;
 
-pub(crate) fn add_label(
-    device: Arc<Device>,
-    label: &str,
-    object_type: vk::ObjectType,
-    object_handle: u64,
-) {
+pub(crate) fn add_label<T: Handle>(device: Arc<Device>, label: &str, object_handle: T) {
     let label = CString::new(label).unwrap();
 
-    let name_info = vk::DebugUtilsObjectNameInfoEXT::builder()
-        .object_type(object_type)
+    let name_info = vk::DebugUtilsObjectNameInfoEXT::default()
         .object_handle(object_handle)
         .object_name(&label);
 
     unsafe {
         device
-            .instance()
-            .debug_utils_loader
-            .set_debug_utils_object_name(device.cloned().handle(), &name_info)
+            .debug_utils_device
+            .set_debug_utils_object_name(&name_info)
             .unwrap();
     }
 }
