@@ -152,5 +152,5 @@ fn main() {
 
     log::info!("Engine start");
 
-    Application::new("Depth test", 1920, 1080).run::<App>();
+    Application::<App>::new("Depth test", 1920, 1080).run();
 }

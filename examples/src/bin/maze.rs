@@ -258,5 +258,5 @@ fn main() {
 
     log::info!("Engine start");
 
-    Application::new("Maze", 1920, 1080).run::<App>();
+    Application::<App>::new("Maze", 1920, 1080).run();
 }

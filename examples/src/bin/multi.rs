@@ -162,5 +162,5 @@ fn main() {
 
     log::info!("Engine start");
 
-    Application::new("Multi", 1920, 1080).run::<App>();
+    Application::<App>::new("Multi", 1920, 1080).run();
 }

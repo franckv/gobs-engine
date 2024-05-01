@@ -125,5 +125,5 @@ fn main() {
 
     log::info!("Engine start");
 
-    Application::new("Triangle", 1920, 1080).run::<App>();
+    Application::<App>::new("Triangle", 1920, 1080).run();
 }

@@ -262,5 +262,5 @@ fn main() {
 
     log::info!("Engine start");
 
-    Application::new("glTF", 1920, 1080).run::<App>();
+    Application::<App>::new("glTF", 1920, 1080).run();
 }
