@@ -70,7 +70,7 @@ unsafe extern "system" fn debug_cb(
                 message,
             );
             #[cfg(debug_assertions)]
-            panic!();
+            panic!("{}", message);
         }
     }
 
@@ -110,7 +110,7 @@ impl Instance {
                     .unwrap()
                     .to_vec()
             }
-            None => vec![],
+            None => vec![ash::khr::surface::NAME.as_ptr()],
         };
 
         extensions.push(debug_utils::NAME.as_ptr());
