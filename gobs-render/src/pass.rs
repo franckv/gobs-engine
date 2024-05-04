@@ -46,6 +46,8 @@ pub trait RenderPass {
     fn push_layout(&self) -> Option<Arc<UniformLayout>>;
     fn uniform_data_layout(&self) -> Option<Arc<UniformLayout>>;
     fn attachments(&self) -> &[String];
+    fn color_clear(&self) -> bool;
+    fn depth_clear(&self) -> bool;
     fn render(
         &self,
         ctx: &Context,

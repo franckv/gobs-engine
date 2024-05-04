@@ -1,12 +1,9 @@
 use std::sync::Arc;
 
-use crate::{alloc::Allocator, device::Device, instance::Instance, queue::Queue};
+use crate::{device::Device, instance::Instance};
 
 pub struct Context {
-    pub instance: Arc<Instance>,
     pub device: Arc<Device>,
-    pub queue: Arc<Queue>,
-    pub allocator: Arc<Allocator>,
 }
 
 impl Context {
@@ -21,15 +18,6 @@ impl Context {
 
         let device = Device::new(instance.clone(), physical_device, &queue_family);
 
-        let queue = Queue::new(device.clone(), queue_family);
-
-        let allocator = Allocator::new(device.clone());
-
-        Context {
-            instance,
-            device,
-            queue,
-            allocator,
-        }
+        Context { device }
     }
 }

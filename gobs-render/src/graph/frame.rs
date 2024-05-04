@@ -99,10 +99,22 @@ impl ResourceManager {
     }
 
     pub fn image_read(&self, label: &str) -> RwLockReadGuard<'_, Image> {
+        assert!(
+            self.resources.contains_key(label),
+            "Missing resource {}",
+            label
+        );
+
         self.resources[label].read()
     }
 
     pub fn image_write(&self, label: &str) -> RwLockWriteGuard<'_, Image> {
+        assert!(
+            self.resources.contains_key(label),
+            "Missing resource {}",
+            label
+        );
+
         self.resources[label].write()
     }
 }
@@ -165,10 +177,28 @@ impl FrameGraph {
 
         graph.register_pass(ComputePass::new(ctx, "compute"));
         graph.register_pass(DepthPass::new(ctx, "depth"));
-        graph.register_pass(ForwardPass::new(ctx, "forward"));
-        graph.register_pass(UiPass::new(ctx, "ui"));
+        graph.register_pass(ForwardPass::new(ctx, "forward", false, false));
+        graph.register_pass(UiPass::new(ctx, "ui", false));
         graph.register_pass(WirePass::new(ctx, "wire"));
         graph.register_pass(BoundsPass::new(ctx, "bounds"));
+
+        graph
+    }
+
+    pub fn ui(ctx: &Context) -> Self {
+        let mut graph = Self::new(ctx);
+
+        let extent = ctx.surface.get_extent(ctx.device.clone());
+
+        graph.resource_manager.register_image(
+            ctx,
+            "draw",
+            ctx.color_format,
+            ImageUsage::Color,
+            extent,
+        );
+
+        graph.register_pass(UiPass::new(ctx, "ui", true));
 
         graph
     }
@@ -237,10 +267,12 @@ impl FrameGraph {
         }
 
         let draw_image_extent = self.resource_manager.image_read("draw").extent;
-        debug_assert_eq!(
-            draw_image_extent,
-            self.resource_manager.image_read("depth").extent
-        );
+        if self.resource_manager.resources.contains_key("depth") {
+            debug_assert_eq!(
+                draw_image_extent,
+                self.resource_manager.image_read("depth").extent
+            );
+        }
 
         self.draw_extent = ImageExtent2D::new(
             (draw_image_extent

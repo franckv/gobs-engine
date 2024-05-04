@@ -215,6 +215,14 @@ impl RenderPass for DepthPass {
         &self.attachments
     }
 
+    fn color_clear(&self) -> bool {
+        false
+    }
+
+    fn depth_clear(&self) -> bool {
+        true
+    }
+
     fn pipeline(&self) -> Option<Arc<Pipeline>> {
         Some(self.pipeline.clone())
     }
@@ -268,8 +276,8 @@ impl RenderPass for DepthPass {
             None,
             draw_extent,
             Some(&resource_manager.image_read(depth_attach)),
-            false,
-            true,
+            self.color_clear(),
+            self.depth_clear(),
             [0.; 4],
             1.,
         );

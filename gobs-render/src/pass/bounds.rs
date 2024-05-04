@@ -200,6 +200,14 @@ impl RenderPass for BoundsPass {
         &self.attachments
     }
 
+    fn color_clear(&self) -> bool {
+        false
+    }
+
+    fn depth_clear(&self) -> bool {
+        false
+    }
+
     fn pipeline(&self) -> Option<Arc<Pipeline>> {
         Some(self.pipeline.clone())
     }
@@ -253,8 +261,8 @@ impl RenderPass for BoundsPass {
             Some(&resource_manager.image_read(draw_attach)),
             draw_extent,
             None,
-            false,
-            false,
+            self.color_clear(),
+            self.depth_clear(),
             [0.; 4],
             1.,
         );

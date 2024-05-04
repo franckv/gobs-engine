@@ -31,6 +31,7 @@ pub struct UiPass {
     name: String,
     ty: PassType,
     attachments: Vec<String>,
+    color_clear: bool,
     push_layout: Arc<UniformLayout>,
     frame_data: Vec<FrameData>,
     _uniform_ds_pool: DescriptorSetPool,
@@ -38,7 +39,7 @@ pub struct UiPass {
 }
 
 impl UiPass {
-    pub fn new(ctx: &Context, name: &str) -> Arc<dyn RenderPass> {
+    pub fn new(ctx: &Context, name: &str, color_clear: bool) -> Arc<dyn RenderPass> {
         let push_layout = UniformLayout::builder()
             .prop("vertex_buffer_address", UniformProp::U64)
             .build();
@@ -72,6 +73,7 @@ impl UiPass {
             name: name.to_string(),
             ty: PassType::Ui,
             attachments: vec![String::from("draw")],
+            color_clear,
             push_layout,
             frame_data,
             _uniform_ds_pool,
@@ -174,6 +176,14 @@ impl RenderPass for UiPass {
         &self.attachments
     }
 
+    fn color_clear(&self) -> bool {
+        self.color_clear
+    }
+
+    fn depth_clear(&self) -> bool {
+        false
+    }
+
     fn pipeline(&self) -> Option<Arc<Pipeline>> {
         None
     }
@@ -223,8 +233,8 @@ impl RenderPass for UiPass {
             Some(&resource_manager.image_read(image_attach)),
             draw_extent,
             None,
-            false,
-            false,
+            self.color_clear(),
+            self.depth_clear(),
             [0.; 4],
             1.,
         );

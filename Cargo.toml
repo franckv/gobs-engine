@@ -59,7 +59,7 @@ ash-window = "0.13"
 anyhow = "1.0"
 bitflags = "2"
 bytemuck = { version = "1.14", features = ["derive"] }
-egui = { version = "0.27", features = ["bytemuck"]}
+egui = { version = "0.26", features = ["bytemuck"]}
 env_logger = "0.11"
 futures = "0.3"
 fs_extra = "1.3"

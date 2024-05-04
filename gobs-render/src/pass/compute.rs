@@ -94,6 +94,14 @@ impl RenderPass for ComputePass {
         &self.attachments
     }
 
+    fn color_clear(&self) -> bool {
+        false
+    }
+
+    fn depth_clear(&self) -> bool {
+        false
+    }
+
     fn pipeline(&self) -> Option<Arc<Pipeline>> {
         Some(self.pipeline.clone())
     }

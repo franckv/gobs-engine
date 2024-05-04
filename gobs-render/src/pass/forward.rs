@@ -32,6 +32,8 @@ pub struct ForwardPass {
     name: String,
     ty: PassType,
     attachments: Vec<String>,
+    color_clear: bool,
+    depth_clear: bool,
     push_layout: Arc<UniformLayout>,
     frame_data: Vec<FrameData>,
     _uniform_ds_pool: DescriptorSetPool,
@@ -39,7 +41,12 @@ pub struct ForwardPass {
 }
 
 impl ForwardPass {
-    pub fn new(ctx: &Context, name: &str) -> Arc<dyn RenderPass> {
+    pub fn new(
+        ctx: &Context,
+        name: &str,
+        color_clear: bool,
+        depth_clear: bool,
+    ) -> Arc<dyn RenderPass> {
         let push_layout = UniformLayout::builder()
             .prop("world_matrix", UniformProp::Mat4F)
             .prop("normal_matrix", UniformProp::Mat3F)
@@ -73,6 +80,8 @@ impl ForwardPass {
             name: name.to_string(),
             ty: PassType::Forward,
             attachments: vec![String::from("draw"), String::from("depth")],
+            color_clear,
+            depth_clear,
             push_layout,
             frame_data,
             _uniform_ds_pool: uniform_ds_pool,
@@ -193,6 +202,14 @@ impl RenderPass for ForwardPass {
         &self.attachments
     }
 
+    fn color_clear(&self) -> bool {
+        self.color_clear
+    }
+
+    fn depth_clear(&self) -> bool {
+        self.depth_clear
+    }
+
     fn pipeline(&self) -> Option<Arc<Pipeline>> {
         None
     }
@@ -257,8 +274,8 @@ impl RenderPass for ForwardPass {
             Some(&resource_manager.image_read(draw_attach)),
             draw_extent,
             Some(&resource_manager.image_read(depth_attach)),
-            false,
-            false,
+            self.color_clear(),
+            self.depth_clear(),
             [0.; 4],
             1.,
         );
