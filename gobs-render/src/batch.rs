@@ -31,14 +31,10 @@ impl ModelManager {
     }
 
     fn new_frame(&mut self, ctx: &Context) -> usize {
-        let frame_id = self.frame_id(ctx);
+        let frame_id = ctx.frame_id();
 
         self.transient_models[frame_id].clear();
         frame_id
-    }
-
-    pub fn frame_id(&self, ctx: &Context) -> usize {
-        ctx.frame_number % (ctx.frames_in_flight + 1)
     }
 
     pub fn add_model(
@@ -51,7 +47,7 @@ impl ModelManager {
         let key = (model.id, pass.id());
 
         if transient {
-            let frame_id = self.frame_id(ctx);
+            let frame_id = ctx.frame_id();
             let model_manager = &mut self.transient_models[frame_id];
 
             let resource = ModelResource::new(ctx, model.clone(), pass.clone());
@@ -73,7 +69,7 @@ impl ModelManager {
         bounding_box: BoundingBox,
         pass: Arc<dyn RenderPass>,
     ) -> Arc<ModelResource> {
-        let frame_id = self.frame_id(ctx);
+        let frame_id = ctx.frame_id();
         let model_manager = &mut self.transient_models[frame_id];
 
         model_manager.push(ModelResource::new_box(ctx, bounding_box, pass.clone()));

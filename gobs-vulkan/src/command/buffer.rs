@@ -641,12 +641,10 @@ impl Drop for CommandBuffer {
     fn drop(&mut self) {
         log::debug!("Drop command buffer");
 
-        let buffers = [self.command_buffer];
-
         unsafe {
             self.device
                 .raw()
-                .free_command_buffers(self.pool.raw(), &buffers);
+                .free_command_buffers(self.pool.raw(), &[self.command_buffer]);
         }
     }
 }

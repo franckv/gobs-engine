@@ -57,6 +57,10 @@ impl FrameData {
     }
 
     pub fn reset(&mut self) {
+        let cmd = &self.command_buffer;
+        cmd.fence.wait_and_reset();
+        debug_assert!(!cmd.fence.signaled());
+
         self.command_buffer.reset();
     }
 }
@@ -246,15 +250,6 @@ impl FrameGraph {
         let frame_id = ctx.frame_id();
         self.batch.reset(ctx);
 
-        {
-            let frame = &mut self.frames[frame_id];
-            let cmd = &frame.command_buffer;
-
-            cmd.fence.wait_and_reset();
-            debug_assert!(!cmd.fence.signaled());
-            frame.reset();
-        }
-
         let frame = &self.frames[frame_id];
         let cmd = &frame.command_buffer;
 
@@ -356,6 +351,11 @@ impl FrameGraph {
         if ctx.frame_number % ctx.stats_refresh == 0 {
             self.batch.render_stats.fps = (1. / delta).round() as u32;
         }
+
+        let frame_id = ctx.frame_id();
+        let frame = &mut self.frames[frame_id];
+
+        frame.reset();
     }
 
     pub fn render(
