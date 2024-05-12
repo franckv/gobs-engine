@@ -13,4 +13,3 @@ anyhow = { workspace = true }
 image = { workspace = true }
 log = { workspace = true }
 rand = { workspace = true }
-time = { workspace = true }

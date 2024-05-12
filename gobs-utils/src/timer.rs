@@ -1,4 +1,4 @@
-use time;
+use std::time;
 
 pub struct Timer {
     last_tick: time::Instant,
@@ -16,14 +16,14 @@ impl Timer {
         let delta = tick - self.last_tick;
         self.last_tick = tick;
 
-        delta.as_seconds_f32()
+        delta.as_secs_f32()
     }
 
     pub fn peek(&self) -> f32 {
         let tick = time::Instant::now();
         let delta = tick - self.last_tick;
 
-        delta.as_seconds_f32()
+        delta.as_secs_f32()
     }
 
     pub fn reset(&mut self) {

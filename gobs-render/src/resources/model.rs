@@ -54,6 +54,12 @@ impl ModelResource {
 
         let (vertices, indices, primitives) = Self::compute_vertices(model.clone(), pass);
 
+        log::debug!(
+            "Upload {} vertices {} indices",
+            vertices.len(),
+            indices.len()
+        );
+
         let (vertex_buffer, index_buffer) = Self::upload_vertices(ctx, &vertices, &indices);
 
         Arc::new(Self {

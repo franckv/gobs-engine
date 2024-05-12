@@ -2,11 +2,12 @@ use std::{collections::HashMap, sync::Arc};
 
 use egui::{
     epaint::{ImageDelta, Primitive},
-    Event, FullOutput, Modifiers, PointerButton, RawInput, Rect, Rgba, TextureId,
+    Event, FullOutput, Modifiers, PointerButton, RawInput, Rect, TextureId,
 };
 use glam::{Vec2, Vec3};
 
 use gobs_core::Transform;
+use gobs_core::Color;
 use gobs_game::input::{Input, Key};
 use gobs_render::{
     batch::RenderBatch,
@@ -72,8 +73,6 @@ impl UIRenderer {
     where
         F: FnMut(&egui::Context),
     {
-        let frame_id = ctx.frame_id();
-
         let input = self.prepare_inputs(delta);
 
         let output = self.ectx.run(input, callback);
@@ -82,14 +81,14 @@ impl UIRenderer {
 
         let to_remove = output.textures_delta.free.clone();
 
-        let model_id = match &self.frame_data[frame_id].model {
+        let model_id = match &self.frame_data[ctx.frame_id()].model {
             Some(model) => Some(model.id),
             None => None,
         };
 
         let model = self.load_model(output, model_id);
 
-        self.frame_data[frame_id].model = Some(model);
+        self.frame_data[ctx.frame_id()].model = Some(model);
 
         self.cleanup_textures(to_remove);
     }
@@ -289,20 +288,24 @@ impl UIRenderer {
             model = model.id(model_id);
         }
 
+        log::debug!("Load {} primitives", primitives.len());
+
         for primitive in &primitives {
             if let Primitive::Mesh(m) = &primitive.primitive {
+                log::debug!("Primitive: {} vertices, {} indices", m.vertices.len(), m.indices.len());
+
                 let mut mesh = Mesh::builder("egui").indices(&m.indices);
 
                 for vertex in &m.vertices {
-                    let color = Rgba::from_srgba_premultiplied(
+                    let color = Color::from_rgba8(
                         vertex.color.r(),
                         vertex.color.g(),
                         vertex.color.b(),
                         vertex.color.a(),
                     );
                     let vertex_data = VertexData::builder()
-                        .position(Vec3::new(vertex.pos.x, self.height - vertex.pos.y, 0.))
-                        .color(color.to_array().into())
+                        .position(Vec3::new(vertex.pos.x.min(self.width), (self.height - vertex.pos.y).min(self.height), 0.))
+                        .color(color)
                         .texture(Vec2::new(vertex.uv.x, vertex.uv.y))
                         .normal(Vec3::new(0., 0., 1.))
                         .padding(true)
@@ -315,6 +318,8 @@ impl UIRenderer {
                     mesh.build(),
                     Some(self.font_texture.get(&m.texture_id).cloned().unwrap()),
                 );
+            } else {
+                log::error!("Primitive unknown");
             }
         }
 

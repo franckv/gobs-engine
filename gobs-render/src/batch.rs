@@ -110,11 +110,14 @@ impl RenderBatch {
         pass: Arc<dyn RenderPass>,
         transient: bool,
     ) {
+        log::debug!("Add model: {}", model.meshes.len());
+
         let resource = self
             .model_manager
             .add_model(ctx, model, pass.clone(), transient);
 
         for primitive in &resource.primitives {
+            log::debug!("Add {} indices", primitive.len);
             let material = match primitive.material {
                 Some(material) => Some(resource.model.materials[&material].clone()),
                 None => None,

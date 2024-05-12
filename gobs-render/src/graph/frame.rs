@@ -58,9 +58,13 @@ impl FrameData {
 
     pub fn reset(&mut self) {
         let cmd = &self.command_buffer;
-        cmd.fence.wait_and_reset();
-        debug_assert!(!cmd.fence.signaled());
 
+        if cmd.fence.signaled() {
+            cmd.fence.wait_and_reset();
+            debug_assert!(!cmd.fence.signaled());
+        } else {
+            log::warn!("Fence unsignaled");
+        }
         self.command_buffer.reset();
     }
 }

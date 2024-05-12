@@ -66,12 +66,12 @@ pub enum MaterialProperty {
 }
 
 pub struct MaterialBuilder {
-    pub vertex_shader: PathBuf,
-    pub fragment_shader: PathBuf,
-    pub vertex_flags: VertexFlag,
-    pub cull_mode: CullMode,
-    pub blend_mode: BlendMode,
-    pub material_descriptor_layout: Option<DescriptorSetLayoutBuilder>,
+    vertex_shader: PathBuf,
+    fragment_shader: PathBuf,
+    vertex_flags: VertexFlag,
+    cull_mode: CullMode,
+    blend_mode: BlendMode,
+    material_descriptor_layout: Option<DescriptorSetLayoutBuilder>,
 }
 
 impl MaterialBuilder {
@@ -98,6 +98,12 @@ impl MaterialBuilder {
 
     pub fn no_culling(mut self) -> Self {
         self.cull_mode = CullMode::None;
+
+        self
+    }
+
+    pub fn cull_mode(mut self, cull_mode: CullMode) -> Self {
+        self.cull_mode = cull_mode;
 
         self
     }
