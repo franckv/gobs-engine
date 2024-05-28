@@ -88,7 +88,7 @@ impl UIRenderer {
 
         let model = self.load_model(output, model_id);
 
-        self.frame_data[ctx.frame_id()].model = Some(model);
+        self.frame_data[ctx.frame_id()].model = model;
 
         self.cleanup_textures(to_remove);
     }
@@ -205,6 +205,7 @@ impl UIRenderer {
                 log::info!("Allocate new texture");
                 let texture = self.decode_texture(ctx, img).await;
                 self.font_texture.insert(*id, texture);
+                log::debug!("Texture loaded");
             }
         }
     }
@@ -279,16 +280,22 @@ impl UIRenderer {
         }
     }
 
-    fn load_model(&self, output: FullOutput, model_id: Option<ModelId>) -> Arc<Model> {
+    fn load_model(&self, output: FullOutput, model_id: Option<ModelId>) -> Option<Arc<Model>> {
+        log::debug!("Loading model");
+
         let primitives = self.ectx.tessellate(output.shapes, PIXEL_PER_POINT);
+
+        log::debug!("Load {} primitives", primitives.len());
+
+        if primitives.len() == 0 {
+            return None;
+        }
 
         let mut model = Model::builder("ui");
 
         if let Some(model_id) = model_id {
             model = model.id(model_id);
         }
-
-        log::debug!("Load {} primitives", primitives.len());
 
         for primitive in &primitives {
             if let Primitive::Mesh(m) = &primitive.primitive {
@@ -323,7 +330,7 @@ impl UIRenderer {
             }
         }
 
-        model.build()
+        Some(model.build())
     }
 }
 
