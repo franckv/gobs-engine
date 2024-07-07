@@ -6,8 +6,8 @@ use egui::{
 };
 use glam::{Vec2, Vec3};
 
-use gobs_core::Transform;
 use gobs_core::Color;
+use gobs_core::Transform;
 use gobs_game::input::{Input, Key};
 use gobs_render::{
     batch::RenderBatch,
@@ -299,7 +299,11 @@ impl UIRenderer {
 
         for primitive in &primitives {
             if let Primitive::Mesh(m) = &primitive.primitive {
-                log::debug!("Primitive: {} vertices, {} indices", m.vertices.len(), m.indices.len());
+                log::debug!(
+                    "Primitive: {} vertices, {} indices",
+                    m.vertices.len(),
+                    m.indices.len()
+                );
 
                 let mut mesh = Mesh::builder("egui").indices(&m.indices);
 
@@ -311,7 +315,11 @@ impl UIRenderer {
                         vertex.color.a(),
                     );
                     let vertex_data = VertexData::builder()
-                        .position(Vec3::new(vertex.pos.x.min(self.width), (self.height - vertex.pos.y).min(self.height), 0.))
+                        .position(Vec3::new(
+                            vertex.pos.x.min(self.width),
+                            (self.height - vertex.pos.y).min(self.height),
+                            0.,
+                        ))
                         .color(color)
                         .texture(Vec2::new(vertex.uv.x, vertex.uv.y))
                         .normal(Vec3::new(0., 0., 1.))

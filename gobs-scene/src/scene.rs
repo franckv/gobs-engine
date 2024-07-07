@@ -7,10 +7,8 @@ use gobs_core::{
 };
 use gobs_render::{batch::RenderBatch, context::Context, pass::RenderPass, renderable::Renderable};
 
-use crate::graph::{
-    node::{NodeId, NodeValue},
-    scenegraph::SceneGraph,
-};
+use crate::components::{NodeId, NodeValue};
+use crate::graph::scenegraph::SceneGraph;
 
 pub struct Scene {
     pub graph: SceneGraph,
@@ -49,7 +47,7 @@ impl Scene {
 
     pub fn camera(&self) -> (Transform, &Camera) {
         if let Some(node) = self.graph.get(self.camera) {
-            if let NodeValue::Camera(camera) = &node.value {
+            if let NodeValue::Camera(camera) = &node.base.value {
                 return (node.global_transform(), camera);
             }
         }
@@ -62,16 +60,16 @@ impl Scene {
         F: FnMut(&mut Transform, &mut Camera),
     {
         self.graph.update(self.camera, |node| {
-            if let NodeValue::Camera(ref mut camera) = node.value {
+            if let NodeValue::Camera(ref mut camera) = node.base.value {
                 f(&mut node.transform, camera);
-                node.updated = true;
+                node.base.updated = true;
             }
         });
     }
 
     pub fn light(&self) -> (Transform, &Light) {
         if let Some(node) = self.graph.get(self.light) {
-            if let NodeValue::Light(light) = &node.value {
+            if let NodeValue::Light(light) = &node.base.value {
                 return (node.global_transform(), light);
             }
         }
@@ -84,9 +82,9 @@ impl Scene {
         F: FnMut(&mut Transform, &mut Light),
     {
         self.graph.update(self.light, |node| {
-            if let NodeValue::Light(ref mut light) = node.value {
+            if let NodeValue::Light(ref mut light) = node.base.value {
                 f(&mut node.transform, light);
-                node.updated = true;
+                node.base.updated = true;
             }
         });
     }
@@ -98,10 +96,10 @@ impl Scene {
         batch: &mut RenderBatch,
     ) {
         self.graph.visit(self.graph.root, &mut |node| {
-            if let NodeValue::Model(_) = node.value {
+            if let NodeValue::Model(_) = node.base.value {
                 batch.add_bounds(
                     ctx,
-                    node.bounding_box,
+                    node.bounding.bounding_box,
                     node.global_transform(),
                     pass.clone(),
                 );
@@ -123,7 +121,7 @@ impl Renderable for Scene {
 
     fn draw(&mut self, ctx: &Context, pass: Arc<dyn RenderPass>, batch: &mut RenderBatch) {
         self.graph.visit(self.graph.root, &mut |node| {
-            if let NodeValue::Model(model) = &node.value {
+            if let NodeValue::Model(model) = &node.base.value {
                 batch.add_model(
                     ctx,
                     model.clone(),

@@ -16,7 +16,7 @@ use gobs::{
         pass::PassType,
         renderable::Renderable,
     },
-    scene::{graph::node::NodeValue, scene::Scene, shape::Shapes},
+    scene::{components::NodeValue, scene::Scene, shape::Shapes},
     ui::UIRenderer,
 };
 
@@ -75,7 +75,7 @@ impl Run for App {
             self.scene
                 .graph
                 .visit_update(self.scene.graph.root, &mut |node| {
-                    if let NodeValue::Model(_) = node.value {
+                    if let NodeValue::Model(_) = node.base.value {
                         node.update_transform(|transform| {
                             transform.rotate(Quat::from_axis_angle(
                                 Vec3::Y,
@@ -95,7 +95,7 @@ impl Run for App {
         self.scene.update(ctx, delta);
 
         self.common
-            .update_ui(ctx, &self.graph, &self.scene, &mut self.ui, delta, |_| {});
+            .update_ui(ctx, &self.graph, &self.scene, &mut self.ui, delta);
     }
 
     fn render(&mut self, ctx: &Context) -> Result<(), RenderError> {

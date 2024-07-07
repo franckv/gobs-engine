@@ -1,5 +1,6 @@
 mod app;
 mod controller;
+mod ui;
 
 use env_logger::Builder;
 

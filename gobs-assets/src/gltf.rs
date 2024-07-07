@@ -16,9 +16,9 @@ use gobs_render::{
     pass::RenderPass,
     BlendMode, ImageExtent2D, SamplerFilter,
 };
-use gobs_scene::graph::{
-    node::{NodeId, NodeValue},
-    scenegraph::SceneGraph,
+use gobs_scene::{
+    components::{NodeId, NodeValue},
+    graph::scenegraph::SceneGraph,
 };
 
 pub struct GLTFLoader {

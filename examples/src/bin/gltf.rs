@@ -14,7 +14,7 @@ use gobs::{
         renderable::Renderable,
     },
     scene::{
-        graph::node::{NodeId, NodeValue},
+        components::{NodeId, NodeValue},
         graph::scenegraph::SceneGraph,
         scene::Scene,
     },
@@ -87,11 +87,7 @@ impl Run for App {
         self.scene.update(ctx, delta);
 
         self.common
-            .update_ui(ctx, &self.graph, &self.scene, &mut self.ui, delta, |ui| {
-                ui.collapsing("GLTF", |ui| {
-                    ui.label(format!("Current scene: {}", self.current_scene));
-                });
-            });
+            .update_ui(ctx, &self.graph, &self.scene, &mut self.ui, delta);
     }
 
     fn render(&mut self, ctx: &Context) -> Result<(), RenderError> {
