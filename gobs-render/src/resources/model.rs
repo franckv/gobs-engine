@@ -159,7 +159,9 @@ impl ModelResource {
                 indices.len() - offset,
                 Some(*material_id),
             ));
-            vertex_offset += vertices.len() as u64;
+            vertex_offset = vertices.len() as u64;
+
+            log::trace!("Vertex offset: {}", vertex_offset);
         }
 
         (vertices, indices, primitives)
