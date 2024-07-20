@@ -1,13 +1,14 @@
 use std::{collections::HashMap, sync::Arc};
 
 use glam::{Vec2, Vec3};
+use serde::Serialize;
 use uuid::Uuid;
 
 use super::{Bounded, BoundingBox, VertexData};
 
 pub type MeshId = Uuid;
 
-#[derive(Debug)]
+#[derive(Debug, Serialize)]
 pub struct Mesh {
     pub id: MeshId,
     pub name: String,

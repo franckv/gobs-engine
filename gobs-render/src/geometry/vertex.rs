@@ -2,6 +2,7 @@ use bitflags::bitflags;
 use glam::{Vec2, Vec3};
 
 use gobs_core::Color;
+use serde::Serialize;
 
 const POS_SIZE: usize = 12;
 const COLOR_SIZE: usize = 16;
@@ -76,7 +77,7 @@ impl VertexFlag {
     }
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, Serialize)]
 pub struct VertexData {
     pub padding: bool,
     pub position: Vec3,

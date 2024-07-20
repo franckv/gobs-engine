@@ -1,5 +1,7 @@
 use std::sync::Arc;
 
+use renderdoc::{RenderDoc, V141};
+
 use gobs::{
     core::entity::camera::Camera,
     game::input::{Input, Key},
@@ -207,6 +209,13 @@ impl SampleApp {
             Input::KeyPressed(key) => match key {
                 Key::E => graph.render_scaling = (graph.render_scaling + 0.1).min(1.),
                 Key::A => graph.render_scaling = (graph.render_scaling - 0.1).max(0.1),
+                Key::R => {
+                    let rd: Result<RenderDoc<V141>, _> = RenderDoc::new();
+
+                    if let Ok(mut rd) = rd {
+                        rd.trigger_capture();
+                    }
+                }
                 Key::L => log::info!("{:?}", ctx.allocator.allocator.lock().unwrap()),
                 Key::P => self.process_updates = !self.process_updates,
                 Key::W => self.draw_wire = !self.draw_wire,

@@ -17,5 +17,7 @@ gpu-allocator = { workspace = true }
 image = { workspace = true }
 log = { workspace = true }
 parking_lot = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
 uuid = { workspace = true }
 winit = { workspace = true }

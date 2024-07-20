@@ -129,14 +129,21 @@ impl UiPass {
             batch.render_stats.cpu_draw_bind += timer.delta();
 
             if let Some(push_layout) = render_object.pass.push_layout() {
+                let vertex_buffer_address = render_object
+                    .model
+                    .vertex_buffer
+                    .address(ctx.device.clone());
+
+                log::trace!(
+                    "VBA: {} + {}",
+                    vertex_buffer_address,
+                    render_object.vertices_offset
+                );
+
                 model_data.clear();
                 push_layout.copy_data(
                     &[UniformPropData::U64(
-                        render_object
-                            .model
-                            .vertex_buffer
-                            .address(ctx.device.clone())
-                            + render_object.vertices_offset,
+                        vertex_buffer_address + render_object.vertices_offset,
                     )],
                     &mut model_data,
                 );

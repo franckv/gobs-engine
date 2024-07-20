@@ -3,9 +3,10 @@ use std::ops::{Add, Div, Mul};
 use bytemuck::{Pod, Zeroable};
 use glam::Vec3;
 use image::Rgba;
+use serde::Serialize;
 
 #[repr(C)]
-#[derive(Clone, Copy, Debug, PartialEq, Pod, Zeroable)]
+#[derive(Clone, Copy, Debug, PartialEq, Pod, Serialize, Zeroable)]
 pub struct Color {
     r: f32,
     g: f32,

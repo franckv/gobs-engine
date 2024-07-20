@@ -3,6 +3,7 @@ use std::collections::HashMap;
 use std::fmt::Debug;
 use std::sync::Arc;
 
+use serde::Serialize;
 use uuid::Uuid;
 
 use crate::geometry::{BoundingBox, Mesh};
@@ -12,10 +13,12 @@ use super::Bounded;
 
 pub type ModelId = Uuid;
 
+#[derive(Serialize)]
 pub struct Model {
     pub name: String,
     pub id: ModelId,
     pub meshes: Vec<(Arc<Mesh>, MaterialInstanceId)>,
+    #[serde(skip)]
     pub materials: HashMap<MaterialInstanceId, Arc<MaterialInstance>>,
 }
 
@@ -27,7 +30,9 @@ impl Model {
 
 impl Debug for Model {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "Model({})", self.name)
+        let json = serde_json::to_string(&self).unwrap();
+
+        write!(f, "Model: {}", json)
     }
 }
 

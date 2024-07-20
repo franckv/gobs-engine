@@ -93,6 +93,12 @@ impl UIRenderer {
         self.cleanup_textures(to_remove);
     }
 
+    pub fn dump_model(&self, ctx: &Context) {
+        if let Some(model) = self.frame_data[ctx.frame_id()].model.clone() {
+            log::warn!("Dump model: {:?}", model);
+        }
+    }
+
     fn get_key(key: Key) -> egui::Key {
         match key {
             Key::A => egui::Key::A,
@@ -280,7 +286,7 @@ impl UIRenderer {
         }
     }
 
-    fn load_model(&self, output: FullOutput, model_id: Option<ModelId>) -> Option<Arc<Model>> {
+    fn load_model(&mut self, output: FullOutput, model_id: Option<ModelId>) -> Option<Arc<Model>> {
         log::debug!("Loading model");
 
         let primitives = self.ectx.tessellate(output.shapes, PIXEL_PER_POINT);
