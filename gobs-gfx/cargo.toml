@@ -1,5 +1,5 @@
 [package]
-name = "gobs-render"
+name = "gobs-gfx"
 version = { workspace = true }
 authors = { workspace = true }
 edition = { workspace = true }
@@ -11,13 +11,18 @@ bytemuck = { workspace = true }
 futures = { workspace = true }
 glam = { workspace = true }
 gobs-core = { workspace = true }
-gobs-gfx = { workspace = true }
 gobs-utils = { workspace = true }
+gobs-vulkan = { workspace = true }
 gpu-allocator = { workspace = true }
 image = { workspace = true }
+indexmap = { workspace = true }
 log = { workspace = true }
 parking_lot = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 uuid = { workspace = true }
 winit = { workspace = true }
+
+[features]
+default = ["vulkan"]
+vulkan = []

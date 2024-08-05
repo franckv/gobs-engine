@@ -89,10 +89,7 @@ impl ShaderStage {
     }
 }
 
-pub type PipelineId = Uuid;
-
 pub struct Pipeline {
-    pub id: PipelineId,
     pub(crate) device: Arc<Device>,
     pub layout: Arc<PipelineLayout>,
     pub(crate) pipeline: vk::Pipeline,

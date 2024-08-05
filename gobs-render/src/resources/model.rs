@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use gobs_vulkan::buffer::{Buffer, BufferUsage};
+use gobs_gfx::{Buffer, BufferUsage, Command, Device, GfxBuffer};
 
 use crate::{
     context::Context,
@@ -43,8 +43,8 @@ impl Primitive {
 
 pub struct ModelResource {
     pub model: Arc<Model>,
-    pub index_buffer: Buffer,
-    pub vertex_buffer: Buffer,
+    pub index_buffer: GfxBuffer,
+    pub vertex_buffer: GfxBuffer,
     pub primitives: Vec<Primitive>,
 }
 
@@ -167,45 +167,33 @@ impl ModelResource {
         (vertices, indices, primitives)
     }
 
-    fn upload_vertices(ctx: &Context, vertices: &[u8], indices: &[u32]) -> (Buffer, Buffer) {
+    fn upload_vertices(ctx: &Context, vertices: &[u8], indices: &[u32]) -> (GfxBuffer, GfxBuffer) {
         let vertices_size = vertices.len();
         let indices_size = indices.len() * std::mem::size_of::<u32>();
 
-        let mut staging = Buffer::new(
+        let mut staging = GfxBuffer::new(
             "staging",
             indices_size + vertices_size,
             BufferUsage::Staging,
-            ctx.device.clone(),
-            ctx.allocator.clone(),
+            &ctx.device,
         );
 
-        let index_buffer = Buffer::new(
-            "index",
-            indices_size,
-            BufferUsage::Index,
-            ctx.device.clone(),
-            ctx.allocator.clone(),
-        );
-        let vertex_buffer = Buffer::new(
-            "vertex",
-            vertices_size,
-            BufferUsage::Vertex,
-            ctx.device.clone(),
-            ctx.allocator.clone(),
-        );
+        let index_buffer = GfxBuffer::new("index", indices_size, BufferUsage::Index, &ctx.device);
+        let vertex_buffer =
+            GfxBuffer::new("vertex", vertices_size, BufferUsage::Vertex, &ctx.device);
 
         staging.copy(&vertices, 0);
         staging.copy(&indices, vertices_size);
 
-        ctx.immediate_cmd.immediate(|cmd| {
+        ctx.device.run_immediate(|cmd| {
             cmd.begin_label("Upload buffer");
 
-            cmd.copy_buffer(&staging, &vertex_buffer, vertex_buffer.size, 0);
+            cmd.copy_buffer(&staging, &vertex_buffer, vertex_buffer.size(), 0);
             cmd.copy_buffer(
                 &staging,
                 &index_buffer,
-                index_buffer.size,
-                vertex_buffer.size,
+                index_buffer.size(),
+                vertex_buffer.size(),
             );
             cmd.end_label();
         });

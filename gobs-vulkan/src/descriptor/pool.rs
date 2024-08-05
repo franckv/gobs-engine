@@ -6,12 +6,12 @@ use crate::descriptor::{DescriptorSet, DescriptorSetLayout};
 use crate::device::Device;
 use crate::Wrap;
 
-const MAX_POOL_SETS: u32 = 1024;
+const MAX_POOL_SETS: usize = 1024;
 
 pub struct DescriptorSetPool {
     device: Arc<Device>,
-    descriptor_layout: Arc<DescriptorSetLayout>,
-    max_sets: u32,
+    pub descriptor_layout: Arc<DescriptorSetLayout>,
+    max_sets: usize,
     current_pool: vk::DescriptorPool,
     available_pools: Vec<vk::DescriptorPool>,
     full_pools: Vec<vk::DescriptorPool>,
@@ -21,7 +21,7 @@ impl DescriptorSetPool {
     pub fn new(
         device: Arc<Device>,
         descriptor_layout: Arc<DescriptorSetLayout>,
-        max_sets: u32,
+        max_sets: usize,
     ) -> Self {
         let current_pool = Self::allocate_pool(device.clone(), descriptor_layout.clone(), max_sets);
 
@@ -38,7 +38,7 @@ impl DescriptorSetPool {
     fn allocate_pool(
         device: Arc<Device>,
         descriptor_layout: Arc<DescriptorSetLayout>,
-        max_sets: u32,
+        max_sets: usize,
     ) -> vk::DescriptorPool {
         log::debug!("Alloc new pool (size={})", max_sets);
 
@@ -47,13 +47,13 @@ impl DescriptorSetPool {
             .iter()
             .map(|binding| vk::DescriptorPoolSize {
                 ty: binding.ty.into(),
-                descriptor_count: max_sets,
+                descriptor_count: max_sets as u32,
             })
             .collect();
 
         let pool_info = vk::DescriptorPoolCreateInfo::default()
             .pool_sizes(&pool_size)
-            .max_sets(max_sets);
+            .max_sets(max_sets as u32);
 
         unsafe {
             device
@@ -69,7 +69,7 @@ impl DescriptorSetPool {
         self.full_pools.push(self.current_pool);
 
         self.current_pool = self.available_pools.pop().unwrap_or_else(|| {
-            self.max_sets = MAX_POOL_SETS.min((self.max_sets as f32 * 1.5) as u32);
+            self.max_sets = MAX_POOL_SETS.min((self.max_sets as f32 * 1.5) as usize);
             Self::allocate_pool(
                 self.device.clone(),
                 self.descriptor_layout.clone(),
@@ -179,7 +179,7 @@ mod tests {
             .binding(DescriptorType::Uniform, DescriptorStage::Compute)
             .binding(DescriptorType::ImageSampler, DescriptorStage::Compute)
             .binding(DescriptorType::StorageImage, DescriptorStage::Compute)
-            .build(ctx.device.clone());
+            .build(ctx.device.clone(), false);
 
         // pool size: 4/6/9/13/19
         let mut pool = DescriptorSetPool::new(ctx.device.clone(), layout, 4);

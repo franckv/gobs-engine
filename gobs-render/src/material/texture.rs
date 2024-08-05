@@ -7,11 +7,11 @@ use image::{DynamicImage, GenericImage, GenericImageView, ImageBuffer};
 use uuid::Uuid;
 
 use gobs_core::color::Color;
-use gobs_utils::load::{self, AssetType};
-use gobs_vulkan::buffer::{Buffer, BufferUsage};
-use gobs_vulkan::image::{
-    Image, ImageExtent2D, ImageFormat, ImageLayout, ImageUsage, Sampler, SamplerFilter,
+use gobs_gfx::{
+    Buffer, BufferUsage, Command, Device, GfxBuffer, GfxImage, GfxSampler, Image, ImageExtent2D,
+    ImageFormat, ImageLayout, ImageUsage, Sampler, SamplerFilter,
 };
+use gobs_utils::load::{self, AssetType};
 
 use crate::context::Context;
 
@@ -56,16 +56,9 @@ impl Texture {
         mag_filter: SamplerFilter,
         min_filter: SamplerFilter,
     ) -> Self {
-        let image = Image::new(
-            name,
-            ctx.device.clone(),
-            format,
-            ImageUsage::Texture,
-            extent,
-            ctx.allocator.clone(),
-        );
+        let image = GfxImage::new(name, &ctx.device, format, ImageUsage::Texture, extent);
 
-        let sampler = Sampler::new(ctx.device.clone(), mag_filter, min_filter);
+        let sampler = Sampler::new(&ctx.device, mag_filter, min_filter);
 
         let mut texture_value = TextureValue {
             id: Uuid::new_v4(),
@@ -260,7 +253,7 @@ impl Texture {
         height: u32,
         data: &[u8],
     ) {
-        let extent = self.0.read().unwrap().image.extent;
+        let extent = self.0.read().unwrap().image.extent();
 
         {
             let new_data = &mut self.0.write().unwrap().data;
@@ -284,32 +277,31 @@ impl Texture {
 
 pub struct TextureValue {
     pub id: TextureId,
-    pub image: Image,
+    pub image: GfxImage,
     pub data: Vec<u8>,
     pub ty: TextureType,
-    pub sampler: Sampler,
+    pub sampler: GfxSampler,
 }
 
 impl TextureValue {
     fn upload_data(&mut self, ctx: &Context) {
-        let mut staging = Buffer::new(
+        let mut staging = GfxBuffer::new(
             "image staging",
             self.data.len(),
             BufferUsage::Staging,
-            ctx.device.clone(),
-            ctx.allocator.clone(),
+            &ctx.device,
         );
 
         staging.copy(&self.data, 0);
 
-        ctx.immediate_cmd.immediate_mut(|cmd| {
+        ctx.device.run_immediate_mut(|cmd| {
             cmd.begin_label("Upload image");
             cmd.transition_image_layout(&mut self.image, ImageLayout::TransferDst);
             cmd.copy_buffer_to_image(
                 &staging,
                 &self.image,
-                self.image.extent.width,
-                self.image.extent.height,
+                self.image.extent().width,
+                self.image.extent().height,
             );
             cmd.transition_image_layout(&mut self.image, ImageLayout::Shader);
             cmd.end_label();

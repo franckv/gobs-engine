@@ -1,9 +1,8 @@
 use std::fmt::Debug;
 use std::sync::Arc;
 
+use gobs_gfx::{GfxBindingGroup, GfxPipeline};
 use uuid::Uuid;
-
-use gobs_vulkan::{descriptor::DescriptorSet, pipeline::Pipeline};
 
 use crate::{
     geometry::VertexFlag,
@@ -15,25 +14,25 @@ pub type MaterialInstanceId = Uuid;
 pub struct MaterialInstance {
     pub id: MaterialInstanceId,
     pub material: Arc<Material>,
-    pub material_ds: Option<DescriptorSet>,
+    pub material_binding: Option<GfxBindingGroup>,
     pub textures: Vec<Texture>,
 }
 
 impl MaterialInstance {
     pub(crate) fn new(
         material: Arc<Material>,
-        material_ds: Option<DescriptorSet>,
+        material_binding: Option<GfxBindingGroup>,
         textures: Vec<Texture>,
     ) -> Arc<Self> {
         Arc::new(Self {
             id: Uuid::new_v4(),
             material,
-            material_ds,
+            material_binding,
             textures,
         })
     }
 
-    pub fn pipeline(&self) -> Arc<Pipeline> {
+    pub fn pipeline(&self) -> Arc<GfxPipeline> {
         self.material.pipeline.clone()
     }
 

@@ -57,7 +57,6 @@ impl ComputePipelineBuilder {
         let bind_point = vk::PipelineBindPoint::COMPUTE;
 
         Arc::new(Pipeline {
-            id: Uuid::new_v4(),
             device: device,
             layout: pipeline_layout,
             pipeline,

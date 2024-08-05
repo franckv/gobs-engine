@@ -2,7 +2,7 @@ use std::fmt::Debug;
 use std::sync::Arc;
 
 use ash::ext::debug_utils;
-use ash::khr::swapchain;
+use ash::khr::{push_descriptor, swapchain};
 use ash::vk::{
     self, PhysicalDeviceFeatures, PhysicalDeviceVulkan12Features, PhysicalDeviceVulkan13Features,
 };
@@ -18,6 +18,7 @@ pub struct Device {
     device: ash::Device,
     pub p_device: PhysicalDevice,
     pub(crate) debug_utils_device: debug_utils::Device,
+    pub(crate) push_descriptor_device: push_descriptor::Device,
 }
 
 impl Device {
@@ -32,7 +33,7 @@ impl Device {
             .queue_family_index(queue_family.index)
             .queue_priorities(&priorities);
 
-        let extensions = [swapchain::NAME.as_ptr()];
+        let extensions = [swapchain::NAME.as_ptr(), push_descriptor::NAME.as_ptr()];
 
         let features10 = PhysicalDeviceFeatures::default().fill_mode_non_solid(true);
         let mut features12 = PhysicalDeviceVulkan12Features::default()
@@ -59,11 +60,15 @@ impl Device {
 
         let debug_utils_device = debug_utils::Device::new(&instance.instance, &device);
 
+        let push_descriptor_device =
+            push_descriptor::Device::new(&instance.instance, &device);
+
         Arc::new(Device {
             instance,
             device,
             p_device,
             debug_utils_device,
+            push_descriptor_device,
         })
     }
 

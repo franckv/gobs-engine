@@ -1,20 +1,12 @@
-use std::{path::PathBuf, sync::Arc};
+use std::sync::Arc;
 
+use gobs_gfx::{
+    BindingGroupType, BlendMode, CompareOp, CullMode, DescriptorStage, DescriptorType,
+    DynamicStateElem, FrontFace, GfxDevice, GfxGraphicsPipelineBuilder, GfxPipeline, ImageLayout,
+    Pipeline, Rect2D, Viewport,
+};
 use parking_lot::RwLock;
 use uuid::Uuid;
-
-use gobs_utils::load;
-use gobs_vulkan::{
-    descriptor::{
-        DescriptorSetLayout, DescriptorSetLayoutBuilder, DescriptorSetPool, DescriptorStage,
-        DescriptorType,
-    },
-    image::ImageLayout,
-    pipeline::{
-        BlendMode, CompareOp, CullMode, DynamicStateElem, FrontFace, Pipeline, PipelineLayout,
-        Rect2D, Shader, ShaderType, Viewport,
-    },
-};
 
 use crate::{
     context::Context,
@@ -28,36 +20,33 @@ pub type MaterialId = Uuid;
 pub struct Material {
     pub id: MaterialId,
     pub vertex_flags: VertexFlag,
-    pub pipeline: Arc<Pipeline>,
+    pub pipeline: Arc<GfxPipeline>,
     pub blending_enabled: bool,
-    pub material_ds_pool: Option<RwLock<DescriptorSetPool>>,
 }
 
 impl Material {
-    pub fn builder(vertex_shader: &str, fragment_shader: &str) -> MaterialBuilder {
-        MaterialBuilder::new(vertex_shader, fragment_shader)
+    pub fn builder(ctx: &Context, vertex_shader: &str, fragment_shader: &str) -> MaterialBuilder {
+        MaterialBuilder::new(ctx, vertex_shader, fragment_shader)
     }
 
     pub fn instantiate(self: &Arc<Self>, textures: Vec<Texture>) -> Arc<MaterialInstance> {
-        let material_ds = match &self.material_ds_pool {
-            Some(ds_pool) => {
-                let material_ds = ds_pool.write().allocate();
-                let mut updater = material_ds.update();
-
+        let material_binding = match textures.is_empty() {
+            true => None,
+            false => {
+                let mut binding = self.pipeline.create_binding_group(BindingGroupType::MaterialData).unwrap();
+                let mut updater = binding.update();
                 for texture in &textures {
                     updater = updater
                         .bind_sampled_image(&texture.read().image, ImageLayout::Shader)
                         .bind_sampler(&texture.read().sampler);
                 }
-
                 updater.end();
 
-                Some(material_ds)
-            }
-            None => None,
+                Some(binding)
+            },
         };
 
-        MaterialInstance::new(self.clone(), material_ds, textures)
+        MaterialInstance::new(self.clone(), material_binding, textures)
     }
 }
 
@@ -66,27 +55,32 @@ pub enum MaterialProperty {
 }
 
 pub struct MaterialBuilder {
-    vertex_shader: PathBuf,
-    fragment_shader: PathBuf,
+    device: Arc<GfxDevice>,
     vertex_flags: VertexFlag,
-    cull_mode: CullMode,
     blend_mode: BlendMode,
-    material_descriptor_layout: Option<DescriptorSetLayoutBuilder>,
+    pipeline_builder: GfxGraphicsPipelineBuilder,
 }
 
 impl MaterialBuilder {
-    pub fn new(vertex_shader: &str, fragment_shader: &str) -> Self {
-        let vertex_shader = load::get_asset_dir(vertex_shader, load::AssetType::SHADER).unwrap();
-        let fragment_shader =
-            load::get_asset_dir(fragment_shader, load::AssetType::SHADER).unwrap();
+    pub fn new(ctx: &Context, vertex_shader: &str, fragment_shader: &str) -> Self {
+        let pipeline_builder = GfxPipeline::graphics(&ctx.device)
+            .vertex_shader(vertex_shader, "main")
+            .fragment_shader(fragment_shader, "main")
+            .pool_size(ctx.frames_in_flight + 1)
+            .viewports(vec![Viewport::new(0., 0., 0., 0.)])
+            .scissors(vec![Rect2D::new(0, 0, 0, 0)])
+            .dynamic_states(&vec![DynamicStateElem::Viewport, DynamicStateElem::Scissor])
+            .attachments(Some(ctx.color_format), Some(ctx.depth_format))
+            .depth_test_enable(false, CompareOp::LessEqual)
+            .front_face(FrontFace::CCW)
+            .binding_group(BindingGroupType::SceneData)
+            .binding(DescriptorType::Uniform, DescriptorStage::All);
 
         Self {
-            vertex_shader,
-            fragment_shader,
+            device: ctx.device.clone(),
             vertex_flags: VertexFlag::empty(),
-            cull_mode: CullMode::Back,
             blend_mode: BlendMode::None,
-            material_descriptor_layout: None,
+            pipeline_builder,
         }
     }
 
@@ -97,95 +91,56 @@ impl MaterialBuilder {
     }
 
     pub fn no_culling(mut self) -> Self {
-        self.cull_mode = CullMode::None;
+        self.pipeline_builder = self.pipeline_builder.cull_mode(CullMode::None);
 
         self
     }
 
     pub fn cull_mode(mut self, cull_mode: CullMode) -> Self {
-        self.cull_mode = cull_mode;
+        self.pipeline_builder = self.pipeline_builder.cull_mode(cull_mode);
 
         self
     }
 
     pub fn blend_mode(mut self, blend_mode: BlendMode) -> Self {
+        self.pipeline_builder = self.pipeline_builder.blending_enabled(blend_mode);
         self.blend_mode = blend_mode;
 
         self
     }
 
     pub fn prop(mut self, _name: &str, prop: MaterialProperty) -> Self {
-        let mut builder = match self.material_descriptor_layout {
-            Some(builder) => builder,
-            None => DescriptorSetLayout::builder(),
-        };
+        if self.pipeline_builder.current_binding_group() != Some(BindingGroupType::MaterialData) {
+            self.pipeline_builder = self
+                .pipeline_builder
+                .binding_group(BindingGroupType::MaterialData);
+        }
 
         match prop {
             MaterialProperty::Texture => {
-                builder = builder.binding(DescriptorType::SampledImage, DescriptorStage::Fragment);
-                builder = builder.binding(DescriptorType::Sampler, DescriptorStage::Fragment);
+                self.pipeline_builder = self
+                    .pipeline_builder
+                    .binding(DescriptorType::SampledImage, DescriptorStage::Fragment)
+                    .binding(DescriptorType::Sampler, DescriptorStage::Fragment);
             }
         }
-
-        self.material_descriptor_layout = Some(builder);
 
         self
     }
 
-    pub fn build(self, ctx: &Context, pass: Arc<dyn RenderPass>) -> Arc<Material> {
-        let scene_descriptor_layout = DescriptorSetLayout::builder()
-            .binding(DescriptorType::Uniform, DescriptorStage::All)
-            .build(ctx.device.clone());
+    pub fn build(self, pass: Arc<dyn RenderPass>) -> Arc<Material> {
+        let pipeline_builder = match pass.push_layout() {
+            Some(push_layout) => self.pipeline_builder.push_constants(push_layout.size()),
+            None => self.pipeline_builder,
+        };
 
-        let material_descriptor_layout = self
-            .material_descriptor_layout
-            .map(|builder| builder.build(ctx.device.clone()));
-
-        let mut ds_layouts = vec![scene_descriptor_layout.clone()];
-        if let Some(ref material_layout) = material_descriptor_layout {
-            ds_layouts.push(material_layout.clone());
-        }
-
-        let pipeline_layout = PipelineLayout::new(
-            ctx.device.clone(),
-            &ds_layouts,
-            match pass.push_layout() {
-                Some(push_layout) => push_layout.size(),
-                None => 0,
-            },
-        );
-
-        let vertex_shader =
-            Shader::from_file(self.vertex_shader, ctx.device.clone(), ShaderType::Vertex);
-        let fragment_shader = Shader::from_file(
-            self.fragment_shader,
-            ctx.device.clone(),
-            ShaderType::Fragment,
-        );
-
-        let pipeline = Pipeline::graphics_builder(ctx.device.clone())
-            .layout(pipeline_layout.clone())
-            .vertex_shader("main", vertex_shader)
-            .fragment_shader("main", fragment_shader)
-            .viewports(vec![Viewport::new(0., 0., 0., 0.)])
-            .scissors(vec![Rect2D::new(0, 0, 0, 0)])
-            .dynamic_states(&vec![DynamicStateElem::Viewport, DynamicStateElem::Scissor])
-            .attachments(Some(ctx.color_format), Some(ctx.depth_format))
-            .depth_test_enable(false, CompareOp::LessEqual)
-            .cull_mode(self.cull_mode)
-            .blending_enabled(self.blend_mode)
-            .front_face(FrontFace::CCW)
-            .build();
-
-        let material_ds_pool = material_descriptor_layout
-            .map(|ds_layout| RwLock::new(DescriptorSetPool::new(ctx.device.clone(), ds_layout, 1)));
+        let pipeline = pipeline_builder.build();
 
         Arc::new(Material {
             id: Uuid::new_v4(),
             vertex_flags: self.vertex_flags,
             pipeline,
             blending_enabled: self.blend_mode != BlendMode::None,
-            material_ds_pool,
         })
     }
 }

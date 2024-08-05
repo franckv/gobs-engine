@@ -85,7 +85,7 @@ struct DynamicStates {
 }
 
 impl DynamicStates {
-    fn new(states: &Vec<DynamicStateElem>) -> Self {
+    fn new(states: &[DynamicStateElem]) -> Self {
         DynamicStates {
             dynamic_states: states
                 .iter()
@@ -513,7 +513,7 @@ impl GraphicsPipelineBuilder {
         self
     }
 
-    pub fn dynamic_states(mut self, states: &Vec<DynamicStateElem>) -> Self {
+    pub fn dynamic_states(mut self, states: &[DynamicStateElem]) -> Self {
         self.dynamic_states = Some(DynamicStates::new(states));
 
         self
@@ -664,7 +664,6 @@ impl GraphicsPipelineBuilder {
         };
 
         Arc::new(Pipeline {
-            id: Uuid::new_v4(),
             device: device,
             layout: pipeline_layout,
             pipeline,

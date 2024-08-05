@@ -4,13 +4,9 @@ use gobs_core::{
     entity::{camera::Camera, light::Light, uniform::UniformLayout},
     Transform,
 };
-use gobs_utils::load;
-use gobs_vulkan::{
-    descriptor::{
-        DescriptorSet, DescriptorSetLayout, DescriptorSetPool, DescriptorStage, DescriptorType,
-    },
-    image::{ImageExtent2D, ImageLayout},
-    pipeline::{Pipeline, PipelineLayout, Shader, ShaderType},
+use gobs_gfx::{
+    BindingGroupType, Command, DescriptorType, GfxBindingGroup, GfxCommand, GfxPipeline,
+    ImageExtent2D, ImageLayout, Pipeline,
 };
 
 use crate::{
@@ -19,16 +15,15 @@ use crate::{
     geometry::VertexFlag,
     graph::{RenderError, ResourceManager},
     pass::{PassId, PassType, RenderPass},
-    CommandBuffer,
 };
 
 pub(crate) struct FrameData {
-    pub draw_ds: DescriptorSet,
+    pub draw_bindings: GfxBindingGroup,
 }
 
 impl FrameData {
-    pub fn new(draw_ds: DescriptorSet) -> Self {
-        FrameData { draw_ds }
+    pub fn new(draw_bindings: GfxBindingGroup) -> Self {
+        FrameData { draw_bindings }
     }
 }
 
@@ -38,32 +33,28 @@ pub struct ComputePass {
     ty: PassType,
     attachments: Vec<String>,
     frame_data: Vec<FrameData>,
-    _draw_ds_pool: DescriptorSetPool,
-    pub pipeline: Arc<Pipeline>,
+    pub pipeline: Arc<GfxPipeline>,
 }
 
 impl ComputePass {
     pub fn new(ctx: &Context, name: &str) -> Arc<dyn RenderPass> {
-        let _draw_ds_layout = DescriptorSetLayout::builder()
-            .binding(DescriptorType::StorageImage, DescriptorStage::Compute)
-            .build(ctx.device.clone());
-        let mut _draw_ds_pool =
-            DescriptorSetPool::new(ctx.device.clone(), _draw_ds_layout.clone(), 10);
+        let pipeline_builder = GfxPipeline::compute(&ctx.device);
+
+        let pipeline = pipeline_builder
+            .shader("sky.comp.spv", "main")
+            .binding_group(BindingGroupType::ComputeData)
+            .binding(DescriptorType::StorageImage)
+            .build();
 
         let frame_data = (0..ctx.frames_in_flight)
-            .map(|_| FrameData::new(_draw_ds_pool.allocate()))
+            .map(|_| {
+                FrameData::new(
+                    pipeline
+                        .create_binding_group(BindingGroupType::ComputeData)
+                        .unwrap(),
+                )
+            })
             .collect();
-
-        let compute_file = load::get_asset_dir("sky.comp.spv", load::AssetType::SHADER).unwrap();
-        let compute_shader =
-            Shader::from_file(compute_file, ctx.device.clone(), ShaderType::Compute);
-
-        let pipeline_layout =
-            PipelineLayout::new(ctx.device.clone(), &[_draw_ds_layout.clone()], 0);
-        let pipeline = Pipeline::compute_builder(ctx.device.clone())
-            .layout(pipeline_layout.clone())
-            .compute_shader("main", compute_shader)
-            .build();
 
         Arc::new(Self {
             id: PassId::new_v4(),
@@ -71,7 +62,6 @@ impl ComputePass {
             ty: PassType::Compute,
             attachments: vec![String::from("draw")],
             frame_data,
-            _draw_ds_pool,
             pipeline,
         })
     }
@@ -102,7 +92,7 @@ impl RenderPass for ComputePass {
         false
     }
 
-    fn pipeline(&self) -> Option<Arc<Pipeline>> {
+    fn pipeline(&self) -> Option<Arc<GfxPipeline>> {
         Some(self.pipeline.clone())
     }
 
@@ -131,7 +121,7 @@ impl RenderPass for ComputePass {
     fn render(
         &self,
         ctx: &Context,
-        cmd: &CommandBuffer,
+        cmd: &GfxCommand,
         resource_manager: &ResourceManager,
         batch: &mut RenderBatch,
         draw_extent: ImageExtent2D,
@@ -142,9 +132,9 @@ impl RenderPass for ComputePass {
         let draw_attach = &self.attachments[0];
 
         let frame_id = ctx.frame_id();
-        let draw_ds = &self.frame_data[frame_id].draw_ds;
+        let draw_bindings = &self.frame_data[frame_id].draw_bindings;
 
-        draw_ds
+        draw_bindings
             .update()
             .bind_image(
                 &resource_manager.image_read(draw_attach),
@@ -160,7 +150,7 @@ impl RenderPass for ComputePass {
         );
 
         cmd.bind_pipeline(&self.pipeline);
-        cmd.bind_descriptor_set(&draw_ds, 0, &self.pipeline);
+        cmd.bind_resource(&draw_bindings);
         batch.stats_mut().binds += 2;
 
         cmd.dispatch(draw_extent.width / 16 + 1, draw_extent.height / 16 + 1, 1);

@@ -70,11 +70,11 @@ impl DescriptorSetLayoutBuilder {
         self
     }
 
-    pub fn build(mut self, device: Arc<Device>) -> Arc<DescriptorSetLayout> {
+    pub fn build(mut self, device: Arc<Device>, push: bool) -> Arc<DescriptorSetLayout> {
         let mut bindings = Vec::new();
         bindings.append(&mut self.bindings);
 
-        DescriptorSetLayout::new(device, bindings)
+        DescriptorSetLayout::new(device, bindings, push)
     }
 }
 
@@ -90,7 +90,11 @@ impl DescriptorSetLayout {
         DescriptorSetLayoutBuilder::new()
     }
 
-    fn new(device: Arc<Device>, bindings: Vec<DescriptorSetLayoutBinding>) -> Arc<Self> {
+    fn new(
+        device: Arc<Device>,
+        bindings: Vec<DescriptorSetLayoutBinding>,
+        push: bool,
+    ) -> Arc<Self> {
         let vk_bindings: Vec<vk::DescriptorSetLayoutBinding> = bindings
             .iter()
             .enumerate()
@@ -104,14 +108,13 @@ impl DescriptorSetLayout {
             })
             .collect();
 
-        let descriptor_info = vk::DescriptorSetLayoutCreateInfo {
-            s_type: vk::StructureType::DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
-            p_next: ptr::null(),
-            flags: Default::default(),
-            binding_count: vk_bindings.len() as u32,
-            p_bindings: vk_bindings.as_ptr(),
-            _marker: std::marker::PhantomData,
-        };
+        let mut descriptor_info =
+            vk::DescriptorSetLayoutCreateInfo::default().bindings(&vk_bindings);
+
+        if push {
+            descriptor_info =
+                descriptor_info.flags(vk::DescriptorSetLayoutCreateFlags::PUSH_DESCRIPTOR_KHR);
+        }
 
         let layout = unsafe {
             device
