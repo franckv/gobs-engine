@@ -1,5 +1,3 @@
-#![feature(variant_count)]
-
 mod backend;
 mod frontend;
 
@@ -8,8 +6,8 @@ pub use backend::{
     GfxGraphicsPipelineBuilder, GfxImage, GfxInstance, GfxPipeline, GfxSampler,
 };
 pub use frontend::{
-    BindingGroupType, Buffer, Command, Device, Display, Image, Instance, Pipeline, PipelineId,
-    Sampler,
+    BindingGroupType, Buffer, Command, Device, Display, DisplayType, Image, Instance, Pipeline,
+    PipelineId, Sampler,
 };
 
 use gobs_vulkan as vk;

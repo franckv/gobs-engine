@@ -50,9 +50,9 @@ impl WirePass {
             .prop("view_proj", UniformProp::Mat4F)
             .build();
 
-        let pipeline = GfxPipeline::graphics(&ctx.device)
+        let pipeline = GfxPipeline::graphics(name, &ctx.device)
             .vertex_shader("wire.vert.spv", "main")
-            .fragment_shader("wire.vert.spv", "main")
+            .fragment_shader("wire.frag.spv", "main")
             .pool_size(ctx.frames_in_flight)
             .push_constants(push_layout.size())
             .binding_group(BindingGroupType::SceneData)
@@ -68,12 +68,7 @@ impl WirePass {
             .build();
 
         let frame_data = (0..ctx.frames_in_flight)
-            .map(|_| {
-                FrameData::new(
-                    ctx,
-                    uniform_data_layout.clone(),
-                )
-            })
+            .map(|_| FrameData::new(ctx, uniform_data_layout.clone()))
             .collect();
 
         Arc::new(Self {

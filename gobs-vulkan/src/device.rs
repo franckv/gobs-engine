@@ -60,8 +60,7 @@ impl Device {
 
         let debug_utils_device = debug_utils::Device::new(&instance.instance, &device);
 
-        let push_descriptor_device =
-            push_descriptor::Device::new(&instance.instance, &device);
+        let push_descriptor_device = push_descriptor::Device::new(&instance.instance, &device);
 
         Arc::new(Device {
             instance,

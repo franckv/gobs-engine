@@ -38,7 +38,7 @@ pub struct ComputePass {
 
 impl ComputePass {
     pub fn new(ctx: &Context, name: &str) -> Arc<dyn RenderPass> {
-        let pipeline_builder = GfxPipeline::compute(&ctx.device);
+        let pipeline_builder = GfxPipeline::compute(name, &ctx.device);
 
         let pipeline = pipeline_builder
             .shader("sky.comp.spv", "main")

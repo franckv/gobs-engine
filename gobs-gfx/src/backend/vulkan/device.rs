@@ -5,7 +5,8 @@ use anyhow::Result;
 use gobs_vulkan as vk;
 
 use crate::{
-    backend::vulkan::{GfxCommand, VkCommand, VkDisplay, VkInstance},
+    backend::vulkan::{GfxCommand, VkCommand, VkInstance},
+    frontend::display::DisplayType,
     Device,
 };
 
@@ -13,25 +14,25 @@ pub struct VkDevice {
     pub(crate) device: Arc<vk::device::Device>,
     pub(crate) queue: Arc<vk::queue::Queue>,
     immediate_cmd: VkCommand,
-    pub(crate) allocator: Arc<vk::alloc::Allocator>,
+    pub allocator: Arc<vk::alloc::Allocator>,
 }
 
 impl Device for VkDevice {
-    fn new(instance: Arc<VkInstance>, display: Arc<VkDisplay>) -> Result<Arc<Self>>
+    fn new(instance: Arc<VkInstance>, display: &DisplayType) -> Result<Arc<Self>>
     where
         Self: Sized,
     {
-        let (physical_device, queue_family) = match &display.surface {
-            Some(surface) => {
-                let physical_device = instance.instance.find_adapter(&surface);
+        let (physical_device, queue_family) = match display {
+            DisplayType::VideoDisplay(display) => {
+                let physical_device = instance.instance.find_adapter(&display.surface);
                 let queue_family = instance
                     .instance
-                    .find_family(&physical_device, &surface)
+                    .find_family(&physical_device, &display.surface)
                     .expect("Cannot find queue family");
 
                 (physical_device, queue_family)
             }
-            None => {
+            DisplayType::NullDisplay => {
                 let physical_device = instance.instance.find_headless_adapter();
                 let queue_family = instance
                     .instance
@@ -115,5 +116,9 @@ impl Device for VkDevice {
 
         cmd.fence.wait();
         log::debug!("Immediate command done");
+    }
+
+    fn wait(&self) {
+        self.device.wait();
     }
 }

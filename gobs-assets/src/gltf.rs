@@ -9,12 +9,13 @@ use gltf::{
 };
 
 use gobs_core::{Color, Transform};
+use gobs_gfx::SamplerFilter;
 use gobs_render::{
     context::Context,
     geometry::{Mesh, Model, VertexData, VertexFlag},
     material::{Material, MaterialInstance, MaterialProperty, Texture, TextureType},
     pass::RenderPass,
-    BlendMode, ImageExtent2D, SamplerFilter,
+    BlendMode, ImageExtent2D,
 };
 use gobs_scene::{
     components::{NodeId, NodeValue},
@@ -209,31 +210,32 @@ impl MaterialManager {
             | VertexFlag::TANGENT
             | VertexFlag::BITANGENT;
 
-        let texture = Material::builder("gltf.texture.vert.spv", "gltf.texture.frag.spv")
+        let texture = Material::builder(ctx, "gltf.texture.vert.spv", "gltf.texture.frag.spv")
             .vertex_flags(vertex_flags)
             .prop("diffuse", MaterialProperty::Texture)
-            .build(ctx, pass.clone());
+            .build(pass.clone());
 
         let transparent_texture =
-            Material::builder("gltf.texture.vert.spv", "gltf.texture.frag.spv")
+            Material::builder(ctx, "gltf.texture.vert.spv", "gltf.texture.frag.spv")
                 .vertex_flags(vertex_flags)
                 .prop("diffuse", MaterialProperty::Texture)
                 .blend_mode(BlendMode::Alpha)
-                .build(ctx, pass.clone());
+                .build(pass.clone());
 
-        let texture_normal = Material::builder("gltf.texture.vert.spv", "gltf.texture_n.frag.spv")
-            .vertex_flags(vertex_flags)
-            .prop("diffuse", MaterialProperty::Texture)
-            .prop("normal", MaterialProperty::Texture)
-            .build(ctx, pass.clone());
+        let texture_normal =
+            Material::builder(ctx, "gltf.texture.vert.spv", "gltf.texture_n.frag.spv")
+                .vertex_flags(vertex_flags)
+                .prop("diffuse", MaterialProperty::Texture)
+                .prop("normal", MaterialProperty::Texture)
+                .build(pass.clone());
 
         let transparent_texture_normal =
-            Material::builder("gltf.texture.vert.spv", "gltf.texture_n.frag.spv")
+            Material::builder(ctx, "gltf.texture.vert.spv", "gltf.texture_n.frag.spv")
                 .vertex_flags(vertex_flags)
                 .prop("diffuse", MaterialProperty::Texture)
                 .prop("normal", MaterialProperty::Texture)
                 .blend_mode(BlendMode::Alpha)
-                .build(ctx, pass.clone());
+                .build(pass.clone());
 
         let vertex_flags = VertexFlag::POSITION
             | VertexFlag::COLOR
@@ -241,15 +243,22 @@ impl MaterialManager {
             | VertexFlag::TANGENT
             | VertexFlag::BITANGENT;
 
-        let color = Material::builder("gltf.color_light.vert.spv", "gltf.color_light.frag.spv")
-            .vertex_flags(vertex_flags)
-            .build(ctx, pass.clone());
+        let color = Material::builder(
+            ctx,
+            "gltf.color_light.vert.spv",
+            "gltf.color_light.frag.spv",
+        )
+        .vertex_flags(vertex_flags)
+        .build(pass.clone());
 
-        let transparent_color =
-            Material::builder("gltf.color_light.vert.spv", "gltf.color_light.frag.spv")
-                .vertex_flags(vertex_flags)
-                .blend_mode(BlendMode::Alpha)
-                .build(ctx, pass.clone());
+        let transparent_color = Material::builder(
+            ctx,
+            "gltf.color_light.vert.spv",
+            "gltf.color_light.frag.spv",
+        )
+        .vertex_flags(vertex_flags)
+        .blend_mode(BlendMode::Alpha)
+        .build(pass.clone());
 
         let default_material_instance = texture
             .clone()

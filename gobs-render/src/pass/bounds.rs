@@ -50,7 +50,7 @@ impl BoundsPass {
             .prop("view_proj", UniformProp::Mat4F)
             .build();
 
-        let pipeline_builder = GfxPipeline::graphics(&ctx.device);
+        let pipeline_builder = GfxPipeline::graphics(name, &ctx.device);
 
         let pipeline = pipeline_builder
             .vertex_shader("wire.vert.spv", "main")
@@ -70,12 +70,7 @@ impl BoundsPass {
             .build();
 
         let frame_data = (0..ctx.frames_in_flight)
-            .map(|_| {
-                FrameData::new(
-                    ctx,
-                    uniform_data_layout.clone(),
-                )
-            })
+            .map(|_| FrameData::new(ctx, uniform_data_layout.clone()))
             .collect();
 
         Arc::new(Self {

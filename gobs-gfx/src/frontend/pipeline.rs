@@ -11,9 +11,10 @@ use crate::{
 pub type PipelineId = Uuid;
 
 pub trait Pipeline {
+    fn name(&self) -> &str;
     fn id(&self) -> PipelineId;
-    fn graphics(device: &GfxDevice) -> GfxGraphicsPipelineBuilder;
-    fn compute(device: &GfxDevice) -> GfxComputePipelineBuilder;
+    fn graphics(name: &str, device: &GfxDevice) -> GfxGraphicsPipelineBuilder;
+    fn compute(name: &str, device: &GfxDevice) -> GfxComputePipelineBuilder;
     fn create_binding_group(self: &Arc<Self>, ty: BindingGroupType) -> Result<GfxBindingGroup>;
     fn reset_binding_group(self: &Arc<Self>, ty: BindingGroupType);
 }

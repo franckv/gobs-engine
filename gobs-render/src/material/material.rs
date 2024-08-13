@@ -2,10 +2,9 @@ use std::sync::Arc;
 
 use gobs_gfx::{
     BindingGroupType, BlendMode, CompareOp, CullMode, DescriptorStage, DescriptorType,
-    DynamicStateElem, FrontFace, GfxDevice, GfxGraphicsPipelineBuilder, GfxPipeline, ImageLayout,
-    Pipeline, Rect2D, Viewport,
+    DynamicStateElem, FrontFace, GfxGraphicsPipelineBuilder, GfxPipeline, ImageLayout, Pipeline,
+    Rect2D, Viewport,
 };
-use parking_lot::RwLock;
 use uuid::Uuid;
 
 use crate::{
@@ -33,7 +32,10 @@ impl Material {
         let material_binding = match textures.is_empty() {
             true => None,
             false => {
-                let mut binding = self.pipeline.create_binding_group(BindingGroupType::MaterialData).unwrap();
+                let binding = self
+                    .pipeline
+                    .create_binding_group(BindingGroupType::MaterialData)
+                    .unwrap();
                 let mut updater = binding.update();
                 for texture in &textures {
                     updater = updater
@@ -43,7 +45,7 @@ impl Material {
                 updater.end();
 
                 Some(binding)
-            },
+            }
         };
 
         MaterialInstance::new(self.clone(), material_binding, textures)
@@ -55,7 +57,6 @@ pub enum MaterialProperty {
 }
 
 pub struct MaterialBuilder {
-    device: Arc<GfxDevice>,
     vertex_flags: VertexFlag,
     blend_mode: BlendMode,
     pipeline_builder: GfxGraphicsPipelineBuilder,
@@ -63,7 +64,7 @@ pub struct MaterialBuilder {
 
 impl MaterialBuilder {
     pub fn new(ctx: &Context, vertex_shader: &str, fragment_shader: &str) -> Self {
-        let pipeline_builder = GfxPipeline::graphics(&ctx.device)
+        let pipeline_builder = GfxPipeline::graphics("material", &ctx.device)
             .vertex_shader(vertex_shader, "main")
             .fragment_shader(fragment_shader, "main")
             .pool_size(ctx.frames_in_flight + 1)
@@ -77,7 +78,6 @@ impl MaterialBuilder {
             .binding(DescriptorType::Uniform, DescriptorStage::All);
 
         Self {
-            device: ctx.device.clone(),
             vertex_flags: VertexFlag::empty(),
             blend_mode: BlendMode::None,
             pipeline_builder,

@@ -111,11 +111,11 @@ impl Ui {
     pub fn show_memory(&mut self, ui: &mut egui::Ui, ctx: &Context) {
         ui.collapsing("Memory", |ui| {
             self.memory_visualiser
-                .render_breakdown_ui(ui, &ctx.allocator.allocator.lock().unwrap());
+                .render_breakdown_ui(ui, &ctx.device.allocator.allocator.lock().unwrap());
         });
         ui.collapsing("Memory blocks", |ui| {
             self.memory_visualiser
-                .render_memory_block_ui(ui, &ctx.allocator.allocator.lock().unwrap());
+                .render_memory_block_ui(ui, &ctx.device.allocator.allocator.lock().unwrap());
         });
     }
 

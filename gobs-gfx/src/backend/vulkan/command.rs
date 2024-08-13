@@ -2,7 +2,7 @@ use gobs_vulkan as vk;
 
 use crate::{
     backend::vulkan::{GfxImage, VkBindingGroup, VkBuffer, VkDevice, VkImage, VkPipeline},
-    Command,
+    Command, DisplayType,
 };
 use crate::{ImageExtent2D, ImageLayout};
 
@@ -12,13 +12,24 @@ pub struct VkCommand {
 
 impl Command for VkCommand {
     fn new(device: &VkDevice, name: &str) -> Self {
-        let command_pool = vk::command::CommandPool::new(device.device.clone(), &device.queue.family);
-        let command =
-            vk::command::CommandBuffer::new(device.device.clone(), device.queue.clone(), command_pool, name);
+        let command_pool =
+            vk::command::CommandPool::new(device.device.clone(), &device.queue.family);
+        let command = vk::command::CommandBuffer::new(
+            device.device.clone(),
+            device.queue.clone(),
+            command_pool,
+            name,
+        );
 
-        Self {
-            command
-        }
+        Self { command }
+    }
+
+    fn begin(&self) {
+        self.command.begin();
+    }
+
+    fn end(&self) {
+        self.command.end();
     }
 
     fn begin_label(&self, label: &str) {
@@ -35,7 +46,8 @@ impl Command for VkCommand {
     }
 
     fn copy_buffer_to_image(&self, src: &VkBuffer, dst: &VkImage, width: u32, height: u32) {
-        self.command.copy_buffer_to_image(&src.buffer, &dst.image, width, height);
+        self.command
+            .copy_buffer_to_image(&src.buffer, &dst.image, width, height);
     }
 
     fn begin_rendering(
@@ -68,6 +80,17 @@ impl Command for VkCommand {
             .transition_image_layout(&mut image.image, layout);
     }
 
+    fn copy_image_to_image(
+        &self,
+        src: &VkImage,
+        src_size: ImageExtent2D,
+        dst: &VkImage,
+        dst_size: ImageExtent2D,
+    ) {
+        self.command
+            .copy_image_to_image(&src.image, src_size, &dst.image, dst_size);
+    }
+
     fn push_constants(&self, pipeline: &VkPipeline, constants: &[u8]) {
         self.command
             .push_constants(pipeline.pipeline.layout.clone(), constants);
@@ -78,6 +101,7 @@ impl Command for VkCommand {
     }
 
     fn bind_pipeline(&self, pipeline: &VkPipeline) {
+        log::debug!("Binding pipeline {}", pipeline.name);
         self.command.bind_pipeline(&pipeline.pipeline);
     }
 
@@ -116,5 +140,14 @@ impl Command for VkCommand {
             log::warn!("Fence unsignaled");
         }
         self.command.reset();
+    }
+
+    fn submit2(&self, display: &DisplayType, frame: usize) {
+        if let DisplayType::VideoDisplay(display) = display {
+            log::trace!("Submit with semaphore {}", frame);
+            let swapchain_semaphore = Some(&display.swapchain_semaphores[frame]);
+            let render_semaphore = Some(&display.render_semaphores[frame]);
+            self.command.submit2(swapchain_semaphore, render_semaphore);
+        }
     }
 }

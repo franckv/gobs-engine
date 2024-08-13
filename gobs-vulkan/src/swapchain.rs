@@ -1,6 +1,7 @@
 use std;
 use std::sync::Arc;
 
+use anyhow::{bail, Result};
 use ash::khr::swapchain;
 use ash::vk;
 
@@ -62,8 +63,7 @@ impl SwapChain {
         image_count: usize,
         old_swapchain: Option<&SwapChain>,
     ) -> Self {
-        //TODO: let extent = surface.get_extent(device.clone());
-        let extent = surface.get_dimensions();
+        let extent = surface.get_extent(device.clone());
 
         let swapchain_info = vk::SwapchainCreateInfoKHR::default()
             .surface(surface.raw())
@@ -122,7 +122,7 @@ impl SwapChain {
         }
     }
 
-    pub fn acquire_image(&mut self, signal: &Semaphore) -> Result<usize, ()> {
+    pub fn acquire_image(&mut self, signal: &Semaphore) -> Result<usize> {
         unsafe {
             match self.loader.acquire_next_image(
                 self.swapchain,
@@ -131,13 +131,15 @@ impl SwapChain {
                 vk::Fence::null(),
             ) {
                 Ok((idx, _)) => Ok(idx as usize),
-                Err(vk::Result::SUBOPTIMAL_KHR) | Err(vk::Result::ERROR_OUT_OF_DATE_KHR) => Err(()),
+                Err(vk::Result::SUBOPTIMAL_KHR) | Err(vk::Result::ERROR_OUT_OF_DATE_KHR) => {
+                    bail!("Failed to acquire image")
+                }
                 _ => panic!("Unable to acquire swapchain"),
             }
         }
     }
 
-    pub fn present(&mut self, index: usize, queue: &Queue, wait: &Semaphore) -> Result<(), ()> {
+    pub fn present(&mut self, index: usize, queue: &Queue, wait: &Semaphore) -> Result<()> {
         let wait_semaphore = wait.raw();
         let image_indice = index as u32;
         let swapchains = self.swapchain;
@@ -150,7 +152,9 @@ impl SwapChain {
         unsafe {
             match self.loader.queue_present(queue.queue, &present_info) {
                 Ok(_) => Ok(()),
-                Err(vk::Result::SUBOPTIMAL_KHR) | Err(vk::Result::ERROR_OUT_OF_DATE_KHR) => Err(()),
+                Err(vk::Result::SUBOPTIMAL_KHR) | Err(vk::Result::ERROR_OUT_OF_DATE_KHR) => {
+                    bail!("Failed to present queue")
+                }
                 _ => panic!("Unable to present swapchain"),
             }
         }

@@ -9,6 +9,7 @@ use glam::{Vec2, Vec3};
 use gobs_core::Color;
 use gobs_core::Transform;
 use gobs_game::input::{Input, Key};
+use gobs_gfx::{Image, SamplerFilter};
 use gobs_render::{
     batch::RenderBatch,
     context::Context,
@@ -16,7 +17,7 @@ use gobs_render::{
     material::{Material, MaterialInstance, MaterialProperty, Texture, TextureType},
     pass::RenderPass,
     renderable::Renderable,
-    BlendMode, ImageExtent2D, SamplerFilter,
+    BlendMode, ImageExtent2D,
 };
 
 const PIXEL_PER_POINT: f32 = 1.;
@@ -40,18 +41,18 @@ impl UIRenderer {
     pub fn new(ctx: &Context, pass: Arc<dyn RenderPass>) -> Self {
         let ectx = egui::Context::default();
 
-        let (width, height): (f32, f32) = ctx.surface.get_extent(ctx.device.clone()).into();
+        let (width, height): (f32, f32) = ctx.display.get_extent(&ctx.device).into();
 
         ectx.set_pixels_per_point(PIXEL_PER_POINT);
 
         let vertex_flags = VertexFlag::POSITION | VertexFlag::COLOR | VertexFlag::TEXTURE;
 
-        let material = Material::builder("ui.vert.spv", "ui.frag.spv")
+        let material = Material::builder(ctx, "ui.vert.spv", "ui.frag.spv")
             .vertex_flags(vertex_flags)
             .prop("diffuse", MaterialProperty::Texture)
             .no_culling()
             .blend_mode(BlendMode::Premultiplied)
-            .build(ctx, pass);
+            .build(pass);
 
         let frame_data = (0..ctx.frames_in_flight)
             .map(|_| FrameData { model: None })
@@ -271,7 +272,7 @@ impl UIRenderer {
                 );
                 log::info!(
                     "Patching texture original size: {:?}",
-                    material.textures[0].read().image.extent
+                    material.textures[0].read().image.extent()
                 );
 
                 material.textures[0].patch(

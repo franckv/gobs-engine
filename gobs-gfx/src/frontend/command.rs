@@ -1,7 +1,12 @@
-use crate::{GfxBindingGroup, GfxBuffer, GfxDevice, GfxImage, GfxPipeline, ImageExtent2D, ImageLayout};
+use crate::{
+    DisplayType, GfxBindingGroup, GfxBuffer, GfxDevice, GfxImage, GfxPipeline, ImageExtent2D,
+    ImageLayout,
+};
 
 pub trait Command {
     fn new(device: &GfxDevice, name: &str) -> Self;
+    fn begin(&self);
+    fn end(&self);
     fn begin_label(&self, label: &str);
     fn end_label(&self);
     fn copy_buffer(&self, src: &GfxBuffer, dst: &GfxBuffer, size: usize, offset: usize);
@@ -18,6 +23,13 @@ pub trait Command {
     );
     fn end_rendering(&self);
     fn transition_image_layout(&self, image: &mut GfxImage, layout: ImageLayout);
+    fn copy_image_to_image(
+        &self,
+        src: &GfxImage,
+        src_size: ImageExtent2D,
+        dst: &GfxImage,
+        dst_size: ImageExtent2D,
+    );
     fn push_constants(&self, pipeline: &GfxPipeline, constants: &[u8]);
     fn set_viewport(&self, width: u32, height: u32);
     fn bind_pipeline(&self, pipeline: &GfxPipeline);
@@ -27,4 +39,5 @@ pub trait Command {
     fn dispatch(&self, x: u32, y: u32, z: u32);
     fn draw_indexed(&self, index_count: usize, instance_count: usize);
     fn reset(&mut self);
+    fn submit2(&self, display: &DisplayType, frame: usize);
 }

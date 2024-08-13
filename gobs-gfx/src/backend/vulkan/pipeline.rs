@@ -14,22 +14,27 @@ use crate::{
 };
 
 pub struct VkPipeline {
+    pub(crate) name: String,
     pub(crate) id: PipelineId,
     pub(crate) pipeline: Arc<vk::pipeline::Pipeline>,
     pub(crate) ds_pools: IndexMap<BindingGroupType, RwLock<vk::descriptor::DescriptorSetPool>>,
 }
 
 impl Pipeline for VkPipeline {
+    fn name(&self) -> &str {
+        &self.name
+    }
+
     fn id(&self) -> PipelineId {
         self.id
     }
 
-    fn graphics(device: &VkDevice) -> VkGraphicsPipelineBuilder {
-        VkGraphicsPipelineBuilder::new(device)
+    fn graphics(name: &str, device: &VkDevice) -> VkGraphicsPipelineBuilder {
+        VkGraphicsPipelineBuilder::new(name, device)
     }
 
-    fn compute(device: &VkDevice) -> VkComputePipelineBuilder {
-        VkComputePipelineBuilder::new(device)
+    fn compute(name: &str, device: &VkDevice) -> VkComputePipelineBuilder {
+        VkComputePipelineBuilder::new(name, device)
     }
 
     fn create_binding_group(self: &Arc<Self>, ty: BindingGroupType) -> Result<VkBindingGroup> {
@@ -45,7 +50,7 @@ impl Pipeline for VkPipeline {
             Err(anyhow::Error::msg("DS pool not found"))
         }
     }
-    
+
     fn reset_binding_group(self: &Arc<Self>, ty: BindingGroupType) {
         if let Some(ds_pool) = self.ds_pools.get(&ty) {
             ds_pool.write().reset();
@@ -54,6 +59,7 @@ impl Pipeline for VkPipeline {
 }
 
 pub struct VkGraphicsPipelineBuilder {
+    name: String,
     device: Arc<vk::device::Device>,
     builder: vk::pipeline::GraphicsPipelineBuilder,
     current_binding_group: Option<BindingGroupType>,
@@ -64,8 +70,9 @@ pub struct VkGraphicsPipelineBuilder {
 }
 
 impl VkGraphicsPipelineBuilder {
-    fn new(device: &VkDevice) -> Self {
+    fn new(name: &str, device: &VkDevice) -> Self {
         Self {
+            name: name.to_string(),
             device: device.device.clone(),
             builder: vk::pipeline::Pipeline::graphics_builder(device.device.clone()),
             current_binding_group: None,
@@ -116,7 +123,11 @@ impl VkGraphicsPipelineBuilder {
 
     fn save_binding_group(mut self) -> Self {
         if let Some(binding_group) = self.current_binding_group {
-            let ds_layout = self.current_ds_layout.unwrap().build(self.device.clone(), false);
+            let push = binding_group == BindingGroupType::SceneData;
+            let ds_layout = self
+                .current_ds_layout
+                .unwrap()
+                .build(self.device.clone(), push);
 
             let ds_pool = vk::descriptor::DescriptorSetPool::new(
                 self.device.clone(),
@@ -223,6 +234,8 @@ impl VkGraphicsPipelineBuilder {
     }
 
     pub fn build(mut self) -> Arc<VkPipeline> {
+        log::debug!("Creating pipeline: {}", self.name);
+
         self = self.save_binding_group();
 
         let ds_pools = self.ds_pools;
@@ -241,6 +254,7 @@ impl VkGraphicsPipelineBuilder {
         let pipeline = self.builder.layout(pipeline_layout).build();
 
         Arc::new(VkPipeline {
+            name: self.name,
             id: PipelineId::new_v4(),
             pipeline,
             ds_pools,
@@ -249,6 +263,7 @@ impl VkGraphicsPipelineBuilder {
 }
 
 pub struct VkComputePipelineBuilder {
+    name: String,
     device: Arc<vk::device::Device>,
     builder: vk::pipeline::ComputePipelineBuilder,
     current_binding_group: Option<BindingGroupType>,
@@ -259,8 +274,9 @@ pub struct VkComputePipelineBuilder {
 }
 
 impl VkComputePipelineBuilder {
-    fn new(device: &VkDevice) -> Self {
+    fn new(name: &str, device: &VkDevice) -> Self {
         Self {
+            name: name.to_string(),
             device: device.device.clone(),
             builder: vk::pipeline::Pipeline::compute_builder(device.device.clone()),
             current_binding_group: None,
@@ -286,7 +302,10 @@ impl VkComputePipelineBuilder {
 
     fn save_binding_group(mut self) -> Self {
         if let Some(binding_group) = self.current_binding_group {
-            let ds_layout = self.current_ds_layout.unwrap().build(self.device.clone(), false);
+            let ds_layout = self
+                .current_ds_layout
+                .unwrap()
+                .build(self.device.clone(), false);
 
             let ds_pool = vk::descriptor::DescriptorSetPool::new(
                 self.device.clone(),
@@ -342,6 +361,7 @@ impl VkComputePipelineBuilder {
         let pipeline = self.builder.layout(pipeline_layout).build();
 
         Arc::new(VkPipeline {
+            name: self.name,
             id: PipelineId::new_v4(),
             pipeline,
             ds_pools,

@@ -5,10 +5,8 @@ use winit::window::Window;
 
 use gobs_vulkan as vk;
 
-use crate::backend::vulkan::{VkImage, VkInstance};
-use crate::{Display, Image};
-
-use super::device::VkDevice;
+use crate::backend::vulkan::{VkDevice, VkImage, VkInstance};
+use crate::{Display, DisplayType, Image};
 
 pub struct VkDisplay {
     pub(crate) surface: Arc<vk::surface::Surface>,
@@ -20,7 +18,7 @@ pub struct VkDisplay {
 }
 
 impl Display for VkDisplay {
-    fn new(instance: Arc<VkInstance>, window: Option<Window>) -> Result<Arc<Self>>
+    fn new(instance: Arc<VkInstance>, window: Option<Window>) -> Result<DisplayType>
     where
         Self: Sized,
     {
@@ -29,7 +27,7 @@ impl Display for VkDisplay {
             window.unwrap(),
         )?);
 
-        Ok(Arc::new(Self {
+        Ok(DisplayType::VideoDisplay(Self {
             surface,
             swapchain: None,
             swapchain_images: Vec::new(),
@@ -39,7 +37,7 @@ impl Display for VkDisplay {
         }))
     }
 
-    fn init(&mut self, device: &VkDevice) {
+    fn init(&mut self, device: &VkDevice, frames_in_flight: usize) {
         let swapchain = Self::create_swapchain(self.surface.clone(), device.device.clone());
         self.swapchain_images = swapchain
             .create_images()
@@ -48,9 +46,7 @@ impl Display for VkDisplay {
             .collect();
         self.swapchain = Some(swapchain);
 
-        let n_images = self.swapchain_images.len();
-
-        for _ in 0..n_images {
+        for _ in 0..frames_in_flight {
             self.swapchain_semaphores
                 .push(vk::sync::Semaphore::new(device.device.clone(), "Swapchain"));
             self.render_semaphores
@@ -58,21 +54,60 @@ impl Display for VkDisplay {
         }
     }
 
-    fn get_extent(&self) -> vk::image::ImageExtent2D {
-            self.surface.get_dimensions()
+    fn get_extent(&self, device: &VkDevice) -> vk::image::ImageExtent2D {
+        self.surface.get_extent(device.device.clone())
     }
 
-    fn acquire(&mut self) -> Result<()> {
-        let semaphore = self.swapchain_semaphores[self.swapchain_idx];
-        let Ok(image_index) = self.swapchain.acquire_image(semaphore) else {
-            bail!("Fail to acquire swapchain");
-        };
+    fn get_render_target(&mut self) -> &mut VkImage {
+        &mut self.swapchain_images[self.swapchain_idx]
+    }
 
-        self.swapchain_idx = image_index;
+    fn acquire(&mut self, frame: usize) -> Result<()> {
+        if let Some(ref mut swapchain) = &mut self.swapchain {
+            log::trace!("Acquire with semaphore {}", frame);
+            let semaphore = &self.swapchain_semaphores[frame];
+            let Ok(image_index) = swapchain.acquire_image(semaphore) else {
+                bail!("Fail to acquire swapchain");
+            };
 
-        self.swapchain_images[image_index as usize].invalidate();
+            self.swapchain_idx = image_index;
+
+            self.swapchain_images[image_index as usize].invalidate();
+        }
 
         Ok(())
+    }
+
+    fn present(&mut self, device: &VkDevice, frame: usize) -> Result<()> {
+        if let Some(ref mut swapchain) = &mut self.swapchain {
+            swapchain.present(
+                self.swapchain_idx,
+                &device.queue,
+                &self.render_semaphores[frame],
+            )
+        } else {
+            bail!("Failed to present swapchain")
+        }
+    }
+
+    fn resize(&mut self, device: &VkDevice) {
+        if let Some(swapchain) = &self.swapchain {
+            self.swapchain = Some(vk::swapchain::SwapChain::new(
+                device.device.clone(),
+                self.surface.clone(),
+                swapchain.format,
+                swapchain.present,
+                swapchain.image_count,
+                Some(&swapchain),
+            ));
+        }
+        if let Some(swapchain) = &self.swapchain {
+            self.swapchain_images = swapchain
+                .create_images()
+                .into_iter()
+                .map(|image| VkImage::from_raw(image))
+                .collect();
+        }
     }
 }
 

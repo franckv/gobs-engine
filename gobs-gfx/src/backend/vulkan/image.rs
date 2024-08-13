@@ -38,9 +38,7 @@ impl Image for VkImage {
 
 impl VkImage {
     pub(crate) fn from_raw(image: vk::image::Image) -> Self {
-        Self {
-            image
-        }
+        Self { image }
     }
 }
 

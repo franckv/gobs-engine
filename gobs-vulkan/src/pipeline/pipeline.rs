@@ -1,7 +1,6 @@
 use std::{ffi::CString, sync::Arc};
 
 use ash::vk;
-use uuid::Uuid;
 
 use crate::device::Device;
 use crate::pipeline::PipelineLayout;
