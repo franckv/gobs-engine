@@ -40,7 +40,7 @@ where
 
         let window = event_loop.create_window(window_attributes).unwrap();
 
-        let context = Context::new(&self.title, window);
+        let context = Context::new(&self.title, Some(window));
         log::info!("Start main loop");
 
         let future = async {
@@ -80,7 +80,7 @@ where
                             physical_size.width,
                             physical_size.height
                         );
-                        runnable.resize(&context, physical_size.width, physical_size.height);
+                        runnable.resize(context, physical_size.width, physical_size.height);
                     }
                     /*WindowEvent::ScaleFactorChanged { new_inner_size, .. } => {
                         status = Event::Resize(new_inner_size.width, new_inner_size.height)
@@ -138,7 +138,7 @@ where
                         if !self.close_requested {
                             runnable.update(&context, delta);
                             log::trace!("[Redraw] FPS: {}", 1. / delta);
-                            match runnable.render(&context) {
+                            match runnable.render(context) {
                                 Ok(_) => {}
                                 Err(RenderError::Lost | RenderError::Outdated) => {}
                                 Err(e) => error!("{:?}", e),
@@ -174,7 +174,7 @@ where
 
     fn about_to_wait(&mut self, _event_loop: &winit::event_loop::ActiveEventLoop) {
         if let Some(context) = &mut self.context {
-            context.surface.window.request_redraw();
+            context.request_redraw();
         }
     }
 }
@@ -217,8 +217,8 @@ pub trait Run: Sized {
     async fn create(context: &Context) -> Self;
     async fn start(&mut self, ctx: &Context);
     fn update(&mut self, ctx: &Context, delta: f32);
-    fn render(&mut self, ctx: &Context) -> Result<(), RenderError>;
+    fn render(&mut self, ctx: &mut Context) -> Result<(), RenderError>;
     fn input(&mut self, ctx: &Context, input: Input);
-    fn resize(&mut self, ctx: &Context, width: u32, height: u32);
+    fn resize(&mut self, ctx: &mut Context, width: u32, height: u32);
     fn close(&mut self, ctx: &Context);
 }

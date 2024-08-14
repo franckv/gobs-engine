@@ -35,7 +35,7 @@ pub struct Surface {
 }
 
 impl Surface {
-    pub fn new(instance: Arc<Instance>, window: Window) -> Result<Arc<Self>> {
+    pub fn new(instance: Arc<Instance>, window: Window) -> Result<Self> {
         let surface = unsafe {
             ash_window::create_surface(
                 &instance.entry,
@@ -47,11 +47,11 @@ impl Surface {
             .unwrap()
         };
 
-        Ok(Arc::new(Surface {
+        Ok(Surface {
             instance: instance,
             window,
             surface,
-        }))
+        })
     }
 
     pub fn family_supported(&self, p_device: &PhysicalDevice, family: &QueueFamily) -> bool {
@@ -102,7 +102,7 @@ impl Surface {
         results
     }
 
-    pub fn get_capabilities(&self, device: Arc<Device>) -> SurfaceCapabilities {
+    pub fn get_capabilities(&self, device: &Device) -> SurfaceCapabilities {
         let capabilities = unsafe {
             self.instance
                 .surface_loader
@@ -128,7 +128,7 @@ impl Surface {
         ImageExtent2D::new(dim.width, dim.height)
     }
 
-    pub fn get_extent(&self, device: Arc<Device>) -> ImageExtent2D {
+    pub fn get_extent(&self, device: &Device) -> ImageExtent2D {
         let caps = self.get_capabilities(device);
         let dim = self.get_dimensions();
 

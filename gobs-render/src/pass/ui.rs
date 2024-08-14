@@ -1,5 +1,6 @@
 use std::sync::Arc;
 
+use gobs_gfx::{Buffer, Command, ImageExtent2D, ImageLayout, Pipeline, PipelineId};
 use gobs_utils::timer::Timer;
 
 use gobs_core::{
@@ -10,11 +11,6 @@ use gobs_core::{
     },
     Transform,
 };
-use gobs_vulkan::{
-    descriptor::{DescriptorSetLayout, DescriptorSetPool, DescriptorStage, DescriptorType},
-    image::{ImageExtent2D, ImageLayout},
-    pipeline::{Pipeline, PipelineId},
-};
 
 use crate::{
     batch::RenderBatch,
@@ -23,7 +19,7 @@ use crate::{
     graph::{RenderError, ResourceManager},
     material::MaterialInstanceId,
     pass::{FrameData, PassId, PassType, RenderPass},
-    CommandBuffer,
+    GfxCommand, GfxPipeline,
 };
 
 pub struct UiPass {
@@ -34,7 +30,6 @@ pub struct UiPass {
     color_clear: bool,
     push_layout: Arc<UniformLayout>,
     frame_data: Vec<FrameData>,
-    _uniform_ds_pool: DescriptorSetPool,
     uniform_data_layout: Arc<UniformLayout>,
 }
 
@@ -44,28 +39,12 @@ impl UiPass {
             .prop("vertex_buffer_address", UniformProp::U64)
             .build();
 
-        let uniform_descriptor_layout = DescriptorSetLayout::builder()
-            .binding(DescriptorType::Uniform, DescriptorStage::All)
-            .build(ctx.device.clone());
-
         let uniform_data_layout = UniformLayout::builder()
             .prop("screen_size", UniformProp::Vec2F)
             .build();
 
-        let mut _uniform_ds_pool = DescriptorSetPool::new(
-            ctx.device.clone(),
-            uniform_descriptor_layout.clone(),
-            ctx.frames_in_flight as u32,
-        );
-
         let frame_data = (0..ctx.frames_in_flight)
-            .map(|_| {
-                FrameData::new(
-                    ctx,
-                    uniform_data_layout.clone(),
-                    _uniform_ds_pool.allocate(),
-                )
-            })
+            .map(|_| FrameData::new(ctx, uniform_data_layout.clone()))
             .collect();
 
         Arc::new(Self {
@@ -76,12 +55,11 @@ impl UiPass {
             color_clear,
             push_layout,
             frame_data,
-            _uniform_ds_pool,
             uniform_data_layout,
         })
     }
 
-    fn render_batch(&self, ctx: &Context, cmd: &CommandBuffer, batch: &mut RenderBatch) {
+    fn render_batch(&self, ctx: &Context, cmd: &GfxCommand, batch: &mut RenderBatch) {
         let mut timer = Timer::new();
 
         let frame_id = ctx.frame_id();
@@ -89,14 +67,15 @@ impl UiPass {
         let mut last_material = MaterialInstanceId::nil();
         let mut last_pipeline = PipelineId::nil();
 
-        let uniform_data_ds = &self.frame_data[frame_id].uniform_ds;
-
         if let Some(scene_data) = batch.scene_data(self.id) {
             self.frame_data[frame_id]
                 .uniform_buffer
                 .write()
                 .update(scene_data);
         }
+
+        let uniform_buffer = self.frame_data[frame_id].uniform_buffer.read();
+
         batch.render_stats.cpu_draw_update += timer.delta();
 
         let mut model_data = Vec::new();
@@ -112,15 +91,16 @@ impl UiPass {
             let pipeline = material.pipeline();
 
             if last_material != material.id {
-                if last_pipeline != pipeline.id {
+                if last_pipeline != pipeline.id() {
                     cmd.bind_pipeline(&pipeline);
                     batch.render_stats.binds += 1;
-                    last_pipeline = pipeline.id;
+                    last_pipeline = pipeline.id();
                 }
-                cmd.bind_descriptor_set(uniform_data_ds, 0, &pipeline);
+
+                cmd.bind_resource_buffer(&uniform_buffer.buffer, &pipeline);
                 batch.render_stats.binds += 1;
-                if let Some(material_ds) = &material.material_ds {
-                    cmd.bind_descriptor_set(material_ds, 1, &pipeline);
+                if let Some(material_binding) = &material.material_binding {
+                    cmd.bind_resource(material_binding);
                     batch.render_stats.binds += 1;
                 }
 
@@ -129,10 +109,7 @@ impl UiPass {
             batch.render_stats.cpu_draw_bind += timer.delta();
 
             if let Some(push_layout) = render_object.pass.push_layout() {
-                let vertex_buffer_address = render_object
-                    .model
-                    .vertex_buffer
-                    .address(ctx.device.clone());
+                let vertex_buffer_address = render_object.model.vertex_buffer.address(&ctx.device);
 
                 log::trace!(
                     "VBA: {} + {}",
@@ -148,11 +125,11 @@ impl UiPass {
                     &mut model_data,
                 );
 
-                cmd.push_constants(pipeline.layout.clone(), &model_data);
+                cmd.push_constants(&pipeline, &model_data);
             }
             batch.render_stats.cpu_draw_push += timer.delta();
 
-            cmd.bind_index_buffer::<u32>(
+            cmd.bind_index_buffer(
                 &render_object.model.index_buffer,
                 render_object.indices_offset,
             );
@@ -191,7 +168,7 @@ impl RenderPass for UiPass {
         false
     }
 
-    fn pipeline(&self) -> Option<Arc<Pipeline>> {
+    fn pipeline(&self) -> Option<Arc<GfxPipeline>> {
         None
     }
 
@@ -220,7 +197,7 @@ impl RenderPass for UiPass {
     fn render(
         &self,
         ctx: &Context,
-        cmd: &CommandBuffer,
+        cmd: &GfxCommand,
         resource_manager: &ResourceManager,
         batch: &mut RenderBatch,
         draw_extent: ImageExtent2D,

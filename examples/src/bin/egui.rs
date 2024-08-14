@@ -3,6 +3,7 @@ use gobs::{
         app::{Application, Run},
         input::{Input, Key},
     },
+    gfx::Device,
     render::{
         context::Context,
         graph::{FrameGraph, RenderError},
@@ -56,7 +57,7 @@ impl Run for App {
         );
     }
 
-    fn render(&mut self, ctx: &Context) -> Result<(), RenderError> {
+    fn render(&mut self, ctx: &mut Context) -> Result<(), RenderError> {
         log::trace!("Render frame {}", ctx.frame_number);
 
         self.graph.begin(ctx)?;
@@ -94,7 +95,7 @@ impl Run for App {
         }
     }
 
-    fn resize(&mut self, ctx: &Context, width: u32, height: u32) {
+    fn resize(&mut self, ctx: &mut Context, width: u32, height: u32) {
         self.graph.resize(ctx);
         self.ui.resize(width, height);
     }
@@ -115,5 +116,5 @@ fn main() {
 
     log::info!("Engine start");
 
-    Application::<App>::new("Egui", 1920, 1080).run();
+    Application::<App>::new("Egui", examples::WIDTH, examples::HEIGHT).run();
 }

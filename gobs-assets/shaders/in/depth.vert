@@ -20,6 +20,6 @@ layout(push_constant) uniform constants {
 
 void main() {
 	Vertex v = push_constants.vertex_buffer_address.vertices[gl_VertexIndex];
-	
+
 	gl_Position = scene_data.view_proj * push_constants.world_matrix * vec4(v.position, 1.f);
 }

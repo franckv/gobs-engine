@@ -1,7 +1,6 @@
 use std::sync::Arc;
 
 use ash::vk;
-use uuid::Uuid;
 
 use crate::pipeline::{Pipeline, PipelineLayout, Shader, ShaderStage};
 use crate::{device::Device, Wrap};
@@ -57,7 +56,6 @@ impl ComputePipelineBuilder {
         let bind_point = vk::PipelineBindPoint::COMPUTE;
 
         Arc::new(Pipeline {
-            id: Uuid::new_v4(),
             device: device,
             layout: pipeline_layout,
             pipeline,

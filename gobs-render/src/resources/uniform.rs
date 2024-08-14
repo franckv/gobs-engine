@@ -1,34 +1,16 @@
-use std::sync::Arc;
+use gobs_gfx::{Buffer, BufferUsage};
 
-use gobs_vulkan::{
-    alloc::Allocator,
-    buffer::{Buffer, BufferUsage},
-    descriptor::DescriptorSetLayout,
-};
-
-use crate::context::Context;
+use crate::{GfxBuffer, GfxDevice};
 
 pub struct UniformBuffer {
-    pub ds_layout: Arc<DescriptorSetLayout>,
-    pub buffer: Buffer,
+    pub buffer: GfxBuffer,
 }
 
 impl UniformBuffer {
-    pub fn new(
-        ctx: &Context,
-        ds_layout: Arc<DescriptorSetLayout>,
-        size: usize,
-        allocator: Arc<Allocator>,
-    ) -> Self {
-        let buffer = Buffer::new(
-            "uniform",
-            size,
-            BufferUsage::Uniform,
-            ctx.device.clone(),
-            allocator,
-        );
+    pub fn new(device: &GfxDevice, size: usize) -> Self {
+        let buffer = GfxBuffer::new("uniform", size, BufferUsage::Uniform, device);
 
-        UniformBuffer { ds_layout, buffer }
+        UniformBuffer { buffer }
     }
 
     pub fn update(&mut self, uniform_data: &[u8]) {

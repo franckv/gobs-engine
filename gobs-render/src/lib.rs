@@ -8,7 +8,7 @@ pub mod renderable;
 pub mod resources;
 pub mod stats;
 
-pub use gobs_vulkan::image::{ImageExtent2D, ImageFormat, SamplerFilter};
-pub use gobs_vulkan::pipeline::{BlendMode, CullMode};
+pub use gobs_gfx::{BlendMode, CullMode, ImageExtent2D, ImageFormat, ImageUsage};
 
-pub type CommandBuffer = gobs_vulkan::command::CommandBuffer;
+#[cfg(feature = "vulkan")]
+pub use gobs_gfx_vulkan::*;

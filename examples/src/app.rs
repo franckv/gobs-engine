@@ -42,13 +42,13 @@ impl SampleApp {
     }
 
     pub fn ortho_camera(ctx: &Context) -> Camera {
-        let extent = ctx.surface.get_extent(ctx.device.clone());
+        let extent = ctx.extent();
 
         Camera::ortho(extent.width as f32, extent.height as f32, 0.1, 100., 0., 0.)
     }
 
     pub fn perspective_camera(ctx: &Context) -> Camera {
-        let extent = ctx.surface.get_extent(ctx.device.clone());
+        let extent = ctx.extent();
 
         Camera::perspective(
             extent.width as f32 / extent.height as f32,
@@ -67,18 +67,18 @@ impl SampleApp {
     pub fn color_material(&self, ctx: &Context, graph: &FrameGraph) -> Arc<Material> {
         let vertex_flags = VertexFlag::POSITION | VertexFlag::COLOR;
 
-        Material::builder("color.vert.spv", "color.frag.spv")
+        Material::builder(ctx, "color.vert.spv", "color.frag.spv")
             .vertex_flags(vertex_flags)
-            .build(ctx, graph.pass_by_type(PassType::Forward).unwrap())
+            .build(graph.pass_by_type(PassType::Forward).unwrap())
     }
 
     pub fn color_material_transparent(&self, ctx: &Context, graph: &FrameGraph) -> Arc<Material> {
         let vertex_flags = VertexFlag::POSITION | VertexFlag::COLOR;
 
-        Material::builder("color.vert.spv", "color.frag.spv")
+        Material::builder(ctx, "color.vert.spv", "color.frag.spv")
             .vertex_flags(vertex_flags)
             .blend_mode(BlendMode::Alpha)
-            .build(ctx, graph.pass_by_type(PassType::Forward).unwrap())
+            .build(graph.pass_by_type(PassType::Forward).unwrap())
     }
 
     pub fn texture_material(&self, ctx: &Context, graph: &FrameGraph) -> Arc<Material> {
@@ -88,10 +88,10 @@ impl SampleApp {
             | VertexFlag::TANGENT
             | VertexFlag::BITANGENT;
 
-        Material::builder("mesh.vert.spv", "mesh.frag.spv")
+        Material::builder(ctx, "mesh.vert.spv", "mesh.frag.spv")
             .vertex_flags(vertex_flags)
             .prop("diffuse", MaterialProperty::Texture)
-            .build(ctx, graph.pass_by_type(PassType::Forward).unwrap())
+            .build(graph.pass_by_type(PassType::Forward).unwrap())
     }
 
     pub fn texture_material_transparent(&self, ctx: &Context, graph: &FrameGraph) -> Arc<Material> {
@@ -101,11 +101,11 @@ impl SampleApp {
             | VertexFlag::TANGENT
             | VertexFlag::BITANGENT;
 
-        Material::builder("mesh.vert.spv", "mesh.frag.spv")
+        Material::builder(ctx, "mesh.vert.spv", "mesh.frag.spv")
             .vertex_flags(vertex_flags)
             .prop("diffuse", MaterialProperty::Texture)
             .blend_mode(BlendMode::Alpha)
-            .build(ctx, graph.pass_by_type(PassType::Forward).unwrap())
+            .build(graph.pass_by_type(PassType::Forward).unwrap())
     }
 
     pub fn normal_mapping_material(&self, ctx: &Context, graph: &FrameGraph) -> Arc<Material> {
@@ -115,19 +115,19 @@ impl SampleApp {
             | VertexFlag::TANGENT
             | VertexFlag::BITANGENT;
 
-        Material::builder("mesh.vert.spv", "mesh_n.frag.spv")
+        Material::builder(ctx, "mesh.vert.spv", "mesh_n.frag.spv")
             .vertex_flags(vertex_flags)
             .prop("diffuse", MaterialProperty::Texture)
             .prop("normal", MaterialProperty::Texture)
-            .build(ctx, graph.pass_by_type(PassType::Forward).unwrap())
+            .build(graph.pass_by_type(PassType::Forward).unwrap())
     }
 
     pub fn depth_material(&self, ctx: &Context, graph: &FrameGraph) -> Arc<Material> {
         let vertex_flags = VertexFlag::POSITION | VertexFlag::COLOR;
 
-        Material::builder("color.vert.spv", "depth.frag.spv")
+        Material::builder(ctx, "color.vert.spv", "depth.frag.spv")
             .vertex_flags(vertex_flags)
-            .build(ctx, graph.pass_by_type(PassType::Forward).unwrap())
+            .build(graph.pass_by_type(PassType::Forward).unwrap())
     }
 
     pub fn update_ui(
@@ -154,7 +154,7 @@ impl SampleApp {
 
     pub fn render(
         &mut self,
-        ctx: &Context,
+        ctx: &mut Context,
         graph: &mut FrameGraph,
         scene: &mut Scene,
         ui: &mut UIRenderer,
@@ -216,7 +216,7 @@ impl SampleApp {
                         rd.trigger_capture();
                     }
                 }
-                Key::L => log::info!("{:?}", ctx.allocator.allocator.lock().unwrap()),
+                Key::L => log::info!("{:?}", ctx.device.allocator.allocator.lock().unwrap()),
                 Key::P => self.process_updates = !self.process_updates,
                 Key::W => self.draw_wire = !self.draw_wire,
                 Key::B => self.draw_bounds = !self.draw_bounds,

@@ -7,7 +7,7 @@ use gobs_core::{
     entity::{camera::Camera, light::Light, uniform::UniformLayout},
     Transform,
 };
-use gobs_vulkan::{descriptor::DescriptorSet, image::ImageExtent2D, pipeline::Pipeline};
+use gobs_gfx::ImageExtent2D;
 
 use crate::{
     batch::RenderBatch,
@@ -15,7 +15,7 @@ use crate::{
     geometry::VertexFlag,
     graph::{RenderError, ResourceManager},
     resources::UniformBuffer,
-    CommandBuffer,
+    GfxCommand, GfxPipeline,
 };
 
 pub mod bounds;
@@ -41,7 +41,7 @@ pub trait RenderPass {
     fn id(&self) -> PassId;
     fn name(&self) -> &str;
     fn ty(&self) -> PassType;
-    fn pipeline(&self) -> Option<Arc<Pipeline>>;
+    fn pipeline(&self) -> Option<Arc<GfxPipeline>>;
     fn vertex_flags(&self) -> Option<VertexFlag>;
     fn push_layout(&self) -> Option<Arc<UniformLayout>>;
     fn uniform_data_layout(&self) -> Option<Arc<UniformLayout>>;
@@ -51,7 +51,7 @@ pub trait RenderPass {
     fn render(
         &self,
         ctx: &Context,
-        cmd: &CommandBuffer,
+        cmd: &GfxCommand,
         resource_manager: &ResourceManager,
         batch: &mut RenderBatch,
         draw_extent: ImageExtent2D,
@@ -66,30 +66,14 @@ pub trait RenderPass {
 }
 
 pub(crate) struct FrameData {
-    pub uniform_ds: DescriptorSet,
     pub uniform_buffer: RwLock<UniformBuffer>,
 }
 
 impl FrameData {
-    pub fn new(
-        ctx: &Context,
-        uniform_layout: Arc<UniformLayout>,
-        uniform_ds: DescriptorSet,
-    ) -> Self {
-        let uniform_buffer = UniformBuffer::new(
-            ctx,
-            uniform_ds.layout.clone(),
-            uniform_layout.size(),
-            ctx.allocator.clone(),
-        );
-
-        uniform_ds
-            .update()
-            .bind_buffer(&uniform_buffer.buffer, 0, uniform_buffer.buffer.size)
-            .end();
+    pub fn new(ctx: &Context, uniform_layout: Arc<UniformLayout>) -> Self {
+        let uniform_buffer = UniformBuffer::new(&ctx.device, uniform_layout.size());
 
         FrameData {
-            uniform_ds,
             uniform_buffer: RwLock::new(uniform_buffer),
         }
     }

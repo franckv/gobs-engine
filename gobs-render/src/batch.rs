@@ -6,7 +6,7 @@ use gobs_core::{
     entity::{camera::Camera, light::Light, uniform::UniformPropData},
     Transform,
 };
-use gobs_vulkan::image::ImageExtent2D;
+use gobs_gfx::ImageExtent2D;
 
 use crate::geometry::{BoundingBox, Model, ModelId};
 use crate::renderable::RenderObject;

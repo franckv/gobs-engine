@@ -32,7 +32,7 @@ impl IndexType for u32 {
 
 /// Store command to be executed by a device
 pub struct CommandBuffer {
-    device: Arc<Device>,
+    pub device: Arc<Device>,
     queue: Arc<Queue>,
     pool: Arc<CommandPool>,
     command_buffer: vk::CommandBuffer,
@@ -634,6 +634,12 @@ impl CommandBuffer {
 
         self.fence.wait();
         log::debug!("Immediate command done");
+    }
+}
+
+impl Wrap<vk::CommandBuffer> for CommandBuffer {
+    fn raw(&self) -> vk::CommandBuffer {
+        self.command_buffer
     }
 }
 

@@ -3,15 +3,10 @@ use std::{collections::HashMap, sync::Arc};
 use anyhow::Result;
 use parking_lot::{RwLock, RwLockReadGuard, RwLockWriteGuard};
 
-use gobs_utils::timer::Timer;
-use gobs_vulkan::{
-    command::{CommandBuffer, CommandPool},
-    image::{ColorSpace, Image, ImageExtent2D, ImageFormat, ImageLayout, ImageUsage},
-    pipeline::PipelineStage,
-    query::{QueryPool, QueryType},
-    swapchain::{PresentationMode, SwapChain},
-    sync::Semaphore,
+use gobs_gfx::{
+    Command, Device, Display, Image, ImageExtent2D, ImageFormat, ImageLayout, ImageUsage,
 };
+use gobs_utils::timer::Timer;
 
 use crate::{
     batch::RenderBatch,
@@ -21,6 +16,7 @@ use crate::{
         ui::UiPass, wire::WirePass, PassId, PassType, RenderPass,
     },
     stats::RenderStats,
+    GfxCommand, GfxImage,
 };
 
 #[derive(Debug)]
@@ -31,48 +27,26 @@ pub enum RenderError {
 }
 
 pub struct FrameData {
-    pub command_buffer: CommandBuffer,
-    pub swapchain_semaphore: Semaphore,
-    pub render_semaphore: Semaphore,
-    pub query_pool: QueryPool,
+    pub command: GfxCommand,
+    //TODO: pub query_pool: QueryPool,
 }
 
 impl FrameData {
     pub fn new(ctx: &Context) -> Self {
-        let command_pool = CommandPool::new(ctx.device.clone(), &ctx.queue.family);
-        let command_buffer =
-            CommandBuffer::new(ctx.device.clone(), ctx.queue.clone(), command_pool, "Frame");
+        let command = GfxCommand::new(&ctx.device, "Frame");
 
-        let swapchain_semaphore = Semaphore::new(ctx.device.clone(), "Swapchain");
-        let render_semaphore = Semaphore::new(ctx.device.clone(), "Render");
+        //        let query_pool = QueryPool::new(ctx.device.clone(), QueryType::Timestamp, 2);
 
-        let query_pool = QueryPool::new(ctx.device.clone(), QueryType::Timestamp, 2);
-
-        FrameData {
-            command_buffer,
-            swapchain_semaphore,
-            render_semaphore,
-            query_pool,
-        }
+        FrameData { command }
     }
 
     pub fn reset(&mut self) {
-        let cmd = &self.command_buffer;
-
-        cmd.fence.wait();
-
-        if cmd.fence.signaled() {
-            cmd.fence.reset();
-            debug_assert!(!cmd.fence.signaled());
-        } else {
-            log::warn!("Fence unsignaled");
-        }
-        self.command_buffer.reset();
+        self.command.reset();
     }
 }
 
 pub struct ResourceManager {
-    resources: HashMap<String, RwLock<Image>>,
+    resources: HashMap<String, RwLock<GfxImage>>,
 }
 
 impl ResourceManager {
@@ -90,14 +64,7 @@ impl ResourceManager {
         usage: ImageUsage,
         extent: ImageExtent2D,
     ) {
-        let image = Image::new(
-            label,
-            ctx.device.clone(),
-            format,
-            usage,
-            extent,
-            ctx.allocator.clone(),
-        );
+        let image = GfxImage::new(label, &ctx.device, format, usage, extent);
 
         self.resources.insert(label.to_string(), RwLock::new(image));
     }
@@ -108,7 +75,7 @@ impl ResourceManager {
         }
     }
 
-    pub fn image_read(&self, label: &str) -> RwLockReadGuard<'_, Image> {
+    pub fn image_read(&self, label: &str) -> RwLockReadGuard<'_, GfxImage> {
         assert!(
             self.resources.contains_key(label),
             "Missing resource {}",
@@ -118,7 +85,7 @@ impl ResourceManager {
         self.resources[label].read()
     }
 
-    pub fn image_write(&self, label: &str) -> RwLockWriteGuard<'_, Image> {
+    pub fn image_write(&self, label: &str) -> RwLockWriteGuard<'_, GfxImage> {
         assert!(
             self.resources.contains_key(label),
             "Missing resource {}",
@@ -131,9 +98,6 @@ impl ResourceManager {
 
 pub struct FrameGraph {
     pub frames: Vec<FrameData>,
-    pub swapchain: SwapChain,
-    pub swapchain_images: Vec<Image>,
-    pub swapchain_idx: usize,
     pub draw_extent: ImageExtent2D,
     pub render_scaling: f32,
     pub passes: Vec<Arc<dyn RenderPass>>,
@@ -143,10 +107,7 @@ pub struct FrameGraph {
 
 impl FrameGraph {
     pub fn new(ctx: &Context) -> Self {
-        let swapchain = Self::create_swapchain(ctx);
-        let swapchain_images = swapchain.create_images();
-
-        let draw_extent = ctx.surface.get_extent(ctx.device.clone());
+        let draw_extent = ctx.extent();
 
         let frames = (0..ctx.frames_in_flight)
             .map(|_| FrameData::new(ctx))
@@ -154,9 +115,6 @@ impl FrameGraph {
 
         Self {
             frames,
-            swapchain,
-            swapchain_images,
-            swapchain_idx: 0,
             draw_extent,
             render_scaling: 1.,
             passes: Vec::new(),
@@ -168,7 +126,7 @@ impl FrameGraph {
     pub fn default(ctx: &Context) -> Self {
         let mut graph = Self::new(ctx);
 
-        let extent = ctx.surface.get_extent(ctx.device.clone());
+        let extent = ctx.extent();
 
         graph.resource_manager.register_image(
             ctx,
@@ -198,7 +156,7 @@ impl FrameGraph {
     pub fn ui(ctx: &Context) -> Self {
         let mut graph = Self::new(ctx);
 
-        let extent = ctx.surface.get_extent(ctx.device.clone());
+        let extent = ctx.extent();
 
         graph.resource_manager.register_image(
             ctx,
@@ -250,67 +208,61 @@ impl FrameGraph {
         &self.batch.render_stats
     }
 
-    pub fn begin(&mut self, ctx: &Context) -> Result<(), RenderError> {
+    pub fn begin(&mut self, ctx: &mut Context) -> Result<(), RenderError> {
         log::debug!("Begin new frame");
 
         let frame_id = ctx.frame_id();
         self.batch.reset(ctx);
 
         let frame = &self.frames[frame_id];
-        let cmd = &frame.command_buffer;
+        let cmd = &frame.command;
 
         if ctx.frame_number >= ctx.frames_in_flight && ctx.frame_number % ctx.stats_refresh == 0 {
-            let mut buf = [0 as u64; 2];
-            frame.query_pool.get_query_pool_results(0, &mut buf);
+            //TODO: let mut buf = [0 as u64; 2];
+            //frame.query_pool.get_query_pool_results(0, &mut buf);
 
-            self.batch.render_stats.gpu_draw_time =
-                ((buf[1] - buf[0]) as f32 * frame.query_pool.period) / 1_000_000_000.;
+            //self.batch.render_stats.gpu_draw_time =
+            //    ((buf[1] - buf[0]) as f32 * frame.query_pool.period) / 1_000_000_000.;
         }
 
-        let draw_image_extent = self.resource_manager.image_read("draw").extent;
+        let draw_image_extent = self.resource_manager.image_read("draw").extent();
         if self.resource_manager.resources.contains_key("depth") {
             debug_assert_eq!(
                 draw_image_extent,
-                self.resource_manager.image_read("depth").extent
+                self.resource_manager.image_read("depth").extent()
             );
         }
 
+        let display_extent = ctx.display.get_extent(&ctx.device);
+
         self.draw_extent = ImageExtent2D::new(
-            (draw_image_extent
-                .width
-                .min(ctx.surface.get_dimensions().width) as f32
-                * self.render_scaling) as u32,
-            (draw_image_extent
-                .height
-                .min(ctx.surface.get_dimensions().height) as f32
-                * self.render_scaling) as u32,
+            (draw_image_extent.width.min(display_extent.width) as f32 * self.render_scaling) as u32,
+            (draw_image_extent.height.min(display_extent.height) as f32 * self.render_scaling)
+                as u32,
         );
 
-        let Ok(image_index) = self.swapchain.acquire_image(&frame.swapchain_semaphore) else {
+        if let Err(_) = ctx.display.acquire(ctx.frame_id()) {
             return Err(RenderError::Outdated);
-        };
-
-        self.swapchain_idx = image_index;
+        }
 
         self.resource_manager.invalidate();
-        self.swapchain_images[image_index as usize].invalidate();
 
         cmd.begin();
 
         cmd.begin_label(&format!("Frame {}", ctx.frame_number));
 
-        cmd.reset_query_pool(&frame.query_pool, 0, 2);
-        cmd.write_timestamp(&frame.query_pool, PipelineStage::TopOfPipe, 0);
+        //TODO: cmd.reset_query_pool(&frame.query_pool, 0, 2);
+        //TODO: cmd.write_timestamp(&frame.query_pool, PipelineStage::TopOfPipe, 0);
 
         Ok(())
     }
 
-    pub fn end(&mut self, ctx: &Context) -> Result<(), RenderError> {
+    pub fn end(&mut self, ctx: &mut Context) -> Result<(), RenderError> {
         log::debug!("End frame");
 
         let frame_id = ctx.frame_id();
         let frame = &self.frames[frame_id];
-        let cmd = &frame.command_buffer;
+        let cmd = &frame.command;
 
         log::debug!("Present");
 
@@ -319,34 +271,28 @@ impl FrameGraph {
             ImageLayout::TransferSrc,
         );
 
-        let swapchain_image = &mut self.swapchain_images[self.swapchain_idx];
+        let render_target = ctx.display.get_render_target();
 
-        cmd.transition_image_layout(swapchain_image, ImageLayout::TransferDst);
+        cmd.transition_image_layout(render_target, ImageLayout::TransferDst);
 
         cmd.copy_image_to_image(
             &self.resource_manager.image_read("draw"),
             self.draw_extent,
-            swapchain_image,
-            swapchain_image.extent,
+            render_target,
+            render_target.extent(),
         );
 
-        cmd.transition_image_layout(swapchain_image, ImageLayout::Present);
+        cmd.transition_image_layout(render_target, ImageLayout::Present);
 
-        cmd.write_timestamp(&frame.query_pool, PipelineStage::BottomOfPipe, 1);
+        //TODO: cmd.write_timestamp(&frame.query_pool, PipelineStage::BottomOfPipe, 1);
 
         cmd.end_label();
 
         cmd.end();
 
-        cmd.submit2(
-            Some(&frame.swapchain_semaphore),
-            Some(&frame.render_semaphore),
-        );
+        cmd.submit2(&ctx.display, ctx.frame_id());
 
-        let Ok(_) = self
-            .swapchain
-            .present(self.swapchain_idx, &ctx.queue, &frame.render_semaphore)
-        else {
+        let Ok(_) = ctx.display.present(&ctx.device, ctx.frame_id()) else {
             return Err(RenderError::Outdated);
         };
 
@@ -385,9 +331,10 @@ impl FrameGraph {
             self.batch.render_stats.update_time = timer.delta();
         }
 
-        let cmd = &self.frames[frame_id].command_buffer;
+        let cmd = &self.frames[frame_id].command;
 
         for pass in &self.passes {
+            log::debug!("Enter render pass: {}", pass.name());
             pass.render(
                 ctx,
                 cmd,
@@ -406,53 +353,13 @@ impl FrameGraph {
         Ok(())
     }
 
-    pub fn resize(&mut self, ctx: &Context) {
+    pub fn resize(&mut self, ctx: &mut Context) {
         self.resize_swapchain(ctx);
     }
 
-    fn create_swapchain(ctx: &Context) -> SwapChain {
-        let device = ctx.device.clone();
-        let surface = ctx.surface.clone();
-
-        let presents = surface.get_available_presentation_modes(device.clone());
-
-        let present = *presents
-            .iter()
-            .find(|&&p| p == PresentationMode::Fifo)
-            .unwrap();
-
-        let caps = surface.get_capabilities(device.clone());
-
-        let mut image_count = caps.min_image_count + 1;
-        if caps.max_image_count > 0 && image_count > caps.max_image_count {
-            image_count = caps.max_image_count;
-        }
-
-        let formats = surface.get_available_format(&device.p_device);
-
-        let format = *formats
-            .iter()
-            .find(|f| {
-                f.format == ImageFormat::B8g8r8a8Unorm && f.color_space == ColorSpace::SrgbNonlinear
-            })
-            .unwrap();
-
-        log::info!("Swapchain format: {:?}", format);
-
-        SwapChain::new(device, surface, format, present, image_count, None)
-    }
-
-    fn resize_swapchain(&mut self, ctx: &Context) {
+    fn resize_swapchain(&mut self, ctx: &mut Context) {
         ctx.device.wait();
 
-        self.swapchain = SwapChain::new(
-            ctx.device.clone(),
-            ctx.surface.clone(),
-            self.swapchain.format,
-            self.swapchain.present,
-            self.swapchain.image_count,
-            Some(&self.swapchain),
-        );
-        self.swapchain_images = self.swapchain.create_images();
+        ctx.display.resize(&ctx.device);
     }
 }

@@ -5,6 +5,8 @@ members = [
     "gobs-core",
     "gobs-egui",
     "gobs-game",
+    "gobs-gfx",
+    "gobs-gfx-vulkan",
     "gobs-render",
     "gobs-scene",
     "gobs-utils",
@@ -37,6 +39,14 @@ path = "./gobs-egui"
 package = "gobs-game"
 path = "./gobs-game"
 
+[workspace.dependencies.gobs-gfx]
+package = "gobs-gfx"
+path = "./gobs-gfx"
+
+[workspace.dependencies.gobs-gfx-vulkan]
+package = "gobs-gfx-vulkan"
+path = "./gobs-gfx-vulkan"
+
 [workspace.dependencies.gobs-render]
 package = "gobs-render"
 path = "./gobs-render"
@@ -67,9 +77,10 @@ glam = { version = "0.28", features = ["bytemuck", "serde"] }
 gltf = "1"
 gpu-allocator = { path = "../3rd/gpu-allocator", features = ["visualizer"]}
 image = "0.25"
+indexmap = "2.2"
 itertools = { version = "0.13" }
 log = "0.4"
-naga = {version = "0.20", features = ["glsl-in", "spv-out"]}
+naga = {version = "22", features = ["glsl-in", "spv-out"]}
 parking_lot = "0.12"
 pollster = "0.3"
 presser = "0.3"

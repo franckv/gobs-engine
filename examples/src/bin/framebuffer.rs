@@ -6,6 +6,7 @@ use gobs::{
         app::{Application, Run},
         input::Input,
     },
+    gfx::{Device, SamplerFilter},
     render::{
         context::Context,
         geometry::Model,
@@ -13,7 +14,6 @@ use gobs::{
         material::{Texture, TextureType},
         pass::PassType,
         renderable::Renderable,
-        SamplerFilter,
     },
     scene::{components::NodeValue, scene::Scene, shape::Shapes},
     ui::UIRenderer,
@@ -67,7 +67,7 @@ impl Run for App {
             .update_ui(ctx, &self.graph, &self.scene, &mut self.ui, delta);
     }
 
-    fn render(&mut self, ctx: &Context) -> Result<(), RenderError> {
+    fn render(&mut self, ctx: &mut Context) -> Result<(), RenderError> {
         self.common
             .render(ctx, &mut self.graph, &mut self.scene, &mut self.ui)
     }
@@ -83,7 +83,7 @@ impl Run for App {
         );
     }
 
-    fn resize(&mut self, ctx: &Context, width: u32, height: u32) {
+    fn resize(&mut self, ctx: &mut Context, width: u32, height: u32) {
         self.graph.resize(ctx);
         self.scene.resize(width, height);
         self.ui.resize(width, height);
@@ -160,5 +160,5 @@ fn main() {
 
     log::info!("Engine start");
 
-    Application::<App>::new("Framebuffer", 1920, 1080).run();
+    Application::<App>::new("Framebuffer", examples::WIDTH, examples::HEIGHT).run();
 }
