@@ -9,6 +9,7 @@ use winit::{
     window::Window,
 };
 
+use gobs_gfx::Display;
 use gobs_render::context::Context;
 use gobs_render::graph::RenderError;
 use gobs_utils::timer::Timer;
@@ -23,6 +24,7 @@ where
     pub context: Option<Context>,
     pub timer: Timer,
     close_requested: bool,
+    is_minimized: bool,
     title: String,
     width: u32,
     height: u32,
@@ -138,10 +140,18 @@ where
                         if !self.close_requested {
                             runnable.update(&context, delta);
                             log::trace!("[Redraw] FPS: {}", 1. / delta);
-                            match runnable.render(context) {
-                                Ok(_) => {}
-                                Err(RenderError::Lost | RenderError::Outdated) => {}
-                                Err(e) => error!("{:?}", e),
+                            if !context.display.is_minimized() {
+                                if self.is_minimized {
+                                    self.is_minimized = false;
+                                    context.display.resize(&context.device);
+                                }
+                                match runnable.render(context) {
+                                    Ok(_) => {}
+                                    Err(RenderError::Lost | RenderError::Outdated) => {}
+                                    Err(e) => error!("{:?}", e),
+                                }
+                            } else {
+                                self.is_minimized = true;
                             }
                         }
                         context.frame_number += 1;
@@ -188,6 +198,7 @@ where
             context: None,
             runnable: None,
             close_requested: false,
+            is_minimized: false,
             timer: Timer::new(),
             title: title.to_string(),
             width,

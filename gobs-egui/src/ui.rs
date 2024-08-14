@@ -35,6 +35,7 @@ pub struct UIRenderer {
     input: Vec<Input>,
     mouse_position: (f32, f32),
     frame_data: Vec<FrameData>,
+    output: Option<FullOutput>,
 }
 
 impl UIRenderer {
@@ -67,6 +68,7 @@ impl UIRenderer {
             input: Vec::new(),
             mouse_position: (0., 0.),
             frame_data,
+            output: None,
         }
     }
 
@@ -76,8 +78,10 @@ impl UIRenderer {
     {
         let input = self.prepare_inputs(delta);
 
-        let output = self.ectx.run(input, callback);
+        self.output = Some(self.ectx.run(input, callback));
+    }
 
+    fn upload_ui_data(&mut self, ctx: &Context, output: FullOutput) {
         pollster::block_on(self.update_textures(ctx, &output));
 
         let to_remove = output.textures_delta.free.clone();
@@ -196,9 +200,9 @@ impl UIRenderer {
 
     async fn update_textures(&mut self, ctx: &Context, output: &FullOutput) {
         for (id, img) in &output.textures_delta.set {
-            log::info!("New texture {:?}", id);
+            log::debug!("New texture {:?}", id);
             if img.pos.is_some() {
-                log::info!("Patching texture");
+                log::debug!("Patching texture");
                 self.patch_texture(
                     ctx,
                     self.font_texture
@@ -209,7 +213,7 @@ impl UIRenderer {
                 )
                 .await;
             } else {
-                log::info!("Allocate new texture");
+                log::debug!("Allocate new texture");
                 let texture = self.decode_texture(ctx, img).await;
                 self.font_texture.insert(*id, texture);
                 log::debug!("Texture loaded");
@@ -219,7 +223,7 @@ impl UIRenderer {
 
     fn cleanup_textures(&mut self, to_remove: Vec<TextureId>) {
         for id in &to_remove {
-            log::info!("Remove texture {:?}", id);
+            log::debug!("Remove texture {:?}", id);
 
             self.font_texture.remove(id);
         }
@@ -262,7 +266,7 @@ impl UIRenderer {
 
                 let pos = img.pos.expect("Can only patch texture with start position");
 
-                log::info!(
+                log::debug!(
                     "Patching texture origin: {}/{}, size: {}/{}, len={}",
                     pos[0],
                     pos[1],
@@ -270,7 +274,7 @@ impl UIRenderer {
                     font.height(),
                     bytes.len()
                 );
-                log::info!(
+                log::debug!(
                     "Patching texture original size: {:?}",
                     material.textures[0].read().image.extent()
                 );
@@ -357,6 +361,11 @@ impl Renderable for UIRenderer {
 
     fn draw(&mut self, ctx: &Context, pass: Arc<dyn RenderPass>, batch: &mut RenderBatch) {
         let frame_id = ctx.frame_id();
+
+        let output = self.output.take().unwrap();
+
+        self.upload_ui_data(ctx, output);
+
         let model = self.frame_data[frame_id].model.clone();
 
         if let Some(model) = model {

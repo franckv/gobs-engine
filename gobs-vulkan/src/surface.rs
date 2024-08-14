@@ -139,6 +139,14 @@ impl Surface {
 
         extent
     }
+
+    pub fn is_minimized(&self) -> bool {
+        if let Some(minimized) = self.window.is_minimized() {
+            minimized
+        } else {
+            false
+        }
+    }
 }
 
 impl Wrap<vk::SurfaceKHR> for Surface {

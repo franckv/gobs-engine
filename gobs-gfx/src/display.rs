@@ -21,4 +21,5 @@ pub trait Display {
     fn present(&mut self, device: &Self::GfxDevice, frame: usize) -> Result<()>;
     fn resize(&mut self, device: &Self::GfxDevice);
     fn request_redraw(&self);
+    fn is_minimized(&self) -> bool;
 }

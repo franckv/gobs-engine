@@ -19,6 +19,9 @@ use crate::{
     GfxCommand, GfxImage,
 };
 
+const FRAME_WIDTH: u32 = 1920;
+const FRAME_HEIGHT: u32 = 1920;
+
 #[derive(Debug)]
 pub enum RenderError {
     Lost,
@@ -35,7 +38,7 @@ impl FrameData {
     pub fn new(ctx: &Context) -> Self {
         let command = GfxCommand::new(&ctx.device, "Frame");
 
-        //        let query_pool = QueryPool::new(ctx.device.clone(), QueryType::Timestamp, 2);
+        //TODO: let query_pool = QueryPool::new(ctx.device.clone(), QueryType::Timestamp, 2);
 
         FrameData { command }
     }
@@ -126,7 +129,7 @@ impl FrameGraph {
     pub fn default(ctx: &Context) -> Self {
         let mut graph = Self::new(ctx);
 
-        let extent = ctx.extent();
+        let extent = Self::get_render_target_extent(ctx);
 
         graph.resource_manager.register_image(
             ctx,
@@ -156,7 +159,7 @@ impl FrameGraph {
     pub fn ui(ctx: &Context) -> Self {
         let mut graph = Self::new(ctx);
 
-        let extent = ctx.extent();
+        let extent = Self::get_render_target_extent(ctx);
 
         graph.resource_manager.register_image(
             ctx,
@@ -169,6 +172,14 @@ impl FrameGraph {
         graph.register_pass(UiPass::new(ctx, "ui", true));
 
         graph
+    }
+
+    fn get_render_target_extent(ctx: &Context) -> ImageExtent2D {
+        let extent = ctx.extent();
+        ImageExtent2D::new(
+            extent.width.max(FRAME_WIDTH),
+            extent.height.max(FRAME_HEIGHT),
+        )
     }
 
     fn register_pass(&mut self, pass: Arc<dyn RenderPass>) {
@@ -212,9 +223,11 @@ impl FrameGraph {
         log::debug!("Begin new frame");
 
         let frame_id = ctx.frame_id();
+        let frame = &mut self.frames[frame_id];
+        frame.reset();
+
         self.batch.reset(ctx);
 
-        let frame = &self.frames[frame_id];
         let cmd = &frame.command;
 
         if ctx.frame_number >= ctx.frames_in_flight && ctx.frame_number % ctx.stats_refresh == 0 {
@@ -233,7 +246,7 @@ impl FrameGraph {
             );
         }
 
-        let display_extent = ctx.display.get_extent(&ctx.device);
+        let display_extent = ctx.extent();
 
         self.draw_extent = ImageExtent2D::new(
             (draw_image_extent.width.min(display_extent.width) as f32 * self.render_scaling) as u32,
@@ -303,11 +316,6 @@ impl FrameGraph {
         if ctx.frame_number % ctx.stats_refresh == 0 {
             self.batch.render_stats.fps = (1. / delta).round() as u32;
         }
-
-        let frame_id = ctx.frame_id();
-        let frame = &mut self.frames[frame_id];
-
-        frame.reset();
     }
 
     pub fn render(

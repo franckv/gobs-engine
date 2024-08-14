@@ -108,22 +108,26 @@ impl Display for VkDisplay {
     fn resize(&mut self, device: &VkDevice) {
         if let Some(swapchain) = &self.swapchain {
             if let Some(surface) = &self.surface {
-                self.swapchain = Some(vk::swapchain::SwapChain::new(
+                let extent = surface.get_extent(&device.device);
+                if extent.width == 0 || extent.height == 0 {
+                    return;
+                }
+
+                let swapchain = vk::swapchain::SwapChain::new(
                     device.device.clone(),
                     surface.clone(),
                     swapchain.format,
                     swapchain.present,
                     swapchain.image_count,
                     Some(&swapchain),
-                ));
+                );
+                self.swapchain_images = swapchain
+                    .create_images(&device.device)
+                    .into_iter()
+                    .map(|image| VkImage::from_raw(image))
+                    .collect();
+                self.swapchain = Some(swapchain);
             }
-        }
-        if let Some(swapchain) = &self.swapchain {
-            self.swapchain_images = swapchain
-                .create_images(&device.device)
-                .into_iter()
-                .map(|image| VkImage::from_raw(image))
-                .collect();
         }
     }
 
@@ -133,6 +137,14 @@ impl Display for VkDisplay {
             Some(surface) => {
                 surface.window.request_redraw();
             }
+        }
+    }
+
+    fn is_minimized(&self) -> bool {
+        if let Some(surface) = &self.surface {
+            surface.is_minimized()
+        } else {
+            false
         }
     }
 }
