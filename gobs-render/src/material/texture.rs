@@ -8,12 +8,12 @@ use uuid::Uuid;
 
 use gobs_core::color::Color;
 use gobs_gfx::{
-    Buffer, BufferUsage, Command, Device, GfxBuffer, GfxImage, GfxSampler, Image, ImageExtent2D,
-    ImageFormat, ImageLayout, ImageUsage, Sampler, SamplerFilter,
+    Buffer, BufferUsage, Command, Device, Image, ImageExtent2D, ImageFormat, ImageLayout,
+    ImageUsage, Sampler, SamplerFilter,
 };
 use gobs_utils::load::{self, AssetType};
 
-use crate::context::Context;
+use crate::{context::Context, GfxBuffer, GfxImage, GfxSampler};
 
 pub type TextureId = Uuid;
 
@@ -58,7 +58,7 @@ impl Texture {
     ) -> Self {
         let image = GfxImage::new(name, &ctx.device, format, ImageUsage::Texture, extent);
 
-        let sampler = Sampler::new(&ctx.device, mag_filter, min_filter);
+        let sampler = GfxSampler::new(&ctx.device, mag_filter, min_filter);
 
         let mut texture_value = TextureValue {
             id: Uuid::new_v4(),

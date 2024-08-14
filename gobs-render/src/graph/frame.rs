@@ -4,8 +4,7 @@ use anyhow::Result;
 use parking_lot::{RwLock, RwLockReadGuard, RwLockWriteGuard};
 
 use gobs_gfx::{
-    Command, Device, GfxCommand, GfxImage, Image, ImageExtent2D, ImageFormat, ImageLayout,
-    ImageUsage,
+    Command, Device, Display, Image, ImageExtent2D, ImageFormat, ImageLayout, ImageUsage,
 };
 use gobs_utils::timer::Timer;
 
@@ -17,6 +16,7 @@ use crate::{
         ui::UiPass, wire::WirePass, PassId, PassType, RenderPass,
     },
     stats::RenderStats,
+    GfxCommand, GfxImage,
 };
 
 #[derive(Debug)]
@@ -107,7 +107,7 @@ pub struct FrameGraph {
 
 impl FrameGraph {
     pub fn new(ctx: &Context) -> Self {
-        let draw_extent = ctx.display.get_extent(&ctx.device);
+        let draw_extent = ctx.extent();
 
         let frames = (0..ctx.frames_in_flight)
             .map(|_| FrameData::new(ctx))
@@ -126,7 +126,7 @@ impl FrameGraph {
     pub fn default(ctx: &Context) -> Self {
         let mut graph = Self::new(ctx);
 
-        let extent = ctx.display.get_extent(&ctx.device);
+        let extent = ctx.extent();
 
         graph.resource_manager.register_image(
             ctx,
@@ -156,7 +156,7 @@ impl FrameGraph {
     pub fn ui(ctx: &Context) -> Self {
         let mut graph = Self::new(ctx);
 
-        let extent = ctx.display.get_extent(&ctx.device);
+        let extent = ctx.extent();
 
         graph.resource_manager.register_image(
             ctx,

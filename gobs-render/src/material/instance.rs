@@ -1,12 +1,12 @@
 use std::fmt::Debug;
 use std::sync::Arc;
 
-use gobs_gfx::{GfxBindingGroup, GfxPipeline};
 use uuid::Uuid;
 
 use crate::{
     geometry::VertexFlag,
     material::{Material, Texture},
+    GfxBindingGroup, GfxPipeline,
 };
 
 pub type MaterialInstanceId = Uuid;

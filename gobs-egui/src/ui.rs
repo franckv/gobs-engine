@@ -41,7 +41,7 @@ impl UIRenderer {
     pub fn new(ctx: &Context, pass: Arc<dyn RenderPass>) -> Self {
         let ectx = egui::Context::default();
 
-        let (width, height): (f32, f32) = ctx.display.get_extent(&ctx.device).into();
+        let (width, height): (f32, f32) = ctx.extent().into();
 
         ectx.set_pixels_per_point(PIXEL_PER_POINT);
 

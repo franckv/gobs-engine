@@ -1,12 +1,12 @@
 use std::sync::Arc;
 
+use gobs_gfx as gfx;
 use gobs_vulkan as vk;
 
-use crate::backend::vulkan::{VkBuffer, VkImage, VkPipeline};
-use crate::BindingGroupType;
-use crate::ImageLayout;
+use gfx::BindingGroupType;
+use gfx::ImageLayout;
 
-use super::image::VkSampler;
+use crate::{VkBuffer, VkImage, VkPipeline, VkSampler};
 
 pub struct VkBindingGroup {
     pub(crate) ds: vk::descriptor::DescriptorSet,

@@ -2,16 +2,16 @@ use std::sync::Arc;
 
 use winit::window::Window;
 
-use gobs_gfx::{self as gfx, Display};
+use gobs_gfx as gfx;
 
-use gfx::{
-    Device, DisplayType, GfxDevice, GfxDisplay, GfxInstance, ImageExtent2D, ImageFormat, Instance,
-};
+use gfx::{Device, Display, ImageExtent2D, ImageFormat, Instance};
+
+use crate::{GfxDevice, GfxDisplay, GfxInstance};
 
 pub struct Context {
     pub app_name: String,
     pub instance: Arc<GfxInstance>,
-    pub display: DisplayType,
+    pub display: GfxDisplay,
     pub device: Arc<GfxDevice>,
     pub color_format: ImageFormat,
     pub depth_format: ImageFormat,
@@ -49,6 +49,10 @@ impl Context {
 
     pub fn frame_id(&self) -> usize {
         self.frame_number % self.frames_in_flight
+    }
+
+    pub fn request_redraw(&self) {
+        self.display.request_redraw();
     }
 }
 

@@ -42,13 +42,13 @@ impl SampleApp {
     }
 
     pub fn ortho_camera(ctx: &Context) -> Camera {
-        let extent = ctx.display.get_extent(&ctx.device);
+        let extent = ctx.extent();
 
         Camera::ortho(extent.width as f32, extent.height as f32, 0.1, 100., 0., 0.)
     }
 
     pub fn perspective_camera(ctx: &Context) -> Camera {
-        let extent = ctx.display.get_extent(&ctx.device);
+        let extent = ctx.extent();
 
         Camera::perspective(
             extent.width as f32 / extent.height as f32,

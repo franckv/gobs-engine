@@ -1,13 +1,17 @@
+use gobs_gfx as gfx;
 use gobs_vulkan as vk;
 
-use crate::backend::vulkan::device::VkDevice;
-use crate::Buffer;
+use gfx::Buffer;
+
+use crate::device::VkDevice;
 
 pub struct VkBuffer {
     pub(crate) buffer: vk::buffer::Buffer,
 }
 
 impl Buffer for VkBuffer {
+    type GfxDevice = VkDevice;
+
     fn new(
         name: &str,
         size: usize,

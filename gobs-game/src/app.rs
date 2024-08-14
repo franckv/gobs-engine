@@ -174,7 +174,7 @@ where
 
     fn about_to_wait(&mut self, _event_loop: &winit::event_loop::ActiveEventLoop) {
         if let Some(context) = &mut self.context {
-            context.display.request_redraw();
+            context.request_redraw();
         }
     }
 }

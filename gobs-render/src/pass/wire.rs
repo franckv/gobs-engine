@@ -12,8 +12,7 @@ use gobs_core::{
 };
 use gobs_gfx::{
     BindingGroupType, Buffer, Command, CullMode, DescriptorStage, DescriptorType, DynamicStateElem,
-    FrontFace, GfxCommand, GfxPipeline, ImageExtent2D, ImageLayout, Pipeline, PolygonMode, Rect2D,
-    Viewport,
+    FrontFace, ImageExtent2D, ImageLayout, Pipeline, PolygonMode, Rect2D, Viewport,
 };
 use gobs_utils::timer::Timer;
 
@@ -23,6 +22,7 @@ use crate::{
     geometry::VertexFlag,
     graph::{RenderError, ResourceManager},
     pass::{FrameData, PassId, PassType, RenderPass},
+    GfxCommand, GfxPipeline,
 };
 
 pub struct WirePass {

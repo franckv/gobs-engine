@@ -2,8 +2,7 @@ use std::sync::Arc;
 
 use gobs_gfx::{
     BindingGroupType, BlendMode, CompareOp, CullMode, DescriptorStage, DescriptorType,
-    DynamicStateElem, FrontFace, GfxGraphicsPipelineBuilder, GfxPipeline, ImageLayout, Pipeline,
-    Rect2D, Viewport,
+    DynamicStateElem, FrontFace, ImageLayout, Pipeline, Rect2D, Viewport,
 };
 use uuid::Uuid;
 
@@ -12,6 +11,7 @@ use crate::{
     geometry::VertexFlag,
     material::{MaterialInstance, Texture},
     pass::RenderPass,
+    GfxGraphicsPipelineBuilder, GfxPipeline,
 };
 
 pub type MaterialId = Uuid;

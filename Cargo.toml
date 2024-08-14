@@ -6,6 +6,7 @@ members = [
     "gobs-egui",
     "gobs-game",
     "gobs-gfx",
+    "gobs-gfx-vulkan",
     "gobs-render",
     "gobs-scene",
     "gobs-utils",
@@ -41,6 +42,10 @@ path = "./gobs-game"
 [workspace.dependencies.gobs-gfx]
 package = "gobs-gfx"
 path = "./gobs-gfx"
+
+[workspace.dependencies.gobs-gfx-vulkan]
+package = "gobs-gfx-vulkan"
+path = "./gobs-gfx-vulkan"
 
 [workspace.dependencies.gobs-render]
 package = "gobs-render"

@@ -63,7 +63,7 @@ impl SwapChain {
         image_count: usize,
         old_swapchain: Option<&SwapChain>,
     ) -> Self {
-        let extent = surface.get_extent(device.clone());
+        let extent = surface.get_extent(&device);
 
         let swapchain_info = vk::SwapchainCreateInfoKHR::default()
             .surface(surface.raw())
@@ -99,9 +99,8 @@ impl SwapChain {
         }
     }
 
-    pub fn create_images(&self) -> Vec<Image> {
-        //TODO: let extent = self.surface.get_extent(self.device.clone());
-        let extent = self.surface.get_dimensions();
+    pub fn create_images(&self, device: &Device) -> Vec<Image> {
+        let extent = self.surface.get_extent(device);
 
         unsafe {
             let vk_images = self.loader.get_swapchain_images(self.swapchain).unwrap();

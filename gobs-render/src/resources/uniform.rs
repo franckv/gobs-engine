@@ -1,4 +1,6 @@
-use gobs_gfx::{Buffer, BufferUsage, GfxBuffer, GfxDevice};
+use gobs_gfx::{Buffer, BufferUsage};
+
+use crate::{GfxBuffer, GfxDevice};
 
 pub struct UniformBuffer {
     pub buffer: GfxBuffer,

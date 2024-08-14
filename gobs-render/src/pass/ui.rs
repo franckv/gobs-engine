@@ -1,8 +1,6 @@
 use std::sync::Arc;
 
-use gobs_gfx::{
-    Buffer, Command, GfxCommand, GfxPipeline, ImageExtent2D, ImageLayout, Pipeline, PipelineId,
-};
+use gobs_gfx::{Buffer, Command, ImageExtent2D, ImageLayout, Pipeline, PipelineId};
 use gobs_utils::timer::Timer;
 
 use gobs_core::{
@@ -21,6 +19,7 @@ use crate::{
     graph::{RenderError, ResourceManager},
     material::MaterialInstanceId,
     pass::{FrameData, PassId, PassType, RenderPass},
+    GfxCommand, GfxPipeline,
 };
 
 pub struct UiPass {

@@ -1,11 +1,11 @@
-pub(crate) mod bindgroup;
-pub(crate) mod buffer;
-pub(crate) mod command;
-pub(crate) mod device;
-pub(crate) mod display;
-pub(crate) mod image;
-pub(crate) mod instance;
-pub(crate) mod pipeline;
+mod bindgroup;
+mod buffer;
+mod command;
+mod device;
+mod display;
+mod image;
+mod instance;
+mod pipeline;
 
 use bindgroup::VkBindingGroup;
 use buffer::VkBuffer;

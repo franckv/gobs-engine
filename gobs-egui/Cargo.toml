@@ -10,7 +10,6 @@ gobs-core = { workspace = true }
 gobs-game = { workspace = true }
 gobs-gfx = { workspace = true }
 gobs-render = { workspace = true }
-gobs-scene = { workspace = true }
 gobs-utils = { workspace = true }
 log = { workspace = true }
 egui = { workspace = true }

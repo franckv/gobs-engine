@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use glam::Mat3;
-use gobs_gfx::{Buffer, Command, GfxCommand, GfxPipeline, ImageExtent2D, ImageLayout, Pipeline};
+use gobs_gfx::{Buffer, Command, ImageExtent2D, ImageLayout, Pipeline};
 use gobs_utils::timer::Timer;
 use uuid::Uuid;
 
@@ -20,6 +20,7 @@ use crate::{
     geometry::VertexFlag,
     graph::{RenderError, ResourceManager},
     pass::{FrameData, PassId, PassType, RenderPass},
+    GfxCommand, GfxPipeline,
 };
 
 pub struct ForwardPass {

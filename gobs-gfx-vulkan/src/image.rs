@@ -1,13 +1,17 @@
+use gobs_gfx as gfx;
 use gobs_vulkan as vk;
 
-use crate::backend::vulkan::VkDevice;
-use crate::{Image, ImageExtent2D, ImageFormat, ImageUsage, Sampler, SamplerFilter};
+use gfx::{Image, ImageExtent2D, ImageFormat, ImageUsage, Sampler, SamplerFilter};
+
+use crate::VkDevice;
 
 pub struct VkImage {
     pub(crate) image: vk::image::Image,
 }
 
 impl Image for VkImage {
+    type GfxDevice = VkDevice;
+
     fn new(
         name: &str,
         device: &VkDevice,
@@ -47,6 +51,8 @@ pub struct VkSampler {
 }
 
 impl Sampler for VkSampler {
+    type GfxDevice = VkDevice;
+
     fn new(device: &VkDevice, mag_filter: SamplerFilter, min_filter: SamplerFilter) -> Self {
         Self {
             sampler: vk::image::Sampler::new(device.device.clone(), mag_filter, min_filter),

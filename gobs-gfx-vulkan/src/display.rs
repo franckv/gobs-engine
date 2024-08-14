@@ -3,13 +3,15 @@ use std::sync::Arc;
 use anyhow::{bail, Result};
 use winit::window::Window;
 
+use gobs_gfx as gfx;
 use gobs_vulkan as vk;
 
-use crate::backend::vulkan::{VkDevice, VkImage, VkInstance};
-use crate::{Display, DisplayType, Image};
+use gfx::{Display, Image};
+
+use crate::{VkDevice, VkImage, VkInstance};
 
 pub struct VkDisplay {
-    pub(crate) surface: Arc<vk::surface::Surface>,
+    pub(crate) surface: Option<Arc<vk::surface::Surface>>,
     pub(crate) swapchain: Option<vk::swapchain::SwapChain>,
     pub(crate) swapchain_images: Vec<VkImage>,
     pub(crate) swapchain_idx: usize,
@@ -18,44 +20,57 @@ pub struct VkDisplay {
 }
 
 impl Display for VkDisplay {
-    fn new(instance: Arc<VkInstance>, window: Option<Window>) -> Result<DisplayType>
+    type GfxDisplay = VkDisplay;
+    type GfxDevice = VkDevice;
+    type GfxImage = VkImage;
+    type GfxInstance = VkInstance;
+
+    fn new(instance: Arc<VkInstance>, window: Option<Window>) -> Result<Self>
     where
         Self: Sized,
     {
-        let surface = Arc::new(vk::surface::Surface::new(
-            instance.instance.clone(),
-            window.unwrap(),
-        )?);
+        let surface = match window {
+            Some(window) => Some(Arc::new(vk::surface::Surface::new(
+                instance.instance.clone(),
+                window,
+            )?)),
+            None => None,
+        };
 
-        Ok(DisplayType::VideoDisplay(Self {
+        Ok(Self {
             surface,
             swapchain: None,
             swapchain_images: Vec::new(),
             swapchain_idx: 0,
             swapchain_semaphores: Vec::new(),
             render_semaphores: Vec::new(),
-        }))
+        })
     }
 
     fn init(&mut self, device: &VkDevice, frames_in_flight: usize) {
-        let swapchain = Self::create_swapchain(self.surface.clone(), device.device.clone());
-        self.swapchain_images = swapchain
-            .create_images()
-            .into_iter()
-            .map(|image| VkImage::from_raw(image))
-            .collect();
-        self.swapchain = Some(swapchain);
+        if let Some(surface) = &self.surface {
+            let swapchain = Self::create_swapchain(surface.clone(), device.device.clone());
+            self.swapchain_images = swapchain
+                .create_images(&device.device)
+                .into_iter()
+                .map(|image| VkImage::from_raw(image))
+                .collect();
+            self.swapchain = Some(swapchain);
 
-        for _ in 0..frames_in_flight {
-            self.swapchain_semaphores
-                .push(vk::sync::Semaphore::new(device.device.clone(), "Swapchain"));
-            self.render_semaphores
-                .push(vk::sync::Semaphore::new(device.device.clone(), "Render"));
+            for _ in 0..frames_in_flight {
+                self.swapchain_semaphores
+                    .push(vk::sync::Semaphore::new(device.device.clone(), "Swapchain"));
+                self.render_semaphores
+                    .push(vk::sync::Semaphore::new(device.device.clone(), "Render"));
+            }
         }
     }
 
     fn get_extent(&self, device: &VkDevice) -> vk::image::ImageExtent2D {
-        self.surface.get_extent(device.device.clone())
+        match &self.surface {
+            Some(surface) => surface.get_extent(&device.device),
+            None => vk::image::ImageExtent2D::new(0, 0),
+        }
     }
 
     fn get_render_target(&mut self) -> &mut VkImage {
@@ -92,21 +107,32 @@ impl Display for VkDisplay {
 
     fn resize(&mut self, device: &VkDevice) {
         if let Some(swapchain) = &self.swapchain {
-            self.swapchain = Some(vk::swapchain::SwapChain::new(
-                device.device.clone(),
-                self.surface.clone(),
-                swapchain.format,
-                swapchain.present,
-                swapchain.image_count,
-                Some(&swapchain),
-            ));
+            if let Some(surface) = &self.surface {
+                self.swapchain = Some(vk::swapchain::SwapChain::new(
+                    device.device.clone(),
+                    surface.clone(),
+                    swapchain.format,
+                    swapchain.present,
+                    swapchain.image_count,
+                    Some(&swapchain),
+                ));
+            }
         }
         if let Some(swapchain) = &self.swapchain {
             self.swapchain_images = swapchain
-                .create_images()
+                .create_images(&device.device)
                 .into_iter()
                 .map(|image| VkImage::from_raw(image))
                 .collect();
+        }
+    }
+
+    fn request_redraw(&self) {
+        match &self.surface {
+            None => (),
+            Some(surface) => {
+                surface.window.request_redraw();
+            }
         }
     }
 }
@@ -123,7 +149,7 @@ impl VkDisplay {
             .find(|&&p| p == vk::swapchain::PresentationMode::Fifo)
             .unwrap();
 
-        let caps = surface.get_capabilities(device.clone());
+        let caps = surface.get_capabilities(&device);
 
         let mut image_count = caps.min_image_count + 1;
         if caps.max_image_count > 0 && image_count > caps.max_image_count {

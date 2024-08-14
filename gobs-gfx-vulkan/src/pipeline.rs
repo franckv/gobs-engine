@@ -4,14 +4,16 @@ use anyhow::Result;
 use indexmap::IndexMap;
 use parking_lot::RwLock;
 
+use gobs_gfx as gfx;
 use gobs_utils::load;
 use gobs_vulkan as vk;
 
-use crate::backend::vulkan::VkBindingGroup;
-use crate::{
-    backend::vulkan::VkDevice, BindingGroupType, BlendMode, CompareOp, CullMode, DynamicStateElem,
-    FrontFace, ImageFormat, Pipeline, PipelineId, PolygonMode, Rect2D, Viewport,
+use gfx::{
+    BindingGroupType, BlendMode, CompareOp, CullMode, DynamicStateElem, FrontFace, ImageFormat,
+    Pipeline, PipelineId, PolygonMode, Rect2D, Viewport,
 };
+
+use crate::{VkBindingGroup, VkDevice};
 
 pub struct VkPipeline {
     pub(crate) name: String,
@@ -21,6 +23,11 @@ pub struct VkPipeline {
 }
 
 impl Pipeline for VkPipeline {
+    type GfxBindingGroup = VkBindingGroup;
+    type GfxDevice = VkDevice;
+    type GfxComputePipelineBuilder = VkComputePipelineBuilder;
+    type GfxGraphicsPipelineBuilder = VkGraphicsPipelineBuilder;
+
     fn name(&self) -> &str {
         &self.name
     }

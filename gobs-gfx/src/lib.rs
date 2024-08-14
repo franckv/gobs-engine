@@ -1,14 +1,20 @@
-mod backend;
-mod frontend;
+mod bindgroup;
+mod buffer;
+mod command;
+mod device;
+mod display;
+mod image;
+mod instance;
+mod pipeline;
 
-pub use backend::{
-    GfxBindingGroup, GfxBuffer, GfxCommand, GfxComputePipelineBuilder, GfxDevice, GfxDisplay,
-    GfxGraphicsPipelineBuilder, GfxImage, GfxInstance, GfxPipeline, GfxSampler,
-};
-pub use frontend::{
-    BindingGroupType, Buffer, Command, Device, Display, DisplayType, Image, Instance, Pipeline,
-    PipelineId, Sampler,
-};
+pub use bindgroup::BindingGroupType;
+pub use buffer::Buffer;
+pub use command::Command;
+pub use device::Device;
+pub use display::Display;
+pub use image::{Image, Sampler};
+pub use instance::Instance;
+pub use pipeline::{Pipeline, PipelineId};
 
 use gobs_vulkan as vk;
 pub use vk::buffer::BufferUsage;

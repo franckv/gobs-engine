@@ -102,7 +102,7 @@ impl Surface {
         results
     }
 
-    pub fn get_capabilities(&self, device: Arc<Device>) -> SurfaceCapabilities {
+    pub fn get_capabilities(&self, device: &Device) -> SurfaceCapabilities {
         let capabilities = unsafe {
             self.instance
                 .surface_loader
@@ -128,7 +128,7 @@ impl Surface {
         ImageExtent2D::new(dim.width, dim.height)
     }
 
-    pub fn get_extent(&self, device: Arc<Device>) -> ImageExtent2D {
+    pub fn get_extent(&self, device: &Device) -> ImageExtent2D {
         let caps = self.get_capabilities(device);
         let dim = self.get_dimensions();
 

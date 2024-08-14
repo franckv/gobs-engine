@@ -4,10 +4,7 @@ use gobs_core::{
     entity::{camera::Camera, light::Light, uniform::UniformLayout},
     Transform,
 };
-use gobs_gfx::{
-    BindingGroupType, Command, DescriptorType, GfxBindingGroup, GfxCommand, GfxPipeline,
-    ImageExtent2D, ImageLayout, Pipeline,
-};
+use gobs_gfx::{BindingGroupType, Command, DescriptorType, ImageExtent2D, ImageLayout, Pipeline};
 
 use crate::{
     batch::RenderBatch,
@@ -15,6 +12,7 @@ use crate::{
     geometry::VertexFlag,
     graph::{RenderError, ResourceManager},
     pass::{PassId, PassType, RenderPass},
+    GfxBindingGroup, GfxCommand, GfxPipeline,
 };
 
 pub(crate) struct FrameData {

@@ -1,21 +1,21 @@
 [package]
-name = "gobs-scene"
+name = "gobs-gfx-vulkan"
 version = { workspace = true }
 authors = { workspace = true }
 edition = { workspace = true }
 
 [dependencies]
+anyhow = { workspace = true }
 bitflags = { workspace = true }
 bytemuck = { workspace = true }
-glam = { workspace = true }
-gobs-core = { workspace = true }
-gobs-render = { workspace = true }
+gobs-gfx = { workspace = true }
 gobs-utils = { workspace = true }
+gobs-vulkan = { workspace = true }
 gpu-allocator = { workspace = true }
+image = { workspace = true }
+indexmap = { workspace = true }
 log = { workspace = true }
 parking_lot = { workspace = true }
-slotmap = { workspace = true }
+serde = { workspace = true }
 uuid = { workspace = true }
-
-[build-dependencies]
-fs_extra = { workspace = true }
+winit = { workspace = true }

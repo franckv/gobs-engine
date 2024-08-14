@@ -3,9 +3,10 @@ use std::sync::Arc;
 use anyhow::Result;
 use winit::window::Window;
 
+use gobs_gfx as gfx;
 use gobs_vulkan as vk;
 
-use crate::Instance;
+use gfx::Instance;
 
 pub struct VkInstance {
     pub(crate) instance: Arc<vk::instance::Instance>,

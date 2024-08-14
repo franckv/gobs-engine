@@ -1,12 +1,13 @@
 use std::sync::Arc;
 
-use gobs_gfx::{Buffer, BufferUsage, Command, Device, GfxBuffer};
+use gobs_gfx::{Buffer, BufferUsage, Command, Device};
 
 use crate::{
     context::Context,
     geometry::{BoundingBox, Mesh, Model, VertexData},
     material::MaterialInstanceId,
     pass::RenderPass,
+    GfxBuffer,
 };
 
 #[derive(Clone, Copy, Debug)]

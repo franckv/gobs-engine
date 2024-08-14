@@ -1,16 +1,22 @@
+use gobs_gfx as gfx;
 use gobs_vulkan as vk;
 
-use crate::{
-    backend::vulkan::{GfxImage, VkBindingGroup, VkBuffer, VkDevice, VkImage, VkPipeline},
-    Command, DisplayType,
-};
-use crate::{ImageExtent2D, ImageLayout};
+use gfx::{Command, ImageExtent2D, ImageLayout};
+
+use crate::{display::VkDisplay, VkBindingGroup, VkBuffer, VkDevice, VkImage, VkPipeline};
 
 pub struct VkCommand {
     pub(crate) command: vk::command::CommandBuffer,
 }
 
 impl Command for VkCommand {
+    type GfxBindingGroup = VkBindingGroup;
+    type GfxBuffer = VkBuffer;
+    type GfxDevice = VkDevice;
+    type GfxDisplay = VkDisplay;
+    type GfxImage = VkImage;
+    type GfxPipeline = VkPipeline;
+
     fn new(device: &VkDevice, name: &str) -> Self {
         let command_pool =
             vk::command::CommandPool::new(device.device.clone(), &device.queue.family);
@@ -75,7 +81,7 @@ impl Command for VkCommand {
         self.command.end_rendering();
     }
 
-    fn transition_image_layout(&self, image: &mut GfxImage, layout: ImageLayout) {
+    fn transition_image_layout(&self, image: &mut VkImage, layout: ImageLayout) {
         self.command
             .transition_image_layout(&mut image.image, layout);
     }
@@ -142,12 +148,10 @@ impl Command for VkCommand {
         self.command.reset();
     }
 
-    fn submit2(&self, display: &DisplayType, frame: usize) {
-        if let DisplayType::VideoDisplay(display) = display {
-            log::trace!("Submit with semaphore {}", frame);
-            let swapchain_semaphore = Some(&display.swapchain_semaphores[frame]);
-            let render_semaphore = Some(&display.render_semaphores[frame]);
-            self.command.submit2(swapchain_semaphore, render_semaphore);
-        }
+    fn submit2(&self, display: &VkDisplay, frame: usize) {
+        log::trace!("Submit with semaphore {}", frame);
+        let swapchain_semaphore = Some(&display.swapchain_semaphores[frame]);
+        let render_semaphore = Some(&display.render_semaphores[frame]);
+        self.command.submit2(swapchain_semaphore, render_semaphore);
     }
 }

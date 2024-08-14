@@ -7,7 +7,7 @@ use gobs_core::{
     entity::{camera::Camera, light::Light, uniform::UniformLayout},
     Transform,
 };
-use gobs_gfx::{GfxCommand, GfxPipeline, ImageExtent2D};
+use gobs_gfx::ImageExtent2D;
 
 use crate::{
     batch::RenderBatch,
@@ -15,6 +15,7 @@ use crate::{
     geometry::VertexFlag,
     graph::{RenderError, ResourceManager},
     resources::UniformBuffer,
+    GfxCommand, GfxPipeline,
 };
 
 pub mod bounds;

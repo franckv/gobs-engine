@@ -2,13 +2,12 @@ use std::sync::Arc;
 
 use anyhow::Result;
 
+use gobs_gfx as gfx;
 use gobs_vulkan as vk;
 
-use crate::{
-    backend::vulkan::{GfxCommand, VkCommand, VkInstance},
-    frontend::display::DisplayType,
-    Device,
-};
+use gfx::Device;
+
+use crate::{display::VkDisplay, GfxCommand, VkCommand, VkInstance};
 
 pub struct VkDevice {
     pub(crate) device: Arc<vk::device::Device>,
@@ -18,21 +17,25 @@ pub struct VkDevice {
 }
 
 impl Device for VkDevice {
-    fn new(instance: Arc<VkInstance>, display: &DisplayType) -> Result<Arc<Self>>
+    type GfxDisplay = VkDisplay;
+    type GfxInstance = VkInstance;
+    type GfxCommand = VkCommand;
+
+    fn new(instance: Arc<VkInstance>, display: &VkDisplay) -> Result<Arc<Self>>
     where
         Self: Sized,
     {
-        let (physical_device, queue_family) = match display {
-            DisplayType::VideoDisplay(display) => {
-                let physical_device = instance.instance.find_adapter(&display.surface);
+        let (physical_device, queue_family) = match &display.surface {
+            Some(surface) => {
+                let physical_device = instance.instance.find_adapter(surface);
                 let queue_family = instance
                     .instance
-                    .find_family(&physical_device, &display.surface)
+                    .find_family(&physical_device, surface)
                     .expect("Cannot find queue family");
 
                 (physical_device, queue_family)
             }
-            DisplayType::NullDisplay => {
+            None => {
                 let physical_device = instance.instance.find_headless_adapter();
                 let queue_family = instance
                     .instance

@@ -1,9 +1,11 @@
-use crate::{GfxDevice, ImageExtent2D, ImageFormat, ImageUsage, SamplerFilter};
+use crate::{ImageExtent2D, ImageFormat, ImageUsage, SamplerFilter};
 
 pub trait Image {
+    type GfxDevice;
+
     fn new(
         name: &str,
-        device: &GfxDevice,
+        device: &Self::GfxDevice,
         format: ImageFormat,
         usage: ImageUsage,
         extent: ImageExtent2D,
@@ -13,5 +15,7 @@ pub trait Image {
 }
 
 pub trait Sampler {
-    fn new(device: &GfxDevice, mag_filter: SamplerFilter, min_filter: SamplerFilter) -> Self;
+    type GfxDevice;
+
+    fn new(device: &Self::GfxDevice, mag_filter: SamplerFilter, min_filter: SamplerFilter) -> Self;
 }
