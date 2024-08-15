@@ -3,8 +3,9 @@ use std::sync::Arc;
 
 use uuid::Uuid;
 
+use gobs_resource::geometry::VertexFlag;
+
 use crate::{
-    geometry::VertexFlag,
     material::{Material, Texture},
     GfxBindingGroup, GfxPipeline,
 };

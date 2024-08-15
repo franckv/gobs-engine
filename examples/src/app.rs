@@ -3,17 +3,16 @@ use std::sync::Arc;
 use renderdoc::{RenderDoc, V141};
 
 use gobs::{
-    core::entity::camera::Camera,
     game::input::{Input, Key},
     render::{
         context::Context,
-        geometry::VertexFlag,
         graph::{FrameGraph, RenderError},
         material::{Material, MaterialProperty},
         pass::PassType,
         renderable::Renderable,
         BlendMode,
     },
+    resource::{entity::camera::Camera, geometry::VertexFlag},
     scene::scene::Scene,
     ui::UIRenderer,
 };

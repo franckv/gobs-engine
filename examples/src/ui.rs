@@ -4,8 +4,9 @@ use gpu_allocator::vulkan::AllocatorVisualizer;
 use slotmap::Key as _;
 
 use gobs::{
-    core::{entity::camera::Camera, Transform},
+    core::Transform,
     render::{context::Context, graph::FrameGraph},
+    resource::entity::camera::Camera,
     scene::{components::NodeValue, graph::scenegraph::SceneGraph, scene::Scene},
 };
 

@@ -3,7 +3,8 @@ use std::collections::{hash_map::Entry, HashMap};
 use slotmap::SlotMap;
 
 use gobs_core::Transform;
-use gobs_render::geometry::{BoundingBox, ModelId};
+use gobs_render::ModelId;
+use gobs_resource::geometry::BoundingBox;
 
 use super::node::Node;
 use crate::components::{NodeId, NodeValue};

@@ -6,10 +6,9 @@ use std::sync::Arc;
 use serde::Serialize;
 use uuid::Uuid;
 
-use crate::geometry::{BoundingBox, Mesh};
-use crate::material::{MaterialInstance, MaterialInstanceId};
+use gobs_resource::geometry::{Bounded, BoundingBox, Mesh};
 
-use super::Bounded;
+use crate::material::{MaterialInstance, MaterialInstanceId};
 
 pub type ModelId = Uuid;
 
@@ -37,7 +36,7 @@ impl Debug for Model {
 }
 
 impl Bounded for Model {
-    fn boundings(&self) -> super::BoundingBox {
+    fn boundings(&self) -> BoundingBox {
         let mut bounding_box = BoundingBox::default();
 
         for (mesh, _) in &self.meshes {

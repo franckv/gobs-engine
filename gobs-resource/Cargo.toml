@@ -1,16 +1,18 @@
 [package]
-name = "gobs-core"
+name = "gobs-resource"
 version = { workspace = true }
 authors = { workspace = true }
 edition = { workspace = true }
 
 [dependencies]
+anyhow = { workspace = true }
 bitflags = { workspace = true }
 bytemuck = { workspace = true }
-image = { workspace = true }
 glam = { workspace = true }
+gobs-core = { workspace = true }
 log = { workspace = true }
 serde = { workspace = true }
+uuid = { workspace = true }
 
 [dev-dependencies]
 env_logger = { workspace = true }

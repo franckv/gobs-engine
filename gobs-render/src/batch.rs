@@ -2,20 +2,21 @@ use std::collections::hash_map::Entry;
 use std::sync::Arc;
 use std::{cmp::Ordering, collections::HashMap};
 
-use gobs_core::{
-    entity::{camera::Camera, light::Light, uniform::UniformPropData},
-    Transform,
-};
+use gobs_core::Transform;
 use gobs_gfx::ImageExtent2D;
+use gobs_resource::{
+    entity::{camera::Camera, light::Light, uniform::UniformPropData},
+    geometry::BoundingBox,
+};
 
-use crate::geometry::{BoundingBox, Model, ModelId};
-use crate::renderable::RenderObject;
 use crate::{
     context::Context,
     pass::{PassId, RenderPass},
+    renderable::RenderObject,
     resources::ModelResource,
     stats::RenderStats,
 };
+use crate::{Model, ModelId};
 
 struct ModelManager {
     models: HashMap<(ModelId, PassId), Arc<ModelResource>>,

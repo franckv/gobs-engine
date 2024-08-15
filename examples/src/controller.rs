@@ -1,9 +1,8 @@
 use std::f32::consts::FRAC_PI_2;
 
 use gobs::core::Transform;
-
-use gobs::core::entity::camera::{Camera, ProjectionMode};
 use gobs::game::input::Key;
+use gobs::resource::entity::camera::{Camera, ProjectionMode};
 
 const SAFE_FRAC_PI_2: f32 = FRAC_PI_2 - 0.0001;
 

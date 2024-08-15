@@ -13,12 +13,12 @@ use gobs_gfx::{Image, SamplerFilter};
 use gobs_render::{
     batch::RenderBatch,
     context::Context,
-    geometry::{Mesh, Model, ModelId, VertexData, VertexFlag},
     material::{Material, MaterialInstance, MaterialProperty, Texture, TextureType},
     pass::RenderPass,
     renderable::Renderable,
-    BlendMode, ImageExtent2D,
+    BlendMode, ImageExtent2D, Model, ModelId,
 };
+use gobs_resource::geometry::{Mesh, VertexData, VertexFlag};
 
 const PIXEL_PER_POINT: f32 = 1.;
 

@@ -5,19 +5,20 @@ use gobs_gfx::{Buffer, Command, ImageExtent2D, ImageLayout, Pipeline};
 use gobs_utils::timer::Timer;
 use uuid::Uuid;
 
-use gobs_core::{
+use gobs_core::Transform;
+
+use gobs_resource::{
     entity::{
         camera::Camera,
         light::Light,
         uniform::{UniformLayout, UniformProp, UniformPropData},
     },
-    Transform,
+    geometry::VertexFlag,
 };
 
 use crate::{
     batch::RenderBatch,
     context::Context,
-    geometry::VertexFlag,
     graph::{RenderError, ResourceManager},
     pass::{FrameData, PassId, PassType, RenderPass},
     GfxCommand, GfxPipeline,

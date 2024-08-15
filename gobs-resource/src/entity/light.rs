@@ -1,6 +1,6 @@
 use uuid::Uuid;
 
-use crate::Color;
+use gobs_core::Color;
 
 pub type LightId = Uuid;
 

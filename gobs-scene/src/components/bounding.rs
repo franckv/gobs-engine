@@ -1,4 +1,4 @@
-use gobs_render::geometry::{Bounded, BoundingBox};
+use gobs_resource::geometry::{Bounded, BoundingBox};
 
 use super::NodeValue;
 

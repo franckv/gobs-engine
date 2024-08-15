@@ -3,16 +3,16 @@ use std::sync::Arc;
 use parking_lot::RwLock;
 use uuid::Uuid;
 
-use gobs_core::{
-    entity::{camera::Camera, light::Light, uniform::UniformLayout},
-    Transform,
-};
+use gobs_core::Transform;
 use gobs_gfx::ImageExtent2D;
+use gobs_resource::{
+    entity::{camera::Camera, light::Light, uniform::UniformLayout},
+    geometry::VertexFlag,
+};
 
 use crate::{
     batch::RenderBatch,
     context::Context,
-    geometry::VertexFlag,
     graph::{RenderError, ResourceManager},
     resources::UniformBuffer,
     GfxCommand, GfxPipeline,

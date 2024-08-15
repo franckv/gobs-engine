@@ -6,9 +6,10 @@ use gobs_gfx::{
 };
 use uuid::Uuid;
 
+use gobs_resource::geometry::VertexFlag;
+
 use crate::{
     context::Context,
-    geometry::VertexFlag,
     material::{MaterialInstance, Texture},
     pass::RenderPass,
     GfxGraphicsPipelineBuilder, GfxPipeline,

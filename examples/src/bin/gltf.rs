@@ -2,7 +2,7 @@ use glam::{Quat, Vec3};
 
 use gobs::{
     assets::gltf,
-    core::{entity::light::Light, Color, Transform},
+    core::{Color, Transform},
     game::{
         app::{Application, Run},
         input::{Input, Key},
@@ -14,6 +14,7 @@ use gobs::{
         pass::PassType,
         renderable::Renderable,
     },
+    resource::entity::light::Light,
     scene::{
         components::{NodeId, NodeValue},
         graph::scenegraph::SceneGraph,

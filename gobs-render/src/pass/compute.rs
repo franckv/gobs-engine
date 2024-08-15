@@ -1,15 +1,15 @@
 use std::sync::Arc;
 
-use gobs_core::{
-    entity::{camera::Camera, light::Light, uniform::UniformLayout},
-    Transform,
-};
+use gobs_core::Transform;
 use gobs_gfx::{BindingGroupType, Command, DescriptorType, ImageExtent2D, ImageLayout, Pipeline};
+use gobs_resource::{
+    entity::{camera::Camera, light::Light, uniform::UniformLayout},
+    geometry::VertexFlag,
+};
 
 use crate::{
     batch::RenderBatch,
     context::Context,
-    geometry::VertexFlag,
     graph::{RenderError, ResourceManager},
     pass::{PassId, PassType, RenderPass},
     GfxBindingGroup, GfxCommand, GfxPipeline,

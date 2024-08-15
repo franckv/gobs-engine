@@ -3,7 +3,7 @@ use std::sync::Arc;
 use glam::Vec2;
 
 use gobs_core::Color;
-use gobs_render::geometry::{Mesh, VertexData};
+use gobs_resource::geometry::{Mesh, VertexData};
 
 const T_MIN: f32 = 0.01;
 const T_MAX: f32 = 1. - T_MIN;

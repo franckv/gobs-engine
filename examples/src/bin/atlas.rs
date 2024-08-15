@@ -2,10 +2,7 @@ use futures::try_join;
 use glam::{Quat, Vec3};
 
 use gobs::{
-    core::{
-        entity::{camera::Camera, light::Light},
-        Color, Transform,
-    },
+    core::{Color, Transform},
     game::{
         app::{Application, Run},
         input::Input,
@@ -13,12 +10,13 @@ use gobs::{
     gfx::{Device, SamplerFilter},
     render::{
         context::Context,
-        geometry::Model,
         graph::{FrameGraph, RenderError},
         material::{Texture, TextureType},
         pass::PassType,
         renderable::Renderable,
+        Model,
     },
+    resource::entity::{camera::Camera, light::Light},
     scene::{components::NodeValue, scene::Scene, shape::Shapes},
     ui::UIRenderer,
 };

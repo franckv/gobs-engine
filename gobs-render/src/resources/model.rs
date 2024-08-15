@@ -1,14 +1,9 @@
 use std::sync::Arc;
 
 use gobs_gfx::{Buffer, BufferUsage, Command, Device};
+use gobs_resource::geometry::{BoundingBox, Mesh, VertexData};
 
-use crate::{
-    context::Context,
-    geometry::{BoundingBox, Mesh, Model, VertexData},
-    material::MaterialInstanceId,
-    pass::RenderPass,
-    GfxBuffer,
-};
+use crate::{context::Context, material::MaterialInstanceId, pass::RenderPass, GfxBuffer, Model};
 
 #[derive(Clone, Copy, Debug)]
 pub enum PrimitiveType {

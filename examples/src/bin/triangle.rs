@@ -1,7 +1,7 @@
 use glam::{Quat, Vec3};
 
 use gobs::{
-    core::{entity::light::Light, Color, Transform},
+    core::{Color, Transform},
     game::{
         app::{Application, Run},
         input::Input,
@@ -9,11 +9,12 @@ use gobs::{
     gfx::Device,
     render::{
         context::Context,
-        geometry::Model,
         graph::{FrameGraph, RenderError},
         pass::PassType,
         renderable::Renderable,
+        Model,
     },
+    resource::entity::light::Light,
     scene::{components::NodeValue, scene::Scene, shape::Shapes},
     ui::UIRenderer,
 };

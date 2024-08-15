@@ -1,11 +1,10 @@
 use std::sync::Arc;
 
 use glam::Vec3;
-use gobs_core::{
-    entity::{camera::Camera, light::Light},
-    Transform,
-};
+
+use gobs_core::Transform;
 use gobs_render::{batch::RenderBatch, context::Context, pass::RenderPass, renderable::Renderable};
+use gobs_resource::entity::{camera::Camera, light::Light};
 
 use crate::components::{NodeId, NodeValue};
 use crate::graph::scenegraph::SceneGraph;

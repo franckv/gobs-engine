@@ -3,19 +3,19 @@ use std::sync::Arc;
 use gobs_gfx::{Buffer, Command, ImageExtent2D, ImageLayout, Pipeline, PipelineId};
 use gobs_utils::timer::Timer;
 
-use gobs_core::{
+use gobs_core::Transform;
+use gobs_resource::{
     entity::{
         camera::Camera,
         light::Light,
         uniform::{UniformLayout, UniformProp, UniformPropData},
     },
-    Transform,
+    geometry::VertexFlag,
 };
 
 use crate::{
     batch::RenderBatch,
     context::Context,
-    geometry::VertexFlag,
     graph::{RenderError, ResourceManager},
     material::MaterialInstanceId,
     pass::{FrameData, PassId, PassType, RenderPass},

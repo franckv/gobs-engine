@@ -6,8 +6,6 @@ edition = { workspace = true }
 
 [dependencies]
 anyhow = { workspace = true }
-bitflags = { workspace = true }
-bytemuck = { workspace = true }
 gobs-gfx = { workspace = true }
 gobs-utils = { workspace = true }
 gobs-vulkan = { workspace = true }
@@ -16,6 +14,5 @@ image = { workspace = true }
 indexmap = { workspace = true }
 log = { workspace = true }
 parking_lot = { workspace = true }
-serde = { workspace = true }
 uuid = { workspace = true }
 winit = { workspace = true }
