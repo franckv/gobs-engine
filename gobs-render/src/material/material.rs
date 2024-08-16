@@ -29,7 +29,7 @@ impl Material {
         MaterialBuilder::new(ctx, vertex_shader, fragment_shader)
     }
 
-    pub fn instantiate(self: &Arc<Self>, textures: Vec<Texture>) -> Arc<MaterialInstance> {
+    pub fn instantiate(self: &Arc<Self>, textures: Vec<Arc<Texture>>) -> Arc<MaterialInstance> {
         let material_binding = match textures.is_empty() {
             true => None,
             false => {
@@ -40,8 +40,8 @@ impl Material {
                 let mut updater = binding.update();
                 for texture in &textures {
                     updater = updater
-                        .bind_sampled_image(&texture.read().image, ImageLayout::Shader)
-                        .bind_sampler(&texture.read().sampler);
+                        .bind_sampled_image(texture.image(), ImageLayout::Shader)
+                        .bind_sampler(texture.sampler());
                 }
                 updater.end();
 

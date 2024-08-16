@@ -1,4 +1,4 @@
-use std::sync::{Arc, RwLock, RwLockReadGuard, RwLockWriteGuard};
+use std::sync::Arc;
 
 use anyhow::Result;
 use futures::future::try_join_all;
@@ -32,11 +32,16 @@ impl Into<ImageFormat> for TextureType {
     }
 }
 
-#[derive(Clone)]
-pub struct Texture(Arc<RwLock<TextureValue>>);
+pub struct Texture {
+    pub id: TextureId,
+    pub image: GfxImage,
+    pub data: Vec<u8>,
+    pub ty: TextureType,
+    pub sampler: GfxSampler,
+}
 
 impl Texture {
-    pub fn default(ctx: &Context) -> Self {
+    pub fn default(ctx: &Context) -> Arc<Self> {
         Self::with_color(
             ctx,
             Color::WHITE,
@@ -55,22 +60,39 @@ impl Texture {
         format: ImageFormat,
         mag_filter: SamplerFilter,
         min_filter: SamplerFilter,
-    ) -> Self {
-        let image = GfxImage::new(name, &ctx.device, format, ImageUsage::Texture, extent);
+    ) -> Arc<Self> {
+        let mut image = GfxImage::new(name, &ctx.device, format, ImageUsage::Texture, extent);
 
         let sampler = GfxSampler::new(&ctx.device, mag_filter, min_filter);
 
-        let mut texture_value = TextureValue {
+        Self::upload_data(ctx, data, &mut image);
+
+        Arc::new(Self {
             id: Uuid::new_v4(),
             image,
             data: data.to_vec(),
             ty,
             sampler,
-        };
+        })
+    }
 
-        texture_value.upload_data(ctx);
+    fn upload_data(ctx: &Context, data: &[u8], image: &mut GfxImage) {
+        let mut staging = GfxBuffer::new(
+            "image staging",
+            data.len(),
+            BufferUsage::Staging,
+            &ctx.device,
+        );
 
-        Self(Arc::new(RwLock::new(texture_value)))
+        staging.copy(data, 0);
+
+        ctx.device.run_immediate_mut(|cmd| {
+            cmd.begin_label("Upload image");
+            cmd.transition_image_layout(image, ImageLayout::TransferDst);
+            cmd.copy_buffer_to_image(&staging, image, image.extent().width, image.extent().height);
+            cmd.transition_image_layout(image, ImageLayout::Shader);
+            cmd.end_label();
+        });
     }
 
     pub async fn with_file(
@@ -79,7 +101,7 @@ impl Texture {
         ty: TextureType,
         mag_filter: SamplerFilter,
         min_filter: SamplerFilter,
-    ) -> Result<Self> {
+    ) -> Result<Arc<Self>> {
         let img = load::load_image(file_name, AssetType::IMAGE).await?;
 
         Ok(Self::new(
@@ -104,7 +126,7 @@ impl Texture {
         texture_type: TextureType,
         mag_filter: SamplerFilter,
         min_filter: SamplerFilter,
-    ) -> Result<Self> {
+    ) -> Result<Arc<Self>> {
         let n = texture_files.len();
 
         let (mut width, mut height) = (0, 0);
@@ -161,7 +183,7 @@ impl Texture {
         ty: TextureType,
         mag_filter: SamplerFilter,
         min_filter: SamplerFilter,
-    ) -> Texture {
+    ) -> Arc<Self> {
         Self::new(
             ctx,
             "framebuffer",
@@ -183,7 +205,7 @@ impl Texture {
         ty: TextureType,
         mag_filter: SamplerFilter,
         min_filter: SamplerFilter,
-    ) -> Texture {
+    ) -> Arc<Self> {
         let data: [u8; 4] = color.into();
         Self::new(
             ctx,
@@ -205,7 +227,7 @@ impl Texture {
         ty: TextureType,
         mag_filter: SamplerFilter,
         min_filter: SamplerFilter,
-    ) -> Texture {
+    ) -> Arc<Self> {
         let mut data: [u8; 4 * Self::CHECKER_SIZE * Self::CHECKER_SIZE] =
             [0; 4 * Self::CHECKER_SIZE * Self::CHECKER_SIZE];
 
@@ -236,12 +258,12 @@ impl Texture {
         )
     }
 
-    pub fn read(&self) -> RwLockReadGuard<'_, TextureValue> {
-        self.0.read().expect("Cannot read texture")
+    pub fn image(&self) -> &GfxImage {
+        &self.image
     }
 
-    pub fn write(&self) -> RwLockWriteGuard<'_, TextureValue> {
-        self.0.write().expect("Cannot read texture")
+    pub fn sampler(&self) -> &GfxSampler {
+        &self.sampler
     }
 
     pub fn patch(
@@ -252,59 +274,32 @@ impl Texture {
         width: u32,
         height: u32,
         data: &[u8],
-    ) {
-        let extent = self.0.read().unwrap().image.extent();
+    ) -> Arc<Self> {
+        let extent = self.image.extent();
 
-        {
-            let new_data = &mut self.0.write().unwrap().data;
+        let mut new_data = self.data.clone();
 
-            for x in 0..width {
-                for y in 0..height {
-                    let local_idx = (x + y * width) as usize;
-                    let global_idx = ((start_x + x) + (start_y + y) * extent.width) as usize;
+        for x in 0..width {
+            for y in 0..height {
+                let local_idx = (x + y * width) as usize;
+                let global_idx = ((start_x + x) + (start_y + y) * extent.width) as usize;
 
-                    new_data[4 * global_idx] = data[4 * local_idx];
-                    new_data[4 * global_idx + 1] = data[4 * local_idx + 1];
-                    new_data[4 * global_idx + 2] = data[4 * local_idx + 2];
-                    new_data[4 * global_idx + 3] = data[4 * local_idx + 3];
-                }
+                new_data[4 * global_idx] = data[4 * local_idx];
+                new_data[4 * global_idx + 1] = data[4 * local_idx + 1];
+                new_data[4 * global_idx + 2] = data[4 * local_idx + 2];
+                new_data[4 * global_idx + 3] = data[4 * local_idx + 3];
             }
         }
 
-        self.0.write().unwrap().upload_data(ctx);
-    }
-}
-
-pub struct TextureValue {
-    pub id: TextureId,
-    pub image: GfxImage,
-    pub data: Vec<u8>,
-    pub ty: TextureType,
-    pub sampler: GfxSampler,
-}
-
-impl TextureValue {
-    fn upload_data(&mut self, ctx: &Context) {
-        let mut staging = GfxBuffer::new(
-            "image staging",
-            self.data.len(),
-            BufferUsage::Staging,
-            &ctx.device,
-        );
-
-        staging.copy(&self.data, 0);
-
-        ctx.device.run_immediate_mut(|cmd| {
-            cmd.begin_label("Upload image");
-            cmd.transition_image_layout(&mut self.image, ImageLayout::TransferDst);
-            cmd.copy_buffer_to_image(
-                &staging,
-                &self.image,
-                self.image.extent().width,
-                self.image.extent().height,
-            );
-            cmd.transition_image_layout(&mut self.image, ImageLayout::Shader);
-            cmd.end_label();
-        });
+        Texture::new(
+            ctx,
+            self.image.name(),
+            &new_data,
+            extent,
+            self.ty,
+            self.image.format(),
+            self.sampler.mag_filter(),
+            self.sampler.min_filter(),
+        )
     }
 }

@@ -37,6 +37,14 @@ impl Image for VkImage {
     fn extent(&self) -> ImageExtent2D {
         self.image.extent
     }
+
+    fn name(&self) -> &str {
+        &self.image.label
+    }
+
+    fn format(&self) -> ImageFormat {
+        self.image.format
+    }
 }
 
 impl VkImage {
@@ -47,6 +55,8 @@ impl VkImage {
 
 pub struct VkSampler {
     pub(crate) sampler: vk::image::Sampler,
+    mag_filter: SamplerFilter,
+    min_filter: SamplerFilter,
 }
 
 impl Sampler for VkSampler {
@@ -55,6 +65,16 @@ impl Sampler for VkSampler {
     fn new(device: &VkDevice, mag_filter: SamplerFilter, min_filter: SamplerFilter) -> Self {
         Self {
             sampler: vk::image::Sampler::new(device.device.clone(), mag_filter, min_filter),
+            mag_filter,
+            min_filter,
         }
+    }
+
+    fn mag_filter(&self) -> SamplerFilter {
+        self.mag_filter
+    }
+
+    fn min_filter(&self) -> SamplerFilter {
+        self.min_filter
     }
 }

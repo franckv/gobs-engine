@@ -16,14 +16,14 @@ pub struct MaterialInstance {
     pub id: MaterialInstanceId,
     pub material: Arc<Material>,
     pub material_binding: Option<GfxBindingGroup>,
-    pub textures: Vec<Texture>,
+    pub textures: Vec<Arc<Texture>>,
 }
 
 impl MaterialInstance {
     pub(crate) fn new(
         material: Arc<Material>,
         material_binding: Option<GfxBindingGroup>,
-        textures: Vec<Texture>,
+        textures: Vec<Arc<Texture>>,
     ) -> Arc<Self> {
         Arc::new(Self {
             id: Uuid::new_v4(),

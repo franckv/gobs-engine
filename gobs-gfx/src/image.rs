@@ -14,10 +14,14 @@ pub trait Image {
     ) -> Self;
     fn invalidate(&mut self);
     fn extent(&self) -> ImageExtent2D;
+    fn name(&self) -> &str;
+    fn format(&self) -> ImageFormat;
 }
 
 pub trait Sampler {
     type GfxDevice;
 
     fn new(device: &Self::GfxDevice, mag_filter: SamplerFilter, min_filter: SamplerFilter) -> Self;
+    fn mag_filter(&self) -> SamplerFilter;
+    fn min_filter(&self) -> SamplerFilter;
 }

@@ -22,7 +22,7 @@ impl Into<vk::Filter> for SamplerFilter {
 
 pub struct Sampler {
     device: Arc<Device>,
-    sampler: vk::Sampler,
+    pub sampler: vk::Sampler,
 }
 
 impl Sampler {

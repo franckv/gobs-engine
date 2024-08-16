@@ -330,7 +330,7 @@ impl MaterialManager {
     fn add_texture_instance(
         &mut self,
         alpha: AlphaMode,
-        texture: Texture,
+        texture: Arc<Texture>,
     ) -> Arc<MaterialInstance> {
         let material_instance = match alpha {
             AlphaMode::Blend => self.transparent_texture.instantiate(vec![texture]),
@@ -344,8 +344,8 @@ impl MaterialManager {
     fn add_texture_normal_instance(
         &mut self,
         alpha: AlphaMode,
-        diffuse: Texture,
-        normal: Texture,
+        diffuse: Arc<Texture>,
+        normal: Arc<Texture>,
     ) -> Arc<MaterialInstance> {
         let material_instance = match alpha {
             AlphaMode::Blend => self
@@ -370,8 +370,8 @@ impl MaterialManager {
 }
 
 struct TextureManager {
-    pub textures: Vec<Texture>,
-    pub default_texture: Texture,
+    pub textures: Vec<Arc<Texture>>,
+    pub default_texture: Arc<Texture>,
 }
 
 impl TextureManager {
@@ -479,7 +479,7 @@ impl TextureManager {
         log::info!("{} textures loaded", self.textures.len());
     }
 
-    fn add(&mut self, texture: Texture) {
+    fn add(&mut self, texture: Arc<Texture>) {
         self.textures.push(texture);
     }
 

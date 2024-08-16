@@ -201,16 +201,21 @@ impl UIRenderer {
         for (id, img) in &output.textures_delta.set {
             log::debug!("New texture {:?}", id);
             if img.pos.is_some() {
-                log::debug!("Patching texture");
-                self.patch_texture(
-                    ctx,
-                    self.font_texture
-                        .get(id)
-                        .cloned()
-                        .expect("Cannot update unallocated texture"),
-                    img,
-                )
-                .await;
+                log::info!("Patching texture");
+                let texture = self
+                    .patch_texture(
+                        ctx,
+                        self.font_texture
+                            .get(id)
+                            .cloned()
+                            .expect("Cannot update unallocated texture"),
+                        img,
+                    )
+                    .await;
+
+                let material = self.material.instantiate(vec![texture]);
+
+                *self.font_texture.get_mut(id).unwrap() = material;
             } else {
                 log::debug!("Allocate new texture");
                 let texture = self.decode_texture(ctx, img).await;
@@ -256,7 +261,7 @@ impl UIRenderer {
         ctx: &Context,
         material: Arc<MaterialInstance>,
         img: &ImageDelta,
-    ) {
+    ) -> Arc<Texture> {
         match &img.image {
             egui::ImageData::Color(_) => todo!(),
             egui::ImageData::Font(font) => {
@@ -275,7 +280,7 @@ impl UIRenderer {
                 );
                 log::debug!(
                     "Patching texture original size: {:?}",
-                    material.textures[0].read().image.extent()
+                    material.textures[0].image().extent()
                 );
 
                 material.textures[0].patch(
@@ -285,7 +290,7 @@ impl UIRenderer {
                     font.width() as u32,
                     font.height() as u32,
                     bytes,
-                );
+                )
             }
         }
     }
