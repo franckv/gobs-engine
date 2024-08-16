@@ -8,13 +8,13 @@ use gltf::{
     Document,
 };
 
-use gobs_core::{Color, Transform};
+use gobs_core::{Color, ImageExtent2D, Transform};
 use gobs_gfx::SamplerFilter;
 use gobs_render::{
     context::Context,
     material::{Material, MaterialInstance, MaterialProperty, Texture, TextureType},
     pass::RenderPass,
-    BlendMode, ImageExtent2D, Model,
+    BlendMode, Model,
 };
 use gobs_resource::geometry::{Mesh, VertexData, VertexFlag};
 use gobs_scene::{

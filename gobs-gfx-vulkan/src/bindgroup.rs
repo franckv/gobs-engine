@@ -1,10 +1,7 @@
 use std::sync::Arc;
 
-use gobs_gfx as gfx;
+use gobs_gfx::{BindingGroupType, ImageLayout};
 use gobs_vulkan as vk;
-
-use gfx::BindingGroupType;
-use gfx::ImageLayout;
 
 use crate::{VkBuffer, VkImage, VkPipeline, VkSampler};
 

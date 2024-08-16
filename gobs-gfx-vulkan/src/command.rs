@@ -1,7 +1,6 @@
-use gobs_gfx as gfx;
+use gobs_core::ImageExtent2D;
+use gobs_gfx::{Command, ImageLayout};
 use gobs_vulkan as vk;
-
-use gfx::{Command, ImageExtent2D, ImageLayout};
 
 use crate::{display::VkDisplay, VkBindingGroup, VkBuffer, VkDevice, VkImage, VkPipeline};
 

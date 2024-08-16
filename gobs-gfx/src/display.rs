@@ -3,7 +3,7 @@ use std::sync::Arc;
 use anyhow::Result;
 use winit::window::Window;
 
-use crate::ImageExtent2D;
+use gobs_core::ImageExtent2D;
 
 pub trait Display {
     type GfxDisplay;

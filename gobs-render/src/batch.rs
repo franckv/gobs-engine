@@ -2,8 +2,7 @@ use std::collections::hash_map::Entry;
 use std::sync::Arc;
 use std::{cmp::Ordering, collections::HashMap};
 
-use gobs_core::Transform;
-use gobs_gfx::ImageExtent2D;
+use gobs_core::{ImageExtent2D, Transform};
 use gobs_resource::{
     entity::{camera::Camera, light::Light, uniform::UniformPropData},
     geometry::BoundingBox,

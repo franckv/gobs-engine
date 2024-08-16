@@ -6,10 +6,10 @@ use image::imageops::FilterType;
 use image::{DynamicImage, GenericImage, GenericImageView, ImageBuffer};
 use uuid::Uuid;
 
-use gobs_core::color::Color;
+use gobs_core::{Color, ImageExtent2D};
 use gobs_gfx::{
-    Buffer, BufferUsage, Command, Device, Image, ImageExtent2D, ImageFormat, ImageLayout,
-    ImageUsage, Sampler, SamplerFilter,
+    Buffer, BufferUsage, Command, Device, Image, ImageFormat, ImageLayout, ImageUsage, Sampler,
+    SamplerFilter,
 };
 use gobs_utils::load::{self, AssetType};
 

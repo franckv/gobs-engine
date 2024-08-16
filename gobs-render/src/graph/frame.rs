@@ -3,9 +3,8 @@ use std::{collections::HashMap, sync::Arc};
 use anyhow::Result;
 use parking_lot::{RwLock, RwLockReadGuard, RwLockWriteGuard};
 
-use gobs_gfx::{
-    Command, Device, Display, Image, ImageExtent2D, ImageFormat, ImageLayout, ImageUsage,
-};
+use gobs_core::ImageExtent2D;
+use gobs_gfx::{Command, Device, Display, Image, ImageFormat, ImageLayout, ImageUsage};
 use gobs_utils::timer::Timer;
 
 use crate::{

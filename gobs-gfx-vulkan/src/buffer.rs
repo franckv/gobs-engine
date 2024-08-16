@@ -1,7 +1,5 @@
-use gobs_gfx as gfx;
+use gobs_gfx::Buffer;
 use gobs_vulkan as vk;
-
-use gfx::Buffer;
 
 use crate::device::VkDevice;
 

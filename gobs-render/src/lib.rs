@@ -8,7 +8,7 @@ pub mod renderable;
 pub mod resources;
 pub mod stats;
 
-pub use gobs_gfx::{BlendMode, CullMode, ImageExtent2D, ImageFormat, ImageUsage};
+pub use gobs_gfx::{BlendMode, CullMode, ImageFormat, ImageUsage};
 
 #[cfg(feature = "vulkan")]
 pub use gobs_gfx_vulkan::*;

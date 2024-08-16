@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
-use gobs_core::Transform;
-use gobs_gfx::{BindingGroupType, Command, DescriptorType, ImageExtent2D, ImageLayout, Pipeline};
+use gobs_core::{ImageExtent2D, Transform};
+use gobs_gfx::{BindingGroupType, Command, DescriptorType, ImageLayout, Pipeline};
 use gobs_resource::{
     entity::{camera::Camera, light::Light, uniform::UniformLayout},
     geometry::VertexFlag,

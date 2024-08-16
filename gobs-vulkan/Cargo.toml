@@ -13,6 +13,7 @@ anyhow = { workspace = true }
 ash = { workspace = true }
 ash-window = { workspace = true }
 bytemuck = { workspace = true }
+gobs-core = { workspace = true }
 gpu-allocator = { workspace = true }
 log = { workspace = true }
 presser = { workspace = true }

@@ -16,11 +16,12 @@ pub use image::{Image, Sampler};
 pub use instance::Instance;
 pub use pipeline::{Pipeline, PipelineId};
 
-use gobs_vulkan as vk;
-pub use vk::buffer::BufferUsage;
-pub use vk::descriptor::{DescriptorStage, DescriptorType};
-pub use vk::image::{ImageExtent2D, ImageFormat, ImageLayout, ImageUsage, SamplerFilter};
-pub use vk::pipeline::{
-    BlendMode, CompareOp, CullMode, DynamicStateElem, FrontFace, PipelineStage, PolygonMode,
-    Rect2D, Viewport,
+pub use gobs_vulkan::{
+    buffer::BufferUsage,
+    descriptor::{DescriptorStage, DescriptorType},
+    image::{ImageFormat, ImageLayout, ImageUsage, SamplerFilter},
+    pipeline::{
+        BlendMode, CompareOp, CullMode, DynamicStateElem, FrontFace, PipelineStage, PolygonMode,
+        Rect2D, Viewport,
+    },
 };

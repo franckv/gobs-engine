@@ -2,13 +2,14 @@ use std;
 use std::sync::Arc;
 
 use anyhow::Result;
+use ash::vk;
 use raw_window_handle::{HasDisplayHandle, HasWindowHandle};
 use winit::window::Window;
 
-use ash::vk;
+use gobs_core::ImageExtent2D;
 
 use crate::device::Device;
-use crate::image::{ColorSpace, ImageExtent2D, ImageFormat};
+use crate::image::{ColorSpace, ImageFormat};
 use crate::instance::Instance;
 use crate::physical::PhysicalDevice;
 use crate::queue::QueueFamily;

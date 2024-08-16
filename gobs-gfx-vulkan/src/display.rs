@@ -3,10 +3,9 @@ use std::sync::Arc;
 use anyhow::{bail, Result};
 use winit::window::Window;
 
-use gobs_gfx as gfx;
+use gobs_core::ImageExtent2D;
+use gobs_gfx::{Display, Image};
 use gobs_vulkan as vk;
-
-use gfx::{Display, Image};
 
 use crate::{VkDevice, VkImage, VkInstance};
 
@@ -66,10 +65,10 @@ impl Display for VkDisplay {
         }
     }
 
-    fn get_extent(&self, device: &VkDevice) -> vk::image::ImageExtent2D {
+    fn get_extent(&self, device: &VkDevice) -> ImageExtent2D {
         match &self.surface {
             Some(surface) => surface.get_extent(&device.device),
-            None => vk::image::ImageExtent2D::new(0, 0),
+            None => ImageExtent2D::new(0, 0),
         }
     }
 

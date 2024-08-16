@@ -6,8 +6,7 @@ use egui::{
 };
 use glam::{Vec2, Vec3};
 
-use gobs_core::Color;
-use gobs_core::Transform;
+use gobs_core::{Color, ImageExtent2D, Transform};
 use gobs_game::input::{Input, Key};
 use gobs_gfx::{Image, SamplerFilter};
 use gobs_render::{
@@ -16,7 +15,7 @@ use gobs_render::{
     material::{Material, MaterialInstance, MaterialProperty, Texture, TextureType},
     pass::RenderPass,
     renderable::Renderable,
-    BlendMode, ImageExtent2D, Model, ModelId,
+    BlendMode, Model, ModelId,
 };
 use gobs_resource::geometry::{Mesh, VertexData, VertexFlag};
 
@@ -72,7 +71,7 @@ impl UIRenderer {
         }
     }
 
-    pub fn update<F>(&mut self, ctx: &Context, _pass: Arc<dyn RenderPass>, delta: f32, callback: F)
+    pub fn update<F>(&mut self, _ctx: &Context, _pass: Arc<dyn RenderPass>, delta: f32, callback: F)
     where
         F: FnMut(&egui::Context),
     {

@@ -4,14 +4,12 @@ use anyhow::Result;
 use indexmap::IndexMap;
 use parking_lot::RwLock;
 
-use gobs_gfx as gfx;
-use gobs_utils::load;
-use gobs_vulkan as vk;
-
-use gfx::{
+use gobs_gfx::{
     BindingGroupType, BlendMode, CompareOp, CullMode, DynamicStateElem, FrontFace, ImageFormat,
     Pipeline, PipelineId, PolygonMode, Rect2D, Viewport,
 };
+use gobs_utils::load;
+use gobs_vulkan as vk;
 
 use crate::{VkBindingGroup, VkDevice};
 

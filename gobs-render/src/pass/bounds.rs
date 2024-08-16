@@ -2,10 +2,10 @@ use std::sync::Arc;
 
 use uuid::Uuid;
 
-use gobs_core::Transform;
+use gobs_core::{ImageExtent2D, Transform};
 use gobs_gfx::{
     BindingGroupType, Buffer, Command, CullMode, DescriptorStage, DescriptorType, DynamicStateElem,
-    FrontFace, ImageExtent2D, ImageLayout, Pipeline, PolygonMode, Rect2D, Viewport,
+    FrontFace, ImageLayout, Pipeline, PolygonMode, Rect2D, Viewport,
 };
 use gobs_resource::{
     entity::{

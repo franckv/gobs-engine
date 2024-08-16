@@ -2,10 +2,8 @@ use std::sync::Arc;
 
 use anyhow::Result;
 
-use gobs_gfx as gfx;
+use gobs_gfx::Device;
 use gobs_vulkan as vk;
-
-use gfx::Device;
 
 use crate::{display::VkDisplay, GfxCommand, VkCommand, VkInstance};
 

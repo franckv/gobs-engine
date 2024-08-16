@@ -4,12 +4,14 @@ use std::sync::Arc;
 use ash::vk;
 use bytemuck::Pod;
 
+use gobs_core::ImageExtent2D;
+
 use crate::buffer::Buffer;
 use crate::command::CommandPool;
 use crate::descriptor::DescriptorSet;
 use crate::device::Device;
 use crate::framebuffer::Framebuffer;
-use crate::image::{Image, ImageExtent2D, ImageLayout};
+use crate::image::{Image, ImageLayout};
 use crate::pipeline::{Pipeline, PipelineLayout, PipelineStage};
 use crate::query::QueryPool;
 use crate::queue::Queue;
@@ -196,7 +198,10 @@ impl CommandBuffer {
         }
 
         let rendering_info = vk::RenderingInfo::default()
-            .render_area(vk::Rect2D::default().extent(extent.into()))
+            .render_area(vk::Rect2D::default().extent(vk::Extent2D {
+                width: extent.width,
+                height: extent.height,
+            }))
             .layer_count(1);
 
         let rendering_info = match color_info.first() {
@@ -246,7 +251,10 @@ impl CommandBuffer {
             .framebuffer(framebuffer.raw())
             .render_area(vk::Rect2D {
                 offset: vk::Offset2D { x: 0, y: 0 },
-                extent: dim.into(),
+                extent: vk::Extent2D {
+                    width: dim.width,
+                    height: dim.height,
+                },
             })
             .clear_values(&clear_values);
 

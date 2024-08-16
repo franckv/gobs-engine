@@ -1,7 +1,6 @@
-use gobs_gfx as gfx;
+use gobs_core::ImageExtent2D;
+use gobs_gfx::{Image, ImageFormat, ImageUsage, Sampler, SamplerFilter};
 use gobs_vulkan as vk;
-
-use gfx::{Image, ImageExtent2D, ImageFormat, ImageUsage, Sampler, SamplerFilter};
 
 use crate::VkDevice;
 

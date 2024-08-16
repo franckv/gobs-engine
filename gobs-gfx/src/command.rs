@@ -1,4 +1,6 @@
-use crate::{ImageExtent2D, ImageLayout};
+use gobs_core::ImageExtent2D;
+
+use crate::ImageLayout;
 
 pub trait Command {
     type GfxBindingGroup;

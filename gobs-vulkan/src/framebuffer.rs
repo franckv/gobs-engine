@@ -3,8 +3,10 @@ use std::sync::Arc;
 
 use ash::vk;
 
+use gobs_core::ImageExtent2D;
+
 use crate::device::Device;
-use crate::image::{Image, ImageExtent2D};
+use crate::image::Image;
 use crate::renderpass::RenderPass;
 use crate::Wrap;
 
