@@ -18,3 +18,12 @@ impl Light {
         }
     }
 }
+
+impl Default for Light {
+    fn default() -> Self {
+        Self {
+            id: LightId::new_v4(),
+            colour: Color::WHITE,
+        }
+    }
+}
