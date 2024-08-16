@@ -1,3 +1,5 @@
+use std::ops::{Add, Mul};
+
 use bitflags::bitflags;
 use glam::{Vec2, Vec3};
 
@@ -87,7 +89,6 @@ pub struct VertexData {
     pub normal_texture: Vec2,
     pub tangent: Vec3,
     pub bitangent: Vec3,
-    pub index: f32,
 }
 
 impl VertexData {
@@ -167,6 +168,40 @@ impl VertexData {
     }
 }
 
+impl Add<VertexData> for VertexData {
+    type Output = Self;
+
+    fn add(self, rhs: VertexData) -> Self::Output {
+        VertexData {
+            padding: self.padding,
+            position: self.position + rhs.position,
+            color: self.color + rhs.color,
+            texture: self.texture + rhs.texture,
+            normal: self.normal + rhs.normal,
+            normal_texture: self.normal_texture + rhs.normal_texture,
+            tangent: self.tangent + rhs.tangent,
+            bitangent: self.bitangent + rhs.bitangent,
+        }
+    }
+}
+
+impl Mul<f32> for VertexData {
+    type Output = Self;
+
+    fn mul(self, rhs: f32) -> Self::Output {
+        VertexData {
+            padding: self.padding,
+            position: self.position * rhs,
+            color: self.color * rhs,
+            texture: self.texture * rhs,
+            normal: self.normal * rhs,
+            normal_texture: self.normal_texture * rhs,
+            tangent: self.tangent * rhs,
+            bitangent: self.bitangent * rhs,
+        }
+    }
+}
+
 pub struct VertexDataBuilder {
     pub padding: Option<bool>,
     pub position: Option<Vec3>,
@@ -176,7 +211,6 @@ pub struct VertexDataBuilder {
     pub normal_texture: Option<Vec2>,
     pub tangent: Option<Vec3>,
     pub bitangent: Option<Vec3>,
-    pub index: Option<f32>,
 }
 
 impl VertexDataBuilder {
@@ -190,7 +224,6 @@ impl VertexDataBuilder {
             normal_texture: None,
             tangent: None,
             bitangent: None,
-            index: None,
         }
     }
 
@@ -242,12 +275,6 @@ impl VertexDataBuilder {
         self
     }
 
-    pub fn index(mut self, index: f32) -> Self {
-        self.index = Some(index);
-
-        self
-    }
-
     pub fn build(self) -> VertexData {
         VertexData {
             padding: self.padding.expect("Missing padding"),
@@ -258,7 +285,6 @@ impl VertexDataBuilder {
             normal_texture: self.normal_texture.unwrap_or(Vec2::splat(0.)),
             tangent: self.tangent.unwrap_or(Vec3::splat(0.)),
             bitangent: self.bitangent.unwrap_or(Vec3::splat(0.)),
-            index: self.index.unwrap_or(1.),
         }
     }
 }
