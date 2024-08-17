@@ -6,7 +6,7 @@ use ash::khr::swapchain;
 use ash::vk;
 
 use crate::device::Device;
-use crate::image::{Image, ImageUsage};
+use crate::image::{Image, ImageUsage, VkFormat};
 use crate::queue::Queue;
 use crate::surface::{Surface, SurfaceFormat};
 use crate::sync::Semaphore;
@@ -68,7 +68,7 @@ impl SwapChain {
         let swapchain_info = vk::SwapchainCreateInfoKHR::default()
             .surface(surface.raw())
             .min_image_count(image_count as u32)
-            .image_format(format.format.into())
+            .image_format(VkFormat::from(format.format).into())
             .image_color_space(format.color_space.into())
             .image_extent(vk::Extent2D {
                 width: extent.width,

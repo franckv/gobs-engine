@@ -8,8 +8,7 @@ use gltf::{
     Document,
 };
 
-use gobs_core::{Color, ImageExtent2D, Transform};
-use gobs_gfx::SamplerFilter;
+use gobs_core::{Color, ImageExtent2D, SamplerFilter, Transform};
 use gobs_render::{
     context::Context,
     material::{Material, MaterialInstance, MaterialProperty, Texture, TextureType},

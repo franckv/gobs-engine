@@ -6,11 +6,8 @@ use image::imageops::FilterType;
 use image::{DynamicImage, GenericImage, GenericImageView, ImageBuffer};
 use uuid::Uuid;
 
-use gobs_core::{Color, ImageExtent2D};
-use gobs_gfx::{
-    Buffer, BufferUsage, Command, Device, Image, ImageFormat, ImageLayout, ImageUsage, Sampler,
-    SamplerFilter,
-};
+use gobs_core::{Color, ImageExtent2D, ImageFormat, SamplerFilter};
+use gobs_gfx::{Buffer, BufferUsage, Command, Device, Image, ImageLayout, ImageUsage, Sampler};
 use gobs_utils::load::{self, AssetType};
 
 use crate::{context::Context, GfxBuffer, GfxImage, GfxSampler};

@@ -2,21 +2,25 @@ use std::sync::Arc;
 
 use ash::vk;
 
+use gobs_core::SamplerFilter;
+
 use crate::device::Device;
 use crate::Wrap;
 
-#[derive(Clone, Copy, Debug)]
-pub enum SamplerFilter {
-    FilterNearest,
-    FilterLinear,
+pub struct VkFilter(vk::Filter);
+
+impl From<SamplerFilter> for VkFilter {
+    fn from(value: SamplerFilter) -> VkFilter {
+        match value {
+            SamplerFilter::FilterNearest => VkFilter(vk::Filter::NEAREST),
+            SamplerFilter::FilterLinear => VkFilter(vk::Filter::LINEAR),
+        }
+    }
 }
 
-impl Into<vk::Filter> for SamplerFilter {
-    fn into(self) -> vk::Filter {
-        match self {
-            SamplerFilter::FilterNearest => vk::Filter::NEAREST,
-            SamplerFilter::FilterLinear => vk::Filter::LINEAR,
-        }
+impl From<VkFilter> for vk::Filter {
+    fn from(value: VkFilter) -> Self {
+        value.0
     }
 }
 
@@ -28,8 +32,8 @@ pub struct Sampler {
 impl Sampler {
     pub fn new(device: Arc<Device>, mag_filter: SamplerFilter, min_filter: SamplerFilter) -> Self {
         let sampler_info = vk::SamplerCreateInfo::default()
-            .mag_filter(mag_filter.into())
-            .min_filter(min_filter.into());
+            .mag_filter(VkFilter::from(mag_filter).into())
+            .min_filter(VkFilter::from(min_filter).into());
 
         let sampler = unsafe { device.raw().create_sampler(&sampler_info, None).unwrap() };
 

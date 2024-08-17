@@ -6,10 +6,10 @@ use ash::vk;
 use raw_window_handle::{HasDisplayHandle, HasWindowHandle};
 use winit::window::Window;
 
-use gobs_core::ImageExtent2D;
+use gobs_core::{ImageExtent2D, ImageFormat};
 
 use crate::device::Device;
-use crate::image::{ColorSpace, ImageFormat};
+use crate::image::{ColorSpace, VkFormat};
 use crate::instance::Instance;
 use crate::physical::PhysicalDevice;
 use crate::queue::QueueFamily;
@@ -76,7 +76,7 @@ impl Surface {
 
         for format in formats {
             let format = SurfaceFormat {
-                format: format.format.into(),
+                format: VkFormat::from(format.format).into(),
                 color_space: format.color_space.into(),
             };
             results.push(format);

@@ -3,13 +3,14 @@ use std::sync::Arc;
 
 use ash::vk;
 
-use gobs_core::ImageExtent2D;
+use gobs_core::{ImageExtent2D, ImageFormat};
 
 use crate::alloc::Allocator;
 use crate::device::Device;
-use crate::image::ImageFormat;
 use crate::memory::Memory;
 use crate::{debug, Wrap};
+
+use super::format::VkFormat;
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum ImageLayout {
@@ -178,7 +179,7 @@ impl Image {
             )
             .mip_levels(1)
             .array_layers(1)
-            .format(format.into())
+            .format(VkFormat::from(format).into())
             .tiling(vk::ImageTiling::OPTIMAL)
             .initial_layout(vk::ImageLayout::UNDEFINED)
             .usage(usage.into())
@@ -197,7 +198,7 @@ impl Image {
         let view_info = vk::ImageViewCreateInfo::default()
             .image(image)
             .view_type(vk::ImageViewType::TYPE_2D)
-            .format(format.into())
+            .format(VkFormat::from(format).into())
             .subresource_range(
                 vk::ImageSubresourceRange::default()
                     .aspect_mask(usage.into())

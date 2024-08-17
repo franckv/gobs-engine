@@ -2,12 +2,12 @@ use futures::try_join;
 use glam::{Quat, Vec3};
 
 use gobs::{
-    core::{Color, Transform},
+    core::{Color, SamplerFilter, Transform},
     game::{
         app::{Application, Run},
         input::Input,
     },
-    gfx::{Device, SamplerFilter},
+    gfx::Device,
     render::{
         context::Context,
         graph::{FrameGraph, RenderError},

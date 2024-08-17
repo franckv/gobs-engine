@@ -4,9 +4,10 @@ use anyhow::Result;
 use indexmap::IndexMap;
 use parking_lot::RwLock;
 
+use gobs_core::ImageFormat;
 use gobs_gfx::{
-    BindingGroupType, BlendMode, CompareOp, CullMode, DynamicStateElem, FrontFace, ImageFormat,
-    Pipeline, PipelineId, PolygonMode, Rect2D, Viewport,
+    BindingGroupType, BlendMode, CompareOp, CullMode, DynamicStateElem, FrontFace, Pipeline,
+    PipelineId, PolygonMode, Rect2D, Viewport,
 };
 use gobs_utils::load;
 use gobs_vulkan as vk;

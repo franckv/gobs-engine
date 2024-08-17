@@ -6,9 +6,9 @@ use egui::{
 };
 use glam::{Vec2, Vec3};
 
-use gobs_core::{Color, ImageExtent2D, Transform};
+use gobs_core::{Color, ImageExtent2D, SamplerFilter, Transform};
 use gobs_game::input::{Input, Key};
-use gobs_gfx::{Image, SamplerFilter};
+use gobs_gfx::Image;
 use gobs_render::{
     batch::RenderBatch,
     context::Context,

@@ -2,8 +2,8 @@ use std::sync::Arc;
 
 use winit::window::Window;
 
-use gobs_core::ImageExtent2D;
-use gobs_gfx::{Device, Display, ImageFormat, Instance};
+use gobs_core::{ImageExtent2D, ImageFormat};
+use gobs_gfx::{Device, Display, Instance};
 
 use crate::{GfxDevice, GfxDisplay, GfxInstance};
 

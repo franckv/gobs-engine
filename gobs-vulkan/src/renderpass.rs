@@ -2,10 +2,10 @@ use std::sync::Arc;
 
 use ash::vk;
 
-use log::{debug, trace};
+use gobs_core::ImageFormat;
 
 use crate::device::Device;
-use crate::image::ImageFormat;
+use crate::image::VkFormat;
 use crate::Wrap;
 
 pub struct RenderPass {
@@ -16,7 +16,7 @@ pub struct RenderPass {
 impl RenderPass {
     pub fn new(device: Arc<Device>, format: ImageFormat, depth_format: ImageFormat) -> Arc<Self> {
         let color_attach = vk::AttachmentDescription::default()
-            .format(format.into())
+            .format(VkFormat::from(format).into())
             .samples(vk::SampleCountFlags::TYPE_1)
             .load_op(vk::AttachmentLoadOp::CLEAR)
             .store_op(vk::AttachmentStoreOp::STORE)
@@ -26,7 +26,7 @@ impl RenderPass {
             .final_layout(vk::ImageLayout::PRESENT_SRC_KHR);
 
         let depth_attach = vk::AttachmentDescription::default()
-            .format(depth_format.into())
+            .format(VkFormat::from(depth_format).into())
             .samples(vk::SampleCountFlags::TYPE_1)
             .load_op(vk::AttachmentLoadOp::CLEAR)
             .store_op(vk::AttachmentStoreOp::DONT_CARE)
@@ -63,7 +63,7 @@ impl RenderPass {
             .dependencies(std::slice::from_ref(&dependency));
 
         let renderpass = unsafe {
-            debug!("Create renderpass");
+            log::debug!("Create renderpass");
             device
                 .raw()
                 .create_render_pass(&renderpass_info, None)
@@ -82,7 +82,7 @@ impl Wrap<vk::RenderPass> for RenderPass {
 
 impl Drop for RenderPass {
     fn drop(&mut self) {
-        trace!("Drop renderpass");
+        log::trace!("Drop renderpass");
         unsafe {
             self.device.raw().destroy_render_pass(self.renderpass, None);
         }

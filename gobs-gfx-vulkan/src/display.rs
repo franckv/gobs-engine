@@ -3,7 +3,7 @@ use std::sync::Arc;
 use anyhow::{bail, Result};
 use winit::window::Window;
 
-use gobs_core::ImageExtent2D;
+use gobs_core::{ImageExtent2D, ImageFormat};
 use gobs_gfx::{Display, Image};
 use gobs_vulkan as vk;
 
@@ -172,7 +172,7 @@ impl VkDisplay {
         let format = *formats
             .iter()
             .find(|f| {
-                f.format == vk::image::ImageFormat::B8g8r8a8Unorm
+                f.format == ImageFormat::B8g8r8a8Unorm
                     && f.color_space == vk::image::ColorSpace::SrgbNonlinear
             })
             .unwrap();

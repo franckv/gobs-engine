@@ -19,7 +19,7 @@ pub use pipeline::{Pipeline, PipelineId};
 pub use gobs_vulkan::{
     buffer::BufferUsage,
     descriptor::{DescriptorStage, DescriptorType},
-    image::{ImageFormat, ImageLayout, ImageUsage, SamplerFilter},
+    image::{ImageLayout, ImageUsage},
     pipeline::{
         BlendMode, CompareOp, CullMode, DynamicStateElem, FrontFace, PipelineStage, PolygonMode,
         Rect2D, Viewport,

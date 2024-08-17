@@ -2,7 +2,9 @@ use std::sync::Arc;
 
 use ash::vk;
 
-use crate::image::ImageFormat;
+use gobs_core::ImageFormat;
+
+use crate::image::VkFormat;
 use crate::pipeline::{Pipeline, PipelineLayout, Rect2D, Shader, ShaderStage, VertexLayout};
 use crate::{device::Device, Wrap};
 
@@ -433,10 +435,10 @@ impl RenderingState {
     fn new(color_format: Vec<ImageFormat>, depth_format: Option<ImageFormat>) -> Self {
         let color_format = color_format
             .iter()
-            .map(|&f| f.into())
+            .map(|&f| VkFormat::from(f).into())
             .collect::<Vec<vk::Format>>();
 
-        let depth_format = depth_format.map(|f| f.into());
+        let depth_format = depth_format.map(|f| VkFormat::from(f).into());
 
         RenderingState {
             color_format,

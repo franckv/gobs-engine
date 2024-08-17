@@ -1,6 +1,6 @@
-use gobs_core::ImageExtent2D;
+use gobs_core::{ImageExtent2D, ImageFormat, SamplerFilter};
 
-use crate::{ImageFormat, ImageUsage, SamplerFilter};
+use crate::ImageUsage;
 
 pub trait Image {
     type GfxDevice;
