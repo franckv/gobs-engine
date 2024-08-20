@@ -1,9 +1,10 @@
 use std::sync::Arc;
 
+use gobs_gfx::{BufferId, PipelineId};
 use parking_lot::RwLock;
 use uuid::Uuid;
 
-use gobs_core::{ImageExtent2D, Transform};
+use gobs_core::{utils::timer::Timer, ImageExtent2D, Transform};
 use gobs_resource::{
     entity::{camera::Camera, light::Light, uniform::UniformLayout},
     geometry::VertexFlag,
@@ -13,6 +14,7 @@ use crate::{
     batch::RenderBatch,
     context::Context,
     graph::{RenderError, ResourceManager},
+    material::MaterialId,
     resources::UniformBuffer,
     GfxCommand, GfxPipeline,
 };
@@ -62,6 +64,30 @@ pub trait RenderPass {
         light: &Light,
         light_transform: &Transform,
     ) -> Vec<u8>;
+}
+
+pub(crate) struct RenderState {
+    last_pipeline: PipelineId,
+    last_index_buffer: BufferId,
+    last_material: MaterialId,
+    last_indices_offset: usize,
+    scene_data_bound: bool,
+    object_data: Vec<u8>,
+    timer: Timer,
+}
+
+impl RenderState {
+    pub fn new() -> Self {
+        Self {
+            last_pipeline: PipelineId::nil(),
+            last_index_buffer: BufferId::nil(),
+            last_material: MaterialId::nil(),
+            last_indices_offset: 0,
+            scene_data_bound: false,
+            object_data: Vec::new(),
+            timer: Timer::new(),
+        }
+    }
 }
 
 pub(crate) struct FrameData {

@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
-use gobs_core::{utils::timer::Timer, ImageExtent2D, Transform};
-use gobs_gfx::{Buffer, Command, ImageLayout, Pipeline, PipelineId};
+use gobs_core::{ImageExtent2D, Transform};
+use gobs_gfx::{Buffer, Command, ImageLayout, Pipeline};
 use gobs_resource::{
     entity::{
         camera::Camera,
@@ -15,10 +15,13 @@ use crate::{
     batch::RenderBatch,
     context::Context,
     graph::{RenderError, ResourceManager},
-    material::MaterialInstanceId,
     pass::{FrameData, PassId, PassType, RenderPass},
+    renderable::RenderObject,
+    stats::RenderStats,
     GfxCommand, GfxPipeline,
 };
+
+use super::RenderState;
 
 pub struct UiPass {
     id: PassId,
@@ -57,86 +60,172 @@ impl UiPass {
         })
     }
 
-    fn render_batch(&self, ctx: &Context, cmd: &GfxCommand, batch: &mut RenderBatch) {
-        let mut timer = Timer::new();
-
-        let frame_id = ctx.frame_id();
-
-        let mut last_material = MaterialInstanceId::nil();
-        let mut last_pipeline = PipelineId::nil();
+    fn prepare_scene_data(&self, ctx: &Context, state: &mut RenderState, batch: &mut RenderBatch) {
+        batch.render_stats.cpu_draw_update += state.timer.delta();
 
         if let Some(scene_data) = batch.scene_data(self.id) {
-            self.frame_data[frame_id]
+            self.frame_data[ctx.frame_id()]
                 .uniform_buffer
                 .write()
                 .update(scene_data);
         }
 
-        let uniform_buffer = self.frame_data[frame_id].uniform_buffer.read();
+        batch.render_stats.cpu_draw_update += state.timer.delta();
+    }
 
-        batch.render_stats.cpu_draw_update += timer.delta();
+    fn should_render(&self, render_object: &RenderObject) -> bool {
+        render_object.pass.id() == self.id && render_object.mesh.material.is_some()
+    }
 
-        let mut model_data = Vec::new();
+    fn bind_pipeline(
+        &self,
+        cmd: &GfxCommand,
+        stats: &mut RenderStats,
+        state: &mut RenderState,
+        render_object: &RenderObject,
+    ) {
+        let material = render_object.mesh.material.clone().unwrap();
+        let pipeline = material.pipeline();
 
-        for render_object in &batch.render_list {
-            if render_object.pass.id() != self.id {
-                continue;
+        if state.last_pipeline != pipeline.id() {
+            log::trace!("Bind pipeline {}", pipeline.id());
+
+            cmd.bind_pipeline(&pipeline);
+
+            stats.binds += 1;
+            state.last_pipeline = pipeline.id();
+        }
+        stats.cpu_draw_bind += state.timer.delta();
+    }
+
+    fn bind_material(
+        &self,
+        cmd: &GfxCommand,
+        stats: &mut RenderStats,
+        state: &mut RenderState,
+        render_object: &RenderObject,
+    ) {
+        if let Some(material) = &render_object.mesh.material {
+            if state.last_material != material.id {
+                if let Some(material_binding) = &render_object.mesh.material_binding {
+                    log::trace!("Bind material {}", material.id);
+                    log::trace!("Transparent: {}", material.material.blending_enabled);
+                    cmd.bind_resource(material_binding);
+                    stats.binds += 1;
+                }
+
+                state.last_material = material.id;
             }
-            if render_object.mesh.material.is_none() {
-                continue;
-            }
+        }
+        stats.cpu_draw_bind += state.timer.delta();
+    }
+
+    fn bind_scene_data(
+        &self,
+        ctx: &Context,
+        cmd: &GfxCommand,
+        stats: &mut RenderStats,
+        state: &mut RenderState,
+        render_object: &RenderObject,
+    ) {
+        if !state.scene_data_bound {
+            let material = render_object.mesh.material.clone().unwrap();
+            let pipeline = material.pipeline();
+            let uniform_buffer = self.frame_data[ctx.frame_id()].uniform_buffer.read();
+
+            cmd.bind_resource_buffer(&uniform_buffer.buffer, &pipeline);
+            stats.binds += 1;
+            state.scene_data_bound = true;
+        }
+        stats.cpu_draw_bind += state.timer.delta();
+    }
+
+    fn bind_object_data(
+        &self,
+        ctx: &Context,
+        cmd: &GfxCommand,
+        stats: &mut RenderStats,
+        state: &mut RenderState,
+        render_object: &RenderObject,
+    ) {
+        log::trace!("Bind push constants");
+
+        if let Some(push_layout) = render_object.pass.push_layout() {
+            state.object_data.clear();
+
             let material = render_object.mesh.material.clone().unwrap();
             let pipeline = material.pipeline();
 
-            if last_material != material.id {
-                if last_pipeline != pipeline.id() {
-                    cmd.bind_pipeline(&pipeline);
-                    batch.render_stats.binds += 1;
-                    last_pipeline = pipeline.id();
-                }
+            // TODO: hardcoded
+            push_layout.copy_data(
+                &[UniformPropData::U64(
+                    render_object.mesh.vertex_buffer.address(&ctx.device)
+                        + render_object.mesh.vertices_offset,
+                )],
+                &mut state.object_data,
+            );
 
-                cmd.bind_resource_buffer(&uniform_buffer.buffer, &pipeline);
-                batch.render_stats.binds += 1;
-                if let Some(material_binding) = &render_object.mesh.material_binding {
-                    cmd.bind_resource(material_binding);
-                    batch.render_stats.binds += 1;
-                }
+            cmd.push_constants(&pipeline, &state.object_data);
+        }
+        stats.cpu_draw_push += state.timer.delta();
 
-                last_material = material.id;
-            }
-            batch.render_stats.cpu_draw_bind += timer.delta();
-
-            if let Some(push_layout) = render_object.pass.push_layout() {
-                let vertex_buffer_address = render_object.mesh.vertex_buffer.address(&ctx.device);
-
-                log::trace!(
-                    "VBA: {} + {}",
-                    vertex_buffer_address,
-                    render_object.mesh.vertices_offset
-                );
-
-                model_data.clear();
-                push_layout.copy_data(
-                    &[UniformPropData::U64(
-                        vertex_buffer_address + render_object.mesh.vertices_offset,
-                    )],
-                    &mut model_data,
-                );
-
-                cmd.push_constants(&pipeline, &model_data);
-            }
-            batch.render_stats.cpu_draw_push += timer.delta();
-
+        if state.last_index_buffer != render_object.mesh.index_buffer.id()
+            || state.last_indices_offset != render_object.mesh.indices_offset
+        {
             cmd.bind_index_buffer(
                 &render_object.mesh.index_buffer,
                 render_object.mesh.indices_offset,
             );
-            batch.render_stats.binds += 1;
-            batch.render_stats.cpu_draw_bind += timer.delta();
+            stats.binds += 1;
+            state.last_index_buffer = render_object.mesh.index_buffer.id();
+            state.last_indices_offset = render_object.mesh.indices_offset;
+        }
+        stats.cpu_draw_bind += state.timer.delta();
+    }
+
+    fn render_batch(&self, ctx: &Context, cmd: &GfxCommand, batch: &mut RenderBatch) {
+        let mut render_state = RenderState::new();
+
+        self.prepare_scene_data(ctx, &mut render_state, batch);
+
+        for render_object in &batch.render_list {
+            if !self.should_render(render_object) {
+                continue;
+            }
+
+            self.bind_pipeline(
+                cmd,
+                &mut batch.render_stats,
+                &mut render_state,
+                render_object,
+            );
+
+            self.bind_scene_data(
+                ctx,
+                cmd,
+                &mut batch.render_stats,
+                &mut render_state,
+                render_object,
+            );
+
+            self.bind_material(
+                cmd,
+                &mut batch.render_stats,
+                &mut render_state,
+                render_object,
+            );
+
+            self.bind_object_data(
+                ctx,
+                cmd,
+                &mut batch.render_stats,
+                &mut render_state,
+                render_object,
+            );
 
             cmd.draw_indexed(render_object.mesh.indices_len, 1);
             batch.render_stats.draws += 1;
-            batch.render_stats.cpu_draw_submit += timer.delta();
+            batch.render_stats.cpu_draw_submit += render_state.timer.delta();
         }
     }
 }
