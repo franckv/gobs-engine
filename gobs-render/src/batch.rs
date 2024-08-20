@@ -1,5 +1,5 @@
+use std::collections::HashMap;
 use std::sync::Arc;
-use std::{cmp::Ordering, collections::HashMap};
 
 use gobs_core::{ImageExtent2D, Transform};
 use gobs_resource::{
@@ -125,38 +125,10 @@ impl RenderBatch {
     fn sort(&mut self) {
         self.render_list.sort_by(|a, b| {
             // sort order: pass, transparent, material: model
-            if a.pass.id() != b.pass.id() {
-                a.pass.id().cmp(&b.pass.id())
-            } else if a.mesh.material.is_none() || b.mesh.material.is_none() {
-                if a.mesh.material.is_some()
-                    && a.mesh.material.clone().unwrap().material.blending_enabled
-                {
-                    Ordering::Greater
-                } else if b.mesh.material.is_some()
-                    && b.mesh.material.clone().unwrap().material.blending_enabled
-                {
-                    Ordering::Less
-                } else {
-                    a.mesh.model.id.cmp(&b.mesh.model.id)
-                }
-            } else if a.mesh.material.clone().unwrap().material.blending_enabled
-                == b.mesh.material.clone().unwrap().material.blending_enabled
-            {
-                if a.mesh.material.clone().unwrap().id == b.mesh.material.clone().unwrap().id {
-                    a.mesh.model.id.cmp(&b.mesh.model.id)
-                } else {
-                    a.mesh
-                        .material
-                        .clone()
-                        .unwrap()
-                        .id
-                        .cmp(&b.mesh.material.clone().unwrap().id)
-                }
-            } else if a.mesh.material.clone().unwrap().material.blending_enabled {
-                Ordering::Greater
-            } else {
-                Ordering::Less
-            }
+            return (a.pass.id().cmp(&b.pass.id()))
+                .then(a.is_transparent().cmp(&b.is_transparent()))
+                .then(a.material_id().cmp(&b.material_id()))
+                .then(a.mesh.model.id.cmp(&b.mesh.model.id));
         });
     }
 
