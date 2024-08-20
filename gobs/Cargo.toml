@@ -13,4 +13,3 @@ gobs-gfx = { workspace = true }
 gobs-render = { workspace = true }
 gobs-resource = { workspace = true }
 gobs-scene = { workspace = true }
-gobs-utils = { workspace = true }

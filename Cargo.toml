@@ -10,7 +10,6 @@ members = [
     "gobs-render",
     "gobs-resource",
     "gobs-scene",
-    "gobs-utils",
     "gobs-vulkan",
 ]
 resolver = "2"
@@ -59,10 +58,6 @@ path = "./gobs-resource"
 [workspace.dependencies.gobs-scene]
 package = "gobs-scene"
 path = "./gobs-scene"
-
-[workspace.dependencies.gobs-utils]
-package = "gobs-utils"
-path = "./gobs-utils"
 
 [workspace.dependencies.gobs-vulkan]
 package = "gobs-vulkan"

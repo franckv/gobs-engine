@@ -11,12 +11,14 @@ use gobs::{
     render::{
         context::Context,
         graph::{FrameGraph, RenderError},
-        material::{Texture, TextureType},
         pass::PassType,
         renderable::Renderable,
         Model,
     },
-    resource::entity::{camera::Camera, light::Light},
+    resource::{
+        entity::{camera::Camera, light::Light},
+        material::{Texture, TextureType},
+    },
     scene::{
         components::{NodeId, NodeValue},
         graph::scenegraph::SceneGraph,
@@ -153,7 +155,6 @@ impl App {
         let material = self.common.normal_mapping_material(ctx, &self.graph);
 
         let diffuse_texture = Texture::with_file(
-            ctx,
             examples::WALL_TEXTURE,
             TextureType::Diffuse,
             SamplerFilter::FilterLinear,
@@ -161,7 +162,6 @@ impl App {
         );
 
         let normal_texture = Texture::with_file(
-            ctx,
             examples::WALL_TEXTURE_N,
             TextureType::Normal,
             SamplerFilter::FilterLinear,

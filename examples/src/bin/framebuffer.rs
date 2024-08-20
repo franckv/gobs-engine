@@ -10,12 +10,14 @@ use gobs::{
     render::{
         context::Context,
         graph::{FrameGraph, RenderError},
-        material::{Texture, TextureType},
         pass::PassType,
         renderable::Renderable,
         Model,
     },
-    resource::entity::light::Light,
+    resource::{
+        entity::light::Light,
+        material::{Texture, TextureType},
+    },
     scene::{components::NodeValue, scene::Scene, shape::Shapes},
     ui::UIRenderer,
 };
@@ -113,7 +115,6 @@ impl App {
         let material = self.common.texture_material(ctx, &self.graph);
 
         let texture = Texture::with_colors(
-            ctx,
             &framebuffer,
             extent,
             TextureType::Diffuse,

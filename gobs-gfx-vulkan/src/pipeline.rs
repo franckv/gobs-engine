@@ -9,7 +9,7 @@ use gobs_gfx::{
     BindingGroupType, BlendMode, CompareOp, CullMode, DynamicStateElem, FrontFace, Pipeline,
     PipelineId, PolygonMode, Rect2D, Viewport,
 };
-use gobs_utils::load;
+use gobs_resource::load;
 use gobs_vulkan as vk;
 
 use crate::{VkBindingGroup, VkDevice};

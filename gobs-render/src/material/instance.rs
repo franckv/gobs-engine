@@ -3,12 +3,9 @@ use std::sync::Arc;
 
 use uuid::Uuid;
 
-use gobs_resource::geometry::VertexFlag;
+use gobs_resource::{geometry::VertexFlag, material::Texture};
 
-use crate::{
-    material::{Material, Texture},
-    GfxPipeline,
-};
+use crate::{material::Material, GfxPipeline};
 
 pub type MaterialInstanceId = Uuid;
 

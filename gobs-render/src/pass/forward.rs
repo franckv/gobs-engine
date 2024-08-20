@@ -3,7 +3,7 @@ use std::sync::Arc;
 use glam::Mat3;
 use uuid::Uuid;
 
-use gobs_core::{ImageExtent2D, Transform};
+use gobs_core::{utils::timer::Timer, ImageExtent2D, Transform};
 use gobs_gfx::{Buffer, Command, ImageLayout, Pipeline};
 use gobs_resource::{
     entity::{
@@ -13,7 +13,6 @@ use gobs_resource::{
     },
     geometry::VertexFlag,
 };
-use gobs_utils::timer::Timer;
 
 use crate::{
     batch::RenderBatch,

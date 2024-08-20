@@ -6,13 +6,11 @@ use gobs_gfx::{
 };
 use uuid::Uuid;
 
-use gobs_resource::geometry::VertexFlag;
+use gobs_resource::{geometry::VertexFlag, material::Texture};
 
 use crate::{
-    context::Context,
-    material::{MaterialInstance, Texture},
-    pass::RenderPass,
-    GfxGraphicsPipelineBuilder, GfxPipeline,
+    context::Context, material::MaterialInstance, pass::RenderPass, GfxGraphicsPipelineBuilder,
+    GfxPipeline,
 };
 
 pub type MaterialId = Uuid;

@@ -2,10 +2,10 @@ use glam::{Quat, Vec3};
 
 use gobs::{
     assets::gltf,
-    core::{Color, Transform},
+    core::Color,
     game::{
         app::{Application, Run},
-        input::{Input, Key},
+        input::Input,
     },
     gfx::Device,
     render::{
@@ -14,14 +14,9 @@ use gobs::{
         pass::PassType,
         renderable::Renderable,
     },
-    resource::entity::light::Light,
-    scene::{
-        components::{NodeId, NodeValue},
-        graph::scenegraph::SceneGraph,
-        scene::Scene,
-    },
+    resource::{entity::light::Light, load},
+    scene::{graph::scenegraph::SceneGraph, scene::Scene},
     ui::UIRenderer,
-    utils::load,
 };
 
 use examples::{CameraController, SampleApp};
@@ -32,8 +27,6 @@ struct App {
     graph: FrameGraph,
     ui: UIRenderer,
     scene: Scene,
-    scenes: Vec<NodeId>,
-    current_scene: usize,
 }
 
 impl Run for App {
@@ -58,8 +51,6 @@ impl Run for App {
             graph,
             ui,
             scene,
-            scenes: vec![],
-            current_scene: 0,
         }
     }
 
@@ -106,18 +97,6 @@ impl Run for App {
             &mut self.ui,
             &mut self.camera_controller,
         );
-
-        match input {
-            Input::KeyPressed(key) => match key {
-                Key::N => {
-                    self.scene.graph.toggle(self.scenes[self.current_scene]);
-                    self.current_scene = (self.current_scene + 1) % self.scenes.len();
-                    self.scene.graph.toggle(self.scenes[self.current_scene]);
-                }
-                _ => (),
-            },
-            _ => (),
-        }
     }
 
     fn resize(&mut self, ctx: &mut Context, width: u32, height: u32) {
@@ -138,118 +117,20 @@ impl Run for App {
 impl App {
     fn init(&mut self, ctx: &Context) {
         log::info!("Load scene 0");
-        let graph0 = self.load_scene(ctx);
-        let node0 = self
-            .scene
+        let graph = self.load_scene(ctx);
+        self.scene
             .graph
-            .insert_subgraph(self.scene.graph.root, graph0.root, &graph0)
+            .insert_subgraph(self.scene.graph.root, graph.root, &graph)
             .unwrap();
-        self.scenes.push(node0);
-
-        log::info!("Load scene 1");
-        let graph1 = self.load_scene2(ctx);
-        let node1 = self
-            .scene
-            .graph
-            .insert_subgraph(self.scene.graph.root, graph1.root, &graph1)
-            .unwrap();
-        self.scene.graph.toggle(node1);
-        self.scenes.push(node1);
-
-        log::info!("Load scene 2");
-        let graph2 = self.load_scene3(ctx);
-        let node2 = self
-            .scene
-            .graph
-            .insert_subgraph(self.scene.graph.root, graph2.root, &graph2)
-            .unwrap();
-        self.scene.graph.toggle(node2);
-        self.scenes.push(node2);
     }
 
     fn load_scene(&self, ctx: &Context) -> SceneGraph {
-        let mut scene = SceneGraph::new();
-
-        let file_name = load::get_asset_dir("basicmesh.glb", load::AssetType::MODEL).unwrap();
+        let file_name = load::get_asset_dir("house.glb", load::AssetType::MODEL).unwrap();
 
         let mut gltf_loader =
             gltf::GLTFLoader::new(ctx, self.graph.pass_by_type(PassType::Forward).unwrap());
 
-        gltf_loader.load(ctx, file_name);
-
-        let i_max = 3;
-        let j_max = 3;
-        let x_range = (-5., 5.);
-        let y_range = (-3., 3.);
-        let scale = 0.7;
-
-        let model = gltf_loader.models[2].clone();
-
-        for i in 0..=i_max {
-            for j in 0..=j_max {
-                let x = x_range.0 + (i as f32) * (x_range.1 - x_range.0) / (i_max as f32);
-                let y = y_range.0 + (j as f32) * (y_range.1 - y_range.0) / (j_max as f32);
-                let transform = Transform::new(
-                    [x, y, -7.].into(),
-                    Quat::IDENTITY,
-                    Vec3::new(scale, scale, scale),
-                );
-                scene.insert(
-                    self.scene.graph.root,
-                    NodeValue::Model(model.clone()),
-                    transform,
-                );
-            }
-        }
-
-        scene
-    }
-
-    fn load_scene2(&self, ctx: &Context) -> SceneGraph {
-        let mut scene = SceneGraph::new();
-
-        let file_name = load::get_asset_dir("Cube.gltf", load::AssetType::MODEL).unwrap();
-
-        let mut gltf_loader =
-            gltf::GLTFLoader::new(ctx, self.graph.pass_by_type(PassType::Forward).unwrap());
-
-        gltf_loader.load(ctx, file_name);
-
-        let i_max = 3;
-        let j_max = 3;
-        let x_range = (-5., 5.);
-        let y_range = (-3., 3.);
-        let scale = 0.7;
-
-        let model = gltf_loader.models[0].clone();
-
-        for i in 0..=i_max {
-            for j in 0..=j_max {
-                let x = x_range.0 + (i as f32) * (x_range.1 - x_range.0) / (i_max as f32);
-                let y = y_range.0 + (j as f32) * (y_range.1 - y_range.0) / (j_max as f32);
-                let transform = Transform::new(
-                    [x, y, -7.].into(),
-                    Quat::IDENTITY,
-                    Vec3::new(scale, scale, scale),
-                );
-                scene.insert(
-                    self.scene.graph.root,
-                    NodeValue::Model(model.clone()),
-                    transform,
-                );
-            }
-        }
-
-        scene
-    }
-
-    fn load_scene3(&self, ctx: &Context) -> SceneGraph {
-        let file_name = load::get_asset_dir("house2.glb", load::AssetType::MODEL).unwrap();
-
-        let mut gltf_loader =
-            gltf::GLTFLoader::new(ctx, self.graph.pass_by_type(PassType::Forward).unwrap());
-
-        gltf_loader.load(ctx, file_name);
+        gltf_loader.load(file_name);
 
         gltf_loader.scene
     }

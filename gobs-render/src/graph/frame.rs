@@ -3,9 +3,8 @@ use std::{collections::HashMap, sync::Arc};
 use anyhow::Result;
 use parking_lot::{RwLock, RwLockReadGuard, RwLockWriteGuard};
 
-use gobs_core::{ImageExtent2D, ImageFormat};
+use gobs_core::{utils::timer::Timer, ImageExtent2D, ImageFormat};
 use gobs_gfx::{Command, Device, Display, Image, ImageLayout, ImageUsage};
-use gobs_utils::timer::Timer;
 
 use crate::{
     batch::RenderBatch,

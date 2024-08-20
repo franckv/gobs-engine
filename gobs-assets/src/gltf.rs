@@ -1,4 +1,4 @@
-use std::{path::Path, sync::Arc};
+use std::{fmt::Debug, path::Path, sync::Arc};
 
 use glam::Quat;
 use gltf::{
@@ -11,11 +11,14 @@ use gltf::{
 use gobs_core::{Color, ImageExtent2D, SamplerFilter, Transform};
 use gobs_render::{
     context::Context,
-    material::{Material, MaterialInstance, MaterialProperty, Texture, TextureType},
+    material::{Material, MaterialInstance, MaterialProperty},
     pass::RenderPass,
     BlendMode, Model,
 };
-use gobs_resource::geometry::{Mesh, VertexData, VertexFlag};
+use gobs_resource::{
+    geometry::{Mesh, VertexData, VertexFlag},
+    material::{Texture, TextureType},
+};
 use gobs_scene::{
     components::{NodeId, NodeValue},
     graph::scenegraph::SceneGraph,
@@ -30,7 +33,7 @@ pub struct GLTFLoader {
 
 impl GLTFLoader {
     pub fn new(ctx: &Context, pass: Arc<dyn RenderPass>) -> Self {
-        let texture_manager = TextureManager::new(ctx);
+        let texture_manager = TextureManager::new();
         let material_manager = MaterialManager::new(ctx, pass, &texture_manager);
 
         GLTFLoader {
@@ -41,13 +44,13 @@ impl GLTFLoader {
         }
     }
 
-    pub fn load<P>(&mut self, ctx: &Context, file: P)
+    pub fn load<P>(&mut self, file: P)
     where
-        P: AsRef<Path>,
+        P: AsRef<Path> + Debug,
     {
-        let (doc, buffers, images) = gltf::import(file).unwrap();
+        let (doc, buffers, images) = gltf::import(&file).expect(&format!("Load asset: {:?}", file));
 
-        self.texture_manager.load(ctx, &doc, &images);
+        self.texture_manager.load(&doc, &images);
         self.material_manager.load(&doc, &self.texture_manager);
 
         self.load_models(&doc, &buffers);
@@ -374,8 +377,8 @@ struct TextureManager {
 }
 
 impl TextureManager {
-    fn new(ctx: &Context) -> Self {
-        let default_texture = Texture::default(ctx);
+    fn new() -> Self {
+        let default_texture = Texture::default();
 
         TextureManager {
             textures: vec![],
@@ -383,7 +386,7 @@ impl TextureManager {
         }
     }
 
-    fn load(&mut self, ctx: &Context, doc: &Document, images: &[image::Data]) {
+    fn load(&mut self, doc: &Document, images: &[image::Data]) {
         log::info!("Reading {} images", images.len());
 
         for t in doc.textures() {
@@ -434,7 +437,6 @@ impl TextureManager {
             match data.format {
                 image::Format::R8G8B8A8 => {
                     let texture = Texture::new(
-                        ctx,
                         &name,
                         &data.pixels,
                         ImageExtent2D::new(data.width, data.height),
@@ -456,7 +458,6 @@ impl TextureManager {
                     }
 
                     let texture = Texture::new(
-                        ctx,
                         &name,
                         &pixels,
                         ImageExtent2D::new(data.width, data.height),

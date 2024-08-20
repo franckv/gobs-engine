@@ -12,7 +12,6 @@ gobs-core = { workspace = true }
 gobs-gfx = { workspace = true }
 gobs-gfx-vulkan = { workspace = true, optional = true}
 gobs-resource = { workspace = true }
-gobs-utils = { workspace = true }
 image = { workspace = true }
 log = { workspace = true }
 parking_lot = { workspace = true }

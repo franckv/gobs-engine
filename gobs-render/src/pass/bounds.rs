@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use uuid::Uuid;
 
-use gobs_core::{ImageExtent2D, Transform};
+use gobs_core::{utils::timer::Timer, ImageExtent2D, Transform};
 use gobs_gfx::{
     BindingGroupType, Buffer, Command, CullMode, DescriptorStage, DescriptorType, DynamicStateElem,
     FrontFace, ImageLayout, Pipeline, PolygonMode, Rect2D, Viewport,
@@ -15,8 +15,6 @@ use gobs_resource::{
     },
     geometry::VertexFlag,
 };
-
-use gobs_utils::timer::Timer;
 
 use crate::{
     batch::RenderBatch,

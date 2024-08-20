@@ -7,10 +7,8 @@ use image::{DynamicImage, GenericImage, GenericImageView, ImageBuffer};
 use uuid::Uuid;
 
 use gobs_core::{Color, ImageExtent2D, ImageFormat, SamplerFilter};
-use gobs_gfx::{Buffer, BufferUsage, Command, Device, Image, ImageLayout, ImageUsage, Sampler};
-use gobs_utils::load::{self, AssetType};
 
-use crate::{context::Context, GfxBuffer, GfxImage, GfxSampler};
+use crate::load::{self, AssetType};
 
 pub type TextureId = Uuid;
 
@@ -31,21 +29,18 @@ impl Into<ImageFormat> for TextureType {
 
 pub struct Texture {
     pub id: TextureId,
+    pub ty: TextureType,
     pub name: String,
     pub format: ImageFormat,
     pub extent: ImageExtent2D,
     pub mag_filter: SamplerFilter,
     pub min_filter: SamplerFilter,
-    pub image: GfxImage,
     pub data: Vec<u8>,
-    pub ty: TextureType,
-    pub sampler: GfxSampler,
 }
 
 impl Texture {
-    pub fn default(ctx: &Context) -> Arc<Self> {
+    pub fn default() -> Arc<Self> {
         Self::with_color(
-            ctx,
             Color::WHITE,
             TextureType::Diffuse,
             SamplerFilter::FilterLinear,
@@ -54,7 +49,6 @@ impl Texture {
     }
 
     pub fn new(
-        ctx: &Context,
         name: &str,
         data: &[u8],
         extent: ImageExtent2D,
@@ -63,47 +57,19 @@ impl Texture {
         mag_filter: SamplerFilter,
         min_filter: SamplerFilter,
     ) -> Arc<Self> {
-        let mut image = GfxImage::new(name, &ctx.device, format, ImageUsage::Texture, extent);
-
-        let sampler = GfxSampler::new(&ctx.device, mag_filter, min_filter);
-
-        Self::upload_data(ctx, data, &mut image);
-
         Arc::new(Self {
             id: Uuid::new_v4(),
+            ty,
             name: name.to_string(),
             format,
             extent,
             mag_filter,
             min_filter,
-            image,
             data: data.to_vec(),
-            ty,
-            sampler,
         })
     }
 
-    fn upload_data(ctx: &Context, data: &[u8], image: &mut GfxImage) {
-        let mut staging = GfxBuffer::new(
-            "image staging",
-            data.len(),
-            BufferUsage::Staging,
-            &ctx.device,
-        );
-
-        staging.copy(data, 0);
-
-        ctx.device.run_immediate_mut(|cmd| {
-            cmd.begin_label("Upload image");
-            cmd.transition_image_layout(image, ImageLayout::TransferDst);
-            cmd.copy_buffer_to_image(&staging, image, image.extent().width, image.extent().height);
-            cmd.transition_image_layout(image, ImageLayout::Shader);
-            cmd.end_label();
-        });
-    }
-
     pub async fn with_file(
-        ctx: &Context,
         file_name: &str,
         ty: TextureType,
         mag_filter: SamplerFilter,
@@ -112,7 +78,6 @@ impl Texture {
         let img = load::load_image(file_name, AssetType::IMAGE).await?;
 
         Ok(Self::new(
-            ctx,
             file_name,
             &img.to_rgba8().into_raw(),
             ImageExtent2D {
@@ -127,7 +92,6 @@ impl Texture {
     }
 
     pub async fn pack(
-        ctx: &Context,
         texture_files: &[&str],
         cols: u32,
         texture_type: TextureType,
@@ -172,7 +136,6 @@ impl Texture {
         let img = &DynamicImage::ImageRgba8(target);
 
         Ok(Self::new(
-            ctx,
             "texture_pack",
             &img.to_rgba8().into_raw(),
             ImageExtent2D::new(img.dimensions().0, img.dimensions().1),
@@ -184,7 +147,6 @@ impl Texture {
     }
 
     pub fn with_colors(
-        ctx: &Context,
         colors: &[Color],
         extent: ImageExtent2D,
         ty: TextureType,
@@ -192,7 +154,6 @@ impl Texture {
         min_filter: SamplerFilter,
     ) -> Arc<Self> {
         Self::new(
-            ctx,
             "framebuffer",
             &colors
                 .iter()
@@ -207,7 +168,6 @@ impl Texture {
     }
 
     pub fn with_color(
-        ctx: &Context,
         color: Color,
         ty: TextureType,
         mag_filter: SamplerFilter,
@@ -215,7 +175,6 @@ impl Texture {
     ) -> Arc<Self> {
         let data: [u8; 4] = color.into();
         Self::new(
-            ctx,
             "color texture",
             &data,
             ImageExtent2D::new(1, 1),
@@ -228,7 +187,6 @@ impl Texture {
 
     const CHECKER_SIZE: usize = 8;
     pub fn with_checker(
-        ctx: &Context,
         color1: Color,
         color2: Color,
         ty: TextureType,
@@ -254,7 +212,6 @@ impl Texture {
         }
 
         Self::new(
-            ctx,
             "checker",
             &data,
             ImageExtent2D::new(Self::CHECKER_SIZE as u32, Self::CHECKER_SIZE as u32),
@@ -265,24 +222,15 @@ impl Texture {
         )
     }
 
-    pub fn image(&self) -> &GfxImage {
-        &self.image
-    }
-
-    pub fn sampler(&self) -> &GfxSampler {
-        &self.sampler
-    }
-
     pub fn patch(
         &self,
-        ctx: &Context,
         start_x: u32,
         start_y: u32,
         width: u32,
         height: u32,
         data: &[u8],
     ) -> Arc<Self> {
-        let extent = self.image.extent();
+        let extent = self.extent;
 
         let mut new_data = self.data.clone();
 
@@ -299,14 +247,13 @@ impl Texture {
         }
 
         Texture::new(
-            ctx,
-            self.image.name(),
+            &self.name,
             &new_data,
             extent,
             self.ty,
-            self.image.format(),
-            self.sampler.mag_filter(),
-            self.sampler.min_filter(),
+            self.format,
+            self.mag_filter,
+            self.min_filter,
         )
     }
 }

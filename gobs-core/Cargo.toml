@@ -10,6 +10,7 @@ bytemuck = { workspace = true }
 image = { workspace = true }
 glam = { workspace = true }
 log = { workspace = true }
+rand = { workspace = true }
 serde = { workspace = true }
 
 [dev-dependencies]

@@ -11,12 +11,14 @@ use gobs::{
     render::{
         context::Context,
         graph::{FrameGraph, RenderError},
-        material::{Texture, TextureType},
         pass::PassType,
         renderable::Renderable,
         Model,
     },
-    resource::entity::{camera::Camera, light::Light},
+    resource::{
+        entity::{camera::Camera, light::Light},
+        material::{Texture, TextureType},
+    },
     scene::{components::NodeValue, scene::Scene, shape::Shapes},
     ui::UIRenderer,
 };
@@ -136,7 +138,6 @@ impl App {
         let material = self.common.normal_mapping_material(ctx, &self.graph);
 
         let diffuse_texture = Texture::pack(
-            ctx,
             examples::ATLAS,
             3,
             TextureType::Diffuse,
@@ -145,7 +146,6 @@ impl App {
         );
 
         let normal_texture = Texture::pack(
-            ctx,
             examples::ATLAS_N,
             examples::ATLAS_COLS,
             TextureType::Normal,

@@ -3,6 +3,7 @@ mod extent;
 mod format;
 mod sampler;
 mod transform;
+pub mod utils;
 
 pub use color::Color;
 pub use extent::ImageExtent2D;

@@ -27,8 +27,7 @@ impl Shader {
     where
         P: AsRef<Path> + Debug,
     {
-        let file =
-            File::open(&filename).unwrap_or_else(|_| panic!("File not found {:?}", filename));
+        let file = File::open(&filename).expect(&format!("File not found {:?}", filename));
 
         let data: Vec<u8> = file.bytes().filter_map(|b| b.ok()).collect();
 

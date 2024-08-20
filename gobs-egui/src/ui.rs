@@ -8,16 +8,18 @@ use glam::{Vec2, Vec3};
 
 use gobs_core::{Color, ImageExtent2D, SamplerFilter, Transform};
 use gobs_game::input::{Input, Key};
-use gobs_gfx::Image;
 use gobs_render::{
     batch::RenderBatch,
     context::Context,
-    material::{Material, MaterialInstance, MaterialProperty, Texture, TextureType},
+    material::{Material, MaterialInstance, MaterialProperty},
     pass::RenderPass,
     renderable::Renderable,
     BlendMode, Model, ModelId,
 };
-use gobs_resource::geometry::{Mesh, VertexData, VertexFlag};
+use gobs_resource::{
+    geometry::{Mesh, VertexData, VertexFlag},
+    material::{Texture, TextureType},
+};
 
 const PIXEL_PER_POINT: f32 = 1.;
 
@@ -81,7 +83,7 @@ impl UIRenderer {
     }
 
     fn upload_ui_data(&mut self, ctx: &Context, output: FullOutput) {
-        pollster::block_on(self.update_textures(ctx, &output));
+        pollster::block_on(self.update_textures(&output));
 
         let to_remove = output.textures_delta.free.clone();
 
@@ -197,14 +199,13 @@ impl UIRenderer {
         self.input.push(input);
     }
 
-    async fn update_textures(&mut self, ctx: &Context, output: &FullOutput) {
+    async fn update_textures(&mut self, output: &FullOutput) {
         for (id, img) in &output.textures_delta.set {
             log::debug!("New texture {:?}", id);
             if img.pos.is_some() {
                 log::info!("Patching texture");
                 let texture = self
                     .patch_texture(
-                        ctx,
                         self.font_texture
                             .get(id)
                             .cloned()
@@ -218,7 +219,7 @@ impl UIRenderer {
                 *self.font_texture.get_mut(id).unwrap() = material;
             } else {
                 log::debug!("Allocate new texture");
-                let texture = self.decode_texture(ctx, img).await;
+                let texture = self.decode_texture(img).await;
                 self.font_texture.insert(*id, texture);
                 log::debug!("Texture loaded");
             }
@@ -233,7 +234,7 @@ impl UIRenderer {
         }
     }
 
-    async fn decode_texture(&self, ctx: &Context, img: &ImageDelta) -> Arc<MaterialInstance> {
+    async fn decode_texture(&self, img: &ImageDelta) -> Arc<MaterialInstance> {
         match &img.image {
             egui::ImageData::Color(_) => todo!(),
             egui::ImageData::Font(font) => {
@@ -241,7 +242,6 @@ impl UIRenderer {
                 let bytes: Vec<u8> = bytemuck::cast_slice(pixels.as_slice()).to_vec();
 
                 let texture = Texture::new(
-                    ctx,
                     "egui",
                     &bytes,
                     ImageExtent2D::new(img.image.width() as u32, img.image.height() as u32),
@@ -258,7 +258,6 @@ impl UIRenderer {
 
     async fn patch_texture(
         &self,
-        ctx: &Context,
         material: Arc<MaterialInstance>,
         img: &ImageDelta,
     ) -> Arc<Texture> {
@@ -280,11 +279,10 @@ impl UIRenderer {
                 );
                 log::debug!(
                     "Patching texture original size: {:?}",
-                    material.textures[0].image().extent()
+                    material.textures[0].extent
                 );
 
                 material.textures[0].patch(
-                    ctx,
                     pos[0] as u32,
                     pos[1] as u32,
                     font.width() as u32,

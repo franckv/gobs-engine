@@ -4,7 +4,10 @@ use std::{
 };
 
 use gobs_gfx::{BindingGroupType, Buffer, BufferUsage, Command, Device, ImageLayout, Pipeline};
-use gobs_resource::geometry::{BoundingBox, Mesh, VertexData};
+use gobs_resource::{
+    geometry::{BoundingBox, Mesh, VertexData},
+    material::TextureId,
+};
 
 use crate::{
     context::Context,
@@ -12,6 +15,8 @@ use crate::{
     pass::{PassId, RenderPass},
     GfxBindingGroup, GfxBuffer, Model, ModelId,
 };
+
+use super::GpuTexture;
 
 #[derive(Clone, Copy, Debug)]
 pub enum PrimitiveType {
@@ -37,6 +42,7 @@ pub struct MeshResourceManager {
     pub mesh_data: HashMap<ResourceKey, Vec<GPUMesh>>,
     pub transient_mesh_data: Vec<HashMap<ResourceKey, Vec<GPUMesh>>>,
     pub material_bindings: HashMap<MaterialInstanceId, GfxBindingGroup>,
+    pub textures: HashMap<TextureId, GpuTexture>,
 }
 
 impl MeshResourceManager {
@@ -48,6 +54,7 @@ impl MeshResourceManager {
             mesh_data: HashMap::new(),
             transient_mesh_data,
             material_bindings: HashMap::new(),
+            textures: HashMap::new(),
         }
     }
 
@@ -159,7 +166,7 @@ impl MeshResourceManager {
         for (&material_id, vertices_offset, indices_offset, indices_len) in vertex_data {
             let material = model.materials.get(&material_id).cloned();
 
-            let material_binding = self.save_binding(material.clone());
+            let material_binding = self.load_material(ctx, material.clone());
 
             gpu_meshes.push(GPUMesh {
                 model: model.clone(),
@@ -226,9 +233,15 @@ impl MeshResourceManager {
         (model.clone(), self.load_object(ctx, model, pass))
     }
 
-    fn save_binding(&mut self, material: Option<Arc<MaterialInstance>>) -> Option<GfxBindingGroup> {
+    fn load_material(
+        &mut self,
+        ctx: &Context,
+        material: Option<Arc<MaterialInstance>>,
+    ) -> Option<GfxBindingGroup> {
         if let Some(ref material) = material {
             log::debug!("Save binding for {}", material.id);
+            self.load_texture(ctx, &material);
+
             match self.material_bindings.entry(material.id) {
                 Entry::Vacant(e) => {
                     if !material.textures.is_empty() {
@@ -243,9 +256,10 @@ impl MeshResourceManager {
                             .unwrap();
                         let mut updater = binding.update();
                         for texture in &material.textures {
+                            let gpu_texture = self.textures.get(&texture.id).expect("Load texture");
                             updater = updater
-                                .bind_sampled_image(texture.image(), ImageLayout::Shader)
-                                .bind_sampler(texture.sampler());
+                                .bind_sampled_image(gpu_texture.image(), ImageLayout::Shader)
+                                .bind_sampler(gpu_texture.sampler());
                         }
                         updater.end();
 
@@ -258,6 +272,17 @@ impl MeshResourceManager {
             }
         } else {
             None
+        }
+    }
+
+    fn load_texture(&mut self, ctx: &Context, material: &MaterialInstance) {
+        for texture in &material.textures {
+            let key = texture.id;
+
+            if !self.textures.contains_key(&key) {
+                self.textures
+                    .insert(key, GpuTexture::new(ctx, texture.clone()));
+            }
         }
     }
 
