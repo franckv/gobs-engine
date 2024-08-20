@@ -42,19 +42,19 @@ impl RenderStats {
     pub fn add_object(&mut self, object: &RenderObject) {
         if !self
             .models_set
-            .contains(&(object.pass.id(), object.model.model.id))
+            .contains(&(object.pass.id(), object.mesh.model.id))
         {
             self.models_set
-                .insert((object.pass.id(), object.model.model.id));
+                .insert((object.pass.id(), object.mesh.model.id));
             let vertices = object
-                .model
+                .mesh
                 .model
                 .meshes
                 .iter()
                 .map(|(m, _)| m.vertices.len() as u32)
                 .sum::<u32>();
             let indices = object
-                .model
+                .mesh
                 .model
                 .meshes
                 .iter()
@@ -62,7 +62,7 @@ impl RenderStats {
                 .sum::<u32>();
             let models = 1;
             let textures = object
-                .model
+                .mesh
                 .model
                 .materials
                 .values()

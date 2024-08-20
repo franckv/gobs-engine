@@ -7,7 +7,7 @@ use gobs_resource::geometry::VertexFlag;
 
 use crate::{
     material::{Material, Texture},
-    GfxBindingGroup, GfxPipeline,
+    GfxPipeline,
 };
 
 pub type MaterialInstanceId = Uuid;
@@ -15,20 +15,14 @@ pub type MaterialInstanceId = Uuid;
 pub struct MaterialInstance {
     pub id: MaterialInstanceId,
     pub material: Arc<Material>,
-    pub material_binding: Option<GfxBindingGroup>,
     pub textures: Vec<Arc<Texture>>,
 }
 
 impl MaterialInstance {
-    pub(crate) fn new(
-        material: Arc<Material>,
-        material_binding: Option<GfxBindingGroup>,
-        textures: Vec<Arc<Texture>>,
-    ) -> Arc<Self> {
+    pub(crate) fn new(material: Arc<Material>, textures: Vec<Arc<Texture>>) -> Arc<Self> {
         Arc::new(Self {
             id: Uuid::new_v4(),
             material,
-            material_binding,
             textures,
         })
     }

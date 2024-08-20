@@ -1,4 +1,3 @@
-use std::collections::hash_map::Entry;
 use std::sync::Arc;
 use std::{cmp::Ordering, collections::HashMap};
 
@@ -8,81 +7,20 @@ use gobs_resource::{
     geometry::BoundingBox,
 };
 
+use crate::resources::MeshResourceManager;
+use crate::Model;
 use crate::{
     context::Context,
     pass::{PassId, RenderPass},
     renderable::RenderObject,
-    resources::ModelResource,
     stats::RenderStats,
 };
-use crate::{Model, ModelId};
-
-struct ModelManager {
-    models: HashMap<(ModelId, PassId), Arc<ModelResource>>,
-    transient_models: Vec<Vec<Arc<ModelResource>>>,
-}
-
-impl ModelManager {
-    pub fn new(ctx: &Context) -> Self {
-        Self {
-            models: HashMap::new(),
-            transient_models: (0..(ctx.frames_in_flight + 1)).map(|_| vec![]).collect(),
-        }
-    }
-
-    fn new_frame(&mut self, ctx: &Context) -> usize {
-        let frame_id = ctx.frame_id();
-
-        self.transient_models[frame_id].clear();
-        frame_id
-    }
-
-    pub fn add_model(
-        &mut self,
-        ctx: &Context,
-        model: Arc<Model>,
-        pass: Arc<dyn RenderPass>,
-        transient: bool,
-    ) -> Arc<ModelResource> {
-        let key = (model.id, pass.id());
-
-        if transient {
-            let frame_id = ctx.frame_id();
-            let model_manager = &mut self.transient_models[frame_id];
-
-            let resource = ModelResource::new(ctx, model.clone(), pass.clone());
-            model_manager.push(resource.clone());
-            resource
-        } else {
-            match self.models.entry(key) {
-                Entry::Occupied(entry) => entry.get().clone(),
-                Entry::Vacant(entry) => entry
-                    .insert(ModelResource::new(ctx, model.clone(), pass.clone()))
-                    .clone(),
-            }
-        }
-    }
-
-    pub fn add_bounding_box(
-        &mut self,
-        ctx: &Context,
-        bounding_box: BoundingBox,
-        pass: Arc<dyn RenderPass>,
-    ) -> Arc<ModelResource> {
-        let frame_id = ctx.frame_id();
-        let model_manager = &mut self.transient_models[frame_id];
-
-        model_manager.push(ModelResource::new_box(ctx, bounding_box, pass.clone()));
-
-        model_manager.last().unwrap().clone()
-    }
-}
 
 pub struct RenderBatch {
     pub(crate) render_list: Vec<RenderObject>,
     pub(crate) scene_data: HashMap<PassId, Vec<u8>>,
     pub(crate) render_stats: RenderStats,
-    model_manager: ModelManager,
+    pub(crate) mesh_resource_manager: MeshResourceManager,
 }
 
 impl RenderBatch {
@@ -91,7 +29,7 @@ impl RenderBatch {
             render_list: Vec::new(),
             scene_data: HashMap::new(),
             render_stats: RenderStats::default(),
-            model_manager: ModelManager::new(ctx),
+            mesh_resource_manager: MeshResourceManager::new(ctx),
         }
     }
 
@@ -99,7 +37,7 @@ impl RenderBatch {
         self.render_list.clear();
         self.scene_data.clear();
         self.render_stats.reset();
-        self.model_manager.new_frame(ctx);
+        self.mesh_resource_manager.new_frame(ctx);
     }
 
     pub fn add_model(
@@ -112,24 +50,17 @@ impl RenderBatch {
     ) {
         log::debug!("Add model: {}", model.meshes.len());
 
-        let resource = self
-            .model_manager
-            .add_model(ctx, model, pass.clone(), transient);
+        let mesh_data = self
+            .mesh_resource_manager
+            .add_object(ctx, model, pass.clone(), transient);
 
-        for primitive in &resource.primitives {
-            log::debug!("Add {} indices", primitive.len);
-            let material = match primitive.material {
-                Some(material) => Some(resource.model.materials[&material].clone()),
-                None => None,
-            };
+        for mesh in mesh_data {
+            log::debug!("Add {} indices", mesh.indices_len);
+
             let render_object = RenderObject {
                 transform,
                 pass: pass.clone(),
-                model: resource.clone(),
-                material,
-                vertices_offset: primitive.vertex_offset,
-                indices_offset: primitive.index_offset,
-                indices_len: primitive.len,
+                mesh: mesh.clone(),
             };
 
             self.render_stats.add_object(&render_object);
@@ -144,19 +75,15 @@ impl RenderBatch {
         transform: Transform,
         pass: Arc<dyn RenderPass>,
     ) {
-        let resource = self
-            .model_manager
-            .add_bounding_box(ctx, bounding_box, pass.clone());
+        let mesh_data =
+            self.mesh_resource_manager
+                .add_bounding_box(ctx, bounding_box, pass.clone());
 
-        for primitive in &resource.primitives {
+        for mesh in mesh_data {
             let render_object = RenderObject {
                 transform,
                 pass: pass.clone(),
-                model: resource.clone(),
-                material: None,
-                vertices_offset: primitive.vertex_offset,
-                indices_offset: primitive.index_offset,
-                indices_len: primitive.len,
+                mesh: mesh.clone(),
             };
 
             self.render_stats.add_object(&render_object);
@@ -195,34 +122,37 @@ impl RenderBatch {
         &mut self.render_stats
     }
 
-    pub fn sort(&mut self) {
+    fn sort(&mut self) {
         self.render_list.sort_by(|a, b| {
             // sort order: pass, transparent, material: model
             if a.pass.id() != b.pass.id() {
                 a.pass.id().cmp(&b.pass.id())
-            } else if a.material.is_none() || b.material.is_none() {
-                if a.material.is_some() && a.material.clone().unwrap().material.blending_enabled {
+            } else if a.mesh.material.is_none() || b.mesh.material.is_none() {
+                if a.mesh.material.is_some()
+                    && a.mesh.material.clone().unwrap().material.blending_enabled
+                {
                     Ordering::Greater
-                } else if b.material.is_some()
-                    && b.material.clone().unwrap().material.blending_enabled
+                } else if b.mesh.material.is_some()
+                    && b.mesh.material.clone().unwrap().material.blending_enabled
                 {
                     Ordering::Less
                 } else {
-                    a.model.model.id.cmp(&b.model.model.id)
+                    a.mesh.model.id.cmp(&b.mesh.model.id)
                 }
-            } else if a.material.clone().unwrap().material.blending_enabled
-                == b.material.clone().unwrap().material.blending_enabled
+            } else if a.mesh.material.clone().unwrap().material.blending_enabled
+                == b.mesh.material.clone().unwrap().material.blending_enabled
             {
-                if a.material.clone().unwrap().id == b.material.clone().unwrap().id {
-                    a.model.model.id.cmp(&b.model.model.id)
+                if a.mesh.material.clone().unwrap().id == b.mesh.material.clone().unwrap().id {
+                    a.mesh.model.id.cmp(&b.mesh.model.id)
                 } else {
-                    a.material
+                    a.mesh
+                        .material
                         .clone()
                         .unwrap()
                         .id
-                        .cmp(&b.material.clone().unwrap().id)
+                        .cmp(&b.mesh.material.clone().unwrap().id)
                 }
-            } else if a.material.clone().unwrap().material.blending_enabled {
+            } else if a.mesh.material.clone().unwrap().material.blending_enabled {
                 Ordering::Greater
             } else {
                 Ordering::Less

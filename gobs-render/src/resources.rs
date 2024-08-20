@@ -1,5 +1,5 @@
-mod model;
+mod manager;
 mod uniform;
 
-pub use model::ModelResource;
+pub use manager::{GPUMesh, MeshResourceManager};
 pub use uniform::UniformBuffer;

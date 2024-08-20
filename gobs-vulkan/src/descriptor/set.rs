@@ -22,7 +22,7 @@ enum ResourceInfo {
 }
 
 /// Bind resources to shaders
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct DescriptorSet {
     pub device: Arc<Device>,
     pub layout: Arc<DescriptorSetLayout>,

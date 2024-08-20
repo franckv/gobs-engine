@@ -1,4 +1,4 @@
-#[derive(Copy, Clone, Eq, Hash, PartialEq)]
+#[derive(Copy, Clone, Debug, Eq, Hash, PartialEq)]
 pub enum BindingGroupType {
     ComputeData,
     SceneData,

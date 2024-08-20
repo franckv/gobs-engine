@@ -88,6 +88,7 @@ impl ShaderStage {
     }
 }
 
+#[derive(Debug)]
 pub struct Pipeline {
     pub(crate) device: Arc<Device>,
     pub layout: Arc<PipelineLayout>,

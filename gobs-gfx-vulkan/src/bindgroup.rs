@@ -5,6 +5,7 @@ use gobs_vulkan as vk;
 
 use crate::{VkBuffer, VkImage, VkPipeline, VkSampler};
 
+#[derive(Clone, Debug)]
 pub struct VkBindingGroup {
     pub(crate) ds: vk::descriptor::DescriptorSet,
     pub(crate) bind_group_type: BindingGroupType,

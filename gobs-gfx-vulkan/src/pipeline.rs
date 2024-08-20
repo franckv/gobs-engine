@@ -14,6 +14,7 @@ use gobs_vulkan as vk;
 
 use crate::{VkBindingGroup, VkDevice};
 
+#[derive(Debug)]
 pub struct VkPipeline {
     pub(crate) name: String,
     pub(crate) id: PipelineId,

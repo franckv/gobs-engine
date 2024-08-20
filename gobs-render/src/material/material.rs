@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use gobs_gfx::{
     BindingGroupType, BlendMode, CompareOp, CullMode, DescriptorStage, DescriptorType,
-    DynamicStateElem, FrontFace, ImageLayout, Pipeline, Rect2D, Viewport,
+    DynamicStateElem, FrontFace, Pipeline, Rect2D, Viewport,
 };
 use uuid::Uuid;
 
@@ -30,26 +30,7 @@ impl Material {
     }
 
     pub fn instantiate(self: &Arc<Self>, textures: Vec<Arc<Texture>>) -> Arc<MaterialInstance> {
-        let material_binding = match textures.is_empty() {
-            true => None,
-            false => {
-                let binding = self
-                    .pipeline
-                    .create_binding_group(BindingGroupType::MaterialData)
-                    .unwrap();
-                let mut updater = binding.update();
-                for texture in &textures {
-                    updater = updater
-                        .bind_sampled_image(texture.image(), ImageLayout::Shader)
-                        .bind_sampler(texture.sampler());
-                }
-                updater.end();
-
-                Some(binding)
-            }
-        };
-
-        MaterialInstance::new(self.clone(), material_binding, textures)
+        MaterialInstance::new(self.clone(), textures)
     }
 }
 

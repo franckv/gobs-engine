@@ -2,19 +2,12 @@ use std::sync::Arc;
 
 use gobs_core::Transform;
 
-use crate::{
-    batch::RenderBatch, context::Context, material::MaterialInstance, pass::RenderPass,
-    resources::ModelResource,
-};
+use crate::{batch::RenderBatch, context::Context, pass::RenderPass, resources::GPUMesh};
 
 pub struct RenderObject {
     pub transform: Transform,
     pub pass: Arc<dyn RenderPass>,
-    pub model: Arc<ModelResource>,
-    pub material: Option<Arc<MaterialInstance>>,
-    pub vertices_offset: u64,
-    pub indices_offset: usize,
-    pub indices_len: usize,
+    pub mesh: GPUMesh,
 }
 
 pub trait Renderable {

@@ -83,10 +83,10 @@ impl UiPass {
             if render_object.pass.id() != self.id {
                 continue;
             }
-            if render_object.material.is_none() {
+            if render_object.mesh.material.is_none() {
                 continue;
             }
-            let material = render_object.material.clone().unwrap();
+            let material = render_object.mesh.material.clone().unwrap();
             let pipeline = material.pipeline();
 
             if last_material != material.id {
@@ -98,7 +98,7 @@ impl UiPass {
 
                 cmd.bind_resource_buffer(&uniform_buffer.buffer, &pipeline);
                 batch.render_stats.binds += 1;
-                if let Some(material_binding) = &material.material_binding {
+                if let Some(material_binding) = &render_object.mesh.material_binding {
                     cmd.bind_resource(material_binding);
                     batch.render_stats.binds += 1;
                 }
@@ -108,18 +108,18 @@ impl UiPass {
             batch.render_stats.cpu_draw_bind += timer.delta();
 
             if let Some(push_layout) = render_object.pass.push_layout() {
-                let vertex_buffer_address = render_object.model.vertex_buffer.address(&ctx.device);
+                let vertex_buffer_address = render_object.mesh.vertex_buffer.address(&ctx.device);
 
                 log::trace!(
                     "VBA: {} + {}",
                     vertex_buffer_address,
-                    render_object.vertices_offset
+                    render_object.mesh.vertices_offset
                 );
 
                 model_data.clear();
                 push_layout.copy_data(
                     &[UniformPropData::U64(
-                        vertex_buffer_address + render_object.vertices_offset,
+                        vertex_buffer_address + render_object.mesh.vertices_offset,
                     )],
                     &mut model_data,
                 );
@@ -129,13 +129,13 @@ impl UiPass {
             batch.render_stats.cpu_draw_push += timer.delta();
 
             cmd.bind_index_buffer(
-                &render_object.model.index_buffer,
-                render_object.indices_offset,
+                &render_object.mesh.index_buffer,
+                render_object.mesh.indices_offset,
             );
             batch.render_stats.binds += 1;
             batch.render_stats.cpu_draw_bind += timer.delta();
 
-            cmd.draw_indexed(render_object.indices_len, 1);
+            cmd.draw_indexed(render_object.mesh.indices_len, 1);
             batch.render_stats.draws += 1;
             batch.render_stats.cpu_draw_submit += timer.delta();
         }

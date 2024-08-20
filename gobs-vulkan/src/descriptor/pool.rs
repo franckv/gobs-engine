@@ -8,6 +8,7 @@ use crate::Wrap;
 
 const MAX_POOL_SETS: usize = 1024;
 
+#[derive(Debug)]
 pub struct DescriptorSetPool {
     device: Arc<Device>,
     pub descriptor_layout: Arc<DescriptorSetLayout>,

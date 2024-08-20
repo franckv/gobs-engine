@@ -92,7 +92,7 @@ impl BoundsPass {
 
         let frame_id = ctx.frame_id();
 
-        let mut last_model = Uuid::nil();
+        let mut last_buffer = Uuid::nil();
         let mut last_offset = 0;
 
         cmd.bind_pipeline(&self.pipeline);
@@ -123,8 +123,8 @@ impl BoundsPass {
                 let model_data = push_layout.data(&[
                     UniformPropData::Mat4F(world_matrix.to_cols_array_2d()),
                     UniformPropData::U64(
-                        render_object.model.vertex_buffer.address(&ctx.device)
-                            + render_object.vertices_offset,
+                        render_object.mesh.vertex_buffer.address(&ctx.device)
+                            + render_object.mesh.vertices_offset,
                     ),
                 ]);
 
@@ -132,20 +132,20 @@ impl BoundsPass {
             }
             batch.render_stats.cpu_draw_push += timer.delta();
 
-            if last_model != render_object.model.model.id
-                || last_offset != render_object.indices_offset
+            if last_buffer != render_object.mesh.index_buffer.id()
+                || last_offset != render_object.mesh.indices_offset
             {
                 cmd.bind_index_buffer(
-                    &render_object.model.index_buffer,
-                    render_object.indices_offset,
+                    &render_object.mesh.index_buffer,
+                    render_object.mesh.indices_offset,
                 );
                 batch.render_stats.binds += 1;
-                last_model = render_object.model.model.id;
-                last_offset = render_object.indices_offset;
+                last_buffer = render_object.mesh.index_buffer.id();
+                last_offset = render_object.mesh.indices_offset;
             }
             batch.render_stats.cpu_draw_bind += timer.delta();
 
-            cmd.draw_indexed(render_object.indices_len, 1);
+            cmd.draw_indexed(render_object.mesh.indices_len, 1);
             batch.render_stats.draws += 1;
             batch.render_stats.cpu_draw_submit += timer.delta();
         }

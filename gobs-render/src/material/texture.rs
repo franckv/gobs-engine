@@ -31,6 +31,11 @@ impl Into<ImageFormat> for TextureType {
 
 pub struct Texture {
     pub id: TextureId,
+    pub name: String,
+    pub format: ImageFormat,
+    pub extent: ImageExtent2D,
+    pub mag_filter: SamplerFilter,
+    pub min_filter: SamplerFilter,
     pub image: GfxImage,
     pub data: Vec<u8>,
     pub ty: TextureType,
@@ -66,6 +71,11 @@ impl Texture {
 
         Arc::new(Self {
             id: Uuid::new_v4(),
+            name: name.to_string(),
+            format,
+            extent,
+            mag_filter,
+            min_filter,
             image,
             data: data.to_vec(),
             ty,
