@@ -20,10 +20,6 @@ pub struct RenderStats {
     draws: u32,
     binds: u32,
     cpu_draw_time: f32,
-    pub cpu_draw_update: f32,
-    pub cpu_draw_push: f32,
-    pub cpu_draw_bind: f32,
-    pub cpu_draw_submit: f32,
     pub gpu_draw_time: f32,
     update_time: f32,
     pub fps: u32,
@@ -35,10 +31,6 @@ impl RenderStats {
     pub fn reset(&mut self) {
         self.draws = 0;
         self.binds = 0;
-        self.cpu_draw_update = 0.;
-        self.cpu_draw_push = 0.;
-        self.cpu_draw_bind = 0.;
-        self.cpu_draw_submit = 0.;
         self.pass_stats.clear();
         self.models_set.clear();
     }

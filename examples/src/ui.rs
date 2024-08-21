@@ -92,12 +92,6 @@ impl Ui {
                 "  CPU draw time: {:.2}ms",
                 1000. * stats.cpu_draw_time()
             ));
-            ui.collapsing("Details", |ui| {
-                ui.label(format!("  Update: {:.2}ms", 1000. * stats.cpu_draw_update));
-                ui.label(format!("  Push: {:.2}ms", 1000. * stats.cpu_draw_push));
-                ui.label(format!("  Bind: {:.2}ms", 1000. * stats.cpu_draw_bind));
-                ui.label(format!("  Submit: {:.2}ms", 1000. * stats.cpu_draw_submit));
-            });
             ui.label(format!("  GPU time: {:.2}ms", 1000. * stats.gpu_draw_time));
             ui.label(format!(
                 "  Update time: {:.2}ms",

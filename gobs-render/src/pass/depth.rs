@@ -86,15 +86,13 @@ impl DepthPass {
         })
     }
 
-    fn prepare_scene_data(&self, ctx: &Context, state: &mut RenderState, batch: &mut RenderBatch) {
+    fn prepare_scene_data(&self, ctx: &Context, batch: &mut RenderBatch) {
         if let Some(scene_data) = batch.scene_data(self.id) {
             self.frame_data[ctx.frame_id()]
                 .uniform_buffer
                 .write()
                 .update(scene_data);
         }
-
-        batch.render_stats.cpu_draw_update += state.timer.delta();
     }
 
     fn should_render(&self, render_object: &RenderObject) -> bool {
@@ -121,7 +119,6 @@ impl DepthPass {
             stats.bind(self.id);
             state.last_pipeline = self.pipeline.id();
         }
-        stats.cpu_draw_bind += state.timer.delta();
     }
 
     fn bind_scene_data(
@@ -139,7 +136,6 @@ impl DepthPass {
             stats.bind(self.id);
             state.scene_data_bound = true;
         }
-        stats.cpu_draw_bind += state.timer.delta();
     }
 
     fn bind_object_data(
@@ -174,7 +170,6 @@ impl DepthPass {
 
             cmd.push_constants(&pipeline, &state.object_data);
         }
-        stats.cpu_draw_push += state.timer.delta();
 
         if state.last_index_buffer != render_object.mesh.index_buffer.id()
             || state.last_indices_offset != render_object.mesh.indices_offset
@@ -187,13 +182,12 @@ impl DepthPass {
             state.last_index_buffer = render_object.mesh.index_buffer.id();
             state.last_indices_offset = render_object.mesh.indices_offset;
         }
-        stats.cpu_draw_bind += state.timer.delta();
     }
 
     fn render_batch(&self, ctx: &Context, cmd: &GfxCommand, batch: &mut RenderBatch) {
         let mut render_state = RenderState::default();
 
-        self.prepare_scene_data(ctx, &mut render_state, batch);
+        self.prepare_scene_data(ctx, batch);
 
         for render_object in &batch.render_list {
             if !self.should_render(render_object) {
@@ -225,7 +219,6 @@ impl DepthPass {
 
             cmd.draw_indexed(render_object.mesh.indices_len, 1);
             batch.render_stats.draw(self.id);
-            batch.render_stats.cpu_draw_submit += render_state.timer.delta();
         }
     }
 }

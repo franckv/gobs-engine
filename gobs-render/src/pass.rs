@@ -4,7 +4,7 @@ use gobs_gfx::{BufferId, PipelineId};
 use parking_lot::RwLock;
 use uuid::Uuid;
 
-use gobs_core::{utils::timer::Timer, ImageExtent2D, Transform};
+use gobs_core::{ImageExtent2D, Transform};
 use gobs_resource::{
     entity::{camera::Camera, light::Light, uniform::UniformLayout},
     geometry::VertexFlag,
@@ -74,7 +74,6 @@ pub(crate) struct RenderState {
     last_indices_offset: usize,
     scene_data_bound: bool,
     object_data: Vec<u8>,
-    timer: Timer,
 }
 
 pub(crate) struct FrameData {
