@@ -40,6 +40,7 @@ impl RenderBatch {
         self.mesh_resource_manager.new_frame(ctx);
     }
 
+    #[tracing::instrument(target = "render", skip_all, level = "debug")]
     pub fn add_model(
         &mut self,
         ctx: &Context,

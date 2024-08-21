@@ -96,7 +96,7 @@ impl Debug for Device {
 
 impl Drop for Device {
     fn drop(&mut self) {
-        tracing::debug!("Drop device");
+        tracing::debug!(target: "memory", "Drop device");
         unsafe {
             self.device.destroy_device(None);
         }

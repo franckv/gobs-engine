@@ -34,7 +34,7 @@ impl Wrap<vk::CommandPool> for CommandPool {
 }
 impl Drop for CommandPool {
     fn drop(&mut self) {
-        tracing::debug!("Drop command pool");
+        tracing::debug!(target: "memory", "Drop command pool");
         unsafe {
             self.device.raw().destroy_command_pool(self.pool, None);
         }

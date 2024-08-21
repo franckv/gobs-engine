@@ -117,6 +117,6 @@ impl Allocator {
 
 impl Drop for Allocator {
     fn drop(&mut self) {
-        tracing::debug!("Drop allocator: {:?}", self.allocator.lock().unwrap());
+        tracing::debug!(target: "memory", "Drop allocator: {:?}", self.allocator.lock().unwrap());
     }
 }

@@ -273,7 +273,7 @@ impl Instance {
 
 impl Drop for Instance {
     fn drop(&mut self) {
-        tracing::debug!("Drop instance");
+        tracing::debug!(target: "memory", "Drop instance");
         unsafe {
             self.debug_utils_loader
                 .destroy_debug_utils_messenger(self.debug_call_back, None);

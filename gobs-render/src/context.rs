@@ -57,6 +57,6 @@ impl Context {
 
 impl Drop for Context {
     fn drop(&mut self) {
-        tracing::debug!("Drop context");
+        tracing::debug!(target: "memory", "Drop context");
     }
 }

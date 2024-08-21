@@ -49,7 +49,7 @@ impl Wrap<vk::Sampler> for Sampler {
 
 impl Drop for Sampler {
     fn drop(&mut self) {
-        tracing::debug!("Drop sampler");
+        tracing::debug!(target: "memory", "Drop sampler");
         unsafe {
             self.device.raw().destroy_sampler(self.sampler, None);
         }

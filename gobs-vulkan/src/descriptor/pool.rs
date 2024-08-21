@@ -149,7 +149,7 @@ impl Wrap<vk::DescriptorPool> for DescriptorSetPool {
 
 impl Drop for DescriptorSetPool {
     fn drop(&mut self) {
-        tracing::debug!("Drop descriptor pool");
+        tracing::debug!(target: "memory", "Drop descriptor pool");
 
         Self::destroy_pool(self.device.clone(), self.current_pool);
         for pool in self.available_pools.drain(..) {

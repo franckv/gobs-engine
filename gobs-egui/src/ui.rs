@@ -73,6 +73,7 @@ impl UIRenderer {
         }
     }
 
+    #[tracing::instrument(target = "ui", skip_all, level = "debug")]
     pub fn update<F>(&mut self, _ctx: &Context, _pass: Arc<dyn RenderPass>, delta: f32, callback: F)
     where
         F: FnMut(&egui::Context),
@@ -82,11 +83,11 @@ impl UIRenderer {
         self.output = Some(self.ectx.run(input, callback));
     }
 
-    #[tracing::instrument(skip(self, ctx, output), level = "debug")]
+    #[tracing::instrument(target = "ui", skip_all, level = "debug")]
     fn upload_ui_data(&mut self, ctx: &Context, output: FullOutput) {
         self.update_textures(&output);
 
-        let to_remove = output.textures_delta.free.clone();
+        self.cleanup_textures(&output);
 
         let model_id = match &self.frame_data[ctx.frame_id()].model {
             Some(model) => Some(model.id),
@@ -96,8 +97,6 @@ impl UIRenderer {
         let model = self.load_model(output, model_id);
 
         self.frame_data[ctx.frame_id()].model = model;
-
-        self.cleanup_textures(to_remove);
     }
 
     pub fn dump_model(&self, ctx: &Context) {
@@ -200,7 +199,7 @@ impl UIRenderer {
         self.input.push(input);
     }
 
-    #[tracing::instrument(skip(self, output), level = "debug")]
+    #[tracing::instrument(target = "ui", skip_all, level = "debug")]
     fn update_textures(&mut self, output: &FullOutput) {
         for (id, img) in &output.textures_delta.set {
             tracing::debug!("New texture {:?}", id);
@@ -226,14 +225,16 @@ impl UIRenderer {
         }
     }
 
-    fn cleanup_textures(&mut self, to_remove: Vec<TextureId>) {
-        for id in &to_remove {
+    #[tracing::instrument(target = "ui", skip_all, level = "debug")]
+    fn cleanup_textures(&mut self, output: &FullOutput) {
+        for id in &output.textures_delta.free {
             tracing::debug!("Remove texture {:?}", id);
 
             self.font_texture.remove(id);
         }
     }
 
+    #[tracing::instrument(target = "ui", skip_all, level = "debug")]
     fn decode_texture(&self, img: &ImageDelta) -> Arc<MaterialInstance> {
         match &img.image {
             egui::ImageData::Color(_) => todo!(),
@@ -256,6 +257,7 @@ impl UIRenderer {
         }
     }
 
+    #[tracing::instrument(target = "ui", skip_all, level = "debug")]
     fn patch_texture(&self, material: Arc<MaterialInstance>, img: &ImageDelta) -> Arc<Texture> {
         match &img.image {
             egui::ImageData::Color(_) => todo!(),
@@ -289,6 +291,7 @@ impl UIRenderer {
         }
     }
 
+    #[tracing::instrument(target = "ui", skip_all, level = "debug")]
     fn load_model(&mut self, output: FullOutput, model_id: Option<ModelId>) -> Option<Arc<Model>> {
         tracing::debug!("Loading model");
 
@@ -357,6 +360,7 @@ impl Renderable for UIRenderer {
         self.height = height as f32;
     }
 
+    #[tracing::instrument(target = "ui", skip_all, level = "debug")]
     fn draw(&mut self, ctx: &Context, pass: Arc<dyn RenderPass>, batch: &mut RenderBatch) {
         let frame_id = ctx.frame_id();
 

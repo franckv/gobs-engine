@@ -81,7 +81,7 @@ impl Wrap<vk::Fence> for Fence {
 
 impl Drop for Fence {
     fn drop(&mut self) {
-        tracing::debug!("Drop fence");
+        tracing::debug!(target: "memory", "Drop fence");
         unsafe {
             self.device.raw().destroy_fence(self.fence, None);
         }

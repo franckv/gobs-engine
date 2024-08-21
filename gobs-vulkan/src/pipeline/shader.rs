@@ -59,7 +59,7 @@ impl Wrap<vk::ShaderModule> for Shader {
 
 impl Drop for Shader {
     fn drop(&mut self) {
-        tracing::debug!("Drop shader");
+        tracing::debug!(target: "memory", "Drop shader");
         unsafe {
             self.device.raw().destroy_shader_module(self.shader, None);
         }

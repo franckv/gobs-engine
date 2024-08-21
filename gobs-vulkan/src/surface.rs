@@ -158,7 +158,7 @@ impl Wrap<vk::SurfaceKHR> for Surface {
 
 impl Drop for Surface {
     fn drop(&mut self) {
-        tracing::debug!("Drop surface");
+        tracing::debug!(target: "memory", "Drop surface");
         unsafe {
             self.instance
                 .surface_loader

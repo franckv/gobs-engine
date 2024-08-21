@@ -136,7 +136,7 @@ impl Wrap<vk::Buffer> for Buffer {
 
 impl Drop for Buffer {
     fn drop(&mut self) {
-        tracing::debug!("Drop buffer {}", self.label);
+        tracing::debug!(target: "memory", "Drop buffer {}", self.label);
         unsafe {
             self.device.raw().destroy_buffer(self.buffer, None);
         }

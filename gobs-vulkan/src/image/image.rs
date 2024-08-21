@@ -226,7 +226,7 @@ impl Wrap<vk::Image> for Image {
 
 impl Drop for Image {
     fn drop(&mut self) {
-        tracing::debug!("Drop image {}", self.label);
+        tracing::debug!(target: "memory", "Drop image {}", self.label);
         unsafe {
             self.device.raw().destroy_image_view(self.image_view, None);
             if self.memory.is_some() {

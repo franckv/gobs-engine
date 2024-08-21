@@ -71,7 +71,7 @@ impl Wrap<vk::Framebuffer> for Framebuffer {
 
 impl Drop for Framebuffer {
     fn drop(&mut self) {
-        tracing::debug!("Drop framebuffer");
+        tracing::debug!(target: "memory", "Drop framebuffer");
         unsafe {
             self.device
                 .raw()

@@ -653,7 +653,7 @@ impl Wrap<vk::CommandBuffer> for CommandBuffer {
 
 impl Drop for CommandBuffer {
     fn drop(&mut self) {
-        tracing::debug!("Drop command buffer");
+        tracing::debug!(target: "memory", "Drop command buffer");
 
         unsafe {
             self.device

@@ -49,6 +49,12 @@ impl Bounded for Model {
     }
 }
 
+impl Drop for Model {
+    fn drop(&mut self) {
+        tracing::debug!(target: "memory", "Drop Model: {}", &self.name);
+    }
+}
+
 pub struct ModelBuilder {
     pub name: String,
     pub id: ModelId,

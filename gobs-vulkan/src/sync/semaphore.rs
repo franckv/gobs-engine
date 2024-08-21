@@ -37,7 +37,7 @@ impl Wrap<vk::Semaphore> for Semaphore {
 
 impl Drop for Semaphore {
     fn drop(&mut self) {
-        tracing::debug!("Drop semaphore");
+        tracing::debug!(target: "memory", "Drop semaphore");
         unsafe {
             self.device.raw().destroy_semaphore(self.semaphore, None);
         }
