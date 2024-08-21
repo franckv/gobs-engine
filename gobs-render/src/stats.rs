@@ -9,19 +9,23 @@ pub struct PassStats {
     pub models: u32,
     pub textures: u32,
     pub instances: u32,
+    pub draws: u32,
+    pub binds: u32,
+    pub draw_time: f32,
+    pub update_time: f32,
 }
 
 #[derive(Clone, Debug, Default)]
 pub struct RenderStats {
-    pub draws: u32,
-    pub binds: u32,
-    pub cpu_draw_time: f32,
+    draws: u32,
+    binds: u32,
+    cpu_draw_time: f32,
     pub cpu_draw_update: f32,
     pub cpu_draw_push: f32,
     pub cpu_draw_bind: f32,
     pub cpu_draw_submit: f32,
     pub gpu_draw_time: f32,
-    pub update_time: f32,
+    update_time: f32,
     pub fps: u32,
     pub pass_stats: HashMap<PassId, PassStats>,
     models_set: HashSet<(PassId, ModelId)>,
@@ -37,6 +41,82 @@ impl RenderStats {
         self.cpu_draw_submit = 0.;
         self.pass_stats.clear();
         self.models_set.clear();
+    }
+
+    pub fn cpu_draw_time_reset(&mut self, update: bool) {
+        if update {
+            self.cpu_draw_time = 0.;
+        };
+    }
+
+    pub fn cpu_draw_time_add(&mut self, t: f32, pass_id: PassId, update: bool) {
+        if update {
+            self.cpu_draw_time += t
+        };
+
+        let pass_stats = self
+            .pass_stats
+            .entry(pass_id)
+            .or_insert(PassStats::default());
+
+        pass_stats.draw_time = t;
+    }
+
+    pub fn cpu_draw_time(&self) -> f32 {
+        self.cpu_draw_time
+    }
+
+    pub fn update_time_reset(&mut self, update: bool) {
+        if update {
+            self.update_time = 0.;
+        };
+    }
+
+    pub fn update_time_add(&mut self, t: f32, pass_id: PassId, update: bool) {
+        if update {
+            self.update_time += t
+        };
+
+        let pass_stats = self
+            .pass_stats
+            .entry(pass_id)
+            .or_insert(PassStats::default());
+
+        pass_stats.update_time = t;
+    }
+
+    pub fn update_time(&self) -> f32 {
+        self.update_time
+    }
+
+    pub fn binds(&self) -> u32 {
+        self.binds
+    }
+
+    pub fn bind(&mut self, pass_id: PassId) {
+        self.binds += 1;
+
+        let pass_stats = self
+            .pass_stats
+            .entry(pass_id)
+            .or_insert(PassStats::default());
+
+        pass_stats.binds += 1
+    }
+
+    pub fn draws(&self) -> u32 {
+        self.draws
+    }
+
+    pub fn draw(&mut self, pass_id: PassId) {
+        self.draws += 1;
+
+        let pass_stats = self
+            .pass_stats
+            .entry(pass_id)
+            .or_insert(PassStats::default());
+
+        pass_stats.draws += 1
     }
 
     pub fn add_object(&mut self, object: &RenderObject) {

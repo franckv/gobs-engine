@@ -25,13 +25,15 @@ impl Model {
     pub fn builder(name: &str) -> ModelBuilder {
         ModelBuilder::new(name)
     }
+
+    pub fn dump(&self) -> String {
+        serde_json::to_string(&self).unwrap()
+    }
 }
 
 impl Debug for Model {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let json = serde_json::to_string(&self).unwrap();
-
-        write!(f, "Model: {}", json)
+        write!(f, "Model: {}", self.name)
     }
 }
 

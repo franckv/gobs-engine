@@ -140,7 +140,7 @@ impl RenderPass for ComputePass {
             )
             .end();
 
-        batch.stats_mut().binds += 1;
+        batch.stats_mut().bind(self.id);
 
         cmd.transition_image_layout(
             &mut resource_manager.image_write(draw_attach),
@@ -148,11 +148,12 @@ impl RenderPass for ComputePass {
         );
 
         cmd.bind_pipeline(&self.pipeline);
+        batch.stats_mut().bind(self.id);
         cmd.bind_resource(&draw_bindings);
-        batch.stats_mut().binds += 2;
+        batch.stats_mut().bind(self.id);
 
         cmd.dispatch(draw_extent.width / 16 + 1, draw_extent.height / 16 + 1, 1);
-        batch.stats_mut().draws += 1;
+        batch.render_stats.draw(self.id);
 
         cmd.end_label();
 

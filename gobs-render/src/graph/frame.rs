@@ -327,18 +327,22 @@ impl FrameGraph {
 
         let mut timer = Timer::new();
 
+        let should_update = ctx.frame_number % ctx.stats_refresh == 0;
+
+        self.batch.render_stats.update_time_reset(should_update);
         for pass in &self.passes {
             draw_cmd(pass.clone(), &mut self.batch);
+
+            self.batch
+                .render_stats
+                .update_time_add(timer.delta(), pass.id(), should_update);
         }
 
         self.batch.finish();
 
-        if ctx.frame_number % ctx.stats_refresh == 0 {
-            self.batch.render_stats.update_time = timer.delta();
-        }
-
         let cmd = &self.frames[frame_id].command;
 
+        self.batch.render_stats.cpu_draw_time_reset(should_update);
         for pass in &self.passes {
             log::debug!("Enter render pass: {}", pass.name());
             pass.render(
@@ -348,10 +352,10 @@ impl FrameGraph {
                 &mut self.batch,
                 self.draw_extent,
             )?;
-        }
 
-        if ctx.frame_number % ctx.stats_refresh == 0 {
-            self.batch.render_stats.cpu_draw_time = timer.peek();
+            self.batch
+                .render_stats
+                .cpu_draw_time_add(timer.delta(), pass.id(), should_update);
         }
 
         log::debug!("End rendering");

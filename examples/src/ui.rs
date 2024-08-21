@@ -70,15 +70,25 @@ impl Ui {
                         ui.label(format!("  Models: {}", pass_stats.models));
                         ui.label(format!("  Instances: {}", pass_stats.instances));
                         ui.label(format!("  Textures: {}", pass_stats.textures));
+                        ui.label(format!("  Draws: {}", pass_stats.draws));
+                        ui.label(format!("  Binds: {}", pass_stats.binds));
+                        ui.label(format!(
+                            "  Draw time: {:.2}ms",
+                            1000. * pass_stats.draw_time
+                        ));
+                        ui.label(format!(
+                            "  Update time: {:.2}ms",
+                            1000. * pass_stats.update_time
+                        ));
                     }
                 });
             }
             ui.label("Performance");
-            ui.label(format!("  Draws: {}", stats.draws));
-            ui.label(format!("  Binds: {}", stats.binds));
+            ui.label(format!("  Draws: {}", stats.draws()));
+            ui.label(format!("  Binds: {}", stats.binds()));
             ui.label(format!(
                 "  CPU draw time: {:.2}ms",
-                1000. * stats.cpu_draw_time
+                1000. * stats.cpu_draw_time()
             ));
             ui.collapsing("Details", |ui| {
                 ui.label(format!("  Update: {:.2}ms", 1000. * stats.cpu_draw_update));
@@ -87,7 +97,10 @@ impl Ui {
                 ui.label(format!("  Submit: {:.2}ms", 1000. * stats.cpu_draw_submit));
             });
             ui.label(format!("  GPU time: {:.2}ms", 1000. * stats.gpu_draw_time));
-            ui.label(format!("  Update time: {:.2}ms", 1000. * stats.update_time));
+            ui.label(format!(
+                "  Update time: {:.2}ms",
+                1000. * stats.update_time()
+            ));
         });
     }
 

@@ -66,6 +66,7 @@ pub trait RenderPass {
     ) -> Vec<u8>;
 }
 
+#[derive(Default)]
 pub(crate) struct RenderState {
     last_pipeline: PipelineId,
     last_index_buffer: BufferId,
@@ -74,20 +75,6 @@ pub(crate) struct RenderState {
     scene_data_bound: bool,
     object_data: Vec<u8>,
     timer: Timer,
-}
-
-impl RenderState {
-    pub fn new() -> Self {
-        Self {
-            last_pipeline: PipelineId::nil(),
-            last_index_buffer: BufferId::nil(),
-            last_material: MaterialId::nil(),
-            last_indices_offset: 0,
-            scene_data_bound: false,
-            object_data: Vec::new(),
-            timer: Timer::new(),
-        }
-    }
 }
 
 pub(crate) struct FrameData {

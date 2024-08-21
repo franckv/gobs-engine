@@ -76,8 +76,6 @@ impl ForwardPass {
     }
 
     fn prepare_scene_data(&self, ctx: &Context, state: &mut RenderState, batch: &mut RenderBatch) {
-        batch.render_stats.cpu_draw_update += state.timer.delta();
-
         if let Some(scene_data) = batch.scene_data(self.id) {
             self.frame_data[ctx.frame_id()]
                 .uniform_buffer
@@ -106,8 +104,8 @@ impl ForwardPass {
             log::trace!("Bind pipeline {}", pipeline.id());
 
             cmd.bind_pipeline(&pipeline);
+            stats.bind(self.id);
 
-            stats.binds += 1;
             state.last_pipeline = pipeline.id();
         }
         stats.cpu_draw_bind += state.timer.delta();
@@ -126,7 +124,7 @@ impl ForwardPass {
                     log::trace!("Bind material {}", material.id);
                     log::trace!("Transparent: {}", material.material.blending_enabled);
                     cmd.bind_resource(material_binding);
-                    stats.binds += 1;
+                    stats.bind(self.id);
                 }
 
                 state.last_material = material.id;
@@ -149,7 +147,7 @@ impl ForwardPass {
             let uniform_buffer = self.frame_data[ctx.frame_id()].uniform_buffer.read();
 
             cmd.bind_resource_buffer(&uniform_buffer.buffer, &pipeline);
-            stats.binds += 1;
+            stats.bind(self.id);
             state.scene_data_bound = true;
         }
         stats.cpu_draw_bind += state.timer.delta();
@@ -198,7 +196,7 @@ impl ForwardPass {
                 &render_object.mesh.index_buffer,
                 render_object.mesh.indices_offset,
             );
-            stats.binds += 1;
+            stats.bind(self.id);
             state.last_index_buffer = render_object.mesh.index_buffer.id();
             state.last_indices_offset = render_object.mesh.indices_offset;
         }
@@ -206,7 +204,7 @@ impl ForwardPass {
     }
 
     fn render_batch(&self, ctx: &Context, cmd: &GfxCommand, batch: &mut RenderBatch) {
-        let mut render_state = RenderState::new();
+        let mut render_state = RenderState::default();
 
         self.prepare_scene_data(ctx, &mut render_state, batch);
 
@@ -246,7 +244,7 @@ impl ForwardPass {
             );
 
             cmd.draw_indexed(render_object.mesh.indices_len, 1);
-            batch.render_stats.draws += 1;
+            batch.render_stats.draw(self.id);
             batch.render_stats.cpu_draw_submit += render_state.timer.delta();
         }
     }

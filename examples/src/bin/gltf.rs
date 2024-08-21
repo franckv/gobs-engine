@@ -32,7 +32,7 @@ struct App {
 impl Run for App {
     async fn create(ctx: &Context) -> Self {
         let camera = SampleApp::perspective_camera(ctx);
-        let camera_position = Vec3::splat(0.);
+        let camera_position = Vec3::new(10., 5., 10.);
 
         let light = Light::new(Color::WHITE);
         let light_position = Vec3::new(0., 0., 10.);
