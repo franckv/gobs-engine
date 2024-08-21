@@ -317,7 +317,9 @@ impl UIRenderer {
                     m.indices.len()
                 );
 
-                let mut mesh = Mesh::builder("egui").indices(&m.indices);
+                let mut mesh = Mesh::builder("egui")
+                    .indices(&m.indices)
+                    .generate_tangents(false);
 
                 for vertex in &m.vertices {
                     let color = Color::from_rgba8(

@@ -59,9 +59,9 @@ impl MeshResourceManager {
     }
 
     fn debug_stats(&self) {
-        tracing::debug!("Meshes: {}", self.mesh_data.keys().len());
-        tracing::debug!("Transient: {}", self.transient_mesh_data[0].keys().len());
-        tracing::debug!("Bindings: {}", self.material_bindings.keys().len());
+        tracing::debug!(target: "render", "Meshes: {}", self.mesh_data.keys().len());
+        tracing::debug!(target: "render", "Transient: {}", self.transient_mesh_data[0].keys().len());
+        tracing::debug!(target: "render", "Bindings: {}", self.material_bindings.keys().len());
     }
 
     pub fn new_frame(&mut self, ctx: &Context) -> usize {
@@ -147,7 +147,7 @@ impl MeshResourceManager {
             // TODO: hot path
             let alignment = vertex_flags.alignment();
             for vertice in &mesh.vertices {
-                vertices.append(&mut vertice.raw(vertex_flags, alignment));
+                vertice.copy_data(vertex_flags, alignment, &mut vertices);
             }
             for index in &mesh.indices {
                 indices.push(*index);
@@ -166,6 +166,7 @@ impl MeshResourceManager {
         for (&material_id, vertices_offset, indices_offset, indices_len) in vertex_data {
             let material = model.materials.get(&material_id).cloned();
 
+            // TODO: manage transient material
             let material_binding = self.load_material(ctx, material.clone());
 
             gpu_meshes.push(GPUMesh {

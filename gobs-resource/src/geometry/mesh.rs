@@ -47,6 +47,7 @@ pub struct MeshBuilder {
     pub name: String,
     pub vertices: Vec<VertexData>,
     pub indices: Vec<u32>,
+    pub generate_tangents: bool,
 }
 
 impl MeshBuilder {
@@ -55,6 +56,7 @@ impl MeshBuilder {
             name: name.to_string(),
             vertices: Vec::new(),
             indices: Vec::new(),
+            generate_tangents: true,
         }
     }
 
@@ -72,6 +74,12 @@ impl MeshBuilder {
 
     pub fn indices(mut self, indices: &[u32]) -> Self {
         self.indices.extend(indices);
+
+        self
+    }
+
+    pub fn generate_tangents(mut self, generate_tangents: bool) -> Self {
+        self.generate_tangents = generate_tangents;
 
         self
     }
@@ -179,7 +187,9 @@ impl MeshBuilder {
 
         assert_eq!(self.indices.len() % 3, 0);
 
-        self = self.update_tangent();
+        if self.generate_tangents {
+            self = self.update_tangent();
+        }
 
         tracing::debug!(
             "Load mesh {} ({} vertices / {} indices)",

@@ -99,42 +99,46 @@ impl VertexData {
     pub fn raw(&self, flags: VertexFlag, alignment: usize) -> Vec<u8> {
         let mut data: Vec<u8> = Vec::new();
 
+        self.copy_data(flags, alignment, &mut data);
+
+        data
+    }
+
+    pub fn copy_data(&self, flags: VertexFlag, alignment: usize, data: &mut Vec<u8>) {
         if flags.contains(VertexFlag::POSITION) {
             data.extend_from_slice(bytemuck::cast_slice(&self.position.to_array()));
-            Self::pad(&mut data, self.padding, alignment - POS_SIZE);
+            Self::pad(data, self.padding, alignment - POS_SIZE);
         };
 
         if flags.contains(VertexFlag::COLOR) {
             data.extend_from_slice(bytemuck::cast_slice(&Into::<[f32; 4]>::into(self.color)));
-            Self::pad(&mut data, self.padding, alignment - COLOR_SIZE);
+            Self::pad(data, self.padding, alignment - COLOR_SIZE);
         };
 
         if flags.contains(VertexFlag::TEXTURE) {
             data.extend_from_slice(bytemuck::cast_slice(&self.texture.to_array()));
-            Self::pad(&mut data, self.padding, alignment - TEX_SIZE);
+            Self::pad(data, self.padding, alignment - TEX_SIZE);
         };
 
         if flags.contains(VertexFlag::NORMAL) {
             data.extend_from_slice(bytemuck::cast_slice(&self.normal.to_array()));
-            Self::pad(&mut data, self.padding, alignment - NORMAL_SIZE);
+            Self::pad(data, self.padding, alignment - NORMAL_SIZE);
         };
 
         if flags.contains(VertexFlag::NORMAL_TEXTURE) {
             data.extend_from_slice(bytemuck::cast_slice(&self.normal_texture.to_array()));
-            Self::pad(&mut data, self.padding, alignment - NORMAL_TEX_SIZE);
+            Self::pad(data, self.padding, alignment - NORMAL_TEX_SIZE);
         };
 
         if flags.contains(VertexFlag::TANGENT) {
             data.extend_from_slice(bytemuck::cast_slice(&self.tangent.to_array()));
-            Self::pad(&mut data, self.padding, alignment - TANGENT_SIZE);
+            Self::pad(data, self.padding, alignment - TANGENT_SIZE);
         };
 
         if flags.contains(VertexFlag::BITANGENT) {
             data.extend_from_slice(bytemuck::cast_slice(&self.bitangent.to_array()));
-            Self::pad(&mut data, self.padding, alignment - BITANGENT_SIZE);
+            Self::pad(data, self.padding, alignment - BITANGENT_SIZE);
         };
-
-        data
     }
 
     fn pad(data: &mut Vec<u8>, padding: bool, len: usize) {

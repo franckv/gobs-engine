@@ -25,19 +25,14 @@ fn main() {
 
 fn copy_files(path: &str) {
     let out_dir = env::var("OUT_DIR").unwrap();
-    let profile = env::var("PROFILE").unwrap();
 
     let mut target = PathBuf::from(out_dir);
 
-    let mut found = false;
-
-    while !found {
-        if target.ends_with(&profile) {
-            found = true;
-        } else {
-            target = target.parent().unwrap().to_path_buf();
-        }
+    for _ in 0..3 {
+        target = target.parent().unwrap().to_path_buf();
     }
+
+    debug!("Target {:?}", target);
 
     let mut copy_options = CopyOptions::new();
     copy_options.overwrite = true;
