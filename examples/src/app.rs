@@ -29,7 +29,7 @@ pub struct SampleApp {
 
 impl SampleApp {
     pub fn new() -> Self {
-        log::info!("Create");
+        tracing::info!("Create");
 
         Self {
             process_updates: false,
@@ -158,7 +158,7 @@ impl SampleApp {
         scene: &mut Scene,
         ui: &mut UIRenderer,
     ) -> Result<(), RenderError> {
-        log::trace!("Render frame {}", ctx.frame_number);
+        tracing::trace!("Render frame {}", ctx.frame_number);
 
         graph.begin(ctx)?;
 
@@ -186,7 +186,7 @@ impl SampleApp {
 
         graph.end(ctx)?;
 
-        log::trace!("End render");
+        tracing::trace!("End render");
 
         Ok(())
     }
@@ -200,7 +200,7 @@ impl SampleApp {
         ui: &mut UIRenderer,
         camera_controller: &mut CameraController,
     ) {
-        log::trace!("Input");
+        tracing::trace!("Input");
 
         ui.input(input);
 
@@ -215,7 +215,7 @@ impl SampleApp {
                         rd.trigger_capture();
                     }
                 }
-                Key::L => log::info!("{:?}", ctx.device.allocator.allocator.lock().unwrap()),
+                Key::L => tracing::info!("{:?}", ctx.device.allocator.allocator.lock().unwrap()),
                 Key::P => self.process_updates = !self.process_updates,
                 Key::W => self.draw_wire = !self.draw_wire,
                 Key::B => self.draw_bounds = !self.draw_bounds,

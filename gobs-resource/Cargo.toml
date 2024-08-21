@@ -12,9 +12,9 @@ futures = { workspace = true }
 glam = { workspace = true }
 gobs-core = { workspace = true }
 image = { workspace = true }
-log = { workspace = true }
 serde = { workspace = true }
+tracing = { workspace = true }
 uuid = { workspace = true }
 
 [dev-dependencies]
-env_logger = { workspace = true }
+tracing-subscriber = { workspace = true }

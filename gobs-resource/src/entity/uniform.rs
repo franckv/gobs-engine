@@ -164,13 +164,17 @@ impl UniformPropData {
 mod tests {
     use glam::Vec3;
     use glam::{Mat4, Vec4};
+    use tracing::Level;
+    use tracing_subscriber::{fmt::format::FmtSpan, FmtSubscriber};
 
     use crate::entity::uniform::{UniformLayout, UniformProp, UniformPropData};
 
     fn setup() {
-        let _ = env_logger::Builder::new()
-            .filter_module("gobs_core", log::LevelFilter::Debug)
-            .try_init();
+        let sub = FmtSubscriber::builder()
+            .with_max_level(Level::INFO)
+            .with_span_events(FmtSpan::CLOSE)
+            .finish();
+        tracing::subscriber::set_global_default(sub).unwrap();
     }
 
     #[repr(C)]

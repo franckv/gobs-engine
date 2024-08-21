@@ -171,7 +171,7 @@ impl SwapChain {
 
 impl Drop for SwapChain {
     fn drop(&mut self) {
-        log::debug!("Drop swapchain");
+        tracing::debug!("Drop swapchain");
         self.cleanup();
     }
 }

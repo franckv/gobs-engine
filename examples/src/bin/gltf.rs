@@ -106,17 +106,17 @@ impl Run for App {
     }
 
     fn close(&mut self, ctx: &Context) {
-        log::info!("Closing");
+        tracing::info!("Closing");
 
         ctx.device.wait();
 
-        log::info!("Closed");
+        tracing::info!("Closed");
     }
 }
 
 impl App {
     fn init(&mut self, ctx: &Context) {
-        log::info!("Load scene 0");
+        tracing::info!("Load scene 0");
         let graph = self.load_scene(ctx);
         self.scene
             .graph
@@ -139,7 +139,7 @@ impl App {
 fn main() {
     examples::init_logger();
 
-    log::info!("Engine start");
+    tracing::info!("Engine start");
 
     Application::<App>::new("glTF", examples::WIDTH, examples::HEIGHT).run();
 }

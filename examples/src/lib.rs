@@ -2,7 +2,8 @@ mod app;
 mod controller;
 mod ui;
 
-use env_logger::Builder;
+use tracing::Level;
+use tracing_subscriber::{fmt::format::FmtSpan, FmtSubscriber};
 
 pub use app::SampleApp;
 pub use controller::CameraController;
@@ -33,7 +34,11 @@ pub const WIDTH: u32 = 800;
 pub const HEIGHT: u32 = 600;
 
 pub fn init_logger() {
-    Builder::new().filter_level(log::LevelFilter::Info).init();
+    let sub = FmtSubscriber::builder()
+        .with_max_level(Level::INFO)
+        .with_span_events(FmtSpan::CLOSE)
+        .finish();
+    tracing::subscriber::set_global_default(sub).unwrap();
 
-    log::info!("Logger initialized");
+    tracing::info!("Logger initialized");
 }

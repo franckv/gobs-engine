@@ -114,7 +114,7 @@ impl Wrap<vk::Pipeline> for Pipeline {
 
 impl Drop for Pipeline {
     fn drop(&mut self) {
-        log::debug!("Drop pipeline");
+        tracing::debug!("Drop pipeline");
         unsafe {
             self.device.raw().destroy_pipeline(self.pipeline, None);
         }

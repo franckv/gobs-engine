@@ -41,7 +41,7 @@ impl DescriptorSetPool {
         descriptor_layout: Arc<DescriptorSetLayout>,
         max_sets: usize,
     ) -> vk::DescriptorPool {
-        log::debug!("Alloc new pool (size={})", max_sets);
+        tracing::debug!("Alloc new pool (size={})", max_sets);
 
         let pool_size: Vec<vk::DescriptorPoolSize> = descriptor_layout
             .bindings
@@ -65,7 +65,7 @@ impl DescriptorSetPool {
     }
 
     fn grow(&mut self) {
-        log::debug!("Growing descriptor pool");
+        tracing::debug!("Growing descriptor pool");
 
         self.full_pools.push(self.current_pool);
 
@@ -80,7 +80,7 @@ impl DescriptorSetPool {
     }
 
     pub fn reset(&mut self) {
-        log::debug!("Reset all descriptor pool");
+        tracing::debug!("Reset all descriptor pool");
         Self::reset_pool(self.device.clone(), self.current_pool);
 
         for pool in self.full_pools.drain(..) {
@@ -90,7 +90,7 @@ impl DescriptorSetPool {
     }
 
     fn reset_pool(device: Arc<Device>, pool: vk::DescriptorPool) {
-        log::debug!("Reset descriptor pool");
+        tracing::debug!("Reset descriptor pool");
         unsafe {
             device
                 .raw()
@@ -100,7 +100,7 @@ impl DescriptorSetPool {
     }
 
     fn destroy_pool(device: Arc<Device>, pool: vk::DescriptorPool) {
-        log::debug!("Destroy descriptor pool");
+        tracing::debug!("Destroy descriptor pool");
         unsafe {
             device.raw().destroy_descriptor_pool(pool, None);
         }
@@ -117,7 +117,7 @@ impl DescriptorSetPool {
     }
 
     pub fn allocate(&mut self) -> DescriptorSet {
-        log::debug!("Allocate descriptor set");
+        tracing::debug!("Allocate descriptor set");
         let results = self.allocate_ds();
 
         let results = match results {
@@ -149,7 +149,7 @@ impl Wrap<vk::DescriptorPool> for DescriptorSetPool {
 
 impl Drop for DescriptorSetPool {
     fn drop(&mut self) {
-        log::debug!("Drop descriptor pool");
+        tracing::debug!("Drop descriptor pool");
 
         Self::destroy_pool(self.device.clone(), self.current_pool);
         for pool in self.available_pools.drain(..) {
@@ -166,12 +166,16 @@ mod tests {
     use crate::descriptor::{
         DescriptorSetLayout, DescriptorSetPool, DescriptorStage, DescriptorType,
     };
+    use tracing::Level;
+    use tracing_subscriber::{fmt::format::FmtSpan, FmtSubscriber};
 
     #[test]
     fn test_alloc() {
-        env_logger::Builder::new()
-            .filter_module("gobs_vulkan::descriptor::pool", log::LevelFilter::Debug)
-            .init();
+        let sub = FmtSubscriber::builder()
+            .with_max_level(Level::INFO)
+            .with_span_events(FmtSpan::CLOSE)
+            .finish();
+        tracing::subscriber::set_global_default(sub).unwrap();
 
         let ctx = crate::headless::Context::new("test");
 

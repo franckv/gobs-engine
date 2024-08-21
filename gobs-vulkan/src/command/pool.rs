@@ -19,7 +19,7 @@ impl CommandPool {
             .queue_family_index(queue_family.index);
 
         let pool = unsafe {
-            log::debug!("Create command pool");
+            tracing::debug!("Create command pool");
             device.raw().create_command_pool(&pool_info, None).unwrap()
         };
 
@@ -34,7 +34,7 @@ impl Wrap<vk::CommandPool> for CommandPool {
 }
 impl Drop for CommandPool {
     fn drop(&mut self) {
-        log::debug!("Drop command pool");
+        tracing::debug!("Drop command pool");
         unsafe {
             self.device.raw().destroy_command_pool(self.pool, None);
         }

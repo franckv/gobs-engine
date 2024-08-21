@@ -9,8 +9,8 @@ glam = { workspace = true }
 gobs-core = { workspace = true }
 gobs-render = { workspace = true }
 gobs-resource = { workspace = true }
-log = { workspace = true }
 slotmap = { workspace = true }
+tracing = { workspace = true }
 uuid = { workspace = true }
 
 [build-dependencies]

@@ -124,7 +124,7 @@ impl RenderPass for ComputePass {
         batch: &mut RenderBatch,
         draw_extent: ImageExtent2D,
     ) -> Result<(), RenderError> {
-        log::debug!("Draw compute");
+        tracing::debug!("Draw compute");
         cmd.begin_label("Draw compute");
 
         let draw_attach = &self.attachments[0];

@@ -241,7 +241,7 @@ impl VkGraphicsPipelineBuilder {
     }
 
     pub fn build(mut self) -> Arc<VkPipeline> {
-        log::debug!("Creating pipeline: {}", self.name);
+        tracing::debug!("Creating pipeline: {}", self.name);
 
         self = self.save_binding_group();
 

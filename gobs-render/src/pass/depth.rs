@@ -150,7 +150,7 @@ impl DepthPass {
         state: &mut RenderState,
         render_object: &RenderObject,
     ) {
-        log::trace!("Bind push constants");
+        tracing::trace!("Bind push constants");
 
         if let Some(push_layout) = render_object.pass.push_layout() {
             state.object_data.clear();
@@ -293,7 +293,7 @@ impl RenderPass for DepthPass {
         batch: &mut RenderBatch,
         draw_extent: ImageExtent2D,
     ) -> Result<(), RenderError> {
-        log::debug!("Draw depth");
+        tracing::debug!("Draw depth");
 
         cmd.begin_label("Draw depth");
 

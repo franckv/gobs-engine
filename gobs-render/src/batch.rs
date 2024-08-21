@@ -48,14 +48,14 @@ impl RenderBatch {
         pass: Arc<dyn RenderPass>,
         transient: bool,
     ) {
-        log::debug!("Add model: {}", model.meshes.len());
+        tracing::debug!("Add model: {}", model.meshes.len());
 
         let mesh_data = self
             .mesh_resource_manager
             .add_object(ctx, model, pass.clone(), transient);
 
         for mesh in mesh_data {
-            log::debug!("Add {} indices", mesh.indices_len);
+            tracing::debug!("Add {} indices", mesh.indices_len);
 
             let render_object = RenderObject {
                 transform,

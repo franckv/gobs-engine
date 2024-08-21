@@ -106,7 +106,7 @@ impl Command for VkCommand {
     }
 
     fn bind_pipeline(&self, pipeline: &VkPipeline) {
-        log::debug!("Binding pipeline {}", pipeline.name);
+        tracing::debug!("Binding pipeline {}", pipeline.name);
         self.command.bind_pipeline(&pipeline.pipeline);
     }
 
@@ -142,13 +142,13 @@ impl Command for VkCommand {
             self.command.fence.reset();
             debug_assert!(!self.command.fence.signaled());
         } else {
-            log::warn!("Fence unsignaled");
+            tracing::warn!("Fence unsignaled");
         }
         self.command.reset();
     }
 
     fn submit2(&self, display: &VkDisplay, frame: usize) {
-        log::trace!("Submit with semaphore {}", frame);
+        tracing::trace!("Submit with semaphore {}", frame);
         let swapchain_semaphore = Some(&display.swapchain_semaphores[frame]);
         let render_semaphore = Some(&display.render_semaphores[frame]);
         self.command.submit2(swapchain_semaphore, render_semaphore);

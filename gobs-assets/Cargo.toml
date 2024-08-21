@@ -12,7 +12,7 @@ gobs-gfx = { workspace = true }
 gobs-render = { workspace = true }
 gobs-resource = { workspace = true }
 gobs-scene = { workspace = true }
-log = { workspace = true }
+tracing = { workspace = true }
 
 [build-dependencies]
 fs_extra = { workspace = true }

@@ -51,7 +51,7 @@ impl Device {
             .push_next(&mut features13);
 
         let device: ash::Device = unsafe {
-            log::debug!("Create device");
+            tracing::debug!("Create device");
             instance
                 .instance
                 .create_device(p_device.raw(), &device_info, None)
@@ -96,7 +96,7 @@ impl Debug for Device {
 
 impl Drop for Device {
     fn drop(&mut self) {
-        log::debug!("Drop device");
+        tracing::debug!("Drop device");
         unsafe {
             self.device.destroy_device(None);
         }

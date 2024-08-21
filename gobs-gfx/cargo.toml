@@ -9,6 +9,6 @@ anyhow = { workspace = true }
 gobs-core = { workspace = true }
 gobs-vulkan = { workspace = true }
 image = { workspace = true }
-log = { workspace = true }
+tracing = { workspace = true }
 uuid = { workspace = true }
 winit = { workspace = true }

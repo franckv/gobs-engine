@@ -1,4 +1,3 @@
-use log::*;
 use pollster::FutureExt;
 use winit::{
     application::ApplicationHandler,
@@ -42,7 +41,7 @@ where
         let window = event_loop.create_window(window_attributes).unwrap();
 
         let context = Context::new(&self.title, Some(window));
-        log::info!("Start main loop");
+        tracing::info!("Start main loop");
 
         let future = async {
             let mut runnable = R::create(&context).await;
@@ -66,17 +65,17 @@ where
     ) {
         if let Some(runnable) = &mut self.runnable {
             if let Some(context) = &mut self.context {
-                log::trace!("evt={:?}", event);
+                tracing::trace!("evt={:?}", event);
 
                 match event {
                     WindowEvent::CloseRequested => {
-                        log::info!("Stopping");
+                        tracing::info!("Stopping");
                         self.close_requested = true;
                         runnable.close(&context);
                         event_loop.exit();
                     }
                     WindowEvent::Resized(physical_size) => {
-                        log::debug!(
+                        tracing::debug!(
                             "Resize to : {}/{}",
                             physical_size.width,
                             physical_size.height
@@ -96,7 +95,7 @@ where
                         ..
                     } => match key_code {
                         keyboard::Key::Named(NamedKey::Escape) => {
-                            log::info!("Stopping");
+                            tracing::info!("Stopping");
                             self.close_requested = true;
                             runnable.close(&context);
                             event_loop.exit();
@@ -138,7 +137,7 @@ where
 
                         if !self.close_requested {
                             runnable.update(&context, delta);
-                            log::trace!("[Redraw] FPS: {}", 1. / delta);
+                            tracing::trace!("[Redraw] FPS: {}", 1. / delta);
                             if !context.display.is_minimized() {
                                 if self.is_minimized {
                                     self.is_minimized = false;
@@ -147,7 +146,7 @@ where
                                 match runnable.render(context) {
                                     Ok(_) => {}
                                     Err(RenderError::Lost | RenderError::Outdated) => {}
-                                    Err(e) => error!("{:?}", e),
+                                    Err(e) => tracing::error!("{:?}", e),
                                 }
                             } else {
                                 self.is_minimized = true;
@@ -169,7 +168,7 @@ where
     ) {
         if let Some(runnable) = &mut self.runnable {
             if let Some(context) = &mut self.context {
-                log::trace!("evt={:?}", event);
+                tracing::trace!("evt={:?}", event);
 
                 match event {
                     DeviceEvent::MouseMotion { delta } => {

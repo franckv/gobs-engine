@@ -13,10 +13,10 @@ gobs-gfx = { workspace = true }
 gobs-gfx-vulkan = { workspace = true, optional = true}
 gobs-resource = { workspace = true }
 image = { workspace = true }
-log = { workspace = true }
 parking_lot = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
+tracing = { workspace = true }
 uuid = { workspace = true }
 winit = { workspace = true }
 

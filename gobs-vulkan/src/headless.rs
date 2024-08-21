@@ -12,7 +12,7 @@ impl Context {
 
         let physical_device = instance.find_headless_adapter();
 
-        log::info!("Using adapter {}", physical_device.name);
+        tracing::info!("Using adapter {}", physical_device.name);
 
         let queue_family = instance.find_headless_family(&physical_device).unwrap();
 

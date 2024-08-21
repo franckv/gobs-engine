@@ -44,7 +44,7 @@ impl Device for VkDevice {
             }
         };
 
-        log::info!("Using adapter {}", physical_device.name);
+        tracing::info!("Using adapter {}", physical_device.name);
 
         let device =
             vk::device::Device::new(instance.instance.clone(), physical_device, &queue_family);
@@ -75,7 +75,7 @@ impl Device for VkDevice {
     where
         F: Fn(&GfxCommand),
     {
-        log::debug!("Submit immediate command");
+        tracing::debug!("Submit immediate command");
         let cmd = &self.immediate_cmd.command;
 
         cmd.fence.reset();
@@ -92,14 +92,14 @@ impl Device for VkDevice {
         cmd.submit2(None, None);
 
         cmd.fence.wait();
-        log::debug!("Immediate command done");
+        tracing::debug!("Immediate command done");
     }
 
     fn run_immediate_mut<F>(&self, mut callback: F)
     where
         F: FnMut(&GfxCommand),
     {
-        log::debug!("Submit immediate command");
+        tracing::debug!("Submit immediate command");
         let cmd = &self.immediate_cmd.command;
 
         cmd.fence.reset();
@@ -116,7 +116,7 @@ impl Device for VkDevice {
         cmd.submit2(None, None);
 
         cmd.fence.wait();
-        log::debug!("Immediate command done");
+        tracing::debug!("Immediate command done");
     }
 
     fn wait(&self) {

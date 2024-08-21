@@ -58,7 +58,7 @@ impl Run for App {
     }
 
     fn render(&mut self, ctx: &mut Context) -> Result<(), RenderError> {
-        log::trace!("Render frame {}", ctx.frame_number);
+        tracing::trace!("Render frame {}", ctx.frame_number);
 
         self.graph.begin(ctx)?;
 
@@ -71,7 +71,7 @@ impl Run for App {
 
         self.graph.end(ctx)?;
 
-        log::trace!("End render");
+        tracing::trace!("End render");
 
         Ok(())
     }
@@ -103,18 +103,18 @@ impl Run for App {
     async fn start(&mut self, _ctx: &Context) {}
 
     fn close(&mut self, ctx: &Context) {
-        log::info!("Closing");
+        tracing::info!("Closing");
 
         ctx.device.wait();
 
-        log::info!("Closed");
+        tracing::info!("Closed");
     }
 }
 
 fn main() {
     examples::init_logger();
 
-    log::info!("Engine start");
+    tracing::info!("Engine start");
 
     Application::<App>::new("Egui", examples::WIDTH, examples::HEIGHT).run();
 }

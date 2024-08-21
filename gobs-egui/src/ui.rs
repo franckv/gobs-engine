@@ -82,8 +82,9 @@ impl UIRenderer {
         self.output = Some(self.ectx.run(input, callback));
     }
 
+    #[tracing::instrument(skip(self, ctx, output), level = "debug")]
     fn upload_ui_data(&mut self, ctx: &Context, output: FullOutput) {
-        pollster::block_on(self.update_textures(&output));
+        self.update_textures(&output);
 
         let to_remove = output.textures_delta.free.clone();
 
@@ -101,7 +102,7 @@ impl UIRenderer {
 
     pub fn dump_model(&self, ctx: &Context) {
         if let Some(model) = self.frame_data[ctx.frame_id()].model.clone() {
-            log::warn!("Dump model: {:?}", model);
+            tracing::warn!("Dump model: {:?}", model);
         }
     }
 
@@ -199,42 +200,41 @@ impl UIRenderer {
         self.input.push(input);
     }
 
-    async fn update_textures(&mut self, output: &FullOutput) {
+    #[tracing::instrument(skip(self, output), level = "debug")]
+    fn update_textures(&mut self, output: &FullOutput) {
         for (id, img) in &output.textures_delta.set {
-            log::debug!("New texture {:?}", id);
+            tracing::debug!("New texture {:?}", id);
             if img.pos.is_some() {
-                log::info!("Patching texture");
-                let texture = self
-                    .patch_texture(
-                        self.font_texture
-                            .get(id)
-                            .cloned()
-                            .expect("Cannot update unallocated texture"),
-                        img,
-                    )
-                    .await;
+                tracing::info!("Patching texture");
+                let texture = self.patch_texture(
+                    self.font_texture
+                        .get(id)
+                        .cloned()
+                        .expect("Cannot update unallocated texture"),
+                    img,
+                );
 
                 let material = self.material.instantiate(vec![texture]);
 
                 *self.font_texture.get_mut(id).unwrap() = material;
             } else {
-                log::debug!("Allocate new texture");
-                let texture = self.decode_texture(img).await;
+                tracing::debug!("Allocate new texture");
+                let texture = self.decode_texture(img);
                 self.font_texture.insert(*id, texture);
-                log::debug!("Texture loaded");
+                tracing::debug!("Texture loaded");
             }
         }
     }
 
     fn cleanup_textures(&mut self, to_remove: Vec<TextureId>) {
         for id in &to_remove {
-            log::debug!("Remove texture {:?}", id);
+            tracing::debug!("Remove texture {:?}", id);
 
             self.font_texture.remove(id);
         }
     }
 
-    async fn decode_texture(&self, img: &ImageDelta) -> Arc<MaterialInstance> {
+    fn decode_texture(&self, img: &ImageDelta) -> Arc<MaterialInstance> {
         match &img.image {
             egui::ImageData::Color(_) => todo!(),
             egui::ImageData::Font(font) => {
@@ -256,11 +256,7 @@ impl UIRenderer {
         }
     }
 
-    async fn patch_texture(
-        &self,
-        material: Arc<MaterialInstance>,
-        img: &ImageDelta,
-    ) -> Arc<Texture> {
+    fn patch_texture(&self, material: Arc<MaterialInstance>, img: &ImageDelta) -> Arc<Texture> {
         match &img.image {
             egui::ImageData::Color(_) => todo!(),
             egui::ImageData::Font(font) => {
@@ -269,7 +265,7 @@ impl UIRenderer {
 
                 let pos = img.pos.expect("Can only patch texture with start position");
 
-                log::debug!(
+                tracing::debug!(
                     "Patching texture origin: {}/{}, size: {}/{}, len={}",
                     pos[0],
                     pos[1],
@@ -277,7 +273,7 @@ impl UIRenderer {
                     font.height(),
                     bytes.len()
                 );
-                log::debug!(
+                tracing::debug!(
                     "Patching texture original size: {:?}",
                     material.textures[0].extent
                 );
@@ -294,11 +290,11 @@ impl UIRenderer {
     }
 
     fn load_model(&mut self, output: FullOutput, model_id: Option<ModelId>) -> Option<Arc<Model>> {
-        log::debug!("Loading model");
+        tracing::debug!("Loading model");
 
         let primitives = self.ectx.tessellate(output.shapes, PIXEL_PER_POINT);
 
-        log::debug!("Load {} primitives", primitives.len());
+        tracing::debug!("Load {} primitives", primitives.len());
 
         if primitives.len() == 0 {
             return None;
@@ -312,7 +308,7 @@ impl UIRenderer {
 
         for primitive in &primitives {
             if let Primitive::Mesh(m) = &primitive.primitive {
-                log::debug!(
+                tracing::debug!(
                     "Primitive: {} vertices, {} indices",
                     m.vertices.len(),
                     m.indices.len()
@@ -347,7 +343,7 @@ impl UIRenderer {
                     Some(self.font_texture.get(&m.texture_id).cloned().unwrap()),
                 );
             } else {
-                log::error!("Primitive unknown");
+                tracing::error!("Primitive unknown");
             }
         }
 

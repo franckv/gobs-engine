@@ -18,7 +18,7 @@ impl Memory {
     pub fn upload<T: Copy>(&mut self, entries: &[T], offset: usize) {
         let size = (entries.len() * mem::size_of::<T>()) as u64;
 
-        log::debug!(
+        tracing::debug!(
             "Uploading data to buffer (Size={}, offset={}, align={}, len={})",
             size,
             offset,
@@ -43,7 +43,7 @@ impl Memory {
 impl Drop for Memory {
     fn drop(&mut self) {
         if let Some(allocation) = &self.allocation {
-            unsafe { log::debug!("Free memory: {:x}", allocation.memory().as_raw()) };
+            unsafe { tracing::debug!("Free memory: {:x}", allocation.memory().as_raw()) };
         }
 
         self.allocator

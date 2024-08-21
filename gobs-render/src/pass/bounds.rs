@@ -143,7 +143,7 @@ impl BoundsPass {
         state: &mut RenderState,
         render_object: &RenderObject,
     ) {
-        log::trace!("Bind push constants");
+        tracing::trace!("Bind push constants");
 
         if let Some(push_layout) = self.push_layout() {
             state.object_data.clear();
@@ -285,7 +285,7 @@ impl RenderPass for BoundsPass {
         batch: &mut RenderBatch,
         draw_extent: ImageExtent2D,
     ) -> Result<(), RenderError> {
-        log::debug!("Draw bounds");
+        tracing::debug!("Draw bounds");
 
         cmd.begin_label("Draw bounds");
 

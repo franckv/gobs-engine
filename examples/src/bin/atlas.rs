@@ -124,11 +124,11 @@ impl Run for App {
     }
 
     fn close(&mut self, ctx: &Context) {
-        log::info!("Closing");
+        tracing::info!("Closing");
 
         ctx.device.wait();
 
-        log::info!("Closed");
+        tracing::info!("Closed");
     }
 }
 
@@ -177,7 +177,7 @@ impl App {
 fn main() {
     examples::init_logger();
 
-    log::info!("Engine start");
+    tracing::info!("Engine start");
 
     Application::<App>::new("Atlas", examples::WIDTH, examples::HEIGHT).run();
 }

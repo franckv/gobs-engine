@@ -176,17 +176,21 @@ impl fmt::Display for Camera {
 #[cfg(test)]
 mod tests {
     use glam::Vec3;
+    use tracing::Level;
+    use tracing_subscriber::{fmt::format::FmtSpan, FmtSubscriber};
 
     use super::Camera;
 
     fn setup() {
-        let _ = env_logger::Builder::new()
-            .filter_module("gobs_core", log::LevelFilter::Debug)
-            .try_init();
+        let sub = FmtSubscriber::builder()
+            .with_max_level(Level::INFO)
+            .with_span_events(FmtSpan::CLOSE)
+            .finish();
+        tracing::subscriber::set_global_default(sub).unwrap();
     }
 
     fn check_dir(yaw: f32, pitch: f32, expected: Vec3) {
-        log::debug!("yaw={:?}, pitch={:?}, dir={:?}", yaw, pitch, expected);
+        tracing::debug!("yaw={:?}, pitch={:?}, dir={:?}", yaw, pitch, expected);
 
         let camera = Camera::ortho(
             320. as f32,

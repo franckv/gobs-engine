@@ -141,7 +141,7 @@ impl WirePass {
         state: &mut RenderState,
         render_object: &RenderObject,
     ) {
-        log::trace!("Bind push constants");
+        tracing::trace!("Bind push constants");
 
         if let Some(push_layout) = render_object.pass.push_layout() {
             state.object_data.clear();
@@ -284,7 +284,7 @@ impl RenderPass for WirePass {
         batch: &mut RenderBatch,
         draw_extent: ImageExtent2D,
     ) -> Result<(), RenderError> {
-        log::debug!("Draw wire");
+        tracing::debug!("Draw wire");
 
         cmd.begin_label("Draw wire");
 

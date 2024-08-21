@@ -85,7 +85,7 @@ impl GLTFLoader {
     fn load_models(&mut self, doc: &Document, buffers: &[buffer::Data]) {
         for m in doc.meshes() {
             let name = m.name().unwrap_or_default();
-            log::info!(
+            tracing::info!(
                 "Mesh #{}: {}, primitives: {}",
                 m.index(),
                 name,
@@ -95,7 +95,7 @@ impl GLTFLoader {
             let mut model = Model::builder(name);
 
             for p in m.primitives() {
-                log::info!(
+                tracing::info!(
                     "Primitive #{}, material {:?}",
                     p.index(),
                     p.material().index()
@@ -189,7 +189,7 @@ impl GLTFLoader {
             self.models.push(model.build());
         }
 
-        log::info!("{} models loaded", self.models.len());
+        tracing::info!("{} models loaded", self.models.len());
     }
 }
 
@@ -265,13 +265,13 @@ impl MaterialManager {
         let default_material_instance = texture
             .clone()
             .instantiate(vec![texture_manager.default_texture.clone()]);
-        log::debug!("Default material id: {}", default_material_instance.id);
+        tracing::debug!("Default material id: {}", default_material_instance.id);
 
         let color_instance = color.instantiate(vec![]);
-        log::debug!("Color material id: {}", color_instance.id);
+        tracing::debug!("Color material id: {}", color_instance.id);
 
         let transparent_color_instance = transparent_color.instantiate(vec![]);
-        log::debug!("Color material id: {}", transparent_color_instance.id);
+        tracing::debug!("Color material id: {}", transparent_color_instance.id);
 
         MaterialManager {
             instances: vec![],
@@ -289,14 +289,14 @@ impl MaterialManager {
         for mat in doc.materials() {
             let name = mat.name().unwrap_or_default();
             if let Some(idx) = mat.index() {
-                log::info!("Material #{}: {}", idx, name);
+                tracing::info!("Material #{}: {}", idx, name);
 
                 let pbr = mat.pbr_metallic_roughness();
                 let diffuse = pbr.base_color_texture();
 
                 match diffuse {
                     Some(tex_info) => {
-                        log::info!(
+                        tracing::info!(
                             "Using texture #{}: {}",
                             tex_info.texture().index(),
                             tex_info.texture().name().unwrap_or_default()
@@ -317,16 +317,16 @@ impl MaterialManager {
                     }
                     None => {
                         let color: Color = pbr.base_color_factor().into();
-                        log::info!("Using color material: {:?}", color);
+                        tracing::info!("Using color material: {:?}", color);
                         self.add_color_instance(mat.alpha_mode());
                     }
                 }
             } else {
-                log::info!("Using default material");
+                tracing::info!("Using default material");
             }
         }
 
-        log::info!("{} materials loaded", self.instances.len());
+        tracing::info!("{} materials loaded", self.instances.len());
     }
 
     fn add_texture_instance(
@@ -387,7 +387,7 @@ impl TextureManager {
     }
 
     fn load(&mut self, doc: &Document, images: &[image::Data]) {
-        log::info!("Reading {} images", images.len());
+        tracing::info!("Reading {} images", images.len());
 
         for t in doc.textures() {
             let name = t.name().unwrap_or_default();
@@ -426,7 +426,7 @@ impl TextureManager {
 
             let name = format!("Texture #{}: {}", t.index(), name);
 
-            log::info!(
+            tracing::info!(
                 "{}, image #{}, format: {:?}, type: {:?}",
                 &name,
                 image.index(),
@@ -471,12 +471,12 @@ impl TextureManager {
                 }
                 _ => {
                     self.add_default();
-                    log::warn!("Unsupported image format: {:?}", data.format)
+                    tracing::warn!("Unsupported image format: {:?}", data.format)
                 }
             };
         }
 
-        log::info!("{} textures loaded", self.textures.len());
+        tracing::info!("{} textures loaded", self.textures.len());
     }
 
     fn add(&mut self, texture: Arc<Texture>) {

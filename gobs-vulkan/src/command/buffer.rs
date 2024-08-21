@@ -425,7 +425,7 @@ impl CommandBuffer {
         dst: &Image,
         dst_size: ImageExtent2D,
     ) {
-        log::trace!(
+        tracing::trace!(
             "Blitting image {}/{} to {}/{}",
             src_size.width,
             src_size.height,
@@ -503,7 +503,7 @@ impl CommandBuffer {
     }
 
     pub fn transition_image_layout(&self, image: &mut Image, dst_layout: ImageLayout) {
-        log::trace!(
+        tracing::trace!(
             "Transition [{}] from {:?} to {:?}",
             &image.label,
             image.layout,
@@ -604,7 +604,7 @@ impl CommandBuffer {
     where
         F: Fn(&CommandBuffer),
     {
-        log::debug!("Submit immediate command");
+        tracing::debug!("Submit immediate command");
         self.fence.reset();
         assert!(!self.fence.signaled());
 
@@ -619,14 +619,14 @@ impl CommandBuffer {
         self.submit2(None, None);
 
         self.fence.wait();
-        log::debug!("Immediate command done");
+        tracing::debug!("Immediate command done");
     }
 
     pub fn immediate_mut<F>(&self, mut callback: F)
     where
         F: FnMut(&CommandBuffer),
     {
-        log::debug!("Submit immediate command");
+        tracing::debug!("Submit immediate command");
         self.fence.reset();
         assert!(!self.fence.signaled());
 
@@ -641,7 +641,7 @@ impl CommandBuffer {
         self.submit2(None, None);
 
         self.fence.wait();
-        log::debug!("Immediate command done");
+        tracing::debug!("Immediate command done");
     }
 }
 
@@ -653,7 +653,7 @@ impl Wrap<vk::CommandBuffer> for CommandBuffer {
 
 impl Drop for CommandBuffer {
     fn drop(&mut self) {
-        log::debug!("Drop command buffer");
+        tracing::debug!("Drop command buffer");
 
         unsafe {
             self.device

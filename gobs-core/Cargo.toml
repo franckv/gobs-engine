@@ -9,9 +9,9 @@ bitflags = { workspace = true }
 bytemuck = { workspace = true }
 image = { workspace = true }
 glam = { workspace = true }
-log = { workspace = true }
 rand = { workspace = true }
 serde = { workspace = true }
+tracing = { workspace = true }
 
 [dev-dependencies]
-env_logger = { workspace = true }
+tracing-subscriber = { workspace = true}

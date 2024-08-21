@@ -78,13 +78,13 @@ impl MeshBuilder {
 
     fn autoindex(mut self) -> Self {
         if !self.indices.is_empty() {
-            log::debug!("Skip indices");
+            tracing::debug!("Skip indices");
             return self;
         }
 
         let mut unique = HashMap::new();
 
-        log::debug!("Indexing {} vertices", self.vertices.len());
+        tracing::debug!("Indexing {} vertices", self.vertices.len());
 
         let mut idx = 0;
         let vertices = self
@@ -141,7 +141,7 @@ impl MeshBuilder {
     }
 
     fn update_tangent(mut self) -> Self {
-        log::debug!("Calculating tangents for {} indices", self.indices.len());
+        tracing::debug!("Calculating tangents for {} indices", self.indices.len());
 
         let mut triangles_included = vec![0; self.vertices.len()];
 
@@ -181,7 +181,7 @@ impl MeshBuilder {
 
         self = self.update_tangent();
 
-        log::debug!(
+        tracing::debug!(
             "Load mesh {} ({} vertices / {} indices)",
             self.name,
             self.vertices.len(),

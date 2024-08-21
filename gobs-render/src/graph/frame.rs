@@ -218,7 +218,7 @@ impl FrameGraph {
     }
 
     pub fn begin(&mut self, ctx: &mut Context) -> Result<(), RenderError> {
-        log::debug!("Begin new frame");
+        tracing::debug!("Begin new frame");
 
         let frame_id = ctx.frame_id();
         let frame = &mut self.frames[frame_id];
@@ -269,13 +269,13 @@ impl FrameGraph {
     }
 
     pub fn end(&mut self, ctx: &mut Context) -> Result<(), RenderError> {
-        log::debug!("End frame");
+        tracing::debug!("End frame");
 
         let frame_id = ctx.frame_id();
         let frame = &self.frames[frame_id];
         let cmd = &frame.command;
 
-        log::debug!("Present");
+        tracing::debug!("Present");
 
         cmd.transition_image_layout(
             &mut self.resource_manager.image_write("draw"),
@@ -321,7 +321,7 @@ impl FrameGraph {
         ctx: &Context,
         draw_cmd: &mut dyn FnMut(Arc<dyn RenderPass>, &mut RenderBatch),
     ) -> Result<(), RenderError> {
-        log::debug!("Begin rendering");
+        tracing::debug!("Begin rendering");
 
         let frame_id = ctx.frame_id();
 
@@ -344,7 +344,7 @@ impl FrameGraph {
 
         self.batch.render_stats.cpu_draw_time_reset(should_update);
         for pass in &self.passes {
-            log::debug!("Enter render pass: {}", pass.name());
+            tracing::debug!("Enter render pass: {}", pass.name());
             pass.render(
                 ctx,
                 cmd,
@@ -358,7 +358,7 @@ impl FrameGraph {
                 .cpu_draw_time_add(timer.delta(), pass.id(), should_update);
         }
 
-        log::debug!("End rendering");
+        tracing::debug!("End rendering");
 
         Ok(())
     }

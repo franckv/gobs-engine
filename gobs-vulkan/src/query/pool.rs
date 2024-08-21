@@ -51,7 +51,7 @@ impl QueryPool {
 
 impl Drop for QueryPool {
     fn drop(&mut self) {
-        log::debug!("Drop query pool");
+        tracing::debug!("Drop query pool");
 
         unsafe {
             self.device.raw().destroy_query_pool(self.pool, None);

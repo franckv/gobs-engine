@@ -35,7 +35,7 @@ unsafe extern "system" fn debug_cb(
 
     match message_severity {
         vk::DebugUtilsMessageSeverityFlagsEXT::WARNING => {
-            log::warn!(
+            tracing::warn!(
                 "{:?} [{} ({})] : {}",
                 message_type,
                 message_id_name,
@@ -44,7 +44,7 @@ unsafe extern "system" fn debug_cb(
             );
         }
         vk::DebugUtilsMessageSeverityFlagsEXT::INFO => {
-            log::info!(
+            tracing::info!(
                 "{:?} [{} ({})] : {}",
                 message_type,
                 message_id_name,
@@ -53,7 +53,7 @@ unsafe extern "system" fn debug_cb(
             );
         }
         vk::DebugUtilsMessageSeverityFlagsEXT::VERBOSE => {
-            log::debug!(
+            tracing::debug!(
                 "{:?} [{} ({})] : {}",
                 message_type,
                 message_id_name,
@@ -62,7 +62,7 @@ unsafe extern "system" fn debug_cb(
             );
         }
         _ => {
-            log::error!(
+            tracing::error!(
                 "{:?} [{} ({})] : {}",
                 message_type,
                 message_id_name,
@@ -131,7 +131,7 @@ impl Instance {
         let entry = ash::Entry::linked();
 
         let instance: ash::Instance = unsafe {
-            log::info!("Create instance");
+            tracing::info!("Create instance");
 
             entry.create_instance(&instance_info, None).unwrap()
         };
@@ -223,7 +223,7 @@ impl Instance {
 
         let features10 = features.features;
 
-        log::debug!(
+        tracing::debug!(
             "Features: {:?},{:?},{:?},{:?}",
             features10,
             features11,
@@ -273,7 +273,7 @@ impl Instance {
 
 impl Drop for Instance {
     fn drop(&mut self) {
-        log::debug!("Drop instance");
+        tracing::debug!("Drop instance");
         unsafe {
             self.debug_utils_loader
                 .destroy_debug_utils_messenger(self.debug_call_back, None);

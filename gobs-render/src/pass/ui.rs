@@ -86,7 +86,7 @@ impl UiPass {
         let pipeline = material.pipeline();
 
         if state.last_pipeline != pipeline.id() {
-            log::trace!("Bind pipeline {}", pipeline.id());
+            tracing::trace!("Bind pipeline {}", pipeline.id());
 
             cmd.bind_pipeline(&pipeline);
             stats.bind(self.id);
@@ -106,8 +106,8 @@ impl UiPass {
         if let Some(material) = &render_object.mesh.material {
             if state.last_material != material.id {
                 if let Some(material_binding) = &render_object.mesh.material_binding {
-                    log::trace!("Bind material {}", material.id);
-                    log::trace!("Transparent: {}", material.material.blending_enabled);
+                    tracing::trace!("Bind material {}", material.id);
+                    tracing::trace!("Transparent: {}", material.material.blending_enabled);
                     cmd.bind_resource(material_binding);
                     stats.bind(self.id);
                 }
@@ -146,7 +146,7 @@ impl UiPass {
         state: &mut RenderState,
         render_object: &RenderObject,
     ) {
-        log::trace!("Bind push constants");
+        tracing::trace!("Bind push constants");
 
         if let Some(push_layout) = render_object.pass.push_layout() {
             state.object_data.clear();
@@ -287,7 +287,7 @@ impl RenderPass for UiPass {
         batch: &mut RenderBatch,
         draw_extent: ImageExtent2D,
     ) -> Result<(), RenderError> {
-        log::debug!("Draw UI");
+        tracing::debug!("Draw UI");
 
         cmd.begin_label("Draw UI");
 

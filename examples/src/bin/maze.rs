@@ -119,11 +119,11 @@ impl Run for App {
     }
 
     fn close(&mut self, ctx: &Context) {
-        log::info!("Closing");
+        tracing::info!("Closing");
 
         ctx.device.wait();
 
-        log::info!("Closed");
+        tracing::info!("Closed");
     }
 }
 
@@ -133,7 +133,7 @@ impl App {
     }
 
     async fn load_scene(&mut self, ctx: &Context) {
-        log::info!("Load scene");
+        tracing::info!("Load scene");
 
         let material = self.common.normal_mapping_material(ctx, &self.graph);
 
@@ -254,7 +254,7 @@ impl App {
 fn main() {
     examples::init_logger();
 
-    log::info!("Engine start");
+    tracing::info!("Engine start");
 
     Application::<App>::new("Maze", examples::WIDTH, examples::HEIGHT).run();
 }

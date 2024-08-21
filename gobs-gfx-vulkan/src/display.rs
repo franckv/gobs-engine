@@ -78,7 +78,7 @@ impl Display for VkDisplay {
 
     fn acquire(&mut self, frame: usize) -> Result<()> {
         if let Some(ref mut swapchain) = &mut self.swapchain {
-            log::trace!("Acquire with semaphore {}", frame);
+            tracing::trace!("Acquire with semaphore {}", frame);
             let semaphore = &self.swapchain_semaphores[frame];
             let Ok(image_index) = swapchain.acquire_image(semaphore) else {
                 bail!("Fail to acquire swapchain");
@@ -177,7 +177,7 @@ impl VkDisplay {
             })
             .unwrap();
 
-        log::info!("Swapchain format: {:?}", format);
+        tracing::info!("Swapchain format: {:?}", format);
 
         vk::swapchain::SwapChain::new(
             device.clone(),

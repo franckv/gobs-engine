@@ -59,9 +59,9 @@ impl MeshResourceManager {
     }
 
     fn debug_stats(&self) {
-        log::debug!("Meshes: {}", self.mesh_data.keys().len());
-        log::debug!("Transient: {}", self.transient_mesh_data[0].keys().len());
-        log::debug!("Bindings: {}", self.material_bindings.keys().len());
+        tracing::debug!("Meshes: {}", self.mesh_data.keys().len());
+        tracing::debug!("Transient: {}", self.transient_mesh_data[0].keys().len());
+        tracing::debug!("Bindings: {}", self.material_bindings.keys().len());
     }
 
     pub fn new_frame(&mut self, ctx: &Context) -> usize {
@@ -138,7 +138,7 @@ impl MeshResourceManager {
             vertices_offset = vertices.len() as u64;
             indices_offset = indices.len();
 
-            log::trace!("Vertex offset: {}, {}", vertices_offset, indices_offset);
+            tracing::trace!("Vertex offset: {}, {}", vertices_offset, indices_offset);
 
             let vertex_flags = match pass.vertex_flags() {
                 Some(vertex_flags) => vertex_flags,
@@ -190,7 +190,7 @@ impl MeshResourceManager {
         bounding_box: BoundingBox,
         pass: Arc<dyn RenderPass>,
     ) -> (Arc<Model>, Vec<GPUMesh>) {
-        log::debug!("New box");
+        tracing::debug!("New box");
 
         let (left, bottom, back) = bounding_box.bottom_left().into();
         let (right, top, front) = bounding_box.top_right().into();
@@ -239,13 +239,13 @@ impl MeshResourceManager {
         material: Option<Arc<MaterialInstance>>,
     ) -> Option<GfxBindingGroup> {
         if let Some(ref material) = material {
-            log::debug!("Save binding for {}", material.id);
+            tracing::debug!("Save binding for {}", material.id);
             self.load_texture(ctx, &material);
 
             match self.material_bindings.entry(material.id) {
                 Entry::Vacant(e) => {
                     if !material.textures.is_empty() {
-                        log::debug!(
+                        tracing::debug!(
                             "Create material binding for pipeline: {}",
                             material.pipeline().id()
                         );

@@ -8,6 +8,6 @@ edition = { workspace = true }
 gobs-core = { workspace = true }
 gobs-gfx = { workspace = true }
 gobs-render = { workspace = true }
-log = { workspace = true }
 pollster = { workspace = true }
+tracing = { workspace = true }
 winit = { workspace = true }

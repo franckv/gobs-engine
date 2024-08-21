@@ -63,7 +63,7 @@ impl RenderPass {
             .dependencies(std::slice::from_ref(&dependency));
 
         let renderpass = unsafe {
-            log::debug!("Create renderpass");
+            tracing::debug!("Create renderpass");
             device
                 .raw()
                 .create_render_pass(&renderpass_info, None)
@@ -82,7 +82,7 @@ impl Wrap<vk::RenderPass> for RenderPass {
 
 impl Drop for RenderPass {
     fn drop(&mut self) {
-        log::trace!("Drop renderpass");
+        tracing::trace!("Drop renderpass");
         unsafe {
             self.device.raw().destroy_render_pass(self.renderpass, None);
         }
