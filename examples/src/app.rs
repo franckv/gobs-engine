@@ -227,10 +227,26 @@ impl SampleApp {
                 _ => camera_controller.key_pressed(key),
             },
             Input::KeyReleased(key) => camera_controller.key_released(key),
-            Input::MousePressed => camera_controller.mouse_pressed(),
-            Input::MouseReleased => camera_controller.mouse_released(),
-            Input::MouseWheel(delta) => camera_controller.mouse_scroll(delta),
-            Input::MouseMotion(dx, dy) => camera_controller.mouse_drag(dx, dy),
+            Input::MousePressed => {
+                if !self.ui.ui_hovered {
+                    camera_controller.mouse_pressed()
+                }
+            }
+            Input::MouseReleased => {
+                if !self.ui.ui_hovered {
+                    camera_controller.mouse_released()
+                }
+            }
+            Input::MouseWheel(delta) => {
+                if !self.ui.ui_hovered {
+                    camera_controller.mouse_scroll(delta)
+                }
+            }
+            Input::MouseMotion(dx, dy) => {
+                if !self.ui.ui_hovered {
+                    camera_controller.mouse_drag(dx, dy)
+                }
+            }
             _ => (),
         }
     }

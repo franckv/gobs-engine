@@ -14,6 +14,7 @@ pub struct Ui {
     pub show_camera: bool,
     pub show_light: bool,
     pub show_models: bool,
+    pub ui_hovered: bool,
     pub memory_visualiser: AllocatorVisualizer,
 }
 
@@ -23,6 +24,7 @@ impl Ui {
             show_camera: true,
             show_light: true,
             show_models: true,
+            ui_hovered: false,
             memory_visualiser: AllocatorVisualizer::new(),
         }
     }
@@ -36,23 +38,23 @@ impl Ui {
         camera: &Camera,
         camera_transform: &Transform,
     ) {
-        egui::CentralPanel::default()
-            .frame(egui::Frame::none())
-            .show(ectx, |ui| {
-                ui.visuals_mut().override_text_color = Some(egui::Color32::GREEN);
-                ectx.style_mut(|s| {
-                    for (_, id) in s.text_styles.iter_mut() {
-                        id.size = 16.;
-                    }
-                });
-                ui.heading(&ctx.app_name);
-                ui.separator();
-                self.show_fps(ui, graph.render_stats().fps);
-                self.show_stats(ui, "Render Stats", graph);
-                self.show_camera(ui, camera, &camera_transform);
-                self.show_memory(ui, ctx);
-                self.show_scene(ui, &scene.graph);
+        egui::Window::new("debug").show(ectx, |ui| {
+            ui.visuals_mut().override_text_color = Some(egui::Color32::GREEN);
+            ectx.style_mut(|s| {
+                for (_, id) in s.text_styles.iter_mut() {
+                    id.size = 16.;
+                }
             });
+            ui.heading(&ctx.app_name);
+            ui.separator();
+            self.show_fps(ui, graph.render_stats().fps);
+            self.show_stats(ui, "Render Stats", graph);
+            self.show_camera(ui, camera, &camera_transform);
+            self.show_memory(ui, ctx);
+            self.show_scene(ui, &scene.graph);
+        });
+
+        self.ui_hovered = ectx.wants_pointer_input();
     }
 
     pub fn show_fps(&self, ui: &mut egui::Ui, fps: u32) {
