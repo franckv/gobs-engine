@@ -2,12 +2,12 @@ use std::{collections::HashMap, sync::Arc};
 
 use egui::{
     epaint::{ImageDelta, Primitive},
-    Event, FullOutput, Modifiers, PointerButton, RawInput, Rect, TextureId,
+    Event, FullOutput, Modifiers, MouseWheelUnit, PointerButton, RawInput, Rect, TextureId,
 };
 use glam::{Vec2, Vec3};
 
 use gobs_core::{Color, ImageExtent2D, SamplerFilter, Transform};
-use gobs_game::input::{Input, Key};
+use gobs_game::input::{Input, Key, MouseButton};
 use gobs_render::{
     batch::RenderBatch,
     context::Context,
@@ -167,22 +167,65 @@ impl UIRenderer {
                     physical_key: None,
                 });
             }
-            Input::MousePressed => {
-                input.events.push(Event::PointerButton {
-                    pos: self.mouse_position.into(),
-                    button: PointerButton::Primary,
-                    pressed: true,
-                    modifiers: Modifiers::NONE,
-                });
-            }
-            Input::MouseReleased => {
-                input.events.push(Event::PointerButton {
-                    pos: self.mouse_position.into(),
-                    button: PointerButton::Primary,
-                    pressed: false,
-                    modifiers: Modifiers::NONE,
-                });
-            }
+            Input::MousePressed(button) => match button {
+                MouseButton::Left => {
+                    input.events.push(Event::PointerButton {
+                        pos: self.mouse_position.into(),
+                        button: PointerButton::Primary,
+                        pressed: true,
+                        modifiers: Modifiers::NONE,
+                    });
+                }
+                MouseButton::Right => {
+                    input.events.push(Event::PointerButton {
+                        pos: self.mouse_position.into(),
+                        button: PointerButton::Secondary,
+                        pressed: true,
+                        modifiers: Modifiers::NONE,
+                    });
+                }
+                MouseButton::Middle => {
+                    input.events.push(Event::PointerButton {
+                        pos: self.mouse_position.into(),
+                        button: PointerButton::Middle,
+                        pressed: true,
+                        modifiers: Modifiers::NONE,
+                    });
+                }
+                _ => {}
+            },
+            Input::MouseReleased(button) => match button {
+                MouseButton::Left => {
+                    input.events.push(Event::PointerButton {
+                        pos: self.mouse_position.into(),
+                        button: PointerButton::Primary,
+                        pressed: false,
+                        modifiers: Modifiers::NONE,
+                    });
+                }
+                MouseButton::Right => {
+                    input.events.push(Event::PointerButton {
+                        pos: self.mouse_position.into(),
+                        button: PointerButton::Secondary,
+                        pressed: false,
+                        modifiers: Modifiers::NONE,
+                    });
+                }
+                MouseButton::Middle => {
+                    input.events.push(Event::PointerButton {
+                        pos: self.mouse_position.into(),
+                        button: PointerButton::Middle,
+                        pressed: false,
+                        modifiers: Modifiers::NONE,
+                    });
+                }
+                _ => {}
+            },
+            Input::MouseWheel(delta) => input.events.push(Event::MouseWheel {
+                unit: MouseWheelUnit::Point,
+                delta: (0., delta).into(),
+                modifiers: Modifiers::NONE,
+            }),
             Input::CursorMoved(x, y) => {
                 self.mouse_position = (x as f32, y as f32);
                 input

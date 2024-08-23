@@ -2,7 +2,7 @@ use pollster::FutureExt;
 use winit::{
     application::ApplicationHandler,
     dpi::{LogicalSize, PhysicalPosition},
-    event::{DeviceEvent, ElementState, KeyEvent, MouseButton, MouseScrollDelta, WindowEvent},
+    event::{DeviceEvent, ElementState, KeyEvent, MouseScrollDelta, WindowEvent},
     event_loop::EventLoop,
     keyboard::{self, NamedKey},
     window::Window,
@@ -82,9 +82,6 @@ where
                         );
                         runnable.resize(context, physical_size.width, physical_size.height);
                     }
-                    /*WindowEvent::ScaleFactorChanged { new_inner_size, .. } => {
-                        status = Event::Resize(new_inner_size.width, new_inner_size.height)
-                    }*/
                     WindowEvent::KeyboardInput {
                         event:
                             KeyEvent {
@@ -124,13 +121,13 @@ where
                         };
                         runnable.input(&context, Input::MouseWheel(delta));
                     }
-                    WindowEvent::MouseInput {
-                        button: MouseButton::Left,
-                        state,
-                        ..
-                    } => match state {
-                        ElementState::Pressed => runnable.input(&context, Input::MousePressed),
-                        ElementState::Released => runnable.input(&context, Input::MouseReleased),
+                    WindowEvent::MouseInput { button, state, .. } => match state {
+                        ElementState::Pressed => {
+                            runnable.input(&context, Input::MousePressed(button.into()))
+                        }
+                        ElementState::Released => {
+                            runnable.input(&context, Input::MouseReleased(button.into()))
+                        }
                     },
                     WindowEvent::RedrawRequested => {
                         let delta = self.timer.delta();

@@ -3,7 +3,7 @@ use std::sync::Arc;
 use renderdoc::{RenderDoc, V141};
 
 use gobs::{
-    game::input::{Input, Key},
+    game::input::{Input, Key, MouseButton},
     render::{
         context::Context,
         graph::{FrameGraph, RenderError},
@@ -227,12 +227,12 @@ impl SampleApp {
                 _ => camera_controller.key_pressed(key),
             },
             Input::KeyReleased(key) => camera_controller.key_released(key),
-            Input::MousePressed => {
+            Input::MousePressed(MouseButton::Left) => {
                 if !self.ui.ui_hovered {
                     camera_controller.mouse_pressed()
                 }
             }
-            Input::MouseReleased => {
+            Input::MouseReleased(MouseButton::Left) => {
                 if !self.ui.ui_hovered {
                     camera_controller.mouse_released()
                 }

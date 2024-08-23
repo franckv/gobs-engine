@@ -1,4 +1,5 @@
-use winit::keyboard::{self, NamedKey};
+use winit::event::{self};
+use winit::keyboard::{self};
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum Key {
@@ -59,17 +60,17 @@ impl From<keyboard::Key> for Key {
     fn from(key_code: keyboard::Key) -> Key {
         match key_code {
             keyboard::Key::Named(named_key) => match named_key {
-                NamedKey::ArrowLeft => Key::Left,
-                NamedKey::ArrowRight => Key::Right,
-                NamedKey::ArrowUp => Key::Up,
-                NamedKey::ArrowDown => Key::Down,
-                NamedKey::PageUp => Key::PageUp,
-                NamedKey::PageDown => Key::PageDown,
-                NamedKey::Enter => Key::Return,
-                NamedKey::Shift => Key::LShift,
-                NamedKey::Space => Key::Space,
-                NamedKey::Tab => Key::Tab,
-                NamedKey::Backspace => Key::Backspace,
+                keyboard::NamedKey::ArrowLeft => Key::Left,
+                keyboard::NamedKey::ArrowRight => Key::Right,
+                keyboard::NamedKey::ArrowUp => Key::Up,
+                keyboard::NamedKey::ArrowDown => Key::Down,
+                keyboard::NamedKey::PageUp => Key::PageUp,
+                keyboard::NamedKey::PageDown => Key::PageDown,
+                keyboard::NamedKey::Enter => Key::Return,
+                keyboard::NamedKey::Shift => Key::LShift,
+                keyboard::NamedKey::Space => Key::Space,
+                keyboard::NamedKey::Tab => Key::Tab,
+                keyboard::NamedKey::Backspace => Key::Backspace,
                 _ => Key::Unknown,
             },
             keyboard::Key::Character(c) => match c.to_uppercase().as_str() {
@@ -120,12 +121,33 @@ impl From<keyboard::Key> for Key {
 }
 
 #[derive(Copy, Clone, Debug, PartialEq)]
+pub enum MouseButton {
+    Left,
+    Right,
+    Middle,
+    Unknown,
+}
+
+impl From<event::MouseButton> for MouseButton {
+    fn from(value: event::MouseButton) -> Self {
+        match value {
+            event::MouseButton::Left => MouseButton::Left,
+            event::MouseButton::Right => MouseButton::Right,
+            event::MouseButton::Middle => MouseButton::Middle,
+            event::MouseButton::Back => MouseButton::Unknown,
+            event::MouseButton::Forward => MouseButton::Unknown,
+            event::MouseButton::Other(_) => MouseButton::Unknown,
+        }
+    }
+}
+
+#[derive(Copy, Clone, Debug, PartialEq)]
 pub enum Input {
     CursorMoved(f64, f64),
     KeyPressed(Key),
     KeyReleased(Key),
     MouseWheel(f32),
     MouseMotion(f64, f64),
-    MousePressed,
-    MouseReleased,
+    MousePressed(MouseButton),
+    MouseReleased(MouseButton),
 }
