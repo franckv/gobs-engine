@@ -6,13 +6,13 @@ use parking_lot::RwLock;
 
 use gobs_core::ImageFormat;
 use gobs_gfx::{
-    BindingGroupType, BlendMode, CompareOp, CullMode, DynamicStateElem, FrontFace, Pipeline,
-    PipelineId, PolygonMode, Rect2D, Viewport,
+    BindingGroupType, BlendMode, CompareOp, ComputePipelineBuilder, CullMode, DynamicStateElem,
+    FrontFace, GraphicsPipelineBuilder, Pipeline, PipelineId, PolygonMode, Rect2D, Viewport,
 };
 use gobs_resource::load;
 use gobs_vulkan as vk;
 
-use crate::{VkBindingGroup, VkDevice};
+use crate::{bindgroup::VkBindingGroup, device::VkDevice, renderer::VkRenderer};
 
 #[derive(Debug)]
 pub struct VkPipeline {
@@ -22,12 +22,7 @@ pub struct VkPipeline {
     pub(crate) ds_pools: IndexMap<BindingGroupType, RwLock<vk::descriptor::DescriptorSetPool>>,
 }
 
-impl Pipeline for VkPipeline {
-    type GfxBindingGroup = VkBindingGroup;
-    type GfxDevice = VkDevice;
-    type GfxComputePipelineBuilder = VkComputePipelineBuilder;
-    type GfxGraphicsPipelineBuilder = VkGraphicsPipelineBuilder;
-
+impl Pipeline<VkRenderer> for VkPipeline {
     fn name(&self) -> &str {
         &self.name
     }
@@ -76,21 +71,8 @@ pub struct VkGraphicsPipelineBuilder {
     push_constants: usize,
 }
 
-impl VkGraphicsPipelineBuilder {
-    fn new(name: &str, device: &VkDevice) -> Self {
-        Self {
-            name: name.to_string(),
-            device: device.device.clone(),
-            builder: vk::pipeline::Pipeline::graphics_builder(device.device.clone()),
-            current_binding_group: None,
-            current_ds_layout: None,
-            ds_pools: IndexMap::new(),
-            ds_pool_size: 10,
-            push_constants: 0,
-        }
-    }
-
-    pub fn vertex_shader(mut self, filename: &str, entry: &str) -> Self {
+impl GraphicsPipelineBuilder<VkRenderer> for VkGraphicsPipelineBuilder {
+    fn vertex_shader(mut self, filename: &str, entry: &str) -> Self {
         let shader_file = load::get_asset_dir(filename, load::AssetType::SHADER).unwrap();
         let shader = vk::pipeline::Shader::from_file(
             shader_file,
@@ -103,7 +85,7 @@ impl VkGraphicsPipelineBuilder {
         self
     }
 
-    pub fn fragment_shader(mut self, filename: &str, entry: &str) -> Self {
+    fn fragment_shader(mut self, filename: &str, entry: &str) -> Self {
         let shader_file = load::get_asset_dir(filename, load::AssetType::SHADER).unwrap();
         let shader = vk::pipeline::Shader::from_file(
             shader_file,
@@ -116,42 +98,19 @@ impl VkGraphicsPipelineBuilder {
         self
     }
 
-    pub fn pool_size(mut self, size: usize) -> Self {
+    fn pool_size(mut self, size: usize) -> Self {
         self.ds_pool_size = size;
 
         self
     }
 
-    pub fn push_constants(mut self, size: usize) -> Self {
+    fn push_constants(mut self, size: usize) -> Self {
         self.push_constants = size;
 
         self
     }
 
-    fn save_binding_group(mut self) -> Self {
-        if let Some(binding_group) = self.current_binding_group {
-            let push = binding_group == BindingGroupType::SceneData;
-            let ds_layout = self
-                .current_ds_layout
-                .unwrap()
-                .build(self.device.clone(), push);
-
-            let ds_pool = vk::descriptor::DescriptorSetPool::new(
-                self.device.clone(),
-                ds_layout,
-                self.ds_pool_size,
-            );
-
-            self.ds_pools.insert(binding_group, RwLock::new(ds_pool));
-        }
-
-        self.current_binding_group = None;
-        self.current_ds_layout = None;
-
-        self
-    }
-
-    pub fn binding_group(mut self, binding_group_type: BindingGroupType) -> Self {
+    fn binding_group(mut self, binding_group_type: BindingGroupType) -> Self {
         self = self.save_binding_group();
 
         self.current_binding_group = Some(binding_group_type);
@@ -160,7 +119,11 @@ impl VkGraphicsPipelineBuilder {
         self
     }
 
-    pub fn binding(
+    fn current_binding_group(&self) -> Option<BindingGroupType> {
+        self.current_binding_group.clone()
+    }
+
+    fn binding(
         mut self,
         ty: vk::descriptor::DescriptorType,
         stage: vk::descriptor::DescriptorStage,
@@ -172,35 +135,31 @@ impl VkGraphicsPipelineBuilder {
         self
     }
 
-    pub fn current_binding_group(&self) -> Option<BindingGroupType> {
-        self.current_binding_group.clone()
-    }
-
-    pub fn polygon_mode(mut self, mode: PolygonMode) -> Self {
+    fn polygon_mode(mut self, mode: PolygonMode) -> Self {
         self.builder = self.builder.polygon_mode(mode);
 
         self
     }
 
-    pub fn viewports(mut self, viewports: Vec<Viewport>) -> Self {
+    fn viewports(mut self, viewports: Vec<Viewport>) -> Self {
         self.builder = self.builder.viewports(viewports);
 
         self
     }
 
-    pub fn scissors(mut self, scissors: Vec<Rect2D>) -> Self {
+    fn scissors(mut self, scissors: Vec<Rect2D>) -> Self {
         self.builder = self.builder.scissors(scissors);
 
         self
     }
 
-    pub fn dynamic_states(mut self, states: &[DynamicStateElem]) -> Self {
+    fn dynamic_states(mut self, states: &[DynamicStateElem]) -> Self {
         self.builder = self.builder.dynamic_states(states);
 
         self
     }
 
-    pub fn attachments(
+    fn attachments(
         mut self,
         color_format: Option<ImageFormat>,
         depth_format: Option<ImageFormat>,
@@ -210,37 +169,37 @@ impl VkGraphicsPipelineBuilder {
         self
     }
 
-    pub fn depth_test_disable(mut self) -> Self {
+    fn depth_test_disable(mut self) -> Self {
         self.builder = self.builder.depth_test_disable();
 
         self
     }
 
-    pub fn depth_test_enable(mut self, write_enable: bool, op: CompareOp) -> Self {
+    fn depth_test_enable(mut self, write_enable: bool, op: CompareOp) -> Self {
         self.builder = self.builder.depth_test_enable(write_enable, op);
 
         self
     }
 
-    pub fn blending_enabled(mut self, blend_mode: BlendMode) -> Self {
+    fn blending_enabled(mut self, blend_mode: BlendMode) -> Self {
         self.builder = self.builder.blending_enabled(blend_mode);
 
         self
     }
 
-    pub fn cull_mode(mut self, cull_mode: CullMode) -> Self {
+    fn cull_mode(mut self, cull_mode: CullMode) -> Self {
         self.builder = self.builder.cull_mode(cull_mode);
 
         self
     }
 
-    pub fn front_face(mut self, front_face: FrontFace) -> Self {
+    fn front_face(mut self, front_face: FrontFace) -> Self {
         self.builder = self.builder.front_face(front_face);
 
         self
     }
 
-    pub fn build(mut self) -> Arc<VkPipeline> {
+    fn build(mut self) -> Arc<VkPipeline> {
         tracing::debug!("Creating pipeline: {}", self.name);
 
         self = self.save_binding_group();
@@ -269,23 +228,12 @@ impl VkGraphicsPipelineBuilder {
     }
 }
 
-pub struct VkComputePipelineBuilder {
-    name: String,
-    device: Arc<vk::device::Device>,
-    builder: vk::pipeline::ComputePipelineBuilder,
-    current_binding_group: Option<BindingGroupType>,
-    current_ds_layout: Option<vk::descriptor::DescriptorSetLayoutBuilder>,
-    ds_pools: IndexMap<BindingGroupType, RwLock<vk::descriptor::DescriptorSetPool>>,
-    ds_pool_size: usize,
-    push_constants: usize,
-}
-
-impl VkComputePipelineBuilder {
+impl VkGraphicsPipelineBuilder {
     fn new(name: &str, device: &VkDevice) -> Self {
         Self {
             name: name.to_string(),
             device: device.device.clone(),
-            builder: vk::pipeline::Pipeline::compute_builder(device.device.clone()),
+            builder: vk::pipeline::Pipeline::graphics_builder(device.device.clone()),
             current_binding_group: None,
             current_ds_layout: None,
             ds_pools: IndexMap::new(),
@@ -294,25 +242,13 @@ impl VkComputePipelineBuilder {
         }
     }
 
-    pub fn shader(mut self, filename: &str, entry: &str) -> Self {
-        let compute_file = load::get_asset_dir(filename, load::AssetType::SHADER).unwrap();
-        let compute_shader = vk::pipeline::Shader::from_file(
-            compute_file,
-            self.device.clone(),
-            vk::pipeline::ShaderType::Compute,
-        );
-
-        self.builder = self.builder.compute_shader(entry, compute_shader);
-
-        self
-    }
-
     fn save_binding_group(mut self) -> Self {
         if let Some(binding_group) = self.current_binding_group {
+            let push = binding_group == BindingGroupType::SceneData;
             let ds_layout = self
                 .current_ds_layout
                 .unwrap()
-                .build(self.device.clone(), false);
+                .build(self.device.clone(), push);
 
             let ds_pool = vk::descriptor::DescriptorSetPool::new(
                 self.device.clone(),
@@ -328,8 +264,34 @@ impl VkComputePipelineBuilder {
 
         self
     }
+}
 
-    pub fn binding_group(mut self, binding_group_type: BindingGroupType) -> Self {
+pub struct VkComputePipelineBuilder {
+    name: String,
+    device: Arc<vk::device::Device>,
+    builder: vk::pipeline::ComputePipelineBuilder,
+    current_binding_group: Option<BindingGroupType>,
+    current_ds_layout: Option<vk::descriptor::DescriptorSetLayoutBuilder>,
+    ds_pools: IndexMap<BindingGroupType, RwLock<vk::descriptor::DescriptorSetPool>>,
+    ds_pool_size: usize,
+    push_constants: usize,
+}
+
+impl ComputePipelineBuilder<VkRenderer> for VkComputePipelineBuilder {
+    fn shader(mut self, filename: &str, entry: &str) -> Self {
+        let compute_file = load::get_asset_dir(filename, load::AssetType::SHADER).unwrap();
+        let compute_shader = vk::pipeline::Shader::from_file(
+            compute_file,
+            self.device.clone(),
+            vk::pipeline::ShaderType::Compute,
+        );
+
+        self.builder = self.builder.compute_shader(entry, compute_shader);
+
+        self
+    }
+
+    fn binding_group(mut self, binding_group_type: BindingGroupType) -> Self {
         self = self.save_binding_group();
 
         self.current_binding_group = Some(binding_group_type);
@@ -338,7 +300,7 @@ impl VkComputePipelineBuilder {
         self
     }
 
-    pub fn binding(mut self, ty: vk::descriptor::DescriptorType) -> Self {
+    fn binding(mut self, ty: vk::descriptor::DescriptorType) -> Self {
         let ds_layout = self
             .current_ds_layout
             .unwrap()
@@ -349,7 +311,7 @@ impl VkComputePipelineBuilder {
         self
     }
 
-    pub fn build(mut self) -> Arc<VkPipeline> {
+    fn build(mut self) -> Arc<VkPipeline> {
         self = self.save_binding_group();
 
         let ds_pools = self.ds_pools;
@@ -373,5 +335,42 @@ impl VkComputePipelineBuilder {
             pipeline,
             ds_pools,
         })
+    }
+}
+
+impl VkComputePipelineBuilder {
+    fn new(name: &str, device: &VkDevice) -> Self {
+        Self {
+            name: name.to_string(),
+            device: device.device.clone(),
+            builder: vk::pipeline::Pipeline::compute_builder(device.device.clone()),
+            current_binding_group: None,
+            current_ds_layout: None,
+            ds_pools: IndexMap::new(),
+            ds_pool_size: 10,
+            push_constants: 0,
+        }
+    }
+
+    fn save_binding_group(mut self) -> Self {
+        if let Some(binding_group) = self.current_binding_group {
+            let ds_layout = self
+                .current_ds_layout
+                .unwrap()
+                .build(self.device.clone(), false);
+
+            let ds_pool = vk::descriptor::DescriptorSetPool::new(
+                self.device.clone(),
+                ds_layout,
+                self.ds_pool_size,
+            );
+
+            self.ds_pools.insert(binding_group, RwLock::new(ds_pool));
+        }
+
+        self.current_binding_group = None;
+        self.current_ds_layout = None;
+
+        self
     }
 }

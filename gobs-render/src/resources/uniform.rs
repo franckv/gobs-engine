@@ -1,14 +1,14 @@
-use gobs_gfx::{Buffer, BufferUsage};
+use gobs_gfx::{Buffer, BufferUsage, Renderer};
 
-use crate::{GfxBuffer, GfxDevice};
+use crate::context::Context;
 
-pub struct UniformBuffer {
-    pub buffer: GfxBuffer,
+pub struct UniformBuffer<R: Renderer> {
+    pub buffer: R::Buffer,
 }
 
-impl UniformBuffer {
-    pub fn new(device: &GfxDevice, size: usize) -> Self {
-        let buffer = GfxBuffer::new("uniform", size, BufferUsage::Uniform, device);
+impl<R: Renderer> UniformBuffer<R> {
+    pub fn new(ctx: &Context<R>, size: usize) -> Self {
+        let buffer = R::Buffer::new("uniform", size, BufferUsage::Uniform, &ctx.device);
 
         UniformBuffer { buffer }
     }

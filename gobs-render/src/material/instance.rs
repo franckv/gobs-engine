@@ -3,20 +3,21 @@ use std::sync::Arc;
 
 use uuid::Uuid;
 
+use gobs_gfx::Renderer;
 use gobs_resource::{geometry::VertexFlag, material::Texture};
 
-use crate::{material::Material, GfxPipeline};
+use crate::material::Material;
 
 pub type MaterialInstanceId = Uuid;
 
-pub struct MaterialInstance {
+pub struct MaterialInstance<R: Renderer> {
     pub id: MaterialInstanceId,
-    pub material: Arc<Material>,
+    pub material: Arc<Material<R>>,
     pub textures: Vec<Arc<Texture>>,
 }
 
-impl MaterialInstance {
-    pub(crate) fn new(material: Arc<Material>, textures: Vec<Arc<Texture>>) -> Arc<Self> {
+impl<R: Renderer> MaterialInstance<R> {
+    pub(crate) fn new(material: Arc<Material<R>>, textures: Vec<Arc<Texture>>) -> Arc<Self> {
         Arc::new(Self {
             id: Uuid::new_v4(),
             material,
@@ -24,7 +25,7 @@ impl MaterialInstance {
         })
     }
 
-    pub fn pipeline(&self) -> Arc<GfxPipeline> {
+    pub fn pipeline(&self) -> Arc<R::Pipeline> {
         self.material.pipeline.clone()
     }
 
@@ -33,7 +34,7 @@ impl MaterialInstance {
     }
 }
 
-impl Debug for MaterialInstance {
+impl<R: Renderer> Debug for MaterialInstance<R> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("MaterialInstance")
             .field("id", &self.id)

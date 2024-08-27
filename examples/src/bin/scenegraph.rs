@@ -8,13 +8,7 @@ use gobs::{
         input::{Input, Key},
     },
     gfx::Device,
-    render::{
-        context::Context,
-        graph::{FrameGraph, RenderError},
-        pass::PassType,
-        renderable::Renderable,
-        Model,
-    },
+    render::{Context, FrameGraph, Model, PassType, RenderError, Renderable},
     resource::{
         entity::{camera::Camera, light::Light},
         material::{Texture, TextureType},

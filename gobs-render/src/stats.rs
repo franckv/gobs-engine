@@ -1,5 +1,7 @@
 use std::collections::{HashMap, HashSet};
 
+use gobs_gfx::Renderer;
+
 use crate::{pass::PassId, renderable::RenderObject, ModelId};
 
 #[derive(Clone, Debug, Default)]
@@ -111,7 +113,7 @@ impl RenderStats {
         pass_stats.draws += 1
     }
 
-    pub fn add_object(&mut self, object: &RenderObject) {
+    pub fn add_object<R: Renderer>(&mut self, object: &RenderObject<R>) {
         if !self
             .models_set
             .contains(&(object.pass.id(), object.mesh.model.id))

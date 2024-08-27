@@ -8,12 +8,7 @@ use gobs::{
         input::Input,
     },
     gfx::Device,
-    render::{
-        context::Context,
-        graph::{FrameGraph, RenderError},
-        pass::PassType,
-        renderable::Renderable,
-    },
+    render::{Context, FrameGraph, PassType, RenderError, Renderable},
     resource::{entity::light::Light, load},
     scene::{graph::scenegraph::SceneGraph, scene::Scene},
     ui::UIRenderer,

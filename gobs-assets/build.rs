@@ -12,7 +12,7 @@ const SHADERS_OUT_DIR: &str = "shaders";
 #[allow(unused_macros)]
 macro_rules! debug {
     ($($tokens: tt)*) => {
-        println!("cargo:warning={}", format!($($tokens)*))
+        println!("cargo:debug={}", format!($($tokens)*))
     }
 }
 

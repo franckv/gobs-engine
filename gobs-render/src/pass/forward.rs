@@ -3,7 +3,7 @@ use std::sync::Arc;
 use glam::Mat3;
 
 use gobs_core::{ImageExtent2D, Transform};
-use gobs_gfx::{Buffer, Command, ImageLayout, Pipeline};
+use gobs_gfx::{Buffer, Command, ImageLayout, Pipeline, Renderer};
 use gobs_resource::{
     entity::{
         camera::Camera,
@@ -20,12 +20,11 @@ use crate::{
     pass::{FrameData, PassId, PassType, RenderPass},
     renderable::RenderObject,
     stats::RenderStats,
-    GfxCommand, GfxPipeline,
 };
 
 use super::RenderState;
 
-pub struct ForwardPass {
+pub struct ForwardPass<R: Renderer> {
     id: PassId,
     name: String,
     ty: PassType,
@@ -33,17 +32,17 @@ pub struct ForwardPass {
     color_clear: bool,
     depth_clear: bool,
     push_layout: Arc<UniformLayout>,
-    frame_data: Vec<FrameData>,
+    frame_data: Vec<FrameData<R>>,
     uniform_data_layout: Arc<UniformLayout>,
 }
 
-impl ForwardPass {
+impl<R: Renderer + 'static> ForwardPass<R> {
     pub fn new(
-        ctx: &Context,
+        ctx: &Context<R>,
         name: &str,
         color_clear: bool,
         depth_clear: bool,
-    ) -> Arc<dyn RenderPass> {
+    ) -> Arc<dyn RenderPass<R>> {
         let push_layout = UniformLayout::builder()
             .prop("world_matrix", UniformProp::Mat4F)
             .prop("normal_matrix", UniformProp::Mat3F)
@@ -75,7 +74,7 @@ impl ForwardPass {
         })
     }
 
-    fn prepare_scene_data(&self, ctx: &Context, batch: &mut RenderBatch) {
+    fn prepare_scene_data(&self, ctx: &Context<R>, batch: &mut RenderBatch<R>) {
         if let Some(scene_data) = batch.scene_data(self.id) {
             self.frame_data[ctx.frame_id()]
                 .uniform_buffer
@@ -84,16 +83,16 @@ impl ForwardPass {
         }
     }
 
-    fn should_render(&self, render_object: &RenderObject) -> bool {
+    fn should_render(&self, render_object: &RenderObject<R>) -> bool {
         render_object.pass.id() == self.id && render_object.mesh.material.is_some()
     }
 
     fn bind_pipeline(
         &self,
-        cmd: &GfxCommand,
+        cmd: &R::Command,
         stats: &mut RenderStats,
         state: &mut RenderState,
-        render_object: &RenderObject,
+        render_object: &RenderObject<R>,
     ) {
         let material = render_object.mesh.material.clone().unwrap();
         let pipeline = material.pipeline();
@@ -110,10 +109,10 @@ impl ForwardPass {
 
     fn bind_material(
         &self,
-        cmd: &GfxCommand,
+        cmd: &R::Command,
         stats: &mut RenderStats,
         state: &mut RenderState,
-        render_object: &RenderObject,
+        render_object: &RenderObject<R>,
     ) {
         if let Some(material) = &render_object.mesh.material {
             if state.last_material != material.id {
@@ -131,11 +130,11 @@ impl ForwardPass {
 
     fn bind_scene_data(
         &self,
-        ctx: &Context,
-        cmd: &GfxCommand,
+        ctx: &Context<R>,
+        cmd: &R::Command,
         stats: &mut RenderStats,
         state: &mut RenderState,
-        render_object: &RenderObject,
+        render_object: &RenderObject<R>,
     ) {
         if !state.scene_data_bound {
             let material = render_object.mesh.material.clone().unwrap();
@@ -150,11 +149,11 @@ impl ForwardPass {
 
     fn bind_object_data(
         &self,
-        ctx: &Context,
-        cmd: &GfxCommand,
+        ctx: &Context<R>,
+        cmd: &R::Command,
         stats: &mut RenderStats,
         state: &mut RenderState,
-        render_object: &RenderObject,
+        render_object: &RenderObject<R>,
     ) {
         tracing::trace!("Bind push constants");
 
@@ -196,7 +195,7 @@ impl ForwardPass {
         }
     }
 
-    fn render_batch(&self, ctx: &Context, cmd: &GfxCommand, batch: &mut RenderBatch) {
+    fn render_batch(&self, ctx: &Context<R>, cmd: &R::Command, batch: &mut RenderBatch<R>) {
         let mut render_state = RenderState::default();
 
         self.prepare_scene_data(ctx, batch);
@@ -242,7 +241,7 @@ impl ForwardPass {
     }
 }
 
-impl RenderPass for ForwardPass {
+impl<R: Renderer + 'static> RenderPass<R> for ForwardPass<R> {
     fn id(&self) -> PassId {
         self.id
     }
@@ -267,7 +266,7 @@ impl RenderPass for ForwardPass {
         self.depth_clear
     }
 
-    fn pipeline(&self) -> Option<Arc<GfxPipeline>> {
+    fn pipeline(&self) -> Option<Arc<R::Pipeline>> {
         None
     }
 
@@ -305,10 +304,10 @@ impl RenderPass for ForwardPass {
 
     fn render(
         &self,
-        ctx: &Context,
-        cmd: &GfxCommand,
-        resource_manager: &ResourceManager,
-        batch: &mut RenderBatch,
+        ctx: &Context<R>,
+        cmd: &R::Command,
+        resource_manager: &ResourceManager<R>,
+        batch: &mut RenderBatch<R>,
         draw_extent: ImageExtent2D,
     ) -> Result<(), RenderError> {
         tracing::debug!("Draw forward");

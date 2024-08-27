@@ -4,7 +4,7 @@ use anyhow::Result;
 use parking_lot::{RwLock, RwLockReadGuard, RwLockWriteGuard};
 
 use gobs_core::{utils::timer::Timer, ImageExtent2D, ImageFormat};
-use gobs_gfx::{Command, Device, Display, Image, ImageLayout, ImageUsage};
+use gobs_gfx::{Command, Device, Display, Image, ImageLayout, ImageUsage, Renderer};
 
 use crate::{
     batch::RenderBatch,
@@ -14,7 +14,6 @@ use crate::{
         ui::UiPass, wire::WirePass, PassId, PassType, RenderPass,
     },
     stats::RenderStats,
-    GfxCommand, GfxImage,
 };
 
 const FRAME_WIDTH: u32 = 1920;
@@ -27,14 +26,14 @@ pub enum RenderError {
     Error,
 }
 
-pub struct FrameData {
-    pub command: GfxCommand,
+pub struct FrameData<R: Renderer> {
+    pub command: R::Command,
     //TODO: pub query_pool: QueryPool,
 }
 
-impl FrameData {
-    pub fn new(ctx: &Context) -> Self {
-        let command = GfxCommand::new(&ctx.device, "Frame");
+impl<R: Renderer> FrameData<R> {
+    pub fn new(ctx: &Context<R>) -> Self {
+        let command = R::Command::new(&ctx.device, "Frame");
 
         //TODO: let query_pool = QueryPool::new(ctx.device.clone(), QueryType::Timestamp, 2);
 
@@ -46,11 +45,11 @@ impl FrameData {
     }
 }
 
-pub struct ResourceManager {
-    resources: HashMap<String, RwLock<GfxImage>>,
+pub struct ResourceManager<R: Renderer> {
+    resources: HashMap<String, RwLock<R::Image>>,
 }
 
-impl ResourceManager {
+impl<R: Renderer> ResourceManager<R> {
     pub fn new() -> Self {
         Self {
             resources: HashMap::new(),
@@ -59,13 +58,13 @@ impl ResourceManager {
 
     pub fn register_image(
         &mut self,
-        ctx: &Context,
+        ctx: &Context<R>,
         label: &str,
         format: ImageFormat,
         usage: ImageUsage,
         extent: ImageExtent2D,
     ) {
-        let image = GfxImage::new(label, &ctx.device, format, usage, extent);
+        let image = R::Image::new(label, &ctx.device, format, usage, extent);
 
         self.resources.insert(label.to_string(), RwLock::new(image));
     }
@@ -76,7 +75,7 @@ impl ResourceManager {
         }
     }
 
-    pub fn image_read(&self, label: &str) -> RwLockReadGuard<'_, GfxImage> {
+    pub fn image_read(&self, label: &str) -> RwLockReadGuard<'_, R::Image> {
         assert!(
             self.resources.contains_key(label),
             "Missing resource {}",
@@ -86,7 +85,7 @@ impl ResourceManager {
         self.resources[label].read()
     }
 
-    pub fn image_write(&self, label: &str) -> RwLockWriteGuard<'_, GfxImage> {
+    pub fn image_write(&self, label: &str) -> RwLockWriteGuard<'_, R::Image> {
         assert!(
             self.resources.contains_key(label),
             "Missing resource {}",
@@ -97,17 +96,17 @@ impl ResourceManager {
     }
 }
 
-pub struct FrameGraph {
-    pub frames: Vec<FrameData>,
+pub struct FrameGraph<R: Renderer> {
+    pub frames: Vec<FrameData<R>>,
     pub draw_extent: ImageExtent2D,
     pub render_scaling: f32,
-    pub passes: Vec<Arc<dyn RenderPass>>,
-    resource_manager: ResourceManager,
-    pub batch: RenderBatch,
+    pub passes: Vec<Arc<dyn RenderPass<R>>>,
+    resource_manager: ResourceManager<R>,
+    pub batch: RenderBatch<R>,
 }
 
-impl FrameGraph {
-    pub fn new(ctx: &Context) -> Self {
+impl<R: Renderer + 'static> FrameGraph<R> {
+    pub fn new(ctx: &Context<R>) -> Self {
         let draw_extent = ctx.extent();
 
         let frames = (0..ctx.frames_in_flight)
@@ -124,7 +123,7 @@ impl FrameGraph {
         }
     }
 
-    pub fn default(ctx: &Context) -> Self {
+    pub fn default(ctx: &Context<R>) -> Self {
         let mut graph = Self::new(ctx);
 
         let extent = Self::get_render_target_extent(ctx);
@@ -154,7 +153,7 @@ impl FrameGraph {
         graph
     }
 
-    pub fn ui(ctx: &Context) -> Self {
+    pub fn ui(ctx: &Context<R>) -> Self {
         let mut graph = Self::new(ctx);
 
         let extent = Self::get_render_target_extent(ctx);
@@ -172,7 +171,7 @@ impl FrameGraph {
         graph
     }
 
-    fn get_render_target_extent(ctx: &Context) -> ImageExtent2D {
+    fn get_render_target_extent(ctx: &Context<R>) -> ImageExtent2D {
         let extent = ctx.extent();
         ImageExtent2D::new(
             extent.width.max(FRAME_WIDTH),
@@ -180,7 +179,7 @@ impl FrameGraph {
         )
     }
 
-    fn register_pass(&mut self, pass: Arc<dyn RenderPass>) {
+    fn register_pass(&mut self, pass: Arc<dyn RenderPass<R>>) {
         for attach in pass.attachments() {
             assert!(self.resource_manager.resources.contains_key(attach));
         }
@@ -188,9 +187,9 @@ impl FrameGraph {
         self.passes.push(pass);
     }
 
-    pub fn get_pass<F>(&self, cmp: F) -> Result<Arc<dyn RenderPass>, ()>
+    pub fn get_pass<F>(&self, cmp: F) -> Result<Arc<dyn RenderPass<R>>, ()>
     where
-        F: Fn(&Arc<dyn RenderPass>) -> bool,
+        F: Fn(&Arc<dyn RenderPass<R>>) -> bool,
     {
         for pass in &self.passes {
             if cmp(pass) {
@@ -201,15 +200,15 @@ impl FrameGraph {
         Err(())
     }
 
-    pub fn pass_by_id(&self, pass_id: PassId) -> Result<Arc<dyn RenderPass>, ()> {
+    pub fn pass_by_id(&self, pass_id: PassId) -> Result<Arc<dyn RenderPass<R>>, ()> {
         self.get_pass(|pass| pass.id() == pass_id)
     }
 
-    pub fn pass_by_type(&self, pass_type: PassType) -> Result<Arc<dyn RenderPass>, ()> {
+    pub fn pass_by_type(&self, pass_type: PassType) -> Result<Arc<dyn RenderPass<R>>, ()> {
         self.get_pass(|pass| pass.ty() == pass_type)
     }
 
-    pub fn pass_by_name(&self, pass_name: &str) -> Result<Arc<dyn RenderPass>, ()> {
+    pub fn pass_by_name(&self, pass_name: &str) -> Result<Arc<dyn RenderPass<R>>, ()> {
         self.get_pass(|pass| pass.name() == pass_name)
     }
 
@@ -217,7 +216,7 @@ impl FrameGraph {
         &self.batch.render_stats
     }
 
-    pub fn begin(&mut self, ctx: &mut Context) -> Result<(), RenderError> {
+    pub fn begin(&mut self, ctx: &mut Context<R>) -> Result<(), RenderError> {
         tracing::debug!("Begin new frame");
 
         let frame_id = ctx.frame_id();
@@ -268,7 +267,7 @@ impl FrameGraph {
         Ok(())
     }
 
-    pub fn end(&mut self, ctx: &mut Context) -> Result<(), RenderError> {
+    pub fn end(&mut self, ctx: &mut Context<R>) -> Result<(), RenderError> {
         tracing::debug!("End frame");
 
         let frame_id = ctx.frame_id();
@@ -310,7 +309,7 @@ impl FrameGraph {
         Ok(())
     }
 
-    pub fn update(&mut self, ctx: &Context, delta: f32) {
+    pub fn update(&mut self, ctx: &Context<R>, delta: f32) {
         if ctx.frame_number % ctx.stats_refresh == 0 {
             self.batch.render_stats.fps = (1. / delta).round() as u32;
         }
@@ -318,8 +317,8 @@ impl FrameGraph {
 
     pub fn render(
         &mut self,
-        ctx: &Context,
-        draw_cmd: &mut dyn FnMut(Arc<dyn RenderPass>, &mut RenderBatch),
+        ctx: &Context<R>,
+        draw_cmd: &mut dyn FnMut(Arc<dyn RenderPass<R>>, &mut RenderBatch<R>),
     ) -> Result<(), RenderError> {
         tracing::debug!("Begin rendering");
 
@@ -363,11 +362,11 @@ impl FrameGraph {
         Ok(())
     }
 
-    pub fn resize(&mut self, ctx: &mut Context) {
+    pub fn resize(&mut self, ctx: &mut Context<R>) {
         self.resize_swapchain(ctx);
     }
 
-    fn resize_swapchain(&mut self, ctx: &mut Context) {
+    fn resize_swapchain(&mut self, ctx: &mut Context<R>) {
         ctx.device.wait();
 
         ctx.display.resize(&ctx.device);

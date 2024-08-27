@@ -10,10 +10,7 @@ use gltf::{
 
 use gobs_core::{Color, ImageExtent2D, SamplerFilter, Transform};
 use gobs_render::{
-    context::Context,
-    material::{Material, MaterialInstance, MaterialProperty},
-    pass::RenderPass,
-    BlendMode, Model,
+    BlendMode, Context, Model, RenderPass, {Material, MaterialInstance, MaterialProperty},
 };
 use gobs_resource::{
     geometry::{Mesh, VertexData, VertexFlag},
@@ -32,7 +29,7 @@ pub struct GLTFLoader {
 }
 
 impl GLTFLoader {
-    pub fn new(ctx: &Context, pass: Arc<dyn RenderPass>) -> Self {
+    pub fn new(ctx: &Context, pass: RenderPass) -> Self {
         let texture_manager = TextureManager::new();
         let material_manager = MaterialManager::new(ctx, pass, &texture_manager);
 
@@ -205,7 +202,7 @@ struct MaterialManager {
 }
 
 impl MaterialManager {
-    fn new(ctx: &Context, pass: Arc<dyn RenderPass>, texture_manager: &TextureManager) -> Self {
+    fn new(ctx: &Context, pass: RenderPass, texture_manager: &TextureManager) -> Self {
         let vertex_flags = VertexFlag::POSITION
             | VertexFlag::TEXTURE
             | VertexFlag::NORMAL

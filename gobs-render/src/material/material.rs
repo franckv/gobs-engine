@@ -2,32 +2,33 @@ use std::sync::Arc;
 
 use gobs_gfx::{
     BindingGroupType, BlendMode, CompareOp, CullMode, DescriptorStage, DescriptorType,
-    DynamicStateElem, FrontFace, Pipeline, Rect2D, Viewport,
+    DynamicStateElem, FrontFace, GraphicsPipelineBuilder, Pipeline, Rect2D, Renderer, Viewport,
 };
 use uuid::Uuid;
 
 use gobs_resource::{geometry::VertexFlag, material::Texture};
 
-use crate::{
-    context::Context, material::MaterialInstance, pass::RenderPass, GfxGraphicsPipelineBuilder,
-    GfxPipeline,
-};
+use crate::{context::Context, material::MaterialInstance, pass::RenderPass};
 
 pub type MaterialId = Uuid;
 
-pub struct Material {
+pub struct Material<R: Renderer> {
     pub id: MaterialId,
     pub vertex_flags: VertexFlag,
-    pub pipeline: Arc<GfxPipeline>,
+    pub pipeline: Arc<R::Pipeline>,
     pub blending_enabled: bool,
 }
 
-impl Material {
-    pub fn builder(ctx: &Context, vertex_shader: &str, fragment_shader: &str) -> MaterialBuilder {
+impl<R: Renderer> Material<R> {
+    pub fn builder(
+        ctx: &Context<R>,
+        vertex_shader: &str,
+        fragment_shader: &str,
+    ) -> MaterialBuilder<R> {
         MaterialBuilder::new(ctx, vertex_shader, fragment_shader)
     }
 
-    pub fn instantiate(self: &Arc<Self>, textures: Vec<Arc<Texture>>) -> Arc<MaterialInstance> {
+    pub fn instantiate(self: &Arc<Self>, textures: Vec<Arc<Texture>>) -> Arc<MaterialInstance<R>> {
         MaterialInstance::new(self.clone(), textures)
     }
 }
@@ -36,15 +37,15 @@ pub enum MaterialProperty {
     Texture,
 }
 
-pub struct MaterialBuilder {
+pub struct MaterialBuilder<R: Renderer> {
     vertex_flags: VertexFlag,
     blend_mode: BlendMode,
-    pipeline_builder: GfxGraphicsPipelineBuilder,
+    pipeline_builder: R::GraphicsPipelineBuilder,
 }
 
-impl MaterialBuilder {
-    pub fn new(ctx: &Context, vertex_shader: &str, fragment_shader: &str) -> Self {
-        let pipeline_builder = GfxPipeline::graphics("material", &ctx.device)
+impl<R: Renderer> MaterialBuilder<R> {
+    pub fn new(ctx: &Context<R>, vertex_shader: &str, fragment_shader: &str) -> Self {
+        let pipeline_builder = R::Pipeline::graphics("material", &ctx.device)
             .vertex_shader(vertex_shader, "main")
             .fragment_shader(fragment_shader, "main")
             .pool_size(ctx.frames_in_flight + 1)
@@ -108,7 +109,7 @@ impl MaterialBuilder {
         self
     }
 
-    pub fn build(self, pass: Arc<dyn RenderPass>) -> Arc<Material> {
+    pub fn build(self, pass: Arc<dyn RenderPass<R>>) -> Arc<Material<R>> {
         let pipeline_builder = match pass.push_layout() {
             Some(push_layout) => self.pipeline_builder.push_constants(push_layout.size()),
             None => self.pipeline_builder,

@@ -5,12 +5,8 @@ use renderdoc::{RenderDoc, V141};
 use gobs::{
     game::input::{Input, Key, MouseButton},
     render::{
-        context::Context,
-        graph::{FrameGraph, RenderError},
-        material::{Material, MaterialProperty},
-        pass::PassType,
-        renderable::Renderable,
-        BlendMode,
+        BlendMode, Context, FrameGraph, Material, MaterialProperty, PassType, RenderError,
+        Renderable,
     },
     resource::{entity::camera::Camera, geometry::VertexFlag},
     scene::scene::Scene,

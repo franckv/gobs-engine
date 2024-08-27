@@ -13,7 +13,7 @@ const ASSETS_DIR: &str = "assets";
 #[allow(unused_macros)]
 macro_rules! debug {
     ($($tokens: tt)*) => {
-        println!("cargo:warning={}", format!($($tokens)*))
+        println!("cargo:debug={}", format!($($tokens)*))
     }
 }
 

@@ -3,6 +3,7 @@ use std::collections::HashMap;
 use std::fmt::Debug;
 use std::sync::Arc;
 
+use gobs_gfx::Renderer;
 use serde::Serialize;
 use uuid::Uuid;
 
@@ -13,16 +14,16 @@ use crate::material::{MaterialInstance, MaterialInstanceId};
 pub type ModelId = Uuid;
 
 #[derive(Serialize)]
-pub struct Model {
+pub struct Model<R: Renderer> {
     pub name: String,
     pub id: ModelId,
     pub meshes: Vec<(Arc<Mesh>, MaterialInstanceId)>,
     #[serde(skip)]
-    pub materials: HashMap<MaterialInstanceId, Arc<MaterialInstance>>,
+    pub materials: HashMap<MaterialInstanceId, Arc<MaterialInstance<R>>>,
 }
 
-impl Model {
-    pub fn builder(name: &str) -> ModelBuilder {
+impl<R: Renderer> Model<R> {
+    pub fn builder(name: &str) -> ModelBuilder<R> {
         ModelBuilder::new(name)
     }
 
@@ -31,13 +32,13 @@ impl Model {
     }
 }
 
-impl Debug for Model {
+impl<R: Renderer> Debug for Model<R> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "Model: {}", self.name)
     }
 }
 
-impl Bounded for Model {
+impl<R: Renderer> Bounded for Model<R> {
     fn boundings(&self) -> BoundingBox {
         let mut bounding_box = BoundingBox::default();
 
@@ -49,20 +50,20 @@ impl Bounded for Model {
     }
 }
 
-impl Drop for Model {
+impl<R: Renderer> Drop for Model<R> {
     fn drop(&mut self) {
         tracing::debug!(target: "memory", "Drop Model: {}", &self.name);
     }
 }
 
-pub struct ModelBuilder {
+pub struct ModelBuilder<R: Renderer> {
     pub name: String,
     pub id: ModelId,
     pub meshes: Vec<(Arc<Mesh>, MaterialInstanceId)>,
-    pub materials: HashMap<MaterialInstanceId, Arc<MaterialInstance>>,
+    pub materials: HashMap<MaterialInstanceId, Arc<MaterialInstance<R>>>,
 }
 
-impl ModelBuilder {
+impl<R: Renderer> ModelBuilder<R> {
     pub fn new(name: &str) -> Self {
         ModelBuilder {
             name: name.to_string(),
@@ -81,7 +82,7 @@ impl ModelBuilder {
     pub fn mesh(
         mut self,
         mesh: Arc<Mesh>,
-        material_instance: Option<Arc<MaterialInstance>>,
+        material_instance: Option<Arc<MaterialInstance<R>>>,
     ) -> Self {
         if let Some(material_instance) = material_instance {
             self.meshes.push((mesh, material_instance.id));
@@ -96,7 +97,7 @@ impl ModelBuilder {
         self
     }
 
-    pub fn build(self) -> Arc<Model> {
+    pub fn build(self) -> Arc<Model<R>> {
         Arc::new(Model {
             name: self.name,
             id: self.id,

@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use gobs_core::{ImageExtent2D, Transform};
-use gobs_gfx::{Buffer, Command, ImageLayout, Pipeline};
+use gobs_gfx::{Buffer, Command, ImageLayout, Pipeline, Renderer};
 use gobs_resource::{
     entity::{
         camera::Camera,
@@ -18,24 +18,23 @@ use crate::{
     pass::{FrameData, PassId, PassType, RenderPass},
     renderable::RenderObject,
     stats::RenderStats,
-    GfxCommand, GfxPipeline,
 };
 
 use super::RenderState;
 
-pub struct UiPass {
+pub struct UiPass<R: Renderer> {
     id: PassId,
     name: String,
     ty: PassType,
     attachments: Vec<String>,
     color_clear: bool,
     push_layout: Arc<UniformLayout>,
-    frame_data: Vec<FrameData>,
+    frame_data: Vec<FrameData<R>>,
     uniform_data_layout: Arc<UniformLayout>,
 }
 
-impl UiPass {
-    pub fn new(ctx: &Context, name: &str, color_clear: bool) -> Arc<dyn RenderPass> {
+impl<R: Renderer + 'static> UiPass<R> {
+    pub fn new(ctx: &Context<R>, name: &str, color_clear: bool) -> Arc<dyn RenderPass<R>> {
         let push_layout = UniformLayout::builder()
             .prop("vertex_buffer_address", UniformProp::U64)
             .build();
@@ -60,7 +59,7 @@ impl UiPass {
         })
     }
 
-    fn prepare_scene_data(&self, ctx: &Context, batch: &mut RenderBatch) {
+    fn prepare_scene_data(&self, ctx: &Context<R>, batch: &mut RenderBatch<R>) {
         if let Some(scene_data) = batch.scene_data(self.id) {
             self.frame_data[ctx.frame_id()]
                 .uniform_buffer
@@ -69,16 +68,16 @@ impl UiPass {
         }
     }
 
-    fn should_render(&self, render_object: &RenderObject) -> bool {
+    fn should_render(&self, render_object: &RenderObject<R>) -> bool {
         render_object.pass.id() == self.id && render_object.mesh.material.is_some()
     }
 
     fn bind_pipeline(
         &self,
-        cmd: &GfxCommand,
+        cmd: &R::Command,
         stats: &mut RenderStats,
         state: &mut RenderState,
-        render_object: &RenderObject,
+        render_object: &RenderObject<R>,
     ) {
         let material = render_object.mesh.material.clone().unwrap();
         let pipeline = material.pipeline();
@@ -95,10 +94,10 @@ impl UiPass {
 
     fn bind_material(
         &self,
-        cmd: &GfxCommand,
+        cmd: &R::Command,
         stats: &mut RenderStats,
         state: &mut RenderState,
-        render_object: &RenderObject,
+        render_object: &RenderObject<R>,
     ) {
         if let Some(material) = &render_object.mesh.material {
             if state.last_material != material.id {
@@ -116,11 +115,11 @@ impl UiPass {
 
     fn bind_scene_data(
         &self,
-        ctx: &Context,
-        cmd: &GfxCommand,
+        ctx: &Context<R>,
+        cmd: &R::Command,
         stats: &mut RenderStats,
         state: &mut RenderState,
-        render_object: &RenderObject,
+        render_object: &RenderObject<R>,
     ) {
         if !state.scene_data_bound {
             let material = render_object.mesh.material.clone().unwrap();
@@ -135,11 +134,11 @@ impl UiPass {
 
     fn bind_object_data(
         &self,
-        ctx: &Context,
-        cmd: &GfxCommand,
+        ctx: &Context<R>,
+        cmd: &R::Command,
         stats: &mut RenderStats,
         state: &mut RenderState,
-        render_object: &RenderObject,
+        render_object: &RenderObject<R>,
     ) {
         tracing::trace!("Bind push constants");
 
@@ -174,7 +173,7 @@ impl UiPass {
         }
     }
 
-    fn render_batch(&self, ctx: &Context, cmd: &GfxCommand, batch: &mut RenderBatch) {
+    fn render_batch(&self, ctx: &Context<R>, cmd: &R::Command, batch: &mut RenderBatch<R>) {
         let mut render_state = RenderState::default();
 
         self.prepare_scene_data(ctx, batch);
@@ -220,7 +219,7 @@ impl UiPass {
     }
 }
 
-impl RenderPass for UiPass {
+impl<R: Renderer + 'static> RenderPass<R> for UiPass<R> {
     fn id(&self) -> PassId {
         self.id
     }
@@ -245,7 +244,7 @@ impl RenderPass for UiPass {
         false
     }
 
-    fn pipeline(&self) -> Option<Arc<GfxPipeline>> {
+    fn pipeline(&self) -> Option<Arc<R::Pipeline>> {
         None
     }
 
@@ -273,10 +272,10 @@ impl RenderPass for UiPass {
 
     fn render(
         &self,
-        ctx: &Context,
-        cmd: &GfxCommand,
-        resource_manager: &ResourceManager,
-        batch: &mut RenderBatch,
+        ctx: &Context<R>,
+        cmd: &R::Command,
+        resource_manager: &ResourceManager<R>,
+        batch: &mut RenderBatch<R>,
         draw_extent: ImageExtent2D,
     ) -> Result<(), RenderError> {
         tracing::debug!("Draw UI");

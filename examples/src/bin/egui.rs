@@ -4,12 +4,7 @@ use gobs::{
         input::{Input, Key},
     },
     gfx::Device,
-    render::{
-        context::Context,
-        graph::{FrameGraph, RenderError},
-        pass::PassType,
-        renderable::Renderable,
-    },
+    render::{Context, FrameGraph, PassType, RenderError, Renderable},
     ui::UIRenderer,
 };
 use renderdoc::{RenderDoc, V141};
