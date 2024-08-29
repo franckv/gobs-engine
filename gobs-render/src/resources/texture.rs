@@ -1,20 +1,21 @@
 use std::sync::Arc;
 
-use gobs_gfx::{Buffer, BufferUsage, Command, Device, Image, ImageLayout, ImageUsage, Sampler};
+use gobs_gfx::{
+    Buffer, BufferUsage, Command, Device, Image, ImageLayout, ImageUsage, Renderer, Sampler,
+};
 use gobs_resource::material::Texture;
 
 use crate::context::Context;
-use crate::{GfxBuffer, GfxImage, GfxSampler};
 
-pub struct GpuTexture {
-    pub texture: Arc<Texture>,
-    pub image: GfxImage,
-    pub sampler: GfxSampler,
+pub struct GpuTexture<R: Renderer> {
+    pub _texture: Arc<Texture>,
+    pub image: R::Image,
+    pub sampler: R::Sampler,
 }
 
-impl GpuTexture {
-    pub fn new(ctx: &Context, texture: Arc<Texture>) -> Self {
-        let mut image = GfxImage::new(
+impl<R: Renderer> GpuTexture<R> {
+    pub fn new(ctx: &Context<R>, texture: Arc<Texture>) -> Self {
+        let mut image = R::Image::new(
             &texture.name,
             &ctx.device,
             texture.format,
@@ -22,27 +23,27 @@ impl GpuTexture {
             texture.extent,
         );
 
-        let sampler = GfxSampler::new(&ctx.device, texture.mag_filter, texture.min_filter);
+        let sampler = R::Sampler::new(&ctx.device, texture.mag_filter, texture.min_filter);
 
         Self::upload_data(ctx, &texture.data, &mut image);
 
         Self {
-            texture,
+            _texture: texture,
             image,
             sampler,
         }
     }
 
-    pub fn image(&self) -> &GfxImage {
+    pub fn image(&self) -> &R::Image {
         &self.image
     }
 
-    pub fn sampler(&self) -> &GfxSampler {
+    pub fn sampler(&self) -> &R::Sampler {
         &self.sampler
     }
 
-    fn upload_data(ctx: &Context, data: &[u8], image: &mut GfxImage) {
-        let mut staging = GfxBuffer::new(
+    fn upload_data(ctx: &Context<R>, data: &[u8], image: &mut R::Image) {
+        let mut staging = R::Buffer::new(
             "image staging",
             data.len(),
             BufferUsage::Staging,

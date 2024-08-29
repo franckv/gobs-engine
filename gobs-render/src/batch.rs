@@ -2,29 +2,29 @@ use std::collections::HashMap;
 use std::sync::Arc;
 
 use gobs_core::{ImageExtent2D, Transform};
+use gobs_gfx::Renderer;
 use gobs_resource::{
     entity::{camera::Camera, light::Light, uniform::UniformPropData},
     geometry::BoundingBox,
 };
 
-use crate::resources::MeshResourceManager;
-use crate::Model;
+use crate::model::Model;
+use crate::{context::Context, resources::MeshResourceManager};
 use crate::{
-    context::Context,
     pass::{PassId, RenderPass},
     renderable::RenderObject,
     stats::RenderStats,
 };
 
-pub struct RenderBatch {
-    pub(crate) render_list: Vec<RenderObject>,
+pub struct RenderBatch<R: Renderer> {
+    pub(crate) render_list: Vec<RenderObject<R>>,
     pub(crate) scene_data: HashMap<PassId, Vec<u8>>,
     pub(crate) render_stats: RenderStats,
-    pub(crate) mesh_resource_manager: MeshResourceManager,
+    pub(crate) mesh_resource_manager: MeshResourceManager<R>,
 }
 
-impl RenderBatch {
-    pub fn new(ctx: &Context) -> Self {
+impl<R: Renderer> RenderBatch<R> {
+    pub fn new(ctx: &Context<R>) -> Self {
         Self {
             render_list: Vec::new(),
             scene_data: HashMap::new(),
@@ -33,7 +33,7 @@ impl RenderBatch {
         }
     }
 
-    pub fn reset(&mut self, ctx: &Context) {
+    pub fn reset(&mut self, ctx: &Context<R>) {
         self.render_list.clear();
         self.scene_data.clear();
         self.render_stats.reset();
@@ -43,10 +43,10 @@ impl RenderBatch {
     #[tracing::instrument(target = "render", skip_all, level = "debug")]
     pub fn add_model(
         &mut self,
-        ctx: &Context,
-        model: Arc<Model>,
+        ctx: &Context<R>,
+        model: Arc<Model<R>>,
         transform: Transform,
-        pass: Arc<dyn RenderPass>,
+        pass: Arc<dyn RenderPass<R>>,
         transient: bool,
     ) {
         tracing::debug!("Add model: {}", model.meshes.len());
@@ -71,10 +71,10 @@ impl RenderBatch {
 
     pub fn add_bounds(
         &mut self,
-        ctx: &Context,
+        ctx: &Context<R>,
         bounding_box: BoundingBox,
         transform: Transform,
-        pass: Arc<dyn RenderPass>,
+        pass: Arc<dyn RenderPass<R>>,
     ) {
         let mesh_data =
             self.mesh_resource_manager
@@ -98,7 +98,7 @@ impl RenderBatch {
         camera_transform: &Transform,
         light: &Light,
         light_transform: &Transform,
-        pass: Arc<dyn RenderPass>,
+        pass: Arc<dyn RenderPass<R>>,
     ) {
         if let Some(_) = pass.uniform_data_layout() {
             let scene_data =
@@ -107,7 +107,7 @@ impl RenderBatch {
         }
     }
 
-    pub fn add_extent_data(&mut self, extent: ImageExtent2D, pass: Arc<dyn RenderPass>) {
+    pub fn add_extent_data(&mut self, extent: ImageExtent2D, pass: Arc<dyn RenderPass<R>>) {
         if let Some(data_layout) = pass.uniform_data_layout() {
             let scene_data = data_layout.data(&[UniformPropData::Vec2F(extent.into())]);
 

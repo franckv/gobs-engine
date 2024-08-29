@@ -3,7 +3,8 @@ use std::sync::Arc;
 use gobs_core::{ImageExtent2D, Transform};
 use gobs_gfx::{
     BindingGroupType, Buffer, Command, CullMode, DescriptorStage, DescriptorType, DynamicStateElem,
-    FrontFace, ImageLayout, Pipeline, PolygonMode, Rect2D, Viewport,
+    FrontFace, GraphicsPipelineBuilder, ImageLayout, Pipeline, PolygonMode, Rect2D, Renderer,
+    Viewport,
 };
 use gobs_resource::{
     entity::{
@@ -18,28 +19,25 @@ use crate::{
     batch::RenderBatch,
     context::Context,
     graph::{RenderError, ResourceManager},
-    pass::{FrameData, PassId, PassType, RenderPass},
+    pass::{FrameData, PassId, PassType, RenderPass, RenderState},
     renderable::RenderObject,
     stats::RenderStats,
-    GfxCommand, GfxPipeline,
 };
 
-use super::RenderState;
-
-pub struct WirePass {
+pub struct WirePass<R: Renderer> {
     id: PassId,
     name: String,
     ty: PassType,
     attachments: Vec<String>,
-    pipeline: Arc<GfxPipeline>,
+    pipeline: Arc<R::Pipeline>,
     vertex_flags: VertexFlag,
     push_layout: Arc<UniformLayout>,
-    frame_data: Vec<FrameData>,
+    frame_data: Vec<FrameData<R>>,
     uniform_data_layout: Arc<UniformLayout>,
 }
 
-impl WirePass {
-    pub fn new(ctx: &Context, name: &str) -> Arc<dyn RenderPass> {
+impl<R: Renderer + 'static> WirePass<R> {
+    pub fn new(ctx: &Context<R>, name: &str) -> Arc<dyn RenderPass<R>> {
         let vertex_flags = VertexFlag::POSITION;
 
         let push_layout = UniformLayout::builder()
@@ -51,7 +49,7 @@ impl WirePass {
             .prop("view_proj", UniformProp::Mat4F)
             .build();
 
-        let pipeline = GfxPipeline::graphics(name, &ctx.device)
+        let pipeline = R::Pipeline::graphics(name, &ctx.device)
             .vertex_shader("wire.vert.spv", "main")
             .fragment_shader("wire.frag.spv", "main")
             .pool_size(ctx.frames_in_flight)
@@ -85,7 +83,7 @@ impl WirePass {
         })
     }
 
-    fn prepare_scene_data(&self, ctx: &Context, batch: &mut RenderBatch) {
+    fn prepare_scene_data(&self, ctx: &Context<R>, batch: &mut RenderBatch<R>) {
         if let Some(scene_data) = batch.scene_data(self.id) {
             self.frame_data[ctx.frame_id()]
                 .uniform_buffer
@@ -94,16 +92,16 @@ impl WirePass {
         }
     }
 
-    fn should_render(&self, render_object: &RenderObject) -> bool {
+    fn should_render(&self, render_object: &RenderObject<R>) -> bool {
         render_object.pass.id() == self.id
     }
 
     fn bind_pipeline(
         &self,
-        cmd: &GfxCommand,
+        cmd: &R::Command,
         stats: &mut RenderStats,
         state: &mut RenderState,
-        _render_object: &RenderObject,
+        _render_object: &RenderObject<R>,
     ) {
         if state.last_pipeline != self.pipeline.id() {
             cmd.bind_pipeline(&self.pipeline);
@@ -114,11 +112,11 @@ impl WirePass {
 
     fn bind_scene_data(
         &self,
-        ctx: &Context,
-        cmd: &GfxCommand,
+        ctx: &Context<R>,
+        cmd: &R::Command,
         stats: &mut RenderStats,
         state: &mut RenderState,
-        _render_object: &RenderObject,
+        _render_object: &RenderObject<R>,
     ) {
         if !state.scene_data_bound {
             let uniform_buffer = self.frame_data[ctx.frame_id()].uniform_buffer.read();
@@ -131,11 +129,11 @@ impl WirePass {
 
     fn bind_object_data(
         &self,
-        ctx: &Context,
-        cmd: &GfxCommand,
+        ctx: &Context<R>,
+        cmd: &R::Command,
         stats: &mut RenderStats,
         state: &mut RenderState,
-        render_object: &RenderObject,
+        render_object: &RenderObject<R>,
     ) {
         tracing::trace!("Bind push constants");
 
@@ -175,7 +173,7 @@ impl WirePass {
         }
     }
 
-    fn render_batch(&self, ctx: &Context, cmd: &GfxCommand, batch: &mut RenderBatch) {
+    fn render_batch(&self, ctx: &Context<R>, cmd: &R::Command, batch: &mut RenderBatch<R>) {
         let mut render_state = RenderState::default();
 
         self.prepare_scene_data(ctx, batch);
@@ -214,7 +212,7 @@ impl WirePass {
     }
 }
 
-impl RenderPass for WirePass {
+impl<R: Renderer + 'static> RenderPass<R> for WirePass<R> {
     fn id(&self) -> PassId {
         self.id
     }
@@ -239,7 +237,7 @@ impl RenderPass for WirePass {
         false
     }
 
-    fn pipeline(&self) -> Option<Arc<GfxPipeline>> {
+    fn pipeline(&self) -> Option<Arc<R::Pipeline>> {
         Some(self.pipeline.clone())
     }
 
@@ -271,10 +269,10 @@ impl RenderPass for WirePass {
 
     fn render(
         &self,
-        ctx: &Context,
-        cmd: &GfxCommand,
-        resource_manager: &ResourceManager,
-        batch: &mut RenderBatch,
+        ctx: &Context<R>,
+        cmd: &R::Command,
+        resource_manager: &ResourceManager<R>,
+        batch: &mut RenderBatch<R>,
         draw_extent: ImageExtent2D,
     ) -> Result<(), RenderError> {
         tracing::debug!("Draw wire");

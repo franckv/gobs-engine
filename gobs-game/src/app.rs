@@ -9,8 +9,7 @@ use winit::{
 };
 
 use gobs_core::utils::timer::Timer;
-use gobs_gfx::Display;
-use gobs_render::{context::Context, graph::RenderError};
+use gobs_render::{Context, Display, RenderError};
 
 use crate::input::Input;
 

@@ -1,7 +1,7 @@
 use gobs_gfx::{Buffer, BufferId};
 use gobs_vulkan as vk;
 
-use crate::device::VkDevice;
+use crate::{device::VkDevice, renderer::VkRenderer};
 
 #[derive(Debug)]
 pub struct VkBuffer {
@@ -9,19 +9,12 @@ pub struct VkBuffer {
     pub(crate) buffer: vk::buffer::Buffer,
 }
 
-impl Buffer for VkBuffer {
-    type GfxDevice = VkDevice;
-
+impl Buffer<VkRenderer> for VkBuffer {
     fn id(&self) -> BufferId {
         self.id
     }
 
-    fn new(
-        name: &str,
-        size: usize,
-        usage: gobs_vulkan::buffer::BufferUsage,
-        device: &VkDevice,
-    ) -> VkBuffer {
+    fn new(name: &str, size: usize, usage: vk::buffer::BufferUsage, device: &VkDevice) -> VkBuffer {
         Self {
             id: BufferId::new_v4(),
             buffer: vk::buffer::Buffer::new(

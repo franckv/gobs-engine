@@ -1,13 +1,12 @@
 use gobs_core::{ImageExtent2D, ImageFormat, SamplerFilter};
 
 use crate::ImageUsage;
+use crate::Renderer;
 
-pub trait Image {
-    type GfxDevice;
-
+pub trait Image<R: Renderer> {
     fn new(
         name: &str,
-        device: &Self::GfxDevice,
+        device: &R::Device,
         format: ImageFormat,
         usage: ImageUsage,
         extent: ImageExtent2D,
@@ -18,10 +17,8 @@ pub trait Image {
     fn format(&self) -> ImageFormat;
 }
 
-pub trait Sampler {
-    type GfxDevice;
-
-    fn new(device: &Self::GfxDevice, mag_filter: SamplerFilter, min_filter: SamplerFilter) -> Self;
+pub trait Sampler<R: Renderer> {
+    fn new(device: &R::Device, mag_filter: SamplerFilter, min_filter: SamplerFilter) -> Self;
     fn mag_filter(&self) -> SamplerFilter;
     fn min_filter(&self) -> SamplerFilter;
 }

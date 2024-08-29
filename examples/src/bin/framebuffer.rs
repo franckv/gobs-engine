@@ -7,13 +7,7 @@ use gobs::{
         input::Input,
     },
     gfx::Device,
-    render::{
-        context::Context,
-        graph::{FrameGraph, RenderError},
-        pass::PassType,
-        renderable::Renderable,
-        Model,
-    },
+    render::{Context, FrameGraph, Model, PassType, RenderError, Renderable},
     resource::{
         entity::light::Light,
         material::{Texture, TextureType},
@@ -96,7 +90,7 @@ impl Run for App {
         self.init(ctx);
     }
 
-    fn close(&mut self, ctx: &gobs::render::context::Context) {
+    fn close(&mut self, ctx: &Context) {
         tracing::info!("Closing");
 
         ctx.device.wait();

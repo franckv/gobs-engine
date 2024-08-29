@@ -8,7 +8,6 @@ edition = { workspace = true }
 bytemuck = { workspace = true }
 gobs-core = { workspace = true }
 gobs-game = { workspace = true }
-gobs-gfx = { workspace = true }
 gobs-render = { workspace = true }
 gobs-resource = { workspace = true }
 egui = { workspace = true }

@@ -5,7 +5,7 @@ use anyhow::Result;
 use gobs_gfx::Device;
 use gobs_vulkan as vk;
 
-use crate::{display::VkDisplay, GfxCommand, VkCommand, VkInstance};
+use crate::{command::VkCommand, display::VkDisplay, instance::VkInstance, renderer::VkRenderer};
 
 pub struct VkDevice {
     pub(crate) device: Arc<vk::device::Device>,
@@ -14,11 +14,7 @@ pub struct VkDevice {
     pub allocator: Arc<vk::alloc::Allocator>,
 }
 
-impl Device for VkDevice {
-    type GfxDisplay = VkDisplay;
-    type GfxInstance = VkInstance;
-    type GfxCommand = VkCommand;
-
+impl Device<VkRenderer> for VkDevice {
     fn new(instance: Arc<VkInstance>, display: &VkDisplay) -> Result<Arc<Self>>
     where
         Self: Sized,
@@ -73,7 +69,7 @@ impl Device for VkDevice {
 
     fn run_immediate<F>(&self, callback: F)
     where
-        F: Fn(&GfxCommand),
+        F: Fn(&VkCommand),
     {
         tracing::debug!("Submit immediate command");
         let cmd = &self.immediate_cmd.command;
@@ -97,7 +93,7 @@ impl Device for VkDevice {
 
     fn run_immediate_mut<F>(&self, mut callback: F)
     where
-        F: FnMut(&GfxCommand),
+        F: FnMut(&VkCommand),
     {
         tracing::debug!("Submit immediate command");
         let cmd = &self.immediate_cmd.command;

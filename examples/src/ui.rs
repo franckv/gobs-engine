@@ -5,7 +5,7 @@ use slotmap::Key as _;
 
 use gobs::{
     core::Transform,
-    render::{context::Context, graph::FrameGraph},
+    render::{Context, FrameGraph},
     resource::entity::camera::Camera,
     scene::{components::NodeValue, graph::scenegraph::SceneGraph, scene::Scene},
 };

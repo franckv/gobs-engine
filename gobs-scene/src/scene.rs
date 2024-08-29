@@ -1,9 +1,7 @@
-use std::sync::Arc;
-
 use glam::Vec3;
 
 use gobs_core::Transform;
-use gobs_render::{batch::RenderBatch, context::Context, pass::RenderPass, renderable::Renderable};
+use gobs_render::{Context, RenderBatch, RenderPass, Renderable};
 use gobs_resource::entity::{camera::Camera, light::Light};
 
 use crate::components::{NodeId, NodeValue};
@@ -88,12 +86,7 @@ impl Scene {
         });
     }
 
-    pub fn draw_bounds(
-        &mut self,
-        ctx: &Context,
-        pass: Arc<dyn RenderPass>,
-        batch: &mut RenderBatch,
-    ) {
+    pub fn draw_bounds(&mut self, ctx: &Context, pass: RenderPass, batch: &mut RenderBatch) {
         self.graph.visit(self.graph.root, &mut |node| {
             if let NodeValue::Model(_) = node.base.value {
                 batch.add_bounds(
@@ -118,7 +111,7 @@ impl Renderable for Scene {
         });
     }
 
-    fn draw(&mut self, ctx: &Context, pass: Arc<dyn RenderPass>, batch: &mut RenderBatch) {
+    fn draw(&mut self, ctx: &Context, pass: RenderPass, batch: &mut RenderBatch) {
         self.graph.visit(self.graph.root, &mut |node| {
             if let NodeValue::Model(model) = &node.base.value {
                 batch.add_model(

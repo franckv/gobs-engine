@@ -2,4 +2,4 @@ mod instance;
 mod material;
 
 pub use instance::{MaterialInstance, MaterialInstanceId};
-pub use material::{Material, MaterialBuilder, MaterialId, MaterialProperty};
+pub use material::{Material, MaterialId, MaterialProperty};

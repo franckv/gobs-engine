@@ -1,16 +1,19 @@
-pub mod batch;
-pub mod context;
-pub mod graph;
-pub mod material;
-pub mod model;
-pub mod pass;
-pub mod renderable;
-pub mod resources;
-pub mod stats;
+mod backend;
+mod batch;
+mod context;
+mod graph;
+mod material;
+mod model;
+mod pass;
+mod renderable;
+mod resources;
+mod stats;
 
-pub use gobs_gfx::{BlendMode, CullMode, ImageUsage};
+pub use gobs_gfx::{BlendMode, CullMode, Display, ImageUsage};
 
-#[cfg(feature = "vulkan")]
-pub use gobs_gfx_vulkan::*;
-
-pub use model::{Model, ModelBuilder, ModelId};
+pub use backend::*;
+pub use graph::RenderError;
+pub use material::MaterialProperty;
+pub use model::ModelId;
+pub use pass::PassType;
+pub use renderable::Renderable;

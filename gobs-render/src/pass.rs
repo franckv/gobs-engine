@@ -1,10 +1,10 @@
 use std::sync::Arc;
 
-use gobs_gfx::{BufferId, PipelineId};
 use parking_lot::RwLock;
 use uuid::Uuid;
 
 use gobs_core::{ImageExtent2D, Transform};
+use gobs_gfx::{BufferId, PipelineId, Renderer};
 use gobs_resource::{
     entity::{camera::Camera, light::Light, uniform::UniformLayout},
     geometry::VertexFlag,
@@ -16,7 +16,6 @@ use crate::{
     graph::{RenderError, ResourceManager},
     material::MaterialId,
     resources::UniformBuffer,
-    GfxCommand, GfxPipeline,
 };
 
 pub mod bounds;
@@ -38,11 +37,11 @@ pub enum PassType {
 
 pub type PassId = Uuid;
 
-pub trait RenderPass {
+pub trait RenderPass<R: Renderer> {
     fn id(&self) -> PassId;
     fn name(&self) -> &str;
     fn ty(&self) -> PassType;
-    fn pipeline(&self) -> Option<Arc<GfxPipeline>>;
+    fn pipeline(&self) -> Option<Arc<R::Pipeline>>;
     fn vertex_flags(&self) -> Option<VertexFlag>;
     fn push_layout(&self) -> Option<Arc<UniformLayout>>;
     fn uniform_data_layout(&self) -> Option<Arc<UniformLayout>>;
@@ -51,10 +50,10 @@ pub trait RenderPass {
     fn depth_clear(&self) -> bool;
     fn render(
         &self,
-        ctx: &Context,
-        cmd: &GfxCommand,
-        resource_manager: &ResourceManager,
-        batch: &mut RenderBatch,
+        ctx: &Context<R>,
+        cmd: &R::Command,
+        resource_manager: &ResourceManager<R>,
+        batch: &mut RenderBatch<R>,
         draw_extent: ImageExtent2D,
     ) -> Result<(), RenderError>;
     fn get_uniform_data(
@@ -76,13 +75,13 @@ pub(crate) struct RenderState {
     object_data: Vec<u8>,
 }
 
-pub(crate) struct FrameData {
-    pub uniform_buffer: RwLock<UniformBuffer>,
+pub(crate) struct FrameData<R: Renderer> {
+    pub uniform_buffer: RwLock<UniformBuffer<R>>,
 }
 
-impl FrameData {
-    pub fn new(ctx: &Context, uniform_layout: Arc<UniformLayout>) -> Self {
-        let uniform_buffer = UniformBuffer::new(&ctx.device, uniform_layout.size());
+impl<R: Renderer> FrameData<R> {
+    pub fn new(ctx: &Context<R>, uniform_layout: Arc<UniformLayout>) -> Self {
+        let uniform_buffer = UniformBuffer::new(ctx, uniform_layout.size());
 
         FrameData {
             uniform_buffer: RwLock::new(uniform_buffer),

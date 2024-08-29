@@ -9,12 +9,8 @@ use glam::{Vec2, Vec3};
 use gobs_core::{Color, ImageExtent2D, SamplerFilter, Transform};
 use gobs_game::input::{Input, Key, MouseButton};
 use gobs_render::{
-    batch::RenderBatch,
-    context::Context,
-    material::{Material, MaterialInstance, MaterialProperty},
-    pass::RenderPass,
-    renderable::Renderable,
-    BlendMode, Model, ModelId,
+    BlendMode, Context, Material, MaterialInstance, MaterialProperty, Model, ModelId, RenderBatch,
+    RenderPass, Renderable,
 };
 use gobs_resource::{
     geometry::{Mesh, VertexData, VertexFlag},
@@ -40,7 +36,7 @@ pub struct UIRenderer {
 }
 
 impl UIRenderer {
-    pub fn new(ctx: &Context, pass: Arc<dyn RenderPass>) -> Self {
+    pub fn new(ctx: &Context, pass: RenderPass) -> Self {
         let ectx = egui::Context::default();
 
         let (width, height): (f32, f32) = ctx.extent().into();
@@ -74,7 +70,7 @@ impl UIRenderer {
     }
 
     #[tracing::instrument(target = "ui", skip_all, level = "debug")]
-    pub fn update<F>(&mut self, _ctx: &Context, _pass: Arc<dyn RenderPass>, delta: f32, callback: F)
+    pub fn update<F>(&mut self, _ctx: &Context, _pass: RenderPass, delta: f32, callback: F)
     where
         F: FnMut(&egui::Context),
     {
@@ -406,7 +402,7 @@ impl Renderable for UIRenderer {
     }
 
     #[tracing::instrument(target = "ui", skip_all, level = "debug")]
-    fn draw(&mut self, ctx: &Context, pass: Arc<dyn RenderPass>, batch: &mut RenderBatch) {
+    fn draw(&mut self, ctx: &Context, pass: RenderPass, batch: &mut RenderBatch) {
         let frame_id = ctx.frame_id();
 
         let output = self.output.take().unwrap();

@@ -7,7 +7,7 @@ use gobs_core::{ImageExtent2D, ImageFormat};
 use gobs_gfx::{Display, Image};
 use gobs_vulkan as vk;
 
-use crate::{VkDevice, VkImage, VkInstance};
+use crate::{device::VkDevice, image::VkImage, instance::VkInstance, renderer::VkRenderer};
 
 pub struct VkDisplay {
     pub(crate) surface: Option<Arc<vk::surface::Surface>>,
@@ -18,12 +18,7 @@ pub struct VkDisplay {
     pub(crate) render_semaphores: Vec<vk::sync::Semaphore>,
 }
 
-impl Display for VkDisplay {
-    type GfxDisplay = VkDisplay;
-    type GfxDevice = VkDevice;
-    type GfxImage = VkImage;
-    type GfxInstance = VkInstance;
-
+impl Display<VkRenderer> for VkDisplay {
     fn new(instance: Arc<VkInstance>, window: Option<Window>) -> Result<Self>
     where
         Self: Sized,

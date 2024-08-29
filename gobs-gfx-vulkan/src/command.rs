@@ -2,20 +2,16 @@ use gobs_core::ImageExtent2D;
 use gobs_gfx::{Command, ImageLayout};
 use gobs_vulkan as vk;
 
-use crate::{display::VkDisplay, VkBindingGroup, VkBuffer, VkDevice, VkImage, VkPipeline};
+use crate::{
+    bindgroup::VkBindingGroup, buffer::VkBuffer, device::VkDevice, display::VkDisplay,
+    image::VkImage, pipeline::VkPipeline, renderer::VkRenderer,
+};
 
 pub struct VkCommand {
     pub(crate) command: vk::command::CommandBuffer,
 }
 
-impl Command for VkCommand {
-    type GfxBindingGroup = VkBindingGroup;
-    type GfxBuffer = VkBuffer;
-    type GfxDevice = VkDevice;
-    type GfxDisplay = VkDisplay;
-    type GfxImage = VkImage;
-    type GfxPipeline = VkPipeline;
-
+impl Command<VkRenderer> for VkCommand {
     fn new(device: &VkDevice, name: &str) -> Self {
         let command_pool =
             vk::command::CommandPool::new(device.device.clone(), &device.queue.family);
