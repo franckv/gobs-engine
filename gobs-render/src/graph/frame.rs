@@ -1,9 +1,12 @@
 use std::sync::Arc;
 
 use anyhow::Result;
+use bytemuck::Pod;
 
-use gobs_core::{utils::timer::Timer, ImageExtent2D};
-use gobs_gfx::{Command, Device, Display, Image, ImageLayout, ImageUsage, Renderer};
+use gobs_core::{utils::timer::Timer, ImageExtent2D, ImageFormat};
+use gobs_gfx::{
+    Buffer, BufferUsage, Command, Device, Display, Image, ImageLayout, ImageUsage, Renderer,
+};
 
 use crate::{
     batch::RenderBatch,
@@ -179,6 +182,66 @@ impl<R: Renderer + 'static> FrameGraph<R> {
         }
 
         Err(())
+    }
+
+    pub fn get_image_data<T: Pod>(
+        &self,
+        ctx: &Context<R>,
+        label: &str,
+        data: &mut Vec<T>,
+        format: ImageFormat,
+    ) -> ImageExtent2D {
+        ctx.device.wait();
+
+        let mut src_image = self.resource_manager.image_write(label);
+        let mut mid_image = R::Image::new(
+            "mid",
+            &ctx.device,
+            format,
+            ImageUsage::Color,
+            src_image.extent(),
+        );
+        let mut dst_image = R::Image::new(
+            "dst",
+            &ctx.device,
+            format,
+            ImageUsage::File,
+            src_image.extent(),
+        );
+
+        let buffer = R::Buffer::new(
+            "copy",
+            dst_image.size(),
+            BufferUsage::StagingDst,
+            &ctx.device,
+        );
+
+        ctx.device.run_immediate_mut(|cmd| {
+            cmd.transition_image_layout(&mut src_image, ImageLayout::TransferSrc);
+            cmd.transition_image_layout(&mut mid_image, ImageLayout::TransferDst);
+            cmd.copy_image_to_image(
+                &src_image,
+                src_image.extent(),
+                &mid_image,
+                mid_image.extent(),
+            );
+
+            cmd.transition_image_layout(&mut mid_image, ImageLayout::TransferSrc);
+            cmd.transition_image_layout(&mut dst_image, ImageLayout::TransferDst);
+            cmd.copy_image_to_image(
+                &mid_image,
+                mid_image.extent(),
+                &dst_image,
+                dst_image.extent(),
+            );
+
+            cmd.transition_image_layout(&mut dst_image, ImageLayout::TransferSrc);
+            cmd.copy_image_to_buffer(&dst_image, &buffer);
+        });
+
+        buffer.get_bytes(data);
+
+        dst_image.extent()
     }
 
     pub fn pass_by_id(&self, pass_id: PassId) -> Result<Arc<dyn RenderPass<R>>, ()> {

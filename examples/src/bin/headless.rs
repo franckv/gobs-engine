@@ -82,6 +82,7 @@ impl App {
 
         let transform =
             Transform::new([0., 0., 0.].into(), Quat::IDENTITY, [300., 300., 1.].into());
+
         self.scene
             .graph
             .insert(self.scene.graph.root, NodeValue::Model(triangle), transform);
@@ -106,7 +107,11 @@ fn main() {
 
     app.update(&ctx, 0.);
 
+    app.resize(&mut ctx, 1920, 1080);
+
     app.render(&mut ctx).unwrap();
 
     app.close(&ctx);
+
+    app.common.screenshot(&ctx, &mut app.graph);
 }

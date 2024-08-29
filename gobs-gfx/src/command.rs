@@ -29,6 +29,7 @@ pub trait Command<R: Renderer> {
         dst: &R::Image,
         dst_size: ImageExtent2D,
     );
+    fn copy_image_to_buffer(&self, sec: &R::Image, dst: &R::Buffer);
     fn push_constants(&self, pipeline: &R::Pipeline, constants: &[u8]);
     fn set_viewport(&self, width: u32, height: u32);
     fn bind_pipeline(&self, pipeline: &R::Pipeline);

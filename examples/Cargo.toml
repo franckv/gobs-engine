@@ -10,6 +10,7 @@ futures = { workspace = true }
 glam = { workspace = true }
 gobs = { workspace = true }
 gpu-allocator = { workspace = true }
+image = { workspace = true }
 pollster = { workspace = true }
 renderdoc = { workspace = true }
 slotmap = { workspace = true }

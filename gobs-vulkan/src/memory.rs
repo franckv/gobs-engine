@@ -2,6 +2,7 @@ use std::mem::{self, align_of};
 use std::sync::Arc;
 
 use ash::vk::Handle;
+use bytemuck::Pod;
 use gpu_allocator::vulkan;
 
 use crate::alloc::Allocator;
@@ -36,6 +37,14 @@ impl Memory {
             .unwrap();
         } else {
             panic!("No allocation");
+        }
+    }
+
+    pub fn download<T: Pod>(&self, data: &mut Vec<T>) {
+        if let Some(allocation) = &self.allocation {
+            if let Some(bytes) = allocation.mapped_slice() {
+                data.extend_from_slice(bytemuck::cast_slice(bytes));
+            }
         }
     }
 }

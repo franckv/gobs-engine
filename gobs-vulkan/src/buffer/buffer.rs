@@ -2,6 +2,7 @@ use std::fmt::Debug;
 use std::sync::Arc;
 
 use ash::vk::{self, Handle};
+use bytemuck::Pod;
 use gpu_allocator::MemoryLocation;
 
 use crate::alloc::Allocator;
@@ -12,6 +13,7 @@ use crate::{debug, Wrap};
 #[derive(Clone, Copy, Debug)]
 pub enum BufferUsage {
     Staging,
+    StagingDst,
     Vertex,
     Instance,
     Index,
@@ -22,6 +24,9 @@ impl Into<vk::MemoryPropertyFlags> for BufferUsage {
     fn into(self) -> vk::MemoryPropertyFlags {
         match self {
             BufferUsage::Staging => {
+                vk::MemoryPropertyFlags::HOST_VISIBLE | vk::MemoryPropertyFlags::HOST_COHERENT
+            }
+            BufferUsage::StagingDst => {
                 vk::MemoryPropertyFlags::HOST_VISIBLE | vk::MemoryPropertyFlags::HOST_COHERENT
             }
             BufferUsage::Vertex => vk::MemoryPropertyFlags::DEVICE_LOCAL,
@@ -40,6 +45,7 @@ impl Into<MemoryLocation> for BufferUsage {
     fn into(self) -> MemoryLocation {
         match self {
             BufferUsage::Staging => MemoryLocation::CpuToGpu,
+            BufferUsage::StagingDst => MemoryLocation::GpuToCpu,
             BufferUsage::Vertex => MemoryLocation::GpuOnly,
             BufferUsage::Instance => MemoryLocation::CpuToGpu,
             BufferUsage::Index => MemoryLocation::GpuOnly,
@@ -52,6 +58,7 @@ impl Into<vk::BufferUsageFlags> for BufferUsage {
     fn into(self) -> vk::BufferUsageFlags {
         match self {
             BufferUsage::Staging => vk::BufferUsageFlags::TRANSFER_SRC,
+            BufferUsage::StagingDst => vk::BufferUsageFlags::TRANSFER_DST,
             BufferUsage::Vertex => {
                 vk::BufferUsageFlags::TRANSFER_DST
                     | vk::BufferUsageFlags::VERTEX_BUFFER
@@ -119,6 +126,10 @@ impl Buffer {
 
     pub fn copy<T: Copy>(&mut self, entries: &[T], offset: usize) {
         self.memory.upload(entries, offset);
+    }
+
+    pub fn get_bytes<T: Pod>(&self, vec: &mut Vec<T>) {
+        self.memory.download(vec);
     }
 }
 

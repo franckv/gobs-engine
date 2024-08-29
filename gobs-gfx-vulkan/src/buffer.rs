@@ -1,3 +1,5 @@
+use bytemuck::Pod;
+
 use gobs_gfx::{Buffer, BufferId};
 use gobs_vulkan as vk;
 
@@ -37,5 +39,9 @@ impl Buffer<VkRenderer> for VkBuffer {
 
     fn address(&self, device: &VkDevice) -> u64 {
         self.buffer.address(device.device.clone())
+    }
+
+    fn get_bytes<T: Pod>(&self, data: &mut Vec<T>) {
+        self.buffer.get_bytes(data);
     }
 }

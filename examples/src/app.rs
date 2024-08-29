@@ -1,8 +1,10 @@
 use std::sync::Arc;
 
+use image::{ImageBuffer, Rgba};
 use renderdoc::{RenderDoc, V141};
 
 use gobs::{
+    core::ImageFormat,
     game::input::{Input, Key},
     render::{
         BlendMode, Context, FrameGraph, Material, MaterialProperty, PassType, RenderError,
@@ -273,6 +275,7 @@ impl SampleApp {
                 Key::W => self.draw_wire = !self.draw_wire,
                 Key::B => self.draw_bounds = !self.draw_bounds,
                 Key::U => self.draw_ui = !self.draw_ui,
+                Key::O => self.screenshot(ctx, graph),
                 Key::Equals => scene.update_camera(|_, camera| {
                     camera.pitch = 0.;
                     camera.yaw = 0.;
@@ -281,5 +284,19 @@ impl SampleApp {
             },
             _ => (),
         }
+    }
+
+    pub fn screenshot(&self, ctx: &Context, graph: &mut FrameGraph) {
+        let filename = "draw_image.png";
+        let mut data = vec![];
+        let extent = graph.get_image_data(&ctx, "draw", &mut data, ImageFormat::R16g16b16a16Unorm);
+
+        tracing::info!("Screenshot \"{}\" ({} bytes)", filename, data.len());
+
+        let img: ImageBuffer<Rgba<u16>, Vec<u16>> =
+            ImageBuffer::from_raw(extent.width, extent.height, data).unwrap();
+
+        img.save_with_format(filename, image::ImageFormat::Png)
+            .unwrap();
     }
 }

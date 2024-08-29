@@ -1,5 +1,5 @@
 use gobs_core::ImageExtent2D;
-use gobs_gfx::{Command, ImageLayout};
+use gobs_gfx::{Command, Image, ImageLayout};
 use gobs_vulkan as vk;
 
 use crate::{
@@ -88,8 +88,26 @@ impl Command<VkRenderer> for VkCommand {
         dst: &VkImage,
         dst_size: ImageExtent2D,
     ) {
-        self.command
-            .copy_image_to_image(&src.image, src_size, &dst.image, dst_size);
+        if self
+            .command
+            .device
+            .support_blit(src.format(), src.usage(), true)
+            && self
+                .command
+                .device
+                .support_blit(dst.format(), dst.usage(), false)
+        {
+            tracing::debug!("Blit from {:?} to {:?}", src.format(), dst.format());
+            self.command
+                .copy_image_to_image_blit(&src.image, src_size, &dst.image, dst_size);
+        } else {
+            tracing::debug!("Copy from {:?} to {:?}", src.format(), dst.format());
+            self.command.copy_image_to_image(&src.image, &dst.image);
+        }
+    }
+
+    fn copy_image_to_buffer(&self, src: &VkImage, dst: &VkBuffer) {
+        self.command.copy_image_to_buffer(&src.image, &dst.buffer);
     }
 
     fn push_constants(&self, pipeline: &VkPipeline, constants: &[u8]) {

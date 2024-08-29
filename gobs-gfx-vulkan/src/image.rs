@@ -43,6 +43,18 @@ impl Image<VkRenderer> for VkImage {
     fn format(&self) -> ImageFormat {
         self.image.format
     }
+
+    fn usage(&self) -> ImageUsage {
+        self.image.usage
+    }
+
+    fn size(&self) -> usize {
+        let extent = self.extent();
+
+        let pixel_size = self.image.format.pixel_size();
+
+        (extent.width * extent.height * pixel_size) as usize
+    }
 }
 
 impl VkImage {

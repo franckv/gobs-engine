@@ -45,6 +45,7 @@ pub enum ImageUsage {
     Texture,
     Color,
     Depth,
+    File,
 }
 
 impl Into<vk::ImageUsageFlags> for ImageUsage {
@@ -61,6 +62,12 @@ impl Into<vk::ImageUsageFlags> for ImageUsage {
                     | vk::ImageUsageFlags::COLOR_ATTACHMENT
                     | vk::ImageUsageFlags::STORAGE
             }
+            ImageUsage::File => {
+                vk::ImageUsageFlags::TRANSFER_SRC
+                    | vk::ImageUsageFlags::TRANSFER_DST
+                    | vk::ImageUsageFlags::COLOR_ATTACHMENT
+                    | vk::ImageUsageFlags::STORAGE
+            }
         }
     }
 }
@@ -71,7 +78,20 @@ impl Into<vk::ImageAspectFlags> for ImageUsage {
             ImageUsage::Swapchain => vk::ImageAspectFlags::COLOR,
             ImageUsage::Texture => vk::ImageAspectFlags::COLOR,
             ImageUsage::Color => vk::ImageAspectFlags::COLOR,
+            ImageUsage::File => vk::ImageAspectFlags::COLOR,
             ImageUsage::Depth => vk::ImageAspectFlags::DEPTH,
+        }
+    }
+}
+
+impl Into<vk::ImageTiling> for ImageUsage {
+    fn into(self) -> vk::ImageTiling {
+        match self {
+            ImageUsage::Swapchain => vk::ImageTiling::OPTIMAL,
+            ImageUsage::Texture => vk::ImageTiling::OPTIMAL,
+            ImageUsage::Color => vk::ImageTiling::OPTIMAL,
+            ImageUsage::Depth => vk::ImageTiling::OPTIMAL,
+            ImageUsage::File => vk::ImageTiling::LINEAR,
         }
     }
 }
@@ -180,7 +200,7 @@ impl Image {
             .mip_levels(1)
             .array_layers(1)
             .format(VkFormat::from(format).into())
-            .tiling(vk::ImageTiling::OPTIMAL)
+            .tiling(usage.into())
             .initial_layout(vk::ImageLayout::UNDEFINED)
             .usage(usage.into())
             .sharing_mode(vk::SharingMode::EXCLUSIVE)

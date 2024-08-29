@@ -6,6 +6,7 @@ edition = { workspace = true }
 
 [dependencies]
 anyhow = { workspace = true }
+bytemuck = { workspace = true }
 futures = { workspace = true }
 glam = { workspace = true }
 gobs-core = { workspace = true }

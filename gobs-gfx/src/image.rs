@@ -15,6 +15,8 @@ pub trait Image<R: Renderer> {
     fn extent(&self) -> ImageExtent2D;
     fn name(&self) -> &str;
     fn format(&self) -> ImageFormat;
+    fn usage(&self) -> ImageUsage;
+    fn size(&self) -> usize;
 }
 
 pub trait Sampler<R: Renderer> {

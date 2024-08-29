@@ -186,3 +186,22 @@ pub enum ImageFormat {
     Astc12x12UnormBlock,
     Astc12x12SrgbBlock,
 }
+
+impl ImageFormat {
+    pub fn pixel_size(&self) -> u32 {
+        match self {
+            ImageFormat::R8g8b8a8Unorm => 4,
+            ImageFormat::R16g16b16a16Sfloat => 8,
+            ImageFormat::R16g16b16a16Unorm => 8,
+            ImageFormat::B8g8r8a8Srgb => 4,
+            ImageFormat::R8g8b8a8Srgb => 4,
+            ImageFormat::B8g8r8a8Unorm => 4,
+            ImageFormat::R32g32Sfloat => 8,
+            ImageFormat::R32g32b32Sfloat => 12,
+            ImageFormat::R32g32b32a32Sfloat => 16,
+            ImageFormat::D32Sfloat => 4,
+            ImageFormat::A2b10g10r10UnormPack32 => 4,
+            _ => todo!(),
+        }
+    }
+}

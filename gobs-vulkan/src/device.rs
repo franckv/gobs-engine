@@ -4,9 +4,12 @@ use std::sync::Arc;
 use ash::ext::debug_utils;
 use ash::khr::{push_descriptor, swapchain};
 use ash::vk::{
-    self, PhysicalDeviceFeatures, PhysicalDeviceVulkan12Features, PhysicalDeviceVulkan13Features,
+    self, FormatFeatureFlags, PhysicalDeviceFeatures, PhysicalDeviceVulkan12Features,
+    PhysicalDeviceVulkan13Features,
 };
+use gobs_core::ImageFormat;
 
+use crate::image::{ImageUsage, VkFormat};
 use crate::instance::Instance;
 use crate::physical::PhysicalDevice;
 use crate::queue::QueueFamily;
@@ -81,6 +84,28 @@ impl Device {
 
     pub fn raw(&self) -> &ash::Device {
         &self.device
+    }
+
+    pub fn support_blit(&self, format: ImageFormat, usage: ImageUsage, src: bool) -> bool {
+        let format_properties = unsafe {
+            self.instance.raw().get_physical_device_format_properties(
+                self.p_device.raw(),
+                VkFormat::from(format).into(),
+            )
+        };
+
+        let tiling: vk::ImageTiling = usage.into();
+        let flag = if src {
+            FormatFeatureFlags::BLIT_SRC
+        } else {
+            FormatFeatureFlags::BLIT_DST
+        };
+
+        if tiling == vk::ImageTiling::LINEAR {
+            format_properties.linear_tiling_features.contains(flag)
+        } else {
+            format_properties.optimal_tiling_features.contains(flag)
+        }
     }
 
     pub fn cloned(&self) -> ash::Device {

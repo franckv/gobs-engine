@@ -1,3 +1,4 @@
+use bytemuck::Pod;
 use uuid::Uuid;
 
 use crate::BufferUsage;
@@ -11,4 +12,5 @@ pub trait Buffer<R: Renderer> {
     fn copy<T: Copy>(&mut self, entries: &[T], offset: usize);
     fn size(&self) -> usize;
     fn address(&self, device: &R::Device) -> u64;
+    fn get_bytes<T: Pod>(&self, data: &mut Vec<T>);
 }

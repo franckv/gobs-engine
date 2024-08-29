@@ -1,7 +1,7 @@
 use std::ffi::CString;
 use std::sync::Arc;
 
-use ash::vk;
+use ash::vk::{self, Extent3D, ImageSubresourceLayers, Offset3D};
 use bytemuck::Pod;
 
 use gobs_core::ImageExtent2D;
@@ -402,11 +402,10 @@ impl CommandBuffer {
     }
 
     pub fn copy_buffer(&self, src: &Buffer, dst: &Buffer, size: usize, offset: usize) {
-        let copy_info = vk::BufferCopy {
-            src_offset: offset as u64,
-            dst_offset: 0,
-            size: size as u64,
-        };
+        let copy_info = vk::BufferCopy::default()
+            .src_offset(offset as u64)
+            .dst_offset(0)
+            .size(size as u64);
 
         unsafe {
             self.device.raw().cmd_copy_buffer(
@@ -418,7 +417,75 @@ impl CommandBuffer {
         }
     }
 
-    pub fn copy_image_to_image(
+    pub fn copy_image_to_buffer(&self, src: &Image, dst: &Buffer) {
+        let copy_info = vk::BufferImageCopy::default()
+            .buffer_offset(0)
+            .buffer_image_height(src.extent.height)
+            .buffer_row_length(src.extent.width)
+            .image_offset(Offset3D { x: 0, y: 0, z: 0 })
+            .image_extent(Extent3D {
+                width: src.extent.width,
+                height: src.extent.height,
+                depth: 1,
+            })
+            .image_subresource(
+                ImageSubresourceLayers::default()
+                    .aspect_mask(src.usage.into())
+                    .base_array_layer(0)
+                    .layer_count(1)
+                    .mip_level(0),
+            );
+
+        unsafe {
+            self.device.raw().cmd_copy_image_to_buffer(
+                self.command_buffer,
+                src.raw(),
+                src.layout.into(),
+                dst.raw(),
+                &[copy_info],
+            );
+        }
+    }
+
+    pub fn copy_image_to_image(&self, src: &Image, dst: &Image) {
+        assert!(src.format.pixel_size() == dst.format.pixel_size());
+
+        let copy_region = vk::ImageCopy2::default()
+            .src_subresource(
+                vk::ImageSubresourceLayers::default()
+                    .aspect_mask(src.usage.into())
+                    .base_array_layer(0)
+                    .layer_count(1)
+                    .mip_level(0),
+            )
+            .dst_subresource(
+                vk::ImageSubresourceLayers::default()
+                    .aspect_mask(dst.usage.into())
+                    .base_array_layer(0)
+                    .layer_count(1)
+                    .mip_level(0),
+            )
+            .extent(Extent3D {
+                width: src.extent.width,
+                height: src.extent.height,
+                depth: 1,
+            });
+
+        let copy_info = vk::CopyImageInfo2::default()
+            .dst_image(dst.raw())
+            .dst_image_layout(vk::ImageLayout::TRANSFER_DST_OPTIMAL)
+            .src_image(src.raw())
+            .src_image_layout(vk::ImageLayout::TRANSFER_SRC_OPTIMAL)
+            .regions(std::slice::from_ref(&copy_region));
+
+        unsafe {
+            self.device
+                .raw()
+                .cmd_copy_image2(self.command_buffer, &copy_info);
+        }
+    }
+
+    pub fn copy_image_to_image_blit(
         &self,
         src: &Image,
         src_size: ImageExtent2D,
