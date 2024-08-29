@@ -20,9 +20,9 @@ pub struct Context<R: Renderer> {
 const FRAMES_IN_FLIGHT: usize = 2;
 
 impl<R: Renderer> Context<R> {
-    pub fn new(name: &str, window: Option<Window>) -> Self {
+    pub fn new(name: &str, window: Option<Window>, validation: bool) -> Self {
         let instance =
-            R::Instance::new(name, window.as_ref(), true).expect("Cannot create instance");
+            R::Instance::new(name, window.as_ref(), validation).expect("Cannot create instance");
         let mut display = R::Display::new(instance.clone(), window).expect("Cannot create display");
         let device = R::Device::new(instance.clone(), &display).expect("Cannot create device");
         display.init(&device, FRAMES_IN_FLIGHT);

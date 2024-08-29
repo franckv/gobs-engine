@@ -21,7 +21,9 @@ use crate::{
 pub mod bounds;
 pub mod compute;
 pub mod depth;
+pub mod dummy;
 pub mod forward;
+pub mod present;
 pub mod ui;
 pub mod wire;
 
@@ -30,7 +32,9 @@ pub enum PassType {
     Bounds,
     Compute,
     Depth,
+    Dummy,
     Forward,
+    Present,
     Wire,
     Ui,
 }
@@ -50,7 +54,7 @@ pub trait RenderPass<R: Renderer> {
     fn depth_clear(&self) -> bool;
     fn render(
         &self,
-        ctx: &Context<R>,
+        ctx: &mut Context<R>,
         cmd: &R::Command,
         resource_manager: &ResourceManager<R>,
         batch: &mut RenderBatch<R>,

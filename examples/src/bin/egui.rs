@@ -1,3 +1,4 @@
+use examples::SampleApp;
 use gobs::{
     game::{
         app::{Application, Run},
@@ -10,6 +11,7 @@ use gobs::{
 use renderdoc::{RenderDoc, V141};
 
 struct App {
+    common: SampleApp,
     graph: FrameGraph,
     ui: UIRenderer,
 }
@@ -18,8 +20,9 @@ impl Run for App {
     async fn create(ctx: &Context) -> Self {
         let graph = FrameGraph::ui(ctx);
         let ui = UIRenderer::new(ctx, graph.pass_by_type(PassType::Ui).unwrap());
+        let common = SampleApp::new();
 
-        App { graph, ui }
+        App { common, graph, ui }
     }
 
     fn update(&mut self, ctx: &Context, delta: f32) {
@@ -53,22 +56,7 @@ impl Run for App {
     }
 
     fn render(&mut self, ctx: &mut Context) -> Result<(), RenderError> {
-        tracing::trace!("Render frame {}", ctx.frame_number);
-
-        self.graph.begin(ctx)?;
-
-        self.graph.render(ctx, &mut |pass, batch| match pass.ty() {
-            PassType::Ui => {
-                self.ui.draw(ctx, pass, batch);
-            }
-            _ => (),
-        })?;
-
-        self.graph.end(ctx)?;
-
-        tracing::trace!("End render");
-
-        Ok(())
+        self.common.render_ui(ctx, &mut self.graph, &mut self.ui)
     }
 
     fn input(&mut self, ctx: &Context, input: Input) {
@@ -111,5 +99,11 @@ fn main() {
 
     tracing::info!("Engine start");
 
-    Application::<App>::new("Egui", examples::WIDTH, examples::HEIGHT).run();
+    Application::<App>::new(
+        "Egui",
+        examples::WIDTH,
+        examples::HEIGHT,
+        examples::VALIDATION,
+    )
+    .run();
 }

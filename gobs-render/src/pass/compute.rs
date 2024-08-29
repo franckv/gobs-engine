@@ -120,7 +120,7 @@ impl<R: Renderer> RenderPass<R> for ComputePass<R> {
 
     fn render(
         &self,
-        ctx: &Context<R>,
+        ctx: &mut Context<R>,
         cmd: &R::Command,
         resource_manager: &ResourceManager<R>,
         batch: &mut RenderBatch<R>,

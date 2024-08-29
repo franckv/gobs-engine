@@ -22,6 +22,7 @@ where
     pub timer: Timer,
     close_requested: bool,
     is_minimized: bool,
+    validation_enabled: bool,
     title: String,
     width: u32,
     height: u32,
@@ -39,7 +40,7 @@ where
 
         let window = event_loop.create_window(window_attributes).unwrap();
 
-        let context = Context::new(&self.title, Some(window));
+        let context = Context::new(&self.title, Some(window), self.validation_enabled);
         tracing::info!("Start main loop");
 
         let future = async {
@@ -187,12 +188,13 @@ impl<R> Application<R>
 where
     R: Run + 'static,
 {
-    pub fn new(title: &str, width: u32, height: u32) -> Application<R> {
+    pub fn new(title: &str, width: u32, height: u32, validation_enabled: bool) -> Application<R> {
         Application {
             context: None,
             runnable: None,
             close_requested: false,
             is_minimized: false,
+            validation_enabled,
             timer: Timer::new(),
             title: title.to_string(),
             width,
@@ -213,7 +215,7 @@ where
     R: Run + 'static,
 {
     fn default() -> Self {
-        Self::new("Default", 800, 600)
+        Self::new("Default", 800, 600, true)
     }
 }
 

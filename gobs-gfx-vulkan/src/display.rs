@@ -67,8 +67,12 @@ impl Display<VkRenderer> for VkDisplay {
         }
     }
 
-    fn get_render_target(&mut self) -> &mut VkImage {
-        &mut self.swapchain_images[self.swapchain_idx]
+    fn get_render_target(&mut self) -> Option<&mut VkImage> {
+        if self.swapchain.is_some() {
+            Some(&mut self.swapchain_images[self.swapchain_idx])
+        } else {
+            None
+        }
     }
 
     fn acquire(&mut self, frame: usize) -> Result<()> {
@@ -93,10 +97,10 @@ impl Display<VkRenderer> for VkDisplay {
                 self.swapchain_idx,
                 &device.queue,
                 &self.render_semaphores[frame],
-            )
-        } else {
-            bail!("Failed to present swapchain")
+            )?;
         }
+
+        Ok(())
     }
 
     fn resize(&mut self, device: &VkDevice) {

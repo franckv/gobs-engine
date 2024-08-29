@@ -102,7 +102,7 @@ impl Run for App {
             &mut self.graph,
             &mut self.scene,
             &mut self.ui,
-            &mut self.camera_controller,
+            Some(&mut self.camera_controller),
         );
     }
 
@@ -250,5 +250,5 @@ fn main() {
 
     tracing::info!("Engine start");
 
-    Application::<App>::new("Maze", examples::WIDTH, examples::HEIGHT).run();
+    Application::<App>::new("Maze", examples::WIDTH, examples::HEIGHT, false).run();
 }

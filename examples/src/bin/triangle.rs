@@ -13,11 +13,10 @@ use gobs::{
     ui::UIRenderer,
 };
 
-use examples::{CameraController, SampleApp};
+use examples::SampleApp;
 
 struct App {
     common: SampleApp,
-    camera_controller: CameraController,
     graph: FrameGraph,
     ui: UIRenderer,
     scene: Scene,
@@ -33,15 +32,12 @@ impl Run for App {
 
         let common = SampleApp::new();
 
-        let camera_controller = SampleApp::controller();
-
         let graph = FrameGraph::default(ctx);
         let ui = UIRenderer::new(ctx, graph.pass_by_type(PassType::Ui).unwrap());
         let scene = Scene::new(camera, camera_position, light, light_position);
 
         App {
             common,
-            camera_controller,
             graph,
             ui,
             scene,
@@ -49,11 +45,6 @@ impl Run for App {
     }
 
     fn update(&mut self, ctx: &Context, delta: f32) {
-        self.scene.update_camera(|transform, camera| {
-            self.camera_controller
-                .update_camera(camera, transform, delta);
-        });
-
         self.graph.update(ctx, delta);
         self.scene.update(ctx, delta);
 
@@ -73,7 +64,7 @@ impl Run for App {
             &mut self.graph,
             &mut self.scene,
             &mut self.ui,
-            &mut self.camera_controller,
+            None,
         );
     }
 
@@ -121,5 +112,11 @@ fn main() {
 
     tracing::info!("Engine start");
 
-    Application::<App>::new("Triangle", examples::WIDTH, examples::HEIGHT).run();
+    Application::<App>::new(
+        "Triangle",
+        examples::WIDTH,
+        examples::HEIGHT,
+        examples::VALIDATION,
+    )
+    .run();
 }

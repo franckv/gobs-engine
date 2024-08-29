@@ -3,7 +3,7 @@ use std::sync::Arc;
 use renderdoc::{RenderDoc, V141};
 
 use gobs::{
-    game::input::{Input, Key, MouseButton},
+    game::input::{Input, Key},
     render::{
         BlendMode, Context, FrameGraph, Material, MaterialProperty, PassType, RenderError,
         Renderable,
@@ -158,8 +158,7 @@ impl SampleApp {
 
         graph.begin(ctx)?;
 
-        graph.render(ctx, &mut |pass, batch| match pass.ty() {
-            PassType::Compute => {}
+        graph.prepare(ctx, &mut |pass, batch| match pass.ty() {
             PassType::Depth | PassType::Forward => {
                 scene.draw(ctx, pass, batch);
             }
@@ -178,7 +177,62 @@ impl SampleApp {
                     ui.draw(ctx, pass, batch);
                 }
             }
-        })?;
+            _ => {}
+        });
+
+        graph.render(ctx)?;
+
+        graph.end(ctx)?;
+
+        tracing::trace!("End render");
+
+        Ok(())
+    }
+
+    pub fn render_ui(
+        &mut self,
+        ctx: &mut Context,
+        graph: &mut FrameGraph,
+        ui: &mut UIRenderer,
+    ) -> Result<(), RenderError> {
+        tracing::trace!("Render frame {}", ctx.frame_number);
+
+        graph.begin(ctx)?;
+
+        graph.prepare(ctx, &mut |pass, batch| match pass.ty() {
+            PassType::Ui => {
+                ui.draw(ctx, pass, batch);
+            }
+            _ => (),
+        });
+
+        graph.render(ctx)?;
+
+        graph.end(ctx)?;
+
+        tracing::trace!("End render");
+
+        Ok(())
+    }
+
+    pub fn render_noui(
+        &mut self,
+        ctx: &mut Context,
+        graph: &mut FrameGraph,
+        scene: &mut Scene,
+    ) -> Result<(), RenderError> {
+        tracing::trace!("Render frame {}", ctx.frame_number);
+
+        graph.begin(ctx)?;
+
+        graph.prepare(ctx, &mut |pass, batch| match pass.ty() {
+            PassType::Depth | PassType::Forward => {
+                scene.draw(ctx, pass, batch);
+            }
+            _ => {}
+        });
+
+        graph.render(ctx)?;
 
         graph.end(ctx)?;
 
@@ -194,11 +248,14 @@ impl SampleApp {
         graph: &mut FrameGraph,
         scene: &mut Scene,
         ui: &mut UIRenderer,
-        camera_controller: &mut CameraController,
+        camera_controller: Option<&mut CameraController>,
     ) {
         tracing::trace!("Input");
 
         ui.input(input);
+        if let Some(camera_controller) = camera_controller {
+            camera_controller.input(input, self.ui.ui_hovered);
+        }
 
         match input {
             Input::KeyPressed(key) => match key {
@@ -220,29 +277,8 @@ impl SampleApp {
                     camera.pitch = 0.;
                     camera.yaw = 0.;
                 }),
-                _ => camera_controller.key_pressed(key),
+                _ => {}
             },
-            Input::KeyReleased(key) => camera_controller.key_released(key),
-            Input::MousePressed(MouseButton::Left) => {
-                if !self.ui.ui_hovered {
-                    camera_controller.mouse_pressed()
-                }
-            }
-            Input::MouseReleased(MouseButton::Left) => {
-                if !self.ui.ui_hovered {
-                    camera_controller.mouse_released()
-                }
-            }
-            Input::MouseWheel(delta) => {
-                if !self.ui.ui_hovered {
-                    camera_controller.mouse_scroll(delta)
-                }
-            }
-            Input::MouseMotion(dx, dy) => {
-                if !self.ui.ui_hovered {
-                    camera_controller.mouse_drag(dx, dy)
-                }
-            }
             _ => (),
         }
     }

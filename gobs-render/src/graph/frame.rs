@@ -1,23 +1,24 @@
-use std::{collections::HashMap, sync::Arc};
+use std::sync::Arc;
 
 use anyhow::Result;
-use parking_lot::{RwLock, RwLockReadGuard, RwLockWriteGuard};
 
-use gobs_core::{utils::timer::Timer, ImageExtent2D, ImageFormat};
+use gobs_core::{utils::timer::Timer, ImageExtent2D};
 use gobs_gfx::{Command, Device, Display, Image, ImageLayout, ImageUsage, Renderer};
 
 use crate::{
     batch::RenderBatch,
     context::Context,
+    graph::resource::ResourceManager,
     pass::{
-        bounds::BoundsPass, compute::ComputePass, depth::DepthPass, forward::ForwardPass,
-        ui::UiPass, wire::WirePass, PassId, PassType, RenderPass,
+        bounds::BoundsPass, compute::ComputePass, depth::DepthPass, dummy::DummyPass,
+        forward::ForwardPass, present::PresentPass, ui::UiPass, wire::WirePass, PassId, PassType,
+        RenderPass,
     },
     stats::RenderStats,
 };
 
 const FRAME_WIDTH: u32 = 1920;
-const FRAME_HEIGHT: u32 = 1920;
+const FRAME_HEIGHT: u32 = 1080;
 
 #[derive(Debug)]
 pub enum RenderError {
@@ -42,57 +43,6 @@ impl<R: Renderer> FrameData<R> {
 
     pub fn reset(&mut self) {
         self.command.reset();
-    }
-}
-
-pub struct ResourceManager<R: Renderer> {
-    resources: HashMap<String, RwLock<R::Image>>,
-}
-
-impl<R: Renderer> ResourceManager<R> {
-    pub fn new() -> Self {
-        Self {
-            resources: HashMap::new(),
-        }
-    }
-
-    pub fn register_image(
-        &mut self,
-        ctx: &Context<R>,
-        label: &str,
-        format: ImageFormat,
-        usage: ImageUsage,
-        extent: ImageExtent2D,
-    ) {
-        let image = R::Image::new(label, &ctx.device, format, usage, extent);
-
-        self.resources.insert(label.to_string(), RwLock::new(image));
-    }
-
-    pub fn invalidate(&self) {
-        for (_, image) in &self.resources {
-            image.write().invalidate();
-        }
-    }
-
-    pub fn image_read(&self, label: &str) -> RwLockReadGuard<'_, R::Image> {
-        assert!(
-            self.resources.contains_key(label),
-            "Missing resource {}",
-            label
-        );
-
-        self.resources[label].read()
-    }
-
-    pub fn image_write(&self, label: &str) -> RwLockWriteGuard<'_, R::Image> {
-        assert!(
-            self.resources.contains_key(label),
-            "Missing resource {}",
-            label
-        );
-
-        self.resources[label].write()
     }
 }
 
@@ -149,6 +99,36 @@ impl<R: Renderer + 'static> FrameGraph<R> {
         graph.register_pass(UiPass::new(ctx, "ui", false));
         graph.register_pass(WirePass::new(ctx, "wire"));
         graph.register_pass(BoundsPass::new(ctx, "bounds"));
+        graph.register_pass(DummyPass::new(ctx, "dummy"));
+        graph.register_pass(PresentPass::new(ctx, "present"));
+
+        graph
+    }
+
+    pub fn headless(ctx: &Context<R>) -> Self {
+        let mut graph = Self::new(ctx);
+
+        let extent = Self::get_render_target_extent(ctx);
+
+        graph.resource_manager.register_image(
+            ctx,
+            "draw",
+            ctx.color_format,
+            ImageUsage::Color,
+            extent,
+        );
+        graph.resource_manager.register_image(
+            ctx,
+            "depth",
+            ctx.depth_format,
+            ImageUsage::Depth,
+            extent,
+        );
+
+        graph.register_pass(ComputePass::new(ctx, "compute"));
+        graph.register_pass(DepthPass::new(ctx, "depth"));
+        graph.register_pass(ForwardPass::new(ctx, "forward", false, false));
+        graph.register_pass(DummyPass::new(ctx, "dummy"));
 
         graph
     }
@@ -167,6 +147,7 @@ impl<R: Renderer + 'static> FrameGraph<R> {
         );
 
         graph.register_pass(UiPass::new(ctx, "ui", true));
+        graph.register_pass(PresentPass::new(ctx, "present"));
 
         graph
     }
@@ -243,13 +224,12 @@ impl<R: Renderer + 'static> FrameGraph<R> {
             );
         }
 
-        let display_extent = ctx.extent();
-
         self.draw_extent = ImageExtent2D::new(
-            (draw_image_extent.width.min(display_extent.width) as f32 * self.render_scaling) as u32,
-            (draw_image_extent.height.min(display_extent.height) as f32 * self.render_scaling)
-                as u32,
+            (draw_image_extent.width as f32 * self.render_scaling) as u32,
+            (draw_image_extent.height as f32 * self.render_scaling) as u32,
         );
+
+        tracing::trace!("Draw extent {:?}", self.draw_extent);
 
         if let Err(_) = ctx.display.acquire(ctx.frame_id()) {
             return Err(RenderError::Outdated);
@@ -274,27 +254,11 @@ impl<R: Renderer + 'static> FrameGraph<R> {
         let frame = &self.frames[frame_id];
         let cmd = &frame.command;
 
-        tracing::debug!("Present");
-
-        cmd.transition_image_layout(
-            &mut self.resource_manager.image_write("draw"),
-            ImageLayout::TransferSrc,
-        );
-
-        let render_target = ctx.display.get_render_target();
-
-        cmd.transition_image_layout(render_target, ImageLayout::TransferDst);
-
-        cmd.copy_image_to_image(
-            &self.resource_manager.image_read("draw"),
-            self.draw_extent,
-            render_target,
-            render_target.extent(),
-        );
-
-        cmd.transition_image_layout(render_target, ImageLayout::Present);
-
         //TODO: cmd.write_timestamp(&frame.query_pool, PipelineStage::BottomOfPipe, 1);
+
+        if let Some(render_target) = ctx.display.get_render_target() {
+            cmd.transition_image_layout(render_target, ImageLayout::Present);
+        }
 
         cmd.end_label();
 
@@ -315,14 +279,12 @@ impl<R: Renderer + 'static> FrameGraph<R> {
         }
     }
 
-    pub fn render(
+    pub fn prepare(
         &mut self,
         ctx: &Context<R>,
         draw_cmd: &mut dyn FnMut(Arc<dyn RenderPass<R>>, &mut RenderBatch<R>),
-    ) -> Result<(), RenderError> {
-        tracing::debug!("Begin rendering");
-
-        let frame_id = ctx.frame_id();
+    ) {
+        tracing::debug!("Begin render batch");
 
         let mut timer = Timer::new();
 
@@ -338,6 +300,16 @@ impl<R: Renderer + 'static> FrameGraph<R> {
         }
 
         self.batch.finish();
+    }
+
+    pub fn render(&mut self, ctx: &mut Context<R>) -> Result<(), RenderError> {
+        tracing::debug!("Begin rendering");
+
+        let frame_id = ctx.frame_id();
+
+        let mut timer = Timer::new();
+
+        let should_update = ctx.frame_number % ctx.stats_refresh == 0;
 
         let cmd = &self.frames[frame_id].command;
 

@@ -1,7 +1,7 @@
 use std::f32::consts::FRAC_PI_2;
 
 use gobs::core::Transform;
-use gobs::game::input::Key;
+use gobs::game::input::{Input, Key, MouseButton};
 use gobs::resource::entity::camera::{Camera, ProjectionMode};
 
 const SAFE_FRAC_PI_2: f32 = FRAC_PI_2 - 0.0001;
@@ -43,6 +43,34 @@ impl CameraController {
             sensitivity,
             debug: false,
             mouse_pressed: false,
+        }
+    }
+
+    pub fn input(&mut self, input: Input, ui_hovered: bool) {
+        match input {
+            Input::KeyPressed(key) => self.key_pressed(key),
+            Input::KeyReleased(key) => self.key_released(key),
+            Input::MousePressed(MouseButton::Left) => {
+                if !ui_hovered {
+                    self.mouse_pressed()
+                }
+            }
+            Input::MouseReleased(MouseButton::Left) => {
+                if !ui_hovered {
+                    self.mouse_released()
+                }
+            }
+            Input::MouseWheel(delta) => {
+                if !ui_hovered {
+                    self.mouse_scroll(delta)
+                }
+            }
+            Input::MouseMotion(dx, dy) => {
+                if !ui_hovered {
+                    self.mouse_drag(dx, dy)
+                }
+            }
+            _ => (),
         }
     }
 

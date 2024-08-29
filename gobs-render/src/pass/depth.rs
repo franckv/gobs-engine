@@ -280,7 +280,7 @@ impl<R: Renderer + 'static> RenderPass<R> for DepthPass<R> {
 
     fn render(
         &self,
-        ctx: &Context<R>,
+        ctx: &mut Context<R>,
         cmd: &R::Command,
         resource_manager: &ResourceManager<R>,
         batch: &mut RenderBatch<R>,

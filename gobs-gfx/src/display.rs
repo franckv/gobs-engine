@@ -13,7 +13,7 @@ pub trait Display<R: Renderer> {
         Self: Sized;
     fn init(&mut self, device: &R::Device, frames_in_flight: usize);
     fn get_extent(&self, device: &R::Device) -> ImageExtent2D;
-    fn get_render_target(&mut self) -> &mut R::Image;
+    fn get_render_target(&mut self) -> Option<&mut R::Image>;
     fn acquire(&mut self, frame: usize) -> Result<()>;
     fn present(&mut self, device: &R::Device, frame: usize) -> Result<()>;
     fn resize(&mut self, device: &R::Device);

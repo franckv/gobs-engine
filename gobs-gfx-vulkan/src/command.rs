@@ -145,8 +145,15 @@ impl Command<VkRenderer> for VkCommand {
 
     fn submit2(&self, display: &VkDisplay, frame: usize) {
         tracing::trace!("Submit with semaphore {}", frame);
-        let swapchain_semaphore = Some(&display.swapchain_semaphores[frame]);
-        let render_semaphore = Some(&display.render_semaphores[frame]);
-        self.command.submit2(swapchain_semaphore, render_semaphore);
+        let (wait, signal) = if display.swapchain.is_some() {
+            let wait = Some(&display.swapchain_semaphores[frame]);
+            let signal = Some(&display.render_semaphores[frame]);
+
+            (wait, signal)
+        } else {
+            (None, None)
+        };
+
+        self.command.submit2(wait, signal);
     }
 }

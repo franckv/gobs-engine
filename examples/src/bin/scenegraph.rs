@@ -105,7 +105,7 @@ impl Run for App {
             &mut self.graph,
             &mut self.scene,
             &mut self.ui,
-            &mut self.camera_controller,
+            Some(&mut self.camera_controller),
         );
 
         match input {
@@ -299,5 +299,11 @@ fn main() {
 
     tracing::info!("Engine start");
 
-    Application::<App>::new("Scenegraph", examples::WIDTH, examples::HEIGHT).run();
+    Application::<App>::new(
+        "Scenegraph",
+        examples::WIDTH,
+        examples::HEIGHT,
+        examples::VALIDATION,
+    )
+    .run();
 }
