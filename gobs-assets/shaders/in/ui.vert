@@ -9,8 +9,10 @@ layout(set = 0, binding = 0) uniform SceneData {
 	vec2 screen_size;
 } scene_data;
 
-layout(location = 0) out vec4 out_color;
-layout(location = 1) out vec2 out_uv;
+layout(location = 0) out struct VertexOutput {
+	vec4 color;
+	vec2 uv;
+} vertex_out;
 
 struct Vertex {
 	vec3 position;
@@ -28,8 +30,8 @@ layout(push_constant) uniform constants {
 
 void main() {
 	Vertex v = push_constants.vertex_buffer_address.vertices[gl_VertexIndex];
-	
+
 	gl_Position = screen_to_ndc(v.position, scene_data.screen_size);
-	out_color = v.color;
-	out_uv = v.uv;
+	vertex_out.color = v.color;
+	vertex_out.uv = v.uv;
 }

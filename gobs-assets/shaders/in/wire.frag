@@ -1,11 +1,11 @@
 #version 450
 
-#extension GL_GOOGLE_include_directive: require
-
-layout(location = 0) in vec4 in_color;
+layout(location = 0) in struct VertexOutput {
+	vec4 color;
+} vertex_out;
 
 layout(location = 0) out vec4 out_color;
 
 void main() {
-	out_color = in_color;
+	out_color = vertex_out.color;
 }

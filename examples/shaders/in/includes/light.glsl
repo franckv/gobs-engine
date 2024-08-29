@@ -28,6 +28,6 @@ vec3 phong_reflection(vec3 normal, vec3 position, vec3 light_dir, vec3 light_col
 
 vec3 phong_reflection_normal(vec3 normal, vec3 position, vec3 light_dir, vec3 light_color,  vec3 view_position, vec3 ambient_color) {
     vec3 tangent_normal = normal * 2.0 - 1.0;
-    
+
     return phong_reflection(tangent_normal, position, light_dir, light_color, view_position, ambient_color);
 }

@@ -1,11 +1,14 @@
 #version 450
 
-#extension GL_GOOGLE_include_directive: require
 #extension GL_EXT_buffer_reference: require
 
-#include "scene_nolight.glsl"
+layout(set = 0, binding = 0) uniform SceneData {
+	mat4 view_proj;
+} scene_data;
 
-layout(location = 0) out vec4 out_color;
+layout(location = 0) out struct VertexOutput {
+	vec4 color;
+} vertex_out;
 
 struct Vertex {
 	vec3 position;
@@ -22,8 +25,8 @@ layout(push_constant) uniform constants {
 
 void main() {
 	Vertex v = push_constants.vertex_buffer_address.vertices[gl_VertexIndex];
-	
+
 	gl_Position = scene_data.view_proj * push_constants.world_matrix * vec4(v.position, 1.f);
 
-	out_color = vec4(0., 1., 0., 1.);
+	vertex_out.color = vec4(0., 1., 0., 1.);
 }
