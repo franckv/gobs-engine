@@ -5,7 +5,7 @@ use std::{
 
 use gobs_gfx::{
     BindingGroup, BindingGroupType, BindingGroupUpdates, Buffer, BufferUsage, Command, Device,
-    ImageLayout, Pipeline, Renderer,
+    GfxBindingGroup, GfxBuffer, ImageLayout, Pipeline,
 };
 use gobs_resource::{
     geometry::{BoundingBox, Mesh, VertexData},
@@ -16,11 +16,11 @@ use crate::{
     context::Context,
     material::{MaterialInstance, MaterialInstanceId},
     model::Model,
-    pass::{PassId, RenderPass},
-    ModelId,
+    pass::PassId,
+    renderable::RenderableLifetime,
+    resources::GpuTexture,
+    ModelId, RenderPass,
 };
-
-use super::GpuTexture;
 
 #[derive(Clone, Copy, Debug)]
 pub enum PrimitiveType {
@@ -28,19 +28,19 @@ pub enum PrimitiveType {
 }
 
 #[derive(Debug)]
-pub struct GPUMesh<R: Renderer> {
-    pub model: Arc<Model<R>>,
+pub struct GPUMesh {
+    pub model: Arc<Model>,
     pub ty: PrimitiveType,
-    pub material: Option<Arc<MaterialInstance<R>>>,
-    pub material_binding: Option<R::BindingGroup>,
-    pub vertex_buffer: Arc<R::Buffer>,
-    pub index_buffer: Arc<R::Buffer>,
+    pub material: Option<Arc<MaterialInstance>>,
+    pub material_binding: Option<GfxBindingGroup>,
+    pub vertex_buffer: Arc<GfxBuffer>,
+    pub index_buffer: Arc<GfxBuffer>,
     pub vertices_offset: u64,
     pub indices_offset: usize,
     pub indices_len: usize,
 }
 
-impl<R: Renderer> Clone for GPUMesh<R> {
+impl Clone for GPUMesh {
     fn clone(&self) -> Self {
         Self {
             model: self.model.clone(),
@@ -58,15 +58,15 @@ impl<R: Renderer> Clone for GPUMesh<R> {
 
 type ResourceKey = (ModelId, PassId);
 
-pub struct MeshResourceManager<R: Renderer> {
-    pub mesh_data: HashMap<ResourceKey, Vec<GPUMesh<R>>>,
-    pub transient_mesh_data: Vec<HashMap<ResourceKey, Vec<GPUMesh<R>>>>,
-    pub material_bindings: HashMap<MaterialInstanceId, R::BindingGroup>,
-    pub textures: HashMap<TextureId, GpuTexture<R>>,
+pub struct MeshResourceManager {
+    pub mesh_data: HashMap<ResourceKey, Vec<GPUMesh>>,
+    pub transient_mesh_data: Vec<HashMap<ResourceKey, Vec<GPUMesh>>>,
+    pub material_bindings: HashMap<MaterialInstanceId, GfxBindingGroup>,
+    pub textures: HashMap<TextureId, GpuTexture>,
 }
 
-impl<R: Renderer> MeshResourceManager<R> {
-    pub fn new(ctx: &Context<R>) -> Self {
+impl MeshResourceManager {
+    pub fn new(ctx: &Context) -> Self {
         let transient_mesh_data = (0..(ctx.frames_in_flight + 1))
             .map(|_| HashMap::new())
             .collect();
@@ -84,7 +84,7 @@ impl<R: Renderer> MeshResourceManager<R> {
         tracing::debug!(target: "render", "Bindings: {}", self.material_bindings.keys().len());
     }
 
-    pub fn new_frame(&mut self, ctx: &Context<R>) -> usize {
+    pub fn new_frame(&mut self, ctx: &Context) -> usize {
         self.debug_stats();
         let frame_id = ctx.frame_id();
 
@@ -94,14 +94,14 @@ impl<R: Renderer> MeshResourceManager<R> {
 
     pub fn add_object(
         &mut self,
-        ctx: &Context<R>,
-        object: Arc<Model<R>>,
-        pass: Arc<dyn RenderPass<R>>,
-        transient: bool,
-    ) -> &[GPUMesh<R>] {
+        ctx: &Context,
+        object: Arc<Model>,
+        pass: RenderPass,
+        lifetime: RenderableLifetime,
+    ) -> &[GPUMesh] {
         let key = (object.id, pass.id());
 
-        if !transient {
+        if lifetime == RenderableLifetime::Static {
             let cached = self.mesh_data.contains_key(&key);
 
             if !cached {
@@ -123,10 +123,10 @@ impl<R: Renderer> MeshResourceManager<R> {
 
     pub fn add_bounding_box(
         &mut self,
-        ctx: &Context<R>,
+        ctx: &Context,
         bounding_box: BoundingBox,
-        pass: Arc<dyn RenderPass<R>>,
-    ) -> &[GPUMesh<R>] {
+        pass: RenderPass,
+    ) -> &[GPUMesh] {
         let frame_id = ctx.frame_id();
         let (model, data) = self.load_box(ctx, bounding_box, pass.clone());
         let key = (model.id, pass.id());
@@ -138,12 +138,7 @@ impl<R: Renderer> MeshResourceManager<R> {
             .expect("Get transient box data")
     }
 
-    fn load_object(
-        &mut self,
-        ctx: &Context<R>,
-        model: Arc<Model<R>>,
-        pass: Arc<dyn RenderPass<R>>,
-    ) -> Vec<GPUMesh<R>> {
+    fn load_object(&mut self, ctx: &Context, model: Arc<Model>, pass: RenderPass) -> Vec<GPUMesh> {
         let mut gpu_meshes = Vec::new();
 
         let mut indices = Vec::new();
@@ -207,10 +202,10 @@ impl<R: Renderer> MeshResourceManager<R> {
 
     fn load_box(
         &mut self,
-        ctx: &Context<R>,
+        ctx: &Context,
         bounding_box: BoundingBox,
-        pass: Arc<dyn RenderPass<R>>,
-    ) -> (Arc<Model<R>>, Vec<GPUMesh<R>>) {
+        pass: RenderPass,
+    ) -> (Arc<Model>, Vec<GPUMesh>) {
         tracing::debug!("New box");
 
         let (left, bottom, back) = bounding_box.bottom_left().into();
@@ -256,9 +251,9 @@ impl<R: Renderer> MeshResourceManager<R> {
 
     fn load_material(
         &mut self,
-        ctx: &Context<R>,
-        material: Option<Arc<MaterialInstance<R>>>,
-    ) -> Option<R::BindingGroup> {
+        ctx: &Context,
+        material: Option<Arc<MaterialInstance>>,
+    ) -> Option<GfxBindingGroup> {
         if let Some(ref material) = material {
             tracing::debug!("Save binding for {}", material.id);
             self.load_texture(ctx, &material);
@@ -296,7 +291,7 @@ impl<R: Renderer> MeshResourceManager<R> {
         }
     }
 
-    fn load_texture(&mut self, ctx: &Context<R>, material: &MaterialInstance<R>) {
+    fn load_texture(&mut self, ctx: &Context, material: &MaterialInstance) {
         for texture in &material.textures {
             let key = texture.id;
 
@@ -308,14 +303,14 @@ impl<R: Renderer> MeshResourceManager<R> {
     }
 
     fn upload_vertices(
-        ctx: &Context<R>,
+        ctx: &Context,
         vertices: &[u8],
         indices: &[u32],
-    ) -> (Arc<R::Buffer>, Arc<R::Buffer>) {
+    ) -> (Arc<GfxBuffer>, Arc<GfxBuffer>) {
         let vertices_size = vertices.len();
         let indices_size = indices.len() * std::mem::size_of::<u32>();
 
-        let mut staging = R::Buffer::new(
+        let mut staging = GfxBuffer::new(
             "staging",
             indices_size + vertices_size,
             BufferUsage::Staging,
@@ -323,8 +318,8 @@ impl<R: Renderer> MeshResourceManager<R> {
         );
 
         let vertex_buffer =
-            R::Buffer::new("vertex", vertices_size, BufferUsage::Vertex, &ctx.device);
-        let index_buffer = R::Buffer::new("index", indices_size, BufferUsage::Index, &ctx.device);
+            GfxBuffer::new("vertex", vertices_size, BufferUsage::Vertex, &ctx.device);
+        let index_buffer = GfxBuffer::new("index", indices_size, BufferUsage::Index, &ctx.device);
 
         staging.copy(&vertices, 0);
         staging.copy(&indices, vertices_size);

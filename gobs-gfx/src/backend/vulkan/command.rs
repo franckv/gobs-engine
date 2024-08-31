@@ -1,11 +1,11 @@
 use gobs_core::ImageExtent2D;
-use gobs_gfx::{Command, Image, ImageLayout};
 use gobs_vulkan as vk;
 
-use crate::{
+use crate::backend::vulkan::{
     bindgroup::VkBindingGroup, buffer::VkBuffer, device::VkDevice, display::VkDisplay,
     image::VkImage, pipeline::VkPipeline, renderer::VkRenderer,
 };
+use crate::{Command, Image, ImageLayout};
 
 pub struct VkCommand {
     pub(crate) command: vk::command::CommandBuffer,

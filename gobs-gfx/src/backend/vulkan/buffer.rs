@@ -1,9 +1,9 @@
 use bytemuck::Pod;
 
-use gobs_gfx::{Buffer, BufferId};
 use gobs_vulkan as vk;
 
-use crate::{device::VkDevice, renderer::VkRenderer};
+use crate::backend::vulkan::{device::VkDevice, renderer::VkRenderer};
+use crate::{Buffer, BufferId};
 
 #[derive(Debug)]
 pub struct VkBuffer {

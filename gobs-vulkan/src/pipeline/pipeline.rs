@@ -2,11 +2,13 @@ use std::{ffi::CString, sync::Arc};
 
 use ash::vk;
 
-use crate::device::Device;
-use crate::pipeline::PipelineLayout;
-use crate::Wrap;
-
-use super::{ComputePipelineBuilder, GraphicsPipelineBuilder, Shader, ShaderType};
+use crate::{
+    device::Device,
+    pipeline::{
+        ComputePipelineBuilder, GraphicsPipelineBuilder, PipelineLayout, Shader, ShaderType,
+    },
+    Wrap,
+};
 
 pub struct Rect2D {
     x: i32,

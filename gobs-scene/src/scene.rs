@@ -1,7 +1,7 @@
 use glam::Vec3;
 
 use gobs_core::Transform;
-use gobs_render::{Context, RenderBatch, RenderPass, Renderable};
+use gobs_render::{Context, RenderBatch, RenderPass, Renderable, RenderableLifetime};
 use gobs_resource::entity::{camera::Camera, light::Light};
 
 use crate::components::{NodeId, NodeValue};
@@ -111,7 +111,14 @@ impl Renderable for Scene {
         });
     }
 
-    fn draw(&mut self, ctx: &Context, pass: RenderPass, batch: &mut RenderBatch) {
+    fn draw(
+        &mut self,
+        ctx: &Context,
+        pass: RenderPass,
+        batch: &mut RenderBatch,
+        _transform: Transform,
+        lifetime: RenderableLifetime,
+    ) {
         self.graph.visit(self.graph.root, &mut |node| {
             if let NodeValue::Model(model) = &node.base.value {
                 batch.add_model(
@@ -119,7 +126,7 @@ impl Renderable for Scene {
                     model.clone(),
                     node.global_transform(),
                     pass.clone(),
-                    false,
+                    lifetime,
                 );
             }
         });

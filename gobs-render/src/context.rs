@@ -3,13 +3,13 @@ use std::sync::Arc;
 use winit::window::Window;
 
 use gobs_core::{ImageExtent2D, ImageFormat};
-use gobs_gfx::{Device, Display, Instance, Renderer};
+use gobs_gfx::{Device, Display, GfxDevice, GfxDisplay, GfxInstance, Instance};
 
-pub struct Context<R: Renderer> {
+pub struct Context {
     pub app_name: String,
-    pub instance: Arc<R::Instance>,
-    pub display: R::Display,
-    pub device: Arc<R::Device>,
+    pub instance: Arc<GfxInstance>,
+    pub display: GfxDisplay,
+    pub device: Arc<GfxDevice>,
     pub color_format: ImageFormat,
     pub depth_format: ImageFormat,
     pub frames_in_flight: usize,
@@ -19,12 +19,12 @@ pub struct Context<R: Renderer> {
 
 const FRAMES_IN_FLIGHT: usize = 2;
 
-impl<R: Renderer> Context<R> {
+impl Context {
     pub fn new(name: &str, window: Option<Window>, validation: bool) -> Self {
         let instance =
-            R::Instance::new(name, window.as_ref(), validation).expect("Cannot create instance");
-        let mut display = R::Display::new(instance.clone(), window).expect("Cannot create display");
-        let device = R::Device::new(instance.clone(), &display).expect("Cannot create device");
+            GfxInstance::new(name, window.as_ref(), validation).expect("Cannot create instance");
+        let mut display = GfxDisplay::new(instance.clone(), window).expect("Cannot create display");
+        let device = GfxDevice::new(instance.clone(), &display).expect("Cannot create device");
         display.init(&device, FRAMES_IN_FLIGHT);
 
         Self {
@@ -53,7 +53,7 @@ impl<R: Renderer> Context<R> {
     }
 }
 
-impl<R: Renderer> Drop for Context<R> {
+impl Drop for Context {
     fn drop(&mut self) {
         tracing::debug!(target: "memory", "Drop context");
     }

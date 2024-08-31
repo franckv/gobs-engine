@@ -4,7 +4,7 @@ use parking_lot::RwLock;
 use uuid::Uuid;
 
 use gobs_core::{ImageExtent2D, Transform};
-use gobs_gfx::{BufferId, PipelineId, Renderer};
+use gobs_gfx::{BufferId, GfxCommand, GfxPipeline, PipelineId};
 use gobs_resource::{
     entity::{camera::Camera, light::Light, uniform::UniformLayout},
     geometry::VertexFlag,
@@ -41,11 +41,11 @@ pub enum PassType {
 
 pub type PassId = Uuid;
 
-pub trait RenderPass<R: Renderer> {
+pub trait RenderPass {
     fn id(&self) -> PassId;
     fn name(&self) -> &str;
     fn ty(&self) -> PassType;
-    fn pipeline(&self) -> Option<Arc<R::Pipeline>>;
+    fn pipeline(&self) -> Option<Arc<GfxPipeline>>;
     fn vertex_flags(&self) -> Option<VertexFlag>;
     fn push_layout(&self) -> Option<Arc<UniformLayout>>;
     fn uniform_data_layout(&self) -> Option<Arc<UniformLayout>>;
@@ -54,10 +54,10 @@ pub trait RenderPass<R: Renderer> {
     fn depth_clear(&self) -> bool;
     fn render(
         &self,
-        ctx: &mut Context<R>,
-        cmd: &R::Command,
-        resource_manager: &ResourceManager<R>,
-        batch: &mut RenderBatch<R>,
+        ctx: &mut Context,
+        cmd: &GfxCommand,
+        resource_manager: &ResourceManager,
+        batch: &mut RenderBatch,
         draw_extent: ImageExtent2D,
     ) -> Result<(), RenderError>;
     fn get_uniform_data(
@@ -79,12 +79,12 @@ pub(crate) struct RenderState {
     object_data: Vec<u8>,
 }
 
-pub(crate) struct FrameData<R: Renderer> {
-    pub uniform_buffer: RwLock<UniformBuffer<R>>,
+pub(crate) struct FrameData {
+    pub uniform_buffer: RwLock<UniformBuffer>,
 }
 
-impl<R: Renderer> FrameData<R> {
-    pub fn new(ctx: &Context<R>, uniform_layout: Arc<UniformLayout>) -> Self {
+impl FrameData {
+    pub fn new(ctx: &Context, uniform_layout: Arc<UniformLayout>) -> Self {
         let uniform_buffer = UniformBuffer::new(ctx, uniform_layout.size());
 
         FrameData {

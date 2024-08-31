@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use gobs_core::ImageExtent2D;
-use gobs_gfx::Renderer;
+use gobs_gfx::{GfxCommand, GfxPipeline};
 use gobs_resource::{entity::uniform::UniformLayout, geometry::VertexFlag};
 
 use crate::{
@@ -20,7 +20,7 @@ pub struct DummyPass {
 }
 
 impl DummyPass {
-    pub fn new<R: Renderer + 'static>(_ctx: &Context<R>, name: &str) -> Arc<dyn RenderPass<R>> {
+    pub fn new(_ctx: &Context, name: &str) -> Arc<dyn RenderPass> {
         Arc::new(Self {
             id: PassId::new_v4(),
             name: name.to_string(),
@@ -30,8 +30,8 @@ impl DummyPass {
     }
 }
 
-impl<R: Renderer + 'static> RenderPass<R> for DummyPass {
-    fn id(&self) -> super::PassId {
+impl RenderPass for DummyPass {
+    fn id(&self) -> PassId {
         self.id
     }
 
@@ -39,11 +39,11 @@ impl<R: Renderer + 'static> RenderPass<R> for DummyPass {
         &self.name
     }
 
-    fn ty(&self) -> super::PassType {
+    fn ty(&self) -> PassType {
         self.ty
     }
 
-    fn pipeline(&self) -> Option<Arc<<R as Renderer>::Pipeline>> {
+    fn pipeline(&self) -> Option<Arc<GfxPipeline>> {
         None
     }
 
@@ -73,10 +73,10 @@ impl<R: Renderer + 'static> RenderPass<R> for DummyPass {
 
     fn render(
         &self,
-        _ctx: &mut Context<R>,
-        _cmd: &<R as Renderer>::Command,
-        _resource_manager: &ResourceManager<R>,
-        _batch: &mut RenderBatch<R>,
+        _ctx: &mut Context,
+        _cmd: &GfxCommand,
+        _resource_manager: &ResourceManager,
+        _batch: &mut RenderBatch,
         _draw_extent: ImageExtent2D,
     ) -> Result<(), RenderError> {
         tracing::debug!("Rendering {}", &self.name);

@@ -4,7 +4,7 @@ use glam::{Vec2, Vec3};
 use serde::Serialize;
 use uuid::Uuid;
 
-use super::{Bounded, BoundingBox, VertexData};
+use crate::geometry::{Bounded, BoundingBox, VertexData};
 
 pub type MeshId = Uuid;
 

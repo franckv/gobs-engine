@@ -1,8 +1,8 @@
 use gobs_core::{ImageExtent2D, ImageFormat, SamplerFilter};
-use gobs_gfx::{Image, ImageUsage, Sampler};
 use gobs_vulkan as vk;
 
-use crate::{device::VkDevice, renderer::VkRenderer};
+use crate::backend::vulkan::{device::VkDevice, renderer::VkRenderer};
+use crate::{Image, ImageUsage, Sampler};
 
 pub struct VkImage {
     pub(crate) image: vk::image::Image,

@@ -3,8 +3,8 @@ use std::sync::Arc;
 use gobs_core::{ImageExtent2D, Transform};
 use gobs_gfx::{
     BindingGroupType, Buffer, Command, CompareOp, CullMode, DescriptorStage, DescriptorType,
-    DynamicStateElem, FrontFace, GraphicsPipelineBuilder, ImageLayout, Pipeline, PolygonMode,
-    Rect2D, Renderer, Viewport,
+    DynamicStateElem, FrontFace, GfxCommand, GfxPipeline, GraphicsPipelineBuilder, ImageLayout,
+    Pipeline, PolygonMode, Rect2D, Viewport,
 };
 use gobs_resource::{
     entity::{
@@ -19,27 +19,25 @@ use crate::{
     batch::RenderBatch,
     context::Context,
     graph::{RenderError, ResourceManager},
-    pass::{FrameData, PassId, PassType, RenderPass},
+    pass::{FrameData, PassId, PassType, RenderPass, RenderState},
     renderable::RenderObject,
     stats::RenderStats,
 };
 
-use super::RenderState;
-
-pub struct DepthPass<R: Renderer> {
+pub struct DepthPass {
     id: PassId,
     name: String,
     ty: PassType,
     attachments: Vec<String>,
-    pipeline: Arc<R::Pipeline>,
+    pipeline: Arc<GfxPipeline>,
     vertex_flags: VertexFlag,
     push_layout: Arc<UniformLayout>,
-    frame_data: Vec<FrameData<R>>,
+    frame_data: Vec<FrameData>,
     uniform_data_layout: Arc<UniformLayout>,
 }
 
-impl<R: Renderer + 'static> DepthPass<R> {
-    pub fn new(ctx: &Context<R>, name: &str) -> Arc<dyn RenderPass<R>> {
+impl DepthPass {
+    pub fn new(ctx: &Context, name: &str) -> Arc<dyn RenderPass> {
         let vertex_flags = VertexFlag::POSITION;
 
         let push_layout = UniformLayout::builder()
@@ -51,7 +49,7 @@ impl<R: Renderer + 'static> DepthPass<R> {
             .prop("view_proj", UniformProp::Mat4F)
             .build();
 
-        let pipeline_builder = R::Pipeline::graphics(name, &ctx.device);
+        let pipeline_builder = GfxPipeline::graphics(name, &ctx.device);
 
         let pipeline = pipeline_builder
             .vertex_shader("depth.vert.spv", "main")
@@ -86,7 +84,7 @@ impl<R: Renderer + 'static> DepthPass<R> {
         })
     }
 
-    fn prepare_scene_data(&self, ctx: &Context<R>, batch: &mut RenderBatch<R>) {
+    fn prepare_scene_data(&self, ctx: &Context, batch: &mut RenderBatch) {
         if let Some(scene_data) = batch.scene_data(self.id) {
             self.frame_data[ctx.frame_id()]
                 .uniform_buffer
@@ -95,7 +93,7 @@ impl<R: Renderer + 'static> DepthPass<R> {
         }
     }
 
-    fn should_render(&self, render_object: &RenderObject<R>) -> bool {
+    fn should_render(&self, render_object: &RenderObject) -> bool {
         render_object.pass.id() == self.id
             && render_object.mesh.material.is_some()
             && !render_object
@@ -109,10 +107,10 @@ impl<R: Renderer + 'static> DepthPass<R> {
 
     fn bind_pipeline(
         &self,
-        cmd: &R::Command,
+        cmd: &GfxCommand,
         stats: &mut RenderStats,
         state: &mut RenderState,
-        _render_object: &RenderObject<R>,
+        _render_object: &RenderObject,
     ) {
         if state.last_pipeline != self.pipeline.id() {
             cmd.bind_pipeline(&self.pipeline);
@@ -123,11 +121,11 @@ impl<R: Renderer + 'static> DepthPass<R> {
 
     fn bind_scene_data(
         &self,
-        ctx: &Context<R>,
-        cmd: &R::Command,
+        ctx: &Context,
+        cmd: &GfxCommand,
         stats: &mut RenderStats,
         state: &mut RenderState,
-        _render_object: &RenderObject<R>,
+        _render_object: &RenderObject,
     ) {
         if !state.scene_data_bound {
             let uniform_buffer = self.frame_data[ctx.frame_id()].uniform_buffer.read();
@@ -140,11 +138,11 @@ impl<R: Renderer + 'static> DepthPass<R> {
 
     fn bind_object_data(
         &self,
-        ctx: &Context<R>,
-        cmd: &R::Command,
+        ctx: &Context,
+        cmd: &GfxCommand,
         stats: &mut RenderStats,
         state: &mut RenderState,
-        render_object: &RenderObject<R>,
+        render_object: &RenderObject,
     ) {
         tracing::trace!("Bind push constants");
 
@@ -184,7 +182,7 @@ impl<R: Renderer + 'static> DepthPass<R> {
         }
     }
 
-    fn render_batch(&self, ctx: &Context<R>, cmd: &R::Command, batch: &mut RenderBatch<R>) {
+    fn render_batch(&self, ctx: &Context, cmd: &GfxCommand, batch: &mut RenderBatch) {
         let mut render_state = RenderState::default();
 
         self.prepare_scene_data(ctx, batch);
@@ -223,7 +221,7 @@ impl<R: Renderer + 'static> DepthPass<R> {
     }
 }
 
-impl<R: Renderer + 'static> RenderPass<R> for DepthPass<R> {
+impl RenderPass for DepthPass {
     fn id(&self) -> PassId {
         self.id
     }
@@ -232,7 +230,7 @@ impl<R: Renderer + 'static> RenderPass<R> for DepthPass<R> {
         &self.name
     }
 
-    fn ty(&self) -> super::PassType {
+    fn ty(&self) -> PassType {
         self.ty
     }
 
@@ -248,7 +246,7 @@ impl<R: Renderer + 'static> RenderPass<R> for DepthPass<R> {
         true
     }
 
-    fn pipeline(&self) -> Option<Arc<R::Pipeline>> {
+    fn pipeline(&self) -> Option<Arc<GfxPipeline>> {
         Some(self.pipeline.clone())
     }
 
@@ -280,10 +278,10 @@ impl<R: Renderer + 'static> RenderPass<R> for DepthPass<R> {
 
     fn render(
         &self,
-        ctx: &mut Context<R>,
-        cmd: &R::Command,
-        resource_manager: &ResourceManager<R>,
-        batch: &mut RenderBatch<R>,
+        ctx: &mut Context,
+        cmd: &GfxCommand,
+        resource_manager: &ResourceManager,
+        batch: &mut RenderBatch,
         draw_extent: ImageExtent2D,
     ) -> Result<(), RenderError> {
         tracing::debug!("Draw depth");

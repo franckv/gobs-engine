@@ -11,7 +11,6 @@ futures = { workspace = true }
 glam = { workspace = true }
 gobs-core = { workspace = true }
 gobs-gfx = { workspace = true }
-gobs-gfx-vulkan = { workspace = true, optional = true}
 gobs-resource = { workspace = true }
 image = { workspace = true }
 parking_lot = { workspace = true }
@@ -20,7 +19,3 @@ serde_json = { workspace = true }
 tracing = { workspace = true }
 uuid = { workspace = true }
 winit = { workspace = true }
-
-[features]
-default = ["vulkan"]
-vulkan = ["dep:gobs-gfx-vulkan"]

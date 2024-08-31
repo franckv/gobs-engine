@@ -5,12 +5,9 @@ use ash::vk;
 
 use gobs_core::{ImageExtent2D, ImageFormat};
 
-use crate::alloc::Allocator;
-use crate::device::Device;
-use crate::memory::Memory;
-use crate::{debug, Wrap};
-
-use super::format::VkFormat;
+use crate::{
+    alloc::Allocator, debug, device::Device, image::format::VkFormat, memory::Memory, Wrap,
+};
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum ImageLayout {

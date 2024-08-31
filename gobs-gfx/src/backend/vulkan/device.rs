@@ -2,10 +2,12 @@ use std::sync::Arc;
 
 use anyhow::Result;
 
-use gobs_gfx::Device;
 use gobs_vulkan as vk;
 
-use crate::{command::VkCommand, display::VkDisplay, instance::VkInstance, renderer::VkRenderer};
+use crate::backend::vulkan::{
+    command::VkCommand, display::VkDisplay, instance::VkInstance, renderer::VkRenderer,
+};
+use crate::Device;
 
 pub struct VkDevice {
     pub(crate) device: Arc<vk::device::Device>,

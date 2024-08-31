@@ -1,20 +1,23 @@
-use std::sync::Arc;
-
 use gobs_core::Transform;
-use gobs_gfx::Renderer;
 
 use crate::{
-    batch::RenderBatch, context::Context, material::MaterialInstanceId, pass::RenderPass,
-    resources::GPUMesh, GfxRenderer,
+    batch::RenderBatch, context::Context, material::MaterialInstanceId, resources::GPUMesh,
+    RenderPass,
 };
 
-pub struct RenderObject<R: Renderer> {
-    pub transform: Transform,
-    pub pass: Arc<dyn RenderPass<R>>,
-    pub mesh: GPUMesh<R>,
+#[derive(Copy, Clone, Debug, PartialEq)]
+pub enum RenderableLifetime {
+    Static,
+    Transient,
 }
 
-impl<R: Renderer> RenderObject<R> {
+pub struct RenderObject {
+    pub transform: Transform,
+    pub pass: RenderPass,
+    pub mesh: GPUMesh,
+}
+
+impl RenderObject {
     pub fn is_transparent(&self) -> bool {
         if let Some(material) = &self.mesh.material {
             material.material.blending_enabled
@@ -36,8 +39,10 @@ pub trait Renderable {
     fn resize(&mut self, width: u32, height: u32);
     fn draw(
         &mut self,
-        ctx: &Context<GfxRenderer>,
-        pass: Arc<dyn RenderPass<GfxRenderer>>,
-        batch: &mut RenderBatch<GfxRenderer>,
+        ctx: &Context,
+        pass: RenderPass,
+        batch: &mut RenderBatch,
+        transform: Transform,
+        lifetime: RenderableLifetime,
     );
 }

@@ -1,4 +1,3 @@
-mod backend;
 mod batch;
 mod context;
 mod graph;
@@ -9,11 +8,16 @@ mod renderable;
 mod resources;
 mod stats;
 
+use std::sync::Arc;
+
 pub use gobs_gfx::{BlendMode, CullMode, Display, ImageUsage};
 
-pub use backend::*;
-pub use graph::RenderError;
-pub use material::MaterialProperty;
-pub use model::ModelId;
+pub use batch::RenderBatch;
+pub use context::Context;
+pub use graph::{FrameGraph, RenderError};
+pub use material::{Material, MaterialInstance, MaterialProperty};
+pub use model::{Model, ModelId};
 pub use pass::PassType;
-pub use renderable::Renderable;
+pub use renderable::{Renderable, RenderableLifetime};
+
+pub type RenderPass = Arc<dyn pass::RenderPass>;

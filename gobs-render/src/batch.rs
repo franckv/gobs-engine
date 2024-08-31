@@ -2,29 +2,30 @@ use std::collections::HashMap;
 use std::sync::Arc;
 
 use gobs_core::{ImageExtent2D, Transform};
-use gobs_gfx::Renderer;
 use gobs_resource::{
     entity::{camera::Camera, light::Light, uniform::UniformPropData},
     geometry::BoundingBox,
 };
 
-use crate::model::Model;
-use crate::{context::Context, resources::MeshResourceManager};
 use crate::{
-    pass::{PassId, RenderPass},
-    renderable::RenderObject,
+    context::Context,
+    model::Model,
+    pass::PassId,
+    renderable::{RenderObject, RenderableLifetime},
+    resources::MeshResourceManager,
     stats::RenderStats,
+    RenderPass,
 };
 
-pub struct RenderBatch<R: Renderer> {
-    pub(crate) render_list: Vec<RenderObject<R>>,
+pub struct RenderBatch {
+    pub(crate) render_list: Vec<RenderObject>,
     pub(crate) scene_data: HashMap<PassId, Vec<u8>>,
     pub(crate) render_stats: RenderStats,
-    pub(crate) mesh_resource_manager: MeshResourceManager<R>,
+    pub(crate) mesh_resource_manager: MeshResourceManager,
 }
 
-impl<R: Renderer> RenderBatch<R> {
-    pub fn new(ctx: &Context<R>) -> Self {
+impl RenderBatch {
+    pub fn new(ctx: &Context) -> Self {
         Self {
             render_list: Vec::new(),
             scene_data: HashMap::new(),
@@ -33,7 +34,7 @@ impl<R: Renderer> RenderBatch<R> {
         }
     }
 
-    pub fn reset(&mut self, ctx: &Context<R>) {
+    pub fn reset(&mut self, ctx: &Context) {
         self.render_list.clear();
         self.scene_data.clear();
         self.render_stats.reset();
@@ -43,17 +44,17 @@ impl<R: Renderer> RenderBatch<R> {
     #[tracing::instrument(target = "render", skip_all, level = "debug")]
     pub fn add_model(
         &mut self,
-        ctx: &Context<R>,
-        model: Arc<Model<R>>,
+        ctx: &Context,
+        model: Arc<Model>,
         transform: Transform,
-        pass: Arc<dyn RenderPass<R>>,
-        transient: bool,
+        pass: RenderPass,
+        lifetime: RenderableLifetime,
     ) {
         tracing::debug!("Add model: {}", model.meshes.len());
 
         let mesh_data = self
             .mesh_resource_manager
-            .add_object(ctx, model, pass.clone(), transient);
+            .add_object(ctx, model, pass.clone(), lifetime);
 
         for mesh in mesh_data {
             tracing::debug!("Add {} indices", mesh.indices_len);
@@ -71,10 +72,10 @@ impl<R: Renderer> RenderBatch<R> {
 
     pub fn add_bounds(
         &mut self,
-        ctx: &Context<R>,
+        ctx: &Context,
         bounding_box: BoundingBox,
         transform: Transform,
-        pass: Arc<dyn RenderPass<R>>,
+        pass: RenderPass,
     ) {
         let mesh_data =
             self.mesh_resource_manager
@@ -98,7 +99,7 @@ impl<R: Renderer> RenderBatch<R> {
         camera_transform: &Transform,
         light: &Light,
         light_transform: &Transform,
-        pass: Arc<dyn RenderPass<R>>,
+        pass: RenderPass,
     ) {
         if let Some(_) = pass.uniform_data_layout() {
             let scene_data =
@@ -107,7 +108,7 @@ impl<R: Renderer> RenderBatch<R> {
         }
     }
 
-    pub fn add_extent_data(&mut self, extent: ImageExtent2D, pass: Arc<dyn RenderPass<R>>) {
+    pub fn add_extent_data(&mut self, extent: ImageExtent2D, pass: RenderPass) {
         if let Some(data_layout) = pass.uniform_data_layout() {
             let scene_data = data_layout.data(&[UniformPropData::Vec2F(extent.into())]);
 

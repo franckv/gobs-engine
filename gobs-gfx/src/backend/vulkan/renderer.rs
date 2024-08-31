@@ -1,14 +1,15 @@
-use gobs_gfx::Renderer;
-
 use crate::{
-    bindgroup::{VkBindingGroup, VkBindingGroupUpdates},
-    buffer::VkBuffer,
-    command::VkCommand,
-    device::VkDevice,
-    display::VkDisplay,
-    image::{VkImage, VkSampler},
-    instance::VkInstance,
-    pipeline::{VkComputePipelineBuilder, VkGraphicsPipelineBuilder, VkPipeline},
+    backend::vulkan::{
+        bindgroup::{VkBindingGroup, VkBindingGroupUpdates},
+        buffer::VkBuffer,
+        command::VkCommand,
+        device::VkDevice,
+        display::VkDisplay,
+        image::{VkImage, VkSampler},
+        instance::VkInstance,
+        pipeline::{VkComputePipelineBuilder, VkGraphicsPipelineBuilder, VkPipeline},
+    },
+    Renderer,
 };
 
 pub struct VkRenderer;

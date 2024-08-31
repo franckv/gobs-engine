@@ -5,14 +5,15 @@ use indexmap::IndexMap;
 use parking_lot::RwLock;
 
 use gobs_core::ImageFormat;
-use gobs_gfx::{
-    BindingGroupType, BlendMode, CompareOp, ComputePipelineBuilder, CullMode, DynamicStateElem,
-    FrontFace, GraphicsPipelineBuilder, Pipeline, PipelineId, PolygonMode, Rect2D, Viewport,
-};
+
 use gobs_resource::load;
 use gobs_vulkan as vk;
 
-use crate::{bindgroup::VkBindingGroup, device::VkDevice, renderer::VkRenderer};
+use crate::backend::vulkan::{bindgroup::VkBindingGroup, device::VkDevice, renderer::VkRenderer};
+use crate::{
+    BindingGroupType, BlendMode, CompareOp, ComputePipelineBuilder, CullMode, DynamicStateElem,
+    FrontFace, GraphicsPipelineBuilder, Pipeline, PipelineId, PolygonMode, Rect2D, Viewport,
+};
 
 #[derive(Debug)]
 pub struct VkPipeline {

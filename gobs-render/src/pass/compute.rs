@@ -3,7 +3,7 @@ use std::sync::Arc;
 use gobs_core::{ImageExtent2D, Transform};
 use gobs_gfx::{
     BindingGroup, BindingGroupType, BindingGroupUpdates, Command, ComputePipelineBuilder,
-    DescriptorType, ImageLayout, Pipeline, Renderer,
+    DescriptorType, GfxBindingGroup, GfxCommand, GfxPipeline, ImageLayout, Pipeline,
 };
 use gobs_resource::{
     entity::{camera::Camera, light::Light, uniform::UniformLayout},
@@ -17,28 +17,28 @@ use crate::{
     pass::{PassId, PassType, RenderPass},
 };
 
-pub(crate) struct FrameData<R: Renderer> {
-    pub draw_bindings: R::BindingGroup,
+pub(crate) struct FrameData {
+    pub draw_bindings: GfxBindingGroup,
 }
 
-impl<R: Renderer> FrameData<R> {
-    pub fn new(draw_bindings: R::BindingGroup) -> Self {
+impl FrameData {
+    pub fn new(draw_bindings: GfxBindingGroup) -> Self {
         FrameData { draw_bindings }
     }
 }
 
-pub struct ComputePass<R: Renderer> {
+pub struct ComputePass {
     id: PassId,
     name: String,
     ty: PassType,
     attachments: Vec<String>,
-    frame_data: Vec<FrameData<R>>,
-    pub pipeline: Arc<R::Pipeline>,
+    frame_data: Vec<FrameData>,
+    pub pipeline: Arc<GfxPipeline>,
 }
 
-impl<R: Renderer + 'static> ComputePass<R> {
-    pub fn new(ctx: &Context<R>, name: &str) -> Arc<dyn RenderPass<R>> {
-        let pipeline_builder = R::Pipeline::compute(name, &ctx.device);
+impl ComputePass {
+    pub fn new(ctx: &Context, name: &str) -> Arc<dyn RenderPass> {
+        let pipeline_builder = GfxPipeline::compute(name, &ctx.device);
 
         let pipeline = pipeline_builder
             .shader("sky.comp.spv", "main")
@@ -67,7 +67,7 @@ impl<R: Renderer + 'static> ComputePass<R> {
     }
 }
 
-impl<R: Renderer> RenderPass<R> for ComputePass<R> {
+impl RenderPass for ComputePass {
     fn id(&self) -> PassId {
         self.id
     }
@@ -92,7 +92,7 @@ impl<R: Renderer> RenderPass<R> for ComputePass<R> {
         false
     }
 
-    fn pipeline(&self) -> Option<Arc<R::Pipeline>> {
+    fn pipeline(&self) -> Option<Arc<GfxPipeline>> {
         Some(self.pipeline.clone())
     }
 
@@ -120,10 +120,10 @@ impl<R: Renderer> RenderPass<R> for ComputePass<R> {
 
     fn render(
         &self,
-        ctx: &mut Context<R>,
-        cmd: &R::Command,
-        resource_manager: &ResourceManager<R>,
-        batch: &mut RenderBatch<R>,
+        ctx: &mut Context,
+        cmd: &GfxCommand,
+        resource_manager: &ResourceManager,
+        batch: &mut RenderBatch,
         draw_extent: ImageExtent2D,
     ) -> Result<(), RenderError> {
         tracing::debug!("Draw compute");

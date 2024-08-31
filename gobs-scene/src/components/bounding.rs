@@ -1,6 +1,6 @@
 use gobs_resource::geometry::{Bounded, BoundingBox};
 
-use super::NodeValue;
+use crate::components::NodeValue;
 
 #[derive(Clone, Debug)]
 pub struct BoundingComponent {

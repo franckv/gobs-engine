@@ -3,27 +3,33 @@ use std::collections::HashMap;
 use std::fmt::Debug;
 use std::sync::Arc;
 
-use gobs_gfx::Renderer;
+use gobs_core::Transform;
 use serde::Serialize;
 use uuid::Uuid;
 
 use gobs_resource::geometry::{Bounded, BoundingBox, Mesh};
 
-use crate::material::{MaterialInstance, MaterialInstanceId};
+use crate::{
+    batch::RenderBatch,
+    context::Context,
+    material::{MaterialInstance, MaterialInstanceId},
+    renderable::RenderableLifetime,
+    RenderPass, Renderable,
+};
 
 pub type ModelId = Uuid;
 
 #[derive(Serialize)]
-pub struct Model<R: Renderer> {
+pub struct Model {
     pub name: String,
     pub id: ModelId,
     pub meshes: Vec<(Arc<Mesh>, MaterialInstanceId)>,
     #[serde(skip)]
-    pub materials: HashMap<MaterialInstanceId, Arc<MaterialInstance<R>>>,
+    pub materials: HashMap<MaterialInstanceId, Arc<MaterialInstance>>,
 }
 
-impl<R: Renderer> Model<R> {
-    pub fn builder(name: &str) -> ModelBuilder<R> {
+impl Model {
+    pub fn builder(name: &str) -> ModelBuilder {
         ModelBuilder::new(name)
     }
 
@@ -32,13 +38,28 @@ impl<R: Renderer> Model<R> {
     }
 }
 
-impl<R: Renderer> Debug for Model<R> {
+impl Renderable for Arc<Model> {
+    fn resize(&mut self, _width: u32, _height: u32) {}
+
+    fn draw(
+        &mut self,
+        ctx: &Context,
+        pass: RenderPass,
+        batch: &mut RenderBatch,
+        transform: Transform,
+        lifetime: RenderableLifetime,
+    ) {
+        batch.add_model(ctx, self.clone(), transform, pass.clone(), lifetime);
+    }
+}
+
+impl Debug for Model {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "Model: {}", self.name)
     }
 }
 
-impl<R: Renderer> Bounded for Model<R> {
+impl Bounded for Model {
     fn boundings(&self) -> BoundingBox {
         let mut bounding_box = BoundingBox::default();
 
@@ -50,20 +71,20 @@ impl<R: Renderer> Bounded for Model<R> {
     }
 }
 
-impl<R: Renderer> Drop for Model<R> {
+impl Drop for Model {
     fn drop(&mut self) {
         tracing::debug!(target: "memory", "Drop Model: {}", &self.name);
     }
 }
 
-pub struct ModelBuilder<R: Renderer> {
+pub struct ModelBuilder {
     pub name: String,
     pub id: ModelId,
     pub meshes: Vec<(Arc<Mesh>, MaterialInstanceId)>,
-    pub materials: HashMap<MaterialInstanceId, Arc<MaterialInstance<R>>>,
+    pub materials: HashMap<MaterialInstanceId, Arc<MaterialInstance>>,
 }
 
-impl<R: Renderer> ModelBuilder<R> {
+impl ModelBuilder {
     pub fn new(name: &str) -> Self {
         ModelBuilder {
             name: name.to_string(),
@@ -82,7 +103,7 @@ impl<R: Renderer> ModelBuilder<R> {
     pub fn mesh(
         mut self,
         mesh: Arc<Mesh>,
-        material_instance: Option<Arc<MaterialInstance<R>>>,
+        material_instance: Option<Arc<MaterialInstance>>,
     ) -> Self {
         if let Some(material_instance) = material_instance {
             self.meshes.push((mesh, material_instance.id));
@@ -97,7 +118,7 @@ impl<R: Renderer> ModelBuilder<R> {
         self
     }
 
-    pub fn build(self) -> Arc<Model<R>> {
+    pub fn build(self) -> Arc<Model> {
         Arc::new(Model {
             name: self.name,
             id: self.id,

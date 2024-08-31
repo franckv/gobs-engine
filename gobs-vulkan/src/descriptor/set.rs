@@ -2,14 +2,15 @@ use std::sync::Arc;
 
 use ash::vk;
 
-use crate::buffer::Buffer;
-use crate::command::CommandBuffer;
-use crate::device::Device;
-use crate::image::{Image, ImageLayout, Sampler};
-use crate::pipeline::Pipeline;
-use crate::Wrap;
-
-use super::DescriptorSetLayout;
+use crate::{
+    buffer::Buffer,
+    command::CommandBuffer,
+    descriptor::DescriptorSetLayout,
+    device::Device,
+    image::{Image, ImageLayout, Sampler},
+    pipeline::Pipeline,
+    Wrap,
+};
 
 #[derive(Debug)]
 enum ResourceInfo {

@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use gobs_core::ImageExtent2D;
-use gobs_gfx::{Command, Display, Image, ImageLayout, Renderer};
+use gobs_gfx::{Command, Display, GfxCommand, GfxPipeline, Image, ImageLayout};
 
 use crate::{
     batch::RenderBatch,
@@ -19,7 +19,7 @@ pub struct PresentPass {
 }
 
 impl PresentPass {
-    pub fn new<R: Renderer + 'static>(_ctx: &Context<R>, name: &str) -> Arc<dyn RenderPass<R>> {
+    pub fn new(_ctx: &Context, name: &str) -> Arc<dyn RenderPass> {
         Arc::new(Self {
             id: PassId::new_v4(),
             name: name.to_string(),
@@ -29,8 +29,8 @@ impl PresentPass {
     }
 }
 
-impl<R: Renderer + 'static> RenderPass<R> for PresentPass {
-    fn id(&self) -> super::PassId {
+impl RenderPass for PresentPass {
+    fn id(&self) -> PassId {
         self.id
     }
 
@@ -38,11 +38,11 @@ impl<R: Renderer + 'static> RenderPass<R> for PresentPass {
         &self.name
     }
 
-    fn ty(&self) -> super::PassType {
+    fn ty(&self) -> PassType {
         self.ty
     }
 
-    fn pipeline(&self) -> Option<std::sync::Arc<<R as Renderer>::Pipeline>> {
+    fn pipeline(&self) -> Option<std::sync::Arc<GfxPipeline>> {
         None
     }
 
@@ -74,10 +74,10 @@ impl<R: Renderer + 'static> RenderPass<R> for PresentPass {
 
     fn render(
         &self,
-        ctx: &mut Context<R>,
-        cmd: &<R as Renderer>::Command,
-        resource_manager: &ResourceManager<R>,
-        _batch: &mut RenderBatch<R>,
+        ctx: &mut Context,
+        cmd: &GfxCommand,
+        resource_manager: &ResourceManager,
+        _batch: &mut RenderBatch,
         draw_extent: ImageExtent2D,
     ) -> Result<(), RenderError> {
         tracing::debug!("Present");

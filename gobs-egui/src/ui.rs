@@ -10,7 +10,7 @@ use gobs_core::{Color, ImageExtent2D, SamplerFilter, Transform};
 use gobs_game::input::{Input, Key, MouseButton};
 use gobs_render::{
     BlendMode, Context, Material, MaterialInstance, MaterialProperty, Model, ModelId, RenderBatch,
-    RenderPass, Renderable,
+    RenderPass, Renderable, RenderableLifetime,
 };
 use gobs_resource::{
     geometry::{Mesh, VertexData, VertexFlag},
@@ -402,7 +402,14 @@ impl Renderable for UIRenderer {
     }
 
     #[tracing::instrument(target = "ui", skip_all, level = "debug")]
-    fn draw(&mut self, ctx: &Context, pass: RenderPass, batch: &mut RenderBatch) {
+    fn draw(
+        &mut self,
+        ctx: &Context,
+        pass: RenderPass,
+        batch: &mut RenderBatch,
+        _transform: Transform,
+        lifetime: RenderableLifetime,
+    ) {
         let frame_id = ctx.frame_id();
 
         let output = self.output.take().unwrap();
@@ -412,7 +419,7 @@ impl Renderable for UIRenderer {
         let model = self.frame_data[frame_id].model.clone();
 
         if let Some(model) = model {
-            batch.add_model(ctx, model, Transform::IDENTITY, pass.clone(), true);
+            batch.add_model(ctx, model, Transform::IDENTITY, pass.clone(), lifetime);
         }
 
         batch.add_extent_data(

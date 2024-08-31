@@ -179,7 +179,7 @@ mod tests {
     use tracing::Level;
     use tracing_subscriber::{fmt::format::FmtSpan, FmtSubscriber};
 
-    use super::Camera;
+    use crate::entity::camera::Camera;
 
     fn setup() {
         let sub = FmtSubscriber::builder()

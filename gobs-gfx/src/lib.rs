@@ -1,3 +1,4 @@
+pub mod backend;
 mod bindgroup;
 mod buffer;
 mod command;
@@ -27,3 +28,5 @@ pub use gobs_vulkan::{
         Rect2D, Viewport,
     },
 };
+
+pub use backend::*;

@@ -6,8 +6,10 @@ use gobs_core::Transform;
 use gobs_render::ModelId;
 use gobs_resource::geometry::BoundingBox;
 
-use super::node::Node;
-use crate::components::{NodeId, NodeValue};
+use crate::{
+    components::{NodeId, NodeValue},
+    graph::node::Node,
+};
 
 #[derive(Clone)]
 pub struct SceneGraph {

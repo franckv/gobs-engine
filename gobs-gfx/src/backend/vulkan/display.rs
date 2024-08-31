@@ -4,10 +4,12 @@ use anyhow::{bail, Result};
 use winit::window::Window;
 
 use gobs_core::{ImageExtent2D, ImageFormat};
-use gobs_gfx::{Display, Image};
 use gobs_vulkan as vk;
 
-use crate::{device::VkDevice, image::VkImage, instance::VkInstance, renderer::VkRenderer};
+use crate::backend::vulkan::{
+    device::VkDevice, image::VkImage, instance::VkInstance, renderer::VkRenderer,
+};
+use crate::{Display, Image};
 
 pub struct VkDisplay {
     pub(crate) surface: Option<Arc<vk::surface::Surface>>,
