@@ -11,6 +11,7 @@ pub trait Buffer<R: Renderer> {
     fn new(name: &str, size: usize, usage: BufferUsage, device: &R::Device) -> Self;
     fn copy<T: Copy>(&mut self, entries: &[T], offset: usize);
     fn size(&self) -> usize;
+    fn usage(&self) -> BufferUsage;
     fn address(&self, device: &R::Device) -> u64;
     fn get_bytes<T: Pod>(&self, data: &mut Vec<T>);
 }

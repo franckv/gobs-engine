@@ -2,7 +2,7 @@ mod app;
 mod controller;
 mod ui;
 
-use tracing::Level;
+use tracing::{level_filters::LevelFilter, Level};
 use tracing_subscriber::{fmt::format::FmtSpan, EnvFilter, FmtSubscriber};
 
 pub use app::SampleApp;
@@ -38,7 +38,11 @@ pub fn init_logger() {
     FmtSubscriber::builder()
         .with_max_level(Level::INFO)
         .with_span_events(FmtSpan::CLOSE)
-        .with_env_filter(EnvFilter::from_default_env())
+        .with_env_filter(
+            EnvFilter::builder()
+                .with_default_directive(LevelFilter::INFO.into())
+                .from_env_lossy(),
+        )
         .init();
 
     tracing::info!("Logger initialized");

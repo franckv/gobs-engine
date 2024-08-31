@@ -10,7 +10,7 @@ use crate::device::Device;
 use crate::memory::Memory;
 use crate::{debug, Wrap};
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, Hash, PartialEq, Eq)]
 pub enum BufferUsage {
     Staging,
     StagingDst,
@@ -82,6 +82,7 @@ pub struct Buffer {
     buffer: vk::Buffer,
     memory: Memory,
     pub size: usize,
+    pub usage: BufferUsage,
 }
 
 impl Buffer {
@@ -115,6 +116,7 @@ impl Buffer {
             buffer,
             memory,
             size,
+            usage,
         }
     }
 

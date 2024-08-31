@@ -1,6 +1,7 @@
 use bytemuck::Pod;
 
 use gobs_vulkan as vk;
+use gobs_vulkan::buffer::BufferUsage;
 
 use crate::backend::vulkan::{device::VkDevice, renderer::VkRenderer};
 use crate::{Buffer, BufferId};
@@ -35,6 +36,10 @@ impl Buffer<VkRenderer> for VkBuffer {
 
     fn size(&self) -> usize {
         self.buffer.size
+    }
+
+    fn usage(&self) -> BufferUsage {
+        self.buffer.usage
     }
 
     fn address(&self, device: &VkDevice) -> u64 {

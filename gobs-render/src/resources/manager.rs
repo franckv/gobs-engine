@@ -3,6 +3,7 @@ use std::{
     sync::Arc,
 };
 
+use gobs_core::utils::pool::ObjectPool;
 use gobs_gfx::{
     BindingGroup, BindingGroupType, BindingGroupUpdates, Buffer, BufferUsage, Command, Device,
     GfxBindingGroup, GfxBuffer, ImageLayout, Pipeline,
@@ -58,11 +59,15 @@ impl Clone for GPUMesh {
 
 type ResourceKey = (ModelId, PassId);
 
+const STAGING_BUFFER_SIZE: usize = 1_048_576;
+
 pub struct MeshResourceManager {
     pub mesh_data: HashMap<ResourceKey, Vec<GPUMesh>>,
     pub transient_mesh_data: Vec<HashMap<ResourceKey, Vec<GPUMesh>>>,
     pub material_bindings: HashMap<MaterialInstanceId, GfxBindingGroup>,
     pub textures: HashMap<TextureId, GpuTexture>,
+    pub staging: GfxBuffer,
+    pub buffer_pool: ObjectPool<BufferUsage, GfxBuffer>,
 }
 
 impl MeshResourceManager {
@@ -75,6 +80,13 @@ impl MeshResourceManager {
             transient_mesh_data,
             material_bindings: HashMap::new(),
             textures: HashMap::new(),
+            staging: GfxBuffer::new(
+                "staging",
+                STAGING_BUFFER_SIZE,
+                BufferUsage::Staging,
+                &ctx.device,
+            ),
+            buffer_pool: ObjectPool::new(),
         }
     }
 
@@ -88,10 +100,23 @@ impl MeshResourceManager {
         self.debug_stats();
         let frame_id = ctx.frame_id();
 
+        for (_, mut data) in self.transient_mesh_data[frame_id].drain() {
+            for mesh in data.drain(..) {
+                let index = Arc::into_inner(mesh.index_buffer);
+                if let Some(buffer) = index {
+                    self.buffer_pool.insert(buffer.usage(), buffer);
+                }
+                let vertex = Arc::into_inner(mesh.vertex_buffer);
+                if let Some(buffer) = vertex {
+                    self.buffer_pool.insert(buffer.usage(), buffer);
+                }
+            }
+        }
         self.transient_mesh_data[frame_id].clear();
         frame_id
     }
 
+    #[tracing::instrument(target = "resources", skip_all, level = "debug")]
     pub fn add_object(
         &mut self,
         ctx: &Context,
@@ -105,14 +130,14 @@ impl MeshResourceManager {
             let cached = self.mesh_data.contains_key(&key);
 
             if !cached {
-                let data = self.load_object(ctx, object.clone(), pass.clone());
+                let data = self.load_object(ctx, object.clone(), pass.clone(), lifetime);
                 self.mesh_data.insert(key, data);
             }
 
             self.mesh_data.get(&key).expect("Get mesh data")
         } else {
             let frame_id = ctx.frame_id();
-            let data = self.load_object(ctx, object.clone(), pass.clone());
+            let data = self.load_object(ctx, object.clone(), pass.clone(), lifetime);
             self.transient_mesh_data[frame_id].insert(key, data);
 
             self.transient_mesh_data[frame_id]
@@ -126,9 +151,10 @@ impl MeshResourceManager {
         ctx: &Context,
         bounding_box: BoundingBox,
         pass: RenderPass,
+        lifetime: RenderableLifetime,
     ) -> &[GPUMesh] {
         let frame_id = ctx.frame_id();
-        let (model, data) = self.load_box(ctx, bounding_box, pass.clone());
+        let (model, data) = self.load_box(ctx, bounding_box, pass.clone(), lifetime);
         let key = (model.id, pass.id());
 
         self.transient_mesh_data[frame_id].insert(key, data);
@@ -138,7 +164,14 @@ impl MeshResourceManager {
             .expect("Get transient box data")
     }
 
-    fn load_object(&mut self, ctx: &Context, model: Arc<Model>, pass: RenderPass) -> Vec<GPUMesh> {
+    #[tracing::instrument(target = "resources", skip_all, level = "debug")]
+    fn load_object(
+        &mut self,
+        ctx: &Context,
+        model: Arc<Model>,
+        pass: RenderPass,
+        lifetime: RenderableLifetime,
+    ) -> Vec<GPUMesh> {
         let mut gpu_meshes = Vec::new();
 
         let mut indices = Vec::new();
@@ -176,7 +209,8 @@ impl MeshResourceManager {
             ))
         }
 
-        let (vertex_buffer, index_buffer) = Self::upload_vertices(ctx, &vertices, &indices);
+        let (vertex_buffer, index_buffer) =
+            self.upload_vertices(ctx, &vertices, &indices, lifetime);
 
         for (&material_id, vertices_offset, indices_offset, indices_len) in vertex_data {
             let material = model.materials.get(&material_id).cloned();
@@ -205,6 +239,7 @@ impl MeshResourceManager {
         ctx: &Context,
         bounding_box: BoundingBox,
         pass: RenderPass,
+        lifetime: RenderableLifetime,
     ) -> (Arc<Model>, Vec<GPUMesh>) {
         tracing::debug!("New box");
 
@@ -246,7 +281,7 @@ impl MeshResourceManager {
 
         let model = Model::builder("box").mesh(mesh, None).build();
 
-        (model.clone(), self.load_object(ctx, model, pass))
+        (model.clone(), self.load_object(ctx, model, pass, lifetime))
     }
 
     fn load_material(
@@ -302,38 +337,69 @@ impl MeshResourceManager {
         }
     }
 
+    fn allocate_buffer(
+        &mut self,
+        ctx: &Context,
+        name: &str,
+        size: usize,
+        usage: BufferUsage,
+    ) -> GfxBuffer {
+        while self.buffer_pool.contains(&usage) {
+            let buffer = self.buffer_pool.pop(&usage);
+
+            if let Some(buffer) = buffer {
+                if buffer.size() >= size {
+                    tracing::debug!(
+                        "Reuse buffer {:?}, {} ({})",
+                        usage,
+                        size,
+                        self.buffer_pool.get(&usage).unwrap().len()
+                    );
+
+                    return buffer;
+                }
+            }
+        }
+
+        tracing::debug!("Allocate new buffer {:?}, {}", usage, size);
+        GfxBuffer::new(name, size, usage, &ctx.device)
+    }
+
+    #[tracing::instrument(target = "resources", skip_all, level = "debug")]
     fn upload_vertices(
+        &mut self,
         ctx: &Context,
         vertices: &[u8],
         indices: &[u32],
+        _lifetime: RenderableLifetime,
     ) -> (Arc<GfxBuffer>, Arc<GfxBuffer>) {
         let vertices_size = vertices.len();
         let indices_size = indices.len() * std::mem::size_of::<u32>();
 
-        let mut staging = GfxBuffer::new(
-            "staging",
-            indices_size + vertices_size,
-            BufferUsage::Staging,
-            &ctx.device,
-        );
+        let staging_size = indices_size + vertices_size;
 
-        let vertex_buffer =
-            GfxBuffer::new("vertex", vertices_size, BufferUsage::Vertex, &ctx.device);
-        let index_buffer = GfxBuffer::new("index", indices_size, BufferUsage::Index, &ctx.device);
+        if staging_size > self.staging.size() {
+            tracing::warn!("Increase staging buffer size: {}", staging_size);
 
-        staging.copy(&vertices, 0);
-        staging.copy(&indices, vertices_size);
+            self.staging = GfxBuffer::new(
+                "staging",
+                indices_size + vertices_size,
+                BufferUsage::Staging,
+                &ctx.device,
+            );
+        };
+
+        let vertex_buffer = self.allocate_buffer(ctx, "vertex", vertices_size, BufferUsage::Vertex);
+        let index_buffer = self.allocate_buffer(ctx, "index", indices_size, BufferUsage::Index);
+
+        self.staging.copy(&vertices, 0);
+        self.staging.copy(&indices, vertices_size);
 
         ctx.device.run_immediate(|cmd| {
             cmd.begin_label("Upload buffer");
 
-            cmd.copy_buffer(&staging, &vertex_buffer, vertex_buffer.size(), 0);
-            cmd.copy_buffer(
-                &staging,
-                &index_buffer,
-                index_buffer.size(),
-                vertex_buffer.size(),
-            );
+            cmd.copy_buffer(&self.staging, &vertex_buffer, vertices_size, 0);
+            cmd.copy_buffer(&self.staging, &index_buffer, indices_size, vertices_size);
             cmd.end_label();
         });
 

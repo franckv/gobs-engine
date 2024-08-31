@@ -76,10 +76,11 @@ impl RenderBatch {
         bounding_box: BoundingBox,
         transform: Transform,
         pass: RenderPass,
+        lifetime: RenderableLifetime,
     ) {
         let mesh_data =
             self.mesh_resource_manager
-                .add_bounding_box(ctx, bounding_box, pass.clone());
+                .add_bounding_box(ctx, bounding_box, pass.clone(), lifetime);
 
         for mesh in mesh_data {
             let render_object = RenderObject {

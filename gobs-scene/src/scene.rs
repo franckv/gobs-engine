@@ -94,6 +94,7 @@ impl Scene {
                     node.bounding.bounding_box,
                     node.global_transform(),
                     pass.clone(),
+                    RenderableLifetime::Transient,
                 );
             }
         });
