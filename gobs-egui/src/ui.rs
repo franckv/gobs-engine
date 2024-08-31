@@ -376,13 +376,18 @@ impl Renderable for UIRenderer {
         ctx: &Context,
         pass: RenderPass,
         batch: &mut RenderBatch,
-        _transform: Transform,
+        transform: Option<Transform>,
         lifetime: RenderableLifetime,
     ) {
         let output = self.output.write().take().unwrap();
 
+        let transform = match transform {
+            Some(transform) => transform,
+            None => Transform::IDENTITY,
+        };
+
         if let Some(model) = self.load_model(output) {
-            batch.add_model(ctx, model, Transform::IDENTITY, pass.clone(), lifetime);
+            batch.add_model(ctx, model, transform, pass.clone(), lifetime);
         }
 
         batch.add_extent_data(

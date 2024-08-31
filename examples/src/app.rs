@@ -4,7 +4,7 @@ use image::{ImageBuffer, Rgba};
 use renderdoc::{RenderDoc, V141};
 
 use gobs::{
-    core::{ImageFormat, Transform},
+    core::ImageFormat,
     game::input::{Input, Key},
     render::{
         BlendMode, Context, FrameGraph, Material, MaterialProperty, PassType, RenderError,
@@ -162,23 +162,11 @@ impl SampleApp {
 
         graph.prepare(ctx, &mut |pass, batch| match pass.ty() {
             PassType::Depth | PassType::Forward => {
-                scene.draw(
-                    ctx,
-                    pass,
-                    batch,
-                    Transform::IDENTITY,
-                    RenderableLifetime::Static,
-                );
+                scene.draw(ctx, pass, batch, None, RenderableLifetime::Static);
             }
             PassType::Wire => {
                 if self.draw_wire {
-                    scene.draw(
-                        ctx,
-                        pass,
-                        batch,
-                        Transform::IDENTITY,
-                        RenderableLifetime::Static,
-                    );
+                    scene.draw(ctx, pass, batch, None, RenderableLifetime::Static);
                 }
             }
             PassType::Bounds => {
@@ -188,13 +176,7 @@ impl SampleApp {
             }
             PassType::Ui => {
                 if self.draw_ui {
-                    ui.draw(
-                        ctx,
-                        pass,
-                        batch,
-                        Transform::IDENTITY,
-                        RenderableLifetime::Transient,
-                    );
+                    ui.draw(ctx, pass, batch, None, RenderableLifetime::Transient);
                 }
             }
             _ => {}
@@ -221,13 +203,7 @@ impl SampleApp {
 
         graph.prepare(ctx, &mut |pass, batch| match pass.ty() {
             PassType::Ui => {
-                ui.draw(
-                    ctx,
-                    pass,
-                    batch,
-                    Transform::IDENTITY,
-                    RenderableLifetime::Transient,
-                );
+                ui.draw(ctx, pass, batch, None, RenderableLifetime::Transient);
             }
             _ => (),
         });
@@ -253,13 +229,7 @@ impl SampleApp {
 
         graph.prepare(ctx, &mut |pass, batch| match pass.ty() {
             PassType::Depth | PassType::Forward => {
-                scene.draw(
-                    ctx,
-                    pass,
-                    batch,
-                    Transform::IDENTITY,
-                    RenderableLifetime::Static,
-                );
+                scene.draw(ctx, pass, batch, None, RenderableLifetime::Static);
             }
             _ => {}
         });

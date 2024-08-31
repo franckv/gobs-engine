@@ -41,7 +41,7 @@ pub trait Renderable {
         ctx: &Context,
         pass: RenderPass,
         batch: &mut RenderBatch,
-        transform: Transform,
+        transform: Option<Transform>,
         lifetime: RenderableLifetime,
     );
 }

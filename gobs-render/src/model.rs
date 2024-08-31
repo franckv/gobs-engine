@@ -44,10 +44,12 @@ impl Renderable for Arc<Model> {
         ctx: &Context,
         pass: RenderPass,
         batch: &mut RenderBatch,
-        transform: Transform,
+        transform: Option<Transform>,
         lifetime: RenderableLifetime,
     ) {
-        batch.add_model(ctx, self.clone(), transform, pass.clone(), lifetime);
+        if let Some(transform) = transform {
+            batch.add_model(ctx, self.clone(), transform, pass.clone(), lifetime);
+        }
     }
 }
 

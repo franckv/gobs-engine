@@ -116,12 +116,18 @@ impl Renderable for Scene {
         ctx: &Context,
         pass: RenderPass,
         batch: &mut RenderBatch,
-        _transform: Transform,
+        _transform: Option<Transform>,
         lifetime: RenderableLifetime,
     ) {
         self.graph.visit(self.graph.root, &mut |node| {
             if let NodeValue::Model(model) = &node.base.value {
-                model.draw(ctx, pass.clone(), batch, node.global_transform(), lifetime);
+                model.draw(
+                    ctx,
+                    pass.clone(),
+                    batch,
+                    Some(node.global_transform()),
+                    lifetime,
+                );
             }
         });
 
