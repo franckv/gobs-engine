@@ -39,10 +39,8 @@ impl Model {
 }
 
 impl Renderable for Arc<Model> {
-    fn resize(&mut self, _width: u32, _height: u32) {}
-
     fn draw(
-        &mut self,
+        &self,
         ctx: &Context,
         pass: RenderPass,
         batch: &mut RenderBatch,

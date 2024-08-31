@@ -5,7 +5,7 @@ use gobs::{
     core::{Color, Transform},
     game::{app::Run, input::Input},
     gfx::Device,
-    render::{Context, FrameGraph, Model, RenderError, Renderable},
+    render::{Context, FrameGraph, Model, RenderError},
     resource::entity::light::Light,
     scene::{components::NodeValue, scene::Scene, shape::Shapes},
 };

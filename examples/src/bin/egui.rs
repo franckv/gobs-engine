@@ -5,7 +5,7 @@ use gobs::{
         input::{Input, Key},
     },
     gfx::Device,
-    render::{Context, FrameGraph, PassType, RenderError, Renderable},
+    render::{Context, FrameGraph, PassType, RenderError},
     ui::UIRenderer,
 };
 use renderdoc::{RenderDoc, V141};
@@ -59,7 +59,7 @@ impl Run for App {
         self.common.render_ui(ctx, &mut self.graph, &mut self.ui)
     }
 
-    fn input(&mut self, ctx: &Context, input: Input) {
+    fn input(&mut self, _ctx: &Context, input: Input) {
         self.ui.input(input);
         match input {
             Input::KeyPressed(key) => match key {
@@ -69,8 +69,6 @@ impl Run for App {
                     if let Ok(mut rd) = rd {
                         rd.trigger_capture();
                     }
-
-                    self.ui.dump_model(ctx);
                 }
                 _ => (),
             },

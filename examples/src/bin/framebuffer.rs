@@ -7,7 +7,7 @@ use gobs::{
         input::Input,
     },
     gfx::Device,
-    render::{Context, FrameGraph, Model, PassType, RenderError, Renderable},
+    render::{Context, FrameGraph, Model, PassType, RenderError},
     resource::{
         entity::light::Light,
         material::{Texture, TextureType},

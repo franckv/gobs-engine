@@ -36,9 +36,8 @@ impl RenderObject {
 }
 
 pub trait Renderable {
-    fn resize(&mut self, width: u32, height: u32);
     fn draw(
-        &mut self,
+        &self,
         ctx: &Context,
         pass: RenderPass,
         batch: &mut RenderBatch,

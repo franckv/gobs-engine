@@ -9,19 +9,16 @@ use glam::{Vec2, Vec3};
 use gobs_core::{Color, ImageExtent2D, SamplerFilter, Transform};
 use gobs_game::input::{Input, Key, MouseButton};
 use gobs_render::{
-    BlendMode, Context, Material, MaterialInstance, MaterialProperty, Model, ModelId, RenderBatch,
+    BlendMode, Context, Material, MaterialInstance, MaterialProperty, Model, RenderBatch,
     RenderPass, Renderable, RenderableLifetime,
 };
 use gobs_resource::{
     geometry::{Mesh, VertexData, VertexFlag},
     material::{Texture, TextureType},
 };
+use parking_lot::RwLock;
 
 const PIXEL_PER_POINT: f32 = 1.;
-
-struct FrameData {
-    model: Option<Arc<Model>>,
-}
 
 pub struct UIRenderer {
     ectx: egui::Context,
@@ -31,8 +28,7 @@ pub struct UIRenderer {
     font_texture: HashMap<TextureId, Arc<MaterialInstance>>,
     input: Vec<Input>,
     mouse_position: (f32, f32),
-    frame_data: Vec<FrameData>,
-    output: Option<FullOutput>,
+    output: RwLock<Option<FullOutput>>,
 }
 
 impl UIRenderer {
@@ -52,10 +48,6 @@ impl UIRenderer {
             .blend_mode(BlendMode::Premultiplied)
             .build(pass);
 
-        let frame_data = (0..ctx.frames_in_flight)
-            .map(|_| FrameData { model: None })
-            .collect();
-
         UIRenderer {
             ectx,
             width,
@@ -64,8 +56,7 @@ impl UIRenderer {
             font_texture: HashMap::new(),
             input: Vec::new(),
             mouse_position: (0., 0.),
-            frame_data,
-            output: None,
+            output: RwLock::new(None),
         }
     }
 
@@ -75,30 +66,12 @@ impl UIRenderer {
         F: FnMut(&egui::Context),
     {
         let input = self.prepare_inputs(delta);
+        let output = self.ectx.run(input, callback);
 
-        self.output = Some(self.ectx.run(input, callback));
-    }
-
-    #[tracing::instrument(target = "ui", skip_all, level = "debug")]
-    fn upload_ui_data(&mut self, ctx: &Context, output: FullOutput) {
         self.update_textures(&output);
-
         self.cleanup_textures(&output);
 
-        let model_id = match &self.frame_data[ctx.frame_id()].model {
-            Some(model) => Some(model.id),
-            None => None,
-        };
-
-        let model = self.load_model(output, model_id);
-
-        self.frame_data[ctx.frame_id()].model = model;
-    }
-
-    pub fn dump_model(&self, ctx: &Context) {
-        if let Some(model) = self.frame_data[ctx.frame_id()].model.clone() {
-            tracing::warn!("Dump model: {:?}", model);
-        }
+        self.output.write().replace(output);
     }
 
     fn get_key(key: Key) -> egui::Key {
@@ -331,7 +304,7 @@ impl UIRenderer {
     }
 
     #[tracing::instrument(target = "ui", skip_all, level = "debug")]
-    fn load_model(&mut self, output: FullOutput, model_id: Option<ModelId>) -> Option<Arc<Model>> {
+    fn load_model(&self, output: FullOutput) -> Option<Arc<Model>> {
         tracing::debug!("Loading model");
 
         let primitives = self.ectx.tessellate(output.shapes, PIXEL_PER_POINT);
@@ -343,10 +316,6 @@ impl UIRenderer {
         }
 
         let mut model = Model::builder("ui");
-
-        if let Some(model_id) = model_id {
-            model = model.id(model_id);
-        }
 
         for primitive in &primitives {
             if let Primitive::Mesh(m) = &primitive.primitive {
@@ -393,32 +362,26 @@ impl UIRenderer {
 
         Some(model.build())
     }
-}
 
-impl Renderable for UIRenderer {
-    fn resize(&mut self, width: u32, height: u32) {
+    pub fn resize(&mut self, width: u32, height: u32) {
         self.width = width as f32;
         self.height = height as f32;
     }
+}
 
+impl Renderable for UIRenderer {
     #[tracing::instrument(target = "ui", skip_all, level = "debug")]
     fn draw(
-        &mut self,
+        &self,
         ctx: &Context,
         pass: RenderPass,
         batch: &mut RenderBatch,
         _transform: Transform,
         lifetime: RenderableLifetime,
     ) {
-        let frame_id = ctx.frame_id();
+        let output = self.output.write().take().unwrap();
 
-        let output = self.output.take().unwrap();
-
-        self.upload_ui_data(ctx, output);
-
-        let model = self.frame_data[frame_id].model.clone();
-
-        if let Some(model) = model {
+        if let Some(model) = self.load_model(output) {
             batch.add_model(ctx, model, Transform::IDENTITY, pass.clone(), lifetime);
         }
 

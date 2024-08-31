@@ -102,17 +102,17 @@ impl Scene {
         let (camera_transform, camera) = self.camera();
         batch.add_camera_data(camera, &camera_transform, light, &light_transform, pass);
     }
-}
 
-impl Renderable for Scene {
-    fn resize(&mut self, width: u32, height: u32) {
+    pub fn resize(&mut self, width: u32, height: u32) {
         self.update_camera(|_, camera| {
             camera.resize(width, height);
         });
     }
+}
 
+impl Renderable for Scene {
     fn draw(
-        &mut self,
+        &self,
         ctx: &Context,
         pass: RenderPass,
         batch: &mut RenderBatch,
@@ -121,13 +121,7 @@ impl Renderable for Scene {
     ) {
         self.graph.visit(self.graph.root, &mut |node| {
             if let NodeValue::Model(model) = &node.base.value {
-                batch.add_model(
-                    ctx,
-                    model.clone(),
-                    node.global_transform(),
-                    pass.clone(),
-                    lifetime,
-                );
+                model.draw(ctx, pass.clone(), batch, node.global_transform(), lifetime);
             }
         });
 
