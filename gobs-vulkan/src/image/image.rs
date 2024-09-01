@@ -62,7 +62,6 @@ impl Into<vk::ImageUsageFlags> for ImageUsage {
             ImageUsage::File => {
                 vk::ImageUsageFlags::TRANSFER_SRC
                     | vk::ImageUsageFlags::TRANSFER_DST
-                    | vk::ImageUsageFlags::COLOR_ATTACHMENT
                     | vk::ImageUsageFlags::STORAGE
             }
         }
