@@ -7,12 +7,17 @@ use gobs_resource::geometry::{Mesh, VertexData};
 
 const T_MIN: f32 = 0.01;
 const T_MAX: f32 = 1. - T_MIN;
-const PADDING: bool = true;
 
 pub struct Shapes;
 
 impl Shapes {
-    pub fn triangle(color1: Color, color2: Color, color3: Color, size: f32) -> Arc<Mesh> {
+    pub fn triangle(
+        color1: Color,
+        color2: Color,
+        color3: Color,
+        size: f32,
+        padding: bool,
+    ) -> Arc<Mesh> {
         let mut builder = Mesh::builder("triangle");
 
         let (top, bottom, left, right) = (size / 2., -size / 2., -size / 2., size / 2.);
@@ -47,7 +52,7 @@ impl Shapes {
                 .color(c[ci[i] - 1])
                 .normal(n[ni[i] - 1].into())
                 .texture(t[ti[i] - 1].into())
-                .padding(PADDING)
+                .padding(padding)
                 .build();
 
             builder = builder.vertex(vertex_data)
@@ -56,7 +61,14 @@ impl Shapes {
         builder.build()
     }
 
-    pub fn rect(color: Color, top: f32, bottom: f32, left: f32, right: f32) -> Arc<Mesh> {
+    pub fn rect(
+        color: Color,
+        top: f32,
+        bottom: f32,
+        left: f32,
+        right: f32,
+        padding: bool,
+    ) -> Arc<Mesh> {
         let mut builder = Mesh::builder("rect");
 
         let v = [
@@ -87,7 +99,7 @@ impl Shapes {
                 .color(color)
                 .texture(t[ti[i] - 1].into())
                 .normal(n[ni[i] - 1].into())
-                .padding(PADDING)
+                .padding(padding)
                 .build();
 
             builder = builder.vertex(vertex_data);
@@ -96,11 +108,11 @@ impl Shapes {
         builder.build()
     }
 
-    pub fn quad(color: Color) -> Arc<Mesh> {
-        Self::rect(color, 0.5, -0.5, -0.5, 0.5)
+    pub fn quad(color: Color, padding: bool) -> Arc<Mesh> {
+        Self::rect(color, 0.5, -0.5, -0.5, 0.5, padding)
     }
 
-    pub fn cubemap(cols: u32, rows: u32, index: &[u32], size: f32) -> Arc<Mesh> {
+    pub fn cubemap(cols: u32, rows: u32, index: &[u32], size: f32, padding: bool) -> Arc<Mesh> {
         let mut builder = Mesh::builder("cube");
 
         let (top, bottom, left, right, front, back) = (
@@ -177,7 +189,7 @@ impl Shapes {
                     index[(i / index.len()) % index.len()],
                 ))
                 .normal(n[ni[i] - 1].into())
-                .padding(PADDING)
+                .padding(padding)
                 .build();
 
             builder = builder.vertex(vertex_data);

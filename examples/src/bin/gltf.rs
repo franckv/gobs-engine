@@ -120,7 +120,7 @@ impl App {
     }
 
     fn load_scene(&self, ctx: &Context) -> SceneGraph {
-        let file_name = load::get_asset_dir("house.glb", load::AssetType::MODEL).unwrap();
+        let file_name = load::get_asset_dir("house2.glb", load::AssetType::MODEL).unwrap();
 
         let mut gltf_loader =
             gltf::GLTFLoader::new(ctx, self.graph.pass_by_type(PassType::Forward).unwrap());

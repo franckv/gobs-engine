@@ -271,7 +271,7 @@ impl MeshResourceManager {
         for i in 0..vi.len() {
             let vertex_data = VertexData::builder()
                 .position(v[vi[i] - 1].into())
-                .padding(true)
+                .padding(ctx.vertex_padding)
                 .build();
 
             mesh = mesh.vertex(vertex_data);
@@ -337,6 +337,7 @@ impl MeshResourceManager {
         }
     }
 
+    #[tracing::instrument(target = "resources", skip_all, level = "debug")]
     fn allocate_buffer(
         &mut self,
         ctx: &Context,
@@ -397,7 +398,6 @@ impl MeshResourceManager {
 
         ctx.device.run_immediate(|cmd| {
             cmd.begin_label("Upload buffer");
-
             cmd.copy_buffer(&self.staging, &vertex_buffer, vertices_size, 0);
             cmd.copy_buffer(&self.staging, &index_buffer, indices_size, vertices_size);
             cmd.end_label();

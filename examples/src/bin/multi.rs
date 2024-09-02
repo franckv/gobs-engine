@@ -133,11 +133,17 @@ impl App {
 
         let model = Model::builder("multi")
             .mesh(
-                Shapes::triangle(Color::RED, Color::GREEN, Color::BLUE, 1.5),
+                Shapes::triangle(
+                    Color::RED,
+                    Color::GREEN,
+                    Color::BLUE,
+                    1.5,
+                    ctx.vertex_padding,
+                ),
                 Some(color_material_instance),
             )
             .mesh(
-                Shapes::cubemap(1, 1, &[1], 1.),
+                Shapes::cubemap(1, 1, &[1], 1., ctx.vertex_padding),
                 Some(diffuse_material_instance),
             )
             .build();

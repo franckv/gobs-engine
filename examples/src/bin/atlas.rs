@@ -157,6 +157,7 @@ impl App {
                     examples::ATLAS_ROWS,
                     &[3, 3, 3, 3, 4, 1],
                     1.,
+                    ctx.vertex_padding,
                 ),
                 Some(material_instance),
             )

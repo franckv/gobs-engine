@@ -81,7 +81,7 @@ impl VertexFlag {
 
 #[derive(Clone, Copy, Debug, Serialize)]
 pub struct VertexData {
-    pub padding: bool,
+    pub padding: bool, // false for vertex buffer, true for storage buffer
     pub position: Vec3,
     pub color: Color,
     pub texture: Vec2,

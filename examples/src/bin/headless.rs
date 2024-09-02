@@ -75,7 +75,13 @@ impl App {
 
         let triangle = Model::builder("triangle")
             .mesh(
-                Shapes::triangle(Color::RED, Color::GREEN, Color::BLUE, 1.),
+                Shapes::triangle(
+                    Color::RED,
+                    Color::GREEN,
+                    Color::BLUE,
+                    1.,
+                    ctx.vertex_padding,
+                ),
                 Some(material_instance),
             )
             .build();

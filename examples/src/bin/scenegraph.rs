@@ -167,7 +167,10 @@ impl App {
         let material_instance = material.instantiate(vec![diffuse_texture, normal_texture]);
 
         let cube = Model::builder("cube")
-            .mesh(Shapes::cubemap(1, 1, &[1], 1.), Some(material_instance))
+            .mesh(
+                Shapes::cubemap(1, 1, &[1], 1., ctx.vertex_padding),
+                Some(material_instance),
+            )
             .build();
 
         let graph = &mut self.scene.graph;

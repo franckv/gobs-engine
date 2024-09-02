@@ -106,14 +106,20 @@ impl App {
 
         let triangle = Model::builder("triangle")
             .mesh(
-                Shapes::triangle(Color::RED, Color::GREEN, Color::BLUE, 1.),
+                Shapes::triangle(
+                    Color::RED,
+                    Color::GREEN,
+                    Color::BLUE,
+                    1.,
+                    ctx.vertex_padding,
+                ),
                 Some(material_instance),
             )
             .build();
 
         let square = Model::builder("square")
             .mesh(
-                Shapes::quad(Color::new(1., 1., 1., 0.5)),
+                Shapes::quad(Color::new(1., 1., 1., 0.5), ctx.vertex_padding),
                 //Shapes::quad(Color::new(1., 1., 1., 0.5)),
                 Some(transparent_material_instance),
             )

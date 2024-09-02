@@ -69,11 +69,11 @@ impl Device<VkRenderer> for VkDevice {
         }))
     }
 
+    #[tracing::instrument(target = "gpu", skip_all, level = "debug")]
     fn run_immediate<F>(&self, callback: F)
     where
         F: Fn(&VkCommand),
     {
-        tracing::debug!("Submit immediate command");
         let cmd = &self.immediate_cmd.command;
 
         cmd.fence.reset();
@@ -90,7 +90,6 @@ impl Device<VkRenderer> for VkDevice {
         cmd.submit2(None, None);
 
         cmd.fence.wait();
-        tracing::debug!("Immediate command done");
     }
 
     fn run_immediate_mut<F>(&self, mut callback: F)

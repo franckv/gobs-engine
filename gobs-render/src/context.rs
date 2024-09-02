@@ -15,6 +15,7 @@ pub struct Context {
     pub frames_in_flight: usize,
     pub stats_refresh: usize,
     pub frame_number: usize,
+    pub vertex_padding: bool,
 }
 
 const FRAMES_IN_FLIGHT: usize = 2;
@@ -37,6 +38,7 @@ impl Context {
             frames_in_flight: FRAMES_IN_FLIGHT,
             stats_refresh: 60,
             frame_number: 0,
+            vertex_padding: true,
         }
     }
 

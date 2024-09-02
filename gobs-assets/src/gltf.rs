@@ -9,11 +9,9 @@ use gltf::{
 };
 
 use gobs_core::{Color, ImageExtent2D, SamplerFilter, Transform};
-use gobs_render::{
-    BlendMode, Context, Model, RenderPass, {Material, MaterialInstance, MaterialProperty},
-};
+use gobs_render::{BlendMode, Context, Model, RenderPass};
 use gobs_resource::{
-    geometry::{Mesh, VertexData, VertexFlag},
+    geometry::{Mesh, VertexData},
     material::{Texture, TextureType},
 };
 use gobs_scene::{
@@ -21,23 +19,24 @@ use gobs_scene::{
     graph::scenegraph::SceneGraph,
 };
 
+use crate::manager::MaterialManager;
+
 pub struct GLTFLoader {
-    texture_manager: TextureManager,
     material_manager: MaterialManager,
     pub models: Vec<Arc<Model>>,
     pub scene: SceneGraph,
+    pub vertex_padding: bool,
 }
 
 impl GLTFLoader {
     pub fn new(ctx: &Context, pass: RenderPass) -> Self {
-        let texture_manager = TextureManager::new();
-        let material_manager = MaterialManager::new(ctx, pass, &texture_manager);
+        let material_manager = MaterialManager::new(ctx, pass);
 
-        GLTFLoader {
-            texture_manager,
+        Self {
             material_manager,
             models: vec![],
             scene: SceneGraph::new(),
+            vertex_padding: ctx.vertex_padding,
         }
     }
 
@@ -47,8 +46,7 @@ impl GLTFLoader {
     {
         let (doc, buffers, images) = gltf::import(&file).expect(&format!("Load asset: {:?}", file));
 
-        self.texture_manager.load(&doc, &images);
-        self.material_manager.load(&doc, &self.texture_manager);
+        self.load_material(&doc, &images);
 
         self.load_models(&doc, &buffers);
         self.load_scene(&doc);
@@ -131,7 +129,7 @@ impl GLTFLoader {
                         mesh_data = mesh_data.vertex(
                             VertexData::builder()
                                 .position(pos.into())
-                                .padding(true)
+                                .padding(self.vertex_padding)
                                 .build(),
                         );
                     }
@@ -188,202 +186,8 @@ impl GLTFLoader {
 
         tracing::info!("{} models loaded", self.models.len());
     }
-}
 
-struct MaterialManager {
-    pub instances: Vec<Arc<MaterialInstance>>,
-    pub default_material_instance: Arc<MaterialInstance>,
-    pub texture: Arc<Material>,
-    pub transparent_texture: Arc<Material>,
-    pub texture_normal: Arc<Material>,
-    pub transparent_texture_normal: Arc<Material>,
-    pub color_instance: Arc<MaterialInstance>,
-    pub transparent_color_instance: Arc<MaterialInstance>,
-}
-
-impl MaterialManager {
-    fn new(ctx: &Context, pass: RenderPass, texture_manager: &TextureManager) -> Self {
-        let vertex_flags = VertexFlag::POSITION
-            | VertexFlag::TEXTURE
-            | VertexFlag::NORMAL
-            | VertexFlag::TANGENT
-            | VertexFlag::BITANGENT;
-
-        let texture = Material::builder(ctx, "gltf.texture.vert.spv", "gltf.texture.frag.spv")
-            .vertex_flags(vertex_flags)
-            .prop("diffuse", MaterialProperty::Texture)
-            .build(pass.clone());
-
-        let transparent_texture =
-            Material::builder(ctx, "gltf.texture.vert.spv", "gltf.texture.frag.spv")
-                .vertex_flags(vertex_flags)
-                .prop("diffuse", MaterialProperty::Texture)
-                .blend_mode(BlendMode::Alpha)
-                .build(pass.clone());
-
-        let texture_normal =
-            Material::builder(ctx, "gltf.texture.vert.spv", "gltf.texture_n.frag.spv")
-                .vertex_flags(vertex_flags)
-                .prop("diffuse", MaterialProperty::Texture)
-                .prop("normal", MaterialProperty::Texture)
-                .build(pass.clone());
-
-        let transparent_texture_normal =
-            Material::builder(ctx, "gltf.texture.vert.spv", "gltf.texture_n.frag.spv")
-                .vertex_flags(vertex_flags)
-                .prop("diffuse", MaterialProperty::Texture)
-                .prop("normal", MaterialProperty::Texture)
-                .blend_mode(BlendMode::Alpha)
-                .build(pass.clone());
-
-        let vertex_flags = VertexFlag::POSITION
-            | VertexFlag::COLOR
-            | VertexFlag::NORMAL
-            | VertexFlag::TANGENT
-            | VertexFlag::BITANGENT;
-
-        let color = Material::builder(
-            ctx,
-            "gltf.color_light.vert.spv",
-            "gltf.color_light.frag.spv",
-        )
-        .vertex_flags(vertex_flags)
-        .build(pass.clone());
-
-        let transparent_color = Material::builder(
-            ctx,
-            "gltf.color_light.vert.spv",
-            "gltf.color_light.frag.spv",
-        )
-        .vertex_flags(vertex_flags)
-        .blend_mode(BlendMode::Alpha)
-        .build(pass.clone());
-
-        let default_material_instance = texture
-            .clone()
-            .instantiate(vec![texture_manager.default_texture.clone()]);
-        tracing::debug!("Default material id: {}", default_material_instance.id);
-
-        let color_instance = color.instantiate(vec![]);
-        tracing::debug!("Color material id: {}", color_instance.id);
-
-        let transparent_color_instance = transparent_color.instantiate(vec![]);
-        tracing::debug!("Color material id: {}", transparent_color_instance.id);
-
-        MaterialManager {
-            instances: vec![],
-            default_material_instance,
-            texture,
-            transparent_texture,
-            texture_normal,
-            transparent_texture_normal,
-            color_instance,
-            transparent_color_instance,
-        }
-    }
-
-    fn load(&mut self, doc: &Document, texture_manager: &TextureManager) {
-        for mat in doc.materials() {
-            let name = mat.name().unwrap_or_default();
-            if let Some(idx) = mat.index() {
-                tracing::info!("Material #{}: {}", idx, name);
-
-                let pbr = mat.pbr_metallic_roughness();
-                let diffuse = pbr.base_color_texture();
-
-                match diffuse {
-                    Some(tex_info) => {
-                        tracing::info!(
-                            "Using texture #{}: {}",
-                            tex_info.texture().index(),
-                            tex_info.texture().name().unwrap_or_default()
-                        );
-                        let texture = texture_manager.textures[tex_info.texture().index()].clone();
-                        match mat.normal_texture() {
-                            Some(normal) => {
-                                let normal_texture =
-                                    texture_manager.textures[normal.texture().index()].clone();
-                                self.add_texture_normal_instance(
-                                    mat.alpha_mode(),
-                                    texture,
-                                    normal_texture,
-                                )
-                            }
-                            None => self.add_texture_instance(mat.alpha_mode(), texture),
-                        };
-                    }
-                    None => {
-                        let color: Color = pbr.base_color_factor().into();
-                        tracing::info!("Using color material: {:?}", color);
-                        self.add_color_instance(mat.alpha_mode());
-                    }
-                }
-            } else {
-                tracing::info!("Using default material");
-            }
-        }
-
-        tracing::info!("{} materials loaded", self.instances.len());
-    }
-
-    fn add_texture_instance(
-        &mut self,
-        alpha: AlphaMode,
-        texture: Arc<Texture>,
-    ) -> Arc<MaterialInstance> {
-        let material_instance = match alpha {
-            AlphaMode::Blend => self.transparent_texture.instantiate(vec![texture]),
-            _ => self.texture.instantiate(vec![texture]),
-        };
-        self.instances.push(material_instance.clone());
-
-        material_instance
-    }
-
-    fn add_texture_normal_instance(
-        &mut self,
-        alpha: AlphaMode,
-        diffuse: Arc<Texture>,
-        normal: Arc<Texture>,
-    ) -> Arc<MaterialInstance> {
-        let material_instance = match alpha {
-            AlphaMode::Blend => self
-                .transparent_texture_normal
-                .instantiate(vec![diffuse, normal]),
-            _ => self.texture_normal.instantiate(vec![diffuse, normal]),
-        };
-        self.instances.push(material_instance.clone());
-
-        material_instance
-    }
-
-    fn add_color_instance(&mut self, alpha: AlphaMode) -> Arc<MaterialInstance> {
-        let material_instance = match alpha {
-            AlphaMode::Blend => self.transparent_color_instance.clone(),
-            _ => self.color_instance.clone(),
-        };
-        self.instances.push(material_instance.clone());
-
-        material_instance
-    }
-}
-
-struct TextureManager {
-    pub textures: Vec<Arc<Texture>>,
-    pub default_texture: Arc<Texture>,
-}
-
-impl TextureManager {
-    fn new() -> Self {
-        let default_texture = Texture::default();
-
-        TextureManager {
-            textures: vec![],
-            default_texture,
-        }
-    }
-
-    fn load(&mut self, doc: &Document, images: &[image::Data]) {
+    fn load_textures(&mut self, doc: &Document, images: &[image::Data]) {
         tracing::info!("Reading {} images", images.len());
 
         for t in doc.textures() {
@@ -443,7 +247,7 @@ impl TextureManager {
                         min_filter,
                     );
 
-                    self.add(texture);
+                    self.material_manager.add_texture(texture);
                 }
                 image::Format::R8G8B8 => {
                     let mut pixels = vec![];
@@ -464,23 +268,74 @@ impl TextureManager {
                         min_filter,
                     );
 
-                    self.add(texture);
+                    self.material_manager.add_texture(texture);
                 }
                 _ => {
-                    self.add_default();
+                    self.material_manager.add_default_texture();
                     tracing::warn!("Unsupported image format: {:?}", data.format)
                 }
             };
         }
 
-        tracing::info!("{} textures loaded", self.textures.len());
+        tracing::info!(
+            "{} textures loaded",
+            self.material_manager.texture_manager.textures.len()
+        );
     }
 
-    fn add(&mut self, texture: Arc<Texture>) {
-        self.textures.push(texture);
+    fn into_blend_mode(alpha: AlphaMode) -> BlendMode {
+        match alpha {
+            AlphaMode::Blend => BlendMode::Alpha,
+            _ => BlendMode::None,
+        }
     }
 
-    fn add_default(&mut self) {
-        self.textures.push(self.default_texture.clone());
+    fn load_material(&mut self, doc: &Document, images: &[image::Data]) {
+        self.load_textures(&doc, &images);
+
+        for mat in doc.materials() {
+            let name = mat.name().unwrap_or_default();
+            if let Some(idx) = mat.index() {
+                tracing::info!("Material #{}: {}", idx, name);
+
+                let pbr = mat.pbr_metallic_roughness();
+                let diffuse = pbr.base_color_texture();
+
+                match diffuse {
+                    Some(tex_info) => {
+                        tracing::info!(
+                            "Using texture #{}: {}",
+                            tex_info.texture().index(),
+                            tex_info.texture().name().unwrap_or_default()
+                        );
+                        let texture = tex_info.texture().index();
+                        match mat.normal_texture() {
+                            Some(normal) => {
+                                let normal_texture = normal.texture().index();
+                                self.material_manager.add_texture_normal_instance(
+                                    Self::into_blend_mode(mat.alpha_mode()),
+                                    texture,
+                                    normal_texture,
+                                )
+                            }
+                            None => self.material_manager.add_texture_instance(
+                                Self::into_blend_mode(mat.alpha_mode()),
+                                texture,
+                            ),
+                        };
+                    }
+                    None => {
+                        let color: Color = pbr.base_color_factor().into();
+                        tracing::info!("Using color material: {:?}", color);
+                        self.material_manager
+                            .add_color_instance(Self::into_blend_mode(mat.alpha_mode()));
+                    }
+                }
+            } else {
+                tracing::info!("Using default material");
+            }
+        }
+
+        tracing::info!("{} materials loaded", self.material_manager.instances.len());
     }
 }

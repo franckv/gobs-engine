@@ -304,7 +304,7 @@ impl UIRenderer {
     }
 
     #[tracing::instrument(target = "ui", skip_all, level = "debug")]
-    fn load_model(&self, output: FullOutput) -> Option<Arc<Model>> {
+    fn load_model(&self, ctx: &Context, output: FullOutput) -> Option<Arc<Model>> {
         tracing::debug!("Loading model");
 
         let primitives = self.ectx.tessellate(output.shapes, PIXEL_PER_POINT);
@@ -345,7 +345,7 @@ impl UIRenderer {
                         .color(color)
                         .texture(Vec2::new(vertex.uv.x, vertex.uv.y))
                         .normal(Vec3::new(0., 0., 1.))
-                        .padding(true)
+                        .padding(ctx.vertex_padding)
                         .build();
 
                     mesh = mesh.vertex(vertex_data);
@@ -386,7 +386,7 @@ impl Renderable for UIRenderer {
             None => Transform::IDENTITY,
         };
 
-        if let Some(model) = self.load_model(output) {
+        if let Some(model) = self.load_model(ctx, output) {
             batch.add_model(ctx, model, transform, pass.clone(), lifetime);
         }
 

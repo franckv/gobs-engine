@@ -30,8 +30,8 @@ pub const ATLAS_COLS: u32 = 3;
 pub const ATLAS_ROWS: u32 = 2;
 pub const MAP: &str = include_str!("../assets/dungeon.map");
 pub const TILE_SIZE: f32 = 1.;
-pub const WIDTH: u32 = 800;
-pub const HEIGHT: u32 = 600;
+pub const WIDTH: u32 = 1920;
+pub const HEIGHT: u32 = 1080;
 pub const VALIDATION: bool = true;
 
 pub fn init_logger() {
