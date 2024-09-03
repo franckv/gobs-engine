@@ -11,7 +11,7 @@ mod renderer;
 
 pub use bindgroup::{BindingGroup, BindingGroupType, BindingGroupUpdates};
 pub use buffer::{Buffer, BufferId};
-pub use command::Command;
+pub use command::{Command, CommandQueueType};
 pub use device::Device;
 pub use display::Display;
 pub use image::{Image, Sampler};

@@ -174,11 +174,5 @@ fn main() {
 
     tracing::info!("Engine start");
 
-    Application::<App>::new(
-        "Atlas",
-        examples::WIDTH,
-        examples::HEIGHT,
-        examples::VALIDATION,
-    )
-    .run();
+    Application::<App>::new("Atlas", examples::WIDTH, examples::HEIGHT).run();
 }

@@ -257,5 +257,5 @@ fn main() {
 
     tracing::info!("Engine start");
 
-    Application::<App>::new("Maze", examples::WIDTH, examples::HEIGHT, false).run();
+    Application::<App>::new("Maze", examples::WIDTH, examples::HEIGHT).run();
 }

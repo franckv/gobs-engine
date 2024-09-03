@@ -6,6 +6,9 @@ use crate::Renderer;
 
 pub trait Device<R: Renderer> {
     fn new(instance: Arc<R::Instance>, display: &R::Display) -> Result<Arc<Self>>;
+    fn run_transfer<F>(&self, callback: F)
+    where
+        F: Fn(&R::Command);
     fn run_immediate<F>(&self, callback: F)
     where
         F: Fn(&R::Command);

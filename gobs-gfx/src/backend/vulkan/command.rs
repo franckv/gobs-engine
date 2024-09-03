@@ -5,6 +5,7 @@ use crate::backend::vulkan::{
     bindgroup::VkBindingGroup, buffer::VkBuffer, device::VkDevice, display::VkDisplay,
     image::VkImage, pipeline::VkPipeline, renderer::VkRenderer,
 };
+use crate::command::CommandQueueType;
 use crate::{Command, Image, ImageLayout};
 
 pub struct VkCommand {
@@ -12,15 +13,13 @@ pub struct VkCommand {
 }
 
 impl Command<VkRenderer> for VkCommand {
-    fn new(device: &VkDevice, name: &str) -> Self {
-        let command_pool =
-            vk::command::CommandPool::new(device.device.clone(), &device.queue.family);
-        let command = vk::command::CommandBuffer::new(
-            device.device.clone(),
-            device.queue.clone(),
-            command_pool,
-            name,
-        );
+    fn new(device: &VkDevice, name: &str, ty: CommandQueueType) -> Self {
+        let queue = device.get_queue(ty);
+
+        let command_pool = vk::command::CommandPool::new(device.device.clone(), &queue.family);
+
+        let command =
+            vk::command::CommandBuffer::new(device.device.clone(), queue, command_pool, name);
 
         Self { command }
     }

@@ -97,7 +97,7 @@ impl Display<VkRenderer> for VkDisplay {
         if let Some(ref mut swapchain) = &mut self.swapchain {
             swapchain.present(
                 self.swapchain_idx,
-                &device.queue,
+                &device.graphics_queue,
                 &self.render_semaphores[frame],
             )?;
         }

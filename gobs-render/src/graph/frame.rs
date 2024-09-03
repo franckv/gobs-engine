@@ -3,8 +3,8 @@ use bytemuck::Pod;
 
 use gobs_core::{utils::timer::Timer, ImageExtent2D, ImageFormat};
 use gobs_gfx::{
-    Buffer, BufferUsage, Command, Device, Display, GfxBuffer, GfxCommand, GfxImage, Image,
-    ImageLayout, ImageUsage,
+    Buffer, BufferUsage, Command, CommandQueueType, Device, Display, GfxBuffer, GfxCommand,
+    GfxImage, Image, ImageLayout, ImageUsage,
 };
 
 use crate::{
@@ -36,7 +36,7 @@ pub struct FrameData {
 
 impl FrameData {
     pub fn new(ctx: &Context) -> Self {
-        let command = GfxCommand::new(&ctx.device, "Frame");
+        let command = GfxCommand::new(&ctx.device, "Frame", CommandQueueType::Graphics);
 
         //TODO: let query_pool = QueryPool::new(ctx.device.clone(), QueryType::Timestamp, 2);
 

@@ -8,11 +8,11 @@ use crate::Wrap;
 
 #[derive(Clone)]
 pub struct QueueFamily {
-    pub(crate) index: u32,
-    pub(crate) size: u32,
-    pub(crate) graphics_bit: bool,
-    pub(crate) compute_bits: bool,
-    pub(crate) transfer_bits: bool,
+    pub index: u32,
+    pub size: u32,
+    pub graphics_bit: bool,
+    pub compute_bits: bool,
+    pub transfer_bits: bool,
 }
 
 impl Debug for QueueFamily {
@@ -45,10 +45,10 @@ pub struct Queue {
 }
 
 impl Queue {
-    pub fn new(device: Arc<Device>, family: QueueFamily) -> Arc<Self> {
+    pub fn new(device: Arc<Device>, family: QueueFamily, index: u32) -> Arc<Self> {
         let queue = unsafe {
             tracing::debug!("Create queue");
-            device.raw().get_device_queue(family.index, 0)
+            device.raw().get_device_queue(family.index, index)
         };
 
         Arc::new(Queue {

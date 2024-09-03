@@ -302,11 +302,5 @@ fn main() {
 
     tracing::info!("Engine start");
 
-    Application::<App>::new(
-        "Scenegraph",
-        examples::WIDTH,
-        examples::HEIGHT,
-        examples::VALIDATION,
-    )
-    .run();
+    Application::<App>::new("Scenegraph", examples::WIDTH, examples::HEIGHT).run();
 }

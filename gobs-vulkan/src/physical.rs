@@ -6,7 +6,7 @@ use crate::instance::Instance;
 use crate::queue::QueueFamily;
 use crate::Wrap;
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum PhysicalDeviceType {
     Other,
     IntegratedGpu,
@@ -22,11 +22,17 @@ pub struct PhysicalDevice {
     pub gpu_type: PhysicalDeviceType,
     pub queue_families: Vec<QueueFamily>,
     pub(crate) props: vk::PhysicalDeviceProperties,
+    pub(crate) mem_props: vk::PhysicalDeviceMemoryProperties,
 }
 
 impl PhysicalDevice {
     pub(crate) fn new(instance: &Instance, p_device: vk::PhysicalDevice) -> Self {
         let props = unsafe { instance.instance.get_physical_device_properties(p_device) };
+        let mem_props = unsafe {
+            instance
+                .instance
+                .get_physical_device_memory_properties(p_device)
+        };
 
         let name = unsafe { CStr::from_ptr(props.device_name.as_ptr()).to_str().unwrap() };
 
@@ -45,6 +51,7 @@ impl PhysicalDevice {
             queue_families: Self::get_queue_families(&p_device, &instance),
             p_device,
             props,
+            mem_props,
         }
     }
 

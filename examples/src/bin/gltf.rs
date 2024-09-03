@@ -136,11 +136,5 @@ fn main() {
 
     tracing::info!("Engine start");
 
-    Application::<App>::new(
-        "glTF",
-        examples::WIDTH,
-        examples::HEIGHT,
-        examples::VALIDATION,
-    )
-    .run();
+    Application::<App>::new("glTF", examples::WIDTH, examples::HEIGHT).run();
 }

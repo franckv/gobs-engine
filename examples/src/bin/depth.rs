@@ -148,11 +148,5 @@ fn main() {
 
     tracing::info!("Engine start");
 
-    Application::<App>::new(
-        "Depth test",
-        examples::WIDTH,
-        examples::HEIGHT,
-        examples::VALIDATION,
-    )
-    .run();
+    Application::<App>::new("Depth test", examples::WIDTH, examples::HEIGHT).run();
 }

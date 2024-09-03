@@ -7,12 +7,15 @@ use gobs_vulkan as vk;
 use crate::backend::vulkan::{
     command::VkCommand, display::VkDisplay, instance::VkInstance, renderer::VkRenderer,
 };
+use crate::command::CommandQueueType;
 use crate::Device;
 
 pub struct VkDevice {
     pub(crate) device: Arc<vk::device::Device>,
-    pub(crate) queue: Arc<vk::queue::Queue>,
+    pub(crate) graphics_queue: Arc<vk::queue::Queue>,
+    pub(crate) transfer_queue: Arc<vk::queue::Queue>,
     immediate_cmd: VkCommand,
+    transfer_cmd: VkCommand,
     pub allocator: Arc<vk::alloc::Allocator>,
 }
 
@@ -21,41 +24,53 @@ impl Device<VkRenderer> for VkDevice {
     where
         Self: Sized,
     {
-        let (physical_device, queue_family) = match &display.surface {
-            Some(surface) => {
-                let physical_device = instance.instance.find_adapter(surface);
-                let queue_family = instance
-                    .instance
-                    .find_family(&physical_device, surface)
-                    .expect("Cannot find queue family");
+        let p_device = instance
+            .instance
+            .find_adapter(display.surface.as_deref())
+            .expect("Find suitable adapter");
 
-                (physical_device, queue_family)
-            }
-            None => {
-                let physical_device = instance.instance.find_headless_adapter();
-                let queue_family = instance
-                    .instance
-                    .find_headless_family(&physical_device)
-                    .expect("Cannot find queue family");
+        let (graphics_family, transfer_family) = instance
+            .instance
+            .find_family(&p_device, display.surface.as_deref());
 
-                (physical_device, queue_family)
-            }
+        tracing::info!(target: "init", "Using adapter {}", p_device.name);
+        tracing::debug!(target: "init", "Using queue families Graphics={:?}, Transfer={:?}", &graphics_family, &transfer_family);
+
+        let device = vk::device::Device::new(
+            instance.instance.clone(),
+            p_device,
+            &graphics_family,
+            &transfer_family,
+        );
+
+        let transfer_queue_index = if transfer_family.index != graphics_family.index {
+            0
+        } else {
+            1
         };
+        let graphics_queue = vk::queue::Queue::new(device.clone(), graphics_family, 0);
+        let transfer_queue =
+            vk::queue::Queue::new(device.clone(), transfer_family, transfer_queue_index);
 
-        tracing::info!("Using adapter {}", physical_device.name);
-
-        let device =
-            vk::device::Device::new(instance.instance.clone(), physical_device, &queue_family);
-
-        let queue = vk::queue::Queue::new(device.clone(), queue_family);
-
-        let immediate_cmd_pool = vk::command::CommandPool::new(device.clone(), &queue.family);
+        let immediate_cmd_pool =
+            vk::command::CommandPool::new(device.clone(), &graphics_queue.family);
         let immediate_cmd = VkCommand {
             command: vk::command::CommandBuffer::new(
                 device.clone(),
-                queue.clone(),
+                graphics_queue.clone(),
                 immediate_cmd_pool,
                 "Immediate",
+            ),
+        };
+
+        let transfer_cmd_pool =
+            vk::command::CommandPool::new(device.clone(), &transfer_queue.family);
+        let transfer_cmd = VkCommand {
+            command: vk::command::CommandBuffer::new(
+                device.clone(),
+                transfer_queue.clone(),
+                transfer_cmd_pool,
+                "Transfer",
             ),
         };
 
@@ -63,10 +78,33 @@ impl Device<VkRenderer> for VkDevice {
 
         Ok(Arc::new(Self {
             device,
-            queue,
+            graphics_queue,
+            transfer_queue,
             immediate_cmd,
+            transfer_cmd,
             allocator,
         }))
+    }
+
+    #[tracing::instrument(target = "gpu", skip_all, level = "debug")]
+    fn run_transfer<F>(&self, callback: F)
+    where
+        F: Fn(&VkCommand),
+    {
+        let cmd = &self.transfer_cmd.command;
+
+        cmd.fence.reset();
+
+        cmd.begin();
+
+        callback(&self.transfer_cmd);
+
+        cmd.end();
+
+        cmd.submit2(None, None);
+
+        cmd.fence.wait();
+        assert!(cmd.fence.signaled());
     }
 
     #[tracing::instrument(target = "gpu", skip_all, level = "debug")]
@@ -77,9 +115,6 @@ impl Device<VkRenderer> for VkDevice {
         let cmd = &self.immediate_cmd.command;
 
         cmd.fence.reset();
-        assert!(!cmd.fence.signaled());
-
-        cmd.reset();
 
         cmd.begin();
 
@@ -90,6 +125,7 @@ impl Device<VkRenderer> for VkDevice {
         cmd.submit2(None, None);
 
         cmd.fence.wait();
+        assert!(cmd.fence.signaled());
     }
 
     fn run_immediate_mut<F>(&self, mut callback: F)
@@ -113,10 +149,23 @@ impl Device<VkRenderer> for VkDevice {
         cmd.submit2(None, None);
 
         cmd.fence.wait();
+
         tracing::debug!("Immediate command done");
     }
 
     fn wait(&self) {
         self.device.wait();
+    }
+}
+
+impl VkDevice {
+    pub fn get_queue(&self, ty: CommandQueueType) -> Arc<vk::queue::Queue> {
+        let queue = match ty {
+            CommandQueueType::Graphics => self.graphics_queue.clone(),
+            CommandQueueType::Transfer => self.transfer_queue.clone(),
+            _ => unimplemented!(),
+        };
+
+        queue
     }
 }

@@ -159,11 +159,5 @@ fn main() {
 
     tracing::info!("Engine start");
 
-    Application::<App>::new(
-        "Framebuffer",
-        examples::WIDTH,
-        examples::HEIGHT,
-        examples::VALIDATION,
-    )
-    .run();
+    Application::<App>::new("Framebuffer", examples::WIDTH, examples::HEIGHT).run();
 }

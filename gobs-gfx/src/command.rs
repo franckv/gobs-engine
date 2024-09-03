@@ -2,8 +2,14 @@ use gobs_core::ImageExtent2D;
 
 use crate::{ImageLayout, Renderer};
 
+pub enum CommandQueueType {
+    Graphics,
+    Compute,
+    Transfer,
+}
+
 pub trait Command<R: Renderer> {
-    fn new(device: &R::Device, name: &str) -> Self;
+    fn new(device: &R::Device, name: &str, ty: CommandQueueType) -> Self;
     fn begin(&self);
     fn end(&self);
     fn begin_label(&self, label: &str);

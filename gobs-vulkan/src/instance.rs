@@ -1,13 +1,15 @@
 use std::borrow::Cow;
+use std::cmp::Ordering;
 use std::ffi::{CStr, CString};
 use std::sync::Arc;
 
 use anyhow::Result;
+use ash::vk::MemoryHeapFlags;
 use ash::{ext::debug_utils, khr::surface, vk};
 use raw_window_handle::HasDisplayHandle;
 use winit::window::Window;
 
-use crate::physical::PhysicalDevice;
+use crate::physical::{PhysicalDevice, PhysicalDeviceType};
 use crate::queue::QueueFamily;
 use crate::surface::Surface;
 use crate::Wrap;
@@ -167,44 +169,63 @@ impl Instance {
         }))
     }
 
-    pub fn find_adapter(&self, surface: &Surface) -> PhysicalDevice {
+    pub fn find_adapter(&self, surface: Option<&Surface>) -> Option<PhysicalDevice> {
         let mut p_devices = PhysicalDevice::enumerate(self);
+        let mut candidates = vec![];
 
-        let idx = {
-            let p_device = p_devices.iter().enumerate().find(|(_, p_device)| {
-                let family = self.find_family(p_device, surface);
-                let features = self.check_features(p_device);
+        tracing::debug!(target: "init", "{} physical devices found", p_devices.len());
 
-                family.is_some() && features
-            });
-
-            match p_device {
-                Some((idx, _)) => idx,
-                None => panic!("No suitable device"),
+        for p_device in p_devices.drain(..) {
+            if self.check_physical_device(&p_device) {
+                candidates.push(p_device);
             }
-        };
+        }
 
-        p_devices.remove(idx)
+        let p_device = candidates.into_iter().max_by(|_, device2| {
+            if device2.gpu_type == PhysicalDeviceType::DiscreteGpu {
+                Ordering::Less
+            } else {
+                Ordering::Greater
+            }
+        });
+
+        p_device
     }
 
-    pub fn find_headless_adapter(&self) -> PhysicalDevice {
-        let mut p_devices = PhysicalDevice::enumerate(self);
+    fn check_physical_device(&self, p_device: &PhysicalDevice) -> bool {
+        tracing::debug!(target: "init", "Checking device: {:?}", p_device.name);
 
-        let idx = {
-            let p_device = p_devices.iter().enumerate().find(|(_, p_device)| {
-                let family = self.find_headless_family(p_device);
-                let features = self.check_features(p_device);
+        tracing::debug!(target: "init", "Device type: {:?}", p_device.props.device_type);
 
-                family.is_some() && features
-            });
+        let vram = p_device
+            .mem_props
+            .memory_heaps_as_slice()
+            .iter()
+            .map(|heap| {
+                if heap.flags.contains(MemoryHeapFlags::DEVICE_LOCAL) {
+                    heap.size
+                } else {
+                    0
+                }
+            })
+            .max()
+            .unwrap_or(0);
 
-            match p_device {
-                Some((idx, _)) => idx,
-                None => panic!("No suitable device"),
-            }
-        };
+        tracing::debug!(target: "init", "VRAM size: {}", vram);
 
-        p_devices.remove(idx)
+        if p_device.props.api_version < vk::make_api_version(0, 1, 3, 0) {
+            tracing::debug!(target: "init", "Reject: wrong version");
+            return false;
+        }
+
+        if !self.check_features(p_device) {
+            tracing::debug!(target: "init", "Reject: missing features");
+            return false;
+        }
+
+        tracing::debug!(target: "init", "Accepted");
+
+        true
     }
 
     fn check_features(&self, p_device: &PhysicalDevice) -> bool {
@@ -238,28 +259,25 @@ impl Instance {
             && features13.synchronization2 == 1
     }
 
-    pub fn find_family(&self, p_device: &PhysicalDevice, surface: &Surface) -> Option<QueueFamily> {
-        let family = p_device
+    pub fn find_family(
+        &self,
+        p_device: &PhysicalDevice,
+        surface: Option<&Surface>,
+    ) -> (QueueFamily, QueueFamily) {
+        let graphics_family = p_device.queue_families.iter().find(|family| match surface {
+            Some(surface) => family.graphics_bit && surface.family_supported(&p_device, &family),
+            None => family.graphics_bit,
+        });
+
+        let transfer_family = p_device
             .queue_families
             .iter()
-            .find(|family| family.graphics_bit && surface.family_supported(&p_device, &family));
+            .find(|family| family.transfer_bits && !family.graphics_bit);
 
-        match family {
-            Some(family) => Some(family.clone()),
-            None => None,
-        }
-    }
+        let graphics_family = graphics_family.expect("Get graphics family").clone();
+        let transfer_family = transfer_family.unwrap_or(&graphics_family).clone();
 
-    pub fn find_headless_family(&self, p_device: &PhysicalDevice) -> Option<QueueFamily> {
-        let family = p_device
-            .queue_families
-            .iter()
-            .find(|family| family.graphics_bit);
-
-        match family {
-            Some(family) => Some(family.clone()),
-            None => None,
-        }
+        (graphics_family, transfer_family)
     }
 
     pub fn raw(&self) -> &ash::Instance {

@@ -28,13 +28,28 @@ impl Device {
     pub fn new(
         instance: Arc<Instance>,
         p_device: PhysicalDevice,
-        queue_family: &QueueFamily,
+        graphics_family: &QueueFamily,
+        transfer_family: &QueueFamily,
     ) -> Arc<Self> {
-        let priorities = [1.0];
+        let priorities = if transfer_family.index != graphics_family.index {
+            vec![1.0]
+        } else {
+            vec![1.0, 1.0]
+        };
+
+        let mut queues = vec![];
 
         let queue_info = vk::DeviceQueueCreateInfo::default()
-            .queue_family_index(queue_family.index)
+            .queue_family_index(graphics_family.index)
             .queue_priorities(&priorities);
+        queues.push(queue_info);
+
+        if transfer_family.index != graphics_family.index {
+            let queue_info = vk::DeviceQueueCreateInfo::default()
+                .queue_family_index(transfer_family.index)
+                .queue_priorities(&priorities);
+            queues.push(queue_info);
+        }
 
         let extensions = [swapchain::NAME.as_ptr(), push_descriptor::NAME.as_ptr()];
 
@@ -47,7 +62,7 @@ impl Device {
             .synchronization2(true);
 
         let device_info = vk::DeviceCreateInfo::default()
-            .queue_create_infos(std::slice::from_ref(&queue_info))
+            .queue_create_infos(&queues)
             .enabled_extension_names(&extensions)
             .enabled_features(&features10)
             .push_next(&mut features12)

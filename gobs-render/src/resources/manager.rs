@@ -396,7 +396,7 @@ impl MeshResourceManager {
         self.staging.copy(&vertices, 0);
         self.staging.copy(&indices, vertices_size);
 
-        ctx.device.run_immediate(|cmd| {
+        ctx.device.run_transfer(|cmd| {
             cmd.begin_label("Upload buffer");
             cmd.copy_buffer(&self.staging, &vertex_buffer, vertices_size, 0);
             cmd.copy_buffer(&self.staging, &index_buffer, indices_size, vertices_size);

@@ -32,7 +32,6 @@ pub const MAP: &str = include_str!("../assets/dungeon.map");
 pub const TILE_SIZE: f32 = 1.;
 pub const WIDTH: u32 = 1920;
 pub const HEIGHT: u32 = 1080;
-pub const VALIDATION: bool = true;
 
 pub fn init_logger() {
     FmtSubscriber::builder()
