@@ -326,6 +326,8 @@ impl FrameGraph {
 
         cmd.end();
 
+        ctx.device.wait_transfer();
+
         cmd.submit2(&ctx.display, ctx.frame_id());
 
         let Ok(_) = ctx.display.present(&ctx.device, ctx.frame_id()) else {

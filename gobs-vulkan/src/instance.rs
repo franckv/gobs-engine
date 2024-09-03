@@ -169,7 +169,7 @@ impl Instance {
         }))
     }
 
-    pub fn find_adapter(&self, surface: Option<&Surface>) -> Option<PhysicalDevice> {
+    pub fn find_adapter(&self, _surface: Option<&Surface>) -> Option<PhysicalDevice> {
         let mut p_devices = PhysicalDevice::enumerate(self);
         let mut candidates = vec![];
 

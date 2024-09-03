@@ -59,7 +59,12 @@ impl Queue {
     }
 
     pub fn wait(&self) {
-        self.device.wait();
+        unsafe {
+            self.device
+                .raw()
+                .queue_wait_idle(self.queue)
+                .expect("Idle queue")
+        };
     }
 }
 

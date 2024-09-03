@@ -156,6 +156,10 @@ impl Device<VkRenderer> for VkDevice {
     fn wait(&self) {
         self.device.wait();
     }
+
+    fn wait_transfer(&self) {
+        self.transfer_queue.wait();
+    }
 }
 
 impl VkDevice {

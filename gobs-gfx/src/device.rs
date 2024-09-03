@@ -16,4 +16,5 @@ pub trait Device<R: Renderer> {
     where
         F: FnMut(&R::Command);
     fn wait(&self);
+    fn wait_transfer(&self);
 }
