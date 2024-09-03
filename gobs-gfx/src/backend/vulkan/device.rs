@@ -108,6 +108,27 @@ impl Device<VkRenderer> for VkDevice {
     }
 
     #[tracing::instrument(target = "gpu", skip_all, level = "debug")]
+    fn run_transfer_mut<F>(&self, mut callback: F)
+    where
+        F: FnMut(&VkCommand),
+    {
+        let cmd = &self.transfer_cmd.command;
+
+        cmd.fence.reset();
+
+        cmd.begin();
+
+        callback(&self.transfer_cmd);
+
+        cmd.end();
+
+        cmd.submit2(None, None);
+
+        cmd.fence.wait();
+        assert!(cmd.fence.signaled());
+    }
+
+    #[tracing::instrument(target = "gpu", skip_all, level = "debug")]
     fn run_immediate<F>(&self, callback: F)
     where
         F: Fn(&VkCommand),
@@ -158,7 +179,7 @@ impl Device<VkRenderer> for VkDevice {
     }
 
     fn wait_transfer(&self) {
-        self.transfer_queue.wait();
+        self.transfer_cmd.command.fence.wait();
     }
 }
 

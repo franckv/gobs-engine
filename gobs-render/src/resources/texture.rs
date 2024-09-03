@@ -53,7 +53,7 @@ impl GpuTexture {
 
         staging.copy(data, 0);
 
-        ctx.device.run_immediate_mut(|cmd| {
+        ctx.device.run_transfer_mut(|cmd| {
             cmd.begin_label("Upload image");
             cmd.transition_image_layout(image, ImageLayout::TransferDst);
             cmd.copy_buffer_to_image(&staging, image, image.extent().width, image.extent().height);

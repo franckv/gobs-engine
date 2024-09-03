@@ -9,6 +9,10 @@ pub trait Device<R: Renderer> {
     fn run_transfer<F>(&self, callback: F)
     where
         F: Fn(&R::Command);
+    fn run_transfer_mut<F>(&self, callback: F)
+    where
+        F: FnMut(&R::Command);
+
     fn run_immediate<F>(&self, callback: F)
     where
         F: Fn(&R::Command);
