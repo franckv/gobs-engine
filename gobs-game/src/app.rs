@@ -149,7 +149,7 @@ where
                                 self.is_minimized = true;
                             }
                         }
-                        context.frame_number += 1;
+                        context.new_frame();
                     }
                     _ => (),
                 }

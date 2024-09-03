@@ -50,6 +50,11 @@ impl Context {
         self.frame_number % self.frames_in_flight
     }
 
+    #[tracing::instrument(target = "app", skip_all, fields(frame=self.frame_number), level = "debug")]
+    pub fn new_frame(&mut self) {
+        self.frame_number += 1;
+    }
+
     pub fn request_redraw(&self) {
         self.display.request_redraw();
     }

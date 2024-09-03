@@ -1,3 +1,4 @@
+use std::fmt::Debug;
 use std::sync::Arc;
 
 use ash::vk;
@@ -6,13 +7,34 @@ use crate::device::Device;
 use crate::Wrap;
 
 #[derive(Clone)]
-#[allow(unused)]
 pub struct QueueFamily {
     pub(crate) index: u32,
     pub(crate) size: u32,
     pub(crate) graphics_bit: bool,
     pub(crate) compute_bits: bool,
     pub(crate) transfer_bits: bool,
+}
+
+impl Debug for QueueFamily {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let mut flags = vec![];
+
+        if self.graphics_bit {
+            flags.push("Graphics");
+        }
+        if self.compute_bits {
+            flags.push("Compute");
+        }
+        if self.transfer_bits {
+            flags.push("Transfer");
+        }
+
+        f.debug_struct("QueueFamily")
+            .field("index", &self.index)
+            .field("size", &self.size)
+            .field("flags", &flags.join(" | "))
+            .finish()
+    }
 }
 
 /// Queue of commands to be executed on device

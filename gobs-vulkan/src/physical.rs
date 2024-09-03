@@ -84,6 +84,8 @@ impl PhysicalDevice {
                     .contains(vk::QueueFlags::TRANSFER),
             };
 
+            tracing::debug!(target: "init", "Queue family: {:?}", &family);
+
             results.push(family);
         }
 
