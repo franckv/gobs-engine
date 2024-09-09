@@ -1,19 +1,22 @@
 use std::fmt::Debug;
 use std::sync::Arc;
 
-use ash::ext::debug_utils;
-use ash::khr::{push_descriptor, swapchain};
-use ash::vk::{
-    self, FormatFeatureFlags, PhysicalDeviceFeatures, PhysicalDeviceVulkan12Features,
-    PhysicalDeviceVulkan13Features,
+use ash::{
+    ext::debug_utils,
+    khr::{push_descriptor, swapchain},
+    vk::{self, FormatFeatureFlags},
 };
+
 use gobs_core::ImageFormat;
 
-use crate::image::{ImageUsage, VkFormat};
-use crate::instance::Instance;
-use crate::physical::PhysicalDevice;
-use crate::queue::QueueFamily;
-use crate::Wrap;
+use crate::{
+    feature::Features,
+    image::{ImageUsage, VkFormat},
+    instance::Instance,
+    physical::PhysicalDevice,
+    queue::QueueFamily,
+    Wrap,
+};
 
 /// Logical device
 pub struct Device {
@@ -22,6 +25,7 @@ pub struct Device {
     pub p_device: PhysicalDevice,
     pub(crate) debug_utils_device: debug_utils::Device,
     pub(crate) push_descriptor_device: push_descriptor::Device,
+    pub features: Features,
 }
 
 impl Device {
@@ -53,13 +57,10 @@ impl Device {
 
         let extensions = [swapchain::NAME.as_ptr(), push_descriptor::NAME.as_ptr()];
 
-        let features10 = PhysicalDeviceFeatures::default().fill_mode_non_solid(true);
-        let mut features12 = PhysicalDeviceVulkan12Features::default()
-            .buffer_device_address(true)
-            .descriptor_indexing(true);
-        let mut features13 = PhysicalDeviceVulkan13Features::default()
-            .dynamic_rendering(true)
-            .synchronization2(true);
+        let features = Features::from_device(&instance, &p_device);
+        let features10 = features.features10();
+        let mut features12 = features.features12();
+        let mut features13 = features.features13();
 
         let device_info = vk::DeviceCreateInfo::default()
             .queue_create_infos(&queues)
@@ -86,6 +87,7 @@ impl Device {
             p_device,
             debug_utils_device,
             push_descriptor_device,
+            features,
         })
     }
 

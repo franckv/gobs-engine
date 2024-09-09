@@ -4,15 +4,16 @@ use std::ffi::{CStr, CString};
 use std::sync::Arc;
 
 use anyhow::Result;
-use ash::vk::MemoryHeapFlags;
 use ash::{ext::debug_utils, khr::surface, vk};
 use raw_window_handle::HasDisplayHandle;
 use winit::window::Window;
 
-use crate::physical::{PhysicalDevice, PhysicalDeviceType};
-use crate::queue::QueueFamily;
-use crate::surface::Surface;
-use crate::Wrap;
+use crate::{
+    feature::Features,
+    physical::{PhysicalDevice, PhysicalDeviceType},
+    queue::QueueFamily,
+    surface::Surface,
+};
 
 unsafe extern "system" fn debug_cb(
     message_severity: vk::DebugUtilsMessageSeverityFlagsEXT,
@@ -160,23 +161,29 @@ impl Instance {
                 .unwrap()
         };
 
-        Ok(Arc::new(Instance {
+        let instance = Instance {
             instance,
             entry,
             surface_loader,
             debug_utils_loader,
             debug_call_back,
-        }))
+        };
+
+        Ok(Arc::new(instance))
     }
 
-    pub fn find_adapter(&self, _surface: Option<&Surface>) -> Option<PhysicalDevice> {
+    pub fn find_adapter(
+        &self,
+        expected_features: &Features,
+        _surface: Option<&Surface>,
+    ) -> Option<PhysicalDevice> {
         let mut p_devices = PhysicalDevice::enumerate(self);
         let mut candidates = vec![];
 
         tracing::debug!(target: "init", "{} physical devices found", p_devices.len());
 
         for p_device in p_devices.drain(..) {
-            if self.check_physical_device(&p_device) {
+            if self.check_physical_device(&p_device, expected_features) {
                 candidates.push(p_device);
             }
         }
@@ -192,7 +199,11 @@ impl Instance {
         p_device
     }
 
-    fn check_physical_device(&self, p_device: &PhysicalDevice) -> bool {
+    fn check_physical_device(
+        &self,
+        p_device: &PhysicalDevice,
+        expected_features: &Features,
+    ) -> bool {
         tracing::debug!(target: "init", "Checking device: {:?}", p_device.name);
 
         tracing::debug!(target: "init", "Device type: {:?}", p_device.props.device_type);
@@ -202,7 +213,7 @@ impl Instance {
             .memory_heaps_as_slice()
             .iter()
             .map(|heap| {
-                if heap.flags.contains(MemoryHeapFlags::DEVICE_LOCAL) {
+                if heap.flags.contains(vk::MemoryHeapFlags::DEVICE_LOCAL) {
                     heap.size
                 } else {
                     0
@@ -218,7 +229,9 @@ impl Instance {
             return false;
         }
 
-        if !self.check_features(p_device) {
+        let features = Features::from_device(self, p_device);
+
+        if !features.check_features(expected_features) {
             tracing::debug!(target: "init", "Reject: missing features");
             return false;
         }
@@ -226,37 +239,6 @@ impl Instance {
         tracing::debug!(target: "init", "Accepted");
 
         true
-    }
-
-    fn check_features(&self, p_device: &PhysicalDevice) -> bool {
-        let mut features11 = vk::PhysicalDeviceVulkan11Features::default();
-        let mut features12 = vk::PhysicalDeviceVulkan12Features::default();
-        let mut features13 = vk::PhysicalDeviceVulkan13Features::default();
-        let mut features = vk::PhysicalDeviceFeatures2::default()
-            .push_next(&mut features11)
-            .push_next(&mut features12)
-            .push_next(&mut features13);
-
-        unsafe {
-            self.instance
-                .get_physical_device_features2(p_device.raw(), &mut features);
-        };
-
-        let features10 = features.features;
-
-        tracing::debug!(
-            "Features: {:?},{:?},{:?},{:?}",
-            features10,
-            features11,
-            features12,
-            features13
-        );
-
-        features10.fill_mode_non_solid == 1
-            && features12.buffer_device_address == 1
-            && features12.descriptor_indexing == 1
-            && features13.dynamic_rendering == 1
-            && features13.synchronization2 == 1
     }
 
     pub fn find_family(

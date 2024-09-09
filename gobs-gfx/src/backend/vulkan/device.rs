@@ -24,9 +24,16 @@ impl Device<VkRenderer> for VkDevice {
     where
         Self: Sized,
     {
+        let expected_features = vk::feature::Features::default()
+            .fill_mode_non_solid()
+            .buffer_device_address()
+            .descriptor_indexing()
+            .dynamic_rendering()
+            .synchronization2();
+
         let p_device = instance
             .instance
-            .find_adapter(display.surface.as_deref())
+            .find_adapter(&expected_features, display.surface.as_deref())
             .expect("Find suitable adapter");
 
         let (graphics_family, transfer_family) = instance

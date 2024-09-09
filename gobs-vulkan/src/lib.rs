@@ -4,6 +4,7 @@ pub mod command;
 pub(crate) mod debug;
 pub mod descriptor;
 pub mod device;
+pub mod feature;
 pub mod framebuffer;
 pub mod image;
 pub mod instance;
