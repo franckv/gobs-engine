@@ -40,12 +40,12 @@ impl Command<VkRenderer> for VkCommand {
         self.command.end_label();
     }
 
-    fn copy_buffer(&self, src: &VkBuffer, dst: &VkBuffer, size: usize, offset: usize) {
+    fn copy_buffer(&self, src: &VkBuffer, dst: &mut VkBuffer, size: usize, offset: usize) {
         self.command
             .copy_buffer(&src.buffer, &dst.buffer, size, offset);
     }
 
-    fn copy_buffer_to_image(&self, src: &VkBuffer, dst: &VkImage, width: u32, height: u32) {
+    fn copy_buffer_to_image(&self, src: &VkBuffer, dst: &mut VkImage, width: u32, height: u32) {
         self.command
             .copy_buffer_to_image(&src.buffer, &dst.image, width, height);
     }
@@ -84,7 +84,7 @@ impl Command<VkRenderer> for VkCommand {
         &self,
         src: &VkImage,
         src_size: ImageExtent2D,
-        dst: &VkImage,
+        dst: &mut VkImage,
         dst_size: ImageExtent2D,
     ) {
         if self
@@ -105,7 +105,7 @@ impl Command<VkRenderer> for VkCommand {
         }
     }
 
-    fn copy_image_to_buffer(&self, src: &VkImage, dst: &VkBuffer) {
+    fn copy_image_to_buffer(&self, src: &VkImage, dst: &mut VkBuffer) {
         self.command.copy_image_to_buffer(&src.image, &dst.buffer);
     }
 

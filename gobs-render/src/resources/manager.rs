@@ -3,7 +3,6 @@ use std::{
     sync::Arc,
 };
 
-use gobs_core::utils::pool::ObjectPool;
 use gobs_gfx::{
     BindingGroup, BindingGroupType, BindingGroupUpdates, Buffer, BufferUsage, Command, Device,
     GfxBindingGroup, GfxBuffer, ImageLayout, Pipeline,
@@ -19,7 +18,7 @@ use crate::{
     model::Model,
     pass::PassId,
     renderable::RenderableLifetime,
-    resources::GpuTexture,
+    resources::{Allocator, GpuTexture},
     ModelId, RenderPass,
 };
 
@@ -66,8 +65,7 @@ pub struct MeshResourceManager {
     pub transient_mesh_data: Vec<HashMap<ResourceKey, Vec<GPUMesh>>>,
     pub material_bindings: HashMap<MaterialInstanceId, GfxBindingGroup>,
     pub textures: HashMap<TextureId, GpuTexture>,
-    pub staging: GfxBuffer,
-    pub buffer_pool: ObjectPool<BufferUsage, GfxBuffer>,
+    pub buffer_pool: Allocator<BufferUsage, GfxBuffer>,
 }
 
 impl MeshResourceManager {
@@ -80,13 +78,7 @@ impl MeshResourceManager {
             transient_mesh_data,
             material_bindings: HashMap::new(),
             textures: HashMap::new(),
-            staging: GfxBuffer::new(
-                "staging",
-                STAGING_BUFFER_SIZE,
-                BufferUsage::Staging,
-                &ctx.device,
-            ),
-            buffer_pool: ObjectPool::new(),
+            buffer_pool: Allocator::new(),
         }
     }
 
@@ -104,11 +96,11 @@ impl MeshResourceManager {
             for mesh in data.drain(..) {
                 let index = Arc::into_inner(mesh.index_buffer);
                 if let Some(buffer) = index {
-                    self.buffer_pool.insert(buffer.usage(), buffer);
+                    self.buffer_pool.recycle(buffer);
                 }
                 let vertex = Arc::into_inner(mesh.vertex_buffer);
                 if let Some(buffer) = vertex {
-                    self.buffer_pool.insert(buffer.usage(), buffer);
+                    self.buffer_pool.recycle(buffer);
                 }
             }
         }
@@ -338,35 +330,6 @@ impl MeshResourceManager {
     }
 
     #[tracing::instrument(target = "resources", skip_all, level = "debug")]
-    fn allocate_buffer(
-        &mut self,
-        ctx: &Context,
-        name: &str,
-        size: usize,
-        usage: BufferUsage,
-    ) -> GfxBuffer {
-        while self.buffer_pool.contains(&usage) {
-            let buffer = self.buffer_pool.pop(&usage);
-
-            if let Some(buffer) = buffer {
-                if buffer.size() >= size {
-                    tracing::debug!(
-                        "Reuse buffer {:?}, {} ({})",
-                        usage,
-                        size,
-                        self.buffer_pool.get(&usage).unwrap().len()
-                    );
-
-                    return buffer;
-                }
-            }
-        }
-
-        tracing::debug!("Allocate new buffer {:?}, {}", usage, size);
-        GfxBuffer::new(name, size, usage, &ctx.device)
-    }
-
-    #[tracing::instrument(target = "resources", skip_all, level = "debug")]
     fn upload_vertices(
         &mut self,
         ctx: &Context,
@@ -379,29 +342,30 @@ impl MeshResourceManager {
 
         let staging_size = indices_size + vertices_size;
 
-        if staging_size > self.staging.size() {
-            tracing::warn!("Increase staging buffer size: {}", staging_size);
+        let mut staging = self.buffer_pool.allocate(
+            ctx,
+            "staging",
+            staging_size.max(STAGING_BUFFER_SIZE),
+            BufferUsage::Staging,
+        );
+        let mut vertex_buffer =
+            self.buffer_pool
+                .allocate(ctx, "vertex", vertices_size, BufferUsage::Vertex);
+        let mut index_buffer =
+            self.buffer_pool
+                .allocate(ctx, "index", indices_size, BufferUsage::Index);
 
-            self.staging = GfxBuffer::new(
-                "staging",
-                indices_size + vertices_size,
-                BufferUsage::Staging,
-                &ctx.device,
-            );
-        };
+        staging.copy(&vertices, 0);
+        staging.copy(&indices, vertices_size);
 
-        let vertex_buffer = self.allocate_buffer(ctx, "vertex", vertices_size, BufferUsage::Vertex);
-        let index_buffer = self.allocate_buffer(ctx, "index", indices_size, BufferUsage::Index);
-
-        self.staging.copy(&vertices, 0);
-        self.staging.copy(&indices, vertices_size);
-
-        ctx.device.run_transfer(|cmd| {
+        ctx.device.run_transfer_mut(|cmd| {
             cmd.begin_label("Upload buffer");
-            cmd.copy_buffer(&self.staging, &vertex_buffer, vertices_size, 0);
-            cmd.copy_buffer(&self.staging, &index_buffer, indices_size, vertices_size);
+            cmd.copy_buffer(&staging, &mut vertex_buffer, vertices_size, 0);
+            cmd.copy_buffer(&staging, &mut index_buffer, indices_size, vertices_size);
             cmd.end_label();
         });
+
+        self.buffer_pool.recycle(staging);
 
         (Arc::new(vertex_buffer), Arc::new(index_buffer))
     }

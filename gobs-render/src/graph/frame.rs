@@ -208,7 +208,7 @@ impl FrameGraph {
             src_image.extent(),
         );
 
-        let buffer = GfxBuffer::new(
+        let mut buffer = GfxBuffer::new(
             "copy",
             dst_image.size(),
             BufferUsage::StagingDst,
@@ -218,24 +218,16 @@ impl FrameGraph {
         ctx.device.run_immediate_mut(|cmd| {
             cmd.transition_image_layout(&mut src_image, ImageLayout::TransferSrc);
             cmd.transition_image_layout(&mut mid_image, ImageLayout::TransferDst);
-            cmd.copy_image_to_image(
-                &src_image,
-                src_image.extent(),
-                &mid_image,
-                mid_image.extent(),
-            );
+            let dst_extent = mid_image.extent();
+            cmd.copy_image_to_image(&src_image, src_image.extent(), &mut mid_image, dst_extent);
 
             cmd.transition_image_layout(&mut mid_image, ImageLayout::TransferSrc);
             cmd.transition_image_layout(&mut dst_image, ImageLayout::TransferDst);
-            cmd.copy_image_to_image(
-                &mid_image,
-                mid_image.extent(),
-                &dst_image,
-                dst_image.extent(),
-            );
+            let dst_extent = dst_image.extent();
+            cmd.copy_image_to_image(&mid_image, mid_image.extent(), &mut dst_image, dst_extent);
 
             cmd.transition_image_layout(&mut dst_image, ImageLayout::TransferSrc);
-            cmd.copy_image_to_buffer(&dst_image, &buffer);
+            cmd.copy_image_to_buffer(&dst_image, &mut buffer);
         });
 
         buffer.get_bytes(data);

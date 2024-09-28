@@ -14,8 +14,8 @@ pub trait Command<R: Renderer> {
     fn end(&self);
     fn begin_label(&self, label: &str);
     fn end_label(&self);
-    fn copy_buffer(&self, src: &R::Buffer, dst: &R::Buffer, size: usize, offset: usize);
-    fn copy_buffer_to_image(&self, src: &R::Buffer, dst: &R::Image, width: u32, height: u32);
+    fn copy_buffer(&self, src: &R::Buffer, dst: &mut R::Buffer, size: usize, offset: usize);
+    fn copy_buffer_to_image(&self, src: &R::Buffer, dst: &mut R::Image, width: u32, height: u32);
     fn begin_rendering(
         &self,
         color: Option<&R::Image>,
@@ -32,10 +32,10 @@ pub trait Command<R: Renderer> {
         &self,
         src: &R::Image,
         src_size: ImageExtent2D,
-        dst: &R::Image,
+        dst: &mut R::Image,
         dst_size: ImageExtent2D,
     );
-    fn copy_image_to_buffer(&self, sec: &R::Image, dst: &R::Buffer);
+    fn copy_image_to_buffer(&self, sec: &R::Image, dst: &mut R::Buffer);
     fn push_constants(&self, pipeline: &R::Pipeline, constants: &[u8]);
     fn set_viewport(&self, width: u32, height: u32);
     fn bind_pipeline(&self, pipeline: &R::Pipeline);
