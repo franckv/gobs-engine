@@ -7,6 +7,7 @@ use gobs_core::Color;
 use crate::geometry::{Mesh, VertexData};
 
 const T_MIN: f32 = 0.01;
+const T_MID: f32 = 0.5;
 const T_MAX: f32 = 1. - T_MIN;
 
 pub struct Shapes;
@@ -41,18 +42,14 @@ impl Shapes {
 
         let vi = [1, 2, 3];
 
-        let ci = [1, 2, 3];
-
         let ni = [1, 1, 1];
-
-        let ti = [1, 2, 3];
 
         for i in 0..vi.len() {
             let vertex_data = VertexData::builder()
                 .position(v[vi[i] - 1].into())
-                .color(c[ci[i] - 1])
+                .color(c[vi[i] - 1])
                 .normal(n[ni[i] - 1].into())
-                .texture(t[ti[i] - 1].into())
+                .texture(t[vi[i] - 1].into())
                 .padding(padding)
                 .build();
 
@@ -92,13 +89,11 @@ impl Shapes {
 
         let ni = [1, 1, 1, 1, 1, 1];
 
-        let ti = [1, 3, 4, 4, 2, 1];
-
         for i in 0..vi.len() {
             let vertex_data = VertexData::builder()
                 .position(v[vi[i] - 1].into())
                 .color(color)
-                .texture(t[ti[i] - 1].into())
+                .texture(t[vi[i] - 1].into())
                 .normal(n[ni[i] - 1].into())
                 .padding(padding)
                 .build();
@@ -111,6 +106,64 @@ impl Shapes {
 
     pub fn quad(color: Color, padding: bool) -> Arc<Mesh> {
         Self::rect(color, 0.5, -0.5, -0.5, 0.5, padding)
+    }
+
+    pub fn hexagon(
+        color0: Color,
+        color1: Color,
+        color2: Color,
+        color3: Color,
+        color4: Color,
+        color5: Color,
+        color6: Color,
+        padding: bool,
+    ) -> Arc<Mesh> {
+        let mut builder = Mesh::builder("hexagon");
+
+        let width = 1.;
+        let height = 3.0f32.sqrt() / 2.;
+
+        let center = [0., 0., 0.];
+        let ne = [width / 2., height, 0.];
+        let e = [width, 0., 0.];
+        let se = [width / 2., -height, 0.];
+        let sw = [-width / 2., -height, 0.];
+        let w = [-width, 0., 0.];
+        let nw = [-width / 2., height, 0.];
+
+        let v = [center, ne, e, se, sw, w, nw];
+
+        let n = [[0., 0., 1.]];
+
+        let t = [
+            [T_MID, T_MID],
+            [T_MAX, T_MAX],
+            [T_MAX, T_MID],
+            [T_MAX, T_MIN],
+            [T_MIN, T_MIN],
+            [T_MIN, T_MID],
+            [T_MIN, T_MAX],
+        ];
+
+        let colors = [color0, color1, color2, color3, color4, color5, color6];
+
+        let vi = [1, 3, 2, 1, 4, 3, 1, 5, 4, 1, 6, 5, 1, 7, 6, 1, 2, 7];
+
+        let ni = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1];
+
+        for i in 0..vi.len() {
+            let vertex_data = VertexData::builder()
+                .position(v[vi[i] - 1].into())
+                .color(colors[vi[i] - 1])
+                .texture(t[vi[i] - 1].into())
+                .normal(n[ni[i] - 1].into())
+                .padding(padding)
+                .build();
+
+            builder = builder.vertex(vertex_data);
+        }
+
+        builder.build()
     }
 
     pub fn cubemap(cols: u32, rows: u32, index: &[u32], size: f32, padding: bool) -> Arc<Mesh> {
