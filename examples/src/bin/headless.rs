@@ -6,8 +6,8 @@ use gobs::{
     game::{app::Run, input::Input},
     gfx::Device,
     render::{Context, FrameGraph, Model, RenderError},
-    resource::entity::light::Light,
-    scene::{components::NodeValue, scene::Scene, shape::Shapes},
+    resource::{entity::light::Light, geometry::Shapes},
+    scene::{components::NodeValue, scene::Scene},
 };
 
 use examples::SampleApp;

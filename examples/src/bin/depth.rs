@@ -8,8 +8,11 @@ use gobs::{
     },
     gfx::Device,
     render::{Context, FrameGraph, Model, PassType, RenderError},
-    resource::entity::{camera::Camera, light::Light},
-    scene::{components::NodeValue, scene::Scene, shape::Shapes},
+    resource::{
+        entity::{camera::Camera, light::Light},
+        geometry::Shapes,
+    },
+    scene::{components::NodeValue, scene::Scene},
     ui::UIRenderer,
 };
 

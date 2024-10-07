@@ -8,8 +8,8 @@ use gobs::{
     },
     gfx::Device,
     render::{Context, FrameGraph, Model, PassType, RenderError},
-    resource::entity::light::Light,
-    scene::{components::NodeValue, scene::Scene, shape::Shapes},
+    resource::{entity::light::Light, geometry::Shapes},
+    scene::{components::NodeValue, scene::Scene},
     ui::UIRenderer,
 };
 

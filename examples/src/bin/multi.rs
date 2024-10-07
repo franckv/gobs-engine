@@ -11,9 +11,10 @@ use gobs::{
     render::{Context, FrameGraph, Model, PassType, RenderError},
     resource::{
         entity::{camera::Camera, light::Light},
+        geometry::Shapes,
         material::{Texture, TextureType},
     },
-    scene::{components::NodeValue, scene::Scene, shape::Shapes},
+    scene::{components::NodeValue, scene::Scene},
     ui::UIRenderer,
 };
 
