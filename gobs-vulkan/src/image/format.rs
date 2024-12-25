@@ -18,6 +18,7 @@ impl From<VkFormat> for ImageFormat {
             vk::Format::R32G32B32A32_SFLOAT => ImageFormat::R32g32b32a32Sfloat,
             vk::Format::D32_SFLOAT => ImageFormat::D32Sfloat,
             vk::Format::A2B10G10R10_UNORM_PACK32 => ImageFormat::A2b10g10r10UnormPack32,
+            vk::Format::A2R10G10B10_UNORM_PACK32 => ImageFormat::A2r10g10b10UnormPack32,
             _ => panic!("Format not implemented: {:?}", format.0),
         }
     }
