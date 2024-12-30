@@ -39,7 +39,7 @@ impl Run for App {
 
         let camera = Camera::perspective(
             extent.width as f32 / extent.height as f32,
-            (60. as f32).to_radians(),
+            60_f32.to_radians(),
             0.1,
             100.,
             0.,
@@ -108,8 +108,8 @@ impl Run for App {
             Some(&mut self.camera_controller),
         );
 
-        match input {
-            Input::KeyPressed(key) => match key {
+        if let Input::KeyPressed(key) = input {
+            match key {
                 Key::N0 => {
                     self.scene.graph.toggle(self.nodes[0]);
                 }
@@ -120,8 +120,7 @@ impl Run for App {
                     self.scene.graph.toggle(self.nodes[2]);
                 }
                 _ => (),
-            },
-            _ => (),
+            }
         }
     }
 

@@ -22,7 +22,7 @@ unsafe extern "system" fn debug_cb(
     _user_data: *mut std::os::raw::c_void,
 ) -> vk::Bool32 {
     let callback_data = *p_callback_data;
-    let message_id_number: i32 = callback_data.message_id_number as i32;
+    let message_id_number: i32 = callback_data.message_id_number;
 
     let message_id_name = if callback_data.p_message_id_name.is_null() {
         Cow::from("")
@@ -188,15 +188,13 @@ impl Instance {
             }
         }
 
-        let p_device = candidates.into_iter().max_by(|_, device2| {
+        candidates.into_iter().max_by(|_, device2| {
             if device2.gpu_type == PhysicalDeviceType::DiscreteGpu {
                 Ordering::Less
             } else {
                 Ordering::Greater
             }
-        });
-
-        p_device
+        })
     }
 
     fn check_physical_device(
@@ -247,7 +245,7 @@ impl Instance {
         surface: Option<&Surface>,
     ) -> (QueueFamily, QueueFamily) {
         let graphics_family = p_device.queue_families.iter().find(|family| match surface {
-            Some(surface) => family.graphics_bit && surface.family_supported(&p_device, &family),
+            Some(surface) => family.graphics_bit && surface.family_supported(p_device, family),
             None => family.graphics_bit,
         });
 

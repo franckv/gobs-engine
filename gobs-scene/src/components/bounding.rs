@@ -2,7 +2,7 @@ use gobs_resource::geometry::{Bounded, BoundingBox};
 
 use crate::components::NodeValue;
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Default)]
 pub struct BoundingComponent {
     pub bounding_box: BoundingBox,
 }
@@ -26,13 +26,5 @@ impl BoundingComponent {
             NodeValue::Camera(_) => BoundingBox::default(),
             NodeValue::Light(_) => BoundingBox::default(),
         };
-    }
-}
-
-impl Default for BoundingComponent {
-    fn default() -> Self {
-        Self {
-            bounding_box: BoundingBox::default(),
-        }
     }
 }

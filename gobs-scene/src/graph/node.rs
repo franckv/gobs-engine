@@ -59,9 +59,7 @@ impl Node {
     }
 
     pub fn global_transform(&self) -> Transform {
-        let matrix = self.parent_transform * self.transform;
-
-        matrix
+        self.parent_transform * self.transform
     }
 
     pub(crate) fn set_parent_transform(&mut self, parent_transform: Transform) {

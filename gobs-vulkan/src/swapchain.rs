@@ -32,9 +32,9 @@ impl From<vk::PresentModeKHR> for PresentationMode {
     }
 }
 
-impl Into<vk::PresentModeKHR> for PresentationMode {
-    fn into(self) -> vk::PresentModeKHR {
-        match self {
+impl From<PresentationMode> for vk::PresentModeKHR {
+    fn from(val: PresentationMode) -> Self {
+        match val {
             PresentationMode::Fifo => vk::PresentModeKHR::FIFO,
             PresentationMode::FifoRelaxed => vk::PresentModeKHR::FIFO_RELAXED,
             PresentationMode::Mailbox => vk::PresentModeKHR::MAILBOX,
@@ -87,7 +87,7 @@ impl SwapChain {
             .image_array_layers(1)
             .queue_family_indices(&[]);
 
-        let loader = swapchain::Device::new(&device.instance().raw(), device.raw());
+        let loader = swapchain::Device::new(device.instance().raw(), device.raw());
 
         let swapchain = unsafe { loader.create_swapchain(&swapchain_info, None).unwrap() };
 
@@ -128,7 +128,7 @@ impl SwapChain {
         unsafe {
             match self.loader.acquire_next_image(
                 self.swapchain,
-                std::u64::MAX,
+                u64::MAX,
                 signal.raw(),
                 vk::Fence::null(),
             ) {

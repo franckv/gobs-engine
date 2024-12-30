@@ -175,8 +175,8 @@ impl MeshBuilder {
         for (i, n) in triangles_included.into_iter().enumerate() {
             let denom = 1. / n as f32;
             let v = &mut self.vertices[i];
-            v.tangent = v.tangent * denom;
-            v.bitangent = v.bitangent * denom;
+            v.tangent *= denom;
+            v.bitangent *= denom;
         }
 
         self

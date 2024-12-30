@@ -60,7 +60,7 @@ impl DepthPass {
             .polygon_mode(PolygonMode::Fill)
             .viewports(vec![Viewport::new(0., 0., 0., 0.)])
             .scissors(vec![Rect2D::new(0, 0, 0, 0)])
-            .dynamic_states(&vec![DynamicStateElem::Viewport, DynamicStateElem::Scissor])
+            .dynamic_states(&[DynamicStateElem::Viewport, DynamicStateElem::Scissor])
             .attachments(None, Some(ctx.depth_format))
             .depth_test_enable(true, CompareOp::Less)
             .cull_mode(CullMode::Back)

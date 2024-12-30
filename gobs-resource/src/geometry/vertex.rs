@@ -144,7 +144,7 @@ impl VertexData {
     fn pad(data: &mut Vec<u8>, padding: bool, len: usize) {
         if padding {
             for _ in 0..len {
-                data.push(0 as u8);
+                data.push(0_u8);
             }
         }
     }

@@ -75,7 +75,7 @@ fn compile_shaders(path_in: &str, path_out: &str) {
         {
             let output = Command::new("sh")
                 .arg("-c")
-                .arg(&format!("glslangValidator -V {} -o {}", file_name, out))
+                .arg(format!("glslangValidator -V {} -o {}", file_name, out))
                 .output()
                 .expect("Error compiling shader");
 

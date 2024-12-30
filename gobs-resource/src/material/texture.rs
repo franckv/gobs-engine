@@ -18,9 +18,9 @@ pub enum TextureType {
     Normal,
 }
 
-impl Into<ImageFormat> for TextureType {
-    fn into(self) -> ImageFormat {
-        match self {
+impl From<TextureType> for ImageFormat {
+    fn from(val: TextureType) -> Self {
+        match val {
             TextureType::Diffuse => ImageFormat::R8g8b8a8Srgb,
             TextureType::Normal => ImageFormat::R8g8b8a8Unorm,
         }

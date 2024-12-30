@@ -20,20 +20,20 @@ impl From<(u32, u32)> for ImageExtent2D {
     }
 }
 
-impl Into<(u32, u32)> for ImageExtent2D {
-    fn into(self) -> (u32, u32) {
-        (self.width, self.height)
+impl From<ImageExtent2D> for (u32, u32) {
+    fn from(val: ImageExtent2D) -> Self {
+        (val.width, val.height)
     }
 }
 
-impl Into<(f32, f32)> for ImageExtent2D {
-    fn into(self) -> (f32, f32) {
-        (self.width as f32, self.height as f32)
+impl From<ImageExtent2D> for (f32, f32) {
+    fn from(val: ImageExtent2D) -> Self {
+        (val.width as f32, val.height as f32)
     }
 }
 
-impl Into<[f32; 2]> for ImageExtent2D {
-    fn into(self) -> [f32; 2] {
-        [self.width as f32, self.height as f32]
+impl From<ImageExtent2D> for [f32; 2] {
+    fn from(val: ImageExtent2D) -> Self {
+        [val.width as f32, val.height as f32]
     }
 }

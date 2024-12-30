@@ -285,7 +285,7 @@ impl FrameGraph {
 
         tracing::trace!("Draw extent {:?}", self.draw_extent);
 
-        if let Err(_) = ctx.display.acquire(ctx.frame_id()) {
+        if ctx.display.acquire(ctx.frame_id()).is_err() {
             return Err(RenderError::Outdated);
         }
 

@@ -136,42 +136,42 @@ impl Div<f32> for Color {
     }
 }
 
-impl Into<[f32; 4]> for Color {
-    fn into(self) -> [f32; 4] {
-        [self.r, self.g, self.b, self.a]
+impl From<Color> for [f32; 4] {
+    fn from(val: Color) -> Self {
+        [val.r, val.g, val.b, val.a]
     }
 }
 
-impl Into<[f32; 3]> for Color {
-    fn into(self) -> [f32; 3] {
-        [self.r, self.g, self.b]
+impl From<Color> for [f32; 3] {
+    fn from(val: Color) -> Self {
+        [val.r, val.g, val.b]
     }
 }
 
-impl Into<[u8; 4]> for Color {
-    fn into(self) -> [u8; 4] {
+impl From<Color> for [u8; 4] {
+    fn from(val: Color) -> Self {
         [
-            (self.r * 255.) as u8,
-            (self.g * 255.) as u8,
-            (self.b * 255.) as u8,
-            (self.a * 255.) as u8,
+            (val.r * 255.) as u8,
+            (val.g * 255.) as u8,
+            (val.b * 255.) as u8,
+            (val.a * 255.) as u8,
         ]
     }
 }
 
-impl Into<Rgba<f32>> for Color {
-    fn into(self) -> Rgba<f32> {
-        image::Rgba([self.r, self.g, self.b, self.a])
+impl From<Color> for Rgba<f32> {
+    fn from(val: Color) -> Self {
+        image::Rgba([val.r, val.g, val.b, val.a])
     }
 }
 
-impl Into<Rgba<u8>> for Color {
-    fn into(self) -> Rgba<u8> {
+impl From<Color> for Rgba<u8> {
+    fn from(val: Color) -> Self {
         image::Rgba([
-            (self.r * 255.) as u8,
-            (self.g * 255.) as u8,
-            (self.b * 255.) as u8,
-            (self.a * 255.) as u8,
+            (val.r * 255.) as u8,
+            (val.g * 255.) as u8,
+            (val.b * 255.) as u8,
+            (val.a * 255.) as u8,
         ])
     }
 }

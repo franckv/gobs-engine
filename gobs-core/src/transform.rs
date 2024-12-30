@@ -117,14 +117,14 @@ impl Mul<Vec4> for Transform {
     }
 }
 
-impl Into<Mat4> for Transform {
-    fn into(self) -> Mat4 {
-        self.matrix
+impl From<Transform> for Mat4 {
+    fn from(val: Transform) -> Self {
+        val.matrix
     }
 }
 
-impl Into<[[f32; 4]; 4]> for Transform {
-    fn into(self) -> [[f32; 4]; 4] {
-        self.matrix.to_cols_array_2d()
+impl From<Transform> for [[f32; 4]; 4] {
+    fn from(val: Transform) -> Self {
+        val.matrix.to_cols_array_2d()
     }
 }

@@ -15,9 +15,9 @@ pub enum DescriptorType {
     SampledImage,
 }
 
-impl Into<vk::DescriptorType> for DescriptorType {
-    fn into(self) -> vk::DescriptorType {
-        match self {
+impl From<DescriptorType> for vk::DescriptorType {
+    fn from(val: DescriptorType) -> Self {
+        match val {
             DescriptorType::Uniform => vk::DescriptorType::UNIFORM_BUFFER,
             DescriptorType::UniformDynamic => vk::DescriptorType::UNIFORM_BUFFER_DYNAMIC,
             DescriptorType::ImageSampler => vk::DescriptorType::COMBINED_IMAGE_SAMPLER,
@@ -36,9 +36,9 @@ pub enum DescriptorStage {
     All,
 }
 
-impl Into<vk::ShaderStageFlags> for DescriptorStage {
-    fn into(self) -> vk::ShaderStageFlags {
-        match self {
+impl From<DescriptorStage> for vk::ShaderStageFlags {
+    fn from(val: DescriptorStage) -> Self {
+        match val {
             DescriptorStage::Compute => vk::ShaderStageFlags::COMPUTE,
             DescriptorStage::Vertex => vk::ShaderStageFlags::VERTEX,
             DescriptorStage::Fragment => vk::ShaderStageFlags::FRAGMENT,

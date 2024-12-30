@@ -48,18 +48,12 @@ impl Run for App {
 
     fn input(&mut self, _ctx: &Context, input: Input) {
         self.ui.input(input);
-        match input {
-            Input::KeyPressed(key) => match key {
-                Key::C => {
-                    let rd: Result<RenderDoc<V141>, _> = RenderDoc::new();
+        if let Input::KeyPressed(Key::C) = input {
+            let rd: Result<RenderDoc<V141>, _> = RenderDoc::new();
 
-                    if let Ok(mut rd) = rd {
-                        rd.trigger_capture();
-                    }
-                }
-                _ => (),
-            },
-            _ => (),
+            if let Ok(mut rd) = rd {
+                rd.trigger_capture();
+            }
         }
     }
 
@@ -267,32 +261,32 @@ impl MiscDemoWindow {
 
 fn label_ui(ui: &mut egui::Ui) {
     ui.horizontal_wrapped(|ui| {
-            // Trick so we don't have to add spaces in the text below:
-            let width = ui.fonts(|f|f.glyph_width(&egui::TextStyle::Body.resolve(ui.style()), ' '));
-            ui.spacing_mut().item_spacing.x = width;
+        // Trick so we don't have to add spaces in the text below:
+        let width = ui.fonts(|f|f.glyph_width(&egui::TextStyle::Body.resolve(ui.style()), ' '));
+        ui.spacing_mut().item_spacing.x = width;
 
-            ui.label(egui::RichText::new("Text can have").color(egui::Color32::from_rgb(110, 255, 110)));
-            ui.colored_label(egui::Color32::from_rgb(128, 140, 255), "color"); // Shortcut version
-            ui.label("and tooltips.").on_hover_text(
-                "This is a multiline tooltip that demonstrates that you can easily add tooltips to any element.\nThis is the second line.\nThis is the third.",
-            );
+        ui.label(egui::RichText::new("Text can have").color(egui::Color32::from_rgb(110, 255, 110)));
+        ui.colored_label(egui::Color32::from_rgb(128, 140, 255), "color"); // Shortcut version
+        ui.label("and tooltips.").on_hover_text(
+            "This is a multiline tooltip that demonstrates that you can easily add tooltips to any element.\nThis is the second line.\nThis is the third.",
+        );
 
-            ui.label("You can mix in other widgets into text, like");
-            let _ = ui.small_button("this button");
-            ui.label(".");
+        ui.label("You can mix in other widgets into text, like");
+        let _ = ui.small_button("this button");
+        ui.label(".");
 
-            ui.label("The default font supports all latin and cyrillic characters (ИÅđ…), common math symbols (∫√∞²⅓…), and many emojis (💓🌟🖩…).")
-                .on_hover_text("There is currently no support for right-to-left languages.");
-            ui.label("See the 🔤 Font Book for more!");
+        ui.label("The default font supports all latin and cyrillic characters (ИÅđ…), common math symbols (∫√∞²⅓…), and many emojis (💓🌟🖩…).")
+            .on_hover_text("There is currently no support for right-to-left languages.");
+        ui.label("See the 🔤 Font Book for more!");
 
-            ui.monospace("There is also a monospace font.");
-        });
+        ui.monospace("There is also a monospace font.");
+    });
 
     ui.add(
         egui::Label::new(
             "Labels containing long text can be set to elide the text that doesn't fit on a single line using `Label::truncate`. When hovered, the label will show the full text.",
         )
-        .truncate(),
+            .truncate(),
     );
 }
 

@@ -34,11 +34,11 @@ impl Run for App {
 
         let camera = Camera::perspective(
             extent.width as f32 / extent.height as f32,
-            (45. as f32).to_radians(),
+            45_f32.to_radians(),
             0.1,
             150.,
-            (0. as f32).to_radians(),
-            (-50. as f32).to_radians(),
+            0_f32.to_radians(),
+            (-50_f32).to_radians(),
         );
         let camera_position = Vec3::new(0., 25., 25.);
 

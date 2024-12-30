@@ -219,7 +219,7 @@ impl SceneGraph {
                 for &child in &node.base.children {
                     self.visit_local(child, f);
                 }
-                f(&node);
+                f(node);
             }
         }
     }
@@ -263,5 +263,11 @@ impl SceneGraph {
                 f(transform, node);
             }
         }
+    }
+}
+
+impl Default for SceneGraph {
+    fn default() -> Self {
+        Self::new()
     }
 }

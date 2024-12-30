@@ -186,15 +186,15 @@ mod tests {
             .with_max_level(Level::INFO)
             .with_span_events(FmtSpan::CLOSE)
             .finish();
-        tracing::subscriber::set_global_default(sub).unwrap();
+        tracing::subscriber::set_global_default(sub).unwrap_or_default();
     }
 
     fn check_dir(yaw: f32, pitch: f32, expected: Vec3) {
         tracing::debug!("yaw={:?}, pitch={:?}, dir={:?}", yaw, pitch, expected);
 
         let camera = Camera::ortho(
-            320. as f32,
-            200. as f32,
+            320_f32,
+            200_f32,
             0.1,
             100.,
             yaw.to_radians(),

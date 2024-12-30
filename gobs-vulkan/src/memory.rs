@@ -1,4 +1,4 @@
-use std::mem::{self, align_of};
+use std::mem::align_of;
 use std::sync::Arc;
 
 use ash::vk::Handle;
@@ -17,7 +17,7 @@ pub struct Memory {
 
 impl Memory {
     pub fn upload<T: Copy>(&mut self, entries: &[T], offset: usize) {
-        let size = (entries.len() * mem::size_of::<T>()) as u64;
+        let size = std::mem::size_of_val(entries) as u64;
 
         tracing::debug!(
             "Uploading data to buffer (Size={}, offset={}, align={}, len={})",

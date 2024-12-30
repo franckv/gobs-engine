@@ -51,9 +51,9 @@ pub enum PipelineStage {
     BottomOfPipe,
 }
 
-impl Into<vk::PipelineStageFlags> for PipelineStage {
-    fn into(self) -> vk::PipelineStageFlags {
-        match self {
+impl From<PipelineStage> for vk::PipelineStageFlags {
+    fn from(val: PipelineStage) -> Self {
+        match val {
             PipelineStage::AllCommands => vk::PipelineStageFlags::ALL_COMMANDS,
             PipelineStage::AllGraphics => vk::PipelineStageFlags::ALL_GRAPHICS,
             PipelineStage::TopOfPipe => vk::PipelineStageFlags::TOP_OF_PIPE,

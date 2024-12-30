@@ -61,15 +61,13 @@ pub enum ColorSpace {
 }
 
 impl From<vk::ColorSpaceKHR> for ColorSpace {
-    fn from(color_space: vk::ColorSpaceKHR) -> ColorSpace {
-        match color_space {
-            _ => ColorSpace::SrgbNonlinear,
-        }
+    fn from(_color_space: vk::ColorSpaceKHR) -> ColorSpace {
+        ColorSpace::SrgbNonlinear
     }
 }
 
-impl Into<vk::ColorSpaceKHR> for ColorSpace {
-    fn into(self) -> vk::ColorSpaceKHR {
+impl From<ColorSpace> for vk::ColorSpaceKHR {
+    fn from(_val: ColorSpace) -> Self {
         vk::ColorSpaceKHR::SRGB_NONLINEAR
     }
 }

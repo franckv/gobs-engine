@@ -49,7 +49,7 @@ impl Surface {
         };
 
         Ok(Surface {
-            instance: instance,
+            instance,
             window,
             surface,
         })
@@ -133,20 +133,14 @@ impl Surface {
         let caps = self.get_capabilities(device);
         let dim = self.get_dimensions();
 
-        let extent = match caps.width {
+        match caps.width {
             std::u32::MAX => dim,
             _ => ImageExtent2D::new(caps.width, caps.height),
-        };
-
-        extent
+        }
     }
 
     pub fn is_minimized(&self) -> bool {
-        if let Some(minimized) = self.window.is_minimized() {
-            minimized
-        } else {
-            false
-        }
+        self.window.is_minimized().unwrap_or(false)
     }
 }
 

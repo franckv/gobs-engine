@@ -311,7 +311,7 @@ impl UIRenderer {
 
         tracing::debug!("Load {} primitives", primitives.len());
 
-        if primitives.len() == 0 {
+        if primitives.is_empty() {
             return None;
         }
 

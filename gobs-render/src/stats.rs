@@ -46,10 +46,7 @@ impl RenderStats {
             self.cpu_draw_time += t
         };
 
-        let pass_stats = self
-            .pass_stats
-            .entry(pass_id)
-            .or_insert(PassStats::default());
+        let pass_stats = self.pass_stats.entry(pass_id).or_default();
 
         pass_stats.draw_time = t;
     }
@@ -69,10 +66,7 @@ impl RenderStats {
             self.update_time += t
         };
 
-        let pass_stats = self
-            .pass_stats
-            .entry(pass_id)
-            .or_insert(PassStats::default());
+        let pass_stats = self.pass_stats.entry(pass_id).or_default();
 
         pass_stats.update_time = t;
     }
@@ -88,10 +82,7 @@ impl RenderStats {
     pub fn bind(&mut self, pass_id: PassId) {
         self.binds += 1;
 
-        let pass_stats = self
-            .pass_stats
-            .entry(pass_id)
-            .or_insert(PassStats::default());
+        let pass_stats = self.pass_stats.entry(pass_id).or_default();
 
         pass_stats.binds += 1
     }
@@ -103,10 +94,7 @@ impl RenderStats {
     pub fn draw(&mut self, pass_id: PassId) {
         self.draws += 1;
 
-        let pass_stats = self
-            .pass_stats
-            .entry(pass_id)
-            .or_insert(PassStats::default());
+        let pass_stats = self.pass_stats.entry(pass_id).or_default();
 
         pass_stats.draws += 1
     }
@@ -141,10 +129,7 @@ impl RenderStats {
                 .map(|m| m.textures.len() as u32)
                 .sum::<u32>();
 
-            let pass_stat = self
-                .pass_stats
-                .entry(object.pass.id())
-                .or_insert(PassStats::default());
+            let pass_stat = self.pass_stats.entry(object.pass.id()).or_default();
 
             pass_stat.vertices += vertices;
             pass_stat.indices += indices;

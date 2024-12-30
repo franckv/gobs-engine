@@ -118,7 +118,7 @@ impl GLTFLoader {
                         }
                         ReadIndices::U32(iter) => {
                             for idx in iter {
-                                mesh_data = mesh_data.index(idx as u32);
+                                mesh_data = mesh_data.index(idx);
                             }
                         }
                     }
@@ -262,7 +262,7 @@ impl GLTFLoader {
                         &name,
                         &pixels,
                         ImageExtent2D::new(data.width, data.height),
-                        ty.into(),
+                        ty,
                         ty.into(),
                         mag_filter,
                         min_filter,
@@ -291,7 +291,7 @@ impl GLTFLoader {
     }
 
     fn load_material(&mut self, doc: &Document, images: &[image::Data]) {
-        self.load_textures(&doc, &images);
+        self.load_textures(doc, images);
 
         for mat in doc.materials() {
             let name = mat.name().unwrap_or_default();

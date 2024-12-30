@@ -8,9 +8,9 @@ pub enum QueryType {
     Timestamp,
 }
 
-impl Into<vk::QueryType> for QueryType {
-    fn into(self) -> vk::QueryType {
-        match self {
+impl From<QueryType> for vk::QueryType {
+    fn from(val: QueryType) -> Self {
+        match val {
             QueryType::Timestamp => vk::QueryType::TIMESTAMP,
         }
     }

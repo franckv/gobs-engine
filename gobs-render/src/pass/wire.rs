@@ -59,7 +59,7 @@ impl WirePass {
             .polygon_mode(PolygonMode::Line)
             .viewports(vec![Viewport::new(0., 0., 0., 0.)])
             .scissors(vec![Rect2D::new(0, 0, 0, 0)])
-            .dynamic_states(&vec![DynamicStateElem::Viewport, DynamicStateElem::Scissor])
+            .dynamic_states(&[DynamicStateElem::Viewport, DynamicStateElem::Scissor])
             .attachments(Some(ctx.color_format), Some(ctx.depth_format))
             .depth_test_disable()
             .cull_mode(CullMode::Back)

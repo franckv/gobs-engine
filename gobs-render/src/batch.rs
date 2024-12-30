@@ -102,7 +102,7 @@ impl RenderBatch {
         light_transform: &Transform,
         pass: RenderPass,
     ) {
-        if let Some(_) = pass.uniform_data_layout() {
+        if pass.uniform_data_layout().is_some() {
             let scene_data =
                 pass.get_uniform_data(camera, camera_transform, light, light_transform);
             self.scene_data.insert(pass.id(), scene_data);
@@ -128,10 +128,10 @@ impl RenderBatch {
     fn sort(&mut self) {
         self.render_list.sort_by(|a, b| {
             // sort order: pass, transparent, material: model
-            return (a.pass.id().cmp(&b.pass.id()))
+            (a.pass.id().cmp(&b.pass.id()))
                 .then(a.is_transparent().cmp(&b.is_transparent()))
                 .then(a.material_id().cmp(&b.material_id()))
-                .then(a.mesh.model.id.cmp(&b.mesh.model.id));
+                .then(a.mesh.model.id.cmp(&b.mesh.model.id))
         });
     }
 

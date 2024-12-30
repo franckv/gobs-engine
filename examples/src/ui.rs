@@ -49,7 +49,7 @@ impl Ui {
             ui.separator();
             self.show_fps(ui, graph.render_stats().fps);
             self.show_stats(ui, "Render Stats", graph);
-            self.show_camera(ui, camera, &camera_transform);
+            self.show_camera(ui, camera, camera_transform);
             self.show_memory(ui, ctx);
             self.show_scene(ui, &scene.graph);
         });
@@ -186,5 +186,11 @@ impl Ui {
                 }
             });
         });
+    }
+}
+
+impl Default for Ui {
+    fn default() -> Self {
+        Self::new()
     }
 }

@@ -164,10 +164,6 @@ impl CameraController {
             projection.fovy += (self.fov_up - self.fov_down) * dt;
         }
 
-        if camera.pitch < -SAFE_FRAC_PI_2 {
-            camera.pitch = -SAFE_FRAC_PI_2;
-        } else if camera.pitch > SAFE_FRAC_PI_2 {
-            camera.pitch = SAFE_FRAC_PI_2;
-        }
+        camera.pitch = camera.pitch.clamp(-SAFE_FRAC_PI_2, SAFE_FRAC_PI_2);
     }
 }

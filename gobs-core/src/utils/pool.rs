@@ -41,3 +41,9 @@ impl<K: Hash + Eq, V> ObjectPool<K, V> {
         self.pool.get(key).is_some_and(|v| !v.is_empty())
     }
 }
+
+impl<K: Hash + Eq, V> Default for ObjectPool<K, V> {
+    fn default() -> Self {
+        Self::new()
+    }
+}

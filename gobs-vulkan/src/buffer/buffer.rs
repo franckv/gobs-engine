@@ -20,9 +20,9 @@ pub enum BufferUsage {
     Uniform,
 }
 
-impl Into<vk::MemoryPropertyFlags> for BufferUsage {
-    fn into(self) -> vk::MemoryPropertyFlags {
-        match self {
+impl From<BufferUsage> for vk::MemoryPropertyFlags {
+    fn from(val: BufferUsage) -> Self {
+        match val {
             BufferUsage::Staging => {
                 vk::MemoryPropertyFlags::HOST_VISIBLE | vk::MemoryPropertyFlags::HOST_COHERENT
             }
@@ -41,9 +41,9 @@ impl Into<vk::MemoryPropertyFlags> for BufferUsage {
     }
 }
 
-impl Into<MemoryLocation> for BufferUsage {
-    fn into(self) -> MemoryLocation {
-        match self {
+impl From<BufferUsage> for MemoryLocation {
+    fn from(val: BufferUsage) -> Self {
+        match val {
             BufferUsage::Staging => MemoryLocation::CpuToGpu,
             BufferUsage::StagingDst => MemoryLocation::GpuToCpu,
             BufferUsage::Vertex => MemoryLocation::GpuOnly,
@@ -54,9 +54,9 @@ impl Into<MemoryLocation> for BufferUsage {
     }
 }
 
-impl Into<vk::BufferUsageFlags> for BufferUsage {
-    fn into(self) -> vk::BufferUsageFlags {
-        match self {
+impl From<BufferUsage> for vk::BufferUsageFlags {
+    fn from(val: BufferUsage) -> Self {
+        match val {
             BufferUsage::Staging => vk::BufferUsageFlags::TRANSFER_SRC,
             BufferUsage::StagingDst => vk::BufferUsageFlags::TRANSFER_DST,
             BufferUsage::Vertex => {

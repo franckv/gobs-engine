@@ -27,6 +27,12 @@ impl TextureManager {
     }
 }
 
+impl Default for TextureManager {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 pub struct MaterialManager {
     pub texture_manager: TextureManager,
     pub instances: Vec<Arc<MaterialInstance>>,

@@ -32,7 +32,7 @@ impl ResourceManager {
     }
 
     pub fn invalidate(&self) {
-        for (_, image) in &self.resources {
+        for image in self.resources.values() {
             image.write().invalidate();
         }
     }
@@ -55,5 +55,11 @@ impl ResourceManager {
         );
 
         self.resources[label].write()
+    }
+}
+
+impl Default for ResourceManager {
+    fn default() -> Self {
+        Self::new()
     }
 }

@@ -192,12 +192,10 @@ impl Device<VkRenderer> for VkDevice {
 
 impl VkDevice {
     pub fn get_queue(&self, ty: CommandQueueType) -> Arc<vk::queue::Queue> {
-        let queue = match ty {
+        match ty {
             CommandQueueType::Graphics => self.graphics_queue.clone(),
             CommandQueueType::Transfer => self.transfer_queue.clone(),
             _ => unimplemented!(),
-        };
-
-        queue
+        }
     }
 }

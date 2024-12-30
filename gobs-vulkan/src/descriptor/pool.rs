@@ -175,7 +175,7 @@ mod tests {
             .with_max_level(Level::INFO)
             .with_span_events(FmtSpan::CLOSE)
             .finish();
-        tracing::subscriber::set_global_default(sub).unwrap();
+        tracing::subscriber::set_global_default(sub).unwrap_or_default();
 
         let ctx = crate::headless::Context::new("test");
 

@@ -121,7 +121,7 @@ impl GraphicsPipelineBuilder<VkRenderer> for VkGraphicsPipelineBuilder {
     }
 
     fn current_binding_group(&self) -> Option<BindingGroupType> {
-        self.current_binding_group.clone()
+        self.current_binding_group
     }
 
     fn binding(

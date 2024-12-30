@@ -47,7 +47,7 @@ struct ViewportState {
 }
 
 impl ViewportState {
-    fn new(viewports: &Vec<Viewport>, scissors: &Vec<Rect2D>) -> Self {
+    fn new(viewports: &[Viewport], scissors: &[Rect2D]) -> Self {
         ViewportState {
             viewports: viewports
                 .iter()
@@ -100,22 +100,17 @@ impl DynamicStates {
     }
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, Default)]
 pub enum PrimitiveTopology {
     Point,
+    #[default]
     Triangle,
     Line,
 }
 
-impl Default for PrimitiveTopology {
-    fn default() -> Self {
-        PrimitiveTopology::Triangle
-    }
-}
-
-impl Into<vk::PrimitiveTopology> for PrimitiveTopology {
-    fn into(self) -> vk::PrimitiveTopology {
-        match self {
+impl From<PrimitiveTopology> for vk::PrimitiveTopology {
+    fn from(val: PrimitiveTopology) -> Self {
+        match val {
             PrimitiveTopology::Point => vk::PrimitiveTopology::POINT_LIST,
             PrimitiveTopology::Triangle => vk::PrimitiveTopology::TRIANGLE_LIST,
             PrimitiveTopology::Line => vk::PrimitiveTopology::LINE_LIST,
@@ -153,9 +148,9 @@ impl Default for PolygonMode {
     }
 }
 
-impl Into<vk::PolygonMode> for PolygonMode {
-    fn into(self) -> vk::PolygonMode {
-        match self {
+impl From<PolygonMode> for vk::PolygonMode {
+    fn from(val: PolygonMode) -> Self {
+        match val {
             PolygonMode::Fill => vk::PolygonMode::FILL,
             PolygonMode::Line => vk::PolygonMode::LINE,
             PolygonMode::Point => vk::PolygonMode::POINT,
@@ -175,9 +170,9 @@ impl Default for FrontFace {
     }
 }
 
-impl Into<vk::FrontFace> for FrontFace {
-    fn into(self) -> vk::FrontFace {
-        match self {
+impl From<FrontFace> for vk::FrontFace {
+    fn from(val: FrontFace) -> Self {
+        match val {
             FrontFace::CW => vk::FrontFace::CLOCKWISE,
             FrontFace::CCW => vk::FrontFace::COUNTER_CLOCKWISE,
         }
@@ -198,9 +193,9 @@ impl Default for CullMode {
     }
 }
 
-impl Into<vk::CullModeFlags> for CullMode {
-    fn into(self) -> vk::CullModeFlags {
-        match self {
+impl From<CullMode> for vk::CullModeFlags {
+    fn from(val: CullMode) -> Self {
+        match val {
             CullMode::None => vk::CullModeFlags::NONE,
             CullMode::Front => vk::CullModeFlags::FRONT,
             CullMode::Back => vk::CullModeFlags::BACK,
@@ -284,9 +279,9 @@ pub enum CompareOp {
     Always,
 }
 
-impl Into<vk::CompareOp> for CompareOp {
-    fn into(self) -> vk::CompareOp {
-        match self {
+impl From<CompareOp> for vk::CompareOp {
+    fn from(val: CompareOp) -> Self {
+        match val {
             CompareOp::Never => vk::CompareOp::NEVER,
             CompareOp::Less => vk::CompareOp::LESS,
             CompareOp::Equal => vk::CompareOp::EQUAL,
@@ -397,6 +392,7 @@ impl ColorBlendState {
     }
 }
 
+#[derive(Default)]
 struct VertexInputState {
     binding_desc: Vec<vk::VertexInputBindingDescription>,
     attribute_desc: Vec<vk::VertexInputAttributeDescription>,
@@ -414,15 +410,6 @@ impl VertexInputState {
         vk::PipelineVertexInputStateCreateInfo::default()
             .vertex_binding_descriptions(&self.binding_desc)
             .vertex_attribute_descriptions(&self.attribute_desc)
-    }
-}
-
-impl Default for VertexInputState {
-    fn default() -> Self {
-        Self {
-            binding_desc: Default::default(),
-            attribute_desc: Default::default(),
-        }
     }
 }
 
@@ -450,7 +437,7 @@ impl RenderingState {
         match self.depth_format {
             Some(depth_format) => vk::PipelineRenderingCreateInfo::default()
                 .color_attachment_formats(&self.color_format)
-                .depth_attachment_format(depth_format.into()),
+                .depth_attachment_format(depth_format),
             None => vk::PipelineRenderingCreateInfo::default()
                 .color_attachment_formats(&self.color_format),
         }
@@ -665,7 +652,7 @@ impl GraphicsPipelineBuilder {
         };
 
         Arc::new(Pipeline {
-            device: device,
+            device,
             layout: pipeline_layout,
             pipeline,
             bind_point,

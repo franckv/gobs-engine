@@ -43,6 +43,12 @@ impl ObjectRegistry {
     }
 }
 
+impl Default for ObjectRegistry {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 #[cfg(test)]
 mod test {
     use super::*;
@@ -55,8 +61,8 @@ mod test {
         let key2 = Uuid::new_v4();
 
         assert!(registry.insert(key1, "bla").is_none());
-        assert!(registry.insert(key1, 1234 as u32).is_none());
-        assert!(registry.insert(key2, 4321 as u32).is_none());
+        assert!(registry.insert(key1, 1234_u32).is_none());
+        assert!(registry.insert(key2, 4321_u32).is_none());
         assert!(registry.insert(key2, "bli").is_none());
         assert!(registry.insert(key2, vec![1, 2, 3, 4]).is_none());
 
@@ -66,6 +72,6 @@ mod test {
         assert_eq!(*registry.get::<&str>(&key2).unwrap(), "bli");
         assert_eq!(registry.get::<Vec<i32>>(&key2).unwrap().len(), 4);
 
-        assert_eq!(registry.insert(key1, 1111 as u32).unwrap(), 1234);
+        assert_eq!(registry.insert(key1, 1111_u32).unwrap(), 1234);
     }
 }

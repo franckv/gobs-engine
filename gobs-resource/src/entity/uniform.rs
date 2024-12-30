@@ -55,6 +55,10 @@ impl UniformLayout {
         self.layout.len()
     }
 
+    pub fn is_empty(&self) -> bool {
+        self.len() == 0
+    }
+
     pub fn size(&self) -> usize {
         self.layout
             .iter()
@@ -74,14 +78,14 @@ impl UniformLayout {
         data
     }
 
-    pub fn copy_data(&self, props: &[UniformPropData], mut data: &mut Vec<u8>) {
+    pub fn copy_data(&self, props: &[UniformPropData], data: &mut Vec<u8>) {
         assert_eq!(self.len(), props.len(), "Invalid uniform layout");
 
         for prop in props {
-            prop.copy(&mut data);
+            prop.copy(data);
             let pad = (self.alignment - prop.ty().size() % self.alignment) % self.alignment;
             for _ in 0..pad {
-                data.push(0 as u8);
+                data.push(0_u8);
             }
         }
     }
@@ -174,7 +178,7 @@ mod tests {
             .with_max_level(Level::INFO)
             .with_span_events(FmtSpan::CLOSE)
             .finish();
-        tracing::subscriber::set_global_default(sub).unwrap();
+        tracing::subscriber::set_global_default(sub).unwrap_or_default();
     }
 
     #[repr(C)]
@@ -245,7 +249,6 @@ mod tests {
     #[test]
     fn test_align() {
         setup();
-
         let mat3 = [[0 as f32; 3]; 3];
         let layout = UniformLayout::builder()
             .prop("mat3", UniformProp::Mat3F)
@@ -259,10 +262,9 @@ mod tests {
     #[test]
     fn test_push() {
         setup();
-
         let mat3 = [[0 as f32; 3]; 3];
         let mat4 = [[0 as f32; 4]; 4];
-        let u = 0 as u64;
+        let u = 0_u64;
 
         let layout = UniformLayout::builder()
             .prop("mat4", UniformProp::Mat4F)

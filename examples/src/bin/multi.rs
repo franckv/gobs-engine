@@ -34,7 +34,7 @@ impl Run for App {
 
         let camera = Camera::perspective(
             extent.width as f32 / extent.height as f32,
-            (60. as f32).to_radians(),
+            60_f32.to_radians(),
             0.1,
             100.,
             0.,

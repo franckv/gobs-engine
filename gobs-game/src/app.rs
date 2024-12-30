@@ -75,7 +75,7 @@ where
                     WindowEvent::CloseRequested => {
                         tracing::info!("Stopping");
                         self.close_requested = true;
-                        runnable.close(&context);
+                        runnable.close(context);
                         event_loop.exit();
                     }
                     WindowEvent::Resized(physical_size) => {
@@ -98,23 +98,23 @@ where
                         keyboard::Key::Named(NamedKey::Escape) => {
                             tracing::info!("Stopping");
                             self.close_requested = true;
-                            runnable.close(&context);
+                            runnable.close(context);
                             event_loop.exit();
                         }
                         _ => {
                             let key = key_code.into();
                             match state {
                                 ElementState::Pressed => {
-                                    runnable.input(&context, Input::KeyPressed(key))
+                                    runnable.input(context, Input::KeyPressed(key))
                                 }
                                 ElementState::Released => {
-                                    runnable.input(&context, Input::KeyReleased(key))
+                                    runnable.input(context, Input::KeyReleased(key))
                                 }
                             }
                         }
                     },
                     WindowEvent::CursorMoved { position, .. } => {
-                        runnable.input(&context, Input::CursorMoved(position.x, position.y));
+                        runnable.input(context, Input::CursorMoved(position.x, position.y));
                     }
                     WindowEvent::MouseWheel { delta, .. } => {
                         let delta = match delta {
@@ -123,21 +123,21 @@ where
                                 y: scroll, ..
                             }) => scroll as f32,
                         };
-                        runnable.input(&context, Input::MouseWheel(delta));
+                        runnable.input(context, Input::MouseWheel(delta));
                     }
                     WindowEvent::MouseInput { button, state, .. } => match state {
                         ElementState::Pressed => {
-                            runnable.input(&context, Input::MousePressed(button.into()))
+                            runnable.input(context, Input::MousePressed(button.into()))
                         }
                         ElementState::Released => {
-                            runnable.input(&context, Input::MouseReleased(button.into()))
+                            runnable.input(context, Input::MouseReleased(button.into()))
                         }
                     },
                     WindowEvent::RedrawRequested => {
                         let delta = self.timer.delta();
 
                         if !self.close_requested {
-                            runnable.update(&context, delta);
+                            runnable.update(context, delta);
                             tracing::trace!("[Redraw] FPS: {}", 1. / delta);
                             if !context.display.is_minimized() {
                                 if self.is_minimized {
@@ -171,11 +171,8 @@ where
             if let Some(context) = &mut self.context {
                 tracing::trace!("evt={:?}", event);
 
-                match event {
-                    DeviceEvent::MouseMotion { delta } => {
-                        runnable.input(&context, Input::MouseMotion(delta.0, delta.1))
-                    }
-                    _ => (),
+                if let DeviceEvent::MouseMotion { delta } = event {
+                    runnable.input(context, Input::MouseMotion(delta.0, delta.1))
                 }
             }
         }

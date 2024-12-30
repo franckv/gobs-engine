@@ -49,7 +49,7 @@ impl SampleApp {
 
         Camera::perspective(
             extent.width as f32 / extent.height as f32,
-            (60. as f32).to_radians(),
+            60_f32.to_radians(),
             0.1,
             100.,
             0.,
@@ -201,11 +201,10 @@ impl SampleApp {
 
         graph.begin(ctx)?;
 
-        graph.prepare(ctx, &mut |pass, batch| match pass.ty() {
-            PassType::Ui => {
+        graph.prepare(ctx, &mut |pass, batch| {
+            if pass.ty() == PassType::Ui {
                 ui.draw(ctx, pass, batch, None, RenderableLifetime::Transient);
             }
-            _ => (),
         });
 
         graph.render(ctx)?;
@@ -259,8 +258,8 @@ impl SampleApp {
             camera_controller.input(input, self.ui.ui_hovered);
         }
 
-        match input {
-            Input::KeyPressed(key) => match key {
+        if let Input::KeyPressed(key) = input {
+            match key {
                 Key::E => graph.render_scaling = (graph.render_scaling + 0.1).min(1.),
                 Key::A => graph.render_scaling = (graph.render_scaling - 0.1).max(0.1),
                 Key::R => {
@@ -281,15 +280,14 @@ impl SampleApp {
                     camera.yaw = 0.;
                 }),
                 _ => {}
-            },
-            _ => (),
+            }
         }
     }
 
     pub fn screenshot(&self, ctx: &Context, graph: &mut FrameGraph) {
         let filename = "draw_image.png";
         let mut data = vec![];
-        let extent = graph.get_image_data(&ctx, "draw", &mut data, ImageFormat::R16g16b16a16Unorm);
+        let extent = graph.get_image_data(ctx, "draw", &mut data, ImageFormat::R16g16b16a16Unorm);
 
         tracing::info!("Screenshot \"{}\" ({} bytes)", filename, data.len());
 
@@ -298,5 +296,11 @@ impl SampleApp {
 
         img.save_with_format(filename, image::ImageFormat::Png)
             .unwrap();
+    }
+}
+
+impl Default for SampleApp {
+    fn default() -> Self {
+        Self::new()
     }
 }

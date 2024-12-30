@@ -21,9 +21,9 @@ pub enum ImageLayout {
     Present,
 }
 
-impl Into<vk::ImageLayout> for ImageLayout {
-    fn into(self) -> vk::ImageLayout {
-        match self {
+impl From<ImageLayout> for vk::ImageLayout {
+    fn from(val: ImageLayout) -> Self {
+        match val {
             ImageLayout::Undefined => vk::ImageLayout::UNDEFINED,
             ImageLayout::General => vk::ImageLayout::GENERAL,
             ImageLayout::TransferSrc => vk::ImageLayout::TRANSFER_SRC_OPTIMAL,
@@ -45,9 +45,9 @@ pub enum ImageUsage {
     File,
 }
 
-impl Into<vk::ImageUsageFlags> for ImageUsage {
-    fn into(self) -> vk::ImageUsageFlags {
-        match self {
+impl From<ImageUsage> for vk::ImageUsageFlags {
+    fn from(val: ImageUsage) -> Self {
+        match val {
             ImageUsage::Swapchain => {
                 vk::ImageUsageFlags::TRANSFER_DST | vk::ImageUsageFlags::COLOR_ATTACHMENT
             }
@@ -68,9 +68,9 @@ impl Into<vk::ImageUsageFlags> for ImageUsage {
     }
 }
 
-impl Into<vk::ImageAspectFlags> for ImageUsage {
-    fn into(self) -> vk::ImageAspectFlags {
-        match self {
+impl From<ImageUsage> for vk::ImageAspectFlags {
+    fn from(val: ImageUsage) -> Self {
+        match val {
             ImageUsage::Swapchain => vk::ImageAspectFlags::COLOR,
             ImageUsage::Texture => vk::ImageAspectFlags::COLOR,
             ImageUsage::Color => vk::ImageAspectFlags::COLOR,
@@ -80,9 +80,9 @@ impl Into<vk::ImageAspectFlags> for ImageUsage {
     }
 }
 
-impl Into<vk::ImageTiling> for ImageUsage {
-    fn into(self) -> vk::ImageTiling {
-        match self {
+impl From<ImageUsage> for vk::ImageTiling {
+    fn from(val: ImageUsage) -> Self {
+        match val {
             ImageUsage::Swapchain => vk::ImageTiling::OPTIMAL,
             ImageUsage::Texture => vk::ImageTiling::OPTIMAL,
             ImageUsage::Color => vk::ImageTiling::OPTIMAL,

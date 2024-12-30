@@ -48,7 +48,7 @@ impl PhysicalDevice {
         PhysicalDevice {
             name: String::from(name),
             gpu_type,
-            queue_families: Self::get_queue_families(&p_device, &instance),
+            queue_families: Self::get_queue_families(&p_device, instance),
             p_device,
             props,
             mem_props,

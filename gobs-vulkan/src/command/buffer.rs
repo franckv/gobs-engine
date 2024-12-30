@@ -206,7 +206,7 @@ impl CommandBuffer {
 
         let rendering_info = match color_info.first() {
             Some(color_attachment) => {
-                rendering_info.color_attachments(std::slice::from_ref(&color_attachment))
+                rendering_info.color_attachments(std::slice::from_ref(color_attachment))
             }
             None => rendering_info,
         };
@@ -679,7 +679,7 @@ impl CommandBuffer {
 
         self.begin();
 
-        callback(&self);
+        callback(self);
 
         self.end();
 
@@ -701,7 +701,7 @@ impl CommandBuffer {
 
         self.begin();
 
-        callback(&self);
+        callback(self);
 
         self.end();
 

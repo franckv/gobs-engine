@@ -27,11 +27,7 @@ impl RenderObject {
     }
 
     pub fn material_id(&self) -> Option<MaterialInstanceId> {
-        if let Some(material) = &self.mesh.material {
-            Some(material.id)
-        } else {
-            None
-        }
+        self.mesh.material.as_ref().map(|material| material.id)
     }
 }
 

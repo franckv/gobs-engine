@@ -151,7 +151,7 @@ impl RenderPass for ComputePass {
 
         cmd.bind_pipeline(&self.pipeline);
         batch.stats_mut().bind(self.id);
-        cmd.bind_resource(&draw_bindings);
+        cmd.bind_resource(draw_bindings);
         batch.stats_mut().bind(self.id);
 
         cmd.dispatch(draw_extent.width / 16 + 1, draw_extent.height / 16 + 1, 1);

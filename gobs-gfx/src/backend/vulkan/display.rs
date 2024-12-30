@@ -49,7 +49,7 @@ impl Display<VkRenderer> for VkDisplay {
             self.swapchain_images = swapchain
                 .create_images(&device.device)
                 .into_iter()
-                .map(|image| VkImage::from_raw(image))
+                .map(VkImage::from_raw)
                 .collect();
             self.swapchain = Some(swapchain);
 
@@ -87,7 +87,7 @@ impl Display<VkRenderer> for VkDisplay {
 
             self.swapchain_idx = image_index;
 
-            self.swapchain_images[image_index as usize].invalidate();
+            self.swapchain_images[image_index].invalidate();
         }
 
         Ok(())
@@ -119,12 +119,12 @@ impl Display<VkRenderer> for VkDisplay {
                     swapchain.format,
                     swapchain.present,
                     swapchain.image_count,
-                    Some(&swapchain),
+                    Some(swapchain),
                 );
                 self.swapchain_images = swapchain
                     .create_images(&device.device)
                     .into_iter()
-                    .map(|image| VkImage::from_raw(image))
+                    .map(VkImage::from_raw)
                     .collect();
                 self.swapchain = Some(swapchain);
             }

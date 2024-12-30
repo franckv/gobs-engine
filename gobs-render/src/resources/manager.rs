@@ -44,14 +44,14 @@ impl Clone for GPUMesh {
     fn clone(&self) -> Self {
         Self {
             model: self.model.clone(),
-            ty: self.ty.clone(),
+            ty: self.ty,
             material: self.material.clone(),
             material_binding: self.material_binding.clone(),
             vertex_buffer: self.vertex_buffer.clone(),
             index_buffer: self.index_buffer.clone(),
-            vertices_offset: self.vertices_offset.clone(),
-            indices_offset: self.indices_offset.clone(),
-            indices_len: self.indices_len.clone(),
+            vertices_offset: self.vertices_offset,
+            indices_offset: self.indices_offset,
+            indices_len: self.indices_len,
         }
     }
 }
@@ -283,7 +283,7 @@ impl MeshResourceManager {
     ) -> Option<GfxBindingGroup> {
         if let Some(ref material) = material {
             tracing::debug!("Save binding for {}", material.id);
-            self.load_texture(ctx, &material);
+            self.load_texture(ctx, material);
 
             match self.material_bindings.entry(material.id) {
                 Entry::Vacant(e) => {
@@ -322,10 +322,9 @@ impl MeshResourceManager {
         for texture in &material.textures {
             let key = texture.id;
 
-            if !self.textures.contains_key(&key) {
-                self.textures
-                    .insert(key, GpuTexture::new(ctx, texture.clone()));
-            }
+            self.textures
+                .entry(key)
+                .or_insert_with(|| GpuTexture::new(ctx, texture.clone()));
         }
     }
 
@@ -338,7 +337,7 @@ impl MeshResourceManager {
         _lifetime: RenderableLifetime,
     ) -> (Arc<GfxBuffer>, Arc<GfxBuffer>) {
         let vertices_size = vertices.len();
-        let indices_size = indices.len() * std::mem::size_of::<u32>();
+        let indices_size = std::mem::size_of_val(indices);
 
         let staging_size = indices_size + vertices_size;
 
@@ -355,8 +354,8 @@ impl MeshResourceManager {
             self.buffer_pool
                 .allocate(ctx, "index", indices_size, BufferUsage::Index);
 
-        staging.copy(&vertices, 0);
-        staging.copy(&indices, vertices_size);
+        staging.copy(vertices, 0);
+        staging.copy(indices, vertices_size);
 
         ctx.device.run_transfer_mut(|cmd| {
             cmd.begin_label("Upload buffer");
