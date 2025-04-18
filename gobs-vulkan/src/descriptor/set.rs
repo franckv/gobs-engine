@@ -3,13 +3,13 @@ use std::sync::Arc;
 use ash::vk;
 
 use crate::{
+    Wrap,
     buffer::Buffer,
     command::CommandBuffer,
     descriptor::DescriptorSetLayout,
     device::Device,
     image::{Image, ImageLayout, Sampler},
     pipeline::Pipeline,
-    Wrap,
 };
 
 #[derive(Debug)]

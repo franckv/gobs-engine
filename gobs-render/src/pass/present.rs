@@ -4,11 +4,11 @@ use gobs_core::ImageExtent2D;
 use gobs_gfx::{Command, Display, GfxCommand, GfxPipeline, Image, ImageLayout};
 
 use crate::{
+    RenderError,
     batch::RenderBatch,
     context::Context,
     graph::ResourceManager,
     pass::{PassId, PassType, RenderPass},
-    RenderError,
 };
 
 pub struct PresentPass {

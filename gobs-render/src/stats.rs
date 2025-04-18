@@ -1,6 +1,6 @@
 use std::collections::{HashMap, HashSet};
 
-use crate::{pass::PassId, renderable::RenderObject, ModelId};
+use crate::{ModelId, pass::PassId, renderable::RenderObject};
 
 #[derive(Clone, Debug, Default)]
 pub struct PassStats {

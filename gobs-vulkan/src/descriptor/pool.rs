@@ -2,9 +2,9 @@ use std::sync::Arc;
 
 use ash::vk::{self, DescriptorPoolResetFlags};
 
+use crate::Wrap;
 use crate::descriptor::{DescriptorSet, DescriptorSetLayout};
 use crate::device::Device;
-use crate::Wrap;
 
 const MAX_POOL_SETS: usize = 1024;
 
@@ -167,7 +167,7 @@ mod tests {
         DescriptorSetLayout, DescriptorSetPool, DescriptorStage, DescriptorType,
     };
     use tracing::Level;
-    use tracing_subscriber::{fmt::format::FmtSpan, FmtSubscriber};
+    use tracing_subscriber::{FmtSubscriber, fmt::format::FmtSpan};
 
     #[test]
     fn test_alloc() {

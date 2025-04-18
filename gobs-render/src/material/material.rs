@@ -9,7 +9,7 @@ use uuid::Uuid;
 
 use gobs_resource::{geometry::VertexFlag, material::Texture};
 
-use crate::{context::Context, material::MaterialInstance, RenderPass};
+use crate::{RenderPass, context::Context, material::MaterialInstance};
 
 pub type MaterialId = Uuid;
 

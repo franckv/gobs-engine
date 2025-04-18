@@ -8,13 +8,13 @@ use winit::window::Window;
 
 use gobs_core::{ImageExtent2D, ImageFormat};
 
+use crate::Wrap;
 use crate::device::Device;
 use crate::image::{ColorSpace, VkFormat};
 use crate::instance::Instance;
 use crate::physical::PhysicalDevice;
 use crate::queue::QueueFamily;
 use crate::swapchain::PresentationMode;
-use crate::Wrap;
 
 #[derive(Copy, Clone, Debug)]
 pub struct SurfaceFormat {

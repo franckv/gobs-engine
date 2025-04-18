@@ -1,7 +1,7 @@
 use crate::{
+    Buffer, Command, Device, Display, Image, Instance, Pipeline, Sampler,
     bindgroup::{BindingGroup, BindingGroupUpdates},
     pipeline::{ComputePipelineBuilder, GraphicsPipelineBuilder},
-    Buffer, Command, Device, Display, Image, Instance, Pipeline, Sampler,
 };
 
 pub trait Renderer: Sized {

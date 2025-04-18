@@ -177,7 +177,7 @@ impl fmt::Display for Camera {
 mod tests {
     use glam::Vec3;
     use tracing::Level;
-    use tracing_subscriber::{fmt::format::FmtSpan, FmtSubscriber};
+    use tracing_subscriber::{FmtSubscriber, fmt::format::FmtSpan};
 
     use crate::entity::camera::Camera;
 

@@ -2,8 +2,8 @@ mod app;
 mod controller;
 mod ui;
 
-use tracing::{level_filters::LevelFilter, Level};
-use tracing_subscriber::{fmt::format::FmtSpan, EnvFilter, FmtSubscriber};
+use tracing::{Level, level_filters::LevelFilter};
+use tracing_subscriber::{EnvFilter, FmtSubscriber, fmt::format::FmtSpan};
 
 pub use app::SampleApp;
 pub use controller::CameraController;

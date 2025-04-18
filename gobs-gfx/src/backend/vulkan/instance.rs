@@ -5,8 +5,8 @@ use winit::window::Window;
 
 use gobs_vulkan as vk;
 
-use crate::backend::vulkan::renderer::VkRenderer;
 use crate::Instance;
+use crate::backend::vulkan::renderer::VkRenderer;
 
 pub struct VkInstance {
     pub(crate) instance: Arc<vk::instance::Instance>,

@@ -5,10 +5,10 @@ use ash::vk;
 
 use gobs_core::ImageExtent2D;
 
+use crate::Wrap;
 use crate::device::Device;
 use crate::image::Image;
 use crate::renderpass::RenderPass;
-use crate::Wrap;
 
 pub struct Framebuffer {
     device: Arc<Device>,

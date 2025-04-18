@@ -15,7 +15,7 @@ use gobs::{
     ui::UIRenderer,
 };
 
-use crate::{ui::Ui, CameraController};
+use crate::{CameraController, ui::Ui};
 
 pub struct SampleApp {
     pub process_updates: bool,

@@ -4,8 +4,8 @@ use ash::vk;
 
 use gobs_core::SamplerFilter;
 
-use crate::device::Device;
 use crate::Wrap;
+use crate::device::Device;
 
 pub struct VkFilter(vk::Filter);
 

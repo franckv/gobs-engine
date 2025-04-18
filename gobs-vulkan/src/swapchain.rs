@@ -1,16 +1,16 @@
 use std;
 use std::sync::Arc;
 
-use anyhow::{bail, Result};
+use anyhow::{Result, bail};
 use ash::khr::swapchain;
 use ash::vk;
 
+use crate::Wrap;
 use crate::device::Device;
 use crate::image::{Image, ImageUsage, VkFormat};
 use crate::queue::Queue;
 use crate::surface::{Surface, SurfaceFormat};
 use crate::sync::Semaphore;
-use crate::Wrap;
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum PresentationMode {

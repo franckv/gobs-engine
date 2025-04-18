@@ -5,11 +5,11 @@ use gobs_gfx::{GfxCommand, GfxPipeline};
 use gobs_resource::{entity::uniform::UniformLayout, geometry::VertexFlag};
 
 use crate::{
+    RenderError,
     batch::RenderBatch,
     context::Context,
     graph::ResourceManager,
     pass::{PassId, PassType, RenderPass},
-    RenderError,
 };
 
 pub struct DummyPass {

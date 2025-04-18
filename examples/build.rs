@@ -3,8 +3,8 @@ use std::fs;
 use std::path::PathBuf;
 use std::process::Command;
 
-use fs_extra::dir::copy;
 use fs_extra::dir::CopyOptions;
+use fs_extra::dir::copy;
 
 const SHADERS_IN_DIR: &str = "shaders/in";
 const SHADERS_OUT_DIR: &str = "shaders";

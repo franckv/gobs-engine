@@ -2,9 +2,9 @@ use std::ffi::CStr;
 
 use ash::vk;
 
+use crate::Wrap;
 use crate::instance::Instance;
 use crate::queue::QueueFamily;
-use crate::Wrap;
 
 #[derive(Debug, PartialEq)]
 pub enum PhysicalDeviceType {

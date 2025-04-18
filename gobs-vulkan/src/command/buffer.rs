@@ -16,7 +16,7 @@ use crate::pipeline::{Pipeline, PipelineLayout, PipelineStage};
 use crate::query::QueryPool;
 use crate::queue::Queue;
 use crate::sync::{Fence, Semaphore};
-use crate::{debug, Wrap};
+use crate::{Wrap, debug};
 
 pub trait IndexType: Copy {
     fn get_index_type() -> vk::IndexType;

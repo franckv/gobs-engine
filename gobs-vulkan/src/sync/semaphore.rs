@@ -3,7 +3,7 @@ use std::sync::Arc;
 use ash::vk;
 
 use crate::device::Device;
-use crate::{debug, Wrap};
+use crate::{Wrap, debug};
 
 pub struct Semaphore {
     device: Arc<Device>,

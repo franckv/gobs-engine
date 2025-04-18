@@ -2,9 +2,9 @@ use std::sync::Arc;
 
 use ash::vk;
 
+use crate::Wrap;
 use crate::device::Device;
 use crate::queue::QueueFamily;
-use crate::Wrap;
 
 /// Used to allocate new CommandBuffers
 pub struct CommandPool {

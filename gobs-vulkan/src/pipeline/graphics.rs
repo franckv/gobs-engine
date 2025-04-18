@@ -6,7 +6,7 @@ use gobs_core::ImageFormat;
 
 use crate::image::VkFormat;
 use crate::pipeline::{Pipeline, PipelineLayout, Rect2D, Shader, ShaderStage, VertexLayout};
-use crate::{device::Device, Wrap};
+use crate::{Wrap, device::Device};
 
 pub struct Viewport {
     x: f32,

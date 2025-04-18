@@ -10,12 +10,12 @@ use ash::{
 use gobs_core::ImageFormat;
 
 use crate::{
+    Wrap,
     feature::Features,
     image::{ImageUsage, VkFormat},
     instance::Instance,
     physical::PhysicalDevice,
     queue::QueueFamily,
-    Wrap,
 };
 
 /// Logical device

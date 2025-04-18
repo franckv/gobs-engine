@@ -4,9 +4,9 @@ use ash::vk;
 
 use gobs_core::ImageFormat;
 
+use crate::Wrap;
 use crate::device::Device;
 use crate::image::VkFormat;
-use crate::Wrap;
 
 pub struct RenderPass {
     device: Arc<Device>,

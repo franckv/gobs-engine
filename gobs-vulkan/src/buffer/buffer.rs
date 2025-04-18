@@ -8,7 +8,7 @@ use gpu_allocator::MemoryLocation;
 use crate::alloc::Allocator;
 use crate::device::Device;
 use crate::memory::Memory;
-use crate::{debug, Wrap};
+use crate::{Wrap, debug};
 
 #[derive(Clone, Copy, Debug, Hash, PartialEq, Eq)]
 pub enum BufferUsage {

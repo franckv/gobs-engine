@@ -1,8 +1,8 @@
 use gobs_core::Transform;
 
 use crate::{
-    batch::RenderBatch, context::Context, material::MaterialInstanceId, resources::GPUMesh,
-    RenderPass,
+    RenderPass, batch::RenderBatch, context::Context, material::MaterialInstanceId,
+    resources::GPUMesh,
 };
 
 #[derive(Copy, Clone, Debug, PartialEq)]

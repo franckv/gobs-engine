@@ -8,13 +8,13 @@ use gobs_resource::{
 };
 
 use crate::{
+    RenderPass,
     context::Context,
     model::Model,
     pass::PassId,
     renderable::{RenderObject, RenderableLifetime},
     resources::MeshResourceManager,
     stats::RenderStats,
-    RenderPass,
 };
 
 pub struct RenderBatch {

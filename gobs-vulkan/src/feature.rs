@@ -1,6 +1,6 @@
 use ash::vk;
 
-use crate::{instance::Instance, physical::PhysicalDevice, Wrap};
+use crate::{Wrap, instance::Instance, physical::PhysicalDevice};
 
 #[derive(Default)]
 pub struct Features {

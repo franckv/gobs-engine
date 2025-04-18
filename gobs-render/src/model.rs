@@ -1,5 +1,5 @@
-use std::collections::hash_map::Entry;
 use std::collections::HashMap;
+use std::collections::hash_map::Entry;
 use std::fmt::Debug;
 use std::sync::Arc;
 
@@ -10,11 +10,11 @@ use uuid::Uuid;
 use gobs_resource::geometry::{Bounded, BoundingBox, Mesh};
 
 use crate::{
+    RenderPass, Renderable,
     batch::RenderBatch,
     context::Context,
     material::{MaterialInstance, MaterialInstanceId},
     renderable::RenderableLifetime,
-    RenderPass, Renderable,
 };
 
 pub type ModelId = Uuid;

@@ -2,9 +2,9 @@ use std::sync::Arc;
 
 use ash::vk;
 
+use crate::Wrap;
 use crate::descriptor::DescriptorSetLayout;
 use crate::device::Device;
-use crate::Wrap;
 
 #[derive(Debug)]
 pub struct PipelineLayout {

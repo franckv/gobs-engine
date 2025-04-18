@@ -3,11 +3,11 @@ use std::{ffi::CString, sync::Arc};
 use ash::vk;
 
 use crate::{
+    Wrap,
     device::Device,
     pipeline::{
         ComputePipelineBuilder, GraphicsPipelineBuilder, PipelineLayout, Shader, ShaderType,
     },
-    Wrap,
 };
 
 pub struct Rect2D {

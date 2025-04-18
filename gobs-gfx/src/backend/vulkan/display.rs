@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use anyhow::{bail, Result};
+use anyhow::{Result, bail};
 use winit::window::Window;
 
 use gobs_core::{ImageExtent2D, ImageFormat};
@@ -78,7 +78,7 @@ impl Display<VkRenderer> for VkDisplay {
     }
 
     fn acquire(&mut self, frame: usize) -> Result<()> {
-        if let Some(ref mut swapchain) = &mut self.swapchain {
+        if let Some(swapchain) = &mut self.swapchain {
             tracing::trace!("Acquire with semaphore {}", frame);
             let semaphore = &self.swapchain_semaphores[frame];
             let Ok(image_index) = swapchain.acquire_image(semaphore) else {
@@ -94,7 +94,7 @@ impl Display<VkRenderer> for VkDisplay {
     }
 
     fn present(&mut self, device: &VkDevice, frame: usize) -> Result<()> {
-        if let Some(ref mut swapchain) = &mut self.swapchain {
+        if let Some(swapchain) = &mut self.swapchain {
             swapchain.present(
                 self.swapchain_idx,
                 &device.graphics_queue,

@@ -1,4 +1,5 @@
 use crate::{
+    Renderer,
     backend::vulkan::{
         bindgroup::{VkBindingGroup, VkBindingGroupUpdates},
         buffer::VkBuffer,
@@ -9,7 +10,6 @@ use crate::{
         instance::VkInstance,
         pipeline::{VkComputePipelineBuilder, VkGraphicsPipelineBuilder, VkPipeline},
     },
-    Renderer,
 };
 
 pub struct VkRenderer;

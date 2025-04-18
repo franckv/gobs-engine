@@ -2,10 +2,9 @@ use std::{fmt::Debug, path::Path, sync::Arc};
 
 use glam::Quat;
 use gltf::{
-    buffer, image,
+    Document, buffer, image,
     material::AlphaMode,
     mesh::util::{ReadColors, ReadIndices},
-    Document,
 };
 
 use gobs_core::{Color, ImageExtent2D, SamplerFilter, Transform};

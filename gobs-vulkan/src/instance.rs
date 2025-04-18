@@ -21,63 +21,65 @@ unsafe extern "system" fn debug_cb(
     p_callback_data: *const vk::DebugUtilsMessengerCallbackDataEXT,
     _user_data: *mut std::os::raw::c_void,
 ) -> vk::Bool32 {
-    let callback_data = *p_callback_data;
-    let message_id_number: i32 = callback_data.message_id_number;
+    unsafe {
+        let callback_data = *p_callback_data;
+        let message_id_number: i32 = callback_data.message_id_number;
 
-    let message_id_name = if callback_data.p_message_id_name.is_null() {
-        Cow::from("")
-    } else {
-        CStr::from_ptr(callback_data.p_message_id_name).to_string_lossy()
-    };
+        let message_id_name = if callback_data.p_message_id_name.is_null() {
+            Cow::from("")
+        } else {
+            CStr::from_ptr(callback_data.p_message_id_name).to_string_lossy()
+        };
 
-    let message = if callback_data.p_message.is_null() {
-        Cow::from("")
-    } else {
-        CStr::from_ptr(callback_data.p_message).to_string_lossy()
-    };
+        let message = if callback_data.p_message.is_null() {
+            Cow::from("")
+        } else {
+            CStr::from_ptr(callback_data.p_message).to_string_lossy()
+        };
 
-    match message_severity {
-        vk::DebugUtilsMessageSeverityFlagsEXT::WARNING => {
-            tracing::warn!(
-                "{:?} [{} ({})] : {}",
-                message_type,
-                message_id_name,
-                &message_id_number.to_string(),
-                message,
-            );
+        match message_severity {
+            vk::DebugUtilsMessageSeverityFlagsEXT::WARNING => {
+                tracing::warn!(
+                    "{:?} [{} ({})] : {}",
+                    message_type,
+                    message_id_name,
+                    &message_id_number.to_string(),
+                    message,
+                );
+            }
+            vk::DebugUtilsMessageSeverityFlagsEXT::INFO => {
+                tracing::info!(
+                    "{:?} [{} ({})] : {}",
+                    message_type,
+                    message_id_name,
+                    &message_id_number.to_string(),
+                    message,
+                );
+            }
+            vk::DebugUtilsMessageSeverityFlagsEXT::VERBOSE => {
+                tracing::debug!(
+                    "{:?} [{} ({})] : {}",
+                    message_type,
+                    message_id_name,
+                    &message_id_number.to_string(),
+                    message,
+                );
+            }
+            _ => {
+                tracing::error!(
+                    "{:?} [{} ({})] : {}",
+                    message_type,
+                    message_id_name,
+                    &message_id_number.to_string(),
+                    message,
+                );
+                #[cfg(debug_assertions)]
+                panic!("{}", message);
+            }
         }
-        vk::DebugUtilsMessageSeverityFlagsEXT::INFO => {
-            tracing::info!(
-                "{:?} [{} ({})] : {}",
-                message_type,
-                message_id_name,
-                &message_id_number.to_string(),
-                message,
-            );
-        }
-        vk::DebugUtilsMessageSeverityFlagsEXT::VERBOSE => {
-            tracing::debug!(
-                "{:?} [{} ({})] : {}",
-                message_type,
-                message_id_name,
-                &message_id_number.to_string(),
-                message,
-            );
-        }
-        _ => {
-            tracing::error!(
-                "{:?} [{} ({})] : {}",
-                message_type,
-                message_id_name,
-                &message_id_number.to_string(),
-                message,
-            );
-            #[cfg(debug_assertions)]
-            panic!("{}", message);
-        }
+
+        vk::FALSE
     }
-
-    vk::FALSE
 }
 
 /// First object to create. Link to Vulkan runtime

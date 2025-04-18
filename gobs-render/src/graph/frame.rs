@@ -1,22 +1,22 @@
 use anyhow::Result;
 use bytemuck::Pod;
 
-use gobs_core::{utils::timer::Timer, ImageExtent2D, ImageFormat};
+use gobs_core::{ImageExtent2D, ImageFormat, utils::timer::Timer};
 use gobs_gfx::{
     Buffer, BufferUsage, Command, CommandQueueType, Device, Display, GfxBuffer, GfxCommand,
     GfxImage, Image, ImageLayout, ImageUsage,
 };
 
 use crate::{
+    RenderPass,
     batch::RenderBatch,
     context::Context,
     graph::resource::ResourceManager,
     pass::{
-        bounds::BoundsPass, compute::ComputePass, depth::DepthPass, dummy::DummyPass,
-        forward::ForwardPass, present::PresentPass, ui::UiPass, wire::WirePass, PassId, PassType,
+        PassId, PassType, bounds::BoundsPass, compute::ComputePass, depth::DepthPass,
+        dummy::DummyPass, forward::ForwardPass, present::PresentPass, ui::UiPass, wire::WirePass,
     },
     stats::RenderStats,
-    RenderPass,
 };
 
 const FRAME_WIDTH: u32 = 1920;

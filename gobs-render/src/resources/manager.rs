@@ -1,5 +1,5 @@
 use std::{
-    collections::{hash_map::Entry, HashMap},
+    collections::{HashMap, hash_map::Entry},
     sync::Arc,
 };
 
@@ -13,13 +13,13 @@ use gobs_resource::{
 };
 
 use crate::{
+    ModelId, RenderPass,
     context::Context,
     material::{MaterialInstance, MaterialInstanceId},
     model::Model,
     pass::PassId,
     renderable::RenderableLifetime,
     resources::{Allocator, GpuTexture},
-    ModelId, RenderPass,
 };
 
 #[derive(Clone, Copy, Debug)]

@@ -1,6 +1,6 @@
 use std::{
     any::{Any, TypeId},
-    collections::{hash_map::Entry, HashMap},
+    collections::{HashMap, hash_map::Entry},
 };
 
 use uuid::Uuid;

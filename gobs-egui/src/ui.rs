@@ -1,8 +1,8 @@
 use std::{collections::HashMap, sync::Arc};
 
 use egui::{
-    epaint::{ImageDelta, Primitive},
     Event, FullOutput, Modifiers, MouseWheelUnit, PointerButton, RawInput, Rect, TextureId,
+    epaint::{ImageDelta, Primitive},
 };
 use glam::{Vec2, Vec3};
 
