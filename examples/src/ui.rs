@@ -1,6 +1,5 @@
 use std::collections::VecDeque;
 
-use gpu_allocator::vulkan::AllocatorVisualizer;
 use slotmap::Key as _;
 
 use gobs::{
@@ -15,7 +14,6 @@ pub struct Ui {
     pub show_light: bool,
     pub show_models: bool,
     pub ui_hovered: bool,
-    pub memory_visualiser: AllocatorVisualizer,
 }
 
 impl Ui {
@@ -25,7 +23,6 @@ impl Ui {
             show_light: true,
             show_models: true,
             ui_hovered: false,
-            memory_visualiser: AllocatorVisualizer::new(),
         }
     }
 
@@ -50,7 +47,6 @@ impl Ui {
             self.show_fps(ui, graph.render_stats().fps);
             self.show_stats(ui, "Render Stats", graph);
             self.show_camera(ui, camera, camera_transform);
-            self.show_memory(ui, ctx);
             self.show_scene(ui, &scene.graph);
         });
 
@@ -115,17 +111,6 @@ impl Ui {
             ui.label(format!("  Yaw: {:.1}°", camera.yaw.to_degrees()));
             ui.label(format!("  Pitch: {:.1}°", camera.pitch.to_degrees()));
             ui.label(format!("  Transform: {:?}", camera_transform));
-        });
-    }
-
-    pub fn show_memory(&mut self, ui: &mut egui::Ui, ctx: &Context) {
-        ui.collapsing("Memory", |ui| {
-            self.memory_visualiser
-                .render_breakdown_ui(ui, &ctx.device.allocator.allocator.lock().unwrap());
-        });
-        ui.collapsing("Memory blocks", |ui| {
-            self.memory_visualiser
-                .render_memory_block_ui(ui, &ctx.device.allocator.allocator.lock().unwrap());
         });
     }
 

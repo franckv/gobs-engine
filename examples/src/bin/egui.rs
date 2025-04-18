@@ -434,6 +434,7 @@ impl BoxPainting {
                     self.rounding,
                     ui.visuals().text_color().gamma_multiply(0.5),
                     egui::Stroke::new(self.stroke_width, egui::Color32::WHITE),
+                    egui::StrokeKind::Inside,
                 );
             }
         });

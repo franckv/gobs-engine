@@ -64,21 +64,21 @@ ash-window = "0.13"
 anyhow = "1.0"
 bitflags = "2.6"
 bytemuck = { version = "1.21", features = ["derive"] }
-egui = { version = "0.30", features = ["bytemuck", "serde"] }
+egui = { version = "0.31", features = ["bytemuck", "serde"] }
 env_logger = "0.11"
 futures = "0.3"
 fs_extra = "1.3"
-glam = { version = "0.29", features = ["bytemuck", "serde"] }
+glam = { version = "0.30", features = ["bytemuck", "serde"] }
 gltf = "1"
-gpu-allocator = { path = "../3rd/gpu-allocator", features = ["visualizer"] }
+gpu-allocator = "0.27"
 image = "0.25"
 indexmap = "2.7"
-itertools = { version = "0.13" }
-naga = { version = "23", features = ["glsl-in", "spv-out"] }
+itertools = { version = "0.14" }
+naga = { version = "25", features = ["glsl-in", "spv-out"] }
 parking_lot = "0.12"
 pollster = "0.4"
 presser = "0.3"
-rand = "0.8"
+rand = "0.9"
 raw-window-handle = "0.6"
 renderdoc = "0.12.1"
 serde = { version = "1.0", features = ["derive", "rc"] }
