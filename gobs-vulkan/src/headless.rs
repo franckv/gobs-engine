@@ -8,7 +8,7 @@ pub struct Context {
 
 impl Context {
     pub fn new(name: &str) -> Self {
-        let instance = Instance::new(name, 1, None, true).expect("Failed to init Intance");
+        let instance = Instance::new(name, 1, None, false).expect("Failed to init Intance");
 
         let expected_features = Features::default()
             .fill_mode_non_solid()
