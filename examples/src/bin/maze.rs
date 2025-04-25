@@ -12,6 +12,7 @@ use gobs::{
     resource::{
         entity::{camera::Camera, light::Light},
         geometry::Shapes,
+        load,
         material::{Texture, TextureType},
     },
     scene::{components::NodeValue, scene::Scene},
@@ -199,7 +200,11 @@ impl App {
             )
             .unwrap();
 
-        for c in examples::MAP.chars() {
+        let map = load::load_string(examples::MAP, load::AssetType::DATA)
+            .await
+            .unwrap();
+
+        for c in map.chars() {
             match c {
                 'w' => {
                     i += examples::TILE_SIZE;
