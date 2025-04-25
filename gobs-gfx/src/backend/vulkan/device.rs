@@ -4,11 +4,11 @@ use anyhow::Result;
 
 use gobs_vulkan as vk;
 
-use crate::Device;
 use crate::backend::vulkan::{
     command::VkCommand, display::VkDisplay, instance::VkInstance, renderer::VkRenderer,
 };
 use crate::command::CommandQueueType;
+use crate::Device;
 
 pub struct VkDevice {
     pub(crate) device: Arc<vk::device::Device>,
@@ -36,28 +36,16 @@ impl Device<VkRenderer> for VkDevice {
             .find_adapter(&expected_features, display.surface.as_deref())
             .expect("Find suitable adapter");
 
-        let (graphics_family, transfer_family) = instance
-            .instance
-            .find_family(&p_device, display.surface.as_deref());
-
         tracing::info!(target: "init", "Using adapter {}", p_device.name);
-        tracing::debug!(target: "init", "Using queue families Graphics={:?}, Transfer={:?}", &graphics_family, &transfer_family);
 
         let device = vk::device::Device::new(
             instance.instance.clone(),
             p_device,
-            &graphics_family,
-            &transfer_family,
+            display.surface.as_deref(),
         );
 
-        let transfer_queue_index = if transfer_family.index != graphics_family.index {
-            0
-        } else {
-            1
-        };
-        let graphics_queue = vk::queue::Queue::new(device.clone(), graphics_family, 0);
-        let transfer_queue =
-            vk::queue::Queue::new(device.clone(), transfer_family, transfer_queue_index);
+        let graphics_queue = device.clone().graphics_queue();
+        let transfer_queue = device.clone().transfer_queue();
 
         let immediate_cmd_pool =
             vk::command::CommandPool::new(device.clone(), &graphics_queue.family);

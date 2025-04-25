@@ -10,12 +10,13 @@ use ash::{
 use gobs_core::ImageFormat;
 
 use crate::{
-    Wrap,
     feature::Features,
     image::{ImageUsage, VkFormat},
     instance::Instance,
     physical::PhysicalDevice,
-    queue::QueueFamily,
+    queue::{Queue, QueueFamily},
+    surface::Surface,
+    Wrap,
 };
 
 /// Logical device
@@ -26,15 +27,19 @@ pub struct Device {
     pub(crate) debug_utils_device: debug_utils::Device,
     pub(crate) push_descriptor_device: push_descriptor::Device,
     pub features: Features,
+    pub graphics_family: QueueFamily,
+    pub transfer_family: QueueFamily,
 }
 
 impl Device {
     pub fn new(
         instance: Arc<Instance>,
         p_device: PhysicalDevice,
-        graphics_family: &QueueFamily,
-        transfer_family: &QueueFamily,
+        surface: Option<&Surface>,
     ) -> Arc<Self> {
+        let (graphics_family, transfer_family) = p_device.find_family(surface);
+        tracing::debug!(target: "init", "Using queue families Graphics={:?}, Transfer={:?}", &graphics_family, &transfer_family);
+
         let priorities = if transfer_family.index != graphics_family.index {
             vec![1.0]
         } else {
@@ -88,7 +93,23 @@ impl Device {
             debug_utils_device,
             push_descriptor_device,
             features,
+            graphics_family,
+            transfer_family,
         })
+    }
+
+    pub fn graphics_queue(self: Arc<Self>) -> Arc<Queue> {
+        Queue::new(self.clone(), self.graphics_family, 0)
+    }
+
+    pub fn transfer_queue(self: Arc<Self>) -> Arc<Queue> {
+        let transfer_queue_index = if self.transfer_family.index != self.graphics_family.index {
+            0
+        } else {
+            1
+        };
+
+        Queue::new(self.clone(), self.transfer_family, transfer_queue_index)
     }
 
     pub(crate) fn instance(&self) -> Arc<Instance> {

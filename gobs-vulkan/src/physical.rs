@@ -2,9 +2,11 @@ use std::ffi::CStr;
 
 use ash::vk;
 
-use crate::Wrap;
+use crate::feature::Features;
 use crate::instance::Instance;
 use crate::queue::QueueFamily;
+use crate::surface::Surface;
+use crate::Wrap;
 
 #[derive(Debug, PartialEq)]
 pub enum PhysicalDeviceType {
@@ -65,6 +67,61 @@ impl PhysicalDevice {
         }
 
         result
+    }
+
+    pub fn find_family(&self, surface: Option<&Surface>) -> (QueueFamily, QueueFamily) {
+        let graphics_family = self.queue_families.iter().find(|family| match surface {
+            Some(surface) => family.graphics_bit && surface.family_supported(self, family),
+            None => family.graphics_bit,
+        });
+
+        let transfer_family = self
+            .queue_families
+            .iter()
+            .find(|family| family.transfer_bits && !family.graphics_bit);
+
+        let graphics_family = graphics_family.expect("Get graphics family").clone();
+        let transfer_family = transfer_family.unwrap_or(&graphics_family).clone();
+
+        (graphics_family, transfer_family)
+    }
+
+    pub fn check_features(&self, instance: &Instance, expected_features: &Features) -> bool {
+        tracing::debug!(target: "init", "Checking device: {:?}", self.name);
+
+        tracing::debug!(target: "init", "Device type: {:?}", self.props.device_type);
+
+        let vram = self
+            .mem_props
+            .memory_heaps_as_slice()
+            .iter()
+            .map(|heap| {
+                if heap.flags.contains(vk::MemoryHeapFlags::DEVICE_LOCAL) {
+                    heap.size
+                } else {
+                    0
+                }
+            })
+            .max()
+            .unwrap_or(0);
+
+        tracing::debug!(target: "init", "VRAM size: {}", vram);
+
+        if self.props.api_version < vk::make_api_version(0, 1, 3, 0) {
+            tracing::debug!(target: "init", "Reject: wrong version");
+            return false;
+        }
+
+        let features = Features::from_device(instance, self);
+
+        if !features.check_features(expected_features) {
+            tracing::debug!(target: "init", "Reject: missing features");
+            return false;
+        }
+
+        tracing::debug!(target: "init", "Accepted");
+
+        true
     }
 
     fn get_queue_families(p_device: &vk::PhysicalDevice, instance: &Instance) -> Vec<QueueFamily> {

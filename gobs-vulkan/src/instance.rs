@@ -11,7 +11,6 @@ use winit::window::Window;
 use crate::{
     feature::Features,
     physical::{PhysicalDevice, PhysicalDeviceType},
-    queue::QueueFamily,
     surface::Surface,
 };
 
@@ -185,7 +184,7 @@ impl Instance {
         tracing::debug!(target: "init", "{} physical devices found", p_devices.len());
 
         for p_device in p_devices.drain(..) {
-            if self.check_physical_device(&p_device, expected_features) {
+            if p_device.check_features(self, expected_features) {
                 candidates.push(p_device);
             }
         }
@@ -197,69 +196,6 @@ impl Instance {
                 Ordering::Greater
             }
         })
-    }
-
-    fn check_physical_device(
-        &self,
-        p_device: &PhysicalDevice,
-        expected_features: &Features,
-    ) -> bool {
-        tracing::debug!(target: "init", "Checking device: {:?}", p_device.name);
-
-        tracing::debug!(target: "init", "Device type: {:?}", p_device.props.device_type);
-
-        let vram = p_device
-            .mem_props
-            .memory_heaps_as_slice()
-            .iter()
-            .map(|heap| {
-                if heap.flags.contains(vk::MemoryHeapFlags::DEVICE_LOCAL) {
-                    heap.size
-                } else {
-                    0
-                }
-            })
-            .max()
-            .unwrap_or(0);
-
-        tracing::debug!(target: "init", "VRAM size: {}", vram);
-
-        if p_device.props.api_version < vk::make_api_version(0, 1, 3, 0) {
-            tracing::debug!(target: "init", "Reject: wrong version");
-            return false;
-        }
-
-        let features = Features::from_device(self, p_device);
-
-        if !features.check_features(expected_features) {
-            tracing::debug!(target: "init", "Reject: missing features");
-            return false;
-        }
-
-        tracing::debug!(target: "init", "Accepted");
-
-        true
-    }
-
-    pub fn find_family(
-        &self,
-        p_device: &PhysicalDevice,
-        surface: Option<&Surface>,
-    ) -> (QueueFamily, QueueFamily) {
-        let graphics_family = p_device.queue_families.iter().find(|family| match surface {
-            Some(surface) => family.graphics_bit && surface.family_supported(p_device, family),
-            None => family.graphics_bit,
-        });
-
-        let transfer_family = p_device
-            .queue_families
-            .iter()
-            .find(|family| family.transfer_bits && !family.graphics_bit);
-
-        let graphics_family = graphics_family.expect("Get graphics family").clone();
-        let transfer_family = transfer_family.unwrap_or(&graphics_family).clone();
-
-        (graphics_family, transfer_family)
     }
 
     pub fn raw(&self) -> &ash::Instance {

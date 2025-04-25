@@ -3,10 +3,10 @@ use std::sync::Arc;
 
 use ash::vk;
 
-use crate::Wrap;
 use crate::device::Device;
+use crate::Wrap;
 
-#[derive(Clone)]
+#[derive(Copy, Clone)]
 pub struct QueueFamily {
     pub index: u32,
     pub size: u32,

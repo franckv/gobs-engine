@@ -23,14 +23,7 @@ impl Context {
 
         tracing::info!("Using adapter {}", physical_device.name);
 
-        let (graphics_family, transfer_family) = instance.find_family(&physical_device, None);
-
-        let device = Device::new(
-            instance.clone(),
-            physical_device,
-            &graphics_family,
-            &transfer_family,
-        );
+        let device = Device::new(instance.clone(), physical_device, None);
 
         Context { device }
     }
