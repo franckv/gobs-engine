@@ -166,14 +166,19 @@ mod tests {
     use crate::descriptor::{
         DescriptorSetLayout, DescriptorSetPool, DescriptorStage, DescriptorType,
     };
-    use tracing::Level;
-    use tracing_subscriber::{FmtSubscriber, fmt::format::FmtSpan};
+    use tracing::{Level, level_filters::LevelFilter};
+    use tracing_subscriber::{EnvFilter, FmtSubscriber, fmt::format::FmtSpan};
 
     #[test]
     fn test_alloc() {
         let sub = FmtSubscriber::builder()
             .with_max_level(Level::INFO)
             .with_span_events(FmtSpan::CLOSE)
+            .with_env_filter(
+                EnvFilter::builder()
+                    .with_default_directive(LevelFilter::INFO.into())
+                    .from_env_lossy(),
+            )
             .finish();
         tracing::subscriber::set_global_default(sub).unwrap_or_default();
 

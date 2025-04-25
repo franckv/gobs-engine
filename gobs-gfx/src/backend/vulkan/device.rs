@@ -4,11 +4,11 @@ use anyhow::Result;
 
 use gobs_vulkan as vk;
 
+use crate::Device;
 use crate::backend::vulkan::{
     command::VkCommand, display::VkDisplay, instance::VkInstance, renderer::VkRenderer,
 };
 use crate::command::CommandQueueType;
-use crate::Device;
 
 pub struct VkDevice {
     pub(crate) device: Arc<vk::device::Device>,

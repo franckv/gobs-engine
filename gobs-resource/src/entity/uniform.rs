@@ -169,6 +169,8 @@ mod tests {
     use glam::Vec3;
     use glam::{Mat4, Vec4};
     use tracing::Level;
+    use tracing::level_filters::LevelFilter;
+    use tracing_subscriber::EnvFilter;
     use tracing_subscriber::{FmtSubscriber, fmt::format::FmtSpan};
 
     use crate::entity::uniform::{UniformLayout, UniformProp, UniformPropData};
@@ -177,6 +179,11 @@ mod tests {
         let sub = FmtSubscriber::builder()
             .with_max_level(Level::INFO)
             .with_span_events(FmtSpan::CLOSE)
+            .with_env_filter(
+                EnvFilter::builder()
+                    .with_default_directive(LevelFilter::INFO.into())
+                    .from_env_lossy(),
+            )
             .finish();
         tracing::subscriber::set_global_default(sub).unwrap_or_default();
     }
