@@ -9,6 +9,7 @@ pub enum AssetType {
     SHADER,
     IMAGE,
     MODEL,
+    DATA,
 }
 
 pub fn get_asset_dir(file_name: &str, ty: AssetType) -> Result<PathBuf> {
@@ -20,6 +21,7 @@ pub fn get_asset_dir(file_name: &str, ty: AssetType) -> Result<PathBuf> {
         AssetType::SHADER => current_dir.join("shaders"),
         AssetType::MODEL => current_dir.join("assets/Models"),
         AssetType::IMAGE => current_dir.join("assets/Textures"),
+        AssetType::DATA => current_dir.join("assets"),
     };
 
     Ok(path.join(file_name))
