@@ -170,6 +170,7 @@ mod tests {
     use tracing_subscriber::{EnvFilter, FmtSubscriber, fmt::format::FmtSpan};
 
     #[test]
+    #[cfg_attr(feature = "ci", ignore)]
     fn test_alloc() {
         let sub = FmtSubscriber::builder()
             .with_max_level(Level::INFO)

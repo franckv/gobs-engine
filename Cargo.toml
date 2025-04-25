@@ -62,8 +62,8 @@ path = "./gobs-vulkan"
 ash = { version = "0.38", features = ["linked", "debug"] }
 ash-window = "0.13"
 anyhow = "1.0"
-bitflags = "2.6"
-bytemuck = { version = "1.21", features = ["derive"] }
+bitflags = "2.9"
+bytemuck = { version = "1.22", features = ["derive"] }
 egui = { version = "0.31", features = ["bytemuck", "serde"] }
 env_logger = "0.11"
 futures = "0.3"
@@ -72,7 +72,7 @@ glam = { version = "0.30", features = ["bytemuck", "serde"] }
 gltf = "1"
 gpu-allocator = "0.27"
 image = "0.25"
-indexmap = "2.7"
+indexmap = "2.9"
 itertools = { version = "0.14" }
 naga = { version = "25", features = ["glsl-in", "spv-out"] }
 parking_lot = "0.12"
@@ -87,7 +87,7 @@ slotmap = "1.0"
 tobj = "4.0"
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
-uuid = { version = "1.11", features = ["serde", "v4"] }
+uuid = { version = "1.16", features = ["serde", "v4"] }
 winit = "0.30"
 
 [profile.release-with-debug]
