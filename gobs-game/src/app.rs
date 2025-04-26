@@ -8,10 +8,10 @@ use winit::{
     window::Window,
 };
 
-use gobs_core::utils::timer::Timer;
+use gobs_core::{Input, utils::timer::Timer};
 use gobs_render::{Context, Display, RenderError};
 
-use crate::input::Input;
+use crate::AppError;
 
 pub struct Application<R>
 where
@@ -44,11 +44,11 @@ where
         #[cfg(not(debug_assertions))]
         let validation_enabled = false;
 
-        let context = Context::new(&self.title, Some(window), validation_enabled);
+        let context = Context::new(&self.title, Some(window), validation_enabled).unwrap();
         tracing::info!("Start main loop");
 
         let future = async {
-            let mut runnable = R::create(&context).await;
+            let mut runnable = R::create(&context).await.unwrap();
             runnable.start(&context).await;
 
             runnable
@@ -221,7 +221,7 @@ where
 
 #[allow(async_fn_in_trait)]
 pub trait Run: Sized {
-    async fn create(context: &Context) -> Self;
+    async fn create(context: &Context) -> Result<Self, AppError>;
     async fn start(&mut self, ctx: &Context);
     fn update(&mut self, ctx: &Context, delta: f32);
     fn render(&mut self, ctx: &mut Context) -> Result<(), RenderError>;

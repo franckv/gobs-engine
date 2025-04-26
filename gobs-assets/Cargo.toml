@@ -11,6 +11,7 @@ gobs-core = { workspace = true }
 gobs-render = { workspace = true }
 gobs-resource = { workspace = true }
 gobs-scene = { workspace = true }
+thiserror = { workspace = true }
 tracing = { workspace = true }
 
 [build-dependencies]

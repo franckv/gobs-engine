@@ -4,12 +4,12 @@ use ash::vk;
 
 use crate::{
     Wrap,
-    buffer::Buffer,
+    buffers::Buffer,
     command::CommandBuffer,
     descriptor::DescriptorSetLayout,
     device::Device,
-    image::{Image, ImageLayout, Sampler},
-    pipeline::Pipeline,
+    images::{Image, ImageLayout, Sampler},
+    pipelines::Pipeline,
 };
 
 #[derive(Debug)]

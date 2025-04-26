@@ -1,7 +1,8 @@
 mod batch;
 mod context;
+mod error;
 mod graph;
-mod material;
+mod materials;
 mod model;
 mod pass;
 mod renderable;
@@ -14,8 +15,9 @@ pub use gobs_gfx::{BlendMode, CullMode, Display, ImageUsage};
 
 pub use batch::RenderBatch;
 pub use context::Context;
-pub use graph::{FrameGraph, RenderError};
-pub use material::{Material, MaterialInstance, MaterialProperty};
+pub use error::RenderError;
+pub use graph::FrameGraph;
+pub use materials::{Material, MaterialInstance, MaterialProperty};
 pub use model::{Model, ModelId};
 pub use pass::PassType;
 pub use renderable::{Renderable, RenderableLifetime};

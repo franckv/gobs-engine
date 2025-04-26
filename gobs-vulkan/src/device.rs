@@ -11,8 +11,9 @@ use gobs_core::ImageFormat;
 
 use crate::{
     Wrap,
+    error::VulkanError,
     feature::Features,
-    image::{ImageUsage, VkFormat},
+    images::{ImageUsage, VkFormat},
     instance::Instance,
     physical::PhysicalDevice,
     queue::{Queue, QueueFamily},
@@ -36,7 +37,7 @@ impl Device {
         instance: Arc<Instance>,
         p_device: PhysicalDevice,
         surface: Option<&Surface>,
-    ) -> Arc<Self> {
+    ) -> Result<Arc<Self>, VulkanError> {
         let (graphics_family, transfer_family) = p_device.find_family(surface);
         tracing::debug!(target: "init", "Using queue families Graphics={:?}, Transfer={:?}", &graphics_family, &transfer_family);
 
@@ -78,15 +79,14 @@ impl Device {
             tracing::debug!("Create device");
             instance
                 .instance
-                .create_device(p_device.raw(), &device_info, None)
-                .unwrap()
+                .create_device(p_device.raw(), &device_info, None)?
         };
 
         let debug_utils_device = debug_utils::Device::new(&instance.instance, &device);
 
         let push_descriptor_device = push_descriptor::Device::new(&instance.instance, &device);
 
-        Arc::new(Device {
+        Ok(Arc::new(Device {
             instance,
             device,
             p_device,
@@ -95,7 +95,7 @@ impl Device {
             features,
             graphics_family,
             transfer_family,
-        })
+        }))
     }
 
     pub fn graphics_queue(self: Arc<Self>) -> Arc<Queue> {

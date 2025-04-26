@@ -1,11 +1,11 @@
 use std::sync::Arc;
 
-use anyhow::{Result, bail};
 use winit::window::Window;
 
 use gobs_core::{ImageExtent2D, ImageFormat};
 use gobs_vulkan as vk;
 
+use crate::GfxError;
 use crate::backend::vulkan::{
     device::VkDevice, image::VkImage, instance::VkInstance, renderer::VkRenderer,
 };
@@ -21,7 +21,7 @@ pub struct VkDisplay {
 }
 
 impl Display<VkRenderer> for VkDisplay {
-    fn new(instance: Arc<VkInstance>, window: Option<Window>) -> Result<Self>
+    fn new(instance: Arc<VkInstance>, window: Option<Window>) -> Result<Self, GfxError>
     where
         Self: Sized,
     {
@@ -77,23 +77,20 @@ impl Display<VkRenderer> for VkDisplay {
         }
     }
 
-    fn acquire(&mut self, frame: usize) -> Result<()> {
+    fn acquire(&mut self, frame: usize) -> Result<(), GfxError> {
         if let Some(swapchain) = &mut self.swapchain {
             tracing::trace!("Acquire with semaphore {}", frame);
             let semaphore = &self.swapchain_semaphores[frame];
-            let Ok(image_index) = swapchain.acquire_image(semaphore) else {
-                bail!("Fail to acquire swapchain");
-            };
+            let image_index = swapchain.acquire_image(semaphore)?;
 
             self.swapchain_idx = image_index;
-
             self.swapchain_images[image_index].invalidate();
         }
 
         Ok(())
     }
 
-    fn present(&mut self, device: &VkDevice, frame: usize) -> Result<()> {
+    fn present(&mut self, device: &VkDevice, frame: usize) -> Result<(), GfxError> {
         if let Some(swapchain) = &mut self.swapchain {
             swapchain.present(
                 self.swapchain_idx,
@@ -174,7 +171,7 @@ impl VkDisplay {
             .iter()
             .find(|f| {
                 f.format == ImageFormat::B8g8r8a8Unorm
-                    && f.color_space == vk::image::ColorSpace::SrgbNonlinear
+                    && f.color_space == vk::images::ColorSpace::SrgbNonlinear
             })
             .unwrap();
 

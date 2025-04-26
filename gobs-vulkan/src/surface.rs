@@ -1,7 +1,6 @@
 use std;
 use std::sync::Arc;
 
-use anyhow::Result;
 use ash::vk;
 use raw_window_handle::{HasDisplayHandle, HasWindowHandle};
 use winit::window::Window;
@@ -10,7 +9,8 @@ use gobs_core::{ImageExtent2D, ImageFormat};
 
 use crate::Wrap;
 use crate::device::Device;
-use crate::image::{ColorSpace, VkFormat};
+use crate::error::VulkanError;
+use crate::images::{ColorSpace, VkFormat};
 use crate::instance::Instance;
 use crate::physical::PhysicalDevice;
 use crate::queue::QueueFamily;
@@ -36,13 +36,19 @@ pub struct Surface {
 }
 
 impl Surface {
-    pub fn new(instance: Arc<Instance>, window: Window) -> Result<Self> {
+    pub fn new(instance: Arc<Instance>, window: Window) -> Result<Self, VulkanError> {
         let surface = unsafe {
             ash_window::create_surface(
                 &instance.entry,
                 &instance.instance,
-                window.display_handle()?.as_raw(),
-                window.window_handle()?.as_raw(),
+                window
+                    .display_handle()
+                    .map_err(|_| VulkanError::SurfaceCreateError)?
+                    .as_raw(),
+                window
+                    .window_handle()
+                    .map_err(|_| VulkanError::SurfaceCreateError)?
+                    .as_raw(),
                 None,
             )
             .unwrap()

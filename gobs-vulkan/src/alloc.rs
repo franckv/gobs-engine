@@ -3,7 +3,7 @@ use std::sync::{Arc, Mutex};
 use ash::vk::{self, Handle};
 use gpu_allocator::{AllocatorDebugSettings, MemoryLocation, vulkan};
 
-use crate::{Wrap, buffer::BufferUsage, device::Device, memory::Memory};
+use crate::{Wrap, buffers::BufferUsage, device::Device, memory::Memory};
 
 pub struct Allocator {
     pub allocator: Mutex<vulkan::Allocator>,

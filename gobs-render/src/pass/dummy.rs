@@ -20,13 +20,13 @@ pub struct DummyPass {
 }
 
 impl DummyPass {
-    pub fn new(_ctx: &Context, name: &str) -> Arc<dyn RenderPass> {
-        Arc::new(Self {
+    pub fn new(_ctx: &Context, name: &str) -> Result<Arc<dyn RenderPass>, RenderError> {
+        Ok(Arc::new(Self {
             id: PassId::new_v4(),
             name: name.to_string(),
             ty: PassType::Dummy,
             attachments: vec![],
-        })
+        }))
     }
 }
 

@@ -7,6 +7,8 @@ edition = { workspace = true }
 [dependencies]
 gobs-core = { workspace = true }
 gobs-render = { workspace = true }
+gobs-egui = { workspace = true }
 pollster = { workspace = true }
+thiserror = { workspace = true }
 tracing = { workspace = true }
 winit = { workspace = true }

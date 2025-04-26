@@ -3,6 +3,8 @@ use std::sync::Arc;
 use gobs_render::{BlendMode, Context, Material, MaterialInstance, MaterialProperty, RenderPass};
 use gobs_resource::{geometry::VertexFlag, material::Texture};
 
+use crate::AssetError;
+
 pub struct TextureManager {
     pub textures: Vec<Arc<Texture>>,
     pub default_texture: Arc<Texture>,
@@ -46,34 +48,34 @@ pub struct MaterialManager {
 }
 
 impl MaterialManager {
-    pub fn new(ctx: &Context, pass: RenderPass) -> Self {
+    pub fn new(ctx: &Context, pass: RenderPass) -> Result<Self, AssetError> {
         let vertex_flags = VertexFlag::POSITION
             | VertexFlag::TEXTURE
             | VertexFlag::NORMAL
             | VertexFlag::TANGENT
             | VertexFlag::BITANGENT;
 
-        let texture = Material::builder(ctx, "gltf.texture.vert.spv", "gltf.texture.frag.spv")
+        let texture = Material::builder(ctx, "gltf.texture.vert.spv", "gltf.texture.frag.spv")?
             .vertex_flags(vertex_flags)
             .prop("diffuse", MaterialProperty::Texture)
             .build(pass.clone());
 
         let transparent_texture =
-            Material::builder(ctx, "gltf.texture.vert.spv", "gltf.texture.frag.spv")
+            Material::builder(ctx, "gltf.texture.vert.spv", "gltf.texture.frag.spv")?
                 .vertex_flags(vertex_flags)
                 .prop("diffuse", MaterialProperty::Texture)
                 .blend_mode(BlendMode::Alpha)
                 .build(pass.clone());
 
         let texture_normal =
-            Material::builder(ctx, "gltf.texture.vert.spv", "gltf.texture_n.frag.spv")
+            Material::builder(ctx, "gltf.texture.vert.spv", "gltf.texture_n.frag.spv")?
                 .vertex_flags(vertex_flags)
                 .prop("diffuse", MaterialProperty::Texture)
                 .prop("normal", MaterialProperty::Texture)
                 .build(pass.clone());
 
         let transparent_texture_normal =
-            Material::builder(ctx, "gltf.texture.vert.spv", "gltf.texture_n.frag.spv")
+            Material::builder(ctx, "gltf.texture.vert.spv", "gltf.texture_n.frag.spv")?
                 .vertex_flags(vertex_flags)
                 .prop("diffuse", MaterialProperty::Texture)
                 .prop("normal", MaterialProperty::Texture)
@@ -90,7 +92,7 @@ impl MaterialManager {
             ctx,
             "gltf.color_light.vert.spv",
             "gltf.color_light.frag.spv",
-        )
+        )?
         .vertex_flags(vertex_flags)
         .build(pass.clone());
 
@@ -98,7 +100,7 @@ impl MaterialManager {
             ctx,
             "gltf.color_light.vert.spv",
             "gltf.color_light.frag.spv",
-        )
+        )?
         .vertex_flags(vertex_flags)
         .blend_mode(BlendMode::Alpha)
         .build(pass.clone());
@@ -116,7 +118,7 @@ impl MaterialManager {
         let transparent_color_instance = transparent_color.instantiate(vec![]);
         tracing::debug!("Color material id: {}", transparent_color_instance.id);
 
-        MaterialManager {
+        Ok(MaterialManager {
             texture_manager,
             instances: vec![],
             default_material_instance,
@@ -126,7 +128,7 @@ impl MaterialManager {
             transparent_texture_normal,
             color_instance,
             transparent_color_instance,
-        }
+        })
     }
 
     pub fn add_texture(&mut self, texture: Arc<Texture>) {

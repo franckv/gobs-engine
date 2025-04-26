@@ -9,7 +9,6 @@ name = "gobs_vulkan"
 path = "src/lib.rs"
 
 [dependencies]
-anyhow = { workspace = true }
 ash = { workspace = true }
 ash-window = { workspace = true }
 bytemuck = { workspace = true }
@@ -17,6 +16,7 @@ gobs-core = { workspace = true }
 gpu-allocator = { workspace = true }
 presser = { workspace = true }
 raw-window-handle = { workspace = true }
+thiserror = { workspace = true }
 tracing = { workspace = true }
 winit = { workspace = true }
 

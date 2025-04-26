@@ -3,11 +3,11 @@ use std::cmp::Ordering;
 use std::ffi::{CStr, CString};
 use std::sync::Arc;
 
-use anyhow::Result;
 use ash::{ext::debug_utils, khr::surface, vk};
 use raw_window_handle::HasDisplayHandle;
 use winit::window::Window;
 
+use crate::error::VulkanError;
 use crate::{
     feature::Features,
     physical::{PhysicalDevice, PhysicalDeviceType},
@@ -96,8 +96,8 @@ impl Instance {
         version: u32,
         window: Option<&Window>,
         validation: bool,
-    ) -> Result<Arc<Self>> {
-        let app_name = CString::new(name).unwrap();
+    ) -> Result<Arc<Self>, VulkanError> {
+        let app_name = CString::new(name)?;
 
         let vk_version = vk::make_api_version(0, 1, 3, 0);
 
@@ -109,17 +109,19 @@ impl Instance {
             .api_version(vk_version);
 
         let mut extensions = match window {
-            Some(window) => {
-                ash_window::enumerate_required_extensions(window.display_handle()?.as_raw())
-                    .unwrap()
-                    .to_vec()
-            }
+            Some(window) => ash_window::enumerate_required_extensions(
+                window
+                    .display_handle()
+                    .map_err(|_| VulkanError::InstanceCreateError)?
+                    .as_raw(),
+            )?
+            .to_vec(),
             None => vec![ash::khr::surface::NAME.as_ptr()],
         };
 
         extensions.push(debug_utils::NAME.as_ptr());
 
-        let validation_layer = CString::new("VK_LAYER_KHRONOS_validation").unwrap();
+        let validation_layer = CString::new("VK_LAYER_KHRONOS_validation")?;
 
         let layers = if validation {
             vec![validation_layer.as_ptr()]
@@ -137,7 +139,7 @@ impl Instance {
         let instance: ash::Instance = unsafe {
             tracing::info!("Create instance");
 
-            entry.create_instance(&instance_info, None).unwrap()
+            entry.create_instance(&instance_info, None)?
         };
 
         let surface_loader = surface::Instance::new(&entry, &instance);
@@ -156,11 +158,8 @@ impl Instance {
             .pfn_user_callback(Some(debug_cb));
 
         let debug_utils_loader = debug_utils::Instance::new(&entry, &instance);
-        let debug_call_back = unsafe {
-            debug_utils_loader
-                .create_debug_utils_messenger(&debug_info, None)
-                .unwrap()
-        };
+        let debug_call_back =
+            unsafe { debug_utils_loader.create_debug_utils_messenger(&debug_info, None)? };
 
         let instance = Instance {
             instance,

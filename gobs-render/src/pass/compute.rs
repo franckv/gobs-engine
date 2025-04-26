@@ -11,9 +11,10 @@ use gobs_resource::{
 };
 
 use crate::{
+    RenderError,
     batch::RenderBatch,
     context::Context,
-    graph::{RenderError, ResourceManager},
+    graph::ResourceManager,
     pass::{PassId, PassType, RenderPass},
 };
 
@@ -37,11 +38,11 @@ pub struct ComputePass {
 }
 
 impl ComputePass {
-    pub fn new(ctx: &Context, name: &str) -> Arc<dyn RenderPass> {
+    pub fn new(ctx: &Context, name: &str) -> Result<Arc<dyn RenderPass>, RenderError> {
         let pipeline_builder = GfxPipeline::compute(name, &ctx.device);
 
         let pipeline = pipeline_builder
-            .shader("sky.comp.spv", "main")
+            .shader("sky.comp.spv", "main")?
             .binding_group(BindingGroupType::ComputeData)
             .binding(DescriptorType::StorageImage)
             .build();
@@ -56,14 +57,14 @@ impl ComputePass {
             })
             .collect();
 
-        Arc::new(Self {
+        Ok(Arc::new(Self {
             id: PassId::new_v4(),
             name: name.to_string(),
             ty: PassType::Compute,
             attachments: vec![String::from("draw")],
             frame_data,
             pipeline,
-        })
+        }))
     }
 }
 

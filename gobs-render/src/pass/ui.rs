@@ -12,9 +12,10 @@ use gobs_resource::{
 };
 
 use crate::{
+    RenderError,
     batch::RenderBatch,
     context::Context,
-    graph::{RenderError, ResourceManager},
+    graph::ResourceManager,
     pass::{FrameData, PassId, PassType, RenderPass, RenderState},
     renderable::RenderObject,
     stats::RenderStats,
@@ -32,7 +33,11 @@ pub struct UiPass {
 }
 
 impl UiPass {
-    pub fn new(ctx: &Context, name: &str, color_clear: bool) -> Arc<dyn RenderPass> {
+    pub fn new(
+        ctx: &Context,
+        name: &str,
+        color_clear: bool,
+    ) -> Result<Arc<dyn RenderPass>, RenderError> {
         let push_layout = UniformLayout::builder()
             .prop("vertex_buffer_address", UniformProp::U64)
             .build();
@@ -45,7 +50,7 @@ impl UiPass {
             .map(|_| FrameData::new(ctx, uniform_data_layout.clone()))
             .collect();
 
-        Arc::new(Self {
+        Ok(Arc::new(Self {
             id: PassId::new_v4(),
             name: name.to_string(),
             ty: PassType::Ui,
@@ -54,7 +59,7 @@ impl UiPass {
             push_layout,
             frame_data,
             uniform_data_layout,
-        })
+        }))
     }
 
     fn prepare_scene_data(&self, ctx: &Context, batch: &mut RenderBatch) {

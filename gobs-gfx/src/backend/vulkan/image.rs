@@ -5,7 +5,7 @@ use crate::backend::vulkan::{device::VkDevice, renderer::VkRenderer};
 use crate::{Image, ImageUsage, Sampler};
 
 pub struct VkImage {
-    pub(crate) image: vk::image::Image,
+    pub(crate) image: vk::images::Image,
 }
 
 impl Image<VkRenderer> for VkImage {
@@ -17,7 +17,7 @@ impl Image<VkRenderer> for VkImage {
         extent: ImageExtent2D,
     ) -> Self {
         Self {
-            image: vk::image::Image::new(
+            image: vk::images::Image::new(
                 name,
                 device.device.clone(),
                 format,
@@ -58,13 +58,13 @@ impl Image<VkRenderer> for VkImage {
 }
 
 impl VkImage {
-    pub(crate) fn from_raw(image: vk::image::Image) -> Self {
+    pub(crate) fn from_raw(image: vk::images::Image) -> Self {
         Self { image }
     }
 }
 
 pub struct VkSampler {
-    pub(crate) sampler: vk::image::Sampler,
+    pub(crate) sampler: vk::images::Sampler,
     mag_filter: SamplerFilter,
     min_filter: SamplerFilter,
 }
@@ -72,7 +72,7 @@ pub struct VkSampler {
 impl Sampler<VkRenderer> for VkSampler {
     fn new(device: &VkDevice, mag_filter: SamplerFilter, min_filter: SamplerFilter) -> Self {
         Self {
-            sampler: vk::image::Sampler::new(device.device.clone(), mag_filter, min_filter),
+            sampler: vk::images::Sampler::new(device.device.clone(), mag_filter, min_filter),
             mag_filter,
             min_filter,
         }

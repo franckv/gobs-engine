@@ -5,7 +5,6 @@ authors = { workspace = true }
 edition = { workspace = true }
 
 [dependencies]
-anyhow = { workspace = true }
 bytemuck = { workspace = true }
 futures = { workspace = true }
 glam = { workspace = true }
@@ -16,6 +15,7 @@ image = { workspace = true }
 parking_lot = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
+thiserror = { workspace = true }
 tracing = { workspace = true }
 uuid = { workspace = true }
 winit = { workspace = true }

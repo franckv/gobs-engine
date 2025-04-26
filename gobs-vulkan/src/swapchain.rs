@@ -1,13 +1,13 @@
 use std;
 use std::sync::Arc;
 
-use anyhow::{Result, bail};
 use ash::khr::swapchain;
 use ash::vk;
 
 use crate::Wrap;
 use crate::device::Device;
-use crate::image::{Image, ImageUsage, VkFormat};
+use crate::error::VulkanError;
+use crate::images::{Image, ImageUsage, VkFormat};
 use crate::queue::Queue;
 use crate::surface::{Surface, SurfaceFormat};
 use crate::sync::Semaphore;
@@ -124,24 +124,25 @@ impl SwapChain {
         }
     }
 
-    pub fn acquire_image(&mut self, signal: &Semaphore) -> Result<usize> {
-        unsafe {
-            match self.loader.acquire_next_image(
+    pub fn acquire_image(&mut self, signal: &Semaphore) -> Result<usize, VulkanError> {
+        let (idx, _) = unsafe {
+            self.loader.acquire_next_image(
                 self.swapchain,
                 u64::MAX,
                 signal.raw(),
                 vk::Fence::null(),
-            ) {
-                Ok((idx, _)) => Ok(idx as usize),
-                Err(vk::Result::SUBOPTIMAL_KHR) | Err(vk::Result::ERROR_OUT_OF_DATE_KHR) => {
-                    bail!("Failed to acquire image")
-                }
-                _ => panic!("Unable to acquire swapchain"),
-            }
-        }
+            )?
+        };
+
+        Ok(idx as usize)
     }
 
-    pub fn present(&mut self, index: usize, queue: &Queue, wait: &Semaphore) -> Result<()> {
+    pub fn present(
+        &mut self,
+        index: usize,
+        queue: &Queue,
+        wait: &Semaphore,
+    ) -> Result<(), VulkanError> {
         let wait_semaphore = wait.raw();
         let image_indice = index as u32;
         let swapchains = self.swapchain;
@@ -152,14 +153,10 @@ impl SwapChain {
             .swapchains(std::slice::from_ref(&swapchains));
 
         unsafe {
-            match self.loader.queue_present(queue.queue, &present_info) {
-                Ok(_) => Ok(()),
-                Err(vk::Result::SUBOPTIMAL_KHR) | Err(vk::Result::ERROR_OUT_OF_DATE_KHR) => {
-                    bail!("Failed to present queue")
-                }
-                _ => panic!("Unable to present swapchain"),
-            }
+            self.loader.queue_present(queue.queue, &present_info)?;
         }
+
+        Ok(())
     }
 
     fn cleanup(&mut self) {

@@ -1,11 +1,11 @@
 use glam::{Quat, Vec3};
 
 use gobs::{
-    assets::gltf,
-    core::Color,
+    assets::gltf_load,
+    core::{Color, Input},
     game::{
+        AppError,
         app::{Application, Run},
-        input::Input,
     },
     gfx::Device,
     render::{Context, FrameGraph, PassType, RenderError},
@@ -25,7 +25,7 @@ struct App {
 }
 
 impl Run for App {
-    async fn create(ctx: &Context) -> Self {
+    async fn create(ctx: &Context) -> Result<Self, AppError> {
         let camera = SampleApp::perspective_camera(ctx);
         let camera_position = Vec3::new(10., 5., 10.);
 
@@ -36,17 +36,17 @@ impl Run for App {
 
         let camera_controller = SampleApp::controller();
 
-        let graph = FrameGraph::default(ctx);
-        let ui = UIRenderer::new(ctx, graph.pass_by_type(PassType::Ui).unwrap());
+        let graph = FrameGraph::default(ctx)?;
+        let ui = UIRenderer::new(ctx, graph.pass_by_type(PassType::Ui)?)?;
         let scene = Scene::new(camera, camera_position, light, light_position);
 
-        App {
+        Ok(App {
             common,
             camera_controller,
             graph,
             ui,
             scene,
-        }
+        })
     }
 
     async fn start(&mut self, ctx: &Context) {
@@ -123,9 +123,10 @@ impl App {
         let file_name = load::get_asset_dir("house2.glb", load::AssetType::MODEL).unwrap();
 
         let mut gltf_loader =
-            gltf::GLTFLoader::new(ctx, self.graph.pass_by_type(PassType::Forward).unwrap());
+            gltf_load::GLTFLoader::new(ctx, self.graph.pass_by_type(PassType::Forward).unwrap())
+                .unwrap();
 
-        gltf_loader.load(file_name);
+        gltf_loader.load(file_name).expect("Load gltf");
 
         gltf_loader.scene
     }

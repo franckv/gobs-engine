@@ -9,7 +9,7 @@ use uuid::Uuid;
 
 use gobs_resource::{geometry::VertexFlag, material::Texture};
 
-use crate::{RenderPass, context::Context, material::MaterialInstance};
+use crate::{RenderError, RenderPass, context::Context, materials::MaterialInstance};
 
 pub type MaterialId = Uuid;
 
@@ -21,7 +21,11 @@ pub struct Material {
 }
 
 impl Material {
-    pub fn builder(ctx: &Context, vertex_shader: &str, fragment_shader: &str) -> MaterialBuilder {
+    pub fn builder(
+        ctx: &Context,
+        vertex_shader: &str,
+        fragment_shader: &str,
+    ) -> Result<MaterialBuilder, RenderError> {
         MaterialBuilder::new(ctx, vertex_shader, fragment_shader)
     }
 
@@ -41,10 +45,14 @@ pub struct MaterialBuilder {
 }
 
 impl MaterialBuilder {
-    pub fn new(ctx: &Context, vertex_shader: &str, fragment_shader: &str) -> Self {
+    pub fn new(
+        ctx: &Context,
+        vertex_shader: &str,
+        fragment_shader: &str,
+    ) -> Result<Self, RenderError> {
         let pipeline_builder = GfxPipeline::graphics("material", &ctx.device)
-            .vertex_shader(vertex_shader, "main")
-            .fragment_shader(fragment_shader, "main")
+            .vertex_shader(vertex_shader, "main")?
+            .fragment_shader(fragment_shader, "main")?
             .pool_size(ctx.frames_in_flight + 1)
             .viewports(vec![Viewport::new(0., 0., 0., 0.)])
             .scissors(vec![Rect2D::new(0, 0, 0, 0)])
@@ -55,11 +63,11 @@ impl MaterialBuilder {
             .binding_group(BindingGroupType::SceneData)
             .binding(DescriptorType::Uniform, DescriptorStage::All);
 
-        Self {
+        Ok(Self {
             vertex_flags: VertexFlag::empty(),
             blend_mode: BlendMode::None,
             pipeline_builder,
-        }
+        })
     }
 
     pub fn vertex_flags(mut self, vertex_flags: VertexFlag) -> Self {

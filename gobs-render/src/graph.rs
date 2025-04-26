@@ -1,5 +1,5 @@
 mod frame;
 mod resource;
 
-pub use frame::{FrameGraph, RenderError};
+pub use frame::FrameGraph;
 pub use resource::ResourceManager;

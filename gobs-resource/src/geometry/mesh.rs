@@ -1,4 +1,7 @@
-use std::{collections::HashMap, sync::Arc};
+use std::{
+    collections::{HashMap, hash_map},
+    sync::Arc,
+};
 
 use glam::{Vec2, Vec3};
 use serde::Serialize;
@@ -100,15 +103,15 @@ impl MeshBuilder {
             .into_iter()
             .filter(|v| {
                 let key = format!("{}:{}:{}", v.position, v.texture, v.normal);
-                if unique.contains_key(&key) {
-                    let idx = unique.get(&key).unwrap();
-                    self.indices.push(*idx);
-                    false
-                } else {
-                    unique.insert(key, idx);
+                if let hash_map::Entry::Vacant(e) = unique.entry(key.clone()) {
+                    e.insert(idx);
                     self.indices.push(idx);
                     idx += 1;
                     true
+                } else {
+                    let idx = unique.get(&key).unwrap();
+                    self.indices.push(*idx);
+                    false
                 }
             })
             .collect::<Vec<VertexData>>();

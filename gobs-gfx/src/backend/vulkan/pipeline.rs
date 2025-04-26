@@ -1,6 +1,5 @@
 use std::sync::Arc;
 
-use anyhow::Result;
 use indexmap::IndexMap;
 use parking_lot::RwLock;
 
@@ -9,6 +8,7 @@ use gobs_core::ImageFormat;
 use gobs_resource::load;
 use gobs_vulkan as vk;
 
+use crate::GfxError;
 use crate::backend::vulkan::{bindgroup::VkBindingGroup, device::VkDevice, renderer::VkRenderer};
 use crate::{
     BindingGroupType, BlendMode, CompareOp, ComputePipelineBuilder, CullMode, DynamicStateElem,
@@ -19,7 +19,7 @@ use crate::{
 pub struct VkPipeline {
     pub(crate) name: String,
     pub(crate) id: PipelineId,
-    pub(crate) pipeline: Arc<vk::pipeline::Pipeline>,
+    pub(crate) pipeline: Arc<vk::pipelines::Pipeline>,
     pub(crate) ds_pools: IndexMap<BindingGroupType, RwLock<vk::descriptor::DescriptorSetPool>>,
 }
 
@@ -40,18 +40,22 @@ impl Pipeline<VkRenderer> for VkPipeline {
         VkComputePipelineBuilder::new(name, device)
     }
 
-    fn create_binding_group(self: &Arc<Self>, ty: BindingGroupType) -> Result<VkBindingGroup> {
-        if let Some(ds_pool) = self.ds_pools.get(&ty) {
-            let ds = ds_pool.write().allocate();
+    fn create_binding_group(
+        self: &Arc<Self>,
+        ty: BindingGroupType,
+    ) -> Result<VkBindingGroup, GfxError> {
+        let ds = self
+            .ds_pools
+            .get(&ty)
+            .ok_or(GfxError::DsPoolCreation)?
+            .write()
+            .allocate();
 
-            Ok(VkBindingGroup {
-                ds,
-                bind_group_type: ty,
-                pipeline: self.clone(),
-            })
-        } else {
-            Err(anyhow::Error::msg("DS pool not found"))
-        }
+        Ok(VkBindingGroup {
+            ds,
+            bind_group_type: ty,
+            pipeline: self.clone(),
+        })
     }
 
     fn reset_binding_group(self: &Arc<Self>, ty: BindingGroupType) {
@@ -64,7 +68,7 @@ impl Pipeline<VkRenderer> for VkPipeline {
 pub struct VkGraphicsPipelineBuilder {
     name: String,
     device: Arc<vk::device::Device>,
-    builder: vk::pipeline::GraphicsPipelineBuilder,
+    builder: vk::pipelines::GraphicsPipelineBuilder,
     current_binding_group: Option<BindingGroupType>,
     current_ds_layout: Option<vk::descriptor::DescriptorSetLayoutBuilder>,
     ds_pools: IndexMap<BindingGroupType, RwLock<vk::descriptor::DescriptorSetPool>>,
@@ -73,30 +77,30 @@ pub struct VkGraphicsPipelineBuilder {
 }
 
 impl GraphicsPipelineBuilder<VkRenderer> for VkGraphicsPipelineBuilder {
-    fn vertex_shader(mut self, filename: &str, entry: &str) -> Self {
-        let shader_file = load::get_asset_dir(filename, load::AssetType::SHADER).unwrap();
-        let shader = vk::pipeline::Shader::from_file(
+    fn vertex_shader(mut self, filename: &str, entry: &str) -> Result<Self, GfxError> {
+        let shader_file = load::get_asset_dir(filename, load::AssetType::SHADER)?;
+        let shader = vk::pipelines::Shader::from_file(
             shader_file,
             self.device.clone(),
-            vk::pipeline::ShaderType::Vertex,
-        );
+            vk::pipelines::ShaderType::Vertex,
+        )?;
 
         self.builder = self.builder.vertex_shader(entry, shader);
 
-        self
+        Ok(self)
     }
 
-    fn fragment_shader(mut self, filename: &str, entry: &str) -> Self {
-        let shader_file = load::get_asset_dir(filename, load::AssetType::SHADER).unwrap();
-        let shader = vk::pipeline::Shader::from_file(
+    fn fragment_shader(mut self, filename: &str, entry: &str) -> Result<Self, GfxError> {
+        let shader_file = load::get_asset_dir(filename, load::AssetType::SHADER)?;
+        let shader = vk::pipelines::Shader::from_file(
             shader_file,
             self.device.clone(),
-            vk::pipeline::ShaderType::Fragment,
-        );
+            vk::pipelines::ShaderType::Fragment,
+        )?;
 
         self.builder = self.builder.fragment_shader(entry, shader);
 
-        self
+        Ok(self)
     }
 
     fn pool_size(mut self, size: usize) -> Self {
@@ -212,7 +216,7 @@ impl GraphicsPipelineBuilder<VkRenderer> for VkGraphicsPipelineBuilder {
             descriptor_layouts.push(ds_pool.read().descriptor_layout.clone());
         }
 
-        let pipeline_layout = vk::pipeline::PipelineLayout::new(
+        let pipeline_layout = vk::pipelines::PipelineLayout::new(
             self.device.clone(),
             &descriptor_layouts,
             self.push_constants,
@@ -234,7 +238,7 @@ impl VkGraphicsPipelineBuilder {
         Self {
             name: name.to_string(),
             device: device.device.clone(),
-            builder: vk::pipeline::Pipeline::graphics_builder(device.device.clone()),
+            builder: vk::pipelines::Pipeline::graphics_builder(device.device.clone()),
             current_binding_group: None,
             current_ds_layout: None,
             ds_pools: IndexMap::new(),
@@ -270,7 +274,7 @@ impl VkGraphicsPipelineBuilder {
 pub struct VkComputePipelineBuilder {
     name: String,
     device: Arc<vk::device::Device>,
-    builder: vk::pipeline::ComputePipelineBuilder,
+    builder: vk::pipelines::ComputePipelineBuilder,
     current_binding_group: Option<BindingGroupType>,
     current_ds_layout: Option<vk::descriptor::DescriptorSetLayoutBuilder>,
     ds_pools: IndexMap<BindingGroupType, RwLock<vk::descriptor::DescriptorSetPool>>,
@@ -279,17 +283,17 @@ pub struct VkComputePipelineBuilder {
 }
 
 impl ComputePipelineBuilder<VkRenderer> for VkComputePipelineBuilder {
-    fn shader(mut self, filename: &str, entry: &str) -> Self {
-        let compute_file = load::get_asset_dir(filename, load::AssetType::SHADER).unwrap();
-        let compute_shader = vk::pipeline::Shader::from_file(
+    fn shader(mut self, filename: &str, entry: &str) -> Result<Self, GfxError> {
+        let compute_file = load::get_asset_dir(filename, load::AssetType::SHADER)?;
+        let compute_shader = vk::pipelines::Shader::from_file(
             compute_file,
             self.device.clone(),
-            vk::pipeline::ShaderType::Compute,
-        );
+            vk::pipelines::ShaderType::Compute,
+        )?;
 
         self.builder = self.builder.compute_shader(entry, compute_shader);
 
-        self
+        Ok(self)
     }
 
     fn binding_group(mut self, binding_group_type: BindingGroupType) -> Self {
@@ -322,7 +326,7 @@ impl ComputePipelineBuilder<VkRenderer> for VkComputePipelineBuilder {
             descriptor_layouts.push(ds_pool.read().descriptor_layout.clone());
         }
 
-        let pipeline_layout = vk::pipeline::PipelineLayout::new(
+        let pipeline_layout = vk::pipelines::PipelineLayout::new(
             self.device.clone(),
             &descriptor_layouts,
             self.push_constants,
@@ -344,7 +348,7 @@ impl VkComputePipelineBuilder {
         Self {
             name: name.to_string(),
             device: device.device.clone(),
-            builder: vk::pipeline::Pipeline::compute_builder(device.device.clone()),
+            builder: vk::pipelines::Pipeline::compute_builder(device.device.clone()),
             current_binding_group: None,
             current_ds_layout: None,
             ds_pools: IndexMap::new(),

@@ -1,10 +1,10 @@
 use glam::{Quat, Vec3};
 
 use gobs::{
-    core::{Color, Transform},
+    core::{Color, Input, Transform},
     game::{
+        AppError,
         app::{Application, Run},
-        input::Input,
     },
     gfx::Device,
     render::{Context, FrameGraph, Model, PassType, RenderError},
@@ -27,7 +27,7 @@ struct App {
 }
 
 impl Run for App {
-    async fn create(ctx: &Context) -> Self {
+    async fn create(ctx: &Context) -> Result<Self, AppError> {
         let extent = ctx.extent();
 
         let camera = Camera::perspective(
@@ -47,17 +47,17 @@ impl Run for App {
 
         let camera_controller = SampleApp::controller();
 
-        let graph = FrameGraph::default(ctx);
-        let ui = UIRenderer::new(ctx, graph.pass_by_type(PassType::Ui).unwrap());
+        let graph = FrameGraph::default(ctx)?;
+        let ui = UIRenderer::new(ctx, graph.pass_by_type(PassType::Ui)?)?;
         let scene = Scene::new(camera, camera_position, light, light_position);
 
-        App {
+        Ok(App {
             common,
             camera_controller,
             graph,
             ui,
             scene,
-        }
+        })
     }
 
     async fn start(&mut self, ctx: &Context) {

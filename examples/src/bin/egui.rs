@@ -1,8 +1,9 @@
 use examples::SampleApp;
 use gobs::{
+    core::{Input, Key},
     game::{
+        AppError,
         app::{Application, Run},
-        input::{Input, Key},
     },
     gfx::Device,
     render::{Context, FrameGraph, PassType, RenderError},
@@ -18,17 +19,17 @@ struct App {
 }
 
 impl Run for App {
-    async fn create(ctx: &Context) -> Self {
-        let graph = FrameGraph::ui(ctx);
-        let ui = UIRenderer::new(ctx, graph.pass_by_type(PassType::Ui).unwrap());
+    async fn create(ctx: &Context) -> Result<Self, AppError> {
+        let graph = FrameGraph::ui(ctx)?;
+        let ui = UIRenderer::new(ctx, graph.pass_by_type(PassType::Ui)?)?;
         let common = SampleApp::new();
 
-        App {
+        Ok(App {
             common,
             graph,
             ui,
             demo: Default::default(),
-        }
+        })
     }
 
     fn update(&mut self, ctx: &Context, delta: f32) {

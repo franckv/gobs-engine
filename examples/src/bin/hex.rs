@@ -1,10 +1,10 @@
 use glam::{Quat, Vec3};
 
 use gobs::{
-    core::{Color, Transform},
+    core::{Color, Input, Transform},
     game::{
+        AppError,
         app::{Application, Run},
-        input::Input,
     },
     gfx::Device,
     render::{Context, FrameGraph, Model, PassType, RenderError},
@@ -23,7 +23,7 @@ struct App {
 }
 
 impl Run for App {
-    async fn create(ctx: &Context) -> Self {
+    async fn create(ctx: &Context) -> Result<Self, AppError> {
         let camera = SampleApp::ortho_camera(ctx);
         let camera_position = Vec3::new(0., 0., 1.);
 
@@ -32,16 +32,16 @@ impl Run for App {
 
         let common = SampleApp::new();
 
-        let graph = FrameGraph::default(ctx);
-        let ui = UIRenderer::new(ctx, graph.pass_by_type(PassType::Ui).unwrap());
+        let graph = FrameGraph::default(ctx)?;
+        let ui = UIRenderer::new(ctx, graph.pass_by_type(PassType::Ui)?)?;
         let scene = Scene::new(camera, camera_position, light, light_position);
 
-        App {
+        Ok(App {
             common,
             graph,
             ui,
             scene,
-        }
+        })
     }
 
     fn update(&mut self, ctx: &Context, delta: f32) {
@@ -95,13 +95,15 @@ impl App {
         let hex = Model::builder("hex")
             .mesh(
                 Shapes::hexagon(
-                    Color::WHITE,
-                    Color::RED,
-                    Color::GREEN,
-                    Color::BLUE,
-                    Color::RED,
-                    Color::GREEN,
-                    Color::BLUE,
+                    [
+                        Color::WHITE,
+                        Color::RED,
+                        Color::GREEN,
+                        Color::BLUE,
+                        Color::RED,
+                        Color::GREEN,
+                        Color::BLUE,
+                    ],
                     ctx.vertex_padding,
                 ),
                 Some(material_instance),

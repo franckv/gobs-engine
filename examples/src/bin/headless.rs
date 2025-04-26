@@ -2,8 +2,8 @@ use glam::{Quat, Vec3};
 use pollster::FutureExt;
 
 use gobs::{
-    core::{Color, Transform},
-    game::{app::Run, input::Input},
+    core::{Color, Input, Transform},
+    game::{AppError, app::Run},
     gfx::Device,
     render::{Context, FrameGraph, Model, RenderError},
     resource::{entity::light::Light, geometry::Shapes},
@@ -19,7 +19,7 @@ struct App {
 }
 
 impl Run for App {
-    async fn create(ctx: &Context) -> Self {
+    async fn create(ctx: &Context) -> Result<Self, AppError> {
         let camera = SampleApp::ortho_camera(ctx);
         let camera_position = Vec3::new(0., 0., 1.);
 
@@ -28,14 +28,14 @@ impl Run for App {
 
         let common = SampleApp::new();
 
-        let graph = FrameGraph::headless(ctx);
+        let graph = FrameGraph::headless(ctx)?;
         let scene = Scene::new(camera, camera_position, light, light_position);
 
-        App {
+        Ok(App {
             common,
             graph,
             scene,
-        }
+        })
     }
 
     fn update(&mut self, ctx: &Context, delta: f32) {
@@ -100,10 +100,10 @@ fn main() {
 
     tracing::info!("Engine start");
 
-    let mut ctx = Context::new("Triangle", None, true);
+    let mut ctx = Context::new("Triangle", None, true).unwrap();
 
     let future = async {
-        let mut app = App::create(&ctx).await;
+        let mut app = App::create(&ctx).await.unwrap();
         app.start(&ctx).await;
 
         app

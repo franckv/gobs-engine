@@ -15,7 +15,7 @@ use gobs_resource::{
 use crate::{
     ModelId, RenderPass,
     context::Context,
-    material::{MaterialInstance, MaterialInstanceId},
+    materials::{MaterialInstance, MaterialInstanceId},
     model::Model,
     pass::PassId,
     renderable::RenderableLifetime,

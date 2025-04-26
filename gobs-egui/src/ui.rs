@@ -6,8 +6,7 @@ use egui::{
 };
 use glam::{Vec2, Vec3};
 
-use gobs_core::{Color, ImageExtent2D, SamplerFilter, Transform};
-use gobs_game::input::{Input, Key, MouseButton};
+use gobs_core::{Color, ImageExtent2D, Input, Key, MouseButton, SamplerFilter, Transform};
 use gobs_render::{
     BlendMode, Context, Material, MaterialInstance, MaterialProperty, Model, RenderBatch,
     RenderPass, Renderable, RenderableLifetime,
@@ -17,6 +16,8 @@ use gobs_resource::{
     material::{Texture, TextureType},
 };
 use parking_lot::RwLock;
+
+use crate::UIError;
 
 const PIXEL_PER_POINT: f32 = 1.;
 
@@ -32,7 +33,7 @@ pub struct UIRenderer {
 }
 
 impl UIRenderer {
-    pub fn new(ctx: &Context, pass: RenderPass) -> Self {
+    pub fn new(ctx: &Context, pass: RenderPass) -> Result<Self, UIError> {
         let ectx = egui::Context::default();
 
         let (width, height): (f32, f32) = ctx.extent().into();
@@ -41,14 +42,14 @@ impl UIRenderer {
 
         let vertex_flags = VertexFlag::POSITION | VertexFlag::COLOR | VertexFlag::TEXTURE;
 
-        let material = Material::builder(ctx, "ui.vert.spv", "ui.frag.spv")
+        let material = Material::builder(ctx, "ui.vert.spv", "ui.frag.spv")?
             .vertex_flags(vertex_flags)
             .prop("diffuse", MaterialProperty::Texture)
             .no_culling()
             .blend_mode(BlendMode::Premultiplied)
             .build(pass);
 
-        UIRenderer {
+        Ok(UIRenderer {
             ectx,
             width,
             height,
@@ -57,7 +58,7 @@ impl UIRenderer {
             input: Vec::new(),
             mouse_position: (0., 0.),
             output: RwLock::new(None),
-        }
+        })
     }
 
     #[tracing::instrument(target = "ui", skip_all, level = "debug")]

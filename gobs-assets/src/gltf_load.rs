@@ -18,7 +18,7 @@ use gobs_scene::{
     graph::scenegraph::SceneGraph,
 };
 
-use crate::manager::MaterialManager;
+use crate::{AssetError, manager::MaterialManager};
 
 pub struct GLTFLoader {
     material_manager: MaterialManager,
@@ -28,27 +28,29 @@ pub struct GLTFLoader {
 }
 
 impl GLTFLoader {
-    pub fn new(ctx: &Context, pass: RenderPass) -> Self {
-        let material_manager = MaterialManager::new(ctx, pass);
+    pub fn new(ctx: &Context, pass: RenderPass) -> Result<Self, AssetError> {
+        let material_manager = MaterialManager::new(ctx, pass)?;
 
-        Self {
+        Ok(Self {
             material_manager,
             models: vec![],
             scene: SceneGraph::new(),
             vertex_padding: ctx.vertex_padding,
-        }
+        })
     }
 
-    pub fn load<P>(&mut self, file: P)
+    pub fn load<P>(&mut self, file: P) -> Result<(), AssetError>
     where
         P: AsRef<Path> + Debug,
     {
-        let (doc, buffers, images) = gltf::import(&file).expect(&format!("Load asset: {:?}", file));
+        let (doc, buffers, images) = gltf::import(&file)?;
 
         self.load_material(&doc, &images);
 
         self.load_models(&doc, &buffers);
         self.load_scene(&doc);
+
+        Ok(())
     }
 
     fn load_scene(&mut self, doc: &Document) {

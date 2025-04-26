@@ -6,7 +6,7 @@ use ash::vk;
 use gobs_core::{ImageExtent2D, ImageFormat};
 
 use crate::{
-    Wrap, alloc::Allocator, debug, device::Device, image::format::VkFormat, memory::Memory,
+    Wrap, alloc::Allocator, debug, device::Device, images::format::VkFormat, memory::Memory,
 };
 
 #[derive(Copy, Clone, Debug, PartialEq)]

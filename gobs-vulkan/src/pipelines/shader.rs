@@ -9,6 +9,7 @@ use ash::vk;
 
 use crate::Wrap;
 use crate::device::Device;
+use crate::error::VulkanError;
 
 pub enum ShaderType {
     Compute,
@@ -23,11 +24,15 @@ pub struct Shader {
 }
 
 impl Shader {
-    pub fn from_file<P>(filename: P, device: Arc<Device>, ty: ShaderType) -> Self
+    pub fn from_file<P>(
+        filename: P,
+        device: Arc<Device>,
+        ty: ShaderType,
+    ) -> Result<Self, VulkanError>
     where
         P: AsRef<Path> + Debug,
     {
-        let file = File::open(&filename).expect(&format!("File not found {:?}", filename));
+        let file = File::open(&filename)?;
 
         let data: Vec<u8> = file.bytes().filter_map(|b| b.ok()).collect();
 
@@ -47,7 +52,7 @@ impl Shader {
                 .unwrap()
         };
 
-        Shader { device, shader, ty }
+        Ok(Shader { device, shader, ty })
     }
 }
 

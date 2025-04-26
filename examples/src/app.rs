@@ -4,8 +4,7 @@ use image::{ImageBuffer, Rgba};
 use renderdoc::{RenderDoc, V141};
 
 use gobs::{
-    core::ImageFormat,
-    game::input::{Input, Key},
+    core::{ImageFormat, Input, Key},
     render::{
         BlendMode, Context, FrameGraph, Material, MaterialProperty, PassType, RenderError,
         Renderable, RenderableLifetime,
@@ -65,6 +64,7 @@ impl SampleApp {
         let vertex_flags = VertexFlag::POSITION | VertexFlag::COLOR;
 
         Material::builder(ctx, "color.vert.spv", "color.frag.spv")
+            .unwrap()
             .vertex_flags(vertex_flags)
             .build(graph.pass_by_type(PassType::Forward).unwrap())
     }
@@ -73,6 +73,7 @@ impl SampleApp {
         let vertex_flags = VertexFlag::POSITION | VertexFlag::COLOR;
 
         Material::builder(ctx, "color.vert.spv", "color.frag.spv")
+            .unwrap()
             .vertex_flags(vertex_flags)
             .blend_mode(BlendMode::Alpha)
             .build(graph.pass_by_type(PassType::Forward).unwrap())
@@ -86,6 +87,7 @@ impl SampleApp {
             | VertexFlag::BITANGENT;
 
         Material::builder(ctx, "mesh.vert.spv", "mesh.frag.spv")
+            .unwrap()
             .vertex_flags(vertex_flags)
             .prop("diffuse", MaterialProperty::Texture)
             .build(graph.pass_by_type(PassType::Forward).unwrap())
@@ -99,6 +101,7 @@ impl SampleApp {
             | VertexFlag::BITANGENT;
 
         Material::builder(ctx, "mesh.vert.spv", "mesh.frag.spv")
+            .unwrap()
             .vertex_flags(vertex_flags)
             .prop("diffuse", MaterialProperty::Texture)
             .blend_mode(BlendMode::Alpha)
@@ -113,6 +116,7 @@ impl SampleApp {
             | VertexFlag::BITANGENT;
 
         Material::builder(ctx, "mesh.vert.spv", "mesh_n.frag.spv")
+            .unwrap()
             .vertex_flags(vertex_flags)
             .prop("diffuse", MaterialProperty::Texture)
             .prop("normal", MaterialProperty::Texture)
@@ -123,6 +127,7 @@ impl SampleApp {
         let vertex_flags = VertexFlag::POSITION | VertexFlag::COLOR;
 
         Material::builder(ctx, "color.vert.spv", "depth.frag.spv")
+            .unwrap()
             .vertex_flags(vertex_flags)
             .build(graph.pass_by_type(PassType::Forward).unwrap())
     }

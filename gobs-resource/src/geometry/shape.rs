@@ -108,16 +108,7 @@ impl Shapes {
         Self::rect(color, 0.5, -0.5, -0.5, 0.5, padding)
     }
 
-    pub fn hexagon(
-        color0: Color,
-        color1: Color,
-        color2: Color,
-        color3: Color,
-        color4: Color,
-        color5: Color,
-        color6: Color,
-        padding: bool,
-    ) -> Arc<Mesh> {
+    pub fn hexagon(colors: [Color; 7], padding: bool) -> Arc<Mesh> {
         let mut builder = Mesh::builder("hexagon");
 
         let width = 1.;
@@ -144,8 +135,6 @@ impl Shapes {
             [T_MIN, T_MID],
             [T_MIN, T_MAX],
         ];
-
-        let colors = [color0, color1, color2, color3, color4, color5, color6];
 
         let vi = [1, 3, 2, 1, 4, 3, 1, 5, 4, 1, 6, 5, 1, 7, 6, 1, 2, 7];
 

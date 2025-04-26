@@ -14,9 +14,10 @@ use gobs_resource::{
 };
 
 use crate::{
+    RenderError,
     batch::RenderBatch,
     context::Context,
-    graph::{RenderError, ResourceManager},
+    graph::ResourceManager,
     pass::{FrameData, PassId, PassType, RenderPass, RenderState},
     renderable::RenderObject,
     stats::RenderStats,
@@ -40,7 +41,7 @@ impl ForwardPass {
         name: &str,
         color_clear: bool,
         depth_clear: bool,
-    ) -> Arc<dyn RenderPass> {
+    ) -> Result<Arc<dyn RenderPass>, RenderError> {
         let push_layout = UniformLayout::builder()
             .prop("world_matrix", UniformProp::Mat4F)
             .prop("normal_matrix", UniformProp::Mat3F)
@@ -59,7 +60,7 @@ impl ForwardPass {
             .map(|_| FrameData::new(ctx, uniform_data_layout.clone()))
             .collect();
 
-        Arc::new(Self {
+        Ok(Arc::new(Self {
             id: PassId::new_v4(),
             name: name.to_string(),
             ty: PassType::Forward,
@@ -69,7 +70,7 @@ impl ForwardPass {
             push_layout,
             frame_data,
             uniform_data_layout,
-        })
+        }))
     }
 
     fn prepare_scene_data(&self, ctx: &Context, batch: &mut RenderBatch) {

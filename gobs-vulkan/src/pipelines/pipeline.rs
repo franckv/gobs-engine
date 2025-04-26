@@ -5,7 +5,7 @@ use ash::vk;
 use crate::{
     Wrap,
     device::Device,
-    pipeline::{
+    pipelines::{
         ComputePipelineBuilder, GraphicsPipelineBuilder, PipelineLayout, Shader, ShaderType,
     },
 };

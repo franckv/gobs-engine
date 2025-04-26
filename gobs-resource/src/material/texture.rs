@@ -1,6 +1,5 @@
 use std::sync::Arc;
 
-use anyhow::Result;
 use futures::future::try_join_all;
 use image::imageops::FilterType;
 use image::{DynamicImage, GenericImage, GenericImageView, ImageBuffer};
@@ -8,7 +7,7 @@ use uuid::Uuid;
 
 use gobs_core::{Color, ImageExtent2D, ImageFormat, SamplerFilter};
 
-use crate::load::{self, AssetType};
+use crate::load::{self, AssetType, LoadingError};
 
 pub type TextureId = Uuid;
 
@@ -74,7 +73,7 @@ impl Texture {
         ty: TextureType,
         mag_filter: SamplerFilter,
         min_filter: SamplerFilter,
-    ) -> Result<Arc<Self>> {
+    ) -> Result<Arc<Self>, LoadingError> {
         let img = load::load_image(file_name, AssetType::IMAGE).await?;
 
         Ok(Self::new(
@@ -97,7 +96,7 @@ impl Texture {
         texture_type: TextureType,
         mag_filter: SamplerFilter,
         min_filter: SamplerFilter,
-    ) -> Result<Arc<Self>> {
+    ) -> Result<Arc<Self>, LoadingError> {
         let n = texture_files.len();
 
         let (mut width, mut height) = (0, 0);

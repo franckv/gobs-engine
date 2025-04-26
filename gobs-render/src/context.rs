@@ -5,6 +5,8 @@ use winit::window::Window;
 use gobs_core::{ImageExtent2D, ImageFormat};
 use gobs_gfx::{Device, Display, GfxDevice, GfxDisplay, GfxInstance, Instance};
 
+use crate::RenderError;
+
 pub struct Context {
     pub app_name: String,
     pub instance: Arc<GfxInstance>,
@@ -21,14 +23,13 @@ pub struct Context {
 const FRAMES_IN_FLIGHT: usize = 2;
 
 impl Context {
-    pub fn new(name: &str, window: Option<Window>, validation: bool) -> Self {
-        let instance =
-            GfxInstance::new(name, window.as_ref(), validation).expect("Cannot create instance");
-        let mut display = GfxDisplay::new(instance.clone(), window).expect("Cannot create display");
-        let device = GfxDevice::new(instance.clone(), &display).expect("Cannot create device");
+    pub fn new(name: &str, window: Option<Window>, validation: bool) -> Result<Self, RenderError> {
+        let instance = GfxInstance::new(name, window.as_ref(), validation)?;
+        let mut display = GfxDisplay::new(instance.clone(), window)?;
+        let device = GfxDevice::new(instance.clone(), &display)?;
         display.init(&device, FRAMES_IN_FLIGHT);
 
-        Self {
+        Ok(Self {
             app_name: name.to_string(),
             instance,
             display,
@@ -39,7 +40,7 @@ impl Context {
             stats_refresh: 60,
             frame_number: 0,
             vertex_padding: true,
-        }
+        })
     }
 
     pub fn extent(&self) -> ImageExtent2D {

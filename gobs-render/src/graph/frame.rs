@@ -1,4 +1,3 @@
-use anyhow::Result;
 use bytemuck::Pod;
 
 use gobs_core::{ImageExtent2D, ImageFormat, utils::timer::Timer};
@@ -8,7 +7,7 @@ use gobs_gfx::{
 };
 
 use crate::{
-    RenderPass,
+    RenderError, RenderPass,
     batch::RenderBatch,
     context::Context,
     graph::resource::ResourceManager,
@@ -21,13 +20,6 @@ use crate::{
 
 const FRAME_WIDTH: u32 = 1920;
 const FRAME_HEIGHT: u32 = 1080;
-
-#[derive(Debug)]
-pub enum RenderError {
-    Lost,
-    Outdated,
-    Error,
-}
 
 pub struct FrameData {
     pub command: GfxCommand,
@@ -75,7 +67,7 @@ impl FrameGraph {
         }
     }
 
-    pub fn default(ctx: &Context) -> Self {
+    pub fn default(ctx: &Context) -> Result<Self, RenderError> {
         let mut graph = Self::new(ctx);
 
         let extent = Self::get_render_target_extent(ctx);
@@ -95,19 +87,19 @@ impl FrameGraph {
             extent,
         );
 
-        graph.register_pass(ComputePass::new(ctx, "compute"));
-        graph.register_pass(DepthPass::new(ctx, "depth"));
-        graph.register_pass(ForwardPass::new(ctx, "forward", false, false));
-        graph.register_pass(UiPass::new(ctx, "ui", false));
-        graph.register_pass(WirePass::new(ctx, "wire"));
-        graph.register_pass(BoundsPass::new(ctx, "bounds"));
-        graph.register_pass(DummyPass::new(ctx, "dummy"));
-        graph.register_pass(PresentPass::new(ctx, "present"));
+        graph.register_pass(ComputePass::new(ctx, "compute")?);
+        graph.register_pass(DepthPass::new(ctx, "depth")?);
+        graph.register_pass(ForwardPass::new(ctx, "forward", false, false)?);
+        graph.register_pass(UiPass::new(ctx, "ui", false)?);
+        graph.register_pass(WirePass::new(ctx, "wire")?);
+        graph.register_pass(BoundsPass::new(ctx, "bounds")?);
+        graph.register_pass(DummyPass::new(ctx, "dummy")?);
+        graph.register_pass(PresentPass::new(ctx, "present")?);
 
-        graph
+        Ok(graph)
     }
 
-    pub fn headless(ctx: &Context) -> Self {
+    pub fn headless(ctx: &Context) -> Result<Self, RenderError> {
         let mut graph = Self::new(ctx);
 
         let extent = Self::get_render_target_extent(ctx);
@@ -127,15 +119,15 @@ impl FrameGraph {
             extent,
         );
 
-        graph.register_pass(ComputePass::new(ctx, "compute"));
-        graph.register_pass(DepthPass::new(ctx, "depth"));
-        graph.register_pass(ForwardPass::new(ctx, "forward", false, false));
-        graph.register_pass(DummyPass::new(ctx, "dummy"));
+        graph.register_pass(ComputePass::new(ctx, "compute")?);
+        graph.register_pass(DepthPass::new(ctx, "depth")?);
+        graph.register_pass(ForwardPass::new(ctx, "forward", false, false)?);
+        graph.register_pass(DummyPass::new(ctx, "dummy")?);
 
-        graph
+        Ok(graph)
     }
 
-    pub fn ui(ctx: &Context) -> Self {
+    pub fn ui(ctx: &Context) -> Result<Self, RenderError> {
         let mut graph = Self::new(ctx);
 
         let extent = Self::get_render_target_extent(ctx);
@@ -148,10 +140,10 @@ impl FrameGraph {
             extent,
         );
 
-        graph.register_pass(UiPass::new(ctx, "ui", true));
-        graph.register_pass(PresentPass::new(ctx, "present"));
+        graph.register_pass(UiPass::new(ctx, "ui", true)?);
+        graph.register_pass(PresentPass::new(ctx, "present")?);
 
-        graph
+        Ok(graph)
     }
 
     fn get_render_target_extent(ctx: &Context) -> ImageExtent2D {
@@ -170,7 +162,7 @@ impl FrameGraph {
         self.passes.push(pass);
     }
 
-    pub fn get_pass<F>(&self, cmp: F) -> Result<RenderPass, ()>
+    pub fn get_pass<F>(&self, cmp: F) -> Result<RenderPass, RenderError>
     where
         F: Fn(&RenderPass) -> bool,
     {
@@ -180,7 +172,7 @@ impl FrameGraph {
             }
         }
 
-        Err(())
+        Err(RenderError::PassNotFound)
     }
 
     pub fn get_image_data<T: Pod>(
@@ -235,15 +227,15 @@ impl FrameGraph {
         dst_image.extent()
     }
 
-    pub fn pass_by_id(&self, pass_id: PassId) -> Result<RenderPass, ()> {
+    pub fn pass_by_id(&self, pass_id: PassId) -> Result<RenderPass, RenderError> {
         self.get_pass(|pass| pass.id() == pass_id)
     }
 
-    pub fn pass_by_type(&self, pass_type: PassType) -> Result<RenderPass, ()> {
+    pub fn pass_by_type(&self, pass_type: PassType) -> Result<RenderPass, RenderError> {
         self.get_pass(|pass| pass.ty() == pass_type)
     }
 
-    pub fn pass_by_name(&self, pass_name: &str) -> Result<RenderPass, ()> {
+    pub fn pass_by_name(&self, pass_name: &str) -> Result<RenderPass, RenderError> {
         self.get_pass(|pass| pass.name() == pass_name)
     }
 

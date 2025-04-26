@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use ash::vk;
 
-use crate::pipeline::{Pipeline, PipelineLayout, Shader, ShaderStage};
+use crate::pipelines::{Pipeline, PipelineLayout, Shader, ShaderStage};
 use crate::{Wrap, device::Device};
 
 #[derive(Default)]

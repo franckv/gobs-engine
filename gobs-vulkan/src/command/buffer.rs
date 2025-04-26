@@ -6,13 +6,13 @@ use bytemuck::Pod;
 
 use gobs_core::ImageExtent2D;
 
-use crate::buffer::Buffer;
+use crate::buffers::Buffer;
 use crate::command::CommandPool;
 use crate::descriptor::DescriptorSet;
 use crate::device::Device;
 use crate::framebuffer::Framebuffer;
-use crate::image::{Image, ImageLayout};
-use crate::pipeline::{Pipeline, PipelineLayout, PipelineStage};
+use crate::images::{Image, ImageLayout};
+use crate::pipelines::{Pipeline, PipelineLayout, PipelineStage};
 use crate::query::QueryPool;
 use crate::queue::Queue;
 use crate::sync::{Fence, Semaphore};

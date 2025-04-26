@@ -16,9 +16,10 @@ use gobs_resource::{
 };
 
 use crate::{
+    RenderError,
     batch::RenderBatch,
     context::Context,
-    graph::{RenderError, ResourceManager},
+    graph::ResourceManager,
     pass::{FrameData, PassId, PassType, RenderPass, RenderState},
     renderable::RenderObject,
     stats::RenderStats,
@@ -37,7 +38,7 @@ pub struct DepthPass {
 }
 
 impl DepthPass {
-    pub fn new(ctx: &Context, name: &str) -> Arc<dyn RenderPass> {
+    pub fn new(ctx: &Context, name: &str) -> Result<Arc<dyn RenderPass>, RenderError> {
         let vertex_flags = VertexFlag::POSITION;
 
         let push_layout = UniformLayout::builder()
@@ -52,7 +53,7 @@ impl DepthPass {
         let pipeline_builder = GfxPipeline::graphics(name, &ctx.device);
 
         let pipeline = pipeline_builder
-            .vertex_shader("depth.vert.spv", "main")
+            .vertex_shader("depth.vert.spv", "main")?
             .pool_size(ctx.frames_in_flight)
             .push_constants(push_layout.size())
             .binding_group(BindingGroupType::SceneData)
@@ -71,7 +72,7 @@ impl DepthPass {
             .map(|_| FrameData::new(ctx, uniform_data_layout.clone()))
             .collect();
 
-        Arc::new(Self {
+        Ok(Arc::new(Self {
             id: PassId::new_v4(),
             name: name.to_string(),
             ty: PassType::Depth,
@@ -81,7 +82,7 @@ impl DepthPass {
             push_layout,
             frame_data,
             uniform_data_layout,
-        })
+        }))
     }
 
     fn prepare_scene_data(&self, ctx: &Context, batch: &mut RenderBatch) {

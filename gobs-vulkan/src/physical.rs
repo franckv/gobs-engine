@@ -80,8 +80,8 @@ impl PhysicalDevice {
             .iter()
             .find(|family| family.transfer_bits && !family.graphics_bit);
 
-        let graphics_family = graphics_family.expect("Get graphics family").clone();
-        let transfer_family = transfer_family.unwrap_or(&graphics_family).clone();
+        let graphics_family = *graphics_family.expect("Get graphics family");
+        let transfer_family = *transfer_family.unwrap_or(&graphics_family);
 
         (graphics_family, transfer_family)
     }

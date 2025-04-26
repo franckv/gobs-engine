@@ -4,8 +4,8 @@ use ash::vk;
 
 use gobs_core::ImageFormat;
 
-use crate::image::VkFormat;
-use crate::pipeline::{Pipeline, PipelineLayout, Rect2D, Shader, ShaderStage, VertexLayout};
+use crate::images::VkFormat;
+use crate::pipelines::{Pipeline, PipelineLayout, Rect2D, Shader, ShaderStage, VertexLayout};
 use crate::{Wrap, device::Device};
 
 pub struct Viewport {

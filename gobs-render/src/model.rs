@@ -13,7 +13,7 @@ use crate::{
     RenderPass, Renderable,
     batch::RenderBatch,
     context::Context,
-    material::{MaterialInstance, MaterialInstanceId},
+    materials::{MaterialInstance, MaterialInstanceId},
     renderable::RenderableLifetime,
 };
 

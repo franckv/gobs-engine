@@ -8,7 +8,7 @@ pub struct Context {
 
 impl Context {
     pub fn new(name: &str) -> Self {
-        let instance = Instance::new(name, 1, None, false).expect("Failed to init Intance");
+        let instance = Instance::new(name, 1, None, false).expect("Failed to init Instance");
 
         let expected_features = Features::default()
             .fill_mode_non_solid()
@@ -23,7 +23,8 @@ impl Context {
 
         tracing::info!("Using adapter {}", physical_device.name);
 
-        let device = Device::new(instance.clone(), physical_device, None);
+        let device =
+            Device::new(instance.clone(), physical_device, None).expect("Failed to init Device");
 
         Context { device }
     }

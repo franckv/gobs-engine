@@ -1,3 +1,5 @@
+#![allow(clippy::new_ret_no_self)]
+
 use std::sync::Arc;
 
 use parking_lot::RwLock;
@@ -11,11 +13,8 @@ use gobs_resource::{
 };
 
 use crate::{
-    batch::RenderBatch,
-    context::Context,
-    graph::{RenderError, ResourceManager},
-    material::MaterialId,
-    resources::UniformBuffer,
+    RenderError, batch::RenderBatch, context::Context, graph::ResourceManager,
+    materials::MaterialId, resources::UniformBuffer,
 };
 
 pub mod bounds;

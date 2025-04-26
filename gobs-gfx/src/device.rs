@@ -1,11 +1,9 @@
 use std::sync::Arc;
 
-use anyhow::Result;
-
-use crate::Renderer;
+use crate::{GfxError, Renderer};
 
 pub trait Device<R: Renderer> {
-    fn new(instance: Arc<R::Instance>, display: &R::Display) -> Result<Arc<Self>>;
+    fn new(instance: Arc<R::Instance>, display: &R::Display) -> Result<Arc<Self>, GfxError>;
     fn run_transfer<F>(&self, callback: F)
     where
         F: Fn(&R::Command);

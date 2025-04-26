@@ -1,7 +1,6 @@
 use bytemuck::Pod;
 
 use gobs_vulkan as vk;
-use gobs_vulkan::buffer::BufferUsage;
 
 use crate::backend::vulkan::{device::VkDevice, renderer::VkRenderer};
 use crate::{Buffer, BufferId};
@@ -9,7 +8,7 @@ use crate::{Buffer, BufferId};
 #[derive(Debug)]
 pub struct VkBuffer {
     id: BufferId,
-    pub(crate) buffer: vk::buffer::Buffer,
+    pub(crate) buffer: vk::buffers::Buffer,
 }
 
 impl Buffer<VkRenderer> for VkBuffer {
@@ -17,10 +16,15 @@ impl Buffer<VkRenderer> for VkBuffer {
         self.id
     }
 
-    fn new(name: &str, size: usize, usage: vk::buffer::BufferUsage, device: &VkDevice) -> VkBuffer {
+    fn new(
+        name: &str,
+        size: usize,
+        usage: vk::buffers::BufferUsage,
+        device: &VkDevice,
+    ) -> VkBuffer {
         Self {
             id: BufferId::new_v4(),
-            buffer: vk::buffer::Buffer::new(
+            buffer: vk::buffers::Buffer::new(
                 name,
                 size,
                 usage,
@@ -38,7 +42,7 @@ impl Buffer<VkRenderer> for VkBuffer {
         self.buffer.size
     }
 
-    fn usage(&self) -> BufferUsage {
+    fn usage(&self) -> vk::buffers::BufferUsage {
         self.buffer.usage
     }
 

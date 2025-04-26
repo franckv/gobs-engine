@@ -6,7 +6,7 @@ use uuid::Uuid;
 use gobs_gfx::GfxPipeline;
 use gobs_resource::{geometry::VertexFlag, material::Texture};
 
-use crate::material::Material;
+use crate::materials::Material;
 
 pub type MaterialInstanceId = Uuid;
 

@@ -1,10 +1,9 @@
 use std::sync::Arc;
 
-use anyhow::Result;
-
 use gobs_vulkan as vk;
 
 use crate::Device;
+use crate::GfxError;
 use crate::backend::vulkan::{
     command::VkCommand, display::VkDisplay, instance::VkInstance, renderer::VkRenderer,
 };
@@ -20,7 +19,7 @@ pub struct VkDevice {
 }
 
 impl Device<VkRenderer> for VkDevice {
-    fn new(instance: Arc<VkInstance>, display: &VkDisplay) -> Result<Arc<Self>>
+    fn new(instance: Arc<VkInstance>, display: &VkDisplay) -> Result<Arc<Self>, GfxError>
     where
         Self: Sized,
     {
@@ -34,7 +33,7 @@ impl Device<VkRenderer> for VkDevice {
         let p_device = instance
             .instance
             .find_adapter(&expected_features, display.surface.as_deref())
-            .expect("Find suitable adapter");
+            .ok_or(GfxError::DeviceCreate)?;
 
         tracing::info!(target: "init", "Using adapter {}", p_device.name);
 
@@ -42,7 +41,7 @@ impl Device<VkRenderer> for VkDevice {
             instance.instance.clone(),
             p_device,
             display.surface.as_deref(),
-        );
+        )?;
 
         let graphics_queue = device.clone().graphics_queue();
         let transfer_queue = device.clone().transfer_queue();
