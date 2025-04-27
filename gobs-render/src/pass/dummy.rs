@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use gobs_core::ImageExtent2D;
 use gobs_gfx::{GfxCommand, GfxPipeline};
-use gobs_resource::{entity::uniform::UniformLayout, geometry::VertexFlag};
+use gobs_resource::{entity::uniform::UniformLayout, geometry::VertexAttribute};
 
 use crate::{
     RenderError,
@@ -47,7 +47,7 @@ impl RenderPass for DummyPass {
         None
     }
 
-    fn vertex_flags(&self) -> Option<VertexFlag> {
+    fn vertex_attributes(&self) -> Option<VertexAttribute> {
         None
     }
 

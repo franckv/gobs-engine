@@ -9,7 +9,7 @@ use gobs_core::{ImageExtent2D, Transform};
 use gobs_gfx::{BufferId, GfxCommand, GfxPipeline, PipelineId};
 use gobs_resource::{
     entity::{camera::Camera, light::Light, uniform::UniformLayout},
-    geometry::VertexFlag,
+    geometry::VertexAttribute,
 };
 
 use crate::{
@@ -45,7 +45,7 @@ pub trait RenderPass {
     fn name(&self) -> &str;
     fn ty(&self) -> PassType;
     fn pipeline(&self) -> Option<Arc<GfxPipeline>>;
-    fn vertex_flags(&self) -> Option<VertexFlag>;
+    fn vertex_attributes(&self) -> Option<VertexAttribute>;
     fn push_layout(&self) -> Option<Arc<UniformLayout>>;
     fn uniform_data_layout(&self) -> Option<Arc<UniformLayout>>;
     fn attachments(&self) -> &[String];

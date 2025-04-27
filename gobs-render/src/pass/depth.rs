@@ -12,7 +12,7 @@ use gobs_resource::{
         light::Light,
         uniform::{UniformLayout, UniformProp, UniformPropData},
     },
-    geometry::VertexFlag,
+    geometry::VertexAttribute,
 };
 
 use crate::{
@@ -31,7 +31,7 @@ pub struct DepthPass {
     ty: PassType,
     attachments: Vec<String>,
     pipeline: Arc<GfxPipeline>,
-    vertex_flags: VertexFlag,
+    vertex_attributes: VertexAttribute,
     push_layout: Arc<UniformLayout>,
     frame_data: Vec<FrameData>,
     uniform_data_layout: Arc<UniformLayout>,
@@ -39,7 +39,7 @@ pub struct DepthPass {
 
 impl DepthPass {
     pub fn new(ctx: &Context, name: &str) -> Result<Arc<dyn RenderPass>, RenderError> {
-        let vertex_flags = VertexFlag::POSITION;
+        let vertex_attributes = VertexAttribute::POSITION;
 
         let push_layout = UniformLayout::builder()
             .prop("world_matrix", UniformProp::Mat4F)
@@ -76,7 +76,7 @@ impl DepthPass {
             ty: PassType::Depth,
             attachments: vec![String::from("depth")],
             pipeline,
-            vertex_flags,
+            vertex_attributes,
             push_layout,
             frame_data,
             uniform_data_layout,
@@ -249,8 +249,8 @@ impl RenderPass for DepthPass {
         Some(self.pipeline.clone())
     }
 
-    fn vertex_flags(&self) -> Option<VertexFlag> {
-        Some(self.vertex_flags)
+    fn vertex_attributes(&self) -> Option<VertexAttribute> {
+        Some(self.vertex_attributes)
     }
 
     fn push_layout(&self) -> Option<Arc<UniformLayout>> {

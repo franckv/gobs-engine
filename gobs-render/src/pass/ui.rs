@@ -8,7 +8,7 @@ use gobs_resource::{
         light::Light,
         uniform::{UniformLayout, UniformProp, UniformPropData},
     },
-    geometry::VertexFlag,
+    geometry::VertexAttribute,
 };
 
 use crate::{
@@ -251,7 +251,7 @@ impl RenderPass for UiPass {
         None
     }
 
-    fn vertex_flags(&self) -> Option<VertexFlag> {
+    fn vertex_attributes(&self) -> Option<VertexAttribute> {
         None
     }
 

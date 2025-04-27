@@ -46,7 +46,7 @@ impl RenderPass for PresentPass {
         None
     }
 
-    fn vertex_flags(&self) -> Option<gobs_resource::geometry::VertexFlag> {
+    fn vertex_attributes(&self) -> Option<gobs_resource::geometry::VertexAttribute> {
         None
     }
 

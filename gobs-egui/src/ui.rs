@@ -12,7 +12,7 @@ use gobs_render::{
     RenderPass, Renderable, RenderableLifetime,
 };
 use gobs_resource::{
-    geometry::{Mesh, VertexData, VertexFlag},
+    geometry::{Mesh, VertexAttribute, VertexData},
     material::{Texture, TextureType},
 };
 use parking_lot::RwLock;
@@ -40,10 +40,11 @@ impl UIRenderer {
 
         ectx.set_pixels_per_point(PIXEL_PER_POINT);
 
-        let vertex_flags = VertexFlag::POSITION | VertexFlag::COLOR | VertexFlag::TEXTURE;
+        let vertex_attributes =
+            VertexAttribute::POSITION | VertexAttribute::COLOR | VertexAttribute::TEXTURE;
 
         let material = Material::builder(ctx, "ui.vert.spv", "ui.frag.spv")?
-            .vertex_flags(vertex_flags)
+            .vertex_attributes(vertex_attributes)
             .prop("diffuse", MaterialProperty::Texture)
             .no_culling()
             .blend_mode(BlendMode::Premultiplied)

@@ -9,7 +9,7 @@ use gobs::{
         BlendMode, Context, FrameGraph, Material, MaterialProperty, PassType, RenderError,
         Renderable, RenderableLifetime,
     },
-    resource::{entity::camera::Camera, geometry::VertexFlag},
+    resource::{entity::camera::Camera, geometry::VertexAttribute},
     scene::scene::Scene,
     ui::UIRenderer,
 };
@@ -61,74 +61,74 @@ impl SampleApp {
     }
 
     pub fn color_material(&self, ctx: &Context, graph: &FrameGraph) -> Arc<Material> {
-        let vertex_flags = VertexFlag::POSITION | VertexFlag::COLOR;
+        let vertex_attributes = VertexAttribute::POSITION | VertexAttribute::COLOR;
 
         Material::builder(ctx, "color.vert.spv", "color.frag.spv")
             .unwrap()
-            .vertex_flags(vertex_flags)
+            .vertex_attributes(vertex_attributes)
             .build(graph.pass_by_type(PassType::Forward).unwrap())
     }
 
     pub fn color_material_transparent(&self, ctx: &Context, graph: &FrameGraph) -> Arc<Material> {
-        let vertex_flags = VertexFlag::POSITION | VertexFlag::COLOR;
+        let vertex_attributes = VertexAttribute::POSITION | VertexAttribute::COLOR;
 
         Material::builder(ctx, "color.vert.spv", "color.frag.spv")
             .unwrap()
-            .vertex_flags(vertex_flags)
+            .vertex_attributes(vertex_attributes)
             .blend_mode(BlendMode::Alpha)
             .build(graph.pass_by_type(PassType::Forward).unwrap())
     }
 
     pub fn texture_material(&self, ctx: &Context, graph: &FrameGraph) -> Arc<Material> {
-        let vertex_flags = VertexFlag::POSITION
-            | VertexFlag::TEXTURE
-            | VertexFlag::NORMAL
-            | VertexFlag::TANGENT
-            | VertexFlag::BITANGENT;
+        let vertex_attributes = VertexAttribute::POSITION
+            | VertexAttribute::TEXTURE
+            | VertexAttribute::NORMAL
+            | VertexAttribute::TANGENT
+            | VertexAttribute::BITANGENT;
 
         Material::builder(ctx, "mesh.vert.spv", "mesh.frag.spv")
             .unwrap()
-            .vertex_flags(vertex_flags)
+            .vertex_attributes(vertex_attributes)
             .prop("diffuse", MaterialProperty::Texture)
             .build(graph.pass_by_type(PassType::Forward).unwrap())
     }
 
     pub fn texture_material_transparent(&self, ctx: &Context, graph: &FrameGraph) -> Arc<Material> {
-        let vertex_flags = VertexFlag::POSITION
-            | VertexFlag::TEXTURE
-            | VertexFlag::NORMAL
-            | VertexFlag::TANGENT
-            | VertexFlag::BITANGENT;
+        let vertex_attributes = VertexAttribute::POSITION
+            | VertexAttribute::TEXTURE
+            | VertexAttribute::NORMAL
+            | VertexAttribute::TANGENT
+            | VertexAttribute::BITANGENT;
 
         Material::builder(ctx, "mesh.vert.spv", "mesh.frag.spv")
             .unwrap()
-            .vertex_flags(vertex_flags)
+            .vertex_attributes(vertex_attributes)
             .prop("diffuse", MaterialProperty::Texture)
             .blend_mode(BlendMode::Alpha)
             .build(graph.pass_by_type(PassType::Forward).unwrap())
     }
 
     pub fn normal_mapping_material(&self, ctx: &Context, graph: &FrameGraph) -> Arc<Material> {
-        let vertex_flags = VertexFlag::POSITION
-            | VertexFlag::TEXTURE
-            | VertexFlag::NORMAL
-            | VertexFlag::TANGENT
-            | VertexFlag::BITANGENT;
+        let vertex_attributes = VertexAttribute::POSITION
+            | VertexAttribute::TEXTURE
+            | VertexAttribute::NORMAL
+            | VertexAttribute::TANGENT
+            | VertexAttribute::BITANGENT;
 
         Material::builder(ctx, "mesh.vert.spv", "mesh_n.frag.spv")
             .unwrap()
-            .vertex_flags(vertex_flags)
+            .vertex_attributes(vertex_attributes)
             .prop("diffuse", MaterialProperty::Texture)
             .prop("normal", MaterialProperty::Texture)
             .build(graph.pass_by_type(PassType::Forward).unwrap())
     }
 
     pub fn depth_material(&self, ctx: &Context, graph: &FrameGraph) -> Arc<Material> {
-        let vertex_flags = VertexFlag::POSITION | VertexFlag::COLOR;
+        let vertex_attributes = VertexAttribute::POSITION | VertexAttribute::COLOR;
 
         Material::builder(ctx, "color.vert.spv", "depth.frag.spv")
             .unwrap()
-            .vertex_flags(vertex_flags)
+            .vertex_attributes(vertex_attributes)
             .build(graph.pass_by_type(PassType::Forward).unwrap())
     }
 

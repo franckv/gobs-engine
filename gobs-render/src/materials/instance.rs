@@ -4,7 +4,7 @@ use std::sync::Arc;
 use uuid::Uuid;
 
 use gobs_gfx::GfxPipeline;
-use gobs_resource::{geometry::VertexFlag, material::Texture};
+use gobs_resource::{geometry::VertexAttribute, material::Texture};
 
 use crate::materials::Material;
 
@@ -29,8 +29,8 @@ impl MaterialInstance {
         self.material.pipeline.clone()
     }
 
-    pub fn vertex_flags(&self) -> VertexFlag {
-        self.material.vertex_flags
+    pub fn vertex_attributes(&self) -> VertexAttribute {
+        self.material.vertex_attributes
     }
 }
 

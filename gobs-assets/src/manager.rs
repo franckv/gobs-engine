@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use gobs_render::{BlendMode, Context, Material, MaterialInstance, MaterialProperty, RenderPass};
-use gobs_resource::{geometry::VertexFlag, material::Texture};
+use gobs_resource::{geometry::VertexAttribute, material::Texture};
 
 use crate::AssetError;
 
@@ -49,51 +49,51 @@ pub struct MaterialManager {
 
 impl MaterialManager {
     pub fn new(ctx: &Context, pass: RenderPass) -> Result<Self, AssetError> {
-        let vertex_flags = VertexFlag::POSITION
-            | VertexFlag::TEXTURE
-            | VertexFlag::NORMAL
-            | VertexFlag::TANGENT
-            | VertexFlag::BITANGENT;
+        let vertex_attributes = VertexAttribute::POSITION
+            | VertexAttribute::TEXTURE
+            | VertexAttribute::NORMAL
+            | VertexAttribute::TANGENT
+            | VertexAttribute::BITANGENT;
 
         let texture = Material::builder(ctx, "gltf.texture.vert.spv", "gltf.texture.frag.spv")?
-            .vertex_flags(vertex_flags)
+            .vertex_attributes(vertex_attributes)
             .prop("diffuse", MaterialProperty::Texture)
             .build(pass.clone());
 
         let transparent_texture =
             Material::builder(ctx, "gltf.texture.vert.spv", "gltf.texture.frag.spv")?
-                .vertex_flags(vertex_flags)
+                .vertex_attributes(vertex_attributes)
                 .prop("diffuse", MaterialProperty::Texture)
                 .blend_mode(BlendMode::Alpha)
                 .build(pass.clone());
 
         let texture_normal =
             Material::builder(ctx, "gltf.texture.vert.spv", "gltf.texture_n.frag.spv")?
-                .vertex_flags(vertex_flags)
+                .vertex_attributes(vertex_attributes)
                 .prop("diffuse", MaterialProperty::Texture)
                 .prop("normal", MaterialProperty::Texture)
                 .build(pass.clone());
 
         let transparent_texture_normal =
             Material::builder(ctx, "gltf.texture.vert.spv", "gltf.texture_n.frag.spv")?
-                .vertex_flags(vertex_flags)
+                .vertex_attributes(vertex_attributes)
                 .prop("diffuse", MaterialProperty::Texture)
                 .prop("normal", MaterialProperty::Texture)
                 .blend_mode(BlendMode::Alpha)
                 .build(pass.clone());
 
-        let vertex_flags = VertexFlag::POSITION
-            | VertexFlag::COLOR
-            | VertexFlag::NORMAL
-            | VertexFlag::TANGENT
-            | VertexFlag::BITANGENT;
+        let vertex_attributes = VertexAttribute::POSITION
+            | VertexAttribute::COLOR
+            | VertexAttribute::NORMAL
+            | VertexAttribute::TANGENT
+            | VertexAttribute::BITANGENT;
 
         let color = Material::builder(
             ctx,
             "gltf.color_light.vert.spv",
             "gltf.color_light.frag.spv",
         )?
-        .vertex_flags(vertex_flags)
+        .vertex_attributes(vertex_attributes)
         .build(pass.clone());
 
         let transparent_color = Material::builder(
@@ -101,7 +101,7 @@ impl MaterialManager {
             "gltf.color_light.vert.spv",
             "gltf.color_light.frag.spv",
         )?
-        .vertex_flags(vertex_flags)
+        .vertex_attributes(vertex_attributes)
         .blend_mode(BlendMode::Alpha)
         .build(pass.clone());
 

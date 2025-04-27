@@ -7,7 +7,7 @@ use gobs_gfx::{
 };
 use uuid::Uuid;
 
-use gobs_resource::{geometry::VertexFlag, material::Texture};
+use gobs_resource::{geometry::VertexAttribute, material::Texture};
 
 use crate::{RenderError, RenderPass, context::Context, materials::MaterialInstance};
 
@@ -15,7 +15,7 @@ pub type MaterialId = Uuid;
 
 pub struct Material {
     pub id: MaterialId,
-    pub vertex_flags: VertexFlag,
+    pub vertex_attributes: VertexAttribute,
     pub pipeline: Arc<GfxPipeline>,
     pub blending_enabled: bool,
 }
@@ -39,7 +39,7 @@ pub enum MaterialProperty {
 }
 
 pub struct MaterialBuilder {
-    vertex_flags: VertexFlag,
+    vertex_attributes: VertexAttribute,
     blend_mode: BlendMode,
     pipeline_builder: GfxGraphicsPipelineBuilder,
 }
@@ -64,14 +64,14 @@ impl MaterialBuilder {
             .binding(DescriptorType::Uniform, DescriptorStage::All);
 
         Ok(Self {
-            vertex_flags: VertexFlag::empty(),
+            vertex_attributes: VertexAttribute::empty(),
             blend_mode: BlendMode::None,
             pipeline_builder,
         })
     }
 
-    pub fn vertex_flags(mut self, vertex_flags: VertexFlag) -> Self {
-        self.vertex_flags = vertex_flags;
+    pub fn vertex_attributes(mut self, vertex_attributes: VertexAttribute) -> Self {
+        self.vertex_attributes = vertex_attributes;
 
         self
     }
@@ -124,7 +124,7 @@ impl MaterialBuilder {
 
         Arc::new(Material {
             id: Uuid::new_v4(),
-            vertex_flags: self.vertex_flags,
+            vertex_attributes: self.vertex_attributes,
             pipeline,
             blending_enabled: self.blend_mode != BlendMode::None,
         })

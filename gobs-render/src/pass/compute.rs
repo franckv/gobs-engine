@@ -7,7 +7,7 @@ use gobs_gfx::{
 };
 use gobs_resource::{
     entity::{camera::Camera, light::Light, uniform::UniformLayout},
-    geometry::VertexFlag,
+    geometry::VertexAttribute,
 };
 
 use crate::{
@@ -97,7 +97,7 @@ impl RenderPass for ComputePass {
         Some(self.pipeline.clone())
     }
 
-    fn vertex_flags(&self) -> Option<VertexFlag> {
+    fn vertex_attributes(&self) -> Option<VertexAttribute> {
         None
     }
 

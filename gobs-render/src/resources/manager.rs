@@ -180,14 +180,14 @@ impl MeshResourceManager {
 
             tracing::trace!("Vertex offset: {}, {}", vertices_offset, indices_offset);
 
-            let vertex_flags = match pass.vertex_flags() {
-                Some(vertex_flags) => vertex_flags,
-                None => model.materials[material_id].vertex_flags(),
+            let vertex_attributes = match pass.vertex_attributes() {
+                Some(vertex_attributes) => vertex_attributes,
+                None => model.materials[material_id].vertex_attributes(),
             };
             // TODO: hot path
-            let alignment = vertex_flags.alignment();
+            let alignment = vertex_attributes.alignment();
             for vertice in &mesh.vertices {
-                vertice.copy_data(vertex_flags, alignment, &mut vertices);
+                vertice.copy_data(vertex_attributes, alignment, &mut vertices);
             }
             for index in &mesh.indices {
                 indices.push(*index);
