@@ -50,9 +50,7 @@ impl DepthPass {
             .prop("view_proj", UniformProp::Mat4F)
             .build();
 
-        let pipeline_builder = GfxPipeline::graphics(name, &ctx.device);
-
-        let pipeline = pipeline_builder
+        let pipeline = GfxPipeline::graphics(name, &ctx.device)
             .vertex_shader("depth.vert.spv", "main")?
             .pool_size(ctx.frames_in_flight)
             .push_constants(push_layout.size())

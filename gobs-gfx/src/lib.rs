@@ -26,8 +26,7 @@ pub use gobs_vulkan::{
     descriptor::{DescriptorStage, DescriptorType},
     images::{ImageLayout, ImageUsage},
     pipelines::{
-        BlendMode, CompareOp, CullMode, DynamicStateElem, FrontFace, PipelineStage, PolygonMode,
-        Rect2D, Viewport,
+        BlendMode, CompareOp, CullMode, DynamicStateElem, FrontFace, PolygonMode, Rect2D, Viewport,
     },
 };
 

@@ -50,9 +50,7 @@ impl BoundsPass {
             .prop("view_proj", UniformProp::Mat4F)
             .build();
 
-        let pipeline_builder = GfxPipeline::graphics(name, &ctx.device);
-
-        let pipeline = pipeline_builder
+        let pipeline = GfxPipeline::graphics(name, &ctx.device)
             .vertex_shader("wire.vert.spv", "main")?
             .fragment_shader("wire.frag.spv", "main")?
             .pool_size(ctx.frames_in_flight)
