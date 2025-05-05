@@ -7,9 +7,9 @@ use gobs_gfx::{
 };
 use uuid::Uuid;
 
-use gobs_resource::{geometry::VertexAttribute, material::Texture};
+use gobs_resource::{geometry::VertexAttribute, resource::ResourceHandle};
 
-use crate::{RenderError, RenderPass, context::Context, materials::MaterialInstance};
+use crate::{GfxContext, RenderError, RenderPass, materials::MaterialInstance};
 
 pub type MaterialId = Uuid;
 
@@ -22,14 +22,14 @@ pub struct Material {
 
 impl Material {
     pub fn builder(
-        ctx: &Context,
+        ctx: &GfxContext,
         vertex_shader: &str,
         fragment_shader: &str,
     ) -> Result<MaterialBuilder, RenderError> {
         MaterialBuilder::new(ctx, vertex_shader, fragment_shader)
     }
 
-    pub fn instantiate(self: &Arc<Self>, textures: Vec<Arc<Texture>>) -> Arc<MaterialInstance> {
+    pub fn instantiate(self: &Arc<Self>, textures: Vec<ResourceHandle>) -> Arc<MaterialInstance> {
         MaterialInstance::new(self.clone(), textures)
     }
 }
@@ -46,7 +46,7 @@ pub struct MaterialBuilder {
 
 impl MaterialBuilder {
     pub fn new(
-        ctx: &Context,
+        ctx: &GfxContext,
         vertex_shader: &str,
         fragment_shader: &str,
     ) -> Result<Self, RenderError> {

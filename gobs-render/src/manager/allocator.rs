@@ -4,7 +4,7 @@ use std::hash::Hash;
 use gobs_core::utils::pool::ObjectPool;
 use gobs_gfx::{Buffer, BufferUsage, GfxBuffer};
 
-use crate::Context;
+use crate::GfxContext;
 
 pub trait ResourceFamily: Hash + Eq + Debug {}
 impl<U: Hash + Eq + Debug> ResourceFamily for U {}
@@ -12,11 +12,11 @@ impl<U: Hash + Eq + Debug> ResourceFamily for U {}
 pub trait Allocable<F: ResourceFamily> {
     fn family(&self) -> F;
     fn size(&self) -> usize;
-    fn allocate(ctx: &Context, name: &str, size: usize, family: F) -> Self;
+    fn allocate(ctx: &GfxContext, name: &str, size: usize, family: F) -> Self;
 }
 
 impl Allocable<BufferUsage> for GfxBuffer {
-    fn allocate(ctx: &Context, name: &str, size: usize, family: BufferUsage) -> Self {
+    fn allocate(ctx: &GfxContext, name: &str, size: usize, family: BufferUsage) -> Self {
         GfxBuffer::new(name, size, family, &ctx.device)
     }
 
@@ -41,7 +41,7 @@ impl<F: ResourceFamily, A: Allocable<F>> Allocator<F, A> {
     }
 
     #[tracing::instrument(target = "resources", skip_all, level = "debug")]
-    pub fn allocate(&mut self, ctx: &Context, name: &str, size: usize, family: F) -> A {
+    pub fn allocate(&mut self, ctx: &GfxContext, name: &str, size: usize, family: F) -> A {
         while self.pool.contains(&family) {
             let resource = self.pool.pop(&family);
 

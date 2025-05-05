@@ -6,9 +6,10 @@ use gobs::{
     game::{
         AppError,
         app::{Application, Run},
+        context::GameContext,
     },
     gfx::Device,
-    render::{Context, FrameGraph, PassType, RenderError},
+    render::{FrameGraph, PassType, RenderError},
     resource::{entity::light::Light, load},
     scene::{graph::scenegraph::SceneGraph, scene::Scene},
     ui::UIRenderer,
@@ -25,7 +26,7 @@ struct App {
 }
 
 impl Run for App {
-    async fn create(ctx: &Context) -> Result<Self, AppError> {
+    async fn create(ctx: &GameContext) -> Result<Self, AppError> {
         let camera = SampleApp::perspective_camera(ctx);
         let camera_position = Vec3::new(10., 5., 10.);
 
@@ -36,8 +37,8 @@ impl Run for App {
 
         let camera_controller = SampleApp::controller();
 
-        let graph = FrameGraph::default(ctx)?;
-        let ui = UIRenderer::new(ctx, graph.pass_by_type(PassType::Ui)?)?;
+        let graph = FrameGraph::default(&ctx.gfx)?;
+        let ui = UIRenderer::new(&ctx.gfx, graph.pass_by_type(PassType::Ui)?)?;
         let scene = Scene::new(camera, camera_position, light, light_position);
 
         Ok(App {
@@ -49,11 +50,11 @@ impl Run for App {
         })
     }
 
-    async fn start(&mut self, ctx: &Context) {
+    async fn start(&mut self, ctx: &mut GameContext) {
         self.init(ctx);
     }
 
-    fn update(&mut self, ctx: &Context, delta: f32) {
+    fn update(&mut self, ctx: &mut GameContext, delta: f32) {
         if self.common.process_updates {
             let angular_speed = 10.;
 
@@ -71,19 +72,24 @@ impl Run for App {
                 .update_camera(camera, transform, delta);
         });
 
-        self.graph.update(ctx, delta);
-        self.scene.update(ctx, delta);
+        self.graph.update(&ctx.gfx, delta);
+        self.scene.update(&ctx.gfx, delta);
 
         self.common
             .update_ui(ctx, &self.graph, &self.scene, &mut self.ui, delta);
     }
 
-    fn render(&mut self, ctx: &mut Context) -> Result<(), RenderError> {
-        self.common
-            .render(ctx, &mut self.graph, &mut self.scene, &mut self.ui)
+    fn render(&mut self, ctx: &mut GameContext) -> Result<(), RenderError> {
+        self.common.render(
+            &mut ctx.gfx,
+            &mut ctx.resource_manager,
+            &mut self.graph,
+            &mut self.scene,
+            &mut self.ui,
+        )
     }
 
-    fn input(&mut self, ctx: &Context, input: Input) {
+    fn input(&mut self, ctx: &GameContext, input: Input) {
         self.common.input(
             ctx,
             input,
@@ -94,23 +100,23 @@ impl Run for App {
         );
     }
 
-    fn resize(&mut self, ctx: &mut Context, width: u32, height: u32) {
-        self.graph.resize(ctx);
+    fn resize(&mut self, ctx: &mut GameContext, width: u32, height: u32) {
+        self.graph.resize(&mut ctx.gfx);
         self.scene.resize(width, height);
         self.ui.resize(width, height);
     }
 
-    fn close(&mut self, ctx: &Context) {
+    fn close(&mut self, ctx: &GameContext) {
         tracing::info!("Closing");
 
-        ctx.device.wait();
+        ctx.gfx.device.wait();
 
         tracing::info!("Closed");
     }
 }
 
 impl App {
-    fn init(&mut self, ctx: &Context) {
+    fn init(&mut self, ctx: &mut GameContext) {
         tracing::info!("Load scene 0");
         let graph = self.load_scene(ctx);
         self.scene
@@ -119,14 +125,19 @@ impl App {
             .unwrap();
     }
 
-    fn load_scene(&self, ctx: &Context) -> SceneGraph {
+    fn load_scene(&self, ctx: &mut GameContext) -> SceneGraph {
         let file_name = load::get_asset_dir("house2.glb", load::AssetType::MODEL).unwrap();
 
-        let mut gltf_loader =
-            gltf_load::GLTFLoader::new(ctx, self.graph.pass_by_type(PassType::Forward).unwrap())
-                .unwrap();
+        let mut gltf_loader = gltf_load::GLTFLoader::new(
+            &mut ctx.gfx,
+            &mut ctx.resource_manager,
+            self.graph.pass_by_type(PassType::Forward).unwrap(),
+        )
+        .unwrap();
 
-        gltf_loader.load(file_name).expect("Load gltf");
+        gltf_loader
+            .load(&mut ctx.resource_manager, file_name)
+            .expect("Load gltf");
 
         gltf_loader.scene
     }

@@ -2,6 +2,7 @@ assets/
 target/
 scripts/
 .vscode/
+.cargo/
 
 Cargo.lock
 *.spv

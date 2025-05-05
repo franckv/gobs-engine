@@ -11,10 +11,9 @@ use gobs_resource::{
 };
 
 use crate::{
-    RenderError,
+    GfxContext, RenderError,
     batch::RenderBatch,
-    context::Context,
-    graph::ResourceManager,
+    graph::GraphResourceManager,
     pass::{PassId, PassType, RenderPass},
 };
 
@@ -38,7 +37,7 @@ pub struct ComputePass {
 }
 
 impl ComputePass {
-    pub fn new(ctx: &Context, name: &str) -> Result<Arc<dyn RenderPass>, RenderError> {
+    pub fn new(ctx: &GfxContext, name: &str) -> Result<Arc<dyn RenderPass>, RenderError> {
         let pipeline_builder = GfxPipeline::compute(name, &ctx.device);
 
         let pipeline = pipeline_builder
@@ -121,9 +120,9 @@ impl RenderPass for ComputePass {
 
     fn render(
         &self,
-        ctx: &mut Context,
+        ctx: &mut GfxContext,
         cmd: &GfxCommand,
-        resource_manager: &ResourceManager,
+        resource_manager: &GraphResourceManager,
         batch: &mut RenderBatch,
         draw_extent: ImageExtent2D,
     ) -> Result<(), RenderError> {

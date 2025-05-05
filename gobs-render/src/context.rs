@@ -7,22 +7,21 @@ use gobs_gfx::{Device, Display, GfxDevice, GfxDisplay, GfxInstance, Instance};
 
 use crate::RenderError;
 
-pub struct Context {
-    pub app_name: String,
+const FRAMES_IN_FLIGHT: usize = 2;
+
+pub struct GfxContext {
     pub instance: Arc<GfxInstance>,
     pub display: GfxDisplay,
     pub device: Arc<GfxDevice>,
     pub color_format: ImageFormat,
     pub depth_format: ImageFormat,
     pub frames_in_flight: usize,
-    pub stats_refresh: usize,
     pub frame_number: usize,
     pub vertex_padding: bool,
+    pub stats_refresh: usize,
 }
 
-const FRAMES_IN_FLIGHT: usize = 2;
-
-impl Context {
+impl GfxContext {
     pub fn new(name: &str, window: Option<Window>, validation: bool) -> Result<Self, RenderError> {
         let instance = GfxInstance::new(name, window.as_ref(), validation)?;
         let mut display = GfxDisplay::new(instance.clone(), window)?;
@@ -30,16 +29,15 @@ impl Context {
         display.init(&device, FRAMES_IN_FLIGHT);
 
         Ok(Self {
-            app_name: name.to_string(),
             instance,
             display,
             device,
             color_format: ImageFormat::R16g16b16a16Sfloat,
             depth_format: ImageFormat::D32Sfloat,
             frames_in_flight: FRAMES_IN_FLIGHT,
-            stats_refresh: 60,
             frame_number: 0,
             vertex_padding: true,
+            stats_refresh: 60,
         })
     }
 
@@ -58,11 +56,5 @@ impl Context {
 
     pub fn request_redraw(&self) {
         self.display.request_redraw();
-    }
-}
-
-impl Drop for Context {
-    fn drop(&mut self) {
-        tracing::debug!(target: "memory", "Drop context");
     }
 }

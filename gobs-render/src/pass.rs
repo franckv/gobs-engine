@@ -13,7 +13,7 @@ use gobs_resource::{
 };
 
 use crate::{
-    RenderError, batch::RenderBatch, context::Context, graph::ResourceManager,
+    GfxContext, RenderError, batch::RenderBatch, graph::GraphResourceManager,
     materials::MaterialId, resources::UniformBuffer,
 };
 
@@ -53,9 +53,9 @@ pub trait RenderPass {
     fn depth_clear(&self) -> bool;
     fn render(
         &self,
-        ctx: &mut Context,
+        ctx: &mut GfxContext,
         cmd: &GfxCommand,
-        resource_manager: &ResourceManager,
+        resource_manager: &GraphResourceManager,
         batch: &mut RenderBatch,
         draw_extent: ImageExtent2D,
     ) -> Result<(), RenderError>;
@@ -83,7 +83,7 @@ pub(crate) struct FrameData {
 }
 
 impl FrameData {
-    pub fn new(ctx: &Context, uniform_layout: Arc<UniformLayout>) -> Self {
+    pub fn new(ctx: &GfxContext, uniform_layout: Arc<UniformLayout>) -> Self {
         let uniform_buffer = UniformBuffer::new(ctx, uniform_layout.size());
 
         FrameData {

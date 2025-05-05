@@ -5,11 +5,12 @@ use renderdoc::{RenderDoc, V141};
 
 use gobs::{
     core::{ImageFormat, Input, Key},
+    game::context::GameContext,
     render::{
-        BlendMode, Context, FrameGraph, Material, MaterialProperty, PassType, RenderError,
+        BlendMode, FrameGraph, GfxContext, Material, MaterialProperty, PassType, RenderError,
         Renderable, RenderableLifetime,
     },
-    resource::{entity::camera::Camera, geometry::VertexAttribute},
+    resource::{entity::camera::Camera, geometry::VertexAttribute, manager::ResourceManager},
     scene::scene::Scene,
     ui::UIRenderer,
 };
@@ -37,14 +38,14 @@ impl SampleApp {
         }
     }
 
-    pub fn ortho_camera(ctx: &Context) -> Camera {
-        let extent = ctx.extent();
+    pub fn ortho_camera(ctx: &GameContext) -> Camera {
+        let extent = ctx.gfx.extent();
 
         Camera::ortho(extent.width as f32, extent.height as f32, 0.1, 100., 0., 0.)
     }
 
-    pub fn perspective_camera(ctx: &Context) -> Camera {
-        let extent = ctx.extent();
+    pub fn perspective_camera(ctx: &GameContext) -> Camera {
+        let extent = ctx.gfx.extent();
 
         Camera::perspective(
             extent.width as f32 / extent.height as f32,
@@ -60,7 +61,7 @@ impl SampleApp {
         CameraController::new(3., 0.4)
     }
 
-    pub fn color_material(&self, ctx: &Context, graph: &FrameGraph) -> Arc<Material> {
+    pub fn color_material(&self, ctx: &GfxContext, graph: &FrameGraph) -> Arc<Material> {
         let vertex_attributes = VertexAttribute::POSITION | VertexAttribute::COLOR;
 
         Material::builder(ctx, "color.vert.spv", "color.frag.spv")
@@ -69,7 +70,11 @@ impl SampleApp {
             .build(graph.pass_by_type(PassType::Forward).unwrap())
     }
 
-    pub fn color_material_transparent(&self, ctx: &Context, graph: &FrameGraph) -> Arc<Material> {
+    pub fn color_material_transparent(
+        &self,
+        ctx: &GfxContext,
+        graph: &FrameGraph,
+    ) -> Arc<Material> {
         let vertex_attributes = VertexAttribute::POSITION | VertexAttribute::COLOR;
 
         Material::builder(ctx, "color.vert.spv", "color.frag.spv")
@@ -79,7 +84,7 @@ impl SampleApp {
             .build(graph.pass_by_type(PassType::Forward).unwrap())
     }
 
-    pub fn texture_material(&self, ctx: &Context, graph: &FrameGraph) -> Arc<Material> {
+    pub fn texture_material(&self, ctx: &GfxContext, graph: &FrameGraph) -> Arc<Material> {
         let vertex_attributes = VertexAttribute::POSITION
             | VertexAttribute::TEXTURE
             | VertexAttribute::NORMAL
@@ -93,7 +98,11 @@ impl SampleApp {
             .build(graph.pass_by_type(PassType::Forward).unwrap())
     }
 
-    pub fn texture_material_transparent(&self, ctx: &Context, graph: &FrameGraph) -> Arc<Material> {
+    pub fn texture_material_transparent(
+        &self,
+        ctx: &GfxContext,
+        graph: &FrameGraph,
+    ) -> Arc<Material> {
         let vertex_attributes = VertexAttribute::POSITION
             | VertexAttribute::TEXTURE
             | VertexAttribute::NORMAL
@@ -108,7 +117,7 @@ impl SampleApp {
             .build(graph.pass_by_type(PassType::Forward).unwrap())
     }
 
-    pub fn normal_mapping_material(&self, ctx: &Context, graph: &FrameGraph) -> Arc<Material> {
+    pub fn normal_mapping_material(&self, ctx: &GfxContext, graph: &FrameGraph) -> Arc<Material> {
         let vertex_attributes = VertexAttribute::POSITION
             | VertexAttribute::TEXTURE
             | VertexAttribute::NORMAL
@@ -123,7 +132,7 @@ impl SampleApp {
             .build(graph.pass_by_type(PassType::Forward).unwrap())
     }
 
-    pub fn depth_material(&self, ctx: &Context, graph: &FrameGraph) -> Arc<Material> {
+    pub fn depth_material(&self, ctx: &GfxContext, graph: &FrameGraph) -> Arc<Material> {
         let vertex_attributes = VertexAttribute::POSITION | VertexAttribute::COLOR;
 
         Material::builder(ctx, "color.vert.spv", "depth.frag.spv")
@@ -134,7 +143,7 @@ impl SampleApp {
 
     pub fn update_ui(
         &mut self,
-        ctx: &Context,
+        ctx: &mut GameContext,
         graph: &FrameGraph,
         scene: &Scene,
         ui: &mut UIRenderer,
@@ -142,13 +151,17 @@ impl SampleApp {
     ) {
         if self.draw_ui {
             let (camera_transform, camera) = scene.camera();
+
+            // TODO: change this
+            let app_info = ctx.app_info.clone();
+
             ui.update(
-                ctx,
+                &mut ctx.resource_manager,
                 graph.pass_by_type(PassType::Ui).unwrap(),
                 delta,
                 |ectx| {
                     self.ui
-                        .draw(ctx, ectx, graph, scene, camera, &camera_transform);
+                        .draw(&app_info, ectx, graph, scene, camera, &camera_transform);
                 },
             );
         }
@@ -156,7 +169,8 @@ impl SampleApp {
 
     pub fn render(
         &mut self,
-        ctx: &mut Context,
+        ctx: &mut GfxContext,
+        resource_manager: &mut ResourceManager,
         graph: &mut FrameGraph,
         scene: &mut Scene,
         ui: &mut UIRenderer,
@@ -167,21 +181,42 @@ impl SampleApp {
 
         graph.prepare(ctx, &mut |pass, batch| match pass.ty() {
             PassType::Depth | PassType::Forward => {
-                scene.draw(ctx, pass, batch, None, RenderableLifetime::Static);
+                scene.draw(
+                    ctx,
+                    resource_manager,
+                    pass,
+                    batch,
+                    None,
+                    RenderableLifetime::Static,
+                );
             }
             PassType::Wire => {
                 if self.draw_wire {
-                    scene.draw(ctx, pass, batch, None, RenderableLifetime::Static);
+                    scene.draw(
+                        ctx,
+                        resource_manager,
+                        pass,
+                        batch,
+                        None,
+                        RenderableLifetime::Static,
+                    );
                 }
             }
             PassType::Bounds => {
                 if self.draw_bounds {
-                    scene.draw_bounds(ctx, pass, batch);
+                    scene.draw_bounds(ctx, resource_manager, pass, batch);
                 }
             }
             PassType::Ui => {
                 if self.draw_ui {
-                    ui.draw(ctx, pass, batch, None, RenderableLifetime::Transient);
+                    ui.draw(
+                        ctx,
+                        resource_manager,
+                        pass,
+                        batch,
+                        None,
+                        RenderableLifetime::Transient,
+                    );
                 }
             }
             _ => {}
@@ -198,7 +233,8 @@ impl SampleApp {
 
     pub fn render_ui(
         &mut self,
-        ctx: &mut Context,
+        ctx: &mut GfxContext,
+        resource_manager: &mut ResourceManager,
         graph: &mut FrameGraph,
         ui: &mut UIRenderer,
     ) -> Result<(), RenderError> {
@@ -208,7 +244,14 @@ impl SampleApp {
 
         graph.prepare(ctx, &mut |pass, batch| {
             if pass.ty() == PassType::Ui {
-                ui.draw(ctx, pass, batch, None, RenderableLifetime::Transient);
+                ui.draw(
+                    ctx,
+                    resource_manager,
+                    pass,
+                    batch,
+                    None,
+                    RenderableLifetime::Transient,
+                );
             }
         });
 
@@ -223,7 +266,8 @@ impl SampleApp {
 
     pub fn render_noui(
         &mut self,
-        ctx: &mut Context,
+        ctx: &mut GfxContext,
+        resource_manager: &mut ResourceManager,
         graph: &mut FrameGraph,
         scene: &mut Scene,
     ) -> Result<(), RenderError> {
@@ -233,7 +277,14 @@ impl SampleApp {
 
         graph.prepare(ctx, &mut |pass, batch| match pass.ty() {
             PassType::Depth | PassType::Forward => {
-                scene.draw(ctx, pass, batch, None, RenderableLifetime::Static);
+                scene.draw(
+                    ctx,
+                    resource_manager,
+                    pass,
+                    batch,
+                    None,
+                    RenderableLifetime::Static,
+                );
             }
             _ => {}
         });
@@ -249,7 +300,7 @@ impl SampleApp {
 
     pub fn input(
         &mut self,
-        ctx: &Context,
+        ctx: &GameContext,
         input: Input,
         graph: &mut FrameGraph,
         scene: &mut Scene,
@@ -274,12 +325,14 @@ impl SampleApp {
                         rd.trigger_capture();
                     }
                 }
-                Key::L => tracing::info!("{:?}", ctx.device.allocator.allocator.lock().unwrap()),
+                Key::L => {
+                    tracing::info!("{:?}", ctx.gfx.device.allocator.allocator.lock().unwrap())
+                }
                 Key::P => self.process_updates = !self.process_updates,
                 Key::W => self.draw_wire = !self.draw_wire,
                 Key::B => self.draw_bounds = !self.draw_bounds,
                 Key::U => self.draw_ui = !self.draw_ui,
-                Key::O => self.screenshot(ctx, graph),
+                Key::O => self.screenshot(&ctx.gfx, graph),
                 Key::Equals => scene.update_camera(|_, camera| {
                     camera.pitch = 0.;
                     camera.yaw = 0.;
@@ -289,7 +342,7 @@ impl SampleApp {
         }
     }
 
-    pub fn screenshot(&self, ctx: &Context, graph: &mut FrameGraph) {
+    pub fn screenshot(&self, ctx: &GfxContext, graph: &mut FrameGraph) {
         let filename = "draw_image.png";
         let mut data = vec![];
         let extent = graph.get_image_data(ctx, "draw", &mut data, ImageFormat::R16g16b16a16Unorm);

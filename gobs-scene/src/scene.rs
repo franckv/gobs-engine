@@ -1,8 +1,9 @@
 use glam::Vec3;
 
 use gobs_core::Transform;
-use gobs_render::{Context, RenderBatch, RenderPass, Renderable, RenderableLifetime};
+use gobs_render::{GfxContext, RenderBatch, RenderPass, Renderable, RenderableLifetime};
 use gobs_resource::entity::{camera::Camera, light::Light};
+use gobs_resource::manager::ResourceManager;
 
 use crate::components::{NodeId, NodeValue};
 use crate::graph::scenegraph::SceneGraph;
@@ -40,7 +41,7 @@ impl Scene {
         }
     }
 
-    pub fn update(&mut self, _ctx: &Context, _delta: f32) {}
+    pub fn update(&mut self, _ctx: &GfxContext, _delta: f32) {}
 
     pub fn camera(&self) -> (Transform, &Camera) {
         if let Some(node) = self.graph.get(self.camera) {
@@ -86,11 +87,18 @@ impl Scene {
         });
     }
 
-    pub fn draw_bounds(&mut self, ctx: &Context, pass: RenderPass, batch: &mut RenderBatch) {
+    pub fn draw_bounds(
+        &mut self,
+        ctx: &GfxContext,
+        resource_manager: &mut ResourceManager,
+        pass: RenderPass,
+        batch: &mut RenderBatch,
+    ) {
         self.graph.visit(self.graph.root, &mut |node| {
             if let NodeValue::Model(_) = node.base.value {
                 batch.add_bounds(
                     ctx,
+                    resource_manager,
                     node.bounding.bounding_box,
                     node.global_transform(),
                     pass.clone(),
@@ -114,7 +122,8 @@ impl Scene {
 impl Renderable for Scene {
     fn draw(
         &self,
-        ctx: &Context,
+        ctx: &GfxContext,
+        resource_manager: &mut ResourceManager,
         pass: RenderPass,
         batch: &mut RenderBatch,
         _transform: Option<Transform>,
@@ -124,6 +133,7 @@ impl Renderable for Scene {
             if let NodeValue::Model(model) = &node.base.value {
                 model.draw(
                     ctx,
+                    resource_manager,
                     pass.clone(),
                     batch,
                     Some(node.global_transform()),

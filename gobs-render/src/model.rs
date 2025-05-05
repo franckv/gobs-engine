@@ -7,12 +7,14 @@ use gobs_core::Transform;
 use serde::Serialize;
 use uuid::Uuid;
 
-use gobs_resource::geometry::{Bounded, BoundingBox, Mesh};
+use gobs_resource::{
+    geometry::{Bounded, BoundingBox, Mesh},
+    manager::ResourceManager,
+};
 
 use crate::{
-    RenderPass, Renderable,
+    GfxContext, RenderPass, Renderable,
     batch::RenderBatch,
-    context::Context,
     materials::{MaterialInstance, MaterialInstanceId},
     renderable::RenderableLifetime,
 };
@@ -41,14 +43,22 @@ impl Model {
 impl Renderable for Arc<Model> {
     fn draw(
         &self,
-        ctx: &Context,
+        ctx: &GfxContext,
+        resource_manager: &mut ResourceManager,
         pass: RenderPass,
         batch: &mut RenderBatch,
         transform: Option<Transform>,
         lifetime: RenderableLifetime,
     ) {
         if let Some(transform) = transform {
-            batch.add_model(ctx, self.clone(), transform, pass.clone(), lifetime);
+            batch.add_model(
+                ctx,
+                resource_manager,
+                self.clone(),
+                transform,
+                pass.clone(),
+                lifetime,
+            );
         }
     }
 }

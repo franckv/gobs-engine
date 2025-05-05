@@ -5,13 +5,13 @@ use parking_lot::{RwLock, RwLockReadGuard, RwLockWriteGuard};
 use gobs_core::{ImageExtent2D, ImageFormat};
 use gobs_gfx::{GfxImage, Image, ImageUsage};
 
-use crate::context::Context;
+use crate::GfxContext;
 
-pub struct ResourceManager {
+pub struct GraphResourceManager {
     pub resources: HashMap<String, RwLock<GfxImage>>,
 }
 
-impl ResourceManager {
+impl GraphResourceManager {
     pub fn new() -> Self {
         Self {
             resources: HashMap::new(),
@@ -20,7 +20,7 @@ impl ResourceManager {
 
     pub fn register_image(
         &mut self,
-        ctx: &Context,
+        ctx: &GfxContext,
         label: &str,
         format: ImageFormat,
         usage: ImageUsage,
@@ -58,7 +58,7 @@ impl ResourceManager {
     }
 }
 
-impl Default for ResourceManager {
+impl Default for GraphResourceManager {
     fn default() -> Self {
         Self::new()
     }

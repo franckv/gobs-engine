@@ -16,10 +16,9 @@ use gobs_resource::{
 };
 
 use crate::{
-    RenderError,
+    GfxContext, RenderError,
     batch::RenderBatch,
-    context::Context,
-    graph::ResourceManager,
+    graph::GraphResourceManager,
     pass::{FrameData, PassId, PassType, RenderPass, RenderState},
     renderable::RenderObject,
     stats::RenderStats,
@@ -38,7 +37,7 @@ pub struct BoundsPass {
 }
 
 impl BoundsPass {
-    pub fn new(ctx: &Context, name: &str) -> Result<Arc<dyn RenderPass>, RenderError> {
+    pub fn new(ctx: &GfxContext, name: &str) -> Result<Arc<dyn RenderPass>, RenderError> {
         let vertex_attributes = VertexAttribute::POSITION;
 
         let push_layout = UniformLayout::builder()
@@ -84,7 +83,7 @@ impl BoundsPass {
         }))
     }
 
-    fn prepare_scene_data(&self, ctx: &Context, batch: &mut RenderBatch) {
+    fn prepare_scene_data(&self, ctx: &GfxContext, batch: &mut RenderBatch) {
         if let Some(scene_data) = batch.scene_data(self.id) {
             self.frame_data[ctx.frame_id()]
                 .uniform_buffer
@@ -113,7 +112,7 @@ impl BoundsPass {
 
     fn bind_scene_data(
         &self,
-        ctx: &Context,
+        ctx: &GfxContext,
         cmd: &GfxCommand,
         stats: &mut RenderStats,
         state: &mut RenderState,
@@ -130,7 +129,7 @@ impl BoundsPass {
 
     fn bind_object_data(
         &self,
-        ctx: &Context,
+        ctx: &GfxContext,
         cmd: &GfxCommand,
         stats: &mut RenderStats,
         state: &mut RenderState,
@@ -171,7 +170,7 @@ impl BoundsPass {
         }
     }
 
-    fn render_batch(&self, ctx: &Context, cmd: &GfxCommand, batch: &mut RenderBatch) {
+    fn render_batch(&self, ctx: &GfxContext, cmd: &GfxCommand, batch: &mut RenderBatch) {
         let mut render_state = RenderState::default();
 
         self.prepare_scene_data(ctx, batch);
@@ -267,9 +266,9 @@ impl RenderPass for BoundsPass {
 
     fn render(
         &self,
-        ctx: &mut Context,
+        ctx: &mut GfxContext,
         cmd: &GfxCommand,
-        resource_manager: &ResourceManager,
+        resource_manager: &GraphResourceManager,
         batch: &mut RenderBatch,
         draw_extent: ImageExtent2D,
     ) -> Result<(), RenderError> {

@@ -1,9 +1,10 @@
 pub mod app;
+pub mod context;
 
-use gobs_render::RenderError;
 use thiserror::Error;
 
 use gobs_egui::UIError;
+use gobs_render::RenderError;
 
 #[derive(Debug, Error)]
 pub enum AppError {

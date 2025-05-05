@@ -9,16 +9,16 @@ use winit::{
 };
 
 use gobs_core::{Input, utils::timer::Timer};
-use gobs_render::{Context, Display, RenderError};
+use gobs_render::{Display, RenderError};
 
-use crate::AppError;
+use crate::{AppError, context::GameContext};
 
 pub struct Application<R>
 where
     R: Run + 'static,
 {
     pub runnable: Option<R>,
-    pub context: Option<Context>,
+    pub context: Option<GameContext>,
     pub timer: Timer,
     close_requested: bool,
     is_minimized: bool,
@@ -44,12 +44,12 @@ where
         #[cfg(not(debug_assertions))]
         let validation_enabled = false;
 
-        let context = Context::new(&self.title, Some(window), validation_enabled).unwrap();
+        let mut context = GameContext::new(&self.title, Some(window), validation_enabled).unwrap();
         tracing::info!("Start main loop");
 
         let future = async {
             let mut runnable = R::create(&context).await.unwrap();
-            runnable.start(&context).await;
+            runnable.start(&mut context).await;
 
             runnable
         };
@@ -139,10 +139,10 @@ where
                         if !self.close_requested {
                             runnable.update(context, delta);
                             tracing::trace!("[Redraw] FPS: {}", 1. / delta);
-                            if !context.display.is_minimized() {
+                            if !context.gfx.display.is_minimized() {
                                 if self.is_minimized {
                                     self.is_minimized = false;
-                                    context.display.resize(&context.device);
+                                    context.gfx.display.resize(&context.gfx.device);
                                 }
                                 match runnable.render(context) {
                                     Ok(_) => {}
@@ -153,7 +153,7 @@ where
                                 self.is_minimized = true;
                             }
                         }
-                        context.new_frame();
+                        context.gfx.new_frame();
                     }
                     _ => (),
                 }
@@ -180,7 +180,7 @@ where
 
     fn about_to_wait(&mut self, _event_loop: &winit::event_loop::ActiveEventLoop) {
         if let Some(context) = &mut self.context {
-            context.request_redraw();
+            context.gfx.request_redraw();
         }
     }
 }
@@ -221,11 +221,11 @@ where
 
 #[allow(async_fn_in_trait)]
 pub trait Run: Sized {
-    async fn create(context: &Context) -> Result<Self, AppError>;
-    async fn start(&mut self, ctx: &Context);
-    fn update(&mut self, ctx: &Context, delta: f32);
-    fn render(&mut self, ctx: &mut Context) -> Result<(), RenderError>;
-    fn input(&mut self, ctx: &Context, input: Input);
-    fn resize(&mut self, ctx: &mut Context, width: u32, height: u32);
-    fn close(&mut self, ctx: &Context);
+    async fn create(context: &GameContext) -> Result<Self, AppError>;
+    async fn start(&mut self, ctx: &mut GameContext);
+    fn update(&mut self, ctx: &mut GameContext, delta: f32);
+    fn render(&mut self, ctx: &mut GameContext) -> Result<(), RenderError>;
+    fn input(&mut self, ctx: &GameContext, input: Input);
+    fn resize(&mut self, ctx: &mut GameContext, width: u32, height: u32);
+    fn close(&mut self, ctx: &GameContext);
 }

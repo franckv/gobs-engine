@@ -1,9 +1,9 @@
-mod allocator;
-mod manager;
 mod texture;
+mod texture_loader;
 mod uniform;
 
-pub use allocator::Allocator;
-pub use manager::{GPUMesh, MeshResourceManager};
-pub use texture::GpuTexture;
+pub use texture::{
+    Texture, TextureData, TexturePath, TextureProperties, TextureType, TextureUpdate,
+};
+pub use texture_loader::TextureLoader;
 pub use uniform::UniformBuffer;

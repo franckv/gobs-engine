@@ -6,14 +6,15 @@ use egui::{
 };
 use glam::{Vec2, Vec3};
 
-use gobs_core::{Color, ImageExtent2D, Input, Key, MouseButton, SamplerFilter, Transform};
+use gobs_core::{Color, ImageExtent2D, Input, Key, MouseButton, Transform};
 use gobs_render::{
-    BlendMode, Context, Material, MaterialInstance, MaterialProperty, Model, RenderBatch,
-    RenderPass, Renderable, RenderableLifetime,
+    BlendMode, GfxContext, Material, MaterialInstance, MaterialProperty, Model, RenderBatch,
+    RenderPass, Renderable, RenderableLifetime, Texture, TextureProperties, TextureUpdate,
 };
 use gobs_resource::{
     geometry::{Mesh, VertexAttribute, VertexData},
-    material::{Texture, TextureType},
+    manager::ResourceManager,
+    resource::ResourceHandle,
 };
 use parking_lot::RwLock;
 
@@ -33,7 +34,7 @@ pub struct UIRenderer {
 }
 
 impl UIRenderer {
-    pub fn new(ctx: &Context, pass: RenderPass) -> Result<Self, UIError> {
+    pub fn new(ctx: &GfxContext, pass: RenderPass) -> Result<Self, UIError> {
         let ectx = egui::Context::default();
 
         let (width, height): (f32, f32) = ctx.extent().into();
@@ -63,14 +64,19 @@ impl UIRenderer {
     }
 
     #[tracing::instrument(target = "ui", skip_all, level = "debug")]
-    pub fn update<F>(&mut self, _ctx: &Context, _pass: RenderPass, delta: f32, callback: F)
-    where
+    pub fn update<F>(
+        &mut self,
+        resource_manager: &mut ResourceManager,
+        _pass: RenderPass,
+        delta: f32,
+        callback: F,
+    ) where
         F: FnMut(&egui::Context),
     {
         let input = self.prepare_inputs(delta);
         let output = self.ectx.run(input, callback);
 
-        self.update_textures(&output);
+        self.update_textures(resource_manager, &output);
         self.cleanup_textures(&output);
 
         self.output.write().replace(output);
@@ -214,12 +220,13 @@ impl UIRenderer {
     }
 
     #[tracing::instrument(target = "ui", skip_all, level = "debug")]
-    fn update_textures(&mut self, output: &FullOutput) {
+    fn update_textures(&mut self, resource_manager: &mut ResourceManager, output: &FullOutput) {
         for (id, img) in &output.textures_delta.set {
             tracing::debug!("New texture {:?}", id);
             if img.pos.is_some() {
-                tracing::info!("Patching texture");
+                tracing::debug!("Patching texture");
                 let texture = self.patch_texture(
+                    resource_manager,
                     self.font_texture
                         .get(id)
                         .cloned()
@@ -232,7 +239,7 @@ impl UIRenderer {
                 *self.font_texture.get_mut(id).unwrap() = material;
             } else {
                 tracing::debug!("Allocate new texture");
-                let texture = self.decode_texture(img);
+                let texture = self.decode_texture(resource_manager, img);
                 self.font_texture.insert(*id, texture);
                 tracing::debug!("Texture loaded");
             }
@@ -249,30 +256,37 @@ impl UIRenderer {
     }
 
     #[tracing::instrument(target = "ui", skip_all, level = "debug")]
-    fn decode_texture(&self, img: &ImageDelta) -> Arc<MaterialInstance> {
+    fn decode_texture(
+        &self,
+        resource_manager: &mut ResourceManager,
+        img: &ImageDelta,
+    ) -> Arc<MaterialInstance> {
         match &img.image {
             egui::ImageData::Color(_) => todo!(),
             egui::ImageData::Font(font) => {
                 let pixels = font.srgba_pixels(None).collect::<Vec<_>>();
                 let bytes: Vec<u8> = bytemuck::cast_slice(pixels.as_slice()).to_vec();
 
-                let texture = Texture::new(
-                    "egui",
-                    &bytes,
+                let properties = TextureProperties::with_data(
+                    "Font texture",
+                    bytes,
                     ImageExtent2D::new(img.image.width() as u32, img.image.height() as u32),
-                    TextureType::Diffuse,
-                    TextureType::Diffuse.into(),
-                    SamplerFilter::FilterLinear,
-                    SamplerFilter::FilterLinear,
                 );
 
-                self.material.instantiate(vec![texture])
+                let handle = resource_manager.add::<Texture>(properties);
+
+                self.material.instantiate(vec![handle])
             }
         }
     }
 
     #[tracing::instrument(target = "ui", skip_all, level = "debug")]
-    fn patch_texture(&self, material: Arc<MaterialInstance>, img: &ImageDelta) -> Arc<Texture> {
+    fn patch_texture(
+        &self,
+        resource_manager: &mut ResourceManager,
+        material: Arc<MaterialInstance>,
+        img: &ImageDelta,
+    ) -> ResourceHandle {
         match &img.image {
             egui::ImageData::Color(_) => todo!(),
             egui::ImageData::Font(font) => {
@@ -289,12 +303,15 @@ impl UIRenderer {
                     font.height(),
                     bytes.len()
                 );
+
+                let handle = resource_manager.clone::<Texture>(&material.textures[0]);
+                let texture = resource_manager.get_mut::<Texture>(&handle);
                 tracing::debug!(
                     "Patching texture original size: {:?}",
-                    material.textures[0].extent
+                    texture.properties.format.extent
                 );
 
-                material.textures[0].patch(
+                texture.patch(
                     pos[0] as u32,
                     pos[1] as u32,
                     font.width() as u32,
@@ -306,7 +323,7 @@ impl UIRenderer {
     }
 
     #[tracing::instrument(target = "ui", skip_all, level = "debug")]
-    fn load_model(&self, ctx: &Context, output: FullOutput) -> Option<Arc<Model>> {
+    fn load_model(&self, ctx: &GfxContext, output: FullOutput) -> Option<Arc<Model>> {
         tracing::debug!("Loading model");
 
         let primitives = self.ectx.tessellate(output.shapes, PIXEL_PER_POINT);
@@ -375,7 +392,8 @@ impl Renderable for UIRenderer {
     #[tracing::instrument(target = "ui", skip_all, level = "debug")]
     fn draw(
         &self,
-        ctx: &Context,
+        ctx: &GfxContext,
+        resource_manager: &mut ResourceManager,
         pass: RenderPass,
         batch: &mut RenderBatch,
         transform: Option<Transform>,
@@ -389,7 +407,14 @@ impl Renderable for UIRenderer {
         };
 
         if let Some(model) = self.load_model(ctx, output) {
-            batch.add_model(ctx, model, transform, pass.clone(), lifetime);
+            batch.add_model(
+                ctx,
+                resource_manager,
+                model,
+                transform,
+                pass.clone(),
+                lifetime,
+            );
         }
 
         batch.add_extent_data(

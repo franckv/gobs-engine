@@ -9,52 +9,17 @@ use gobs_gfx::{
 };
 use gobs_resource::{
     geometry::{BoundingBox, Mesh, VertexData},
-    material::TextureId,
+    manager::ResourceManager,
 };
 
 use crate::{
-    ModelId, RenderPass,
-    context::Context,
+    GfxContext, ModelId, RenderPass, Texture,
+    manager::{Allocator, GPUMesh, PrimitiveType},
     materials::{MaterialInstance, MaterialInstanceId},
     model::Model,
     pass::PassId,
     renderable::RenderableLifetime,
-    resources::{Allocator, GpuTexture},
 };
-
-#[derive(Clone, Copy, Debug)]
-pub enum PrimitiveType {
-    Triangle,
-}
-
-#[derive(Debug)]
-pub struct GPUMesh {
-    pub model: Arc<Model>,
-    pub ty: PrimitiveType,
-    pub material: Option<Arc<MaterialInstance>>,
-    pub material_binding: Option<GfxBindingGroup>,
-    pub vertex_buffer: Arc<GfxBuffer>,
-    pub index_buffer: Arc<GfxBuffer>,
-    pub vertices_offset: u64,
-    pub indices_offset: usize,
-    pub indices_len: usize,
-}
-
-impl Clone for GPUMesh {
-    fn clone(&self) -> Self {
-        Self {
-            model: self.model.clone(),
-            ty: self.ty,
-            material: self.material.clone(),
-            material_binding: self.material_binding.clone(),
-            vertex_buffer: self.vertex_buffer.clone(),
-            index_buffer: self.index_buffer.clone(),
-            vertices_offset: self.vertices_offset,
-            indices_offset: self.indices_offset,
-            indices_len: self.indices_len,
-        }
-    }
-}
 
 type ResourceKey = (ModelId, PassId);
 
@@ -64,12 +29,11 @@ pub struct MeshResourceManager {
     pub mesh_data: HashMap<ResourceKey, Vec<GPUMesh>>,
     pub transient_mesh_data: Vec<HashMap<ResourceKey, Vec<GPUMesh>>>,
     pub material_bindings: HashMap<MaterialInstanceId, GfxBindingGroup>,
-    pub textures: HashMap<TextureId, GpuTexture>,
     pub buffer_pool: Allocator<BufferUsage, GfxBuffer>,
 }
 
 impl MeshResourceManager {
-    pub fn new(ctx: &Context) -> Self {
+    pub fn new(ctx: &GfxContext) -> Self {
         let transient_mesh_data = (0..(ctx.frames_in_flight + 1))
             .map(|_| HashMap::new())
             .collect();
@@ -77,7 +41,6 @@ impl MeshResourceManager {
             mesh_data: HashMap::new(),
             transient_mesh_data,
             material_bindings: HashMap::new(),
-            textures: HashMap::new(),
             buffer_pool: Allocator::new(),
         }
     }
@@ -88,7 +51,7 @@ impl MeshResourceManager {
         tracing::debug!(target: "render", "Bindings: {}", self.material_bindings.keys().len());
     }
 
-    pub fn new_frame(&mut self, ctx: &Context) -> usize {
+    pub fn new_frame(&mut self, ctx: &GfxContext) -> usize {
         self.debug_stats();
         let frame_id = ctx.frame_id();
 
@@ -111,7 +74,8 @@ impl MeshResourceManager {
     #[tracing::instrument(target = "resources", skip_all, level = "debug")]
     pub fn add_object(
         &mut self,
-        ctx: &Context,
+        ctx: &GfxContext,
+        resource_manager: &mut ResourceManager,
         object: Arc<Model>,
         pass: RenderPass,
         lifetime: RenderableLifetime,
@@ -122,14 +86,26 @@ impl MeshResourceManager {
             let cached = self.mesh_data.contains_key(&key);
 
             if !cached {
-                let data = self.load_object(ctx, object.clone(), pass.clone(), lifetime);
+                let data = self.load_object(
+                    ctx,
+                    resource_manager,
+                    object.clone(),
+                    pass.clone(),
+                    lifetime,
+                );
                 self.mesh_data.insert(key, data);
             }
 
             self.mesh_data.get(&key).expect("Get mesh data")
         } else {
             let frame_id = ctx.frame_id();
-            let data = self.load_object(ctx, object.clone(), pass.clone(), lifetime);
+            let data = self.load_object(
+                ctx,
+                resource_manager,
+                object.clone(),
+                pass.clone(),
+                lifetime,
+            );
             self.transient_mesh_data[frame_id].insert(key, data);
 
             self.transient_mesh_data[frame_id]
@@ -140,13 +116,15 @@ impl MeshResourceManager {
 
     pub fn add_bounding_box(
         &mut self,
-        ctx: &Context,
+        ctx: &GfxContext,
+        resource_manager: &mut ResourceManager,
         bounding_box: BoundingBox,
         pass: RenderPass,
         lifetime: RenderableLifetime,
     ) -> &[GPUMesh] {
         let frame_id = ctx.frame_id();
-        let (model, data) = self.load_box(ctx, bounding_box, pass.clone(), lifetime);
+        let (model, data) =
+            self.load_box(ctx, resource_manager, bounding_box, pass.clone(), lifetime);
         let key = (model.id, pass.id());
 
         self.transient_mesh_data[frame_id].insert(key, data);
@@ -159,7 +137,8 @@ impl MeshResourceManager {
     #[tracing::instrument(target = "resources", skip_all, level = "debug")]
     fn load_object(
         &mut self,
-        ctx: &Context,
+        ctx: &GfxContext,
+        resource_manager: &mut ResourceManager,
         model: Arc<Model>,
         pass: RenderPass,
         lifetime: RenderableLifetime,
@@ -208,7 +187,7 @@ impl MeshResourceManager {
             let material = model.materials.get(&material_id).cloned();
 
             // TODO: manage transient material
-            let material_binding = self.load_material(ctx, material.clone());
+            let material_binding = self.load_material(resource_manager, material.clone());
 
             gpu_meshes.push(GPUMesh {
                 model: model.clone(),
@@ -228,7 +207,8 @@ impl MeshResourceManager {
 
     fn load_box(
         &mut self,
-        ctx: &Context,
+        ctx: &GfxContext,
+        resource_manager: &mut ResourceManager,
         bounding_box: BoundingBox,
         pass: RenderPass,
         lifetime: RenderableLifetime,
@@ -273,17 +253,19 @@ impl MeshResourceManager {
 
         let model = Model::builder("box").mesh(mesh, None).build();
 
-        (model.clone(), self.load_object(ctx, model, pass, lifetime))
+        (
+            model.clone(),
+            self.load_object(ctx, resource_manager, model, pass, lifetime),
+        )
     }
 
     fn load_material(
         &mut self,
-        ctx: &Context,
+        resource_manager: &mut ResourceManager,
         material: Option<Arc<MaterialInstance>>,
     ) -> Option<GfxBindingGroup> {
         if let Some(ref material) = material {
             tracing::debug!("Save binding for {}", material.id);
-            self.load_texture(ctx, material);
 
             match self.material_bindings.entry(material.id) {
                 Entry::Vacant(e) => {
@@ -299,10 +281,11 @@ impl MeshResourceManager {
                             .unwrap();
                         let mut updater = binding.update();
                         for texture in &material.textures {
-                            let gpu_texture = self.textures.get(&texture.id).expect("Load texture");
+                            // TODO: load texture
+                            let gpu_texture = resource_manager.get_data::<Texture>(texture);
                             updater = updater
-                                .bind_sampled_image(gpu_texture.image(), ImageLayout::Shader)
-                                .bind_sampler(gpu_texture.sampler());
+                                .bind_sampled_image(&gpu_texture.image, ImageLayout::Shader)
+                                .bind_sampler(&gpu_texture.sampler);
                         }
                         updater.end();
 
@@ -318,20 +301,10 @@ impl MeshResourceManager {
         }
     }
 
-    fn load_texture(&mut self, ctx: &Context, material: &MaterialInstance) {
-        for texture in &material.textures {
-            let key = texture.id;
-
-            self.textures
-                .entry(key)
-                .or_insert_with(|| GpuTexture::new(ctx, texture.clone()));
-        }
-    }
-
     #[tracing::instrument(target = "resources", skip_all, level = "debug")]
     fn upload_vertices(
         &mut self,
-        ctx: &Context,
+        ctx: &GfxContext,
         vertices: &[u8],
         indices: &[u32],
         _lifetime: RenderableLifetime,

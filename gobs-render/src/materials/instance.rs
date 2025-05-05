@@ -1,10 +1,11 @@
 use std::fmt::Debug;
 use std::sync::Arc;
 
+use gobs_resource::resource::ResourceHandle;
 use uuid::Uuid;
 
 use gobs_gfx::GfxPipeline;
-use gobs_resource::{geometry::VertexAttribute, material::Texture};
+use gobs_resource::geometry::VertexAttribute;
 
 use crate::materials::Material;
 
@@ -13,11 +14,11 @@ pub type MaterialInstanceId = Uuid;
 pub struct MaterialInstance {
     pub id: MaterialInstanceId,
     pub material: Arc<Material>,
-    pub textures: Vec<Arc<Texture>>,
+    pub textures: Vec<ResourceHandle>,
 }
 
 impl MaterialInstance {
-    pub(crate) fn new(material: Arc<Material>, textures: Vec<Arc<Texture>>) -> Arc<Self> {
+    pub(crate) fn new(material: Arc<Material>, textures: Vec<ResourceHandle>) -> Arc<Self> {
         Arc::new(Self {
             id: Uuid::new_v4(),
             material,

@@ -3,9 +3,9 @@ use pollster::FutureExt;
 
 use gobs::{
     core::{Color, Input, Transform},
-    game::{AppError, app::Run},
+    game::{AppError, app::Run, context::GameContext},
     gfx::Device,
-    render::{Context, FrameGraph, Model, RenderError},
+    render::{FrameGraph, Model, RenderError},
     resource::{entity::light::Light, geometry::Shapes},
     scene::{components::NodeValue, scene::Scene},
 };
@@ -19,7 +19,7 @@ struct App {
 }
 
 impl Run for App {
-    async fn create(ctx: &Context) -> Result<Self, AppError> {
+    async fn create(ctx: &GameContext) -> Result<Self, AppError> {
         let camera = SampleApp::ortho_camera(ctx);
         let camera_position = Vec3::new(0., 0., 1.);
 
@@ -28,7 +28,7 @@ impl Run for App {
 
         let common = SampleApp::new();
 
-        let graph = FrameGraph::headless(ctx)?;
+        let graph = FrameGraph::headless(&ctx.gfx)?;
         let scene = Scene::new(camera, camera_position, light, light_position);
 
         Ok(App {
@@ -38,39 +38,43 @@ impl Run for App {
         })
     }
 
-    fn update(&mut self, ctx: &Context, delta: f32) {
-        self.graph.update(ctx, delta);
-        self.scene.update(ctx, delta);
+    fn update(&mut self, ctx: &mut GameContext, delta: f32) {
+        self.graph.update(&ctx.gfx, delta);
+        self.scene.update(&ctx.gfx, delta);
     }
 
-    fn render(&mut self, ctx: &mut Context) -> Result<(), RenderError> {
-        self.common
-            .render_noui(ctx, &mut self.graph, &mut self.scene)
+    fn render(&mut self, ctx: &mut GameContext) -> Result<(), RenderError> {
+        self.common.render_noui(
+            &mut ctx.gfx,
+            &mut ctx.resource_manager,
+            &mut self.graph,
+            &mut self.scene,
+        )
     }
 
-    fn input(&mut self, _ctx: &Context, _input: Input) {}
+    fn input(&mut self, _ctx: &GameContext, _input: Input) {}
 
-    fn resize(&mut self, ctx: &mut Context, width: u32, height: u32) {
-        self.graph.resize(ctx);
+    fn resize(&mut self, ctx: &mut GameContext, width: u32, height: u32) {
+        self.graph.resize(&mut ctx.gfx);
         self.scene.resize(width, height);
     }
 
-    async fn start(&mut self, ctx: &Context) {
+    async fn start(&mut self, ctx: &mut GameContext) {
         self.init(ctx);
     }
 
-    fn close(&mut self, ctx: &Context) {
+    fn close(&mut self, ctx: &GameContext) {
         tracing::info!("Closing");
 
-        ctx.device.wait();
+        ctx.gfx.device.wait();
 
         tracing::info!("Closed");
     }
 }
 
 impl App {
-    fn init(&mut self, ctx: &Context) {
-        let material = self.common.color_material(ctx, &self.graph);
+    fn init(&mut self, ctx: &GameContext) {
+        let material = self.common.color_material(&ctx.gfx, &self.graph);
         let material_instance = material.instantiate(vec![]);
 
         let triangle = Model::builder("triangle")
@@ -80,7 +84,7 @@ impl App {
                     Color::GREEN,
                     Color::BLUE,
                     1.,
-                    ctx.vertex_padding,
+                    ctx.gfx.vertex_padding,
                 ),
                 Some(material_instance),
             )
@@ -100,18 +104,18 @@ fn main() {
 
     tracing::info!("Engine start");
 
-    let mut ctx = Context::new("Triangle", None, true).unwrap();
+    let mut ctx = GameContext::new("Triangle", None, true).unwrap();
 
     let future = async {
         let mut app = App::create(&ctx).await.unwrap();
-        app.start(&ctx).await;
+        app.start(&mut ctx).await;
 
         app
     };
 
     let mut app = future.block_on();
 
-    app.update(&ctx, 0.);
+    app.update(&mut ctx, 0.);
 
     app.resize(&mut ctx, 1920, 1080);
 
@@ -119,5 +123,5 @@ fn main() {
 
     app.close(&ctx);
 
-    app.common.screenshot(&ctx, &mut app.graph);
+    app.common.screenshot(&ctx.gfx, &mut app.graph);
 }

@@ -4,10 +4,9 @@ use gobs_core::ImageExtent2D;
 use gobs_gfx::{Command, Display, GfxCommand, GfxPipeline, Image, ImageLayout};
 
 use crate::{
-    RenderError,
+    GfxContext, RenderError,
     batch::RenderBatch,
-    context::Context,
-    graph::ResourceManager,
+    graph::GraphResourceManager,
     pass::{PassId, PassType, RenderPass},
 };
 
@@ -19,7 +18,7 @@ pub struct PresentPass {
 }
 
 impl PresentPass {
-    pub fn new(_ctx: &Context, name: &str) -> Result<Arc<dyn RenderPass>, RenderError> {
+    pub fn new(_ctx: &GfxContext, name: &str) -> Result<Arc<dyn RenderPass>, RenderError> {
         Ok(Arc::new(Self {
             id: PassId::new_v4(),
             name: name.to_string(),
@@ -74,9 +73,9 @@ impl RenderPass for PresentPass {
 
     fn render(
         &self,
-        ctx: &mut Context,
+        ctx: &mut GfxContext,
         cmd: &GfxCommand,
-        resource_manager: &ResourceManager,
+        resource_manager: &GraphResourceManager,
         _batch: &mut RenderBatch,
         draw_extent: ImageExtent2D,
     ) -> Result<(), RenderError> {

@@ -5,15 +5,15 @@ use gobs_core::{ImageExtent2D, Transform};
 use gobs_resource::{
     entity::{camera::Camera, light::Light, uniform::UniformPropData},
     geometry::BoundingBox,
+    manager::ResourceManager,
 };
 
 use crate::{
-    RenderPass,
-    context::Context,
+    GfxContext, RenderPass,
+    manager::MeshResourceManager,
     model::Model,
     pass::PassId,
     renderable::{RenderObject, RenderableLifetime},
-    resources::MeshResourceManager,
     stats::RenderStats,
 };
 
@@ -25,7 +25,7 @@ pub struct RenderBatch {
 }
 
 impl RenderBatch {
-    pub fn new(ctx: &Context) -> Self {
+    pub fn new(ctx: &GfxContext) -> Self {
         Self {
             render_list: Vec::new(),
             scene_data: HashMap::new(),
@@ -34,7 +34,7 @@ impl RenderBatch {
         }
     }
 
-    pub fn reset(&mut self, ctx: &Context) {
+    pub fn reset(&mut self, ctx: &GfxContext) {
         self.render_list.clear();
         self.scene_data.clear();
         self.render_stats.reset();
@@ -44,7 +44,8 @@ impl RenderBatch {
     #[tracing::instrument(target = "render", skip_all, level = "debug")]
     pub fn add_model(
         &mut self,
-        ctx: &Context,
+        ctx: &GfxContext,
+        resource_manager: &mut ResourceManager,
         model: Arc<Model>,
         transform: Transform,
         pass: RenderPass,
@@ -52,9 +53,13 @@ impl RenderBatch {
     ) {
         tracing::debug!("Add model: {}", model.meshes.len());
 
-        let mesh_data = self
-            .mesh_resource_manager
-            .add_object(ctx, model, pass.clone(), lifetime);
+        let mesh_data = self.mesh_resource_manager.add_object(
+            ctx,
+            resource_manager,
+            model,
+            pass.clone(),
+            lifetime,
+        );
 
         for mesh in mesh_data {
             tracing::debug!("Add {} indices", mesh.indices_len);
@@ -72,15 +77,20 @@ impl RenderBatch {
 
     pub fn add_bounds(
         &mut self,
-        ctx: &Context,
+        ctx: &GfxContext,
+        resource_manager: &mut ResourceManager,
         bounding_box: BoundingBox,
         transform: Transform,
         pass: RenderPass,
         lifetime: RenderableLifetime,
     ) {
-        let mesh_data =
-            self.mesh_resource_manager
-                .add_bounding_box(ctx, bounding_box, pass.clone(), lifetime);
+        let mesh_data = self.mesh_resource_manager.add_bounding_box(
+            ctx,
+            resource_manager,
+            bounding_box,
+            pass.clone(),
+            lifetime,
+        );
 
         for mesh in mesh_data {
             let render_object = RenderObject {

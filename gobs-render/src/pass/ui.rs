@@ -12,10 +12,9 @@ use gobs_resource::{
 };
 
 use crate::{
-    RenderError,
+    GfxContext, RenderError,
     batch::RenderBatch,
-    context::Context,
-    graph::ResourceManager,
+    graph::GraphResourceManager,
     pass::{FrameData, PassId, PassType, RenderPass, RenderState},
     renderable::RenderObject,
     stats::RenderStats,
@@ -34,7 +33,7 @@ pub struct UiPass {
 
 impl UiPass {
     pub fn new(
-        ctx: &Context,
+        ctx: &GfxContext,
         name: &str,
         color_clear: bool,
     ) -> Result<Arc<dyn RenderPass>, RenderError> {
@@ -62,7 +61,7 @@ impl UiPass {
         }))
     }
 
-    fn prepare_scene_data(&self, ctx: &Context, batch: &mut RenderBatch) {
+    fn prepare_scene_data(&self, ctx: &GfxContext, batch: &mut RenderBatch) {
         if let Some(scene_data) = batch.scene_data(self.id) {
             self.frame_data[ctx.frame_id()]
                 .uniform_buffer
@@ -118,7 +117,7 @@ impl UiPass {
 
     fn bind_scene_data(
         &self,
-        ctx: &Context,
+        ctx: &GfxContext,
         cmd: &GfxCommand,
         stats: &mut RenderStats,
         state: &mut RenderState,
@@ -137,7 +136,7 @@ impl UiPass {
 
     fn bind_object_data(
         &self,
-        ctx: &Context,
+        ctx: &GfxContext,
         cmd: &GfxCommand,
         stats: &mut RenderStats,
         state: &mut RenderState,
@@ -176,7 +175,7 @@ impl UiPass {
         }
     }
 
-    fn render_batch(&self, ctx: &Context, cmd: &GfxCommand, batch: &mut RenderBatch) {
+    fn render_batch(&self, ctx: &GfxContext, cmd: &GfxCommand, batch: &mut RenderBatch) {
         let mut render_state = RenderState::default();
 
         self.prepare_scene_data(ctx, batch);
@@ -275,9 +274,9 @@ impl RenderPass for UiPass {
 
     fn render(
         &self,
-        ctx: &mut Context,
+        ctx: &mut GfxContext,
         cmd: &GfxCommand,
-        resource_manager: &ResourceManager,
+        resource_manager: &GraphResourceManager,
         batch: &mut RenderBatch,
         draw_extent: ImageExtent2D,
     ) -> Result<(), RenderError> {

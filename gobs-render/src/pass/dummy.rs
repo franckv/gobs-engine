@@ -5,10 +5,9 @@ use gobs_gfx::{GfxCommand, GfxPipeline};
 use gobs_resource::{entity::uniform::UniformLayout, geometry::VertexAttribute};
 
 use crate::{
-    RenderError,
+    GfxContext, RenderError,
     batch::RenderBatch,
-    context::Context,
-    graph::ResourceManager,
+    graph::GraphResourceManager,
     pass::{PassId, PassType, RenderPass},
 };
 
@@ -20,7 +19,7 @@ pub struct DummyPass {
 }
 
 impl DummyPass {
-    pub fn new(_ctx: &Context, name: &str) -> Result<Arc<dyn RenderPass>, RenderError> {
+    pub fn new(_ctx: &GfxContext, name: &str) -> Result<Arc<dyn RenderPass>, RenderError> {
         Ok(Arc::new(Self {
             id: PassId::new_v4(),
             name: name.to_string(),
@@ -73,9 +72,9 @@ impl RenderPass for DummyPass {
 
     fn render(
         &self,
-        _ctx: &mut Context,
+        _ctx: &mut GfxContext,
         _cmd: &GfxCommand,
-        _resource_manager: &ResourceManager,
+        _resource_manager: &GraphResourceManager,
         _batch: &mut RenderBatch,
         _draw_extent: ImageExtent2D,
     ) -> Result<(), RenderError> {

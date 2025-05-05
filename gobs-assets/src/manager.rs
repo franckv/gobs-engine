@@ -1,18 +1,23 @@
 use std::sync::Arc;
 
-use gobs_render::{BlendMode, Context, Material, MaterialInstance, MaterialProperty, RenderPass};
-use gobs_resource::{geometry::VertexAttribute, material::Texture};
+use gobs_render::{
+    BlendMode, GfxContext, Material, MaterialInstance, MaterialProperty, RenderPass, Texture,
+    TextureProperties,
+};
+use gobs_resource::{
+    geometry::VertexAttribute, manager::ResourceManager, resource::ResourceHandle,
+};
 
 use crate::AssetError;
 
 pub struct TextureManager {
-    pub textures: Vec<Arc<Texture>>,
-    pub default_texture: Arc<Texture>,
+    pub textures: Vec<ResourceHandle>,
+    pub default_texture: ResourceHandle,
 }
 
 impl TextureManager {
-    pub fn new() -> Self {
-        let default_texture = Texture::default();
+    pub fn new(resource_manager: &mut ResourceManager) -> Self {
+        let default_texture = resource_manager.add::<Texture>(TextureProperties::default());
 
         TextureManager {
             textures: vec![],
@@ -20,18 +25,12 @@ impl TextureManager {
         }
     }
 
-    pub fn add(&mut self, texture: Arc<Texture>) {
+    pub fn add(&mut self, texture: ResourceHandle) {
         self.textures.push(texture);
     }
 
     pub fn add_default(&mut self) {
-        self.textures.push(self.default_texture.clone());
-    }
-}
-
-impl Default for TextureManager {
-    fn default() -> Self {
-        Self::new()
+        self.textures.push(self.default_texture);
     }
 }
 
@@ -48,7 +47,11 @@ pub struct MaterialManager {
 }
 
 impl MaterialManager {
-    pub fn new(ctx: &Context, pass: RenderPass) -> Result<Self, AssetError> {
+    pub fn new(
+        ctx: &mut GfxContext,
+        resource_manager: &mut ResourceManager,
+        pass: RenderPass,
+    ) -> Result<Self, AssetError> {
         let vertex_attributes = VertexAttribute::POSITION
             | VertexAttribute::TEXTURE
             | VertexAttribute::NORMAL
@@ -105,11 +108,11 @@ impl MaterialManager {
         .blend_mode(BlendMode::Alpha)
         .build(pass.clone());
 
-        let texture_manager = TextureManager::new();
+        let texture_manager = TextureManager::new(resource_manager);
 
         let default_material_instance = texture
             .clone()
-            .instantiate(vec![texture_manager.default_texture.clone()]);
+            .instantiate(vec![texture_manager.default_texture]);
         tracing::debug!("Default material id: {}", default_material_instance.id);
 
         let color_instance = color.instantiate(vec![]);
@@ -131,7 +134,7 @@ impl MaterialManager {
         })
     }
 
-    pub fn add_texture(&mut self, texture: Arc<Texture>) {
+    pub fn add_texture(&mut self, texture: ResourceHandle) {
         self.texture_manager.add(texture);
     }
 
@@ -144,7 +147,7 @@ impl MaterialManager {
         alpha: BlendMode,
         texture: usize,
     ) -> Arc<MaterialInstance> {
-        let texture = self.texture_manager.textures[texture].clone();
+        let texture = self.texture_manager.textures[texture];
 
         let material_instance = match alpha {
             BlendMode::Alpha => self.transparent_texture.instantiate(vec![texture]),
@@ -161,8 +164,8 @@ impl MaterialManager {
         diffuse: usize,
         normal: usize,
     ) -> Arc<MaterialInstance> {
-        let diffuse = self.texture_manager.textures[diffuse].clone();
-        let normal = self.texture_manager.textures[normal].clone();
+        let diffuse = self.texture_manager.textures[diffuse];
+        let normal = self.texture_manager.textures[normal];
 
         let material_instance = match alpha {
             BlendMode::Alpha => self

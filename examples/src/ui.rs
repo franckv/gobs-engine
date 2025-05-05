@@ -4,7 +4,8 @@ use slotmap::Key as _;
 
 use gobs::{
     core::Transform,
-    render::{Context, FrameGraph},
+    game::context::AppInfo,
+    render::FrameGraph,
     resource::entity::camera::Camera,
     scene::{components::NodeValue, graph::scenegraph::SceneGraph, scene::Scene},
 };
@@ -28,7 +29,7 @@ impl Ui {
 
     pub fn draw(
         &mut self,
-        ctx: &Context,
+        app_info: &AppInfo,
         ectx: &egui::Context,
         graph: &FrameGraph,
         scene: &Scene,
@@ -42,7 +43,7 @@ impl Ui {
                     id.size = 16.;
                 }
             });
-            ui.heading(&ctx.app_name);
+            ui.heading(&app_info.name);
             ui.separator();
             self.show_fps(ui, graph.render_stats().fps);
             self.show_stats(ui, "Render Stats", graph);

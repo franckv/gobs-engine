@@ -41,6 +41,13 @@ impl ObjectRegistry {
             .get(key)?
             .downcast_ref::<T>()
     }
+
+    pub fn get_mut<T: Any>(&mut self, key: &Key) -> Option<&mut T> {
+        self.registry
+            .get_mut(&TypeId::of::<T>())?
+            .get_mut(key)?
+            .downcast_mut::<T>()
+    }
 }
 
 impl Default for ObjectRegistry {
@@ -72,6 +79,10 @@ mod test {
         assert_eq!(*registry.get::<&str>(&key2).unwrap(), "bli");
         assert_eq!(registry.get::<Vec<i32>>(&key2).unwrap().len(), 4);
 
-        assert_eq!(registry.insert(key1, 1111_u32).unwrap(), 1234);
+        *registry.get_mut::<u32>(&key1).unwrap() += 1;
+        assert_eq!(*registry.get::<u32>(&key1).unwrap(), 1235);
+
+        // return old value on replace
+        assert_eq!(registry.insert(key1, 1111_u32).unwrap(), 1235);
     }
 }

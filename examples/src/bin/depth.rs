@@ -5,9 +5,10 @@ use gobs::{
     game::{
         AppError,
         app::{Application, Run},
+        context::GameContext,
     },
     gfx::Device,
-    render::{Context, FrameGraph, Model, PassType, RenderError},
+    render::{FrameGraph, Model, PassType, RenderError},
     resource::{
         entity::{camera::Camera, light::Light},
         geometry::Shapes,
@@ -27,8 +28,8 @@ struct App {
 }
 
 impl Run for App {
-    async fn create(ctx: &Context) -> Result<Self, AppError> {
-        let extent = ctx.extent();
+    async fn create(ctx: &GameContext) -> Result<Self, AppError> {
+        let extent = ctx.gfx.extent();
 
         let camera = Camera::perspective(
             extent.width as f32 / extent.height as f32,
@@ -47,8 +48,8 @@ impl Run for App {
 
         let camera_controller = SampleApp::controller();
 
-        let graph = FrameGraph::default(ctx)?;
-        let ui = UIRenderer::new(ctx, graph.pass_by_type(PassType::Ui)?)?;
+        let graph = FrameGraph::default(&ctx.gfx)?;
+        let ui = UIRenderer::new(&ctx.gfx, graph.pass_by_type(PassType::Ui)?)?;
         let scene = Scene::new(camera, camera_position, light, light_position);
 
         Ok(App {
@@ -60,11 +61,11 @@ impl Run for App {
         })
     }
 
-    async fn start(&mut self, ctx: &Context) {
+    async fn start(&mut self, ctx: &mut GameContext) {
         self.init(ctx).await;
     }
 
-    fn update(&mut self, ctx: &Context, delta: f32) {
+    fn update(&mut self, ctx: &mut GameContext, delta: f32) {
         if self.common.process_updates {
             let angular_speed = 10.;
 
@@ -87,19 +88,24 @@ impl Run for App {
                 .update_camera(camera, transform, delta);
         });
 
-        self.graph.update(ctx, delta);
-        self.scene.update(ctx, delta);
+        self.graph.update(&ctx.gfx, delta);
+        self.scene.update(&ctx.gfx, delta);
 
         self.common
             .update_ui(ctx, &self.graph, &self.scene, &mut self.ui, delta);
     }
 
-    fn render(&mut self, ctx: &mut Context) -> Result<(), RenderError> {
-        self.common
-            .render(ctx, &mut self.graph, &mut self.scene, &mut self.ui)
+    fn render(&mut self, ctx: &mut GameContext) -> Result<(), RenderError> {
+        self.common.render(
+            &mut ctx.gfx,
+            &mut ctx.resource_manager,
+            &mut self.graph,
+            &mut self.scene,
+            &mut self.ui,
+        )
     }
 
-    fn input(&mut self, ctx: &Context, input: Input) {
+    fn input(&mut self, ctx: &GameContext, input: Input) {
         self.common.input(
             ctx,
             input,
@@ -110,24 +116,24 @@ impl Run for App {
         );
     }
 
-    fn resize(&mut self, ctx: &mut Context, width: u32, height: u32) {
-        self.graph.resize(ctx);
+    fn resize(&mut self, ctx: &mut GameContext, width: u32, height: u32) {
+        self.graph.resize(&mut ctx.gfx);
         self.scene.resize(width, height);
         self.ui.resize(width, height);
     }
 
-    fn close(&mut self, ctx: &Context) {
+    fn close(&mut self, ctx: &GameContext) {
         tracing::info!("Closing");
 
-        ctx.device.wait();
+        ctx.gfx.device.wait();
 
         tracing::info!("Closed");
     }
 }
 
 impl App {
-    async fn init(&mut self, ctx: &Context) {
-        let material = self.common.depth_material(ctx, &self.graph);
+    async fn init(&mut self, ctx: &GameContext) {
+        let material = self.common.depth_material(&ctx.gfx, &self.graph);
 
         let material_instance =
             //NormalMaterial::instanciate(material, diffuse_texture, normal_texture);
@@ -135,7 +141,7 @@ impl App {
 
         let cube = Model::builder("cube")
             .mesh(
-                Shapes::cubemap(1, 1, &[1], 1., ctx.vertex_padding),
+                Shapes::cubemap(1, 1, &[1], 1., ctx.gfx.vertex_padding),
                 Some(material_instance),
             )
             .build();

@@ -1,9 +1,7 @@
 use gobs_core::Transform;
+use gobs_resource::manager::ResourceManager;
 
-use crate::{
-    RenderPass, batch::RenderBatch, context::Context, materials::MaterialInstanceId,
-    resources::GPUMesh,
-};
+use crate::{GPUMesh, GfxContext, RenderPass, batch::RenderBatch, materials::MaterialInstanceId};
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum RenderableLifetime {
@@ -34,7 +32,8 @@ impl RenderObject {
 pub trait Renderable {
     fn draw(
         &self,
-        ctx: &Context,
+        ctx: &GfxContext,
+        resource_manager: &mut ResourceManager,
         pass: RenderPass,
         batch: &mut RenderBatch,
         transform: Option<Transform>,

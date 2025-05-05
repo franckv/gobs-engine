@@ -7,10 +7,9 @@ use gobs_gfx::{
 };
 
 use crate::{
-    RenderError, RenderPass,
+    GfxContext, RenderError, RenderPass,
     batch::RenderBatch,
-    context::Context,
-    graph::resource::ResourceManager,
+    graph::resource::GraphResourceManager,
     pass::{
         PassId, PassType, bounds::BoundsPass, compute::ComputePass, depth::DepthPass,
         dummy::DummyPass, forward::ForwardPass, present::PresentPass, ui::UiPass, wire::WirePass,
@@ -22,17 +21,22 @@ const FRAME_WIDTH: u32 = 1920;
 const FRAME_HEIGHT: u32 = 1080;
 
 pub struct FrameData {
+    pub id: usize,
     pub command: GfxCommand,
     //TODO: pub query_pool: QueryPool,
 }
 
 impl FrameData {
-    pub fn new(ctx: &Context) -> Self {
+    pub fn new(ctx: &GfxContext) -> Self {
+        let frame_id = ctx.frame_id();
         let command = GfxCommand::new(&ctx.device, "Frame", CommandQueueType::Graphics);
 
         //TODO: let query_pool = QueryPool::new(ctx.device.clone(), QueryType::Timestamp, 2);
 
-        FrameData { command }
+        FrameData {
+            id: frame_id,
+            command,
+        }
     }
 
     pub fn reset(&mut self) {
@@ -45,12 +49,12 @@ pub struct FrameGraph {
     pub draw_extent: ImageExtent2D,
     pub render_scaling: f32,
     pub passes: Vec<RenderPass>,
-    resource_manager: ResourceManager,
+    resource_manager: GraphResourceManager,
     pub batch: RenderBatch,
 }
 
 impl FrameGraph {
-    pub fn new(ctx: &Context) -> Self {
+    pub fn new(ctx: &GfxContext) -> Self {
         let draw_extent = ctx.extent();
 
         let frames = (0..ctx.frames_in_flight)
@@ -62,12 +66,12 @@ impl FrameGraph {
             draw_extent,
             render_scaling: 1.,
             passes: Vec::new(),
-            resource_manager: ResourceManager::new(),
+            resource_manager: GraphResourceManager::new(),
             batch: RenderBatch::new(ctx),
         }
     }
 
-    pub fn default(ctx: &Context) -> Result<Self, RenderError> {
+    pub fn default(ctx: &GfxContext) -> Result<Self, RenderError> {
         let mut graph = Self::new(ctx);
 
         let extent = Self::get_render_target_extent(ctx);
@@ -99,7 +103,7 @@ impl FrameGraph {
         Ok(graph)
     }
 
-    pub fn headless(ctx: &Context) -> Result<Self, RenderError> {
+    pub fn headless(ctx: &GfxContext) -> Result<Self, RenderError> {
         let mut graph = Self::new(ctx);
 
         let extent = Self::get_render_target_extent(ctx);
@@ -127,7 +131,7 @@ impl FrameGraph {
         Ok(graph)
     }
 
-    pub fn ui(ctx: &Context) -> Result<Self, RenderError> {
+    pub fn ui(ctx: &GfxContext) -> Result<Self, RenderError> {
         let mut graph = Self::new(ctx);
 
         let extent = Self::get_render_target_extent(ctx);
@@ -146,7 +150,7 @@ impl FrameGraph {
         Ok(graph)
     }
 
-    fn get_render_target_extent(ctx: &Context) -> ImageExtent2D {
+    fn get_render_target_extent(ctx: &GfxContext) -> ImageExtent2D {
         let extent = ctx.extent();
         ImageExtent2D::new(
             extent.width.max(FRAME_WIDTH),
@@ -177,7 +181,7 @@ impl FrameGraph {
 
     pub fn get_image_data<T: Pod>(
         &self,
-        ctx: &Context,
+        ctx: &GfxContext,
         label: &str,
         data: &mut Vec<T>,
         format: ImageFormat,
@@ -243,12 +247,13 @@ impl FrameGraph {
         &self.batch.render_stats
     }
 
-    pub fn begin(&mut self, ctx: &mut Context) -> Result<(), RenderError> {
+    pub fn begin(&mut self, ctx: &mut GfxContext) -> Result<(), RenderError> {
         tracing::debug!("Begin new frame");
 
         let frame_id = ctx.frame_id();
         let frame = &mut self.frames[frame_id];
         frame.reset();
+        frame.id = frame_id;
 
         self.batch.reset(ctx);
 
@@ -293,7 +298,7 @@ impl FrameGraph {
         Ok(())
     }
 
-    pub fn end(&mut self, ctx: &mut Context) -> Result<(), RenderError> {
+    pub fn end(&mut self, ctx: &mut GfxContext) -> Result<(), RenderError> {
         tracing::debug!("End frame");
 
         let frame_id = ctx.frame_id();
@@ -321,7 +326,7 @@ impl FrameGraph {
         Ok(())
     }
 
-    pub fn update(&mut self, ctx: &Context, delta: f32) {
+    pub fn update(&mut self, ctx: &GfxContext, delta: f32) {
         if ctx.frame_number % ctx.stats_refresh == 0 {
             self.batch.render_stats.fps = (1. / delta).round() as u32;
         }
@@ -329,7 +334,7 @@ impl FrameGraph {
 
     pub fn prepare(
         &mut self,
-        ctx: &Context,
+        ctx: &GfxContext,
         draw_cmd: &mut dyn FnMut(RenderPass, &mut RenderBatch),
     ) {
         tracing::debug!("Begin render batch");
@@ -350,7 +355,7 @@ impl FrameGraph {
         self.batch.finish();
     }
 
-    pub fn render(&mut self, ctx: &mut Context) -> Result<(), RenderError> {
+    pub fn render(&mut self, ctx: &mut GfxContext) -> Result<(), RenderError> {
         tracing::debug!("Begin rendering");
 
         let frame_id = ctx.frame_id();
@@ -382,11 +387,11 @@ impl FrameGraph {
         Ok(())
     }
 
-    pub fn resize(&mut self, ctx: &mut Context) {
+    pub fn resize(&mut self, ctx: &mut GfxContext) {
         self.resize_swapchain(ctx);
     }
 
-    fn resize_swapchain(&mut self, ctx: &mut Context) {
+    fn resize_swapchain(&mut self, ctx: &mut GfxContext) {
         ctx.device.wait();
 
         ctx.display.resize(&ctx.device);

@@ -1,18 +1,17 @@
-use futures::try_join;
 use glam::{Quat, Vec3};
 
 use gobs::{
-    core::{Color, Input, SamplerFilter, Transform},
+    core::{Color, Input, Transform},
     game::{
         AppError,
         app::{Application, Run},
+        context::GameContext,
     },
     gfx::Device,
-    render::{Context, FrameGraph, Model, PassType, RenderError},
+    render::{FrameGraph, Model, PassType, RenderError, Texture, TextureProperties, TextureType},
     resource::{
         entity::{camera::Camera, light::Light},
         geometry::Shapes,
-        material::{Texture, TextureType},
     },
     scene::{components::NodeValue, scene::Scene},
     ui::UIRenderer,
@@ -29,8 +28,8 @@ struct App {
 }
 
 impl Run for App {
-    async fn create(ctx: &Context) -> Result<Self, AppError> {
-        let extent = ctx.extent();
+    async fn create(ctx: &GameContext) -> Result<Self, AppError> {
+        let extent = ctx.gfx.extent();
 
         let camera = Camera::perspective(
             extent.width as f32 / extent.height as f32,
@@ -49,8 +48,8 @@ impl Run for App {
 
         let camera_controller = SampleApp::controller();
 
-        let graph = FrameGraph::default(ctx)?;
-        let ui = UIRenderer::new(ctx, graph.pass_by_type(PassType::Ui)?)?;
+        let graph = FrameGraph::default(&ctx.gfx)?;
+        let ui = UIRenderer::new(&ctx.gfx, graph.pass_by_type(PassType::Ui)?)?;
         let scene = Scene::new(camera, camera_position, light, light_position);
 
         Ok(App {
@@ -62,25 +61,30 @@ impl Run for App {
         })
     }
 
-    fn update(&mut self, ctx: &Context, delta: f32) {
+    fn update(&mut self, ctx: &mut GameContext, delta: f32) {
         self.scene.update_camera(|transform, camera| {
             self.camera_controller
                 .update_camera(camera, transform, delta);
         });
 
-        self.graph.update(ctx, delta);
-        self.scene.update(ctx, delta);
+        self.graph.update(&ctx.gfx, delta);
+        self.scene.update(&ctx.gfx, delta);
 
         self.common
             .update_ui(ctx, &self.graph, &self.scene, &mut self.ui, delta);
     }
 
-    fn render(&mut self, ctx: &mut Context) -> Result<(), RenderError> {
-        self.common
-            .render(ctx, &mut self.graph, &mut self.scene, &mut self.ui)
+    fn render(&mut self, ctx: &mut GameContext) -> Result<(), RenderError> {
+        self.common.render(
+            &mut ctx.gfx,
+            &mut ctx.resource_manager,
+            &mut self.graph,
+            &mut self.scene,
+            &mut self.ui,
+        )
     }
 
-    fn input(&mut self, ctx: &Context, input: Input) {
+    fn input(&mut self, ctx: &GameContext, input: Input) {
         self.common.input(
             ctx,
             input,
@@ -91,44 +95,39 @@ impl Run for App {
         );
     }
 
-    fn resize(&mut self, ctx: &mut Context, width: u32, height: u32) {
-        self.graph.resize(ctx);
+    fn resize(&mut self, ctx: &mut GameContext, width: u32, height: u32) {
+        self.graph.resize(&mut ctx.gfx);
         self.scene.resize(width, height);
         self.ui.resize(width, height);
     }
 
-    async fn start(&mut self, ctx: &Context) {
+    async fn start(&mut self, ctx: &mut GameContext) {
         self.init(ctx).await;
     }
 
-    fn close(&mut self, ctx: &Context) {
+    fn close(&mut self, ctx: &GameContext) {
         tracing::info!("Closing");
 
-        ctx.device.wait();
+        ctx.gfx.device.wait();
 
         tracing::info!("Closed");
     }
 }
 
 impl App {
-    async fn init(&mut self, ctx: &Context) {
-        let color_material = self.common.color_material(ctx, &self.graph);
+    async fn init(&mut self, ctx: &mut GameContext) {
+        let color_material = self.common.color_material(&ctx.gfx, &self.graph);
         let color_material_instance = color_material.instantiate(vec![]);
 
-        let diffuse_material = self.common.normal_mapping_material(ctx, &self.graph);
-        let diffuse_texture = Texture::with_file(
-            examples::WALL_TEXTURE,
-            TextureType::Diffuse,
-            SamplerFilter::FilterLinear,
-            SamplerFilter::FilterLinear,
-        );
-        let normal_texture = Texture::with_file(
-            examples::WALL_TEXTURE_N,
-            TextureType::Normal,
-            SamplerFilter::FilterLinear,
-            SamplerFilter::FilterLinear,
-        );
-        let (diffuse_texture, normal_texture) = try_join!(diffuse_texture, normal_texture).unwrap();
+        let diffuse_material = self.common.normal_mapping_material(&ctx.gfx, &self.graph);
+
+        let properties = TextureProperties::with_file("Wall Diffuse", examples::WALL_TEXTURE);
+        let diffuse_texture = ctx.resource_manager.add::<Texture>(properties);
+
+        let mut properties = TextureProperties::with_file("Wall Normal", examples::WALL_TEXTURE_N);
+        properties.format.ty = TextureType::Normal;
+        let normal_texture = ctx.resource_manager.add::<Texture>(properties);
+
         let diffuse_material_instance =
             diffuse_material.instantiate(vec![diffuse_texture, normal_texture]);
 
@@ -139,12 +138,12 @@ impl App {
                     Color::GREEN,
                     Color::BLUE,
                     1.5,
-                    ctx.vertex_padding,
+                    ctx.gfx.vertex_padding,
                 ),
                 Some(color_material_instance),
             )
             .mesh(
-                Shapes::cubemap(1, 1, &[1], 1., ctx.vertex_padding),
+                Shapes::cubemap(1, 1, &[1], 1., ctx.gfx.vertex_padding),
                 Some(diffuse_material_instance),
             )
             .build();
