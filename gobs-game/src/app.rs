@@ -153,7 +153,6 @@ where
                                 self.is_minimized = true;
                             }
                         }
-                        context.gfx.new_frame();
                     }
                     _ => (),
                 }

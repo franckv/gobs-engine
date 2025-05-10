@@ -6,14 +6,14 @@ use parking_lot::RwLock;
 use uuid::Uuid;
 
 use gobs_core::{ImageExtent2D, Transform};
-use gobs_gfx::{BufferId, GfxCommand, GfxPipeline, PipelineId};
+use gobs_gfx::{BufferId, GfxPipeline, PipelineId};
 use gobs_resource::{
     entity::{camera::Camera, light::Light, uniform::UniformLayout},
     geometry::VertexAttribute,
 };
 
 use crate::{
-    GfxContext, RenderError, batch::RenderBatch, graph::GraphResourceManager,
+    GfxContext, RenderError, batch::RenderBatch, graph::FrameData, graph::GraphResourceManager,
     materials::MaterialId, resources::UniformBuffer,
 };
 
@@ -54,7 +54,7 @@ pub trait RenderPass {
     fn render(
         &self,
         ctx: &mut GfxContext,
-        cmd: &GfxCommand,
+        frame: &FrameData,
         resource_manager: &GraphResourceManager,
         batch: &mut RenderBatch,
         draw_extent: ImageExtent2D,
@@ -78,15 +78,15 @@ pub(crate) struct RenderState {
     object_data: Vec<u8>,
 }
 
-pub(crate) struct FrameData {
+pub(crate) struct PassFrameData {
     pub uniform_buffer: RwLock<UniformBuffer>,
 }
 
-impl FrameData {
+impl PassFrameData {
     pub fn new(ctx: &GfxContext, uniform_layout: Arc<UniformLayout>) -> Self {
         let uniform_buffer = UniformBuffer::new(ctx, uniform_layout.size());
 
-        FrameData {
+        PassFrameData {
             uniform_buffer: RwLock::new(uniform_buffer),
         }
     }

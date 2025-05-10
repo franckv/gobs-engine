@@ -16,7 +16,6 @@ pub struct GfxContext {
     pub color_format: ImageFormat,
     pub depth_format: ImageFormat,
     pub frames_in_flight: usize,
-    pub frame_number: usize,
     pub vertex_padding: bool,
     pub stats_refresh: usize,
 }
@@ -35,7 +34,6 @@ impl GfxContext {
             color_format: ImageFormat::R16g16b16a16Sfloat,
             depth_format: ImageFormat::D32Sfloat,
             frames_in_flight: FRAMES_IN_FLIGHT,
-            frame_number: 0,
             vertex_padding: true,
             stats_refresh: 60,
         })
@@ -43,15 +41,6 @@ impl GfxContext {
 
     pub fn extent(&self) -> ImageExtent2D {
         self.display.get_extent(&self.device)
-    }
-
-    pub fn frame_id(&self) -> usize {
-        self.frame_number % self.frames_in_flight
-    }
-
-    #[tracing::instrument(target = "app", skip_all, fields(frame=self.frame_number), level = "debug")]
-    pub fn new_frame(&mut self) {
-        self.frame_number += 1;
     }
 
     pub fn request_redraw(&self) {

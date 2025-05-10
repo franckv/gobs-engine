@@ -10,7 +10,7 @@ use gobs::{
         BlendMode, FrameGraph, GfxContext, Material, MaterialProperty, PassType, RenderError,
         Renderable, RenderableLifetime,
     },
-    resource::{entity::camera::Camera, geometry::VertexAttribute, manager::ResourceManager},
+    resource::{entity::camera::Camera, geometry::VertexAttribute},
     scene::scene::Scene,
     ui::UIRenderer,
 };
@@ -169,20 +169,22 @@ impl SampleApp {
 
     pub fn render(
         &mut self,
-        ctx: &mut GfxContext,
-        resource_manager: &mut ResourceManager,
+        ctx: &mut GameContext,
         graph: &mut FrameGraph,
         scene: &mut Scene,
         ui: &mut UIRenderer,
     ) -> Result<(), RenderError> {
-        tracing::trace!("Render frame {}", ctx.frame_number);
+        tracing::trace!("Render frame {}", graph.frame_number);
 
-        graph.begin(ctx)?;
+        let gfx = &mut ctx.gfx;
+        let resource_manager = &mut ctx.resource_manager;
 
-        graph.prepare(ctx, &mut |pass, batch| match pass.ty() {
+        graph.begin(gfx)?;
+
+        graph.prepare(gfx, &mut |pass, batch| match pass.ty() {
             PassType::Depth | PassType::Forward => {
                 scene.draw(
-                    ctx,
+                    gfx,
                     resource_manager,
                     pass,
                     batch,
@@ -193,7 +195,7 @@ impl SampleApp {
             PassType::Wire => {
                 if self.draw_wire {
                     scene.draw(
-                        ctx,
+                        gfx,
                         resource_manager,
                         pass,
                         batch,
@@ -204,13 +206,13 @@ impl SampleApp {
             }
             PassType::Bounds => {
                 if self.draw_bounds {
-                    scene.draw_bounds(ctx, resource_manager, pass, batch);
+                    scene.draw_bounds(gfx, resource_manager, pass, batch);
                 }
             }
             PassType::Ui => {
                 if self.draw_ui {
                     ui.draw(
-                        ctx,
+                        gfx,
                         resource_manager,
                         pass,
                         batch,
@@ -222,9 +224,9 @@ impl SampleApp {
             _ => {}
         });
 
-        graph.render(ctx)?;
+        graph.render(gfx)?;
 
-        graph.end(ctx)?;
+        graph.end(gfx)?;
 
         tracing::trace!("End render");
 
@@ -233,19 +235,21 @@ impl SampleApp {
 
     pub fn render_ui(
         &mut self,
-        ctx: &mut GfxContext,
-        resource_manager: &mut ResourceManager,
+        ctx: &mut GameContext,
         graph: &mut FrameGraph,
         ui: &mut UIRenderer,
     ) -> Result<(), RenderError> {
-        tracing::trace!("Render frame {}", ctx.frame_number);
+        tracing::trace!("Render frame {}", graph.frame_number);
 
-        graph.begin(ctx)?;
+        let gfx = &mut ctx.gfx;
+        let resource_manager = &mut ctx.resource_manager;
 
-        graph.prepare(ctx, &mut |pass, batch| {
+        graph.begin(gfx)?;
+
+        graph.prepare(gfx, &mut |pass, batch| {
             if pass.ty() == PassType::Ui {
                 ui.draw(
-                    ctx,
+                    gfx,
                     resource_manager,
                     pass,
                     batch,
@@ -255,9 +259,9 @@ impl SampleApp {
             }
         });
 
-        graph.render(ctx)?;
+        graph.render(gfx)?;
 
-        graph.end(ctx)?;
+        graph.end(gfx)?;
 
         tracing::trace!("End render");
 
@@ -266,19 +270,21 @@ impl SampleApp {
 
     pub fn render_noui(
         &mut self,
-        ctx: &mut GfxContext,
-        resource_manager: &mut ResourceManager,
+        ctx: &mut GameContext,
         graph: &mut FrameGraph,
         scene: &mut Scene,
     ) -> Result<(), RenderError> {
-        tracing::trace!("Render frame {}", ctx.frame_number);
+        tracing::trace!("Render frame {}", graph.frame_number);
 
-        graph.begin(ctx)?;
+        let gfx = &mut ctx.gfx;
+        let resource_manager = &mut ctx.resource_manager;
 
-        graph.prepare(ctx, &mut |pass, batch| match pass.ty() {
+        graph.begin(gfx)?;
+
+        graph.prepare(gfx, &mut |pass, batch| match pass.ty() {
             PassType::Depth | PassType::Forward => {
                 scene.draw(
-                    ctx,
+                    gfx,
                     resource_manager,
                     pass,
                     batch,
@@ -289,9 +295,9 @@ impl SampleApp {
             _ => {}
         });
 
-        graph.render(ctx)?;
+        graph.render(gfx)?;
 
-        graph.end(ctx)?;
+        graph.end(gfx)?;
 
         tracing::trace!("End render");
 

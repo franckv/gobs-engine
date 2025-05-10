@@ -45,12 +45,7 @@ impl Run for App {
     }
 
     fn render(&mut self, ctx: &mut GameContext) -> Result<(), RenderError> {
-        self.common.render_ui(
-            &mut ctx.gfx,
-            &mut ctx.resource_manager,
-            &mut self.graph,
-            &mut self.ui,
-        )
+        self.common.render_ui(ctx, &mut self.graph, &mut self.ui)
     }
 
     fn input(&mut self, _ctx: &GameContext, input: Input) {

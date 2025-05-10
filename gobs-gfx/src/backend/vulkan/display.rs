@@ -160,6 +160,13 @@ impl VkDisplay {
 
         let caps = surface.get_capabilities(&device);
 
+        tracing::debug!(
+            target = "init",
+            "image count: {}-{}",
+            caps.min_image_count,
+            caps.max_image_count
+        );
+
         let mut image_count = caps.min_image_count + 1;
         if caps.max_image_count > 0 && image_count > caps.max_image_count {
             image_count = caps.max_image_count;

@@ -16,8 +16,8 @@ use gobs_resource::{
 use crate::{
     GfxContext, RenderError,
     batch::RenderBatch,
-    graph::GraphResourceManager,
-    pass::{FrameData, PassId, PassType, RenderPass, RenderState},
+    graph::{FrameData, GraphResourceManager},
+    pass::{PassFrameData, PassId, PassType, RenderPass, RenderState},
     renderable::RenderObject,
     stats::RenderStats,
 };
@@ -30,7 +30,7 @@ pub struct ForwardPass {
     color_clear: bool,
     depth_clear: bool,
     push_layout: Arc<UniformLayout>,
-    frame_data: Vec<FrameData>,
+    frame_data: Vec<PassFrameData>,
     uniform_data_layout: Arc<UniformLayout>,
 }
 
@@ -56,7 +56,7 @@ impl ForwardPass {
             .build();
 
         let frame_data = (0..ctx.frames_in_flight)
-            .map(|_| FrameData::new(ctx, uniform_data_layout.clone()))
+            .map(|_| PassFrameData::new(ctx, uniform_data_layout.clone()))
             .collect();
 
         Ok(Arc::new(Self {
@@ -72,12 +72,9 @@ impl ForwardPass {
         }))
     }
 
-    fn prepare_scene_data(&self, ctx: &GfxContext, batch: &mut RenderBatch) {
+    fn prepare_scene_data(&self, frame: &PassFrameData, batch: &mut RenderBatch) {
         if let Some(scene_data) = batch.scene_data(self.id) {
-            self.frame_data[ctx.frame_id()]
-                .uniform_buffer
-                .write()
-                .update(scene_data);
+            frame.uniform_buffer.write().update(scene_data);
         }
     }
 
@@ -128,7 +125,7 @@ impl ForwardPass {
 
     fn bind_scene_data(
         &self,
-        ctx: &GfxContext,
+        frame: &PassFrameData,
         cmd: &GfxCommand,
         stats: &mut RenderStats,
         state: &mut RenderState,
@@ -137,7 +134,7 @@ impl ForwardPass {
         if !state.scene_data_bound {
             let material = render_object.mesh.material.clone().unwrap();
             let pipeline = material.pipeline();
-            let uniform_buffer = self.frame_data[ctx.frame_id()].uniform_buffer.read();
+            let uniform_buffer = frame.uniform_buffer.read();
 
             cmd.bind_resource_buffer(&uniform_buffer.buffer, &pipeline);
             stats.bind(self.id);
@@ -193,10 +190,16 @@ impl ForwardPass {
         }
     }
 
-    fn render_batch(&self, ctx: &GfxContext, cmd: &GfxCommand, batch: &mut RenderBatch) {
+    fn render_batch(
+        &self,
+        ctx: &GfxContext,
+        frame: &PassFrameData,
+        cmd: &GfxCommand,
+        batch: &mut RenderBatch,
+    ) {
         let mut render_state = RenderState::default();
 
-        self.prepare_scene_data(ctx, batch);
+        self.prepare_scene_data(frame, batch);
 
         for render_object in &batch.render_list {
             if !self.should_render(render_object) {
@@ -211,7 +214,7 @@ impl ForwardPass {
             );
 
             self.bind_scene_data(
-                ctx,
+                frame,
                 cmd,
                 &mut batch.render_stats,
                 &mut render_state,
@@ -303,12 +306,14 @@ impl RenderPass for ForwardPass {
     fn render(
         &self,
         ctx: &mut GfxContext,
-        cmd: &GfxCommand,
+        frame: &FrameData,
         resource_manager: &GraphResourceManager,
         batch: &mut RenderBatch,
         draw_extent: ImageExtent2D,
     ) -> Result<(), RenderError> {
         tracing::debug!("Draw forward");
+
+        let cmd = &frame.command;
 
         cmd.begin_label("Draw forward");
 
@@ -336,7 +341,9 @@ impl RenderPass for ForwardPass {
 
         cmd.set_viewport(draw_extent.width, draw_extent.height);
 
-        self.render_batch(ctx, cmd, batch);
+        let pass_frame = &self.frame_data[frame.id];
+
+        self.render_batch(ctx, pass_frame, cmd, batch);
 
         cmd.end_rendering();
 

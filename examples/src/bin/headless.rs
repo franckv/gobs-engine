@@ -44,12 +44,8 @@ impl Run for App {
     }
 
     fn render(&mut self, ctx: &mut GameContext) -> Result<(), RenderError> {
-        self.common.render_noui(
-            &mut ctx.gfx,
-            &mut ctx.resource_manager,
-            &mut self.graph,
-            &mut self.scene,
-        )
+        self.common
+            .render_noui(ctx, &mut self.graph, &mut self.scene)
     }
 
     fn input(&mut self, _ctx: &GameContext, _input: Input) {}

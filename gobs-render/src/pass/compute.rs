@@ -3,7 +3,7 @@ use std::sync::Arc;
 use gobs_core::{ImageExtent2D, Transform};
 use gobs_gfx::{
     BindingGroup, BindingGroupType, BindingGroupUpdates, Command, ComputePipelineBuilder,
-    DescriptorType, GfxBindingGroup, GfxCommand, GfxPipeline, ImageLayout, Pipeline,
+    DescriptorType, GfxBindingGroup, GfxPipeline, ImageLayout, Pipeline,
 };
 use gobs_resource::{
     entity::{camera::Camera, light::Light, uniform::UniformLayout},
@@ -13,17 +13,17 @@ use gobs_resource::{
 use crate::{
     GfxContext, RenderError,
     batch::RenderBatch,
-    graph::GraphResourceManager,
+    graph::{FrameData, GraphResourceManager},
     pass::{PassId, PassType, RenderPass},
 };
 
-pub(crate) struct FrameData {
+pub(crate) struct PassFrameData {
     pub draw_bindings: GfxBindingGroup,
 }
 
-impl FrameData {
+impl PassFrameData {
     pub fn new(draw_bindings: GfxBindingGroup) -> Self {
-        FrameData { draw_bindings }
+        PassFrameData { draw_bindings }
     }
 }
 
@@ -32,7 +32,7 @@ pub struct ComputePass {
     name: String,
     ty: PassType,
     attachments: Vec<String>,
-    frame_data: Vec<FrameData>,
+    frame_data: Vec<PassFrameData>,
     pub pipeline: Arc<GfxPipeline>,
 }
 
@@ -48,7 +48,7 @@ impl ComputePass {
 
         let frame_data = (0..ctx.frames_in_flight)
             .map(|_| {
-                FrameData::new(
+                PassFrameData::new(
                     pipeline
                         .create_binding_group(BindingGroupType::ComputeData)
                         .unwrap(),
@@ -120,19 +120,23 @@ impl RenderPass for ComputePass {
 
     fn render(
         &self,
-        ctx: &mut GfxContext,
-        cmd: &GfxCommand,
+        _ctx: &mut GfxContext,
+        frame: &FrameData,
         resource_manager: &GraphResourceManager,
         batch: &mut RenderBatch,
         draw_extent: ImageExtent2D,
     ) -> Result<(), RenderError> {
         tracing::debug!("Draw compute");
+
+        let cmd = &frame.command;
+
         cmd.begin_label("Draw compute");
 
         let draw_attach = &self.attachments[0];
 
-        let frame_id = ctx.frame_id();
-        let draw_bindings = &self.frame_data[frame_id].draw_bindings;
+        let pass_frame = &self.frame_data[frame.id];
+
+        let draw_bindings = &pass_frame.draw_bindings;
 
         draw_bindings
             .update()

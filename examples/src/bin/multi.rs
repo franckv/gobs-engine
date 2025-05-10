@@ -75,13 +75,8 @@ impl Run for App {
     }
 
     fn render(&mut self, ctx: &mut GameContext) -> Result<(), RenderError> {
-        self.common.render(
-            &mut ctx.gfx,
-            &mut ctx.resource_manager,
-            &mut self.graph,
-            &mut self.scene,
-            &mut self.ui,
-        )
+        self.common
+            .render(ctx, &mut self.graph, &mut self.scene, &mut self.ui)
     }
 
     fn input(&mut self, ctx: &GameContext, input: Input) {

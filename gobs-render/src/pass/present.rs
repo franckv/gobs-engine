@@ -1,12 +1,12 @@
 use std::sync::Arc;
 
 use gobs_core::ImageExtent2D;
-use gobs_gfx::{Command, Display, GfxCommand, GfxPipeline, Image, ImageLayout};
+use gobs_gfx::{Command, Display, GfxPipeline, Image, ImageLayout};
 
 use crate::{
     GfxContext, RenderError,
     batch::RenderBatch,
-    graph::GraphResourceManager,
+    graph::{FrameData, GraphResourceManager},
     pass::{PassId, PassType, RenderPass},
 };
 
@@ -74,12 +74,14 @@ impl RenderPass for PresentPass {
     fn render(
         &self,
         ctx: &mut GfxContext,
-        cmd: &GfxCommand,
+        frame: &FrameData,
         resource_manager: &GraphResourceManager,
         _batch: &mut RenderBatch,
         draw_extent: ImageExtent2D,
     ) -> Result<(), RenderError> {
         tracing::debug!("Present");
+
+        let cmd = &frame.command;
 
         if let Some(render_target) = ctx.display.get_render_target() {
             cmd.transition_image_layout(

@@ -27,16 +27,12 @@ pub struct FrameData {
 }
 
 impl FrameData {
-    pub fn new(ctx: &GfxContext) -> Self {
-        let frame_id = ctx.frame_id();
+    pub fn new(ctx: &GfxContext, id: usize) -> Self {
         let command = GfxCommand::new(&ctx.device, "Frame", CommandQueueType::Graphics);
 
         //TODO: let query_pool = QueryPool::new(ctx.device.clone(), QueryType::Timestamp, 2);
 
-        FrameData {
-            id: frame_id,
-            command,
-        }
+        FrameData { id, command }
     }
 
     pub fn reset(&mut self) {
@@ -46,6 +42,7 @@ impl FrameData {
 
 pub struct FrameGraph {
     pub frames: Vec<FrameData>,
+    pub frame_number: usize,
     pub draw_extent: ImageExtent2D,
     pub render_scaling: f32,
     pub passes: Vec<RenderPass>,
@@ -58,11 +55,12 @@ impl FrameGraph {
         let draw_extent = ctx.extent();
 
         let frames = (0..ctx.frames_in_flight)
-            .map(|_| FrameData::new(ctx))
+            .map(|id| FrameData::new(ctx, id))
             .collect();
 
         Self {
             frames,
+            frame_number: 0,
             draw_extent,
             render_scaling: 1.,
             passes: Vec::new(),
@@ -250,16 +248,16 @@ impl FrameGraph {
     pub fn begin(&mut self, ctx: &mut GfxContext) -> Result<(), RenderError> {
         tracing::debug!("Begin new frame");
 
-        let frame_id = ctx.frame_id();
+        self.frame_number += 1;
+        let frame_id = self.frame_number % ctx.frames_in_flight;
         let frame = &mut self.frames[frame_id];
         frame.reset();
-        frame.id = frame_id;
 
         self.batch.reset(ctx);
 
         let cmd = &frame.command;
 
-        if ctx.frame_number >= ctx.frames_in_flight && ctx.frame_number % ctx.stats_refresh == 0 {
+        if self.frame_number >= ctx.frames_in_flight && self.frame_number % ctx.stats_refresh == 0 {
             //TODO: let mut buf = [0 as u64; 2];
             //frame.query_pool.get_query_pool_results(0, &mut buf);
 
@@ -282,7 +280,7 @@ impl FrameGraph {
 
         tracing::trace!("Draw extent {:?}", self.draw_extent);
 
-        if ctx.display.acquire(ctx.frame_id()).is_err() {
+        if ctx.display.acquire(frame_id).is_err() {
             return Err(RenderError::Outdated);
         }
 
@@ -290,7 +288,7 @@ impl FrameGraph {
 
         cmd.begin();
 
-        cmd.begin_label(&format!("Frame {}", ctx.frame_number));
+        cmd.begin_label(&format!("Frame {}", self.frame_number));
 
         //TODO: cmd.reset_query_pool(&frame.query_pool, 0, 2);
         //TODO: cmd.write_timestamp(&frame.query_pool, PipelineStage::TopOfPipe, 0);
@@ -301,7 +299,7 @@ impl FrameGraph {
     pub fn end(&mut self, ctx: &mut GfxContext) -> Result<(), RenderError> {
         tracing::debug!("End frame");
 
-        let frame_id = ctx.frame_id();
+        let frame_id = self.frame_number % ctx.frames_in_flight;
         let frame = &self.frames[frame_id];
         let cmd = &frame.command;
 
@@ -317,9 +315,9 @@ impl FrameGraph {
 
         ctx.device.wait_transfer();
 
-        cmd.submit2(&ctx.display, ctx.frame_id());
+        cmd.submit2(&ctx.display, frame_id);
 
-        let Ok(_) = ctx.display.present(&ctx.device, ctx.frame_id()) else {
+        let Ok(_) = ctx.display.present(&ctx.device, frame_id) else {
             return Err(RenderError::Outdated);
         };
 
@@ -327,7 +325,7 @@ impl FrameGraph {
     }
 
     pub fn update(&mut self, ctx: &GfxContext, delta: f32) {
-        if ctx.frame_number % ctx.stats_refresh == 0 {
+        if self.frame_number % ctx.stats_refresh == 0 {
             self.batch.render_stats.fps = (1. / delta).round() as u32;
         }
     }
@@ -341,7 +339,7 @@ impl FrameGraph {
 
         let mut timer = Timer::new();
 
-        let should_update = ctx.frame_number % ctx.stats_refresh == 0;
+        let should_update = self.frame_number % ctx.stats_refresh == 0;
 
         self.batch.render_stats.update_time_reset(should_update);
         for pass in &self.passes {
@@ -358,20 +356,21 @@ impl FrameGraph {
     pub fn render(&mut self, ctx: &mut GfxContext) -> Result<(), RenderError> {
         tracing::debug!("Begin rendering");
 
-        let frame_id = ctx.frame_id();
+        let frame_id = self.frame_number % ctx.frames_in_flight;
 
         let mut timer = Timer::new();
 
-        let should_update = ctx.frame_number % ctx.stats_refresh == 0;
-
-        let cmd = &self.frames[frame_id].command;
+        let should_update = self.frame_number % ctx.stats_refresh == 0;
 
         self.batch.render_stats.cpu_draw_time_reset(should_update);
+
+        let frame = &self.frames[frame_id];
+
         for pass in &self.passes {
             tracing::debug!("Enter render pass: {}", pass.name());
             pass.render(
                 ctx,
-                cmd,
+                frame,
                 &self.resource_manager,
                 &mut self.batch,
                 self.draw_extent,

@@ -1,13 +1,13 @@
 use std::sync::Arc;
 
 use gobs_core::ImageExtent2D;
-use gobs_gfx::{GfxCommand, GfxPipeline};
+use gobs_gfx::GfxPipeline;
 use gobs_resource::{entity::uniform::UniformLayout, geometry::VertexAttribute};
 
 use crate::{
     GfxContext, RenderError,
     batch::RenderBatch,
-    graph::GraphResourceManager,
+    graph::{FrameData, GraphResourceManager},
     pass::{PassId, PassType, RenderPass},
 };
 
@@ -73,7 +73,7 @@ impl RenderPass for DummyPass {
     fn render(
         &self,
         _ctx: &mut GfxContext,
-        _cmd: &GfxCommand,
+        _frame: &FrameData,
         _resource_manager: &GraphResourceManager,
         _batch: &mut RenderBatch,
         _draw_extent: ImageExtent2D,

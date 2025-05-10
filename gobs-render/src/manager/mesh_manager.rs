@@ -26,6 +26,7 @@ type ResourceKey = (ModelId, PassId);
 const STAGING_BUFFER_SIZE: usize = 1_048_576;
 
 pub struct MeshResourceManager {
+    pub frame_id: usize,
     pub mesh_data: HashMap<ResourceKey, Vec<GPUMesh>>,
     pub transient_mesh_data: Vec<HashMap<ResourceKey, Vec<GPUMesh>>>,
     pub material_bindings: HashMap<MaterialInstanceId, GfxBindingGroup>,
@@ -38,6 +39,7 @@ impl MeshResourceManager {
             .map(|_| HashMap::new())
             .collect();
         Self {
+            frame_id: 0,
             mesh_data: HashMap::new(),
             transient_mesh_data,
             material_bindings: HashMap::new(),
@@ -51,11 +53,12 @@ impl MeshResourceManager {
         tracing::debug!(target: "render", "Bindings: {}", self.material_bindings.keys().len());
     }
 
-    pub fn new_frame(&mut self, ctx: &GfxContext) -> usize {
+    pub fn new_frame(&mut self, ctx: &GfxContext) {
         self.debug_stats();
-        let frame_id = ctx.frame_id();
 
-        for (_, mut data) in self.transient_mesh_data[frame_id].drain() {
+        self.frame_id = (self.frame_id + 1) % ctx.frames_in_flight;
+
+        for (_, mut data) in self.transient_mesh_data[self.frame_id].drain() {
             for mesh in data.drain(..) {
                 let index = Arc::into_inner(mesh.index_buffer);
                 if let Some(buffer) = index {
@@ -67,8 +70,7 @@ impl MeshResourceManager {
                 }
             }
         }
-        self.transient_mesh_data[frame_id].clear();
-        frame_id
+        self.transient_mesh_data[self.frame_id].clear();
     }
 
     #[tracing::instrument(target = "resources", skip_all, level = "debug")]
@@ -98,7 +100,7 @@ impl MeshResourceManager {
 
             self.mesh_data.get(&key).expect("Get mesh data")
         } else {
-            let frame_id = ctx.frame_id();
+            let frame_id = self.frame_id;
             let data = self.load_object(
                 ctx,
                 resource_manager,
@@ -122,7 +124,7 @@ impl MeshResourceManager {
         pass: RenderPass,
         lifetime: RenderableLifetime,
     ) -> &[GPUMesh] {
-        let frame_id = ctx.frame_id();
+        let frame_id = self.frame_id;
         let (model, data) =
             self.load_box(ctx, resource_manager, bounding_box, pass.clone(), lifetime);
         let key = (model.id, pass.id());

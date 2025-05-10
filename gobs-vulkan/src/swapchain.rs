@@ -108,6 +108,15 @@ impl SwapChain {
         unsafe {
             let vk_images = self.loader.get_swapchain_images(self.swapchain).unwrap();
 
+            tracing::debug!(
+                target = "init",
+                "actual image count={}, requested={}",
+                vk_images.len(),
+                self.image_count
+            );
+
+            assert_eq!(self.image_count, vk_images.len());
+
             vk_images
                 .iter()
                 .map(|&image| {
