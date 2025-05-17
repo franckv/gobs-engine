@@ -1,3 +1,5 @@
+use std::collections::hash_map::Entry;
+
 use gobs_core::utils::{anymap::AnyMap, registry::ObjectRegistry};
 
 use crate::resource::{Resource, ResourceHandle, ResourceLoader, ResourceState, ResourceType};
@@ -39,15 +41,25 @@ impl ResourceManager {
     fn load_data<R: ResourceType + 'static>(
         &mut self,
         handle: &ResourceHandle,
-        parameter: R::ResourceParameter,
+        parameter: &R::ResourceParameter,
     ) {
         let resource = self.registry.get_mut::<Resource<R>>(handle).unwrap();
 
-        if let ResourceState::Unloaded = resource.data {
-            tracing::debug!(target: "resources", "Loading resource {}", handle);
-            let loader = self.loader.get::<R::ResourceLoader>().unwrap();
-            let data = loader.load(&mut resource.properties, parameter);
-            resource.data = ResourceState::Loaded(data);
+        match resource.data.entry(parameter.clone()) {
+            Entry::Occupied(mut e) => {
+                if let ResourceState::Unloaded = e.get() {
+                    tracing::debug!(target: "resources", "Loading resource {}", handle);
+                    let loader = self.loader.get::<R::ResourceLoader>().unwrap();
+                    let data = loader.load(&mut resource.properties, parameter);
+                    e.insert(ResourceState::Loaded(data));
+                }
+            }
+            Entry::Vacant(e) => {
+                tracing::debug!(target: "resources", "Loading resource {}", handle);
+                let loader = self.loader.get::<R::ResourceLoader>().unwrap();
+                let data = loader.load(&mut resource.properties, parameter);
+                e.insert(ResourceState::Loaded(data));
+            }
         }
     }
 
@@ -56,13 +68,12 @@ impl ResourceManager {
         handle: &ResourceHandle,
         parameter: R::ResourceParameter,
     ) -> &R::ResourceData {
-        self.load_data::<R>(handle, parameter);
+        self.load_data::<R>(handle, &parameter);
 
         let resource = self.registry.get_mut::<Resource<R>>(handle).unwrap();
-        match &resource.data {
-            ResourceState::Unloaded => unreachable!(),
-            ResourceState::Loading => unimplemented!(),
-            ResourceState::Loaded(data) => data,
+        match &resource.data.get(&parameter) {
+            Some(ResourceState::Loaded(data)) => data,
+            _ => unreachable!(),
         }
     }
 

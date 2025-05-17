@@ -141,7 +141,7 @@ impl TextureLoader {
 }
 
 impl ResourceLoader<Texture> for TextureLoader {
-    fn load(&self, properties: &mut TextureProperties, _: ()) -> TextureData {
+    fn load(&self, properties: &mut TextureProperties, _: &()) -> TextureData {
         match &properties.path {
             TexturePath::Default => self.load_default(),
             TexturePath::File(filename) => self.load_file(filename, &mut properties.format),

@@ -1,3 +1,6 @@
+use std::collections::HashMap;
+use std::hash::Hash;
+
 use uuid::Uuid;
 
 pub enum ResourceState<R: ResourceType> {
@@ -11,7 +14,7 @@ pub type ResourceHandle = Uuid;
 pub trait ResourceType {
     type ResourceData;
     type ResourceProperties: Clone;
-    type ResourceParameter;
+    type ResourceParameter: Clone + Hash + Eq;
     type ResourceLoader: ResourceLoader<Self>
     where
         Self: Sized;
@@ -20,7 +23,7 @@ pub trait ResourceType {
 pub struct Resource<R: ResourceType> {
     pub id: ResourceHandle,
     pub properties: R::ResourceProperties,
-    pub(crate) data: ResourceState<R>,
+    pub(crate) data: HashMap<R::ResourceParameter, ResourceState<R>>,
 }
 
 impl<R: ResourceType> Resource<R> {
@@ -28,7 +31,7 @@ impl<R: ResourceType> Resource<R> {
         Self {
             id: Uuid::new_v4(),
             properties,
-            data: ResourceState::Unloaded,
+            data: HashMap::new(),
         }
     }
 }
@@ -37,6 +40,6 @@ pub trait ResourceLoader<R: ResourceType> {
     fn load(
         &self,
         properties: &mut R::ResourceProperties,
-        parameter: R::ResourceParameter,
+        parameter: &R::ResourceParameter,
     ) -> R::ResourceData;
 }
