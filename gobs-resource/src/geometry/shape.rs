@@ -4,7 +4,9 @@ use glam::Vec2;
 
 use gobs_core::Color;
 
-use crate::geometry::{Mesh, VertexData};
+use crate::geometry::{MeshGeometry, VertexData};
+
+use super::BoundingBox;
 
 const T_MIN: f32 = 0.01;
 const T_MID: f32 = 0.5;
@@ -19,8 +21,8 @@ impl Shapes {
         color3: Color,
         size: f32,
         padding: bool,
-    ) -> Arc<Mesh> {
-        let mut builder = Mesh::builder("triangle");
+    ) -> Arc<MeshGeometry> {
+        let mut builder = MeshGeometry::builder("triangle");
 
         let (top, bottom, left, right) = (size / 2., -size / 2., -size / 2., size / 2.);
 
@@ -66,8 +68,8 @@ impl Shapes {
         left: f32,
         right: f32,
         padding: bool,
-    ) -> Arc<Mesh> {
-        let mut builder = Mesh::builder("rect");
+    ) -> Arc<MeshGeometry> {
+        let mut builder = MeshGeometry::builder("rect");
 
         let v = [
             [left, top, 0.],
@@ -104,12 +106,12 @@ impl Shapes {
         builder.build()
     }
 
-    pub fn quad(color: Color, padding: bool) -> Arc<Mesh> {
+    pub fn quad(color: Color, padding: bool) -> Arc<MeshGeometry> {
         Self::rect(color, 0.5, -0.5, -0.5, 0.5, padding)
     }
 
-    pub fn hexagon(colors: [Color; 7], padding: bool) -> Arc<Mesh> {
-        let mut builder = Mesh::builder("hexagon");
+    pub fn hexagon(colors: [Color; 7], padding: bool) -> Arc<MeshGeometry> {
+        let mut builder = MeshGeometry::builder("hexagon");
 
         let width = 1.;
         let height = 3.0f32.sqrt() / 2.;
@@ -155,8 +157,14 @@ impl Shapes {
         builder.build()
     }
 
-    pub fn cubemap(cols: u32, rows: u32, index: &[u32], size: f32, padding: bool) -> Arc<Mesh> {
-        let mut builder = Mesh::builder("cube");
+    pub fn cubemap(
+        cols: u32,
+        rows: u32,
+        index: &[u32],
+        size: f32,
+        padding: bool,
+    ) -> Arc<MeshGeometry> {
+        let mut builder = MeshGeometry::builder("cube");
 
         let (top, bottom, left, right, front, back) = (
             size / 2.,
@@ -232,6 +240,44 @@ impl Shapes {
                     index[(i / index.len()) % index.len()],
                 ))
                 .normal(n[ni[i] - 1].into())
+                .padding(padding)
+                .build();
+
+            builder = builder.vertex(vertex_data);
+        }
+
+        builder.build()
+    }
+
+    pub fn bounding_box(bounding_box: BoundingBox, padding: bool) -> Arc<MeshGeometry> {
+        let (left, bottom, back) = bounding_box.bottom_left().into();
+        let (right, top, front) = bounding_box.top_right().into();
+
+        let v = [
+            [left, top, front],
+            [right, top, front],
+            [left, bottom, front],
+            [right, bottom, front],
+            [left, top, back],
+            [right, top, back],
+            [left, bottom, back],
+            [right, bottom, back],
+        ];
+
+        let vi = [
+            3, 4, 2, 3, 2, 1, // F
+            8, 7, 5, 8, 5, 6, // B
+            7, 3, 1, 7, 1, 5, // L
+            4, 8, 6, 4, 6, 2, // R
+            1, 2, 6, 1, 6, 5, // U
+            7, 8, 4, 7, 4, 3, // D
+        ];
+
+        let mut builder = MeshGeometry::builder("bounds");
+
+        for i in 0..vi.len() {
+            let vertex_data = VertexData::builder()
+                .position(v[vi[i] - 1].into())
                 .padding(padding)
                 .build();
 

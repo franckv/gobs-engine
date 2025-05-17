@@ -111,7 +111,7 @@ impl SwapChain {
             let vk_images = self.loader.get_swapchain_images(self.swapchain).unwrap();
 
             tracing::debug!(
-                target = "init",
+                target: "init",
                 "actual image count={}, requested={}",
                 vk_images.len(),
                 self.image_count

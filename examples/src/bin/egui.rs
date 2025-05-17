@@ -67,11 +67,11 @@ impl Run for App {
     async fn start(&mut self, _ctx: &mut GameContext) {}
 
     fn close(&mut self, ctx: &GameContext) {
-        tracing::info!("Closing");
+        tracing::info!(target: "app", "Closing");
 
         ctx.gfx.device.wait();
 
-        tracing::info!("Closed");
+        tracing::info!(target: "app", "Closed");
     }
 }
 
@@ -704,7 +704,7 @@ fn text_layout_demo(ui: &mut egui::Ui) {
 fn main() {
     examples::init_logger();
 
-    tracing::info!("Engine start");
+    tracing::info!(target: "app", "Engine start");
 
     Application::<App>::new("Egui", examples::WIDTH, examples::HEIGHT).run();
 }

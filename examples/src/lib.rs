@@ -44,5 +44,8 @@ pub fn init_logger() {
         )
         .init();
 
-    tracing::info!("Logger initialized");
+    tracing::info!(
+        "Logger initialized (RUST_LOG={:?})",
+        std::env::var("RUST_LOG")
+    );
 }

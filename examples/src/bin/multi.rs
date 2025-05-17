@@ -8,10 +8,11 @@ use gobs::{
         context::GameContext,
     },
     gfx::Device,
-    render::{FrameGraph, Model, PassType, RenderError, Texture, TextureProperties, TextureType},
+    render::{FrameGraph, Model, PassType, RenderError, TextureProperties, TextureType},
     resource::{
         entity::{camera::Camera, light::Light},
         geometry::Shapes,
+        resource::ResourceLifetime,
     },
     scene::{components::NodeValue, scene::Scene},
     ui::UIRenderer,
@@ -101,11 +102,11 @@ impl Run for App {
     }
 
     fn close(&mut self, ctx: &GameContext) {
-        tracing::info!("Closing");
+        tracing::info!(target: "app", "Closing");
 
         ctx.gfx.device.wait();
 
-        tracing::info!("Closed");
+        tracing::info!(target: "app", "Closed");
     }
 }
 
@@ -117,11 +118,15 @@ impl App {
         let diffuse_material = self.common.normal_mapping_material(&ctx.gfx, &self.graph);
 
         let properties = TextureProperties::with_file("Wall Diffuse", examples::WALL_TEXTURE);
-        let diffuse_texture = ctx.resource_manager.add::<Texture>(properties);
+        let diffuse_texture = ctx
+            .resource_manager
+            .add(properties, ResourceLifetime::Static);
 
         let mut properties = TextureProperties::with_file("Wall Normal", examples::WALL_TEXTURE_N);
         properties.format.ty = TextureType::Normal;
-        let normal_texture = ctx.resource_manager.add::<Texture>(properties);
+        let normal_texture = ctx
+            .resource_manager
+            .add(properties, ResourceLifetime::Static);
 
         let diffuse_material_instance =
             diffuse_material.instantiate(vec![diffuse_texture, normal_texture]);
@@ -136,10 +141,14 @@ impl App {
                     ctx.gfx.vertex_padding,
                 ),
                 Some(color_material_instance),
+                &mut ctx.resource_manager,
+                ResourceLifetime::Static,
             )
             .mesh(
                 Shapes::cubemap(1, 1, &[1], 1., ctx.gfx.vertex_padding),
                 Some(diffuse_material_instance),
+                &mut ctx.resource_manager,
+                ResourceLifetime::Static,
             )
             .build();
 
@@ -153,7 +162,7 @@ impl App {
 fn main() {
     examples::init_logger();
 
-    tracing::info!("Engine start");
+    tracing::info!(target: "app", "Engine start");
 
     Application::<App>::new("Multi", examples::WIDTH, examples::HEIGHT).run();
 }

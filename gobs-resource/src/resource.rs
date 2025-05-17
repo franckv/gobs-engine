@@ -1,6 +1,6 @@
-use std::collections::HashMap;
-use std::hash::Hash;
+use std::{collections::HashMap, fmt::Debug, hash::Hash, marker::PhantomData};
 
+use serde::Serialize;
 use uuid::Uuid;
 
 pub enum ResourceState<R: ResourceType> {
@@ -9,9 +9,36 @@ pub enum ResourceState<R: ResourceType> {
     Loaded(R::ResourceData),
 }
 
-pub type ResourceHandle = Uuid;
+#[derive(Copy, Clone, Debug, PartialEq)]
+pub enum ResourceLifetime {
+    Static,
+    Transient,
+}
 
-pub trait ResourceType {
+// pub type ResourceHandle = Uuid;
+
+#[derive(Copy, Clone, Debug, PartialEq, Serialize)]
+pub struct ResourceHandle<R: ResourceType> {
+    pub id: Uuid,
+    pub(crate) ty: PhantomData<R>,
+}
+
+impl<R: ResourceType> ResourceHandle<R> {
+    pub fn new() -> Self {
+        Self {
+            id: Uuid::new_v4(),
+            ty: PhantomData,
+        }
+    }
+}
+
+impl<R: ResourceType> Default for ResourceHandle<R> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+pub trait ResourceType: Copy + Debug {
     type ResourceData;
     type ResourceProperties: Clone;
     type ResourceParameter: Clone + Hash + Eq;
@@ -21,17 +48,21 @@ pub trait ResourceType {
 }
 
 pub struct Resource<R: ResourceType> {
-    pub id: ResourceHandle,
+    pub handle: ResourceHandle<R>,
     pub properties: R::ResourceProperties,
     pub(crate) data: HashMap<R::ResourceParameter, ResourceState<R>>,
+    pub lifetime: ResourceLifetime,
+    pub life: usize,
 }
 
 impl<R: ResourceType> Resource<R> {
-    pub(crate) fn new(properties: R::ResourceProperties) -> Self {
+    pub(crate) fn new(properties: R::ResourceProperties, lifetime: ResourceLifetime) -> Self {
         Self {
-            id: Uuid::new_v4(),
+            handle: ResourceHandle::new(),
             properties,
             data: HashMap::new(),
+            lifetime,
+            life: 0,
         }
     }
 }

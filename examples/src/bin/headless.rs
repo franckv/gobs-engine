@@ -6,7 +6,7 @@ use gobs::{
     game::{AppError, app::Run, context::GameContext},
     gfx::Device,
     render::{FrameGraph, Model, RenderError},
-    resource::{entity::light::Light, geometry::Shapes},
+    resource::{entity::light::Light, geometry::Shapes, resource::ResourceLifetime},
     scene::{components::NodeValue, scene::Scene},
 };
 
@@ -60,16 +60,16 @@ impl Run for App {
     }
 
     fn close(&mut self, ctx: &GameContext) {
-        tracing::info!("Closing");
+        tracing::info!(target: "app", "Closing");
 
         ctx.gfx.device.wait();
 
-        tracing::info!("Closed");
+        tracing::info!(target: "app", "Closed");
     }
 }
 
 impl App {
-    fn init(&mut self, ctx: &GameContext) {
+    fn init(&mut self, ctx: &mut GameContext) {
         let material = self.common.color_material(&ctx.gfx, &self.graph);
         let material_instance = material.instantiate(vec![]);
 
@@ -83,6 +83,8 @@ impl App {
                     ctx.gfx.vertex_padding,
                 ),
                 Some(material_instance),
+                &mut ctx.resource_manager,
+                ResourceLifetime::Static,
             )
             .build();
 
@@ -98,7 +100,7 @@ impl App {
 fn main() {
     examples::init_logger();
 
-    tracing::info!("Engine start");
+    tracing::info!(target: "app", "Engine start");
 
     let mut ctx = GameContext::new("Triangle", None, true).unwrap();
 

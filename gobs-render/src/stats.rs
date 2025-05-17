@@ -1,5 +1,7 @@
 use std::collections::{HashMap, HashSet};
 
+use gobs_gfx::{Buffer, BufferId};
+
 use crate::{ModelId, pass::PassId, renderable::RenderObject};
 
 #[derive(Clone, Debug, Default)]
@@ -25,6 +27,7 @@ pub struct RenderStats {
     pub fps: u32,
     pub pass_stats: HashMap<PassId, PassStats>,
     models_set: HashSet<(PassId, ModelId)>,
+    indices_set: HashSet<(PassId, BufferId, usize)>,
 }
 
 impl RenderStats {
@@ -33,6 +36,7 @@ impl RenderStats {
         self.binds = 0;
         self.pass_stats.clear();
         self.models_set.clear();
+        self.indices_set.clear();
     }
 
     pub fn cpu_draw_time_reset(&mut self, update: bool) {
@@ -100,42 +104,58 @@ impl RenderStats {
     }
 
     pub fn add_object(&mut self, object: &RenderObject) {
-        if !self
-            .models_set
-            .contains(&(object.pass.id(), object.mesh.model.id))
-        {
-            self.models_set
-                .insert((object.pass.id(), object.mesh.model.id));
-            let vertices = object
-                .mesh
-                .model
-                .meshes
-                .iter()
-                .map(|(m, _)| m.vertices.len() as u32)
-                .sum::<u32>();
-            let indices = object
-                .mesh
-                .model
-                .meshes
-                .iter()
-                .map(|(m, _)| m.indices.len() as u32)
-                .sum::<u32>();
+        let key = (
+            object.pass.id(),
+            object.mesh.index_buffer.id(),
+            object.mesh.indices_offset,
+        );
+
+        if !self.indices_set.contains(&key) {
+            self.indices_set.insert(key);
+
+            let indices = object.mesh.indices_len as u32;
+            let vertices = object.mesh.vertices_count as u32;
             let models = 1;
-            let textures = object
-                .mesh
-                .model
-                .materials
-                .values()
-                .map(|m| m.textures.len() as u32)
-                .sum::<u32>();
 
             let pass_stat = self.pass_stats.entry(object.pass.id()).or_default();
 
-            pass_stat.vertices += vertices;
             pass_stat.indices += indices;
+            pass_stat.vertices += vertices;
             pass_stat.models += models;
-            pass_stat.textures += textures;
             pass_stat.instances += 1;
         }
+        // if !self
+        //     .models_set
+        //     .contains(&(object.pass.id(), object.model.id))
+        // {
+        //     self.models_set.insert((object.pass.id(), object.model.id));
+        //     let vertices = object
+        //         .model
+        //         .meshes
+        //         .iter()
+        //         .map(|(m, _)| m.vertices.len() as u32)
+        //         .sum::<u32>();
+        //     let indices = object
+        //         .model
+        //         .meshes
+        //         .iter()
+        //         .map(|(m, _)| m.indices.len() as u32)
+        //         .sum::<u32>();
+        //     let models = 1;
+        //     let textures = object
+        //         .model
+        //         .materials
+        //         .values()
+        //         .map(|m| m.textures.len() as u32)
+        //         .sum::<u32>();
+        //
+        //     let pass_stat = self.pass_stats.entry(object.pass.id()).or_default();
+        //
+        //     pass_stat.vertices += vertices;
+        //     pass_stat.indices += indices;
+        //     pass_stat.models += models;
+        //     pass_stat.textures += textures;
+        //     pass_stat.instances += 1;
+        // }
     }
 }

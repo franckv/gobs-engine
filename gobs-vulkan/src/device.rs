@@ -76,7 +76,7 @@ impl Device {
             .push_next(&mut features13);
 
         let device: ash::Device = unsafe {
-            tracing::debug!("Create device");
+            tracing::debug!(target: "init", "Create device");
             instance
                 .instance
                 .create_device(p_device.raw(), &device_info, None)?

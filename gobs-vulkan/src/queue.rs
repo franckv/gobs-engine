@@ -47,7 +47,7 @@ pub struct Queue {
 impl Queue {
     pub fn new(device: Arc<Device>, family: QueueFamily, index: u32) -> Arc<Self> {
         let queue = unsafe {
-            tracing::debug!("Create queue");
+            tracing::debug!(target: "init", "Create queue");
             device.raw().get_device_queue(family.index, index)
         };
 

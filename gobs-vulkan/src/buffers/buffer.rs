@@ -108,7 +108,7 @@ impl Buffer {
 
         let memory = allocator.allocate_buffer(usage, buffer, &buffer_label);
 
-        tracing::debug!("Create buffer {} [{:x}]", buffer_label, buffer.as_raw());
+        tracing::trace!(target: "memory", "Create buffer {} [{:x}]", buffer_label, buffer.as_raw());
 
         Buffer {
             label: buffer_label,
@@ -149,7 +149,7 @@ impl Wrap<vk::Buffer> for Buffer {
 
 impl Drop for Buffer {
     fn drop(&mut self) {
-        tracing::debug!(target: "memory", "Drop buffer {}", self.label);
+        tracing::trace!(target: "memory", "Drop buffer {}", self.label);
         unsafe {
             self.device.raw().destroy_buffer(self.buffer, None);
         }

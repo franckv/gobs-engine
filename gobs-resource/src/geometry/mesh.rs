@@ -11,15 +11,15 @@ use crate::geometry::{Bounded, BoundingBox, VertexData};
 
 pub type MeshId = Uuid;
 
-#[derive(Debug, Serialize)]
-pub struct Mesh {
+#[derive(Clone, Debug, Serialize)]
+pub struct MeshGeometry {
     pub id: MeshId,
     pub name: String,
     pub vertices: Vec<VertexData>,
     pub indices: Vec<u32>,
 }
 
-impl Mesh {
+impl MeshGeometry {
     fn new(name: String, vertices: Vec<VertexData>, indices: Vec<u32>) -> Arc<Self> {
         Arc::new(Self {
             id: Uuid::new_v4(),
@@ -34,7 +34,7 @@ impl Mesh {
     }
 }
 
-impl Bounded for Mesh {
+impl Bounded for MeshGeometry {
     fn boundings(&self) -> BoundingBox {
         let mut bounding_box = BoundingBox::default();
 
@@ -89,13 +89,13 @@ impl MeshBuilder {
 
     fn autoindex(mut self) -> Self {
         if !self.indices.is_empty() {
-            tracing::debug!("Skip indices");
+            tracing::trace!(target: "resources", "Skip indices");
             return self;
         }
 
         let mut unique = HashMap::new();
 
-        tracing::debug!("Indexing {} vertices", self.vertices.len());
+        tracing::trace!(target: "resources", "Indexing {} vertices", self.vertices.len());
 
         let mut idx = 0;
         let vertices = self
@@ -152,7 +152,7 @@ impl MeshBuilder {
     }
 
     fn update_tangent(mut self) -> Self {
-        tracing::debug!("Calculating tangents for {} indices", self.indices.len());
+        tracing::trace!(target: "resources", "Calculating tangents for {} indices", self.indices.len());
 
         let mut triangles_included = vec![0; self.vertices.len()];
 
@@ -185,7 +185,7 @@ impl MeshBuilder {
         self
     }
 
-    pub fn build(mut self) -> Arc<Mesh> {
+    pub fn build(mut self) -> Arc<MeshGeometry> {
         self = self.autoindex();
 
         assert_eq!(self.indices.len() % 3, 0);
@@ -194,13 +194,13 @@ impl MeshBuilder {
             self = self.update_tangent();
         }
 
-        tracing::debug!(
+        tracing::debug!(target: "resources",
             "Load mesh {} ({} vertices / {} indices)",
             self.name,
             self.vertices.len(),
             self.indices.len()
         );
 
-        Mesh::new(self.name, self.vertices, self.indices)
+        MeshGeometry::new(self.name, self.vertices, self.indices)
     }
 }

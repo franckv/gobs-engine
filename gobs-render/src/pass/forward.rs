@@ -79,7 +79,7 @@ impl ForwardPass {
     }
 
     fn should_render(&self, render_object: &RenderObject) -> bool {
-        render_object.pass.id() == self.id && render_object.mesh.material.is_some()
+        render_object.pass.id() == self.id && render_object.material.is_some()
     }
 
     fn bind_pipeline(
@@ -89,11 +89,11 @@ impl ForwardPass {
         state: &mut RenderState,
         render_object: &RenderObject,
     ) {
-        let material = render_object.mesh.material.clone().unwrap();
+        let material = render_object.material.clone().unwrap();
         let pipeline = material.pipeline();
 
         if state.last_pipeline != pipeline.id() {
-            tracing::trace!("Bind pipeline {}", pipeline.id());
+            tracing::trace!(target: "render", "Bind pipeline {}", pipeline.id());
 
             cmd.bind_pipeline(&pipeline);
             stats.bind(self.id);
@@ -109,11 +109,11 @@ impl ForwardPass {
         state: &mut RenderState,
         render_object: &RenderObject,
     ) {
-        if let Some(material) = &render_object.mesh.material {
+        if let Some(material) = &render_object.material {
             if state.last_material != material.id {
-                if let Some(material_binding) = &render_object.mesh.material_binding {
-                    tracing::trace!("Bind material {}", material.id);
-                    tracing::trace!("Transparent: {}", material.material.blending_enabled);
+                if let Some(material_binding) = &render_object.material_binding {
+                    tracing::trace!(target: "render", "Bind material {}", material.id);
+                    tracing::trace!(target: "render", "Transparent: {}", material.material.blending_enabled);
                     cmd.bind_resource(material_binding);
                     stats.bind(self.id);
                 }
@@ -132,7 +132,7 @@ impl ForwardPass {
         render_object: &RenderObject,
     ) {
         if !state.scene_data_bound {
-            let material = render_object.mesh.material.clone().unwrap();
+            let material = render_object.material.clone().unwrap();
             let pipeline = material.pipeline();
             let uniform_buffer = frame.uniform_buffer.read();
 
@@ -150,7 +150,7 @@ impl ForwardPass {
         state: &mut RenderState,
         render_object: &RenderObject,
     ) {
-        tracing::trace!("Bind push constants");
+        tracing::trace!(target: "render", "Bind push constants");
 
         if let Some(push_layout) = render_object.pass.push_layout() {
             state.object_data.clear();
@@ -158,7 +158,7 @@ impl ForwardPass {
             let world_matrix = render_object.transform.matrix();
             let normal_matrix = Mat3::from_quat(render_object.transform.rotation());
 
-            let material = render_object.mesh.material.clone().unwrap();
+            let material = render_object.material.clone().unwrap();
             let pipeline = material.pipeline();
 
             // TODO: hardcoded
@@ -311,7 +311,7 @@ impl RenderPass for ForwardPass {
         batch: &mut RenderBatch,
         draw_extent: ImageExtent2D,
     ) -> Result<(), RenderError> {
-        tracing::debug!("Draw forward");
+        tracing::debug!(target: "render", "Draw forward");
 
         let cmd = &frame.command;
 

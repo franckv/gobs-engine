@@ -2,9 +2,7 @@ use std::fmt::Debug;
 use std::hash::Hash;
 
 use gobs_core::utils::pool::ObjectPool;
-use gobs_gfx::{Buffer, BufferUsage, GfxBuffer};
-
-use crate::GfxContext;
+use gobs_gfx::{Buffer, BufferUsage, GfxBuffer, GfxDevice};
 
 pub trait ResourceFamily: Hash + Eq + Debug {}
 impl<U: Hash + Eq + Debug> ResourceFamily for U {}
@@ -12,12 +10,12 @@ impl<U: Hash + Eq + Debug> ResourceFamily for U {}
 pub trait Allocable<F: ResourceFamily> {
     fn family(&self) -> F;
     fn size(&self) -> usize;
-    fn allocate(ctx: &GfxContext, name: &str, size: usize, family: F) -> Self;
+    fn allocate(device: &GfxDevice, name: &str, size: usize, family: F) -> Self;
 }
 
 impl Allocable<BufferUsage> for GfxBuffer {
-    fn allocate(ctx: &GfxContext, name: &str, size: usize, family: BufferUsage) -> Self {
-        GfxBuffer::new(name, size, family, &ctx.device)
+    fn allocate(device: &GfxDevice, name: &str, size: usize, family: BufferUsage) -> Self {
+        GfxBuffer::new(name, size, family, device)
     }
 
     fn family(&self) -> BufferUsage {
@@ -40,8 +38,8 @@ impl<F: ResourceFamily, A: Allocable<F>> Allocator<F, A> {
         }
     }
 
-    #[tracing::instrument(target = "resources", skip_all, level = "debug")]
-    pub fn allocate(&mut self, ctx: &GfxContext, name: &str, size: usize, family: F) -> A {
+    #[tracing::instrument(target = "memory", skip_all, level = "trace")]
+    pub fn allocate(&mut self, device: &GfxDevice, name: &str, size: usize, family: F) -> A {
         while self.pool.contains(&family) {
             let resource = self.pool.pop(&family);
 
@@ -59,11 +57,11 @@ impl<F: ResourceFamily, A: Allocable<F>> Allocator<F, A> {
             }
         }
 
-        tracing::debug!("Allocate new resource {:?}, {}", family, size);
-        A::allocate(ctx, name, size, family)
+        tracing::debug!(target: "memory", "Allocate new resource {:?}, {}", family, size);
+        A::allocate(device, name, size, family)
     }
 
-    #[tracing::instrument(target = "resources", skip_all, level = "debug")]
+    #[tracing::instrument(target = "memory", skip_all, level = "trace")]
     pub fn recycle(&mut self, resource: A) {
         self.pool.insert(resource.family(), resource);
     }

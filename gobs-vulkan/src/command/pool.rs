@@ -19,7 +19,7 @@ impl CommandPool {
             .queue_family_index(queue_family.index);
 
         let pool = unsafe {
-            tracing::debug!("Create command pool");
+            tracing::debug!(target: "init", "Create command pool");
             device.raw().create_command_pool(&pool_info, None).unwrap()
         };
 

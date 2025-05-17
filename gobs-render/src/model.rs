@@ -3,20 +3,21 @@ use std::collections::hash_map::Entry;
 use std::fmt::Debug;
 use std::sync::Arc;
 
-use gobs_core::Transform;
 use serde::Serialize;
 use uuid::Uuid;
 
+use gobs_core::Transform;
 use gobs_resource::{
-    geometry::{Bounded, BoundingBox, Mesh},
+    geometry::{Bounded, BoundingBox, MeshGeometry},
     manager::ResourceManager,
+    resource::{ResourceHandle, ResourceLifetime},
 };
 
 use crate::{
-    GfxContext, RenderPass, Renderable,
+    GfxContext, Mesh, RenderPass, Renderable,
     batch::RenderBatch,
     materials::{MaterialInstance, MaterialInstanceId},
-    renderable::RenderableLifetime,
+    resources::MeshProperties,
 };
 
 pub type ModelId = Uuid;
@@ -25,9 +26,10 @@ pub type ModelId = Uuid;
 pub struct Model {
     pub name: String,
     pub id: ModelId,
-    pub meshes: Vec<(Arc<Mesh>, MaterialInstanceId)>,
+    pub meshes: Vec<(ResourceHandle<Mesh>, MaterialInstanceId)>,
     #[serde(skip)]
     pub materials: HashMap<MaterialInstanceId, Arc<MaterialInstance>>,
+    pub bounding_box: BoundingBox,
 }
 
 impl Model {
@@ -43,22 +45,14 @@ impl Model {
 impl Renderable for Arc<Model> {
     fn draw(
         &self,
-        ctx: &GfxContext,
+        _ctx: &GfxContext,
         resource_manager: &mut ResourceManager,
         pass: RenderPass,
         batch: &mut RenderBatch,
         transform: Option<Transform>,
-        lifetime: RenderableLifetime,
     ) {
         if let Some(transform) = transform {
-            batch.add_model(
-                ctx,
-                resource_manager,
-                self.clone(),
-                transform,
-                pass.clone(),
-                lifetime,
-            );
+            batch.add_model(resource_manager, self.clone(), transform, pass.clone());
         }
     }
 }
@@ -71,13 +65,7 @@ impl Debug for Model {
 
 impl Bounded for Model {
     fn boundings(&self) -> BoundingBox {
-        let mut bounding_box = BoundingBox::default();
-
-        for (mesh, _) in &self.meshes {
-            bounding_box.extends_box(mesh.boundings());
-        }
-
-        bounding_box
+        self.bounding_box
     }
 }
 
@@ -90,8 +78,9 @@ impl Drop for Model {
 pub struct ModelBuilder {
     pub name: String,
     pub id: ModelId,
-    pub meshes: Vec<(Arc<Mesh>, MaterialInstanceId)>,
+    pub meshes: Vec<(ResourceHandle<Mesh>, MaterialInstanceId)>,
     pub materials: HashMap<MaterialInstanceId, Arc<MaterialInstance>>,
+    pub bounding_box: BoundingBox,
 }
 
 impl ModelBuilder {
@@ -101,6 +90,7 @@ impl ModelBuilder {
             id: Uuid::new_v4(),
             meshes: Vec::new(),
             materials: HashMap::new(),
+            bounding_box: BoundingBox::default(),
         }
     }
 
@@ -112,17 +102,23 @@ impl ModelBuilder {
 
     pub fn mesh(
         mut self,
-        mesh: Arc<Mesh>,
+        mesh: Arc<MeshGeometry>,
         material_instance: Option<Arc<MaterialInstance>>,
+        resource_manager: &mut ResourceManager,
+        lifetime: ResourceLifetime,
     ) -> Self {
+        self.bounding_box.extends_box(mesh.boundings());
+
+        let handle = resource_manager.add(MeshProperties::with_geometry("mesh", mesh), lifetime);
+
         if let Some(material_instance) = material_instance {
-            self.meshes.push((mesh, material_instance.id));
+            self.meshes.push((handle, material_instance.id));
 
             if let Entry::Vacant(entry) = self.materials.entry(material_instance.id) {
                 entry.insert(material_instance);
             }
         } else {
-            self.meshes.push((mesh, MaterialInstanceId::nil()))
+            self.meshes.push((handle, MaterialInstanceId::nil()))
         }
 
         self
@@ -134,6 +130,7 @@ impl ModelBuilder {
             id: self.id,
             meshes: self.meshes,
             materials: self.materials,
+            bounding_box: self.bounding_box,
         })
     }
 }

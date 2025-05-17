@@ -38,7 +38,7 @@ unsafe extern "system" fn debug_cb(
 
         match message_severity {
             vk::DebugUtilsMessageSeverityFlagsEXT::WARNING => {
-                tracing::warn!(
+                tracing::warn!(target: "render",
                     "{:?} [{} ({})] : {}",
                     message_type,
                     message_id_name,
@@ -47,7 +47,7 @@ unsafe extern "system" fn debug_cb(
                 );
             }
             vk::DebugUtilsMessageSeverityFlagsEXT::INFO => {
-                tracing::info!(
+                tracing::info!(target: "render",
                     "{:?} [{} ({})] : {}",
                     message_type,
                     message_id_name,
@@ -56,7 +56,7 @@ unsafe extern "system" fn debug_cb(
                 );
             }
             vk::DebugUtilsMessageSeverityFlagsEXT::VERBOSE => {
-                tracing::debug!(
+                tracing::debug!(target: "render",
                     "{:?} [{} ({})] : {}",
                     message_type,
                     message_id_name,
@@ -65,7 +65,7 @@ unsafe extern "system" fn debug_cb(
                 );
             }
             _ => {
-                tracing::error!(
+                tracing::error!(target: "render",
                     "{:?} [{} ({})] : {}",
                     message_type,
                     message_id_name,
@@ -137,7 +137,7 @@ impl Instance {
         let entry = ash::Entry::linked();
 
         let instance: ash::Instance = unsafe {
-            tracing::info!("Create instance");
+            tracing::info!(target: "init", "Create instance");
 
             entry.create_instance(&instance_info, None)?
         };

@@ -132,14 +132,14 @@ impl WirePass {
         state: &mut RenderState,
         render_object: &RenderObject,
     ) {
-        tracing::trace!("Bind push constants");
+        tracing::trace!(target: "render", "Bind push constants");
 
         if let Some(push_layout) = render_object.pass.push_layout() {
             state.object_data.clear();
 
             let world_matrix = render_object.transform.matrix();
 
-            let material = render_object.mesh.material.clone().unwrap();
+            let material = render_object.material.clone().unwrap();
             let pipeline = material.pipeline();
 
             // TODO: hardcoded
@@ -278,7 +278,7 @@ impl RenderPass for WirePass {
         batch: &mut RenderBatch,
         draw_extent: ImageExtent2D,
     ) -> Result<(), RenderError> {
-        tracing::debug!("Draw wire");
+        tracing::debug!(target: "render", "Draw wire");
 
         let cmd = &frame.command;
 

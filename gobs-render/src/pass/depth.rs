@@ -90,9 +90,8 @@ impl DepthPass {
 
     fn should_render(&self, render_object: &RenderObject) -> bool {
         render_object.pass.id() == self.id
-            && render_object.mesh.material.is_some()
+            && render_object.material.is_some()
             && !render_object
-                .mesh
                 .material
                 .clone()
                 .unwrap()
@@ -139,14 +138,14 @@ impl DepthPass {
         state: &mut RenderState,
         render_object: &RenderObject,
     ) {
-        tracing::trace!("Bind push constants");
+        tracing::trace!(target: "render", "Bind push constants");
 
         if let Some(push_layout) = render_object.pass.push_layout() {
             state.object_data.clear();
 
             let world_matrix = render_object.transform.matrix();
 
-            let material = render_object.mesh.material.clone().unwrap();
+            let material = render_object.material.clone().unwrap();
             let pipeline = material.pipeline();
 
             // TODO: hardcoded
@@ -285,7 +284,7 @@ impl RenderPass for DepthPass {
         batch: &mut RenderBatch,
         draw_extent: ImageExtent2D,
     ) -> Result<(), RenderError> {
-        tracing::debug!("Draw depth");
+        tracing::debug!(target: "render", "Draw depth");
 
         let cmd = &frame.command;
 

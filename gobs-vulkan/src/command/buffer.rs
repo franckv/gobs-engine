@@ -492,7 +492,7 @@ impl CommandBuffer {
         dst: &Image,
         dst_size: ImageExtent2D,
     ) {
-        tracing::trace!(
+        tracing::trace!(target: "render",
             "Blitting image {}/{} to {}/{}",
             src_size.width,
             src_size.height,
@@ -570,7 +570,7 @@ impl CommandBuffer {
     }
 
     pub fn transition_image_layout(&self, image: &mut Image, dst_layout: ImageLayout) {
-        tracing::trace!(
+        tracing::trace!(target: "render",
             "Transition [{}] from {:?} to {:?}",
             &image.label,
             image.layout,
@@ -671,7 +671,7 @@ impl CommandBuffer {
     where
         F: Fn(&CommandBuffer),
     {
-        tracing::debug!("Submit immediate command");
+        tracing::debug!(target: "render", "Submit immediate command");
         self.fence.reset();
         assert!(!self.fence.signaled());
 
@@ -686,14 +686,14 @@ impl CommandBuffer {
         self.submit2(None, None);
 
         self.fence.wait();
-        tracing::debug!("Immediate command done");
+        tracing::debug!(target: "render", "Immediate command done");
     }
 
     pub fn immediate_mut<F>(&self, mut callback: F)
     where
         F: FnMut(&CommandBuffer),
     {
-        tracing::debug!("Submit immediate command");
+        tracing::debug!(target: "render", "Submit immediate command");
         self.fence.reset();
         assert!(!self.fence.signaled());
 
@@ -708,7 +708,7 @@ impl CommandBuffer {
         self.submit2(None, None);
 
         self.fence.wait();
-        tracing::debug!("Immediate command done");
+        tracing::debug!(target: "render", "Immediate command done");
     }
 }
 

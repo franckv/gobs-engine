@@ -9,12 +9,12 @@ use glam::{Vec2, Vec3};
 use gobs_core::{Color, ImageExtent2D, Input, Key, MouseButton, Transform};
 use gobs_render::{
     BlendMode, GfxContext, Material, MaterialInstance, MaterialProperty, Model, RenderBatch,
-    RenderPass, Renderable, RenderableLifetime, Texture, TextureProperties, TextureUpdate,
+    RenderPass, Renderable, Texture, TextureProperties, TextureUpdate,
 };
 use gobs_resource::{
-    geometry::{Mesh, VertexAttribute, VertexData},
+    geometry::{MeshGeometry, VertexAttribute, VertexData},
     manager::ResourceManager,
-    resource::ResourceHandle,
+    resource::{ResourceHandle, ResourceLifetime},
 };
 use parking_lot::RwLock;
 
@@ -63,7 +63,7 @@ impl UIRenderer {
         })
     }
 
-    #[tracing::instrument(target = "ui", skip_all, level = "debug")]
+    #[tracing::instrument(target = "ui", skip_all, level = "trace")]
     pub fn update<F>(
         &mut self,
         resource_manager: &mut ResourceManager,
@@ -219,12 +219,19 @@ impl UIRenderer {
         self.input.push(input);
     }
 
-    #[tracing::instrument(target = "ui", skip_all, level = "debug")]
+    #[tracing::instrument(target = "ui", skip_all, level = "trace")]
     fn update_textures(&mut self, resource_manager: &mut ResourceManager, output: &FullOutput) {
+        for (id, material) in self.font_texture.iter() {
+            tracing::debug!(target: "ui", "Font texture id={:?}, material={}", id, material.id);
+            for texture in &material.textures {
+                tracing::debug!(target: "ui", "  Using texture={:?}", texture.id);
+            }
+        }
+
         for (id, img) in &output.textures_delta.set {
-            tracing::debug!("New texture {:?}", id);
+            tracing::debug!(target: "ui", "New texture {:?}", id);
             if img.pos.is_some() {
-                tracing::debug!("Patching texture");
+                tracing::debug!(target: "ui", "Patching texture");
                 let texture = self.patch_texture(
                     resource_manager,
                     self.font_texture
@@ -238,24 +245,24 @@ impl UIRenderer {
 
                 *self.font_texture.get_mut(id).unwrap() = material;
             } else {
-                tracing::debug!("Allocate new texture");
+                tracing::debug!(target: "ui", "Allocate new texture");
                 let texture = self.decode_texture(resource_manager, img);
                 self.font_texture.insert(*id, texture);
-                tracing::debug!("Texture loaded");
+                tracing::trace!(target: "ui", "Texture loaded");
             }
         }
     }
 
-    #[tracing::instrument(target = "ui", skip_all, level = "debug")]
+    #[tracing::instrument(target = "ui", skip_all, level = "trace")]
     fn cleanup_textures(&mut self, output: &FullOutput) {
         for id in &output.textures_delta.free {
-            tracing::debug!("Remove texture {:?}", id);
+            tracing::debug!(target: "ui", "Remove texture {:?}", id);
 
             self.font_texture.remove(id);
         }
     }
 
-    #[tracing::instrument(target = "ui", skip_all, level = "debug")]
+    #[tracing::instrument(target = "ui", skip_all, level = "trace")]
     fn decode_texture(
         &self,
         resource_manager: &mut ResourceManager,
@@ -273,20 +280,20 @@ impl UIRenderer {
                     ImageExtent2D::new(img.image.width() as u32, img.image.height() as u32),
                 );
 
-                let handle = resource_manager.add::<Texture>(properties);
+                let handle = resource_manager.add(properties, ResourceLifetime::Static);
 
                 self.material.instantiate(vec![handle])
             }
         }
     }
 
-    #[tracing::instrument(target = "ui", skip_all, level = "debug")]
+    #[tracing::instrument(target = "ui", skip_all, level = "trace")]
     fn patch_texture(
         &self,
         resource_manager: &mut ResourceManager,
         material: Arc<MaterialInstance>,
         img: &ImageDelta,
-    ) -> ResourceHandle {
+    ) -> ResourceHandle<Texture> {
         match &img.image {
             egui::ImageData::Color(_) => todo!(),
             egui::ImageData::Font(font) => {
@@ -295,7 +302,7 @@ impl UIRenderer {
 
                 let pos = img.pos.expect("Can only patch texture with start position");
 
-                tracing::debug!(
+                tracing::trace!(target: "ui",
                     "Patching texture origin: {}/{}, size: {}/{}, len={}",
                     pos[0],
                     pos[1],
@@ -304,9 +311,9 @@ impl UIRenderer {
                     bytes.len()
                 );
 
-                let handle = resource_manager.clone::<Texture>(&material.textures[0]);
-                let texture = resource_manager.get_mut::<Texture>(&handle);
-                tracing::debug!(
+                let handle = resource_manager.replace(&material.textures[0]);
+                let texture = resource_manager.get_mut(&handle);
+                tracing::trace!(target: "ui",
                     "Patching texture original size: {:?}",
                     texture.properties.format.extent
                 );
@@ -322,13 +329,18 @@ impl UIRenderer {
         }
     }
 
-    #[tracing::instrument(target = "ui", skip_all, level = "debug")]
-    fn load_model(&self, ctx: &GfxContext, output: FullOutput) -> Option<Arc<Model>> {
-        tracing::debug!("Loading model");
+    #[tracing::instrument(target = "ui", skip_all, level = "trace")]
+    fn load_model(
+        &self,
+        ctx: &GfxContext,
+        resource_manager: &mut ResourceManager,
+        output: FullOutput,
+    ) -> Option<Arc<Model>> {
+        tracing::debug!(target: "ui", "Loading model");
 
         let primitives = self.ectx.tessellate(output.shapes, PIXEL_PER_POINT);
 
-        tracing::debug!("Load {} primitives", primitives.len());
+        tracing::debug!(target: "ui", "Load {} primitives", primitives.len());
 
         if primitives.is_empty() {
             return None;
@@ -338,13 +350,13 @@ impl UIRenderer {
 
         for primitive in &primitives {
             if let Primitive::Mesh(m) = &primitive.primitive {
-                tracing::debug!(
+                tracing::trace!(target: "ui",
                     "Primitive: {} vertices, {} indices",
                     m.vertices.len(),
                     m.indices.len()
                 );
 
-                let mut mesh = Mesh::builder("egui")
+                let mut mesh = MeshGeometry::builder("egui")
                     .indices(&m.indices)
                     .generate_tangents(false);
 
@@ -373,9 +385,11 @@ impl UIRenderer {
                 model = model.mesh(
                     mesh.build(),
                     Some(self.font_texture.get(&m.texture_id).cloned().unwrap()),
+                    resource_manager,
+                    ResourceLifetime::Transient,
                 );
             } else {
-                tracing::error!("Primitive unknown");
+                tracing::error!(target: "ui", "Primitive unknown");
             }
         }
 
@@ -389,7 +403,7 @@ impl UIRenderer {
 }
 
 impl Renderable for UIRenderer {
-    #[tracing::instrument(target = "ui", skip_all, level = "debug")]
+    #[tracing::instrument(target = "ui", skip_all, level = "trace")]
     fn draw(
         &self,
         ctx: &GfxContext,
@@ -397,7 +411,6 @@ impl Renderable for UIRenderer {
         pass: RenderPass,
         batch: &mut RenderBatch,
         transform: Option<Transform>,
-        lifetime: RenderableLifetime,
     ) {
         let output = self.output.write().take().unwrap();
 
@@ -406,15 +419,8 @@ impl Renderable for UIRenderer {
             None => Transform::IDENTITY,
         };
 
-        if let Some(model) = self.load_model(ctx, output) {
-            batch.add_model(
-                ctx,
-                resource_manager,
-                model,
-                transform,
-                pass.clone(),
-                lifetime,
-            );
+        if let Some(model) = self.load_model(ctx, resource_manager, output) {
+            batch.add_model(resource_manager, model, transform, pass.clone());
         }
 
         batch.add_extent_data(

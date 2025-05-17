@@ -126,7 +126,7 @@ impl RenderPass for ComputePass {
         batch: &mut RenderBatch,
         draw_extent: ImageExtent2D,
     ) -> Result<(), RenderError> {
-        tracing::debug!("Draw compute");
+        tracing::debug!(target: "render", "Draw compute");
 
         let cmd = &frame.command;
 

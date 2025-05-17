@@ -79,7 +79,7 @@ impl Display<VkRenderer> for VkDisplay {
 
     fn acquire(&mut self, frame: usize) -> Result<(), GfxError> {
         if let Some(swapchain) = &mut self.swapchain {
-            tracing::trace!("Acquire with semaphore {}", frame);
+            tracing::trace!(target: "render", "Acquire with semaphore {}", frame);
             let semaphore = &self.swapchain_semaphores[frame];
             let image_index = swapchain.acquire_image(semaphore)?;
 
@@ -160,8 +160,7 @@ impl VkDisplay {
 
         let caps = surface.get_capabilities(&device);
 
-        tracing::debug!(
-            target = "init",
+        tracing::debug!(target: "init",
             "image count: {}-{}",
             caps.min_image_count,
             caps.max_image_count
@@ -182,7 +181,7 @@ impl VkDisplay {
             })
             .unwrap();
 
-        tracing::info!("Swapchain format: {:?}", format);
+        tracing::debug!(target: "init", "Swapchain format: {:?}", format);
 
         vk::swapchain::SwapChain::new(
             device.clone(),

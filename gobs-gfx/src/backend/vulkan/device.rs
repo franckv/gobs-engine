@@ -80,7 +80,7 @@ impl Device<VkRenderer> for VkDevice {
         }))
     }
 
-    #[tracing::instrument(target = "gpu", skip_all, level = "debug")]
+    #[tracing::instrument(target = "gpu", skip_all, level = "trace")]
     fn run_transfer<F>(&self, callback: F)
     where
         F: Fn(&VkCommand),
@@ -101,7 +101,7 @@ impl Device<VkRenderer> for VkDevice {
         assert!(cmd.fence.signaled());
     }
 
-    #[tracing::instrument(target = "gpu", skip_all, level = "debug")]
+    #[tracing::instrument(target = "gpu", skip_all, level = "trace")]
     fn run_transfer_mut<F>(&self, mut callback: F)
     where
         F: FnMut(&VkCommand),
@@ -122,7 +122,7 @@ impl Device<VkRenderer> for VkDevice {
         assert!(cmd.fence.signaled());
     }
 
-    #[tracing::instrument(target = "gpu", skip_all, level = "debug")]
+    #[tracing::instrument(target = "gpu", skip_all, level = "trace")]
     fn run_immediate<F>(&self, callback: F)
     where
         F: Fn(&VkCommand),
@@ -147,7 +147,7 @@ impl Device<VkRenderer> for VkDevice {
     where
         F: FnMut(&VkCommand),
     {
-        tracing::debug!("Submit immediate command");
+        tracing::debug!(target: "render", "Submit immediate command");
         let cmd = &self.immediate_cmd.command;
 
         cmd.fence.reset();
@@ -165,7 +165,7 @@ impl Device<VkRenderer> for VkDevice {
 
         cmd.fence.wait();
 
-        tracing::debug!("Immediate command done");
+        tracing::debug!(target: "render", "Immediate command done");
     }
 
     fn wait(&self) {

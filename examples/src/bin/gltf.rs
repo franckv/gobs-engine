@@ -102,17 +102,17 @@ impl Run for App {
     }
 
     fn close(&mut self, ctx: &GameContext) {
-        tracing::info!("Closing");
+        tracing::info!(target: "app", "Closing");
 
         ctx.gfx.device.wait();
 
-        tracing::info!("Closed");
+        tracing::info!(target: "app", "Closed");
     }
 }
 
 impl App {
     fn init(&mut self, ctx: &mut GameContext) {
-        tracing::info!("Load scene 0");
+        tracing::info!(target: "app", "Load scene 0");
         let graph = self.load_scene(ctx);
         self.scene
             .graph
@@ -141,7 +141,7 @@ impl App {
 fn main() {
     examples::init_logger();
 
-    tracing::info!("Engine start");
+    tracing::info!(target: "app", "Engine start");
 
     Application::<App>::new("glTF", examples::WIDTH, examples::HEIGHT).run();
 }

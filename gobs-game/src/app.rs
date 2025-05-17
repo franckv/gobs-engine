@@ -45,7 +45,7 @@ where
         let validation_enabled = false;
 
         let mut context = GameContext::new(&self.title, Some(window), validation_enabled).unwrap();
-        tracing::info!("Start main loop");
+        tracing::info!(target: "events", "Start main loop");
 
         let future = async {
             let mut runnable = R::create(&context).await.unwrap();
@@ -69,17 +69,17 @@ where
     ) {
         if let Some(runnable) = &mut self.runnable {
             if let Some(context) = &mut self.context {
-                tracing::trace!("evt={:?}", event);
+                tracing::trace!(target: "events", "evt={:?}", event);
 
                 match event {
                     WindowEvent::CloseRequested => {
-                        tracing::info!("Stopping");
+                        tracing::info!(target: "events", "Stopping");
                         self.close_requested = true;
                         runnable.close(context);
                         event_loop.exit();
                     }
                     WindowEvent::Resized(physical_size) => {
-                        tracing::debug!(
+                        tracing::trace!(target: "events",
                             "Resize to : {}/{}",
                             physical_size.width,
                             physical_size.height
@@ -96,7 +96,7 @@ where
                         ..
                     } => match key_code {
                         keyboard::Key::Named(NamedKey::Escape) => {
-                            tracing::info!("Stopping");
+                            tracing::info!(target: "events", "Stopping");
                             self.close_requested = true;
                             runnable.close(context);
                             event_loop.exit();
@@ -137,8 +137,9 @@ where
                         let delta = self.timer.delta();
 
                         if !self.close_requested {
+                            context.update();
                             runnable.update(context, delta);
-                            tracing::trace!("[Redraw] FPS: {}", 1. / delta);
+                            tracing::trace!(target: "events", "[Redraw] FPS: {}", 1. / delta);
                             if !context.gfx.display.is_minimized() {
                                 if self.is_minimized {
                                     self.is_minimized = false;
@@ -147,7 +148,7 @@ where
                                 match runnable.render(context) {
                                     Ok(_) => {}
                                     Err(RenderError::Lost | RenderError::Outdated) => {}
-                                    Err(e) => tracing::error!("{:?}", e),
+                                    Err(e) => tracing::error!(target: "events", "{:?}", e),
                                 }
                             } else {
                                 self.is_minimized = true;
@@ -168,7 +169,7 @@ where
     ) {
         if let Some(runnable) = &mut self.runnable {
             if let Some(context) = &mut self.context {
-                tracing::trace!("evt={:?}", event);
+                tracing::trace!(target: "events", "evt={:?}", event);
 
                 if let DeviceEvent::MouseMotion { delta } = event {
                     runnable.input(context, Input::MouseMotion(delta.0, delta.1))

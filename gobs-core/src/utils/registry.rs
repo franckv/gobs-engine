@@ -1,21 +1,37 @@
 use std::{
     any::{Any, TypeId},
     collections::{HashMap, hash_map::Entry},
+    fmt::Debug,
+    hash::Hash,
 };
 
-use uuid::Uuid;
-
-type Key = Uuid;
-
-pub struct ObjectRegistry {
+pub struct ObjectRegistry<Key: Hash + Eq + Debug> {
     registry: HashMap<TypeId, HashMap<Key, Box<dyn Any>>>,
 }
 
-impl ObjectRegistry {
+impl<Key: Hash + Eq + Debug> ObjectRegistry<Key> {
     pub fn new() -> Self {
         Self {
             registry: HashMap::new(),
         }
+    }
+
+    pub fn keys<T: Any>(&self) -> impl Iterator<Item = &Key> {
+        self.registry
+            .get(&TypeId::of::<T>())
+            .into_iter()
+            .flat_map(|entries| entries.keys())
+    }
+
+    pub fn values_mut<T: Any>(&mut self) -> impl Iterator<Item = &mut T> {
+        self.registry
+            .get_mut(&TypeId::of::<T>())
+            .into_iter()
+            .flat_map(|entries| {
+                entries
+                    .values_mut()
+                    .flat_map(|entry| entry.downcast_mut::<T>())
+            })
     }
 
     pub fn insert<T: Any>(&mut self, key: Key, value: T) -> Option<T> {
@@ -35,6 +51,15 @@ impl ObjectRegistry {
         Some(*old_value)
     }
 
+    pub fn remove<T: Any>(&mut self, key: &Key) -> Option<T> {
+        if let Entry::Occupied(mut e) = self.registry.entry(TypeId::of::<T>()) {
+            Some(*(e.get_mut().remove(key)?.downcast::<T>().ok()?))
+        } else {
+            tracing::warn!(target: "core-utils", "Missing entry: {:?}", key);
+            None
+        }
+    }
+
     pub fn get<T: Any>(&self, key: &Key) -> Option<&T> {
         self.registry
             .get(&TypeId::of::<T>())?
@@ -50,7 +75,7 @@ impl ObjectRegistry {
     }
 }
 
-impl Default for ObjectRegistry {
+impl<Key: Hash + Eq + Debug> Default for ObjectRegistry<Key> {
     fn default() -> Self {
         Self::new()
     }
@@ -58,6 +83,8 @@ impl Default for ObjectRegistry {
 
 #[cfg(test)]
 mod test {
+    use uuid::Uuid;
+
     use super::*;
 
     #[test]

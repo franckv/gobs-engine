@@ -40,7 +40,7 @@ pub fn get_asset_dir(file_name: &str, ty: AssetType) -> Result<PathBuf, LoadingE
 pub async fn load_string(file_name: &str, ty: AssetType) -> Result<String, LoadingError> {
     let path = get_asset_dir(file_name, ty)?;
 
-    tracing::debug!("Loading string: {:?}", path);
+    tracing::debug!(target: "resources", "Loading string: {:?}", path);
 
     let txt = std::fs::read_to_string(path)?;
 
@@ -50,7 +50,7 @@ pub async fn load_string(file_name: &str, ty: AssetType) -> Result<String, Loadi
 pub async fn load_binary(file_name: &str, ty: AssetType) -> Result<Vec<u8>, LoadingError> {
     let path = get_asset_dir(file_name, ty)?;
 
-    tracing::info!("Loading bin: {:?}", path);
+    tracing::debug!(target: "resources", "Loading bin: {:?}", path);
 
     let data = std::fs::read(path)?;
 

@@ -21,7 +21,7 @@ impl Context {
             .find_adapter(&expected_features, None)
             .expect("Find suitable adapter");
 
-        tracing::info!("Using adapter {}", physical_device.name);
+        tracing::info!(target: "render", "Using adapter {}", physical_device.name);
 
         let device =
             Device::new(instance.clone(), physical_device, None).expect("Failed to init Device");

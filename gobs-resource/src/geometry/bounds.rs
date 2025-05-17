@@ -1,7 +1,9 @@
 use glam::{Vec3, Vec4};
+use serde::Serialize;
+
 use gobs_core::Transform;
 
-#[derive(Clone, Copy, Debug, Default)]
+#[derive(Clone, Copy, Debug, Default, Serialize)]
 pub struct BoundingBox {
     pub x_min: f32,
     pub x_max: f32,

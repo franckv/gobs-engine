@@ -1,15 +1,15 @@
 use std::sync::Arc;
 
+use uuid::Uuid;
+
 use gobs_gfx::{
     BindingGroupType, BlendMode, CompareOp, CullMode, DescriptorStage, DescriptorType,
     DynamicStateElem, FrontFace, GfxGraphicsPipelineBuilder, GfxPipeline, GraphicsPipelineBuilder,
     Pipeline, Rect2D, Viewport,
 };
-use uuid::Uuid;
-
 use gobs_resource::{geometry::VertexAttribute, resource::ResourceHandle};
 
-use crate::{GfxContext, RenderError, RenderPass, materials::MaterialInstance};
+use crate::{GfxContext, RenderError, RenderPass, Texture, materials::MaterialInstance};
 
 pub type MaterialId = Uuid;
 
@@ -29,7 +29,10 @@ impl Material {
         MaterialBuilder::new(ctx, vertex_shader, fragment_shader)
     }
 
-    pub fn instantiate(self: &Arc<Self>, textures: Vec<ResourceHandle>) -> Arc<MaterialInstance> {
+    pub fn instantiate(
+        self: &Arc<Self>,
+        textures: Vec<ResourceHandle<Texture>>,
+    ) -> Arc<MaterialInstance> {
         MaterialInstance::new(self.clone(), textures)
     }
 }

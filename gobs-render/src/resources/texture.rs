@@ -5,8 +5,9 @@ use gobs_gfx::{
 };
 use gobs_resource::resource::{Resource, ResourceHandle, ResourceType};
 
-use super::TextureLoader;
+use crate::resources::TextureLoader;
 
+#[derive(Clone, Copy, Debug)]
 pub struct Texture;
 
 impl ResourceType for Texture {
@@ -132,7 +133,7 @@ pub trait TextureUpdate {
         width: u32,
         height: u32,
         data: &[u8],
-    ) -> ResourceHandle;
+    ) -> ResourceHandle<Texture>;
 }
 
 impl TextureUpdate for Resource<Texture> {
@@ -143,7 +144,7 @@ impl TextureUpdate for Resource<Texture> {
         width: u32,
         height: u32,
         data: &[u8],
-    ) -> ResourceHandle {
+    ) -> ResourceHandle<Texture> {
         if let TexturePath::Bytes(old_data) = &self.properties.path {
             let extent = self.properties.format.extent;
 
@@ -165,10 +166,10 @@ impl TextureUpdate for Resource<Texture> {
 
             self.properties.path = TexturePath::Bytes(new_data);
         } else {
-            tracing::error!("Cannot patch resource: self.source");
+            tracing::error!(target: "resources", "Cannot patch resource: self.source");
         }
 
-        self.id
+        self.handle
     }
 }
 
@@ -180,7 +181,7 @@ pub struct TextureData {
 
 impl TextureData {
     pub(crate) fn new(device: &GfxDevice, name: &str, format: &TextureFormat, data: &[u8]) -> Self {
-        tracing::debug!("Texture properties: {:?}", format);
+        tracing::trace!(target: "resources", "Texture properties: {:?}", format);
 
         let image_format = format.ty.into();
         let mut image = GfxImage::new(

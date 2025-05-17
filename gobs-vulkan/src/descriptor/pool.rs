@@ -41,7 +41,7 @@ impl DescriptorSetPool {
         descriptor_layout: Arc<DescriptorSetLayout>,
         max_sets: usize,
     ) -> vk::DescriptorPool {
-        tracing::debug!("Alloc new pool (size={})", max_sets);
+        tracing::debug!(target: "memory", "Alloc new pool (size={})", max_sets);
 
         let pool_size: Vec<vk::DescriptorPoolSize> = descriptor_layout
             .bindings
@@ -65,7 +65,7 @@ impl DescriptorSetPool {
     }
 
     fn grow(&mut self) {
-        tracing::debug!("Growing descriptor pool");
+        tracing::debug!(target: "memory", "Growing descriptor pool");
 
         self.full_pools.push(self.current_pool);
 
@@ -80,7 +80,7 @@ impl DescriptorSetPool {
     }
 
     pub fn reset(&mut self) {
-        tracing::debug!("Reset all descriptor pool");
+        tracing::debug!(target: "memory", "Reset all descriptor pool");
         Self::reset_pool(self.device.clone(), self.current_pool);
 
         for pool in self.full_pools.drain(..) {
@@ -90,7 +90,7 @@ impl DescriptorSetPool {
     }
 
     fn reset_pool(device: Arc<Device>, pool: vk::DescriptorPool) {
-        tracing::debug!("Reset descriptor pool");
+        tracing::debug!(target: "memory", "Reset descriptor pool");
         unsafe {
             device
                 .raw()
@@ -100,7 +100,7 @@ impl DescriptorSetPool {
     }
 
     fn destroy_pool(device: Arc<Device>, pool: vk::DescriptorPool) {
-        tracing::debug!("Destroy descriptor pool");
+        tracing::debug!(target: "memory", "Destroy descriptor pool");
         unsafe {
             device.raw().destroy_descriptor_pool(pool, None);
         }
@@ -117,7 +117,7 @@ impl DescriptorSetPool {
     }
 
     pub fn allocate(&mut self) -> DescriptorSet {
-        tracing::debug!("Allocate descriptor set");
+        tracing::debug!(target: "memory", "Allocate descriptor set");
         let results = self.allocate_ds();
 
         let results = match results {

@@ -79,7 +79,7 @@ impl RenderPass for PresentPass {
         _batch: &mut RenderBatch,
         draw_extent: ImageExtent2D,
     ) -> Result<(), RenderError> {
-        tracing::debug!("Present");
+        tracing::debug!(target: "render", "Present");
 
         let cmd = &frame.command;
 

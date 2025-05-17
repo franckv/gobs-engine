@@ -195,7 +195,7 @@ mod tests {
     }
 
     fn check_dir(yaw: f32, pitch: f32, expected: Vec3) {
-        tracing::debug!("yaw={:?}, pitch={:?}, dir={:?}", yaw, pitch, expected);
+        tracing::debug!(target: "resources", "yaw={:?}, pitch={:?}, dir={:?}", yaw, pitch, expected);
 
         let camera = Camera::ortho(
             320_f32,

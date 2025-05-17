@@ -18,13 +18,13 @@ pub use batch::RenderBatch;
 pub use context::GfxContext;
 pub use error::RenderError;
 pub use graph::FrameGraph;
-pub use manager::GPUMesh;
 pub use materials::{Material, MaterialInstance, MaterialProperty};
 pub use model::{Model, ModelId};
 pub use pass::PassType;
 pub use renderable::{Renderable, RenderableLifetime};
 pub use resources::{
-    Texture, TextureData, TextureLoader, TexturePath, TextureProperties, TextureType, TextureUpdate,
+    Mesh, MeshData, MeshLoader, Texture, TextureData, TextureLoader, TexturePath,
+    TextureProperties, TextureType, TextureUpdate,
 };
 
 pub type RenderPass = Arc<dyn pass::RenderPass>;

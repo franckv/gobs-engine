@@ -1,7 +1,7 @@
 use glam::Vec3;
 
 use gobs_core::Transform;
-use gobs_render::{GfxContext, RenderBatch, RenderPass, Renderable, RenderableLifetime};
+use gobs_render::{GfxContext, RenderBatch, RenderPass, Renderable};
 use gobs_resource::entity::{camera::Camera, light::Light};
 use gobs_resource::manager::ResourceManager;
 
@@ -102,7 +102,6 @@ impl Scene {
                     node.bounding.bounding_box,
                     node.global_transform(),
                     pass.clone(),
-                    RenderableLifetime::Transient,
                 );
             }
         });
@@ -127,7 +126,6 @@ impl Renderable for Scene {
         pass: RenderPass,
         batch: &mut RenderBatch,
         _transform: Option<Transform>,
-        lifetime: RenderableLifetime,
     ) {
         self.graph.visit(self.graph.root, &mut |node| {
             if let NodeValue::Model(model) = &node.base.value {
@@ -137,7 +135,6 @@ impl Renderable for Scene {
                     pass.clone(),
                     batch,
                     Some(node.global_transform()),
-                    lifetime,
                 );
             }
         });

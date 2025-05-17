@@ -42,7 +42,7 @@ impl Allocator {
         label: &str,
     ) -> Memory {
         let mem_req = unsafe { self.device.raw().get_buffer_memory_requirements(buffer) };
-        tracing::debug!("Allocating buffer {}: {:?}", label, mem_req);
+        tracing::debug!(target: "memory", "Allocating buffer {}: {:?}", label, mem_req);
 
         let allocation = self
             .allocator
@@ -58,7 +58,7 @@ impl Allocator {
             .unwrap();
 
         unsafe {
-            tracing::debug!(
+            tracing::debug!(target: "memory",
                 "Binding memory {:x} with buffer {}",
                 allocation.memory().as_raw(),
                 label
@@ -79,7 +79,7 @@ impl Allocator {
 
     pub fn allocate_image(self: Arc<Self>, image: vk::Image, label: &str) -> Memory {
         let mem_req = unsafe { self.device.raw().get_image_memory_requirements(image) };
-        tracing::debug!("Allocating image {}: {:?}", label, mem_req);
+        tracing::debug!(target: "memory", "Allocating image {}: {:?}", label, mem_req);
 
         let allocation = self
             .allocator
@@ -95,7 +95,7 @@ impl Allocator {
             .unwrap();
 
         unsafe {
-            tracing::debug!(
+            tracing::debug!(target: "memory",
                 "Binding memory {:x} with image {}",
                 allocation.memory().as_raw(),
                 label

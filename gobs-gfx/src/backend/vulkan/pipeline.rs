@@ -205,7 +205,7 @@ impl GraphicsPipelineBuilder<VkRenderer> for VkGraphicsPipelineBuilder {
     }
 
     fn build(mut self) -> Arc<VkPipeline> {
-        tracing::debug!("Creating pipeline: {}", self.name);
+        tracing::debug!(target: "render", "Creating pipeline: {}", self.name);
 
         self = self.save_binding_group();
 

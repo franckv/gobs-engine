@@ -78,7 +78,7 @@ impl RenderPass for DummyPass {
         _batch: &mut RenderBatch,
         _draw_extent: ImageExtent2D,
     ) -> Result<(), RenderError> {
-        tracing::debug!("Rendering {}", &self.name);
+        tracing::debug!(target: "render", "Rendering {}", &self.name);
         Ok(())
     }
 

@@ -14,6 +14,10 @@ impl AnyMap {
         }
     }
 
+    pub fn values(&self) -> impl Iterator<Item = &Box<dyn Any>> {
+        self.map.values()
+    }
+
     pub fn insert<T: Any>(&mut self, value: T) -> Option<T> {
         match self.map.entry(TypeId::of::<T>()) {
             Entry::Occupied(mut e) => {

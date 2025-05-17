@@ -4,17 +4,14 @@ use std::sync::Arc;
 use gobs_core::{ImageExtent2D, Transform};
 use gobs_resource::{
     entity::{camera::Camera, light::Light, uniform::UniformPropData},
-    geometry::BoundingBox,
+    geometry::{BoundingBox, Shapes},
     manager::ResourceManager,
+    resource::ResourceLifetime,
 };
 
 use crate::{
-    GfxContext, RenderPass,
-    manager::MeshResourceManager,
-    model::Model,
-    pass::PassId,
-    renderable::{RenderObject, RenderableLifetime},
-    stats::RenderStats,
+    GfxContext, RenderPass, manager::MeshResourceManager, model::Model, pass::PassId,
+    renderable::RenderObject, stats::RenderStats,
 };
 
 pub struct RenderBatch {
@@ -25,12 +22,12 @@ pub struct RenderBatch {
 }
 
 impl RenderBatch {
-    pub fn new(ctx: &GfxContext) -> Self {
+    pub fn new() -> Self {
         Self {
             render_list: Vec::new(),
             scene_data: HashMap::new(),
             render_stats: RenderStats::default(),
-            mesh_resource_manager: MeshResourceManager::new(ctx),
+            mesh_resource_manager: MeshResourceManager::new(),
         }
     }
 
@@ -41,38 +38,40 @@ impl RenderBatch {
         self.mesh_resource_manager.new_frame(ctx);
     }
 
-    #[tracing::instrument(target = "render", skip_all, level = "debug")]
+    #[tracing::instrument(target = "render", skip_all, level = "trace")]
     pub fn add_model(
         &mut self,
-        ctx: &GfxContext,
         resource_manager: &mut ResourceManager,
         model: Arc<Model>,
         transform: Transform,
         pass: RenderPass,
-        lifetime: RenderableLifetime,
     ) {
-        tracing::debug!("Add model: {}", model.meshes.len());
+        tracing::debug!(target: "render", "Add model: {}", model.meshes.len());
 
-        let mesh_data = self.mesh_resource_manager.add_object(
-            ctx,
-            resource_manager,
-            model,
-            pass.clone(),
-            lifetime,
-        );
+        for (mesh, material_id) in &model.meshes {
+            let material = model.materials.get(material_id).cloned();
+            let material_binding = self
+                .mesh_resource_manager
+                .load_material(resource_manager, material.clone());
 
-        for mesh in mesh_data {
-            tracing::debug!("Add {} indices", mesh.indices_len);
-
-            let render_object = RenderObject {
-                transform,
-                pass: pass.clone(),
-                mesh: mesh.clone(),
+            let vertex_attributes = match pass.vertex_attributes() {
+                Some(vertex_attributes) => vertex_attributes,
+                None => model.materials[material_id].vertex_attributes(),
             };
 
-            self.render_stats.add_object(&render_object);
-            self.render_list.push(render_object);
+            let mesh_data = resource_manager.get_data(mesh, vertex_attributes);
+
+            self.render_list.push(RenderObject {
+                model_id: model.id,
+                transform,
+                pass: pass.clone(),
+                mesh: mesh_data.clone(),
+                material,
+                material_binding,
+            });
         }
+
+        // self.render_stats.add_object(&render_object);
     }
 
     pub fn add_bounds(
@@ -82,26 +81,14 @@ impl RenderBatch {
         bounding_box: BoundingBox,
         transform: Transform,
         pass: RenderPass,
-        lifetime: RenderableLifetime,
     ) {
-        let mesh_data = self.mesh_resource_manager.add_bounding_box(
-            ctx,
-            resource_manager,
-            bounding_box,
-            pass.clone(),
-            lifetime,
-        );
+        let mesh = Shapes::bounding_box(bounding_box, ctx.vertex_padding);
 
-        for mesh in mesh_data {
-            let render_object = RenderObject {
-                transform,
-                pass: pass.clone(),
-                mesh: mesh.clone(),
-            };
+        let model = Model::builder("box")
+            .mesh(mesh, None, resource_manager, ResourceLifetime::Transient)
+            .build();
 
-            self.render_stats.add_object(&render_object);
-            self.render_list.push(render_object);
-        }
+        self.add_model(resource_manager, model, transform, pass);
     }
 
     pub fn add_camera_data(
@@ -137,15 +124,21 @@ impl RenderBatch {
 
     fn sort(&mut self) {
         self.render_list.sort_by(|a, b| {
-            // sort order: pass, transparent, material: model
+            // sort order: pass, transparent, material, model
             (a.pass.id().cmp(&b.pass.id()))
                 .then(a.is_transparent().cmp(&b.is_transparent()))
                 .then(a.material_id().cmp(&b.material_id()))
-                .then(a.mesh.model.id.cmp(&b.mesh.model.id))
+                .then(a.model_id.cmp(&b.model_id))
         });
     }
 
     pub fn finish(&mut self) {
         self.sort();
+    }
+}
+
+impl Default for RenderBatch {
+    fn default() -> Self {
+        Self::new()
     }
 }

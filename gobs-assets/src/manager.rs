@@ -5,19 +5,22 @@ use gobs_render::{
     TextureProperties,
 };
 use gobs_resource::{
-    geometry::VertexAttribute, manager::ResourceManager, resource::ResourceHandle,
+    geometry::VertexAttribute,
+    manager::ResourceManager,
+    resource::{ResourceHandle, ResourceLifetime},
 };
 
 use crate::AssetError;
 
 pub struct TextureManager {
-    pub textures: Vec<ResourceHandle>,
-    pub default_texture: ResourceHandle,
+    pub textures: Vec<ResourceHandle<Texture>>,
+    pub default_texture: ResourceHandle<Texture>,
 }
 
 impl TextureManager {
     pub fn new(resource_manager: &mut ResourceManager) -> Self {
-        let default_texture = resource_manager.add::<Texture>(TextureProperties::default());
+        let default_texture =
+            resource_manager.add(TextureProperties::default(), ResourceLifetime::Static);
 
         TextureManager {
             textures: vec![],
@@ -25,7 +28,7 @@ impl TextureManager {
         }
     }
 
-    pub fn add(&mut self, texture: ResourceHandle) {
+    pub fn add(&mut self, texture: ResourceHandle<Texture>) {
         self.textures.push(texture);
     }
 
@@ -113,13 +116,13 @@ impl MaterialManager {
         let default_material_instance = texture
             .clone()
             .instantiate(vec![texture_manager.default_texture]);
-        tracing::debug!("Default material id: {}", default_material_instance.id);
+        tracing::debug!(target: "resources", "Default material id: {}", default_material_instance.id);
 
         let color_instance = color.instantiate(vec![]);
-        tracing::debug!("Color material id: {}", color_instance.id);
+        tracing::debug!(target: "resources", "Color material id: {}", color_instance.id);
 
         let transparent_color_instance = transparent_color.instantiate(vec![]);
-        tracing::debug!("Color material id: {}", transparent_color_instance.id);
+        tracing::debug!(target: "resources", "Color material id: {}", transparent_color_instance.id);
 
         Ok(MaterialManager {
             texture_manager,
@@ -134,7 +137,7 @@ impl MaterialManager {
         })
     }
 
-    pub fn add_texture(&mut self, texture: ResourceHandle) {
+    pub fn add_texture(&mut self, texture: ResourceHandle<Texture>) {
         self.texture_manager.add(texture);
     }
 

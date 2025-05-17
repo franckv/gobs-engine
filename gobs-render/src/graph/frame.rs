@@ -65,7 +65,7 @@ impl FrameGraph {
             render_scaling: 1.,
             passes: Vec::new(),
             resource_manager: GraphResourceManager::new(),
-            batch: RenderBatch::new(ctx),
+            batch: RenderBatch::new(),
         }
     }
 
@@ -246,10 +246,11 @@ impl FrameGraph {
     }
 
     pub fn begin(&mut self, ctx: &mut GfxContext) -> Result<(), RenderError> {
-        tracing::debug!("Begin new frame");
-
         self.frame_number += 1;
         let frame_id = self.frame_number % ctx.frames_in_flight;
+
+        tracing::info!(target: "render", "Begin new frame: {} ({}/{})", self.frame_number, frame_id, ctx.frames_in_flight);
+
         let frame = &mut self.frames[frame_id];
         frame.reset();
 
@@ -278,7 +279,7 @@ impl FrameGraph {
             (draw_image_extent.height as f32 * self.render_scaling) as u32,
         );
 
-        tracing::trace!("Draw extent {:?}", self.draw_extent);
+        tracing::trace!(target: "render", "Draw extent {:?}", self.draw_extent);
 
         if ctx.display.acquire(frame_id).is_err() {
             return Err(RenderError::Outdated);
@@ -297,7 +298,7 @@ impl FrameGraph {
     }
 
     pub fn end(&mut self, ctx: &mut GfxContext) -> Result<(), RenderError> {
-        tracing::debug!("End frame");
+        tracing::debug!(target: "render", "End frame");
 
         let frame_id = self.frame_number % ctx.frames_in_flight;
         let frame = &self.frames[frame_id];
@@ -335,7 +336,7 @@ impl FrameGraph {
         ctx: &GfxContext,
         draw_cmd: &mut dyn FnMut(RenderPass, &mut RenderBatch),
     ) {
-        tracing::debug!("Begin render batch");
+        tracing::debug!(target: "render", "Begin render batch");
 
         let mut timer = Timer::new();
 
@@ -354,7 +355,7 @@ impl FrameGraph {
     }
 
     pub fn render(&mut self, ctx: &mut GfxContext) -> Result<(), RenderError> {
-        tracing::debug!("Begin rendering");
+        tracing::debug!(target: "render", "Begin rendering");
 
         let frame_id = self.frame_number % ctx.frames_in_flight;
 
@@ -367,7 +368,7 @@ impl FrameGraph {
         let frame = &self.frames[frame_id];
 
         for pass in &self.passes {
-            tracing::debug!("Enter render pass: {}", pass.name());
+            tracing::debug!(target: "render", "Enter render pass: {}", pass.name());
             pass.render(
                 ctx,
                 frame,
@@ -381,7 +382,7 @@ impl FrameGraph {
                 .cpu_draw_time_add(timer.delta(), pass.id(), should_update);
         }
 
-        tracing::debug!("End rendering");
+        tracing::debug!(target: "render", "End rendering");
 
         Ok(())
     }

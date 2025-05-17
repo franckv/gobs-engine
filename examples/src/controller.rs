@@ -93,13 +93,13 @@ impl CameraController {
         let amount = if pressed { 2. } else { 0. };
 
         match key {
-            Key::Z | Key::Up => {
+            Key::W | Key::Up => {
                 self.amount_forward = amount;
             }
             Key::S | Key::Down => {
                 self.amount_backward = amount;
             }
-            Key::Q | Key::Left => {
+            Key::A | Key::Left => {
                 self.amount_left = amount;
             }
             Key::D | Key::Right => {

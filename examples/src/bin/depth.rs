@@ -12,6 +12,7 @@ use gobs::{
     resource::{
         entity::{camera::Camera, light::Light},
         geometry::Shapes,
+        resource::ResourceLifetime,
     },
     scene::{components::NodeValue, scene::Scene},
     ui::UIRenderer,
@@ -118,16 +119,16 @@ impl Run for App {
     }
 
     fn close(&mut self, ctx: &GameContext) {
-        tracing::info!("Closing");
+        tracing::info!(target: "app", "Closing");
 
         ctx.gfx.device.wait();
 
-        tracing::info!("Closed");
+        tracing::info!(target: "app", "Closed");
     }
 }
 
 impl App {
-    async fn init(&mut self, ctx: &GameContext) {
+    async fn init(&mut self, ctx: &mut GameContext) {
         let material = self.common.depth_material(&ctx.gfx, &self.graph);
 
         let material_instance =
@@ -138,6 +139,8 @@ impl App {
             .mesh(
                 Shapes::cubemap(1, 1, &[1], 1., ctx.gfx.vertex_padding),
                 Some(material_instance),
+                &mut ctx.resource_manager,
+                ResourceLifetime::Static,
             )
             .build();
 
@@ -150,7 +153,7 @@ impl App {
 fn main() {
     examples::init_logger();
 
-    tracing::info!("Engine start");
+    tracing::info!(target: "app", "Engine start");
 
     Application::<App>::new("Depth test", examples::WIDTH, examples::HEIGHT).run();
 }

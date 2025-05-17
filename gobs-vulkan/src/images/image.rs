@@ -246,7 +246,7 @@ impl Drop for Image {
         unsafe {
             self.device.raw().destroy_image_view(self.image_view, None);
             if self.memory.is_some() {
-                tracing::debug!("Destroy image {}", self.label);
+                tracing::debug!(target: "memory", "Destroy image {}", self.label);
                 self.device.raw().destroy_image(self.image, None);
             }
         }

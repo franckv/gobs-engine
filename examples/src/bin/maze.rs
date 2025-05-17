@@ -8,11 +8,12 @@ use gobs::{
         context::GameContext,
     },
     gfx::Device,
-    render::{FrameGraph, Model, PassType, RenderError, Texture, TextureProperties, TextureType},
+    render::{FrameGraph, Model, PassType, RenderError, TextureProperties, TextureType},
     resource::{
         entity::{camera::Camera, light::Light},
         geometry::Shapes,
         load,
+        resource::ResourceLifetime,
     },
     scene::{components::NodeValue, scene::Scene},
     ui::UIRenderer,
@@ -114,11 +115,11 @@ impl Run for App {
     }
 
     fn close(&mut self, ctx: &GameContext) {
-        tracing::info!("Closing");
+        tracing::info!(target: "app", "Closing");
 
         ctx.gfx.device.wait();
 
-        tracing::info!("Closed");
+        tracing::info!(target: "app", "Closed");
     }
 }
 
@@ -128,18 +129,22 @@ impl App {
     }
 
     async fn load_scene(&mut self, ctx: &mut GameContext) {
-        tracing::info!("Load scene");
+        tracing::info!(target: "app", "Load scene");
 
         let material = self.common.normal_mapping_material(&ctx.gfx, &self.graph);
 
         let properties =
             TextureProperties::with_atlas("Atlas Diffuse", examples::ATLAS, examples::ATLAS_COLS);
-        let diffuse_texture = ctx.resource_manager.add::<Texture>(properties);
+        let diffuse_texture = ctx
+            .resource_manager
+            .add(properties, ResourceLifetime::Static);
 
         let mut properties =
             TextureProperties::with_atlas("Atlas Normal", examples::ATLAS_N, examples::ATLAS_COLS);
         properties.format.ty = TextureType::Normal;
-        let normal_texture = ctx.resource_manager.add::<Texture>(properties);
+        let normal_texture = ctx
+            .resource_manager
+            .add(properties, ResourceLifetime::Static);
 
         let material_instance = material.instantiate(vec![diffuse_texture, normal_texture]);
 
@@ -153,6 +158,8 @@ impl App {
                     ctx.gfx.vertex_padding,
                 ),
                 Some(material_instance.clone()),
+                &mut ctx.resource_manager,
+                ResourceLifetime::Static,
             )
             .build();
 
@@ -166,6 +173,8 @@ impl App {
                     ctx.gfx.vertex_padding,
                 ),
                 Some(material_instance.clone()),
+                &mut ctx.resource_manager,
+                ResourceLifetime::Static,
             )
             .build();
 
@@ -251,7 +260,7 @@ impl App {
 fn main() {
     examples::init_logger();
 
-    tracing::info!("Engine start");
+    tracing::info!(target: "app", "Engine start");
 
     Application::<App>::new("Maze", examples::WIDTH, examples::HEIGHT).run();
 }

@@ -68,7 +68,7 @@ impl UiPass {
     }
 
     fn should_render(&self, render_object: &RenderObject) -> bool {
-        render_object.pass.id() == self.id && render_object.mesh.material.is_some()
+        render_object.pass.id() == self.id && render_object.material.is_some()
     }
 
     fn bind_pipeline(
@@ -78,11 +78,11 @@ impl UiPass {
         state: &mut RenderState,
         render_object: &RenderObject,
     ) {
-        let material = render_object.mesh.material.clone().unwrap();
+        let material = render_object.material.clone().unwrap();
         let pipeline = material.pipeline();
 
         if state.last_pipeline != pipeline.id() {
-            tracing::trace!("Bind pipeline {}", pipeline.id());
+            tracing::trace!(target: "render", "Bind pipeline {}", pipeline.id());
 
             cmd.bind_pipeline(&pipeline);
             stats.bind(self.id);
@@ -98,11 +98,11 @@ impl UiPass {
         state: &mut RenderState,
         render_object: &RenderObject,
     ) {
-        if let Some(material) = &render_object.mesh.material {
+        if let Some(material) = &render_object.material {
             if state.last_material != material.id {
-                if let Some(material_binding) = &render_object.mesh.material_binding {
-                    tracing::trace!("Bind material {}", material.id);
-                    tracing::trace!("Transparent: {}", material.material.blending_enabled);
+                if let Some(material_binding) = &render_object.material_binding {
+                    tracing::trace!(target: "render", "Bind material {}", material.id);
+                    tracing::trace!(target: "render", "Transparent: {}", material.material.blending_enabled);
                     cmd.bind_resource(material_binding);
                     stats.bind(self.id);
                 }
@@ -121,7 +121,7 @@ impl UiPass {
         render_object: &RenderObject,
     ) {
         if !state.scene_data_bound {
-            let material = render_object.mesh.material.clone().unwrap();
+            let material = render_object.material.clone().unwrap();
             let pipeline = material.pipeline();
             let uniform_buffer = frame.uniform_buffer.read();
 
@@ -139,12 +139,12 @@ impl UiPass {
         state: &mut RenderState,
         render_object: &RenderObject,
     ) {
-        tracing::trace!("Bind push constants");
+        tracing::trace!(target: "render", "Bind push constants");
 
         if let Some(push_layout) = render_object.pass.push_layout() {
             state.object_data.clear();
 
-            let material = render_object.mesh.material.clone().unwrap();
+            let material = render_object.material.clone().unwrap();
             let pipeline = material.pipeline();
 
             // TODO: hardcoded
@@ -285,7 +285,7 @@ impl RenderPass for UiPass {
         batch: &mut RenderBatch,
         draw_extent: ImageExtent2D,
     ) -> Result<(), RenderError> {
-        tracing::debug!("Draw UI");
+        tracing::debug!(target: "render", "Draw UI");
 
         let cmd = &frame.command;
 

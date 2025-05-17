@@ -19,7 +19,7 @@ impl Memory {
     pub fn upload<T: Copy>(&mut self, entries: &[T], offset: usize) {
         let size = std::mem::size_of_val(entries) as u64;
 
-        tracing::debug!(
+        tracing::debug!(target: "memory",
             "Uploading data to buffer (Size={}, offset={}, align={}, len={})",
             size,
             offset,
@@ -52,7 +52,9 @@ impl Memory {
 impl Drop for Memory {
     fn drop(&mut self) {
         if let Some(allocation) = &self.allocation {
-            unsafe { tracing::debug!("Free memory: {:x}", allocation.memory().as_raw()) };
+            unsafe {
+                tracing::debug!(target: "memory", "Free memory: {:x}", allocation.memory().as_raw())
+            };
         }
 
         self.allocator

@@ -8,7 +8,7 @@ use gobs::{
     game::context::GameContext,
     render::{
         BlendMode, FrameGraph, GfxContext, Material, MaterialProperty, PassType, RenderError,
-        Renderable, RenderableLifetime,
+        Renderable,
     },
     resource::{entity::camera::Camera, geometry::VertexAttribute},
     scene::scene::Scene,
@@ -27,7 +27,7 @@ pub struct SampleApp {
 
 impl SampleApp {
     pub fn new() -> Self {
-        tracing::info!("Create");
+        tracing::info!(target: "app", "Create");
 
         Self {
             process_updates: false,
@@ -174,7 +174,7 @@ impl SampleApp {
         scene: &mut Scene,
         ui: &mut UIRenderer,
     ) -> Result<(), RenderError> {
-        tracing::trace!("Render frame {}", graph.frame_number);
+        tracing::trace!(target: "app", "Render frame {}", graph.frame_number);
 
         let gfx = &mut ctx.gfx;
         let resource_manager = &mut ctx.resource_manager;
@@ -183,25 +183,11 @@ impl SampleApp {
 
         graph.prepare(gfx, &mut |pass, batch| match pass.ty() {
             PassType::Depth | PassType::Forward => {
-                scene.draw(
-                    gfx,
-                    resource_manager,
-                    pass,
-                    batch,
-                    None,
-                    RenderableLifetime::Static,
-                );
+                scene.draw(gfx, resource_manager, pass, batch, None);
             }
             PassType::Wire => {
                 if self.draw_wire {
-                    scene.draw(
-                        gfx,
-                        resource_manager,
-                        pass,
-                        batch,
-                        None,
-                        RenderableLifetime::Static,
-                    );
+                    scene.draw(gfx, resource_manager, pass, batch, None);
                 }
             }
             PassType::Bounds => {
@@ -211,14 +197,7 @@ impl SampleApp {
             }
             PassType::Ui => {
                 if self.draw_ui {
-                    ui.draw(
-                        gfx,
-                        resource_manager,
-                        pass,
-                        batch,
-                        None,
-                        RenderableLifetime::Transient,
-                    );
+                    ui.draw(gfx, resource_manager, pass, batch, None);
                 }
             }
             _ => {}
@@ -228,7 +207,7 @@ impl SampleApp {
 
         graph.end(gfx)?;
 
-        tracing::trace!("End render");
+        tracing::trace!(target: "app", "End render");
 
         Ok(())
     }
@@ -239,7 +218,7 @@ impl SampleApp {
         graph: &mut FrameGraph,
         ui: &mut UIRenderer,
     ) -> Result<(), RenderError> {
-        tracing::trace!("Render frame {}", graph.frame_number);
+        tracing::trace!(target: "app", "Render frame {}", graph.frame_number);
 
         let gfx = &mut ctx.gfx;
         let resource_manager = &mut ctx.resource_manager;
@@ -248,14 +227,7 @@ impl SampleApp {
 
         graph.prepare(gfx, &mut |pass, batch| {
             if pass.ty() == PassType::Ui {
-                ui.draw(
-                    gfx,
-                    resource_manager,
-                    pass,
-                    batch,
-                    None,
-                    RenderableLifetime::Transient,
-                );
+                ui.draw(gfx, resource_manager, pass, batch, None);
             }
         });
 
@@ -263,7 +235,7 @@ impl SampleApp {
 
         graph.end(gfx)?;
 
-        tracing::trace!("End render");
+        tracing::trace!(target: "app", "End render");
 
         Ok(())
     }
@@ -274,7 +246,7 @@ impl SampleApp {
         graph: &mut FrameGraph,
         scene: &mut Scene,
     ) -> Result<(), RenderError> {
-        tracing::trace!("Render frame {}", graph.frame_number);
+        tracing::trace!(target: "app", "Render frame {}", graph.frame_number);
 
         let gfx = &mut ctx.gfx;
         let resource_manager = &mut ctx.resource_manager;
@@ -283,14 +255,7 @@ impl SampleApp {
 
         graph.prepare(gfx, &mut |pass, batch| match pass.ty() {
             PassType::Depth | PassType::Forward => {
-                scene.draw(
-                    gfx,
-                    resource_manager,
-                    pass,
-                    batch,
-                    None,
-                    RenderableLifetime::Static,
-                );
+                scene.draw(gfx, resource_manager, pass, batch, None);
             }
             _ => {}
         });
@@ -299,7 +264,7 @@ impl SampleApp {
 
         graph.end(gfx)?;
 
-        tracing::trace!("End render");
+        tracing::trace!(target: "app", "End render");
 
         Ok(())
     }
@@ -313,7 +278,7 @@ impl SampleApp {
         ui: &mut UIRenderer,
         camera_controller: Option<&mut CameraController>,
     ) {
-        tracing::trace!("Input");
+        tracing::trace!(target: "app", "Input");
 
         ui.input(input);
         if let Some(camera_controller) = camera_controller {
@@ -323,7 +288,7 @@ impl SampleApp {
         if let Input::KeyPressed(key) = input {
             match key {
                 Key::E => graph.render_scaling = (graph.render_scaling + 0.1).min(1.),
-                Key::A => graph.render_scaling = (graph.render_scaling - 0.1).max(0.1),
+                Key::Q => graph.render_scaling = (graph.render_scaling - 0.1).max(0.1),
                 Key::R => {
                     let rd: Result<RenderDoc<V141>, _> = RenderDoc::new();
 
@@ -332,10 +297,10 @@ impl SampleApp {
                     }
                 }
                 Key::L => {
-                    tracing::info!("{:?}", ctx.gfx.device.allocator.allocator.lock().unwrap())
+                    tracing::info!(target: "app", "{:?}", ctx.gfx.device.allocator.allocator.lock().unwrap())
                 }
                 Key::P => self.process_updates = !self.process_updates,
-                Key::W => self.draw_wire = !self.draw_wire,
+                Key::Z => self.draw_wire = !self.draw_wire,
                 Key::B => self.draw_bounds = !self.draw_bounds,
                 Key::U => self.draw_ui = !self.draw_ui,
                 Key::O => self.screenshot(&ctx.gfx, graph),
@@ -353,7 +318,7 @@ impl SampleApp {
         let mut data = vec![];
         let extent = graph.get_image_data(ctx, "draw", &mut data, ImageFormat::R16g16b16a16Unorm);
 
-        tracing::info!("Screenshot \"{}\" ({} bytes)", filename, data.len());
+        tracing::info!(target: "app", "Screenshot \"{}\" ({} bytes)", filename, data.len());
 
         let img: ImageBuffer<Rgba<u16>, Vec<u16>> =
             ImageBuffer::from_raw(extent.width, extent.height, data).unwrap();
