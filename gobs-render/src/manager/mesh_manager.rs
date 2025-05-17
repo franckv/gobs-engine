@@ -284,7 +284,7 @@ impl MeshResourceManager {
                         let mut updater = binding.update();
                         for texture in &material.textures {
                             // TODO: load texture
-                            let gpu_texture = resource_manager.get_data::<Texture>(texture);
+                            let gpu_texture = resource_manager.get_data::<Texture>(texture, ());
                             updater = updater
                                 .bind_sampled_image(&gpu_texture.image, ImageLayout::Shader)
                                 .bind_sampler(&gpu_texture.sampler);

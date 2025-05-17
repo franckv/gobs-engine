@@ -11,6 +11,7 @@ pub type ResourceHandle = Uuid;
 pub trait ResourceType {
     type ResourceData;
     type ResourceProperties: Clone;
+    type ResourceParameter;
     type ResourceLoader: ResourceLoader<Self>
     where
         Self: Sized;
@@ -33,5 +34,9 @@ impl<R: ResourceType> Resource<R> {
 }
 
 pub trait ResourceLoader<R: ResourceType> {
-    fn load(&self, properties: &mut R::ResourceProperties) -> R::ResourceData;
+    fn load(
+        &self,
+        properties: &mut R::ResourceProperties,
+        parameter: R::ResourceParameter,
+    ) -> R::ResourceData;
 }

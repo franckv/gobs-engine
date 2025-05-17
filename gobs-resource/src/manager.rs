@@ -36,13 +36,17 @@ impl ResourceManager {
         self.add::<R>(properties)
     }
 
-    fn load_data<R: ResourceType + 'static>(&mut self, handle: &ResourceHandle) {
+    fn load_data<R: ResourceType + 'static>(
+        &mut self,
+        handle: &ResourceHandle,
+        parameter: R::ResourceParameter,
+    ) {
         let resource = self.registry.get_mut::<Resource<R>>(handle).unwrap();
 
         if let ResourceState::Unloaded = resource.data {
             tracing::debug!(target: "resources", "Loading resource {}", handle);
             let loader = self.loader.get::<R::ResourceLoader>().unwrap();
-            let data = loader.load(&mut resource.properties);
+            let data = loader.load(&mut resource.properties, parameter);
             resource.data = ResourceState::Loaded(data);
         }
     }
@@ -50,8 +54,9 @@ impl ResourceManager {
     pub fn get_data<R: ResourceType + 'static>(
         &mut self,
         handle: &ResourceHandle,
+        parameter: R::ResourceParameter,
     ) -> &R::ResourceData {
-        self.load_data::<R>(handle);
+        self.load_data::<R>(handle, parameter);
 
         let resource = self.registry.get_mut::<Resource<R>>(handle).unwrap();
         match &resource.data {

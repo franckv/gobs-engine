@@ -12,6 +12,7 @@ pub struct Texture;
 impl ResourceType for Texture {
     type ResourceData = TextureData;
     type ResourceProperties = TextureProperties;
+    type ResourceParameter = ();
     type ResourceLoader = TextureLoader;
 }
 
