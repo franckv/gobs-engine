@@ -18,6 +18,7 @@ pub enum PresentationMode {
     FifoRelaxed,
     Mailbox,
     Immediate,
+    Unsupported,
 }
 
 impl From<vk::PresentModeKHR> for PresentationMode {
@@ -27,7 +28,7 @@ impl From<vk::PresentModeKHR> for PresentationMode {
             vk::PresentModeKHR::FIFO_RELAXED => PresentationMode::FifoRelaxed,
             vk::PresentModeKHR::MAILBOX => PresentationMode::Mailbox,
             vk::PresentModeKHR::IMMEDIATE => PresentationMode::Immediate,
-            _ => panic!("Invalid present mode"),
+            _ => PresentationMode::Unsupported,
         }
     }
 }
@@ -39,6 +40,7 @@ impl From<PresentationMode> for vk::PresentModeKHR {
             PresentationMode::FifoRelaxed => vk::PresentModeKHR::FIFO_RELAXED,
             PresentationMode::Mailbox => vk::PresentModeKHR::MAILBOX,
             PresentationMode::Immediate => vk::PresentModeKHR::IMMEDIATE,
+            _ => panic!("Invalid present mode: {:?}", val),
         }
     }
 }
