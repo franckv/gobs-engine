@@ -49,14 +49,14 @@ impl ResourceManager {
             Entry::Occupied(mut e) => {
                 if let ResourceState::Unloaded = e.get() {
                     tracing::debug!(target: "resources", "Loading resource {}", handle);
-                    let loader = self.loader.get::<R::ResourceLoader>().unwrap();
+                    let loader = self.loader.get_mut::<R::ResourceLoader>().unwrap();
                     let data = loader.load(&mut resource.properties, parameter);
                     e.insert(ResourceState::Loaded(data));
                 }
             }
             Entry::Vacant(e) => {
                 tracing::debug!(target: "resources", "Loading resource {}", handle);
-                let loader = self.loader.get::<R::ResourceLoader>().unwrap();
+                let loader = self.loader.get_mut::<R::ResourceLoader>().unwrap();
                 let data = loader.load(&mut resource.properties, parameter);
                 e.insert(ResourceState::Loaded(data));
             }

@@ -38,7 +38,7 @@ impl<R: ResourceType> Resource<R> {
 
 pub trait ResourceLoader<R: ResourceType> {
     fn load(
-        &self,
+        &mut self,
         properties: &mut R::ResourceProperties,
         parameter: &R::ResourceParameter,
     ) -> R::ResourceData;
