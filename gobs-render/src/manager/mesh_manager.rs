@@ -14,14 +14,12 @@ use crate::{
 };
 
 pub struct MeshResourceManager {
-    pub frame_id: usize,
     pub material_bindings: HashMap<MaterialInstanceId, GfxBindingGroup>,
 }
 
 impl MeshResourceManager {
     pub fn new() -> Self {
         Self {
-            frame_id: 0,
             material_bindings: HashMap::new(),
         }
     }
@@ -32,8 +30,6 @@ impl MeshResourceManager {
 
     pub fn new_frame(&mut self, ctx: &GfxContext) {
         self.debug_stats();
-
-        self.frame_id = (self.frame_id + 1) % ctx.frames_in_flight;
     }
 
     /*
