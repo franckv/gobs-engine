@@ -249,7 +249,7 @@ impl FrameGraph {
         self.frame_number += 1;
         let frame_id = self.frame_number % ctx.frames_in_flight;
 
-        tracing::info!(target: "render", "Begin new frame: {} ({}/{})", self.frame_number, frame_id, ctx.frames_in_flight);
+        tracing::debug!(target: "render", "Begin new frame: {} ({}/{})", self.frame_number, frame_id, ctx.frames_in_flight);
 
         let frame = &mut self.frames[frame_id];
         frame.reset();

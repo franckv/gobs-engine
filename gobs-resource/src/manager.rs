@@ -29,12 +29,12 @@ impl ResourceManager {
         let mut to_delete = vec![];
 
         for value in self.registry.values_mut::<Resource<R>>() {
-            tracing::debug!(target: "resources", "Registry Type={:?}, key={:?}, life={}, lifetime={:?}", std::any::type_name::<R>(), value.handle.id, value.life, value.lifetime);
+            tracing::trace!(target: "resources", "Registry Type={:?}, key={:?}, life={}, lifetime={:?}", std::any::type_name::<R>(), value.handle.id, value.life, value.lifetime);
 
             if value.lifetime == ResourceLifetime::Transient {
                 value.life += 1;
                 if value.life > self.frames_in_flight {
-                    tracing::debug!(target: "resources", "To be removed: {}", value.handle.id);
+                    tracing::trace!(target: "resources", "Transient resource to be removed: {}", value.handle.id);
                     to_delete.push(value.handle);
                 }
             }
