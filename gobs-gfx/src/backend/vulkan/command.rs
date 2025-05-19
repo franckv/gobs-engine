@@ -155,13 +155,13 @@ impl Command<VkRenderer> for VkCommand {
             self.command.fence.reset();
             debug_assert!(!self.command.fence.signaled());
         } else {
-            tracing::warn!(target: "render", "Fence unsignaled");
+            tracing::warn!(target: "sync", "Fence unsignaled");
         }
         self.command.reset();
     }
 
     fn submit2(&self, display: &VkDisplay, frame: usize) {
-        tracing::trace!(target: "render", "Submit with semaphore {}", frame);
+        tracing::trace!(target: "sync", "Submit with semaphore {}", frame);
         let (wait, signal) = if display.swapchain.is_some() {
             let wait = Some(&display.swapchain_semaphores[frame]);
             let signal = Some(&display.render_semaphores[frame]);

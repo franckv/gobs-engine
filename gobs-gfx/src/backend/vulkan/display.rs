@@ -71,6 +71,7 @@ impl Display<VkRenderer> for VkDisplay {
 
     fn get_render_target(&mut self) -> Option<&mut VkImage> {
         if self.swapchain.is_some() {
+            tracing::trace!(target: "sync", "Use render target {}", self.swapchain_idx);
             Some(&mut self.swapchain_images[self.swapchain_idx])
         } else {
             None
@@ -79,9 +80,11 @@ impl Display<VkRenderer> for VkDisplay {
 
     fn acquire(&mut self, frame: usize) -> Result<(), GfxError> {
         if let Some(swapchain) = &mut self.swapchain {
-            tracing::trace!(target: "render", "Acquire with semaphore {}", frame);
+            tracing::trace!(target: "sync", "Acquire with semaphore {}", frame);
             let semaphore = &self.swapchain_semaphores[frame];
+
             let image_index = swapchain.acquire_image(semaphore)?;
+            tracing::trace!(target: "sync", "Acquire image {}", image_index);
 
             self.swapchain_idx = image_index;
             self.swapchain_images[image_index].invalidate();
@@ -92,6 +95,7 @@ impl Display<VkRenderer> for VkDisplay {
 
     fn present(&mut self, device: &VkDevice, frame: usize) -> Result<(), GfxError> {
         if let Some(swapchain) = &mut self.swapchain {
+            tracing::trace!(target: "sync", "Present with semaphore {}", frame);
             swapchain.present(
                 self.swapchain_idx,
                 &device.graphics_queue,

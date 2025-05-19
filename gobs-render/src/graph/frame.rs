@@ -252,6 +252,9 @@ impl FrameGraph {
         tracing::debug!(target: "render", "Begin new frame: {} ({}/{})", self.frame_number, frame_id, ctx.frames_in_flight);
 
         let frame = &mut self.frames[frame_id];
+        assert_eq!(frame.id, frame_id);
+
+        tracing::debug!(target: "sync", "Wait for frame: {} ({}/{})", self.frame_number, frame_id, ctx.frames_in_flight);
         frame.reset();
 
         self.batch.reset(ctx);
