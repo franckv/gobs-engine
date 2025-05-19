@@ -14,7 +14,7 @@ pub trait Display<R: Renderer> {
     fn get_extent(&self, device: &R::Device) -> ImageExtent2D;
     fn get_render_target(&mut self) -> Option<&mut R::Image>;
     fn acquire(&mut self, frame: usize) -> Result<(), GfxError>;
-    fn present(&mut self, device: &R::Device, frame: usize) -> Result<(), GfxError>;
+    fn present(&mut self, device: &R::Device) -> Result<(), GfxError>;
     fn resize(&mut self, device: &R::Device);
     fn request_redraw(&self);
     fn is_minimized(&self) -> bool;

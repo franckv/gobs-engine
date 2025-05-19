@@ -38,8 +38,8 @@ impl Display<VkRenderer> for VkDisplay {
             swapchain: None,
             swapchain_images: Vec::new(),
             swapchain_idx: 0,
-            swapchain_semaphores: Vec::new(),
-            render_semaphores: Vec::new(),
+            swapchain_semaphores: Vec::new(), // per frames in flight
+            render_semaphores: Vec::new(),    // per swapchain image
         })
     }
 
@@ -56,6 +56,8 @@ impl Display<VkRenderer> for VkDisplay {
             for _ in 0..frames_in_flight {
                 self.swapchain_semaphores
                     .push(vk::sync::Semaphore::new(device.device.clone(), "Swapchain"));
+            }
+            for _ in 0..self.swapchain_images.len() {
                 self.render_semaphores
                     .push(vk::sync::Semaphore::new(device.device.clone(), "Render"));
             }
@@ -80,7 +82,7 @@ impl Display<VkRenderer> for VkDisplay {
 
     fn acquire(&mut self, frame: usize) -> Result<(), GfxError> {
         if let Some(swapchain) = &mut self.swapchain {
-            tracing::trace!(target: "sync", "Acquire with semaphore {}", frame);
+            tracing::trace!(target: "sync", "Acquire with swapchain semaphore {}", frame);
             let semaphore = &self.swapchain_semaphores[frame];
 
             let image_index = swapchain.acquire_image(semaphore)?;
@@ -93,13 +95,13 @@ impl Display<VkRenderer> for VkDisplay {
         Ok(())
     }
 
-    fn present(&mut self, device: &VkDevice, frame: usize) -> Result<(), GfxError> {
+    fn present(&mut self, device: &VkDevice) -> Result<(), GfxError> {
         if let Some(swapchain) = &mut self.swapchain {
-            tracing::trace!(target: "sync", "Present with semaphore {}", frame);
+            tracing::trace!(target: "sync", "Present with render semaphore {}", self.swapchain_idx);
             swapchain.present(
                 self.swapchain_idx,
                 &device.graphics_queue,
-                &self.render_semaphores[frame],
+                &self.render_semaphores[self.swapchain_idx],
             )?;
         }
 

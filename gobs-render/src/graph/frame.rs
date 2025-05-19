@@ -321,7 +321,7 @@ impl FrameGraph {
 
         cmd.submit2(&ctx.display, frame_id);
 
-        let Ok(_) = ctx.display.present(&ctx.device, frame_id) else {
+        let Ok(_) = ctx.display.present(&ctx.device) else {
             return Err(RenderError::Outdated);
         };
 

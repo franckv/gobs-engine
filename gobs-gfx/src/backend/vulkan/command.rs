@@ -161,10 +161,11 @@ impl Command<VkRenderer> for VkCommand {
     }
 
     fn submit2(&self, display: &VkDisplay, frame: usize) {
-        tracing::trace!(target: "sync", "Submit with semaphore {}", frame);
+        let swapchain_idx = display.swapchain_idx;
+        tracing::trace!(target: "sync", "Submit with swapchain semaphore: {}, render semaphore: {}", frame, swapchain_idx);
         let (wait, signal) = if display.swapchain.is_some() {
             let wait = Some(&display.swapchain_semaphores[frame]);
-            let signal = Some(&display.render_semaphores[frame]);
+            let signal = Some(&display.render_semaphores[swapchain_idx]);
 
             (wait, signal)
         } else {
