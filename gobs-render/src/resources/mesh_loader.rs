@@ -3,7 +3,7 @@ use std::sync::Arc;
 use gobs_gfx::{Buffer, BufferUsage, Command, Device, GfxBuffer, GfxDevice};
 use gobs_resource::{
     geometry::{MeshGeometry, VertexAttribute},
-    resource::ResourceLoader,
+    resource::{Resource, ResourceLoader},
 };
 
 use crate::{
@@ -110,5 +110,9 @@ impl ResourceLoader<Mesh> for MeshLoader {
             MeshPath::Bytes(_) => todo!(),
             MeshPath::Mesh(geometry) => self.load_geometry(geometry, parameter),
         }
+    }
+
+    fn unload(&mut self, _resource: Resource<Mesh>) {
+        // drop resource
     }
 }

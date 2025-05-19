@@ -257,7 +257,7 @@ impl FrameGraph {
         tracing::debug!(target: "sync", "Wait for frame: {} ({}/{})", self.frame_number, frame_id, ctx.frames_in_flight);
         frame.reset();
 
-        self.batch.reset(ctx);
+        self.batch.reset();
 
         let cmd = &frame.command;
 

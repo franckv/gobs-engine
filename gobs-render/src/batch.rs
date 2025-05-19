@@ -31,11 +31,11 @@ impl RenderBatch {
         }
     }
 
-    pub fn reset(&mut self, ctx: &GfxContext) {
+    pub fn reset(&mut self) {
         self.render_list.clear();
         self.scene_data.clear();
         self.render_stats.reset();
-        self.mesh_resource_manager.new_frame(ctx);
+        self.mesh_resource_manager.new_frame();
     }
 
     #[tracing::instrument(target = "render", skip_all, level = "trace")]

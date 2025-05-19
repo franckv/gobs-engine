@@ -73,4 +73,6 @@ pub trait ResourceLoader<R: ResourceType> {
         properties: &mut R::ResourceProperties,
         parameter: &R::ResourceParameter,
     ) -> R::ResourceData;
+
+    fn unload(&mut self, resource: Resource<R>);
 }

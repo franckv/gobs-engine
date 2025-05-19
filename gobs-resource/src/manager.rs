@@ -40,8 +40,11 @@ impl ResourceManager {
             }
         }
 
+        let loader = self.loader.get_mut::<R::ResourceLoader>().unwrap();
         for handle in to_delete {
-            self.remove::<R>(&handle);
+            if let Some(resource) = self.registry.remove::<Resource<R>>(&handle.id) {
+                loader.unload(resource);
+            }
         }
     }
 
@@ -65,8 +68,11 @@ impl ResourceManager {
         handle
     }
 
-    pub fn remove<R: ResourceType + 'static>(&mut self, handle: &ResourceHandle<R>) {
-        self.registry.remove::<Resource<R>>(&handle.id);
+    pub fn remove<R: ResourceType + 'static>(
+        &mut self,
+        handle: &ResourceHandle<R>,
+    ) -> Option<Resource<R>> {
+        self.registry.remove::<Resource<R>>(&handle.id)
     }
 
     pub fn replace<R: ResourceType + 'static>(

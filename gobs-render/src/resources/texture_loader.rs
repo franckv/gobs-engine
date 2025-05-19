@@ -1,14 +1,14 @@
 use std::sync::Arc;
 
 use futures::future::try_join_all;
-use gobs_core::{Color, ImageExtent2D};
 use image::{DynamicImage, GenericImage, GenericImageView, ImageBuffer, imageops::FilterType};
 use pollster::FutureExt;
 
+use gobs_core::{Color, ImageExtent2D};
 use gobs_gfx::GfxDevice;
 use gobs_resource::{
     load::{self, AssetType},
-    resource::ResourceLoader,
+    resource::{Resource, ResourceLoader},
 };
 
 use crate::{
@@ -155,5 +155,9 @@ impl ResourceLoader<Texture> for TextureLoader {
                 self.load_checker(*color1, *color2, &properties.format)
             }
         }
+    }
+
+    fn unload(&mut self, _resource: Resource<Texture>) {
+        // drop resource
     }
 }

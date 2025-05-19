@@ -8,10 +8,7 @@ use gobs_gfx::{
 };
 use gobs_resource::manager::ResourceManager;
 
-use crate::{
-    GfxContext,
-    materials::{MaterialInstance, MaterialInstanceId},
-};
+use crate::materials::{MaterialInstance, MaterialInstanceId};
 
 pub struct MeshResourceManager {
     pub material_bindings: HashMap<MaterialInstanceId, GfxBindingGroup>,
@@ -28,7 +25,7 @@ impl MeshResourceManager {
         tracing::debug!(target: "render", "Bindings: {}", self.material_bindings.keys().len());
     }
 
-    pub fn new_frame(&mut self, ctx: &GfxContext) {
+    pub fn new_frame(&mut self) {
         self.debug_stats();
     }
 
