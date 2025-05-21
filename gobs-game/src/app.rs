@@ -48,7 +48,7 @@ where
         tracing::info!(target: "events", "Start main loop");
 
         let future = async {
-            let mut runnable = R::create(&context).await.unwrap();
+            let mut runnable = R::create(&mut context).await.unwrap();
             runnable.start(&mut context).await;
 
             runnable
@@ -221,7 +221,7 @@ where
 
 #[allow(async_fn_in_trait)]
 pub trait Run: Sized {
-    async fn create(context: &GameContext) -> Result<Self, AppError>;
+    async fn create(context: &mut GameContext) -> Result<Self, AppError>;
     async fn start(&mut self, ctx: &mut GameContext);
     fn update(&mut self, ctx: &mut GameContext, delta: f32);
     fn render(&mut self, ctx: &mut GameContext) -> Result<(), RenderError>;

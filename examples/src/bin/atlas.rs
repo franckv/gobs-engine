@@ -29,7 +29,7 @@ struct App {
 }
 
 impl Run for App {
-    async fn create(ctx: &GameContext) -> Result<Self, AppError> {
+    async fn create(ctx: &mut GameContext) -> Result<Self, AppError> {
         let extent = ctx.gfx.extent();
 
         let camera = Camera::perspective(
@@ -50,7 +50,11 @@ impl Run for App {
         let camera_controller = SampleApp::controller();
 
         let graph = FrameGraph::default(&ctx.gfx)?;
-        let ui = UIRenderer::new(&ctx.gfx, graph.pass_by_type(PassType::Ui)?)?;
+        let ui = UIRenderer::new(
+            &ctx.gfx,
+            &mut ctx.resource_manager,
+            graph.pass_by_type(PassType::Ui)?,
+        )?;
         let scene = Scene::new(camera, camera_position, light, light_position);
 
         Ok(App {
@@ -129,7 +133,9 @@ impl Run for App {
 
 impl App {
     async fn init(&mut self, ctx: &mut GameContext) {
-        let material = self.common.normal_mapping_material(&ctx.gfx, &self.graph);
+        let material =
+            self.common
+                .normal_mapping_material(&ctx.gfx, &mut ctx.resource_manager, &self.graph);
 
         let properties =
             TextureProperties::with_atlas("Atlas Diffuse", examples::ATLAS, examples::ATLAS_COLS);

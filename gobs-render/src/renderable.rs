@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use gobs_core::Transform;
-use gobs_gfx::GfxBindingGroup;
+use gobs_gfx::{GfxBindingGroup, GfxPipeline};
 use gobs_resource::manager::ResourceManager;
 use uuid::Uuid;
 
@@ -21,6 +21,7 @@ pub struct RenderObject {
     pub transform: Transform,
     pub pass: RenderPass,
     pub mesh: MeshData,
+    pub pipeline: Option<Arc<GfxPipeline>>,
     pub material: Option<Arc<MaterialInstance>>,
     pub material_binding: Option<GfxBindingGroup>,
 }

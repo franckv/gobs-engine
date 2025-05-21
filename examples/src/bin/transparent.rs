@@ -25,7 +25,7 @@ struct App {
 }
 
 impl Run for App {
-    async fn create(ctx: &GameContext) -> Result<Self, AppError> {
+    async fn create(ctx: &mut GameContext) -> Result<Self, AppError> {
         let camera = SampleApp::ortho_camera(ctx);
         let camera_position = Vec3::new(0., 0., 1.);
 
@@ -37,7 +37,11 @@ impl Run for App {
         let camera_controller = SampleApp::controller();
 
         let graph = FrameGraph::default(&ctx.gfx)?;
-        let ui = UIRenderer::new(&ctx.gfx, graph.pass_by_type(PassType::Ui)?)?;
+        let ui = UIRenderer::new(
+            &ctx.gfx,
+            &mut ctx.resource_manager,
+            graph.pass_by_type(PassType::Ui)?,
+        )?;
         let scene = Scene::new(camera, camera_position, light, light_position);
 
         Ok(App {
@@ -99,12 +103,16 @@ impl Run for App {
 
 impl App {
     fn init(&mut self, ctx: &mut GameContext) {
-        let material = self.common.color_material(&ctx.gfx, &self.graph);
+        let material = self
+            .common
+            .color_material(&ctx.gfx, &mut ctx.resource_manager, &self.graph);
         let material_instance = material.instantiate(vec![]);
 
-        let transparent_material = self
-            .common
-            .color_material_transparent(&ctx.gfx, &self.graph);
+        let transparent_material = self.common.color_material_transparent(
+            &ctx.gfx,
+            &mut ctx.resource_manager,
+            &self.graph,
+        );
         let transparent_material_instance = transparent_material.instantiate(vec![]);
 
         let triangle = Model::builder("triangle")

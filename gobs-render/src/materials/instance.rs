@@ -2,10 +2,9 @@ use std::{fmt::Debug, sync::Arc};
 
 use uuid::Uuid;
 
-use gobs_gfx::GfxPipeline;
 use gobs_resource::{geometry::VertexAttribute, resource::ResourceHandle};
 
-use crate::{Texture, materials::Material};
+use crate::{Pipeline, Texture, materials::Material};
 
 pub type MaterialInstanceId = Uuid;
 
@@ -27,8 +26,8 @@ impl MaterialInstance {
         })
     }
 
-    pub fn pipeline(&self) -> Arc<GfxPipeline> {
-        self.material.pipeline.clone()
+    pub fn pipeline(&self) -> ResourceHandle<Pipeline> {
+        self.material.pipeline
     }
 
     pub fn vertex_attributes(&self) -> VertexAttribute {

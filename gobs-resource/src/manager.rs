@@ -97,18 +97,21 @@ impl ResourceManager {
     ) {
         let resource = self.registry.get_mut::<Resource<R>>(&handle.id).unwrap();
 
+        let loader = self
+            .loader
+            .get_mut::<R::ResourceLoader>()
+            .unwrap_or_else(|| panic!("Loader not registered: {:?}", std::any::type_name::<R>()));
+
         match resource.data.entry(parameter.clone()) {
             Entry::Occupied(mut e) => {
                 if let ResourceState::Unloaded = e.get() {
                     tracing::trace!(target: "resources", "Loading resource {:?}", handle);
-                    let loader = self.loader.get_mut::<R::ResourceLoader>().unwrap();
                     let data = loader.load(&mut resource.properties, parameter);
                     e.insert(ResourceState::Loaded(data));
                 }
             }
             Entry::Vacant(e) => {
                 tracing::trace!(target: "resources", "Loading resource {:?}", handle);
-                let loader = self.loader.get_mut::<R::ResourceLoader>().unwrap();
                 let data = loader.load(&mut resource.properties, parameter);
                 e.insert(ResourceState::Loaded(data));
             }

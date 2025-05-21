@@ -145,8 +145,7 @@ impl DepthPass {
 
             let world_matrix = render_object.transform.matrix();
 
-            let material = render_object.material.clone().unwrap();
-            let pipeline = material.pipeline();
+            let pipeline = render_object.pipeline.clone().unwrap();
 
             // TODO: hardcoded
             push_layout.copy_data(

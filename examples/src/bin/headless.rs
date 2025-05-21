@@ -19,7 +19,7 @@ struct App {
 }
 
 impl Run for App {
-    async fn create(ctx: &GameContext) -> Result<Self, AppError> {
+    async fn create(ctx: &mut GameContext) -> Result<Self, AppError> {
         let camera = SampleApp::ortho_camera(ctx);
         let camera_position = Vec3::new(0., 0., 1.);
 
@@ -70,7 +70,9 @@ impl Run for App {
 
 impl App {
     fn init(&mut self, ctx: &mut GameContext) {
-        let material = self.common.color_material(&ctx.gfx, &self.graph);
+        let material = self
+            .common
+            .color_material(&ctx.gfx, &mut ctx.resource_manager, &self.graph);
         let material_instance = material.instantiate(vec![]);
 
         let triangle = Model::builder("triangle")
@@ -105,7 +107,7 @@ fn main() {
     let mut ctx = GameContext::new("Triangle", None, true).unwrap();
 
     let future = async {
-        let mut app = App::create(&ctx).await.unwrap();
+        let mut app = App::create(&mut ctx).await.unwrap();
         app.start(&mut ctx).await;
 
         app

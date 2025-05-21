@@ -120,13 +120,16 @@ impl MeshResourceManager {
             match self.material_bindings.entry(material.id) {
                 Entry::Vacant(e) => {
                     if !material.textures.is_empty() {
+                        let pipeline_handle = material.material.pipeline;
+
                         tracing::debug!(target: "render",
-                            "Create material binding for pipeline: {}",
-                            material.pipeline().id()
+                            "Create material binding for pipeline: {:?}",
+                            pipeline_handle
                         );
-                        let binding = material
-                            .material
-                            .pipeline
+
+                        let pipeline = &resource_manager.get_data(&pipeline_handle, ()).pipeline;
+
+                        let binding = pipeline
                             .create_binding_group(BindingGroupType::MaterialData)
                             .unwrap();
                         let mut updater = binding.update();

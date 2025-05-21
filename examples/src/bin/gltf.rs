@@ -26,7 +26,7 @@ struct App {
 }
 
 impl Run for App {
-    async fn create(ctx: &GameContext) -> Result<Self, AppError> {
+    async fn create(ctx: &mut GameContext) -> Result<Self, AppError> {
         let camera = SampleApp::perspective_camera(ctx);
         let camera_position = Vec3::new(10., 5., 10.);
 
@@ -38,7 +38,11 @@ impl Run for App {
         let camera_controller = SampleApp::controller();
 
         let graph = FrameGraph::default(&ctx.gfx)?;
-        let ui = UIRenderer::new(&ctx.gfx, graph.pass_by_type(PassType::Ui)?)?;
+        let ui = UIRenderer::new(
+            &ctx.gfx,
+            &mut ctx.resource_manager,
+            graph.pass_by_type(PassType::Ui)?,
+        )?;
         let scene = Scene::new(camera, camera_position, light, light_position);
 
         Ok(App {

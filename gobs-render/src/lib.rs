@@ -23,8 +23,9 @@ pub use model::{Model, ModelId};
 pub use pass::PassType;
 pub use renderable::{Renderable, RenderableLifetime};
 pub use resources::{
-    Mesh, MeshData, MeshLoader, Texture, TextureData, TextureLoader, TexturePath,
-    TextureProperties, TextureType, TextureUpdate,
+    Mesh, MeshData, MeshLoader, Pipeline, PipelineData, PipelineLoader, PipelineProperties,
+    Texture, TextureData, TextureLoader, TexturePath, TextureProperties, TextureType,
+    TextureUpdate,
 };
 
 pub type RenderPass = Arc<dyn pass::RenderPass>;

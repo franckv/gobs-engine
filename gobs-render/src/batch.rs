@@ -59,6 +59,14 @@ impl RenderBatch {
                 None => model.materials[material_id].vertex_attributes(),
             };
 
+            let pipeline = if let Some(material) = &material {
+                let pipeline_data = resource_manager.get_data(&material.pipeline(), ());
+
+                Some(pipeline_data.pipeline.clone())
+            } else {
+                None
+            };
+
             let mesh_data = resource_manager.get_data(mesh, vertex_attributes);
 
             self.render_list.push(RenderObject {
@@ -66,6 +74,7 @@ impl RenderBatch {
                 transform,
                 pass: pass.clone(),
                 mesh: mesh_data.clone(),
+                pipeline,
                 material,
                 material_binding,
             });

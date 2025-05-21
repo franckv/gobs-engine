@@ -20,9 +20,13 @@ struct App {
 }
 
 impl Run for App {
-    async fn create(ctx: &GameContext) -> Result<Self, AppError> {
+    async fn create(ctx: &mut GameContext) -> Result<Self, AppError> {
         let graph = FrameGraph::ui(&ctx.gfx)?;
-        let ui = UIRenderer::new(&ctx.gfx, graph.pass_by_type(PassType::Ui)?)?;
+        let ui = UIRenderer::new(
+            &ctx.gfx,
+            &mut ctx.resource_manager,
+            graph.pass_by_type(PassType::Ui)?,
+        )?;
         let common = SampleApp::new();
 
         Ok(App {

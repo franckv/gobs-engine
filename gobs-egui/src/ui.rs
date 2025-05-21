@@ -34,7 +34,11 @@ pub struct UIRenderer {
 }
 
 impl UIRenderer {
-    pub fn new(ctx: &GfxContext, pass: RenderPass) -> Result<Self, UIError> {
+    pub fn new(
+        ctx: &GfxContext,
+        resource_manager: &mut ResourceManager,
+        pass: RenderPass,
+    ) -> Result<Self, UIError> {
         let ectx = egui::Context::default();
 
         let (width, height): (f32, f32) = ctx.extent().into();
@@ -49,7 +53,7 @@ impl UIRenderer {
             .prop("diffuse", MaterialProperty::Texture)
             .no_culling()
             .blend_mode(BlendMode::Premultiplied)
-            .build(pass);
+            .build(pass, resource_manager);
 
         Ok(UIRenderer {
             ectx,

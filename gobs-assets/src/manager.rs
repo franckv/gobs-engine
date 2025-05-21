@@ -64,21 +64,21 @@ impl MaterialManager {
         let texture = Material::builder(ctx, "gltf.texture.vert.spv", "gltf.texture.frag.spv")?
             .vertex_attributes(vertex_attributes)
             .prop("diffuse", MaterialProperty::Texture)
-            .build(pass.clone());
+            .build(pass.clone(), resource_manager);
 
         let transparent_texture =
             Material::builder(ctx, "gltf.texture.vert.spv", "gltf.texture.frag.spv")?
                 .vertex_attributes(vertex_attributes)
                 .prop("diffuse", MaterialProperty::Texture)
                 .blend_mode(BlendMode::Alpha)
-                .build(pass.clone());
+                .build(pass.clone(), resource_manager);
 
         let texture_normal =
             Material::builder(ctx, "gltf.texture.vert.spv", "gltf.texture_n.frag.spv")?
                 .vertex_attributes(vertex_attributes)
                 .prop("diffuse", MaterialProperty::Texture)
                 .prop("normal", MaterialProperty::Texture)
-                .build(pass.clone());
+                .build(pass.clone(), resource_manager);
 
         let transparent_texture_normal =
             Material::builder(ctx, "gltf.texture.vert.spv", "gltf.texture_n.frag.spv")?
@@ -86,7 +86,7 @@ impl MaterialManager {
                 .prop("diffuse", MaterialProperty::Texture)
                 .prop("normal", MaterialProperty::Texture)
                 .blend_mode(BlendMode::Alpha)
-                .build(pass.clone());
+                .build(pass.clone(), resource_manager);
 
         let vertex_attributes = VertexAttribute::POSITION
             | VertexAttribute::COLOR
@@ -100,7 +100,7 @@ impl MaterialManager {
             "gltf.color_light.frag.spv",
         )?
         .vertex_attributes(vertex_attributes)
-        .build(pass.clone());
+        .build(pass.clone(), resource_manager);
 
         let transparent_color = Material::builder(
             ctx,
@@ -109,7 +109,7 @@ impl MaterialManager {
         )?
         .vertex_attributes(vertex_attributes)
         .blend_mode(BlendMode::Alpha)
-        .build(pass.clone());
+        .build(pass.clone(), resource_manager);
 
         let texture_manager = TextureManager::new(resource_manager);
 

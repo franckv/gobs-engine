@@ -78,8 +78,7 @@ impl UiPass {
         state: &mut RenderState,
         render_object: &RenderObject,
     ) {
-        let material = render_object.material.clone().unwrap();
-        let pipeline = material.pipeline();
+        let pipeline = render_object.pipeline.clone().unwrap();
 
         if state.last_pipeline != pipeline.id() {
             tracing::trace!(target: "render", "Bind pipeline {}", pipeline.id());
@@ -121,8 +120,7 @@ impl UiPass {
         render_object: &RenderObject,
     ) {
         if !state.scene_data_bound {
-            let material = render_object.material.clone().unwrap();
-            let pipeline = material.pipeline();
+            let pipeline = render_object.pipeline.clone().unwrap();
             let uniform_buffer = frame.uniform_buffer.read();
 
             cmd.bind_resource_buffer(&uniform_buffer.buffer, &pipeline);
@@ -144,8 +142,7 @@ impl UiPass {
         if let Some(push_layout) = render_object.pass.push_layout() {
             state.object_data.clear();
 
-            let material = render_object.material.clone().unwrap();
-            let pipeline = material.pipeline();
+            let pipeline = render_object.pipeline.clone().unwrap();
 
             // TODO: hardcoded
             push_layout.copy_data(

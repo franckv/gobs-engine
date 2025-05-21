@@ -57,18 +57,3 @@ pub struct MeshData {
     pub indices_offset: usize,
     pub indices_len: usize,
 }
-
-impl MeshData {
-    // pub fn new() -> Self {
-    //     Self {
-    //         ty: MeshPrimitiveType::Triangle,
-    //         material,
-    //         material_binding,
-    //         vertex_buffer: vertex_buffer.clone(),
-    //         index_buffer: index_buffer.clone(),
-    //         vertices_offset,
-    //         indices_offset,
-    //         indices_len,
-    //     }
-    // }
-}

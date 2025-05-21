@@ -89,8 +89,7 @@ impl ForwardPass {
         state: &mut RenderState,
         render_object: &RenderObject,
     ) {
-        let material = render_object.material.clone().unwrap();
-        let pipeline = material.pipeline();
+        let pipeline = render_object.pipeline.clone().unwrap();
 
         if state.last_pipeline != pipeline.id() {
             tracing::trace!(target: "render", "Bind pipeline {}", pipeline.id());
@@ -132,8 +131,7 @@ impl ForwardPass {
         render_object: &RenderObject,
     ) {
         if !state.scene_data_bound {
-            let material = render_object.material.clone().unwrap();
-            let pipeline = material.pipeline();
+            let pipeline = render_object.pipeline.clone().unwrap();
             let uniform_buffer = frame.uniform_buffer.read();
 
             cmd.bind_resource_buffer(&uniform_buffer.buffer, &pipeline);
@@ -158,8 +156,7 @@ impl ForwardPass {
             let world_matrix = render_object.transform.matrix();
             let normal_matrix = Mat3::from_quat(render_object.transform.rotation());
 
-            let material = render_object.material.clone().unwrap();
-            let pipeline = material.pipeline();
+            let pipeline = render_object.pipeline.clone().unwrap();
 
             // TODO: hardcoded
             push_layout.copy_data(

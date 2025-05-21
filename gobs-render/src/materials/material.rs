@@ -3,20 +3,25 @@ use std::sync::Arc;
 use uuid::Uuid;
 
 use gobs_gfx::{
-    BindingGroupType, BlendMode, CompareOp, CullMode, DescriptorStage, DescriptorType,
-    DynamicStateElem, FrontFace, GfxGraphicsPipelineBuilder, GfxPipeline, GraphicsPipelineBuilder,
-    Pipeline, Rect2D, Viewport,
+    BindingGroupType, BlendMode, CompareOp, CullMode, DescriptorStage, DescriptorType, FrontFace,
 };
-use gobs_resource::{geometry::VertexAttribute, resource::ResourceHandle};
+use gobs_resource::{
+    geometry::VertexAttribute,
+    manager::ResourceManager,
+    resource::{ResourceHandle, ResourceLifetime},
+};
 
-use crate::{GfxContext, RenderError, RenderPass, Texture, materials::MaterialInstance};
+use crate::{
+    GfxContext, Pipeline, PipelineProperties, RenderError, RenderPass, Texture,
+    materials::MaterialInstance, resources::GraphicsPipelineProperties,
+};
 
 pub type MaterialId = Uuid;
 
 pub struct Material {
     pub id: MaterialId,
     pub vertex_attributes: VertexAttribute,
-    pub pipeline: Arc<GfxPipeline>,
+    pub pipeline: ResourceHandle<Pipeline>,
     pub blending_enabled: bool,
 }
 
@@ -44,7 +49,8 @@ pub enum MaterialProperty {
 pub struct MaterialBuilder {
     vertex_attributes: VertexAttribute,
     blend_mode: BlendMode,
-    pipeline_builder: GfxGraphicsPipelineBuilder,
+    pipeline_properties: GraphicsPipelineProperties,
+    last_binding_group_type: Option<BindingGroupType>,
 }
 
 impl MaterialBuilder {
@@ -53,23 +59,22 @@ impl MaterialBuilder {
         vertex_shader: &str,
         fragment_shader: &str,
     ) -> Result<Self, RenderError> {
-        let pipeline_builder = GfxPipeline::graphics("material", &ctx.device)
-            .vertex_shader(vertex_shader, "main")?
-            .fragment_shader(fragment_shader, "main")?
+        let pipeline_properties = PipelineProperties::graphics("material")
+            .vertex_shader(vertex_shader)
+            .fragment_shader(fragment_shader)
             .pool_size(ctx.frames_in_flight + 1)
-            .viewports(vec![Viewport::new(0., 0., 0., 0.)])
-            .scissors(vec![Rect2D::new(0, 0, 0, 0)])
-            .dynamic_states(&[DynamicStateElem::Viewport, DynamicStateElem::Scissor])
-            .attachments(Some(ctx.color_format), Some(ctx.depth_format))
+            .color_format(ctx.color_format)
+            .depth_format(ctx.depth_format)
             .depth_test_enable(false, CompareOp::LessEqual)
             .front_face(FrontFace::CCW)
-            .binding_group(BindingGroupType::SceneData)
-            .binding(DescriptorType::Uniform, DescriptorStage::All);
+            .binding_group(DescriptorStage::All, BindingGroupType::SceneData)
+            .binding(DescriptorType::Uniform);
 
         Ok(Self {
             vertex_attributes: VertexAttribute::empty(),
             blend_mode: BlendMode::None,
-            pipeline_builder,
+            pipeline_properties,
+            last_binding_group_type: None,
         })
     }
 
@@ -80,50 +85,51 @@ impl MaterialBuilder {
     }
 
     pub fn no_culling(mut self) -> Self {
-        self.pipeline_builder = self.pipeline_builder.cull_mode(CullMode::None);
+        self.pipeline_properties = self.pipeline_properties.cull_mode(CullMode::None);
 
         self
     }
 
     pub fn cull_mode(mut self, cull_mode: CullMode) -> Self {
-        self.pipeline_builder = self.pipeline_builder.cull_mode(cull_mode);
+        self.pipeline_properties = self.pipeline_properties.cull_mode(cull_mode);
 
         self
     }
 
     pub fn blend_mode(mut self, blend_mode: BlendMode) -> Self {
-        self.pipeline_builder = self.pipeline_builder.blending_enabled(blend_mode);
+        self.pipeline_properties = self.pipeline_properties.blend_mode(blend_mode);
         self.blend_mode = blend_mode;
 
         self
     }
 
     pub fn prop(mut self, _name: &str, prop: MaterialProperty) -> Self {
-        if self.pipeline_builder.current_binding_group() != Some(BindingGroupType::MaterialData) {
-            self.pipeline_builder = self
-                .pipeline_builder
-                .binding_group(BindingGroupType::MaterialData);
+        if self.last_binding_group_type != Some(BindingGroupType::MaterialData) {
+            self.pipeline_properties = self
+                .pipeline_properties
+                .binding_group(DescriptorStage::Fragment, BindingGroupType::MaterialData);
+            self.last_binding_group_type = Some(BindingGroupType::MaterialData);
         }
 
         match prop {
             MaterialProperty::Texture => {
-                self.pipeline_builder = self
-                    .pipeline_builder
-                    .binding(DescriptorType::SampledImage, DescriptorStage::Fragment)
-                    .binding(DescriptorType::Sampler, DescriptorStage::Fragment);
+                self.pipeline_properties = self
+                    .pipeline_properties
+                    .binding(DescriptorType::SampledImage)
+                    .binding(DescriptorType::Sampler);
             }
         }
 
         self
     }
 
-    pub fn build(self, pass: RenderPass) -> Arc<Material> {
-        let pipeline_builder = match pass.push_layout() {
-            Some(push_layout) => self.pipeline_builder.push_constants(push_layout.size()),
-            None => self.pipeline_builder,
+    pub fn build(self, pass: RenderPass, resource_manager: &mut ResourceManager) -> Arc<Material> {
+        let pipeline_properties = match pass.push_layout() {
+            Some(push_layout) => self.pipeline_properties.push_constants(push_layout.size()),
+            None => self.pipeline_properties,
         };
 
-        let pipeline = pipeline_builder.build();
+        let pipeline = resource_manager.add(pipeline_properties.wrap(), ResourceLifetime::Static);
 
         Arc::new(Material {
             id: Uuid::new_v4(),

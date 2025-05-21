@@ -10,7 +10,7 @@ use gobs::{
         BlendMode, FrameGraph, GfxContext, Material, MaterialProperty, PassType, RenderError,
         Renderable,
     },
-    resource::{entity::camera::Camera, geometry::VertexAttribute},
+    resource::{entity::camera::Camera, geometry::VertexAttribute, manager::ResourceManager},
     scene::scene::Scene,
     ui::UIRenderer,
 };
@@ -61,18 +61,27 @@ impl SampleApp {
         CameraController::new(3., 0.4)
     }
 
-    pub fn color_material(&self, ctx: &GfxContext, graph: &FrameGraph) -> Arc<Material> {
+    pub fn color_material(
+        &self,
+        ctx: &GfxContext,
+        resource_manager: &mut ResourceManager,
+        graph: &FrameGraph,
+    ) -> Arc<Material> {
         let vertex_attributes = VertexAttribute::POSITION | VertexAttribute::COLOR;
 
         Material::builder(ctx, "color.vert.spv", "color.frag.spv")
             .unwrap()
             .vertex_attributes(vertex_attributes)
-            .build(graph.pass_by_type(PassType::Forward).unwrap())
+            .build(
+                graph.pass_by_type(PassType::Forward).unwrap(),
+                resource_manager,
+            )
     }
 
     pub fn color_material_transparent(
         &self,
         ctx: &GfxContext,
+        resource_manager: &mut ResourceManager,
         graph: &FrameGraph,
     ) -> Arc<Material> {
         let vertex_attributes = VertexAttribute::POSITION | VertexAttribute::COLOR;
@@ -81,10 +90,18 @@ impl SampleApp {
             .unwrap()
             .vertex_attributes(vertex_attributes)
             .blend_mode(BlendMode::Alpha)
-            .build(graph.pass_by_type(PassType::Forward).unwrap())
+            .build(
+                graph.pass_by_type(PassType::Forward).unwrap(),
+                resource_manager,
+            )
     }
 
-    pub fn texture_material(&self, ctx: &GfxContext, graph: &FrameGraph) -> Arc<Material> {
+    pub fn texture_material(
+        &self,
+        ctx: &GfxContext,
+        resource_manager: &mut ResourceManager,
+        graph: &FrameGraph,
+    ) -> Arc<Material> {
         let vertex_attributes = VertexAttribute::POSITION
             | VertexAttribute::TEXTURE
             | VertexAttribute::NORMAL
@@ -95,12 +112,16 @@ impl SampleApp {
             .unwrap()
             .vertex_attributes(vertex_attributes)
             .prop("diffuse", MaterialProperty::Texture)
-            .build(graph.pass_by_type(PassType::Forward).unwrap())
+            .build(
+                graph.pass_by_type(PassType::Forward).unwrap(),
+                resource_manager,
+            )
     }
 
     pub fn texture_material_transparent(
         &self,
         ctx: &GfxContext,
+        resource_manager: &mut ResourceManager,
         graph: &FrameGraph,
     ) -> Arc<Material> {
         let vertex_attributes = VertexAttribute::POSITION
@@ -114,10 +135,18 @@ impl SampleApp {
             .vertex_attributes(vertex_attributes)
             .prop("diffuse", MaterialProperty::Texture)
             .blend_mode(BlendMode::Alpha)
-            .build(graph.pass_by_type(PassType::Forward).unwrap())
+            .build(
+                graph.pass_by_type(PassType::Forward).unwrap(),
+                resource_manager,
+            )
     }
 
-    pub fn normal_mapping_material(&self, ctx: &GfxContext, graph: &FrameGraph) -> Arc<Material> {
+    pub fn normal_mapping_material(
+        &self,
+        ctx: &GfxContext,
+        resource_manager: &mut ResourceManager,
+        graph: &FrameGraph,
+    ) -> Arc<Material> {
         let vertex_attributes = VertexAttribute::POSITION
             | VertexAttribute::TEXTURE
             | VertexAttribute::NORMAL
@@ -129,16 +158,27 @@ impl SampleApp {
             .vertex_attributes(vertex_attributes)
             .prop("diffuse", MaterialProperty::Texture)
             .prop("normal", MaterialProperty::Texture)
-            .build(graph.pass_by_type(PassType::Forward).unwrap())
+            .build(
+                graph.pass_by_type(PassType::Forward).unwrap(),
+                resource_manager,
+            )
     }
 
-    pub fn depth_material(&self, ctx: &GfxContext, graph: &FrameGraph) -> Arc<Material> {
+    pub fn depth_material(
+        &self,
+        ctx: &GfxContext,
+        resource_manager: &mut ResourceManager,
+        graph: &FrameGraph,
+    ) -> Arc<Material> {
         let vertex_attributes = VertexAttribute::POSITION | VertexAttribute::COLOR;
 
         Material::builder(ctx, "color.vert.spv", "depth.frag.spv")
             .unwrap()
             .vertex_attributes(vertex_attributes)
-            .build(graph.pass_by_type(PassType::Forward).unwrap())
+            .build(
+                graph.pass_by_type(PassType::Forward).unwrap(),
+                resource_manager,
+            )
     }
 
     pub fn update_ui(
