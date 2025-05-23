@@ -1,5 +1,7 @@
 # gobs-engine
 
+![CI](https://github.com/franckv/gobs-engine/actions/workflows/rust.yml/badge.svg)
+
 Game engine written in Rust based on Vulkan.
 
 ## Crates
