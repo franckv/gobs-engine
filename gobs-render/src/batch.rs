@@ -54,17 +54,25 @@ impl RenderBatch {
                 .mesh_resource_manager
                 .load_material(resource_manager, material.clone());
 
+            let mut bind_groups = Vec::new();
+            if let Some(bind_group) = material_binding {
+                bind_groups.push(bind_group);
+            }
+
             let vertex_attributes = match pass.vertex_attributes() {
                 Some(vertex_attributes) => vertex_attributes,
                 None => model.materials[material_id].vertex_attributes(),
             };
 
-            let pipeline = if let Some(material) = &material {
+            let (pipeline, is_transparent) = if let Some(material) = &material {
                 let pipeline_data = resource_manager.get_data(&material.pipeline(), ());
 
-                Some(pipeline_data.pipeline.clone())
+                (
+                    Some(pipeline_data.pipeline.clone()),
+                    material.material.blending_enabled,
+                )
             } else {
-                None
+                (None, false)
             };
 
             let mesh_data = resource_manager.get_data(mesh, vertex_attributes);
@@ -75,8 +83,8 @@ impl RenderBatch {
                 pass: pass.clone(),
                 mesh: mesh_data.clone(),
                 pipeline,
-                material,
-                material_binding,
+                is_transparent,
+                bind_groups,
             });
         }
 
@@ -136,7 +144,7 @@ impl RenderBatch {
             // sort order: pass, transparent, material, model
             (a.pass.id().cmp(&b.pass.id()))
                 .then(a.is_transparent().cmp(&b.is_transparent()))
-                .then(a.material_id().cmp(&b.material_id()))
+                .then(a.pipeline_id().cmp(&b.pipeline_id()))
                 .then(a.model_id.cmp(&b.model_id))
         });
     }

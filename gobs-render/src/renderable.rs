@@ -1,14 +1,11 @@
 use std::sync::Arc;
 
 use gobs_core::Transform;
-use gobs_gfx::{GfxBindingGroup, GfxPipeline};
+use gobs_gfx::{GfxBindingGroup, GfxPipeline, Pipeline, PipelineId};
 use gobs_resource::manager::ResourceManager;
 use uuid::Uuid;
 
-use crate::{
-    GfxContext, MaterialInstance, RenderPass, batch::RenderBatch, materials::MaterialInstanceId,
-    resources::MeshData,
-};
+use crate::{GfxContext, RenderPass, batch::RenderBatch, resources::MeshData};
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum RenderableLifetime {
@@ -22,21 +19,21 @@ pub struct RenderObject {
     pub pass: RenderPass,
     pub mesh: MeshData,
     pub pipeline: Option<Arc<GfxPipeline>>,
-    pub material: Option<Arc<MaterialInstance>>,
-    pub material_binding: Option<GfxBindingGroup>,
+    pub is_transparent: bool,
+    pub bind_groups: Vec<GfxBindingGroup>,
 }
 
 impl RenderObject {
     pub fn is_transparent(&self) -> bool {
-        if let Some(material) = &self.material {
-            material.material.blending_enabled
-        } else {
-            false
-        }
+        self.is_transparent
     }
 
-    pub fn material_id(&self) -> Option<MaterialInstanceId> {
-        self.material.as_ref().map(|material| material.id)
+    pub fn pipeline_id(&self) -> PipelineId {
+        if let Some(pipeline) = &self.pipeline {
+            pipeline.id()
+        } else {
+            PipelineId::default()
+        }
     }
 }
 

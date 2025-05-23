@@ -89,14 +89,7 @@ impl DepthPass {
     }
 
     fn should_render(&self, render_object: &RenderObject) -> bool {
-        render_object.pass.id() == self.id
-            && render_object.material.is_some()
-            && !render_object
-                .material
-                .clone()
-                .unwrap()
-                .material
-                .blending_enabled
+        render_object.pass.id() == self.id && !render_object.is_transparent()
     }
 
     fn bind_pipeline(
@@ -145,8 +138,6 @@ impl DepthPass {
 
             let world_matrix = render_object.transform.matrix();
 
-            let pipeline = render_object.pipeline.clone().unwrap();
-
             // TODO: hardcoded
             push_layout.copy_data(
                 &[
@@ -159,7 +150,7 @@ impl DepthPass {
                 &mut state.object_data,
             );
 
-            cmd.push_constants(&pipeline, &state.object_data);
+            cmd.push_constants(&self.pipeline, &state.object_data);
         }
 
         if state.last_index_buffer != render_object.mesh.index_buffer.id()

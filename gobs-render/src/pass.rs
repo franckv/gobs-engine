@@ -14,7 +14,7 @@ use gobs_resource::{
 
 use crate::{
     GfxContext, RenderError, batch::RenderBatch, graph::FrameData, graph::GraphResourceManager,
-    materials::MaterialId, resources::UniformBuffer,
+    resources::UniformBuffer,
 };
 
 pub mod bounds;
@@ -72,7 +72,6 @@ pub trait RenderPass {
 pub(crate) struct RenderState {
     last_pipeline: PipelineId,
     last_index_buffer: BufferId,
-    last_material: MaterialId,
     last_indices_offset: usize,
     scene_data_bound: bool,
     object_data: Vec<u8>,

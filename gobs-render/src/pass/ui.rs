@@ -68,7 +68,7 @@ impl UiPass {
     }
 
     fn should_render(&self, render_object: &RenderObject) -> bool {
-        render_object.pass.id() == self.id && render_object.material.is_some()
+        render_object.pass.id() == self.id && render_object.pipeline.is_some()
     }
 
     fn bind_pipeline(
@@ -90,24 +90,15 @@ impl UiPass {
         }
     }
 
-    fn bind_material(
+    fn bind_resources(
         &self,
         cmd: &GfxCommand,
         stats: &mut RenderStats,
-        state: &mut RenderState,
         render_object: &RenderObject,
     ) {
-        if let Some(material) = &render_object.material {
-            if state.last_material != material.id {
-                if let Some(material_binding) = &render_object.material_binding {
-                    tracing::trace!(target: "render", "Bind material {}", material.id);
-                    tracing::trace!(target: "render", "Transparent: {}", material.material.blending_enabled);
-                    cmd.bind_resource(material_binding);
-                    stats.bind(self.id);
-                }
-
-                state.last_material = material.id;
-            }
+        for bind_group in &render_object.bind_groups {
+            cmd.bind_resource(bind_group);
+            stats.bind(self.id);
         }
     }
 
@@ -202,12 +193,7 @@ impl UiPass {
                 render_object,
             );
 
-            self.bind_material(
-                cmd,
-                &mut batch.render_stats,
-                &mut render_state,
-                render_object,
-            );
+            self.bind_resources(cmd, &mut batch.render_stats, render_object);
 
             self.bind_object_data(
                 ctx,
