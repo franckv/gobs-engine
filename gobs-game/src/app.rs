@@ -9,7 +9,7 @@ use winit::{
 };
 
 use gobs_core::{Input, utils::timer::Timer};
-use gobs_render::{Display, RenderError};
+use gobs_render_graph::{Display, RenderError};
 
 use crate::{AppError, context::GameContext};
 
@@ -84,6 +84,7 @@ where
                             physical_size.width,
                             physical_size.height
                         );
+                        context.resize(physical_size.width, physical_size.height);
                         runnable.resize(context, physical_size.width, physical_size.height);
                     }
                     WindowEvent::KeyboardInput {
@@ -137,7 +138,7 @@ where
                         let delta = self.timer.delta();
 
                         if !self.close_requested {
-                            context.update();
+                            context.update(delta);
                             runnable.update(context, delta);
                             tracing::trace!(target: "events", "[Redraw] FPS: {}", 1. / delta);
                             if !context.gfx.display.is_minimized() {
@@ -225,7 +226,7 @@ pub trait Run: Sized {
     async fn start(&mut self, ctx: &mut GameContext);
     fn update(&mut self, ctx: &mut GameContext, delta: f32);
     fn render(&mut self, ctx: &mut GameContext) -> Result<(), RenderError>;
-    fn input(&mut self, ctx: &GameContext, input: Input);
+    fn input(&mut self, ctx: &mut GameContext, input: Input);
     fn resize(&mut self, ctx: &mut GameContext, width: u32, height: u32);
     fn close(&mut self, ctx: &GameContext);
 }

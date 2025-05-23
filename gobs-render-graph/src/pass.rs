@@ -13,8 +13,8 @@ use gobs_resource::{
 };
 
 use crate::{
-    GfxContext, RenderError, batch::RenderBatch, graph::FrameData, graph::GraphResourceManager,
-    resources::UniformBuffer,
+    GfxContext, RenderError, RenderObject, UniformBuffer,
+    graph::{FrameData, GraphResourceManager},
 };
 
 pub mod bounds;
@@ -56,7 +56,8 @@ pub trait RenderPass {
         ctx: &mut GfxContext,
         frame: &FrameData,
         resource_manager: &GraphResourceManager,
-        batch: &mut RenderBatch,
+        render_list: &[RenderObject],
+        uniform_data: Option<&[u8]>,
         draw_extent: ImageExtent2D,
     ) -> Result<(), RenderError>;
     fn get_uniform_data(

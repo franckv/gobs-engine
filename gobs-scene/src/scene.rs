@@ -1,7 +1,8 @@
 use glam::Vec3;
 
 use gobs_core::Transform;
-use gobs_render::{GfxContext, RenderBatch, RenderPass, Renderable};
+use gobs_render::{RenderBatch, Renderable};
+use gobs_render_graph::{GfxContext, RenderPass};
 use gobs_resource::entity::{camera::Camera, light::Light};
 use gobs_resource::manager::ResourceManager;
 

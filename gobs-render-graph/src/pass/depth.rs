@@ -2,9 +2,9 @@ use std::sync::Arc;
 
 use gobs_core::{ImageExtent2D, Transform};
 use gobs_gfx::{
-    BindingGroupType, Buffer, Command, CullMode, DescriptorStage, DescriptorType, DynamicStateElem,
-    FrontFace, GfxCommand, GfxPipeline, GraphicsPipelineBuilder, ImageLayout, Pipeline,
-    PolygonMode, Rect2D, Viewport,
+    BindingGroupType, Buffer, Command, CompareOp, CullMode, DescriptorStage, DescriptorType,
+    DynamicStateElem, FrontFace, GfxCommand, GfxPipeline, GraphicsPipelineBuilder, ImageLayout,
+    Pipeline, PolygonMode, Rect2D, Viewport,
 };
 use gobs_resource::{
     entity::{
@@ -16,15 +16,12 @@ use gobs_resource::{
 };
 
 use crate::{
-    GfxContext, RenderError,
-    batch::RenderBatch,
+    GfxContext, RenderError, RenderObject,
     graph::{FrameData, GraphResourceManager},
     pass::{PassFrameData, PassId, PassType, RenderPass, RenderState},
-    renderable::RenderObject,
-    stats::RenderStats,
 };
 
-pub struct WirePass {
+pub struct DepthPass {
     id: PassId,
     name: String,
     ty: PassType,
@@ -36,7 +33,7 @@ pub struct WirePass {
     uniform_data_layout: Arc<UniformLayout>,
 }
 
-impl WirePass {
+impl DepthPass {
     pub fn new(ctx: &GfxContext, name: &str) -> Result<Arc<dyn RenderPass>, RenderError> {
         let vertex_attributes = VertexAttribute::POSITION;
 
@@ -50,18 +47,17 @@ impl WirePass {
             .build();
 
         let pipeline = GfxPipeline::graphics(name, &ctx.device)
-            .vertex_shader("wire.vert.spv", "main")?
-            .fragment_shader("wire.frag.spv", "main")?
+            .vertex_shader("depth.vert.spv", "main")?
             .pool_size(ctx.frames_in_flight)
             .push_constants(push_layout.size())
             .binding_group(BindingGroupType::SceneData)
-            .binding(DescriptorType::Uniform, DescriptorStage::All)
-            .polygon_mode(PolygonMode::Line)
+            .binding(DescriptorType::Uniform, DescriptorStage::Vertex)
+            .polygon_mode(PolygonMode::Fill)
             .viewports(vec![Viewport::new(0., 0., 0., 0.)])
             .scissors(vec![Rect2D::new(0, 0, 0, 0)])
             .dynamic_states(&[DynamicStateElem::Viewport, DynamicStateElem::Scissor])
-            .attachments(Some(ctx.color_format), Some(ctx.depth_format))
-            .depth_test_disable()
+            .attachments(None, Some(ctx.depth_format))
+            .depth_test_enable(true, CompareOp::Less)
             .cull_mode(CullMode::Back)
             .front_face(FrontFace::CCW)
             .build();
@@ -73,8 +69,8 @@ impl WirePass {
         Ok(Arc::new(Self {
             id: PassId::new_v4(),
             name: name.to_string(),
-            ty: PassType::Wire,
-            attachments: vec![String::from("draw")],
+            ty: PassType::Depth,
+            attachments: vec![String::from("depth")],
             pipeline,
             vertex_attributes,
             push_layout,
@@ -83,26 +79,22 @@ impl WirePass {
         }))
     }
 
-    fn prepare_scene_data(&self, frame: &PassFrameData, batch: &mut RenderBatch) {
-        if let Some(scene_data) = batch.scene_data(self.id) {
-            frame.uniform_buffer.write().update(scene_data);
-        }
+    fn prepare_scene_data(&self, frame: &PassFrameData, uniform_data: &[u8]) {
+        frame.uniform_buffer.write().update(uniform_data);
     }
 
     fn should_render(&self, render_object: &RenderObject) -> bool {
-        render_object.pass.id() == self.id
+        render_object.pass.id() == self.id && !render_object.is_transparent()
     }
 
     fn bind_pipeline(
         &self,
         cmd: &GfxCommand,
-        stats: &mut RenderStats,
         state: &mut RenderState,
         _render_object: &RenderObject,
     ) {
         if state.last_pipeline != self.pipeline.id() {
             cmd.bind_pipeline(&self.pipeline);
-            stats.bind(self.id);
             state.last_pipeline = self.pipeline.id();
         }
     }
@@ -111,7 +103,6 @@ impl WirePass {
         &self,
         frame: &PassFrameData,
         cmd: &GfxCommand,
-        stats: &mut RenderStats,
         state: &mut RenderState,
         _render_object: &RenderObject,
     ) {
@@ -119,7 +110,6 @@ impl WirePass {
             let uniform_buffer = frame.uniform_buffer.read();
 
             cmd.bind_resource_buffer(&uniform_buffer.buffer, &self.pipeline);
-            stats.bind(self.id);
             state.scene_data_bound = true;
         }
     }
@@ -128,7 +118,6 @@ impl WirePass {
         &self,
         ctx: &GfxContext,
         cmd: &GfxCommand,
-        stats: &mut RenderStats,
         state: &mut RenderState,
         render_object: &RenderObject,
     ) {
@@ -139,33 +128,27 @@ impl WirePass {
 
             let world_matrix = render_object.transform.matrix();
 
-            let pipeline = render_object.pipeline.clone().unwrap();
-
             // TODO: hardcoded
             push_layout.copy_data(
                 &[
                     UniformPropData::Mat4F(world_matrix.to_cols_array_2d()),
                     UniformPropData::U64(
-                        render_object.mesh.vertex_buffer.address(&ctx.device)
-                            + render_object.mesh.vertices_offset,
+                        render_object.vertex_buffer.address(&ctx.device)
+                            + render_object.vertices_offset,
                     ),
                 ],
                 &mut state.object_data,
             );
 
-            cmd.push_constants(&pipeline, &state.object_data);
+            cmd.push_constants(&self.pipeline, &state.object_data);
         }
 
-        if state.last_index_buffer != render_object.mesh.index_buffer.id()
-            || state.last_indices_offset != render_object.mesh.indices_offset
+        if state.last_index_buffer != render_object.index_buffer.id()
+            || state.last_indices_offset != render_object.indices_offset
         {
-            cmd.bind_index_buffer(
-                &render_object.mesh.index_buffer,
-                render_object.mesh.indices_offset,
-            );
-            stats.bind(self.id);
-            state.last_index_buffer = render_object.mesh.index_buffer.id();
-            state.last_indices_offset = render_object.mesh.indices_offset;
+            cmd.bind_index_buffer(&render_object.index_buffer, render_object.indices_offset);
+            state.last_index_buffer = render_object.index_buffer.id();
+            state.last_indices_offset = render_object.indices_offset;
         }
     }
 
@@ -174,47 +157,32 @@ impl WirePass {
         ctx: &GfxContext,
         frame: &PassFrameData,
         cmd: &GfxCommand,
-        batch: &mut RenderBatch,
+        render_list: &[RenderObject],
+        uniform_data: Option<&[u8]>,
     ) {
         let mut render_state = RenderState::default();
 
-        self.prepare_scene_data(frame, batch);
+        if let Some(uniform_data) = uniform_data {
+            self.prepare_scene_data(frame, uniform_data);
+        }
 
-        for render_object in &batch.render_list {
+        for render_object in render_list {
             if !self.should_render(render_object) {
                 continue;
             }
 
-            self.bind_pipeline(
-                cmd,
-                &mut batch.render_stats,
-                &mut render_state,
-                render_object,
-            );
+            self.bind_pipeline(cmd, &mut render_state, render_object);
 
-            self.bind_scene_data(
-                frame,
-                cmd,
-                &mut batch.render_stats,
-                &mut render_state,
-                render_object,
-            );
+            self.bind_scene_data(frame, cmd, &mut render_state, render_object);
 
-            self.bind_object_data(
-                ctx,
-                cmd,
-                &mut batch.render_stats,
-                &mut render_state,
-                render_object,
-            );
+            self.bind_object_data(ctx, cmd, &mut render_state, render_object);
 
-            cmd.draw_indexed(render_object.mesh.indices_len, 1);
-            batch.render_stats.draw(self.id);
+            cmd.draw_indexed(render_object.indices_len, 1);
         }
     }
 }
 
-impl RenderPass for WirePass {
+impl RenderPass for DepthPass {
     fn id(&self) -> PassId {
         self.id
     }
@@ -236,7 +204,7 @@ impl RenderPass for WirePass {
     }
 
     fn depth_clear(&self) -> bool {
-        false
+        true
     }
 
     fn pipeline(&self) -> Option<Arc<GfxPipeline>> {
@@ -274,26 +242,27 @@ impl RenderPass for WirePass {
         ctx: &mut GfxContext,
         frame: &FrameData,
         resource_manager: &GraphResourceManager,
-        batch: &mut RenderBatch,
+        render_list: &[RenderObject],
+        uniform_data: Option<&[u8]>,
         draw_extent: ImageExtent2D,
     ) -> Result<(), RenderError> {
-        tracing::debug!(target: "render", "Draw wire");
+        tracing::debug!(target: "render", "Draw depth");
 
         let cmd = &frame.command;
 
-        cmd.begin_label("Draw wire");
+        cmd.begin_label("Draw depth");
 
-        let draw_attach = &self.attachments[0];
+        let depth_attach = &self.attachments[0];
 
         cmd.transition_image_layout(
-            &mut resource_manager.image_write(draw_attach),
-            ImageLayout::Color,
+            &mut resource_manager.image_write(depth_attach),
+            ImageLayout::Depth,
         );
 
         cmd.begin_rendering(
-            Some(&resource_manager.image_read(draw_attach)),
-            draw_extent,
             None,
+            draw_extent,
+            Some(&resource_manager.image_read(depth_attach)),
             self.color_clear(),
             self.depth_clear(),
             [0.; 4],
@@ -304,7 +273,7 @@ impl RenderPass for WirePass {
 
         let pass_frame = &self.frame_data[frame.id];
 
-        self.render_batch(ctx, pass_frame, cmd, batch);
+        self.render_batch(ctx, pass_frame, cmd, render_list, uniform_data);
 
         cmd.end_rendering();
 

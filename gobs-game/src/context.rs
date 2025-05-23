@@ -1,8 +1,7 @@
 use winit::window::Window;
 
-use gobs_render::{
-    GfxContext, Mesh, MeshLoader, Pipeline, PipelineLoader, RenderError, Texture, TextureLoader,
-};
+use gobs_render::{Mesh, MeshLoader, Pipeline, PipelineLoader, Renderer, Texture, TextureLoader};
+use gobs_render_graph::{GfxContext, RenderError};
 use gobs_resource::manager::ResourceManager;
 
 #[derive(Clone, Debug)]
@@ -14,6 +13,7 @@ pub struct GameContext {
     pub app_info: AppInfo,
     pub gfx: GfxContext,
     pub resource_manager: ResourceManager,
+    pub renderer: Renderer,
 }
 
 impl GameContext {
@@ -30,16 +30,24 @@ impl GameContext {
         let pipeline_loader = PipelineLoader::new(gfx.device.clone());
         resource_manager.register_resource::<Pipeline>(pipeline_loader);
 
+        let renderer = Renderer::new(&gfx);
+
         Ok(Self {
             app_info: AppInfo {
                 name: name.to_string(),
             },
             gfx,
             resource_manager,
+            renderer,
         })
     }
 
-    pub fn update(&mut self) {
+    pub fn resize(&mut self, width: u32, height: u32) {
+        self.renderer.resize(&mut self.gfx, width, height);
+    }
+
+    pub fn update(&mut self, delta: f32) {
+        self.renderer.update(&self.gfx, delta);
         self.resource_manager.update::<Mesh>();
         self.resource_manager.update::<Texture>();
         self.resource_manager.update::<Pipeline>();

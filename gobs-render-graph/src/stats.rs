@@ -2,7 +2,7 @@ use std::collections::{HashMap, HashSet};
 
 use gobs_gfx::{Buffer, BufferId};
 
-use crate::{ModelId, pass::PassId, renderable::RenderObject};
+use crate::{pass::PassId, renderable::RenderObject};
 
 #[derive(Clone, Debug, Default)]
 pub struct PassStats {
@@ -26,7 +26,7 @@ pub struct RenderStats {
     update_time: f32,
     pub fps: u32,
     pub pass_stats: HashMap<PassId, PassStats>,
-    models_set: HashSet<(PassId, ModelId)>,
+    // models_set: HashSet<(PassId, ModelId)>,
     indices_set: HashSet<(PassId, BufferId, usize)>,
 }
 
@@ -35,7 +35,7 @@ impl RenderStats {
         self.draws = 0;
         self.binds = 0;
         self.pass_stats.clear();
-        self.models_set.clear();
+        // self.models_set.clear();
         self.indices_set.clear();
     }
 
@@ -106,15 +106,15 @@ impl RenderStats {
     pub fn add_object(&mut self, object: &RenderObject) {
         let key = (
             object.pass.id(),
-            object.mesh.index_buffer.id(),
-            object.mesh.indices_offset,
+            object.index_buffer.id(),
+            object.indices_offset,
         );
 
         if !self.indices_set.contains(&key) {
             self.indices_set.insert(key);
 
-            let indices = object.mesh.indices_len as u32;
-            let vertices = object.mesh.vertices_count as u32;
+            let indices = object.indices_len as u32;
+            let vertices = object.vertices_count as u32;
             let models = 1;
 
             let pass_stat = self.pass_stats.entry(object.pass.id()).or_default();

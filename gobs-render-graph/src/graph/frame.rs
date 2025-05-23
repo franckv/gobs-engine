@@ -1,20 +1,18 @@
 use bytemuck::Pod;
 
-use gobs_core::{ImageExtent2D, ImageFormat, utils::timer::Timer};
+use gobs_core::{ImageExtent2D, ImageFormat};
 use gobs_gfx::{
     Buffer, BufferUsage, Command, CommandQueueType, Device, Display, GfxBuffer, GfxCommand,
     GfxImage, Image, ImageLayout, ImageUsage,
 };
 
 use crate::{
-    GfxContext, RenderError, RenderPass,
-    batch::RenderBatch,
+    GfxContext, RenderError, RenderObject, RenderPass,
     graph::resource::GraphResourceManager,
     pass::{
         PassId, PassType, bounds::BoundsPass, compute::ComputePass, depth::DepthPass,
         dummy::DummyPass, forward::ForwardPass, present::PresentPass, ui::UiPass, wire::WirePass,
     },
-    stats::RenderStats,
 };
 
 const FRAME_WIDTH: u32 = 1920;
@@ -47,7 +45,6 @@ pub struct FrameGraph {
     pub render_scaling: f32,
     pub passes: Vec<RenderPass>,
     resource_manager: GraphResourceManager,
-    pub batch: RenderBatch,
 }
 
 impl FrameGraph {
@@ -65,7 +62,6 @@ impl FrameGraph {
             render_scaling: 1.,
             passes: Vec::new(),
             resource_manager: GraphResourceManager::new(),
-            batch: RenderBatch::new(),
         }
     }
 
@@ -241,10 +237,6 @@ impl FrameGraph {
         self.get_pass(|pass| pass.name() == pass_name)
     }
 
-    pub fn render_stats(&self) -> &RenderStats {
-        &self.batch.render_stats
-    }
-
     pub fn begin(&mut self, ctx: &mut GfxContext) -> Result<(), RenderError> {
         self.frame_number += 1;
         let frame_id = self.frame_number % ctx.frames_in_flight;
@@ -256,8 +248,6 @@ impl FrameGraph {
 
         tracing::debug!(target: "sync", "Wait for frame: {} ({}/{})", self.frame_number, frame_id, ctx.frames_in_flight);
         frame.reset();
-
-        self.batch.reset();
 
         let cmd = &frame.command;
 
@@ -328,64 +318,31 @@ impl FrameGraph {
         Ok(())
     }
 
-    pub fn update(&mut self, ctx: &GfxContext, delta: f32) {
-        if self.frame_number % ctx.stats_refresh == 0 {
-            self.batch.render_stats.fps = (1. / delta).round() as u32;
-        }
-    }
+    pub fn update(&mut self, _ctx: &GfxContext, _delta: f32) {}
 
-    pub fn prepare(
+    pub fn render(
         &mut self,
-        ctx: &GfxContext,
-        draw_cmd: &mut dyn FnMut(RenderPass, &mut RenderBatch),
-    ) {
-        tracing::debug!(target: "render", "Begin render batch");
-
-        let mut timer = Timer::new();
-
-        let should_update = self.frame_number % ctx.stats_refresh == 0;
-
-        self.batch.render_stats.update_time_reset(should_update);
-        for pass in &self.passes {
-            draw_cmd(pass.clone(), &mut self.batch);
-
-            self.batch
-                .render_stats
-                .update_time_add(timer.delta(), pass.id(), should_update);
-        }
-
-        self.batch.finish();
-    }
-
-    pub fn render(&mut self, ctx: &mut GfxContext) -> Result<(), RenderError> {
-        tracing::debug!(target: "render", "Begin rendering");
+        ctx: &mut GfxContext,
+        pass: RenderPass,
+        render_list: &[RenderObject],
+        uniform_data: Option<&[u8]>,
+    ) -> Result<(), RenderError> {
+        tracing::debug!(target: "render", "Begin rendering pass {}", pass.name());
 
         let frame_id = self.frame_number % ctx.frames_in_flight;
 
-        let mut timer = Timer::new();
-
-        let should_update = self.frame_number % ctx.stats_refresh == 0;
-
-        self.batch.render_stats.cpu_draw_time_reset(should_update);
-
         let frame = &self.frames[frame_id];
 
-        for pass in &self.passes {
-            tracing::debug!(target: "render", "Enter render pass: {}", pass.name());
-            pass.render(
-                ctx,
-                frame,
-                &self.resource_manager,
-                &mut self.batch,
-                self.draw_extent,
-            )?;
+        pass.render(
+            ctx,
+            frame,
+            &self.resource_manager,
+            render_list,
+            uniform_data,
+            self.draw_extent,
+        )?;
 
-            self.batch
-                .render_stats
-                .cpu_draw_time_add(timer.delta(), pass.id(), should_update);
-        }
-
-        tracing::debug!(target: "render", "End rendering");
+        tracing::debug!(target: "render", "End rendering pass");
 
         Ok(())
     }

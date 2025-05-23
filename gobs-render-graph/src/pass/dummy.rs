@@ -5,8 +5,7 @@ use gobs_gfx::GfxPipeline;
 use gobs_resource::{entity::uniform::UniformLayout, geometry::VertexAttribute};
 
 use crate::{
-    GfxContext, RenderError,
-    batch::RenderBatch,
+    GfxContext, RenderError, RenderObject,
     graph::{FrameData, GraphResourceManager},
     pass::{PassId, PassType, RenderPass},
 };
@@ -75,7 +74,8 @@ impl RenderPass for DummyPass {
         _ctx: &mut GfxContext,
         _frame: &FrameData,
         _resource_manager: &GraphResourceManager,
-        _batch: &mut RenderBatch,
+        _render_list: &[RenderObject],
+        _uniform_data: Option<&[u8]>,
         _draw_extent: ImageExtent2D,
     ) -> Result<(), RenderError> {
         tracing::debug!(target: "render", "Rendering {}", &self.name);

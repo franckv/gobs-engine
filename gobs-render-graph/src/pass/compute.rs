@@ -11,8 +11,7 @@ use gobs_resource::{
 };
 
 use crate::{
-    GfxContext, RenderError,
-    batch::RenderBatch,
+    GfxContext, RenderError, RenderObject,
     graph::{FrameData, GraphResourceManager},
     pass::{PassId, PassType, RenderPass},
 };
@@ -123,7 +122,8 @@ impl RenderPass for ComputePass {
         _ctx: &mut GfxContext,
         frame: &FrameData,
         resource_manager: &GraphResourceManager,
-        batch: &mut RenderBatch,
+        _render_list: &[RenderObject],
+        _uniform_data: Option<&[u8]>,
         draw_extent: ImageExtent2D,
     ) -> Result<(), RenderError> {
         tracing::debug!(target: "render", "Draw compute");
@@ -146,20 +146,15 @@ impl RenderPass for ComputePass {
             )
             .end();
 
-        batch.stats_mut().bind(self.id);
-
         cmd.transition_image_layout(
             &mut resource_manager.image_write(draw_attach),
             ImageLayout::General,
         );
 
         cmd.bind_pipeline(&self.pipeline);
-        batch.stats_mut().bind(self.id);
         cmd.bind_resource(draw_bindings);
-        batch.stats_mut().bind(self.id);
 
         cmd.dispatch(draw_extent.width / 16 + 1, draw_extent.height / 16 + 1, 1);
-        batch.render_stats.draw(self.id);
 
         cmd.end_label();
 

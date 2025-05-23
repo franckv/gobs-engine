@@ -5,7 +5,6 @@ use slotmap::Key as _;
 use gobs::{
     core::Transform,
     game::context::AppInfo,
-    render::FrameGraph,
     resource::entity::camera::Camera,
     scene::{components::NodeValue, graph::scenegraph::SceneGraph, scene::Scene},
 };
@@ -31,7 +30,6 @@ impl Ui {
         &mut self,
         app_info: &AppInfo,
         ectx: &egui::Context,
-        graph: &FrameGraph,
         scene: &Scene,
         camera: &Camera,
         camera_transform: &Transform,
@@ -45,8 +43,8 @@ impl Ui {
             });
             ui.heading(&app_info.name);
             ui.separator();
-            self.show_fps(ui, graph.render_stats().fps);
-            self.show_stats(ui, "Render Stats", graph);
+            // self.show_fps(ui, graph.render_stats().fps);
+            // self.show_stats(ui, "Render Stats", graph);
             self.show_camera(ui, camera, camera_transform);
             self.show_scene(ui, &scene.graph);
         });
@@ -58,44 +56,44 @@ impl Ui {
         ui.label(format!("FPS: {}", fps));
     }
 
-    pub fn show_stats(&self, ui: &mut egui::Ui, header: &str, graph: &FrameGraph) {
-        let stats = graph.render_stats();
-        ui.collapsing(header, |ui| {
-            for pass in &graph.passes {
-                ui.collapsing(format!("Pass: {}", pass.name()), |ui| {
-                    if let Some(pass_stats) = stats.pass_stats.get(&pass.id()) {
-                        ui.label(format!("  Vertices: {}", pass_stats.vertices));
-                        ui.label(format!("  Indices: {}", pass_stats.indices));
-                        ui.label(format!("  Models: {}", pass_stats.models));
-                        ui.label(format!("  Instances: {}", pass_stats.instances));
-                        ui.label(format!("  Textures: {}", pass_stats.textures));
-                        ui.label(format!("  Draws: {}", pass_stats.draws));
-                        ui.label(format!("  Binds: {}", pass_stats.binds));
-                        ui.label(format!(
-                            "  Draw time: {:.2}ms",
-                            1000. * pass_stats.draw_time
-                        ));
-                        ui.label(format!(
-                            "  Update time: {:.2}ms",
-                            1000. * pass_stats.update_time
-                        ));
-                    }
-                });
-            }
-            ui.label("Performance");
-            ui.label(format!("  Draws: {}", stats.draws()));
-            ui.label(format!("  Binds: {}", stats.binds()));
-            ui.label(format!(
-                "  CPU draw time: {:.2}ms",
-                1000. * stats.cpu_draw_time()
-            ));
-            ui.label(format!("  GPU time: {:.2}ms", 1000. * stats.gpu_draw_time));
-            ui.label(format!(
-                "  Update time: {:.2}ms",
-                1000. * stats.update_time()
-            ));
-        });
-    }
+    // pub fn show_stats(&self, ui: &mut egui::Ui, header: &str, graph: &FrameGraph) {
+    //     // let stats = graph.render_stats();
+    //     ui.collapsing(header, |ui| {
+    //         for pass in &graph.passes {
+    //             ui.collapsing(format!("Pass: {}", pass.name()), |ui| {
+    //                 if let Some(pass_stats) = stats.pass_stats.get(&pass.id()) {
+    //                     ui.label(format!("  Vertices: {}", pass_stats.vertices));
+    //                     ui.label(format!("  Indices: {}", pass_stats.indices));
+    //                     ui.label(format!("  Models: {}", pass_stats.models));
+    //                     ui.label(format!("  Instances: {}", pass_stats.instances));
+    //                     ui.label(format!("  Textures: {}", pass_stats.textures));
+    //                     ui.label(format!("  Draws: {}", pass_stats.draws));
+    //                     ui.label(format!("  Binds: {}", pass_stats.binds));
+    //                     ui.label(format!(
+    //                         "  Draw time: {:.2}ms",
+    //                         1000. * pass_stats.draw_time
+    //                     ));
+    //                     ui.label(format!(
+    //                         "  Update time: {:.2}ms",
+    //                         1000. * pass_stats.update_time
+    //                     ));
+    //                 }
+    //             });
+    //         }
+    //         ui.label("Performance");
+    //         ui.label(format!("  Draws: {}", stats.draws()));
+    //         ui.label(format!("  Binds: {}", stats.binds()));
+    //         ui.label(format!(
+    //             "  CPU draw time: {:.2}ms",
+    //             1000. * stats.cpu_draw_time()
+    //         ));
+    //         ui.label(format!("  GPU time: {:.2}ms", 1000. * stats.gpu_draw_time));
+    //         ui.label(format!(
+    //             "  Update time: {:.2}ms",
+    //             1000. * stats.update_time()
+    //         ));
+    //     });
+    // }
 
     pub fn show_camera(&self, ui: &mut egui::Ui, camera: &Camera, camera_transform: &Transform) {
         ui.collapsing("Camera", |ui| {

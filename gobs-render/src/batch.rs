@@ -2,6 +2,7 @@ use std::collections::HashMap;
 use std::sync::Arc;
 
 use gobs_core::{ImageExtent2D, Transform};
+use gobs_render_graph::{GfxContext, PassId, RenderObject, RenderPass};
 use gobs_resource::{
     entity::{camera::Camera, light::Light, uniform::UniformPropData},
     geometry::{BoundingBox, Shapes},
@@ -9,15 +10,11 @@ use gobs_resource::{
     resource::ResourceLifetime,
 };
 
-use crate::{
-    GfxContext, RenderPass, manager::MeshResourceManager, model::Model, pass::PassId,
-    renderable::RenderObject, stats::RenderStats,
-};
+use crate::{manager::MeshResourceManager, model::Model};
 
 pub struct RenderBatch {
     pub(crate) render_list: Vec<RenderObject>,
     pub(crate) scene_data: HashMap<PassId, Vec<u8>>,
-    pub(crate) render_stats: RenderStats,
     pub(crate) mesh_resource_manager: MeshResourceManager,
 }
 
@@ -26,7 +23,6 @@ impl RenderBatch {
         Self {
             render_list: Vec::new(),
             scene_data: HashMap::new(),
-            render_stats: RenderStats::default(),
             mesh_resource_manager: MeshResourceManager::new(),
         }
     }
@@ -34,7 +30,6 @@ impl RenderBatch {
     pub fn reset(&mut self) {
         self.render_list.clear();
         self.scene_data.clear();
-        self.render_stats.reset();
         self.mesh_resource_manager.new_frame();
     }
 
@@ -81,10 +76,16 @@ impl RenderBatch {
                 model_id: model.id,
                 transform,
                 pass: pass.clone(),
-                mesh: mesh_data.clone(),
                 pipeline,
                 is_transparent,
                 bind_groups,
+                vertex_buffer: mesh_data.vertex_buffer.clone(),
+                vertices_offset: mesh_data.vertices_offset,
+                vertices_len: mesh_data.vertices_len,
+                vertices_count: mesh_data.vertices_count,
+                index_buffer: mesh_data.index_buffer.clone(),
+                indices_offset: mesh_data.indices_offset,
+                indices_len: mesh_data.indices_len,
             });
         }
 
@@ -131,12 +132,8 @@ impl RenderBatch {
         }
     }
 
-    pub fn scene_data(&self, pass_id: PassId) -> Option<&Vec<u8>> {
-        self.scene_data.get(&pass_id)
-    }
-
-    pub fn stats_mut(&mut self) -> &mut RenderStats {
-        &mut self.render_stats
+    pub fn scene_data(&self, pass_id: PassId) -> Option<&[u8]> {
+        self.scene_data.get(&pass_id).map(Vec::as_slice)
     }
 
     fn sort(&mut self) {

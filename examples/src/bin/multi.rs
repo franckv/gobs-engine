@@ -8,7 +8,8 @@ use gobs::{
         context::GameContext,
     },
     gfx::Device,
-    render::{FrameGraph, Model, PassType, RenderError, TextureProperties, TextureType},
+    render::{Model, TextureProperties, TextureType},
+    render_graph::{FrameGraph, PassType, RenderError},
     resource::{
         entity::{camera::Camera, light::Light},
         geometry::Shapes,
@@ -75,20 +76,17 @@ impl Run for App {
         self.graph.update(&ctx.gfx, delta);
         self.scene.update(&ctx.gfx, delta);
 
-        self.common
-            .update_ui(ctx, &self.graph, &self.scene, &mut self.ui, delta);
+        self.common.update_ui(ctx, &self.scene, &mut self.ui, delta);
     }
 
     fn render(&mut self, ctx: &mut GameContext) -> Result<(), RenderError> {
-        self.common
-            .render(ctx, &mut self.graph, &mut self.scene, &mut self.ui)
+        self.common.render(ctx, &mut self.scene, &mut self.ui)
     }
 
-    fn input(&mut self, ctx: &GameContext, input: Input) {
+    fn input(&mut self, ctx: &mut GameContext, input: Input) {
         self.common.input(
             ctx,
             input,
-            &mut self.graph,
             &mut self.scene,
             &mut self.ui,
             Some(&mut self.camera_controller),
@@ -116,14 +114,10 @@ impl Run for App {
 
 impl App {
     async fn init(&mut self, ctx: &mut GameContext) {
-        let color_material =
-            self.common
-                .color_material(&ctx.gfx, &mut ctx.resource_manager, &self.graph);
+        let color_material = self.common.color_material(ctx);
         let color_material_instance = color_material.instantiate(vec![]);
 
-        let diffuse_material =
-            self.common
-                .normal_mapping_material(&ctx.gfx, &mut ctx.resource_manager, &self.graph);
+        let diffuse_material = self.common.normal_mapping_material(ctx);
 
         let properties = TextureProperties::with_file("Wall Diffuse", examples::WALL_TEXTURE);
         let diffuse_texture = ctx

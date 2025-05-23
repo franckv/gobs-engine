@@ -8,7 +8,8 @@ use gobs::{
         context::GameContext,
     },
     gfx::Device,
-    render::{FrameGraph, Model, PassType, RenderError, TextureProperties, TextureType},
+    render::{Model, TextureProperties, TextureType},
+    render_graph::{PassType, RenderError},
     resource::{
         entity::{camera::Camera, light::Light},
         geometry::Shapes,
@@ -23,7 +24,6 @@ use examples::{CameraController, SampleApp};
 struct App {
     common: SampleApp,
     camera_controller: CameraController,
-    graph: FrameGraph,
     ui: UIRenderer,
     scene: Scene,
 }
@@ -49,18 +49,16 @@ impl Run for App {
 
         let camera_controller = SampleApp::controller();
 
-        let graph = FrameGraph::default(&ctx.gfx)?;
         let ui = UIRenderer::new(
             &ctx.gfx,
             &mut ctx.resource_manager,
-            graph.pass_by_type(PassType::Ui)?,
+            ctx.renderer.graph.pass_by_type(PassType::Ui)?,
         )?;
         let scene = Scene::new(camera, camera_position, light, light_position);
 
         Ok(App {
             common,
             camera_controller,
-            graph,
             ui,
             scene,
         })
@@ -93,31 +91,26 @@ impl Run for App {
                 .update_camera(camera, transform, delta);
         });
 
-        self.graph.update(&ctx.gfx, delta);
         self.scene.update(&ctx.gfx, delta);
 
-        self.common
-            .update_ui(ctx, &self.graph, &self.scene, &mut self.ui, delta);
+        self.common.update_ui(ctx, &self.scene, &mut self.ui, delta);
     }
 
     fn render(&mut self, ctx: &mut GameContext) -> Result<(), RenderError> {
-        self.common
-            .render(ctx, &mut self.graph, &mut self.scene, &mut self.ui)
+        self.common.render(ctx, &mut self.scene, &mut self.ui)
     }
 
-    fn input(&mut self, ctx: &GameContext, input: Input) {
+    fn input(&mut self, ctx: &mut GameContext, input: Input) {
         self.common.input(
             ctx,
             input,
-            &mut self.graph,
             &mut self.scene,
             &mut self.ui,
             Some(&mut self.camera_controller),
         );
     }
 
-    fn resize(&mut self, ctx: &mut GameContext, width: u32, height: u32) {
-        self.graph.resize(&mut ctx.gfx);
+    fn resize(&mut self, _ctx: &mut GameContext, width: u32, height: u32) {
         self.scene.resize(width, height);
         self.ui.resize(width, height);
     }
@@ -133,9 +126,7 @@ impl Run for App {
 
 impl App {
     async fn init(&mut self, ctx: &mut GameContext) {
-        let material =
-            self.common
-                .normal_mapping_material(&ctx.gfx, &mut ctx.resource_manager, &self.graph);
+        let material = self.common.normal_mapping_material(ctx);
 
         let properties =
             TextureProperties::with_atlas("Atlas Diffuse", examples::ATLAS, examples::ATLAS_COLS);

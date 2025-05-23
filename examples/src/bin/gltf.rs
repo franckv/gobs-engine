@@ -9,7 +9,7 @@ use gobs::{
         context::GameContext,
     },
     gfx::Device,
-    render::{FrameGraph, PassType, RenderError},
+    render_graph::{FrameGraph, PassType, RenderError},
     resource::{entity::light::Light, load},
     scene::{graph::scenegraph::SceneGraph, scene::Scene},
     ui::UIRenderer,
@@ -79,20 +79,17 @@ impl Run for App {
         self.graph.update(&ctx.gfx, delta);
         self.scene.update(&ctx.gfx, delta);
 
-        self.common
-            .update_ui(ctx, &self.graph, &self.scene, &mut self.ui, delta);
+        self.common.update_ui(ctx, &self.scene, &mut self.ui, delta);
     }
 
     fn render(&mut self, ctx: &mut GameContext) -> Result<(), RenderError> {
-        self.common
-            .render(ctx, &mut self.graph, &mut self.scene, &mut self.ui)
+        self.common.render(ctx, &mut self.scene, &mut self.ui)
     }
 
-    fn input(&mut self, ctx: &GameContext, input: Input) {
+    fn input(&mut self, ctx: &mut GameContext, input: Input) {
         self.common.input(
             ctx,
             input,
-            &mut self.graph,
             &mut self.scene,
             &mut self.ui,
             Some(&mut self.camera_controller),

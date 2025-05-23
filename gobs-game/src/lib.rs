@@ -4,7 +4,7 @@ pub mod context;
 use thiserror::Error;
 
 use gobs_egui::UIError;
-use gobs_render::RenderError;
+use gobs_render_graph::RenderError;
 
 #[derive(Debug, Error)]
 pub enum AppError {

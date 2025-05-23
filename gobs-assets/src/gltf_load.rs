@@ -8,7 +8,8 @@ use gltf::{
 };
 
 use gobs_core::{Color, ImageExtent2D, SamplerFilter, Transform};
-use gobs_render::{BlendMode, GfxContext, Model, RenderPass, TextureProperties, TextureType};
+use gobs_render::{Model, TextureProperties, TextureType};
+use gobs_render_graph::{BlendMode, GfxContext, RenderPass};
 use gobs_resource::{
     geometry::{MeshGeometry, VertexData},
     manager::ResourceManager,

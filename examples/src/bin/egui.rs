@@ -7,7 +7,7 @@ use gobs::{
         context::GameContext,
     },
     gfx::Device,
-    render::{FrameGraph, PassType, RenderError},
+    render_graph::{FrameGraph, PassType, RenderError},
     ui::UIRenderer,
 };
 use renderdoc::{RenderDoc, V141};
@@ -40,19 +40,16 @@ impl Run for App {
     fn update(&mut self, ctx: &mut GameContext, delta: f32) {
         self.graph.update(&ctx.gfx, delta);
 
-        self.ui.update(
-            &mut ctx.resource_manager,
-            self.graph.pass_by_type(PassType::Ui).unwrap(),
-            delta,
-            |ectx| self.demo.show(ectx, &mut true),
-        );
+        self.ui.update(&mut ctx.resource_manager, delta, |ectx| {
+            self.demo.show(ectx, &mut true)
+        });
     }
 
     fn render(&mut self, ctx: &mut GameContext) -> Result<(), RenderError> {
-        self.common.render_ui(ctx, &mut self.graph, &mut self.ui)
+        self.common.render_ui(ctx, &mut self.ui)
     }
 
-    fn input(&mut self, _ctx: &GameContext, input: Input) {
+    fn input(&mut self, _ctx: &mut GameContext, input: Input) {
         self.ui.input(input);
         if let Input::KeyPressed(Key::C) = input {
             let rd: Result<RenderDoc<V141>, _> = RenderDoc::new();

@@ -16,15 +16,12 @@ use gobs_resource::{
 };
 
 use crate::{
-    GfxContext, RenderError,
-    batch::RenderBatch,
+    GfxContext, RenderError, RenderObject,
     graph::{FrameData, GraphResourceManager},
     pass::{PassFrameData, PassId, PassType, RenderPass, RenderState},
-    renderable::RenderObject,
-    stats::RenderStats,
 };
 
-pub struct BoundsPass {
+pub struct WirePass {
     id: PassId,
     name: String,
     ty: PassType,
@@ -36,7 +33,7 @@ pub struct BoundsPass {
     uniform_data_layout: Arc<UniformLayout>,
 }
 
-impl BoundsPass {
+impl WirePass {
     pub fn new(ctx: &GfxContext, name: &str) -> Result<Arc<dyn RenderPass>, RenderError> {
         let vertex_attributes = VertexAttribute::POSITION;
 
@@ -73,7 +70,7 @@ impl BoundsPass {
         Ok(Arc::new(Self {
             id: PassId::new_v4(),
             name: name.to_string(),
-            ty: PassType::Bounds,
+            ty: PassType::Wire,
             attachments: vec![String::from("draw")],
             pipeline,
             vertex_attributes,
@@ -83,10 +80,8 @@ impl BoundsPass {
         }))
     }
 
-    fn prepare_scene_data(&self, frame: &PassFrameData, batch: &mut RenderBatch) {
-        if let Some(scene_data) = batch.scene_data(self.id) {
-            frame.uniform_buffer.write().update(scene_data);
-        }
+    fn prepare_scene_data(&self, frame: &PassFrameData, uniform_data: &[u8]) {
+        frame.uniform_buffer.write().update(uniform_data);
     }
 
     fn should_render(&self, render_object: &RenderObject) -> bool {
@@ -96,13 +91,11 @@ impl BoundsPass {
     fn bind_pipeline(
         &self,
         cmd: &GfxCommand,
-        stats: &mut RenderStats,
         state: &mut RenderState,
         _render_object: &RenderObject,
     ) {
         if state.last_pipeline != self.pipeline.id() {
             cmd.bind_pipeline(&self.pipeline);
-            stats.bind(self.id);
             state.last_pipeline = self.pipeline.id();
         }
     }
@@ -111,7 +104,6 @@ impl BoundsPass {
         &self,
         frame: &PassFrameData,
         cmd: &GfxCommand,
-        stats: &mut RenderStats,
         state: &mut RenderState,
         _render_object: &RenderObject,
     ) {
@@ -119,7 +111,6 @@ impl BoundsPass {
             let uniform_buffer = frame.uniform_buffer.read();
 
             cmd.bind_resource_buffer(&uniform_buffer.buffer, &self.pipeline);
-            stats.bind(self.id);
             state.scene_data_bound = true;
         }
     }
@@ -128,42 +119,39 @@ impl BoundsPass {
         &self,
         ctx: &GfxContext,
         cmd: &GfxCommand,
-        stats: &mut RenderStats,
         state: &mut RenderState,
         render_object: &RenderObject,
     ) {
         tracing::trace!(target: "render", "Bind push constants");
 
-        if let Some(push_layout) = self.push_layout() {
+        if let Some(push_layout) = render_object.pass.push_layout() {
             state.object_data.clear();
 
             let world_matrix = render_object.transform.matrix();
+
+            let pipeline = render_object.pipeline.clone().unwrap();
 
             // TODO: hardcoded
             push_layout.copy_data(
                 &[
                     UniformPropData::Mat4F(world_matrix.to_cols_array_2d()),
                     UniformPropData::U64(
-                        render_object.mesh.vertex_buffer.address(&ctx.device)
-                            + render_object.mesh.vertices_offset,
+                        render_object.vertex_buffer.address(&ctx.device)
+                            + render_object.vertices_offset,
                     ),
                 ],
                 &mut state.object_data,
             );
 
-            cmd.push_constants(&self.pipeline, &state.object_data);
+            cmd.push_constants(&pipeline, &state.object_data);
         }
 
-        if state.last_index_buffer != render_object.mesh.index_buffer.id()
-            || state.last_indices_offset != render_object.mesh.indices_offset
+        if state.last_index_buffer != render_object.index_buffer.id()
+            || state.last_indices_offset != render_object.indices_offset
         {
-            cmd.bind_index_buffer(
-                &render_object.mesh.index_buffer,
-                render_object.mesh.indices_offset,
-            );
-            stats.bind(self.id);
-            state.last_index_buffer = render_object.mesh.index_buffer.id();
-            state.last_indices_offset = render_object.mesh.indices_offset;
+            cmd.bind_index_buffer(&render_object.index_buffer, render_object.indices_offset);
+            state.last_index_buffer = render_object.index_buffer.id();
+            state.last_indices_offset = render_object.indices_offset;
         }
     }
 
@@ -172,47 +160,32 @@ impl BoundsPass {
         ctx: &GfxContext,
         frame: &PassFrameData,
         cmd: &GfxCommand,
-        batch: &mut RenderBatch,
+        render_list: &[RenderObject],
+        uniform_data: Option<&[u8]>,
     ) {
         let mut render_state = RenderState::default();
 
-        self.prepare_scene_data(frame, batch);
+        if let Some(uniform_data) = uniform_data {
+            self.prepare_scene_data(frame, uniform_data);
+        }
 
-        for render_object in &batch.render_list {
+        for render_object in render_list {
             if !self.should_render(render_object) {
                 continue;
             }
 
-            self.bind_pipeline(
-                cmd,
-                &mut batch.render_stats,
-                &mut render_state,
-                render_object,
-            );
+            self.bind_pipeline(cmd, &mut render_state, render_object);
 
-            self.bind_scene_data(
-                frame,
-                cmd,
-                &mut batch.render_stats,
-                &mut render_state,
-                render_object,
-            );
+            self.bind_scene_data(frame, cmd, &mut render_state, render_object);
 
-            self.bind_object_data(
-                ctx,
-                cmd,
-                &mut batch.render_stats,
-                &mut render_state,
-                render_object,
-            );
+            self.bind_object_data(ctx, cmd, &mut render_state, render_object);
 
-            cmd.draw_indexed(render_object.mesh.indices_len, 1);
-            batch.render_stats.draw(self.id);
+            cmd.draw_indexed(render_object.indices_len, 1);
         }
     }
 }
 
-impl RenderPass for BoundsPass {
+impl RenderPass for WirePass {
     fn id(&self) -> PassId {
         self.id
     }
@@ -272,14 +245,15 @@ impl RenderPass for BoundsPass {
         ctx: &mut GfxContext,
         frame: &FrameData,
         resource_manager: &GraphResourceManager,
-        batch: &mut RenderBatch,
+        render_list: &[RenderObject],
+        uniform_data: Option<&[u8]>,
         draw_extent: ImageExtent2D,
     ) -> Result<(), RenderError> {
-        tracing::debug!(target: "render", "Draw bounds");
+        tracing::debug!(target: "render", "Draw wire");
 
         let cmd = &frame.command;
 
-        cmd.begin_label("Draw bounds");
+        cmd.begin_label("Draw wire");
 
         let draw_attach = &self.attachments[0];
 
@@ -301,7 +275,8 @@ impl RenderPass for BoundsPass {
         cmd.set_viewport(draw_extent.width, draw_extent.height);
 
         let pass_frame = &self.frame_data[frame.id];
-        self.render_batch(ctx, pass_frame, cmd, batch);
+
+        self.render_batch(ctx, pass_frame, cmd, render_list, uniform_data);
 
         cmd.end_rendering();
 

@@ -8,6 +8,7 @@ edition = { workspace = true }
 glam = { workspace = true }
 gltf = { workspace = true }
 gobs-core = { workspace = true }
+gobs-render-graph = { workspace = true }
 gobs-render = { workspace = true }
 gobs-resource = { workspace = true }
 gobs-scene = { workspace = true }

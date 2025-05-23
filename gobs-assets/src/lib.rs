@@ -3,7 +3,7 @@ pub mod manager;
 
 use thiserror::Error;
 
-use gobs_render::RenderError;
+use gobs_render_graph::RenderError;
 
 #[derive(Debug, Error)]
 pub enum AssetError {

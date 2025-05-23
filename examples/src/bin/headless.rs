@@ -5,7 +5,8 @@ use gobs::{
     core::{Color, Input, Transform},
     game::{AppError, app::Run, context::GameContext},
     gfx::Device,
-    render::{FrameGraph, Model, RenderError},
+    render::Model,
+    render_graph::{FrameGraph, RenderError},
     resource::{entity::light::Light, geometry::Shapes, resource::ResourceLifetime},
     scene::{components::NodeValue, scene::Scene},
 };
@@ -44,11 +45,10 @@ impl Run for App {
     }
 
     fn render(&mut self, ctx: &mut GameContext) -> Result<(), RenderError> {
-        self.common
-            .render_noui(ctx, &mut self.graph, &mut self.scene)
+        self.common.render_noui(ctx, &mut self.scene)
     }
 
-    fn input(&mut self, _ctx: &GameContext, _input: Input) {}
+    fn input(&mut self, _ctx: &mut GameContext, _input: Input) {}
 
     fn resize(&mut self, ctx: &mut GameContext, width: u32, height: u32) {
         self.graph.resize(&mut ctx.gfx);
@@ -70,9 +70,7 @@ impl Run for App {
 
 impl App {
     fn init(&mut self, ctx: &mut GameContext) {
-        let material = self
-            .common
-            .color_material(&ctx.gfx, &mut ctx.resource_manager, &self.graph);
+        let material = self.common.color_material(ctx);
         let material_instance = material.instantiate(vec![]);
 
         let triangle = Model::builder("triangle")
@@ -123,5 +121,5 @@ fn main() {
 
     app.close(&ctx);
 
-    app.common.screenshot(&ctx.gfx, &mut app.graph);
+    app.common.screenshot(&mut ctx);
 }

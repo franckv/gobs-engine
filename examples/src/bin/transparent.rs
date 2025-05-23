@@ -8,7 +8,8 @@ use gobs::{
         context::GameContext,
     },
     gfx::Device,
-    render::{FrameGraph, Model, PassType, RenderError},
+    render::Model,
+    render_graph::{FrameGraph, PassType, RenderError},
     resource::{entity::light::Light, geometry::Shapes, resource::ResourceLifetime},
     scene::{components::NodeValue, scene::Scene},
     ui::UIRenderer,
@@ -62,20 +63,17 @@ impl Run for App {
         self.graph.update(&ctx.gfx, delta);
         self.scene.update(&ctx.gfx, delta);
 
-        self.common
-            .update_ui(ctx, &self.graph, &self.scene, &mut self.ui, delta);
+        self.common.update_ui(ctx, &self.scene, &mut self.ui, delta);
     }
 
     fn render(&mut self, ctx: &mut GameContext) -> Result<(), RenderError> {
-        self.common
-            .render(ctx, &mut self.graph, &mut self.scene, &mut self.ui)
+        self.common.render(ctx, &mut self.scene, &mut self.ui)
     }
 
-    fn input(&mut self, ctx: &GameContext, input: Input) {
+    fn input(&mut self, ctx: &mut GameContext, input: Input) {
         self.common.input(
             ctx,
             input,
-            &mut self.graph,
             &mut self.scene,
             &mut self.ui,
             Some(&mut self.camera_controller),
@@ -103,16 +101,10 @@ impl Run for App {
 
 impl App {
     fn init(&mut self, ctx: &mut GameContext) {
-        let material = self
-            .common
-            .color_material(&ctx.gfx, &mut ctx.resource_manager, &self.graph);
+        let material = self.common.color_material(ctx);
         let material_instance = material.instantiate(vec![]);
 
-        let transparent_material = self.common.color_material_transparent(
-            &ctx.gfx,
-            &mut ctx.resource_manager,
-            &self.graph,
-        );
+        let transparent_material = self.common.color_material_transparent(ctx);
         let transparent_material_instance = transparent_material.instantiate(vec![]);
 
         let triangle = Model::builder("triangle")

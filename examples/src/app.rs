@@ -6,11 +6,9 @@ use renderdoc::{RenderDoc, V141};
 use gobs::{
     core::{ImageFormat, Input, Key},
     game::context::GameContext,
-    render::{
-        BlendMode, FrameGraph, GfxContext, Material, MaterialProperty, PassType, RenderError,
-        Renderable,
-    },
-    resource::{entity::camera::Camera, geometry::VertexAttribute, manager::ResourceManager},
+    render::{Material, MaterialProperty, Renderable},
+    render_graph::{BlendMode, PassType, RenderError},
+    resource::{entity::camera::Camera, geometry::VertexAttribute},
     scene::scene::Scene,
     ui::UIRenderer,
 };
@@ -61,130 +59,99 @@ impl SampleApp {
         CameraController::new(3., 0.4)
     }
 
-    pub fn color_material(
-        &self,
-        ctx: &GfxContext,
-        resource_manager: &mut ResourceManager,
-        graph: &FrameGraph,
-    ) -> Arc<Material> {
+    pub fn color_material(&self, ctx: &mut GameContext) -> Arc<Material> {
         let vertex_attributes = VertexAttribute::POSITION | VertexAttribute::COLOR;
 
-        Material::builder(ctx, "color.vert.spv", "color.frag.spv")
+        Material::builder(&ctx.gfx, "color.vert.spv", "color.frag.spv")
             .unwrap()
             .vertex_attributes(vertex_attributes)
             .build(
-                graph.pass_by_type(PassType::Forward).unwrap(),
-                resource_manager,
+                ctx.renderer.graph.pass_by_type(PassType::Forward).unwrap(),
+                &mut ctx.resource_manager,
             )
     }
 
-    pub fn color_material_transparent(
-        &self,
-        ctx: &GfxContext,
-        resource_manager: &mut ResourceManager,
-        graph: &FrameGraph,
-    ) -> Arc<Material> {
+    pub fn color_material_transparent(&self, ctx: &mut GameContext) -> Arc<Material> {
         let vertex_attributes = VertexAttribute::POSITION | VertexAttribute::COLOR;
 
-        Material::builder(ctx, "color.vert.spv", "color.frag.spv")
+        Material::builder(&ctx.gfx, "color.vert.spv", "color.frag.spv")
             .unwrap()
             .vertex_attributes(vertex_attributes)
             .blend_mode(BlendMode::Alpha)
             .build(
-                graph.pass_by_type(PassType::Forward).unwrap(),
-                resource_manager,
+                ctx.renderer.graph.pass_by_type(PassType::Forward).unwrap(),
+                &mut ctx.resource_manager,
             )
     }
 
-    pub fn texture_material(
-        &self,
-        ctx: &GfxContext,
-        resource_manager: &mut ResourceManager,
-        graph: &FrameGraph,
-    ) -> Arc<Material> {
+    pub fn texture_material(&self, ctx: &mut GameContext) -> Arc<Material> {
         let vertex_attributes = VertexAttribute::POSITION
             | VertexAttribute::TEXTURE
             | VertexAttribute::NORMAL
             | VertexAttribute::TANGENT
             | VertexAttribute::BITANGENT;
 
-        Material::builder(ctx, "mesh.vert.spv", "mesh.frag.spv")
+        Material::builder(&ctx.gfx, "mesh.vert.spv", "mesh.frag.spv")
             .unwrap()
             .vertex_attributes(vertex_attributes)
             .prop("diffuse", MaterialProperty::Texture)
             .build(
-                graph.pass_by_type(PassType::Forward).unwrap(),
-                resource_manager,
+                ctx.renderer.graph.pass_by_type(PassType::Forward).unwrap(),
+                &mut ctx.resource_manager,
             )
     }
 
-    pub fn texture_material_transparent(
-        &self,
-        ctx: &GfxContext,
-        resource_manager: &mut ResourceManager,
-        graph: &FrameGraph,
-    ) -> Arc<Material> {
+    pub fn texture_material_transparent(&self, ctx: &mut GameContext) -> Arc<Material> {
         let vertex_attributes = VertexAttribute::POSITION
             | VertexAttribute::TEXTURE
             | VertexAttribute::NORMAL
             | VertexAttribute::TANGENT
             | VertexAttribute::BITANGENT;
 
-        Material::builder(ctx, "mesh.vert.spv", "mesh.frag.spv")
+        Material::builder(&ctx.gfx, "mesh.vert.spv", "mesh.frag.spv")
             .unwrap()
             .vertex_attributes(vertex_attributes)
             .prop("diffuse", MaterialProperty::Texture)
             .blend_mode(BlendMode::Alpha)
             .build(
-                graph.pass_by_type(PassType::Forward).unwrap(),
-                resource_manager,
+                ctx.renderer.graph.pass_by_type(PassType::Forward).unwrap(),
+                &mut ctx.resource_manager,
             )
     }
 
-    pub fn normal_mapping_material(
-        &self,
-        ctx: &GfxContext,
-        resource_manager: &mut ResourceManager,
-        graph: &FrameGraph,
-    ) -> Arc<Material> {
+    pub fn normal_mapping_material(&self, ctx: &mut GameContext) -> Arc<Material> {
         let vertex_attributes = VertexAttribute::POSITION
             | VertexAttribute::TEXTURE
             | VertexAttribute::NORMAL
             | VertexAttribute::TANGENT
             | VertexAttribute::BITANGENT;
 
-        Material::builder(ctx, "mesh.vert.spv", "mesh_n.frag.spv")
+        Material::builder(&ctx.gfx, "mesh.vert.spv", "mesh_n.frag.spv")
             .unwrap()
             .vertex_attributes(vertex_attributes)
             .prop("diffuse", MaterialProperty::Texture)
             .prop("normal", MaterialProperty::Texture)
             .build(
-                graph.pass_by_type(PassType::Forward).unwrap(),
-                resource_manager,
+                ctx.renderer.graph.pass_by_type(PassType::Forward).unwrap(),
+                &mut ctx.resource_manager,
             )
     }
 
-    pub fn depth_material(
-        &self,
-        ctx: &GfxContext,
-        resource_manager: &mut ResourceManager,
-        graph: &FrameGraph,
-    ) -> Arc<Material> {
+    pub fn depth_material(&self, ctx: &mut GameContext) -> Arc<Material> {
         let vertex_attributes = VertexAttribute::POSITION | VertexAttribute::COLOR;
 
-        Material::builder(ctx, "color.vert.spv", "depth.frag.spv")
+        Material::builder(&ctx.gfx, "color.vert.spv", "depth.frag.spv")
             .unwrap()
             .vertex_attributes(vertex_attributes)
             .build(
-                graph.pass_by_type(PassType::Forward).unwrap(),
-                resource_manager,
+                ctx.renderer.graph.pass_by_type(PassType::Forward).unwrap(),
+                &mut ctx.resource_manager,
             )
     }
 
     pub fn update_ui(
         &mut self,
         ctx: &mut GameContext,
-        graph: &FrameGraph,
         scene: &Scene,
         ui: &mut UIRenderer,
         delta: f32,
@@ -195,33 +162,27 @@ impl SampleApp {
             // TODO: change this
             let app_info = ctx.app_info.clone();
 
-            ui.update(
-                &mut ctx.resource_manager,
-                graph.pass_by_type(PassType::Ui).unwrap(),
-                delta,
-                |ectx| {
-                    self.ui
-                        .draw(&app_info, ectx, graph, scene, camera, &camera_transform);
-                },
-            );
+            ui.update(&mut ctx.resource_manager, delta, |ectx| {
+                self.ui
+                    .draw(&app_info, ectx, scene, camera, &camera_transform);
+            });
         }
     }
 
     pub fn render(
         &mut self,
         ctx: &mut GameContext,
-        graph: &mut FrameGraph,
         scene: &mut Scene,
         ui: &mut UIRenderer,
     ) -> Result<(), RenderError> {
-        tracing::trace!(target: "app", "Render frame {}", graph.frame_number);
+        tracing::trace!(target: "app", "Render frame {}", ctx.renderer.frame_number());
 
         let gfx = &mut ctx.gfx;
         let resource_manager = &mut ctx.resource_manager;
 
-        graph.begin(gfx)?;
+        ctx.renderer.begin(gfx);
 
-        graph.prepare(gfx, &mut |pass, batch| match pass.ty() {
+        ctx.renderer.draw(&mut |pass, batch| match pass.ty() {
             PassType::Depth | PassType::Forward => {
                 scene.draw(gfx, resource_manager, pass, batch, None);
             }
@@ -243,9 +204,7 @@ impl SampleApp {
             _ => {}
         });
 
-        graph.render(gfx)?;
-
-        graph.end(gfx)?;
+        ctx.renderer.end(gfx);
 
         tracing::trace!(target: "app", "End render");
 
@@ -255,25 +214,22 @@ impl SampleApp {
     pub fn render_ui(
         &mut self,
         ctx: &mut GameContext,
-        graph: &mut FrameGraph,
         ui: &mut UIRenderer,
     ) -> Result<(), RenderError> {
-        tracing::trace!(target: "app", "Render frame {}", graph.frame_number);
+        tracing::trace!(target: "app", "Render frame {}", ctx.renderer.frame_number());
 
         let gfx = &mut ctx.gfx;
         let resource_manager = &mut ctx.resource_manager;
 
-        graph.begin(gfx)?;
+        ctx.renderer.begin(gfx);
 
-        graph.prepare(gfx, &mut |pass, batch| {
+        ctx.renderer.draw(&mut |pass, batch| {
             if pass.ty() == PassType::Ui {
                 ui.draw(gfx, resource_manager, pass, batch, None);
             }
         });
 
-        graph.render(gfx)?;
-
-        graph.end(gfx)?;
+        ctx.renderer.end(gfx);
 
         tracing::trace!(target: "app", "End render");
 
@@ -283,26 +239,23 @@ impl SampleApp {
     pub fn render_noui(
         &mut self,
         ctx: &mut GameContext,
-        graph: &mut FrameGraph,
         scene: &mut Scene,
     ) -> Result<(), RenderError> {
-        tracing::trace!(target: "app", "Render frame {}", graph.frame_number);
+        tracing::trace!(target: "app", "Render frame {}", ctx.renderer.frame_number());
 
         let gfx = &mut ctx.gfx;
         let resource_manager = &mut ctx.resource_manager;
 
-        graph.begin(gfx)?;
+        ctx.renderer.begin(gfx);
 
-        graph.prepare(gfx, &mut |pass, batch| match pass.ty() {
+        ctx.renderer.draw(&mut |pass, batch| match pass.ty() {
             PassType::Depth | PassType::Forward => {
                 scene.draw(gfx, resource_manager, pass, batch, None);
             }
             _ => {}
         });
 
-        graph.render(gfx)?;
-
-        graph.end(gfx)?;
+        ctx.renderer.end(gfx);
 
         tracing::trace!(target: "app", "End render");
 
@@ -311,9 +264,8 @@ impl SampleApp {
 
     pub fn input(
         &mut self,
-        ctx: &GameContext,
+        ctx: &mut GameContext,
         input: Input,
-        graph: &mut FrameGraph,
         scene: &mut Scene,
         ui: &mut UIRenderer,
         camera_controller: Option<&mut CameraController>,
@@ -327,8 +279,14 @@ impl SampleApp {
 
         if let Input::KeyPressed(key) = input {
             match key {
-                Key::E => graph.render_scaling = (graph.render_scaling + 0.1).min(1.),
-                Key::Q => graph.render_scaling = (graph.render_scaling - 0.1).max(0.1),
+                Key::E => {
+                    ctx.renderer.graph.render_scaling =
+                        (ctx.renderer.graph.render_scaling + 0.1).min(1.)
+                }
+                Key::Q => {
+                    ctx.renderer.graph.render_scaling =
+                        (ctx.renderer.graph.render_scaling - 0.1).max(0.1)
+                }
                 Key::R => {
                     let rd: Result<RenderDoc<V141>, _> = RenderDoc::new();
 
@@ -343,7 +301,7 @@ impl SampleApp {
                 Key::Z => self.draw_wire = !self.draw_wire,
                 Key::B => self.draw_bounds = !self.draw_bounds,
                 Key::U => self.draw_ui = !self.draw_ui,
-                Key::O => self.screenshot(&ctx.gfx, graph),
+                Key::O => self.screenshot(ctx),
                 Key::Equals => scene.update_camera(|_, camera| {
                     camera.pitch = 0.;
                     camera.yaw = 0.;
@@ -353,10 +311,15 @@ impl SampleApp {
         }
     }
 
-    pub fn screenshot(&self, ctx: &GfxContext, graph: &mut FrameGraph) {
+    pub fn screenshot(&self, ctx: &mut GameContext) {
         let filename = "draw_image.png";
         let mut data = vec![];
-        let extent = graph.get_image_data(ctx, "draw", &mut data, ImageFormat::R16g16b16a16Unorm);
+        let extent = ctx.renderer.graph.get_image_data(
+            &ctx.gfx,
+            "draw",
+            &mut data,
+            ImageFormat::R16g16b16a16Unorm,
+        );
 
         tracing::info!(target: "app", "Screenshot \"{}\" ({} bytes)", filename, data.len());
 

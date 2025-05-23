@@ -1,9 +1,7 @@
 use std::sync::Arc;
 
-use gobs_render::{
-    BlendMode, GfxContext, Material, MaterialInstance, MaterialProperty, RenderPass, Texture,
-    TextureProperties,
-};
+use gobs_render::{Material, MaterialInstance, MaterialProperty, Texture, TextureProperties};
+use gobs_render_graph::{BlendMode, GfxContext, RenderPass};
 use gobs_resource::{
     geometry::VertexAttribute,
     manager::ResourceManager,

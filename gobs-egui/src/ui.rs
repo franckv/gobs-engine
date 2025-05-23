@@ -5,18 +5,19 @@ use egui::{
     epaint::{ImageDelta, Primitive},
 };
 use glam::{Vec2, Vec3};
+use parking_lot::RwLock;
 
 use gobs_core::{Color, ImageExtent2D, Input, Key, MouseButton, Transform};
 use gobs_render::{
-    BlendMode, GfxContext, Material, MaterialInstance, MaterialProperty, Model, RenderBatch,
-    RenderPass, Renderable, Texture, TextureProperties, TextureUpdate,
+    Material, MaterialInstance, MaterialProperty, Model, RenderBatch, Renderable, Texture,
+    TextureProperties, TextureUpdate,
 };
+use gobs_render_graph::{BlendMode, GfxContext, RenderPass};
 use gobs_resource::{
     geometry::{MeshGeometry, VertexAttribute, VertexData},
     manager::ResourceManager,
     resource::{ResourceHandle, ResourceLifetime},
 };
-use parking_lot::RwLock;
 
 use crate::UIError;
 
@@ -68,13 +69,8 @@ impl UIRenderer {
     }
 
     #[tracing::instrument(target = "ui", skip_all, level = "trace")]
-    pub fn update<F>(
-        &mut self,
-        resource_manager: &mut ResourceManager,
-        _pass: RenderPass,
-        delta: f32,
-        callback: F,
-    ) where
+    pub fn update<F>(&mut self, resource_manager: &mut ResourceManager, delta: f32, callback: F)
+    where
         F: FnMut(&egui::Context),
     {
         let input = self.prepare_inputs(delta);

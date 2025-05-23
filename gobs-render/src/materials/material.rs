@@ -5,6 +5,7 @@ use uuid::Uuid;
 use gobs_gfx::{
     BindingGroupType, BlendMode, CompareOp, CullMode, DescriptorStage, DescriptorType, FrontFace,
 };
+use gobs_render_graph::{GfxContext, RenderError, RenderPass};
 use gobs_resource::{
     geometry::VertexAttribute,
     manager::ResourceManager,
@@ -12,12 +13,13 @@ use gobs_resource::{
 };
 
 use crate::{
-    GfxContext, Pipeline, PipelineProperties, RenderError, RenderPass, Texture,
-    materials::MaterialInstance, resources::GraphicsPipelineProperties,
+    Pipeline, PipelineProperties, Texture, materials::MaterialInstance,
+    resources::GraphicsPipelineProperties,
 };
 
 pub type MaterialId = Uuid;
 
+#[derive(Clone, Copy, Debug)]
 pub struct Material {
     pub id: MaterialId,
     pub vertex_attributes: VertexAttribute,

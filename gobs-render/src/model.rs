@@ -7,6 +7,7 @@ use serde::Serialize;
 use uuid::Uuid;
 
 use gobs_core::Transform;
+use gobs_render_graph::{GfxContext, RenderPass};
 use gobs_resource::{
     geometry::{Bounded, BoundingBox, MeshGeometry},
     manager::ResourceManager,
@@ -14,7 +15,7 @@ use gobs_resource::{
 };
 
 use crate::{
-    GfxContext, Mesh, RenderPass, Renderable,
+    Mesh, Renderable,
     batch::RenderBatch,
     materials::{MaterialInstance, MaterialInstanceId},
     resources::MeshProperties,

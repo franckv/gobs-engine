@@ -2,9 +2,9 @@ use std::sync::Arc;
 
 use gobs_core::{ImageExtent2D, Transform};
 use gobs_gfx::{
-    BindingGroupType, Buffer, Command, CompareOp, CullMode, DescriptorStage, DescriptorType,
-    DynamicStateElem, FrontFace, GfxCommand, GfxPipeline, GraphicsPipelineBuilder, ImageLayout,
-    Pipeline, PolygonMode, Rect2D, Viewport,
+    BindingGroupType, Buffer, Command, CullMode, DescriptorStage, DescriptorType, DynamicStateElem,
+    FrontFace, GfxCommand, GfxPipeline, GraphicsPipelineBuilder, ImageLayout, Pipeline,
+    PolygonMode, Rect2D, Viewport,
 };
 use gobs_resource::{
     entity::{
@@ -16,15 +16,12 @@ use gobs_resource::{
 };
 
 use crate::{
-    GfxContext, RenderError,
-    batch::RenderBatch,
+    GfxContext, RenderError, RenderObject,
     graph::{FrameData, GraphResourceManager},
     pass::{PassFrameData, PassId, PassType, RenderPass, RenderState},
-    renderable::RenderObject,
-    stats::RenderStats,
 };
 
-pub struct DepthPass {
+pub struct BoundsPass {
     id: PassId,
     name: String,
     ty: PassType,
@@ -36,7 +33,7 @@ pub struct DepthPass {
     uniform_data_layout: Arc<UniformLayout>,
 }
 
-impl DepthPass {
+impl BoundsPass {
     pub fn new(ctx: &GfxContext, name: &str) -> Result<Arc<dyn RenderPass>, RenderError> {
         let vertex_attributes = VertexAttribute::POSITION;
 
@@ -50,17 +47,18 @@ impl DepthPass {
             .build();
 
         let pipeline = GfxPipeline::graphics(name, &ctx.device)
-            .vertex_shader("depth.vert.spv", "main")?
+            .vertex_shader("wire.vert.spv", "main")?
+            .fragment_shader("wire.frag.spv", "main")?
             .pool_size(ctx.frames_in_flight)
             .push_constants(push_layout.size())
             .binding_group(BindingGroupType::SceneData)
-            .binding(DescriptorType::Uniform, DescriptorStage::Vertex)
-            .polygon_mode(PolygonMode::Fill)
+            .binding(DescriptorType::Uniform, DescriptorStage::All)
+            .polygon_mode(PolygonMode::Line)
             .viewports(vec![Viewport::new(0., 0., 0., 0.)])
             .scissors(vec![Rect2D::new(0, 0, 0, 0)])
             .dynamic_states(&[DynamicStateElem::Viewport, DynamicStateElem::Scissor])
-            .attachments(None, Some(ctx.depth_format))
-            .depth_test_enable(true, CompareOp::Less)
+            .attachments(Some(ctx.color_format), Some(ctx.depth_format))
+            .depth_test_disable()
             .cull_mode(CullMode::Back)
             .front_face(FrontFace::CCW)
             .build();
@@ -72,8 +70,8 @@ impl DepthPass {
         Ok(Arc::new(Self {
             id: PassId::new_v4(),
             name: name.to_string(),
-            ty: PassType::Depth,
-            attachments: vec![String::from("depth")],
+            ty: PassType::Bounds,
+            attachments: vec![String::from("draw")],
             pipeline,
             vertex_attributes,
             push_layout,
@@ -82,26 +80,22 @@ impl DepthPass {
         }))
     }
 
-    fn prepare_scene_data(&self, frame: &PassFrameData, batch: &mut RenderBatch) {
-        if let Some(scene_data) = batch.scene_data(self.id) {
-            frame.uniform_buffer.write().update(scene_data);
-        }
+    fn prepare_scene_data(&self, frame: &PassFrameData, uniform_data: &[u8]) {
+        frame.uniform_buffer.write().update(uniform_data);
     }
 
     fn should_render(&self, render_object: &RenderObject) -> bool {
-        render_object.pass.id() == self.id && !render_object.is_transparent()
+        render_object.pass.id() == self.id
     }
 
     fn bind_pipeline(
         &self,
         cmd: &GfxCommand,
-        stats: &mut RenderStats,
         state: &mut RenderState,
         _render_object: &RenderObject,
     ) {
         if state.last_pipeline != self.pipeline.id() {
             cmd.bind_pipeline(&self.pipeline);
-            stats.bind(self.id);
             state.last_pipeline = self.pipeline.id();
         }
     }
@@ -110,7 +104,6 @@ impl DepthPass {
         &self,
         frame: &PassFrameData,
         cmd: &GfxCommand,
-        stats: &mut RenderStats,
         state: &mut RenderState,
         _render_object: &RenderObject,
     ) {
@@ -118,7 +111,6 @@ impl DepthPass {
             let uniform_buffer = frame.uniform_buffer.read();
 
             cmd.bind_resource_buffer(&uniform_buffer.buffer, &self.pipeline);
-            stats.bind(self.id);
             state.scene_data_bound = true;
         }
     }
@@ -127,13 +119,12 @@ impl DepthPass {
         &self,
         ctx: &GfxContext,
         cmd: &GfxCommand,
-        stats: &mut RenderStats,
         state: &mut RenderState,
         render_object: &RenderObject,
     ) {
         tracing::trace!(target: "render", "Bind push constants");
 
-        if let Some(push_layout) = render_object.pass.push_layout() {
+        if let Some(push_layout) = self.push_layout() {
             state.object_data.clear();
 
             let world_matrix = render_object.transform.matrix();
@@ -143,8 +134,8 @@ impl DepthPass {
                 &[
                     UniformPropData::Mat4F(world_matrix.to_cols_array_2d()),
                     UniformPropData::U64(
-                        render_object.mesh.vertex_buffer.address(&ctx.device)
-                            + render_object.mesh.vertices_offset,
+                        render_object.vertex_buffer.address(&ctx.device)
+                            + render_object.vertices_offset,
                     ),
                 ],
                 &mut state.object_data,
@@ -153,16 +144,12 @@ impl DepthPass {
             cmd.push_constants(&self.pipeline, &state.object_data);
         }
 
-        if state.last_index_buffer != render_object.mesh.index_buffer.id()
-            || state.last_indices_offset != render_object.mesh.indices_offset
+        if state.last_index_buffer != render_object.index_buffer.id()
+            || state.last_indices_offset != render_object.indices_offset
         {
-            cmd.bind_index_buffer(
-                &render_object.mesh.index_buffer,
-                render_object.mesh.indices_offset,
-            );
-            stats.bind(self.id);
-            state.last_index_buffer = render_object.mesh.index_buffer.id();
-            state.last_indices_offset = render_object.mesh.indices_offset;
+            cmd.bind_index_buffer(&render_object.index_buffer, render_object.indices_offset);
+            state.last_index_buffer = render_object.index_buffer.id();
+            state.last_indices_offset = render_object.indices_offset;
         }
     }
 
@@ -171,47 +158,32 @@ impl DepthPass {
         ctx: &GfxContext,
         frame: &PassFrameData,
         cmd: &GfxCommand,
-        batch: &mut RenderBatch,
+        render_list: &[RenderObject],
+        uniform_data: Option<&[u8]>,
     ) {
         let mut render_state = RenderState::default();
 
-        self.prepare_scene_data(frame, batch);
+        if let Some(uniform_data) = uniform_data {
+            self.prepare_scene_data(frame, uniform_data);
+        }
 
-        for render_object in &batch.render_list {
+        for render_object in render_list {
             if !self.should_render(render_object) {
                 continue;
             }
 
-            self.bind_pipeline(
-                cmd,
-                &mut batch.render_stats,
-                &mut render_state,
-                render_object,
-            );
+            self.bind_pipeline(cmd, &mut render_state, render_object);
 
-            self.bind_scene_data(
-                frame,
-                cmd,
-                &mut batch.render_stats,
-                &mut render_state,
-                render_object,
-            );
+            self.bind_scene_data(frame, cmd, &mut render_state, render_object);
 
-            self.bind_object_data(
-                ctx,
-                cmd,
-                &mut batch.render_stats,
-                &mut render_state,
-                render_object,
-            );
+            self.bind_object_data(ctx, cmd, &mut render_state, render_object);
 
-            cmd.draw_indexed(render_object.mesh.indices_len, 1);
-            batch.render_stats.draw(self.id);
+            cmd.draw_indexed(render_object.indices_len, 1);
         }
     }
 }
 
-impl RenderPass for DepthPass {
+impl RenderPass for BoundsPass {
     fn id(&self) -> PassId {
         self.id
     }
@@ -233,7 +205,7 @@ impl RenderPass for DepthPass {
     }
 
     fn depth_clear(&self) -> bool {
-        true
+        false
     }
 
     fn pipeline(&self) -> Option<Arc<GfxPipeline>> {
@@ -271,26 +243,27 @@ impl RenderPass for DepthPass {
         ctx: &mut GfxContext,
         frame: &FrameData,
         resource_manager: &GraphResourceManager,
-        batch: &mut RenderBatch,
+        render_list: &[RenderObject],
+        uniform_data: Option<&[u8]>,
         draw_extent: ImageExtent2D,
     ) -> Result<(), RenderError> {
-        tracing::debug!(target: "render", "Draw depth");
+        tracing::debug!(target: "render", "Draw bounds");
 
         let cmd = &frame.command;
 
-        cmd.begin_label("Draw depth");
+        cmd.begin_label("Draw bounds");
 
-        let depth_attach = &self.attachments[0];
+        let draw_attach = &self.attachments[0];
 
         cmd.transition_image_layout(
-            &mut resource_manager.image_write(depth_attach),
-            ImageLayout::Depth,
+            &mut resource_manager.image_write(draw_attach),
+            ImageLayout::Color,
         );
 
         cmd.begin_rendering(
-            None,
+            Some(&resource_manager.image_read(draw_attach)),
             draw_extent,
-            Some(&resource_manager.image_read(depth_attach)),
+            None,
             self.color_clear(),
             self.depth_clear(),
             [0.; 4],
@@ -300,8 +273,7 @@ impl RenderPass for DepthPass {
         cmd.set_viewport(draw_extent.width, draw_extent.height);
 
         let pass_frame = &self.frame_data[frame.id];
-
-        self.render_batch(ctx, pass_frame, cmd, batch);
+        self.render_batch(ctx, pass_frame, cmd, render_list, uniform_data);
 
         cmd.end_rendering();
 

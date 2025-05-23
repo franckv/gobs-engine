@@ -4,8 +4,7 @@ use gobs_core::ImageExtent2D;
 use gobs_gfx::{Command, Display, GfxPipeline, Image, ImageLayout};
 
 use crate::{
-    GfxContext, RenderError,
-    batch::RenderBatch,
+    GfxContext, RenderError, RenderObject,
     graph::{FrameData, GraphResourceManager},
     pass::{PassId, PassType, RenderPass},
 };
@@ -76,7 +75,8 @@ impl RenderPass for PresentPass {
         ctx: &mut GfxContext,
         frame: &FrameData,
         resource_manager: &GraphResourceManager,
-        _batch: &mut RenderBatch,
+        _render_list: &[RenderObject],
+        _uniform_data: Option<&[u8]>,
         draw_extent: ImageExtent2D,
     ) -> Result<(), RenderError> {
         tracing::debug!(target: "render", "Present");
