@@ -1,6 +1,6 @@
 # gobs-engine
 
-![CI](https://github.com/franckv/gobs-engine/actions/workflows/rust.yml/badge.svg)
+[![Rust](https://github.com/franckv/gobs-engine/actions/workflows/rust.yml/badge.svg)](https://github.com/franckv/gobs-engine/actions/workflows/rust.yml)
 
 Game engine written in Rust based on Vulkan.
 
