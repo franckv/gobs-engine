@@ -90,7 +90,6 @@ impl Scene {
 
     pub fn draw_bounds(
         &mut self,
-        ctx: &GfxContext,
         resource_manager: &mut ResourceManager,
         pass: RenderPass,
         batch: &mut RenderBatch,
@@ -98,7 +97,6 @@ impl Scene {
         self.graph.visit(self.graph.root, &mut |node| {
             if let NodeValue::Model(_) = node.base.value {
                 batch.add_bounds(
-                    ctx,
                     resource_manager,
                     node.bounding.bounding_box,
                     node.global_transform(),
@@ -122,7 +120,6 @@ impl Scene {
 impl Renderable for Scene {
     fn draw(
         &self,
-        ctx: &GfxContext,
         resource_manager: &mut ResourceManager,
         pass: RenderPass,
         batch: &mut RenderBatch,
@@ -131,7 +128,6 @@ impl Renderable for Scene {
         self.graph.visit(self.graph.root, &mut |node| {
             if let NodeValue::Model(model) = &node.base.value {
                 model.draw(
-                    ctx,
                     resource_manager,
                     pass.clone(),
                     batch,

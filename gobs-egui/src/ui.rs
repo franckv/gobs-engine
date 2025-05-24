@@ -32,6 +32,7 @@ pub struct UIRenderer {
     input: Vec<Input>,
     mouse_position: (f32, f32),
     output: RwLock<Option<FullOutput>>,
+    vertex_padding: bool,
 }
 
 impl UIRenderer {
@@ -65,6 +66,7 @@ impl UIRenderer {
             input: Vec::new(),
             mouse_position: (0., 0.),
             output: RwLock::new(None),
+            vertex_padding: ctx.vertex_padding,
         })
     }
 
@@ -332,7 +334,6 @@ impl UIRenderer {
     #[tracing::instrument(target = "ui", skip_all, level = "trace")]
     fn load_model(
         &self,
-        ctx: &GfxContext,
         resource_manager: &mut ResourceManager,
         output: FullOutput,
     ) -> Option<Arc<Model>> {
@@ -376,7 +377,7 @@ impl UIRenderer {
                         .color(color)
                         .texture(Vec2::new(vertex.uv.x, vertex.uv.y))
                         .normal(Vec3::new(0., 0., 1.))
-                        .padding(ctx.vertex_padding)
+                        .padding(self.vertex_padding)
                         .build();
 
                     mesh = mesh.vertex(vertex_data);
@@ -406,7 +407,6 @@ impl Renderable for UIRenderer {
     #[tracing::instrument(target = "ui", skip_all, level = "trace")]
     fn draw(
         &self,
-        ctx: &GfxContext,
         resource_manager: &mut ResourceManager,
         pass: RenderPass,
         batch: &mut RenderBatch,
@@ -419,7 +419,7 @@ impl Renderable for UIRenderer {
             None => Transform::IDENTITY,
         };
 
-        if let Some(model) = self.load_model(ctx, resource_manager, output) {
+        if let Some(model) = self.load_model(resource_manager, output) {
             batch.add_model(resource_manager, model, transform, pass.clone());
         }
 

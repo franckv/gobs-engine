@@ -320,29 +320,31 @@ impl FrameGraph {
 
     pub fn update(&mut self, _ctx: &GfxContext, _delta: f32) {}
 
-    pub fn render(
-        &mut self,
+    pub fn render<'a>(
+        &'a mut self,
         ctx: &mut GfxContext,
-        pass: RenderPass,
         render_list: &[RenderObject],
-        uniform_data: Option<&[u8]>,
+        uniform_cb: &dyn Fn(PassId) -> Option<&'a [u8]>,
     ) -> Result<(), RenderError> {
-        tracing::debug!(target: "render", "Begin rendering pass {}", pass.name());
-
         let frame_id = self.frame_number % ctx.frames_in_flight;
 
         let frame = &self.frames[frame_id];
 
-        pass.render(
-            ctx,
-            frame,
-            &self.resource_manager,
-            render_list,
-            uniform_data,
-            self.draw_extent,
-        )?;
+        for pass in &self.passes {
+            tracing::debug!(target: "render", "Begin rendering pass {}", pass.name());
+            let uniform_data = uniform_cb(pass.id());
 
-        tracing::debug!(target: "render", "End rendering pass");
+            pass.render(
+                ctx,
+                frame,
+                &self.resource_manager,
+                render_list,
+                uniform_data,
+                self.draw_extent,
+            )?;
+
+            tracing::debug!(target: "render", "End rendering pass");
+        }
 
         Ok(())
     }

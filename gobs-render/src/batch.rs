@@ -16,14 +16,16 @@ pub struct RenderBatch {
     pub(crate) render_list: Vec<RenderObject>,
     pub(crate) scene_data: HashMap<PassId, Vec<u8>>,
     pub(crate) mesh_resource_manager: MeshResourceManager,
+    vertex_padding: bool,
 }
 
 impl RenderBatch {
-    pub fn new() -> Self {
+    pub fn new(ctx: &GfxContext) -> Self {
         Self {
             render_list: Vec::new(),
             scene_data: HashMap::new(),
             mesh_resource_manager: MeshResourceManager::new(),
+            vertex_padding: ctx.vertex_padding,
         }
     }
 
@@ -94,13 +96,12 @@ impl RenderBatch {
 
     pub fn add_bounds(
         &mut self,
-        ctx: &GfxContext,
         resource_manager: &mut ResourceManager,
         bounding_box: BoundingBox,
         transform: Transform,
         pass: RenderPass,
     ) {
-        let mesh = Shapes::bounding_box(bounding_box, ctx.vertex_padding);
+        let mesh = Shapes::bounding_box(bounding_box, self.vertex_padding);
 
         let model = Model::builder("box")
             .mesh(mesh, None, resource_manager, ResourceLifetime::Transient)
@@ -148,11 +149,5 @@ impl RenderBatch {
 
     pub fn finish(&mut self) {
         self.sort();
-    }
-}
-
-impl Default for RenderBatch {
-    fn default() -> Self {
-        Self::new()
     }
 }

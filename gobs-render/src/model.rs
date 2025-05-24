@@ -7,7 +7,7 @@ use serde::Serialize;
 use uuid::Uuid;
 
 use gobs_core::Transform;
-use gobs_render_graph::{GfxContext, RenderPass};
+use gobs_render_graph::RenderPass;
 use gobs_resource::{
     geometry::{Bounded, BoundingBox, MeshGeometry},
     manager::ResourceManager,
@@ -46,7 +46,6 @@ impl Model {
 impl Renderable for Arc<Model> {
     fn draw(
         &self,
-        _ctx: &GfxContext,
         resource_manager: &mut ResourceManager,
         pass: RenderPass,
         batch: &mut RenderBatch,

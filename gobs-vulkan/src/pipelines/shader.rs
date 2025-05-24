@@ -1,6 +1,6 @@
 use std::fmt::Debug;
 use std::fs::File;
-use std::io::Read;
+use std::io::{BufReader, Read};
 use std::path::Path;
 use std::ptr;
 use std::sync::Arc;
@@ -33,8 +33,9 @@ impl Shader {
         P: AsRef<Path> + Debug,
     {
         let file = File::open(&filename)?;
+        let reader = BufReader::new(file);
 
-        let data: Vec<u8> = file.bytes().filter_map(|b| b.ok()).collect();
+        let data: Vec<u8> = reader.bytes().filter_map(|b| b.ok()).collect();
 
         let shader_info = vk::ShaderModuleCreateInfo {
             s_type: vk::StructureType::SHADER_MODULE_CREATE_INFO,

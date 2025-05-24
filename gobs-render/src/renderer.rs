@@ -11,7 +11,7 @@ impl Renderer {
     pub fn new(ctx: &GfxContext) -> Self {
         Self {
             graph: FrameGraph::default(ctx).unwrap(),
-            batch: RenderBatch::new(),
+            batch: RenderBatch::new(ctx),
         }
     }
 
@@ -23,34 +23,28 @@ impl Renderer {
         self.graph.update(ctx, delta);
     }
 
-    pub fn begin(&mut self, ctx: &mut GfxContext) {
+    pub fn draw(
+        &mut self,
+        ctx: &mut GfxContext,
+        draw_cmd: &mut dyn FnMut(RenderPass, &mut RenderBatch),
+    ) {
         tracing::debug!(target: "render", "Begin render batch");
 
         self.batch.reset();
 
         self.graph.begin(ctx).unwrap();
-    }
 
-    pub fn draw(&mut self, draw_cmd: &mut dyn FnMut(RenderPass, &mut RenderBatch)) {
         for pass in &self.graph.passes {
             draw_cmd(pass.clone(), &mut self.batch);
         }
 
         self.batch.finish();
-    }
 
-    pub fn end(&mut self, ctx: &mut GfxContext) {
-        let passes = self.graph.passes.clone();
-        for pass in passes {
-            self.graph
-                .render(
-                    ctx,
-                    pass.clone(),
-                    &self.batch.render_list,
-                    self.batch.scene_data(pass.id()),
-                )
-                .unwrap();
-        }
+        self.graph
+            .render(ctx, &self.batch.render_list, &|pass| {
+                self.batch.scene_data(pass)
+            })
+            .unwrap();
 
         self.graph.end(ctx).unwrap();
     }
