@@ -7,9 +7,8 @@ use gobs::{
         app::{Application, Run},
         context::GameContext,
     },
-    gfx::Device,
     render::Model,
-    render_graph::{FrameGraph, PassType, RenderError},
+    render_graph::{PassType, RenderError},
     resource::{entity::light::Light, geometry::Shapes, resource::ResourceLifetime},
     scene::{components::NodeValue, scene::Scene},
     ui::UIRenderer,
@@ -19,7 +18,6 @@ use examples::SampleApp;
 
 struct App {
     common: SampleApp,
-    graph: FrameGraph,
     ui: UIRenderer,
     scene: Scene,
 }
@@ -34,25 +32,18 @@ impl Run for App {
 
         let common = SampleApp::new();
 
-        let graph = FrameGraph::default(&ctx.gfx)?;
         let ui = UIRenderer::new(
-            &ctx.gfx,
+            &ctx.renderer.gfx,
             &mut ctx.resource_manager,
-            graph.pass_by_type(PassType::Ui)?,
+            ctx.renderer.graph.pass_by_type(PassType::Ui)?,
         )?;
         let scene = Scene::new(camera, camera_position, light, light_position);
 
-        Ok(App {
-            common,
-            graph,
-            ui,
-            scene,
-        })
+        Ok(App { common, ui, scene })
     }
 
     fn update(&mut self, ctx: &mut GameContext, delta: f32) {
-        self.graph.update(&ctx.gfx, delta);
-        self.scene.update(&ctx.gfx, delta);
+        self.scene.update(&ctx.renderer.gfx, delta);
 
         self.common.update_ui(ctx, &self.scene, &mut self.ui, delta);
     }
@@ -66,8 +57,7 @@ impl Run for App {
             .input(ctx, input, &mut self.scene, &mut self.ui, None);
     }
 
-    fn resize(&mut self, ctx: &mut GameContext, width: u32, height: u32) {
-        self.graph.resize(&mut ctx.gfx);
+    fn resize(&mut self, _ctx: &mut GameContext, width: u32, height: u32) {
         self.scene.resize(width, height);
         self.ui.resize(width, height);
     }
@@ -76,11 +66,7 @@ impl Run for App {
         self.init(ctx);
     }
 
-    fn close(&mut self, ctx: &GameContext) {
-        tracing::info!(target: "app", "Closing");
-
-        ctx.gfx.device.wait();
-
+    fn close(&mut self, _ctx: &mut GameContext) {
         tracing::info!(target: "app", "Closed");
     }
 }
@@ -102,13 +88,13 @@ impl App {
                         Color::GREEN,
                         Color::BLUE,
                     ],
-                    ctx.gfx.vertex_padding,
+                    ctx.renderer.gfx.vertex_padding,
                 ),
                 Some(material_instance),
                 &mut ctx.resource_manager,
                 ResourceLifetime::Static,
             )
-            .build();
+            .build(&mut ctx.resource_manager);
 
         let transform =
             Transform::new([0., 0., 0.].into(), Quat::IDENTITY, [300., 300., 1.].into());

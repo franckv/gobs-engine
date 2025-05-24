@@ -105,7 +105,7 @@ impl RenderBatch {
 
         let model = Model::builder("box")
             .mesh(mesh, None, resource_manager, ResourceLifetime::Transient)
-            .build();
+            .build(resource_manager);
 
         self.add_model(resource_manager, model, transform, pass);
     }

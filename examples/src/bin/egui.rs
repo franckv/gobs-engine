@@ -1,4 +1,5 @@
-use examples::SampleApp;
+use renderdoc::{RenderDoc, V141};
+
 use gobs::{
     core::{Input, Key},
     game::{
@@ -6,40 +7,35 @@ use gobs::{
         app::{Application, Run},
         context::GameContext,
     },
-    gfx::Device,
-    render_graph::{FrameGraph, PassType, RenderError},
+    render_graph::{PassType, RenderError},
     ui::UIRenderer,
 };
-use renderdoc::{RenderDoc, V141};
+
+use examples::SampleApp;
 
 struct App {
     common: SampleApp,
-    graph: FrameGraph,
     ui: UIRenderer,
     demo: MiscDemoWindow,
 }
 
 impl Run for App {
     async fn create(ctx: &mut GameContext) -> Result<Self, AppError> {
-        let graph = FrameGraph::ui(&ctx.gfx)?;
         let ui = UIRenderer::new(
-            &ctx.gfx,
+            &ctx.renderer.gfx,
             &mut ctx.resource_manager,
-            graph.pass_by_type(PassType::Ui)?,
+            ctx.renderer.graph.pass_by_type(PassType::Ui)?,
         )?;
         let common = SampleApp::new();
 
         Ok(App {
             common,
-            graph,
             ui,
             demo: Default::default(),
         })
     }
 
     fn update(&mut self, ctx: &mut GameContext, delta: f32) {
-        self.graph.update(&ctx.gfx, delta);
-
         self.ui.update(&mut ctx.resource_manager, delta, |ectx| {
             self.demo.show(ectx, &mut true)
         });
@@ -60,18 +56,13 @@ impl Run for App {
         }
     }
 
-    fn resize(&mut self, ctx: &mut GameContext, width: u32, height: u32) {
-        self.graph.resize(&mut ctx.gfx);
+    fn resize(&mut self, _ctx: &mut GameContext, width: u32, height: u32) {
         self.ui.resize(width, height);
     }
 
     async fn start(&mut self, _ctx: &mut GameContext) {}
 
-    fn close(&mut self, ctx: &GameContext) {
-        tracing::info!(target: "app", "Closing");
-
-        ctx.gfx.device.wait();
-
+    fn close(&mut self, _ctx: &mut GameContext) {
         tracing::info!(target: "app", "Closed");
     }
 }

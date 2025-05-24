@@ -202,7 +202,7 @@ impl GLTFLoader {
                 );
             }
 
-            self.models.push(model.build());
+            self.models.push(model.build(resource_manager));
         }
 
         tracing::debug!(target: "resources", "{} models loaded", self.models.len());

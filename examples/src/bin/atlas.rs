@@ -7,7 +7,6 @@ use gobs::{
         app::{Application, Run},
         context::GameContext,
     },
-    gfx::Device,
     render::{Model, TextureProperties, TextureType},
     render_graph::{PassType, RenderError},
     resource::{
@@ -30,7 +29,7 @@ struct App {
 
 impl Run for App {
     async fn create(ctx: &mut GameContext) -> Result<Self, AppError> {
-        let extent = ctx.gfx.extent();
+        let extent = ctx.renderer.extent();
 
         let camera = Camera::perspective(
             extent.width as f32 / extent.height as f32,
@@ -50,7 +49,7 @@ impl Run for App {
         let camera_controller = SampleApp::controller();
 
         let ui = UIRenderer::new(
-            &ctx.gfx,
+            &ctx.renderer.gfx,
             &mut ctx.resource_manager,
             ctx.renderer.graph.pass_by_type(PassType::Ui)?,
         )?;
@@ -91,7 +90,7 @@ impl Run for App {
                 .update_camera(camera, transform, delta);
         });
 
-        self.scene.update(&ctx.gfx, delta);
+        self.scene.update(&ctx.renderer.gfx, delta);
 
         self.common.update_ui(ctx, &self.scene, &mut self.ui, delta);
     }
@@ -115,11 +114,7 @@ impl Run for App {
         self.ui.resize(width, height);
     }
 
-    fn close(&mut self, ctx: &GameContext) {
-        tracing::info!(target: "app", "Closing");
-
-        ctx.gfx.device.wait();
-
+    fn close(&mut self, _ctx: &mut GameContext) {
         tracing::info!(target: "app", "Closed");
     }
 }
@@ -150,13 +145,13 @@ impl App {
                     examples::ATLAS_ROWS,
                     &[3, 3, 3, 3, 4, 1],
                     1.,
-                    ctx.gfx.vertex_padding,
+                    ctx.renderer.gfx.vertex_padding,
                 ),
                 Some(material_instance),
                 &mut ctx.resource_manager,
                 ResourceLifetime::Static,
             )
-            .build();
+            .build(&mut ctx.resource_manager);
 
         let transform = Transform::new([0., 0., -2.].into(), Quat::IDENTITY, Vec3::splat(1.));
         self.scene

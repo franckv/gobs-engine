@@ -37,13 +37,13 @@ impl SampleApp {
     }
 
     pub fn ortho_camera(ctx: &GameContext) -> Camera {
-        let extent = ctx.gfx.extent();
+        let extent = ctx.renderer.extent();
 
         Camera::ortho(extent.width as f32, extent.height as f32, 0.1, 100., 0., 0.)
     }
 
     pub fn perspective_camera(ctx: &GameContext) -> Camera {
-        let extent = ctx.gfx.extent();
+        let extent = ctx.renderer.extent();
 
         Camera::perspective(
             extent.width as f32 / extent.height as f32,
@@ -62,7 +62,7 @@ impl SampleApp {
     pub fn color_material(&self, ctx: &mut GameContext) -> Arc<Material> {
         let vertex_attributes = VertexAttribute::POSITION | VertexAttribute::COLOR;
 
-        Material::builder(&ctx.gfx, "color.vert.spv", "color.frag.spv")
+        Material::builder(&ctx.renderer.gfx, "color.vert.spv", "color.frag.spv")
             .unwrap()
             .vertex_attributes(vertex_attributes)
             .build(
@@ -74,7 +74,7 @@ impl SampleApp {
     pub fn color_material_transparent(&self, ctx: &mut GameContext) -> Arc<Material> {
         let vertex_attributes = VertexAttribute::POSITION | VertexAttribute::COLOR;
 
-        Material::builder(&ctx.gfx, "color.vert.spv", "color.frag.spv")
+        Material::builder(&ctx.renderer.gfx, "color.vert.spv", "color.frag.spv")
             .unwrap()
             .vertex_attributes(vertex_attributes)
             .blend_mode(BlendMode::Alpha)
@@ -91,7 +91,7 @@ impl SampleApp {
             | VertexAttribute::TANGENT
             | VertexAttribute::BITANGENT;
 
-        Material::builder(&ctx.gfx, "mesh.vert.spv", "mesh.frag.spv")
+        Material::builder(&ctx.renderer.gfx, "mesh.vert.spv", "mesh.frag.spv")
             .unwrap()
             .vertex_attributes(vertex_attributes)
             .prop("diffuse", MaterialProperty::Texture)
@@ -108,7 +108,7 @@ impl SampleApp {
             | VertexAttribute::TANGENT
             | VertexAttribute::BITANGENT;
 
-        Material::builder(&ctx.gfx, "mesh.vert.spv", "mesh.frag.spv")
+        Material::builder(&ctx.renderer.gfx, "mesh.vert.spv", "mesh.frag.spv")
             .unwrap()
             .vertex_attributes(vertex_attributes)
             .prop("diffuse", MaterialProperty::Texture)
@@ -126,7 +126,7 @@ impl SampleApp {
             | VertexAttribute::TANGENT
             | VertexAttribute::BITANGENT;
 
-        Material::builder(&ctx.gfx, "mesh.vert.spv", "mesh_n.frag.spv")
+        Material::builder(&ctx.renderer.gfx, "mesh.vert.spv", "mesh_n.frag.spv")
             .unwrap()
             .vertex_attributes(vertex_attributes)
             .prop("diffuse", MaterialProperty::Texture)
@@ -140,7 +140,7 @@ impl SampleApp {
     pub fn depth_material(&self, ctx: &mut GameContext) -> Arc<Material> {
         let vertex_attributes = VertexAttribute::POSITION | VertexAttribute::COLOR;
 
-        Material::builder(&ctx.gfx, "color.vert.spv", "depth.frag.spv")
+        Material::builder(&ctx.renderer.gfx, "color.vert.spv", "depth.frag.spv")
             .unwrap()
             .vertex_attributes(vertex_attributes)
             .build(
@@ -177,10 +177,9 @@ impl SampleApp {
     ) -> Result<(), RenderError> {
         tracing::trace!(target: "app", "Render frame {}", ctx.renderer.frame_number());
 
-        let gfx = &mut ctx.gfx;
         let resource_manager = &mut ctx.resource_manager;
 
-        ctx.renderer.draw(gfx, &mut |pass, batch| match pass.ty() {
+        ctx.renderer.draw(&mut |pass, batch| match pass.ty() {
             PassType::Depth | PassType::Forward => {
                 scene.draw(resource_manager, pass, batch, None);
             }
@@ -214,10 +213,9 @@ impl SampleApp {
     ) -> Result<(), RenderError> {
         tracing::trace!(target: "app", "Render frame {}", ctx.renderer.frame_number());
 
-        let gfx = &mut ctx.gfx;
         let resource_manager = &mut ctx.resource_manager;
 
-        ctx.renderer.draw(gfx, &mut |pass, batch| {
+        ctx.renderer.draw(&mut |pass, batch| {
             if pass.ty() == PassType::Ui {
                 ui.draw(resource_manager, pass, batch, None);
             }
@@ -235,10 +233,9 @@ impl SampleApp {
     ) -> Result<(), RenderError> {
         tracing::trace!(target: "app", "Render frame {}", ctx.renderer.frame_number());
 
-        let gfx = &mut ctx.gfx;
         let resource_manager = &mut ctx.resource_manager;
 
-        ctx.renderer.draw(gfx, &mut |pass, batch| match pass.ty() {
+        ctx.renderer.draw(&mut |pass, batch| match pass.ty() {
             PassType::Depth | PassType::Forward => {
                 scene.draw(resource_manager, pass, batch, None);
             }
@@ -283,7 +280,7 @@ impl SampleApp {
                     }
                 }
                 Key::L => {
-                    tracing::info!(target: "app", "{:?}", ctx.gfx.device.allocator.allocator.lock().unwrap())
+                    tracing::info!(target: "app", "{:?}", ctx.renderer.gfx.device.allocator.allocator.lock().unwrap())
                 }
                 Key::P => self.process_updates = !self.process_updates,
                 Key::Z => self.draw_wire = !self.draw_wire,
@@ -303,7 +300,7 @@ impl SampleApp {
         let filename = "draw_image.png";
         let mut data = vec![];
         let extent = ctx.renderer.graph.get_image_data(
-            &ctx.gfx,
+            &ctx.renderer.gfx,
             "draw",
             &mut data,
             ImageFormat::R16g16b16a16Unorm,

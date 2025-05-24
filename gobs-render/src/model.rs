@@ -124,7 +124,7 @@ impl ModelBuilder {
         self
     }
 
-    pub fn build(self) -> Arc<Model> {
+    pub fn build(self, _resource_manager: &mut ResourceManager) -> Arc<Model> {
         Arc::new(Model {
             name: self.name,
             id: self.id,

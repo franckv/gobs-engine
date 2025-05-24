@@ -100,6 +100,7 @@ where
                             tracing::info!(target: "events", "Stopping");
                             self.close_requested = true;
                             runnable.close(context);
+                            context.close();
                             event_loop.exit();
                         }
                         _ => {
@@ -141,10 +142,14 @@ where
                             context.update(delta);
                             runnable.update(context, delta);
                             tracing::trace!(target: "events", "[Redraw] FPS: {}", 1. / delta);
-                            if !context.gfx.display.is_minimized() {
+                            if !context.renderer.gfx.display.is_minimized() {
                                 if self.is_minimized {
                                     self.is_minimized = false;
-                                    context.gfx.display.resize(&context.gfx.device);
+                                    context
+                                        .renderer
+                                        .gfx
+                                        .display
+                                        .resize(&context.renderer.gfx.device);
                                 }
                                 match runnable.render(context) {
                                     Ok(_) => {}
@@ -181,7 +186,7 @@ where
 
     fn about_to_wait(&mut self, _event_loop: &winit::event_loop::ActiveEventLoop) {
         if let Some(context) = &mut self.context {
-            context.gfx.request_redraw();
+            context.renderer.gfx.request_redraw();
         }
     }
 }
@@ -228,5 +233,5 @@ pub trait Run: Sized {
     fn render(&mut self, ctx: &mut GameContext) -> Result<(), RenderError>;
     fn input(&mut self, ctx: &mut GameContext, input: Input);
     fn resize(&mut self, ctx: &mut GameContext, width: u32, height: u32);
-    fn close(&mut self, ctx: &GameContext);
+    fn close(&mut self, ctx: &mut GameContext);
 }

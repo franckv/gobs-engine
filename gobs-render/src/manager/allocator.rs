@@ -31,6 +31,12 @@ pub struct Allocator<F: ResourceFamily, A: Allocable<F>> {
     pub pool: ObjectPool<F, A>,
 }
 
+impl<F: ResourceFamily, A: Allocable<F>> Default for Allocator<F, A> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl<F: ResourceFamily, A: Allocable<F>> Allocator<F, A> {
     pub fn new() -> Self {
         Self {

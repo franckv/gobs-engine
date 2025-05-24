@@ -4,9 +4,8 @@ use pollster::FutureExt;
 use gobs::{
     core::{Color, Input, Transform},
     game::{AppError, app::Run, context::GameContext},
-    gfx::Device,
     render::Model,
-    render_graph::{FrameGraph, RenderError},
+    render_graph::RenderError,
     resource::{entity::light::Light, geometry::Shapes, resource::ResourceLifetime},
     scene::{components::NodeValue, scene::Scene},
 };
@@ -15,7 +14,6 @@ use examples::SampleApp;
 
 struct App {
     common: SampleApp,
-    graph: FrameGraph,
     scene: Scene,
 }
 
@@ -29,19 +27,13 @@ impl Run for App {
 
         let common = SampleApp::new();
 
-        let graph = FrameGraph::headless(&ctx.gfx)?;
         let scene = Scene::new(camera, camera_position, light, light_position);
 
-        Ok(App {
-            common,
-            graph,
-            scene,
-        })
+        Ok(App { common, scene })
     }
 
     fn update(&mut self, ctx: &mut GameContext, delta: f32) {
-        self.graph.update(&ctx.gfx, delta);
-        self.scene.update(&ctx.gfx, delta);
+        self.scene.update(&ctx.renderer.gfx, delta);
     }
 
     fn render(&mut self, ctx: &mut GameContext) -> Result<(), RenderError> {
@@ -50,8 +42,7 @@ impl Run for App {
 
     fn input(&mut self, _ctx: &mut GameContext, _input: Input) {}
 
-    fn resize(&mut self, ctx: &mut GameContext, width: u32, height: u32) {
-        self.graph.resize(&mut ctx.gfx);
+    fn resize(&mut self, _ctx: &mut GameContext, width: u32, height: u32) {
         self.scene.resize(width, height);
     }
 
@@ -59,11 +50,7 @@ impl Run for App {
         self.init(ctx);
     }
 
-    fn close(&mut self, ctx: &GameContext) {
-        tracing::info!(target: "app", "Closing");
-
-        ctx.gfx.device.wait();
-
+    fn close(&mut self, _ctx: &mut GameContext) {
         tracing::info!(target: "app", "Closed");
     }
 }
@@ -80,13 +67,13 @@ impl App {
                     Color::GREEN,
                     Color::BLUE,
                     1.,
-                    ctx.gfx.vertex_padding,
+                    ctx.renderer.gfx.vertex_padding,
                 ),
                 Some(material_instance),
                 &mut ctx.resource_manager,
                 ResourceLifetime::Static,
             )
-            .build();
+            .build(&mut ctx.resource_manager);
 
         let transform =
             Transform::new([0., 0., 0.].into(), Quat::IDENTITY, [300., 300., 1.].into());
@@ -119,7 +106,7 @@ fn main() {
 
     app.render(&mut ctx).unwrap();
 
-    app.close(&ctx);
+    app.close(&mut ctx);
 
     app.common.screenshot(&mut ctx);
 }
