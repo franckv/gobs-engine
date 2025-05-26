@@ -7,7 +7,7 @@ use gobs::{
         app::{Application, Run},
         context::GameContext,
     },
-    render_graph::{PassType, RenderError},
+    render_graph::RenderError,
     ui::UIRenderer,
 };
 
@@ -24,7 +24,7 @@ impl Run for App {
         let ui = UIRenderer::new(
             &ctx.renderer.gfx,
             &mut ctx.resource_manager,
-            ctx.renderer.graph.pass_by_type(PassType::Ui)?,
+            ctx.renderer.ui_pass(),
         )?;
         let common = SampleApp::new();
 

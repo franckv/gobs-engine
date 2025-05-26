@@ -58,16 +58,24 @@ impl RenderBatch {
 
             let vertex_attributes = match pass.vertex_attributes() {
                 Some(vertex_attributes) => vertex_attributes,
-                None => model.materials[material_id].vertex_attributes(),
+                None => {
+                    resource_manager
+                        .get(&model.materials[material_id].material)
+                        .properties
+                        .vertex_attributes
+                }
             };
 
             let (pipeline, is_transparent) = if let Some(material) = &material {
-                let pipeline_data = resource_manager.get_data(&material.pipeline(), ());
+                let blending_enabled = resource_manager
+                    .get(&material.material)
+                    .properties
+                    .blending_enabled;
 
-                (
-                    Some(pipeline_data.pipeline.clone()),
-                    material.material.blending_enabled,
-                )
+                let pipeline = resource_manager.get_data(&material.material, ()).pipeline;
+                let pipeline_data = resource_manager.get_data(&pipeline, ());
+
+                (Some(pipeline_data.pipeline.clone()), blending_enabled)
             } else {
                 (None, false)
             };

@@ -4,7 +4,10 @@ use gobs_gfx::{
     BindingGroupType, ComputePipelineBuilder, DynamicStateElem, GfxDevice, GfxPipeline,
     GraphicsPipelineBuilder, Pipeline as _, Rect2D, Viewport,
 };
-use gobs_resource::resource::{Resource, ResourceLoader};
+use gobs_resource::{
+    manager::ResourceRegistry,
+    resource::{Resource, ResourceHandle, ResourceLoader},
+};
 
 use crate::resources::pipeline::{
     ComputePipelineProperties, GraphicsPipelineProperties, Pipeline, PipelineData,
@@ -86,7 +89,15 @@ impl PipelineLoader {
 }
 
 impl ResourceLoader<Pipeline> for PipelineLoader {
-    fn load(&mut self, properties: &mut PipelineProperties, _: &()) -> PipelineData {
+    fn load(
+        &mut self,
+        handle: &ResourceHandle<Pipeline>,
+        _: &(),
+        registry: &mut ResourceRegistry,
+    ) -> PipelineData {
+        let resource = registry.get_mut(handle);
+        let properties = &mut resource.properties;
+
         match &properties {
             PipelineProperties::Compute(properties) => self.load_compute(properties),
             PipelineProperties::Graphics(properties) => self.load_graphics(properties),

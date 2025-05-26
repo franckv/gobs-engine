@@ -7,8 +7,8 @@ use gobs::{
         app::{Application, Run},
         context::GameContext,
     },
-    render::{Model, TextureProperties, TextureType},
-    render_graph::{PassType, RenderError},
+    render::{MaterialInstance, Model, TextureProperties, TextureType},
+    render_graph::RenderError,
     resource::{
         entity::{camera::Camera, light::Light},
         geometry::Shapes,
@@ -52,7 +52,7 @@ impl Run for App {
         let ui = UIRenderer::new(
             &ctx.renderer.gfx,
             &mut ctx.resource_manager,
-            ctx.renderer.graph.pass_by_type(PassType::Ui)?,
+            ctx.renderer.ui_pass(),
         )?;
         let scene = Scene::new(camera, camera_position, light, light_position);
 
@@ -123,7 +123,11 @@ impl App {
     async fn load_scene(&mut self, ctx: &mut GameContext) {
         tracing::info!(target: "app", "Load scene");
 
-        let material = self.common.normal_mapping_material(ctx);
+        let material = self.common.normal_mapping_material(
+            &ctx.renderer.gfx,
+            &mut ctx.resource_manager,
+            ctx.renderer.forward_pass(),
+        );
 
         let properties =
             TextureProperties::with_atlas("Atlas Diffuse", examples::ATLAS, examples::ATLAS_COLS);
@@ -138,7 +142,8 @@ impl App {
             .resource_manager
             .add(properties, ResourceLifetime::Static);
 
-        let material_instance = material.instantiate(vec![diffuse_texture, normal_texture]);
+        let material_instance =
+            MaterialInstance::new(material, vec![diffuse_texture, normal_texture]);
 
         let wall = Model::builder("wall")
             .mesh(

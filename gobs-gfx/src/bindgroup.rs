@@ -3,6 +3,7 @@ use crate::Renderer;
 
 #[derive(Copy, Clone, Debug, Eq, Hash, PartialEq)]
 pub enum BindingGroupType {
+    None,
     ComputeData,
     SceneData,
     MaterialData,
@@ -11,6 +12,7 @@ pub enum BindingGroupType {
 impl BindingGroupType {
     pub fn set(&self) -> u32 {
         match self {
+            BindingGroupType::None => panic!("Invalid binding group"),
             BindingGroupType::ComputeData => 0,
             BindingGroupType::SceneData => 0,
             BindingGroupType::MaterialData => 1,

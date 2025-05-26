@@ -3,6 +3,8 @@ use std::{collections::HashMap, fmt::Debug, hash::Hash, marker::PhantomData};
 use serde::Serialize;
 use uuid::Uuid;
 
+use crate::manager::ResourceRegistry;
+
 pub enum ResourceState<R: ResourceType> {
     Unloaded,
     Loading,
@@ -65,13 +67,18 @@ impl<R: ResourceType> Resource<R> {
             life: 0,
         }
     }
+
+    pub(crate) fn is_loaded(&self, parameter: &R::ResourceParameter) -> bool {
+        matches!(self.data.get(parameter), Some(ResourceState::Loaded(_)))
+    }
 }
 
 pub trait ResourceLoader<R: ResourceType> {
     fn load(
         &mut self,
-        properties: &mut R::ResourceProperties,
+        handle: &ResourceHandle<R>,
         parameter: &R::ResourceParameter,
+        resource_registry: &mut ResourceRegistry,
     ) -> R::ResourceData;
 
     fn unload(&mut self, resource: Resource<R>);

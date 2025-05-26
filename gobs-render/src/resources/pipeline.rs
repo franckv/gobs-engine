@@ -40,7 +40,7 @@ impl PipelineProperties {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct GraphicsPipelineProperties {
     pub name: String,
     pub(crate) vertex_entry: String,
@@ -48,6 +48,7 @@ pub struct GraphicsPipelineProperties {
     pub(crate) fragment_entry: String,
     pub(crate) fragment_shader: Option<String>,
     pub(crate) binding_groups: Vec<(DescriptorStage, BindingGroupType, Vec<DescriptorType>)>,
+    pub(crate) last_binding_group: BindingGroupType,
     pub(crate) ds_pool_size: usize,
     pub(crate) push_constants: usize,
     pub(crate) color_format: Option<ImageFormat>,
@@ -64,11 +65,12 @@ impl GraphicsPipelineProperties {
     pub fn new(name: &str) -> Self {
         Self {
             name: name.to_string(),
-            binding_groups: Vec::new(),
             vertex_entry: "main".to_string(),
             vertex_shader: None,
             fragment_entry: "main".to_string(),
             fragment_shader: None,
+            binding_groups: Vec::new(),
+            last_binding_group: BindingGroupType::None,
             ds_pool_size: 10,
             push_constants: 0,
             color_format: None,
@@ -152,6 +154,7 @@ impl GraphicsPipelineProperties {
 
     pub fn binding_group(mut self, stage: DescriptorStage, ty: BindingGroupType) -> Self {
         self.binding_groups.push((stage, ty, Vec::new()));
+        self.last_binding_group = ty;
 
         self
     }

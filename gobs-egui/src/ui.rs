@@ -9,8 +9,8 @@ use parking_lot::RwLock;
 
 use gobs_core::{Color, ImageExtent2D, Input, Key, MouseButton, Transform};
 use gobs_render::{
-    Material, MaterialInstance, MaterialProperty, Model, RenderBatch, Renderable, Texture,
-    TextureProperties, TextureUpdate,
+    Material, MaterialInstance, MaterialProperties, MaterialProperty, Model, RenderBatch,
+    Renderable, Texture, TextureProperties, TextureUpdate,
 };
 use gobs_render_graph::{BlendMode, GfxContext, RenderPass};
 use gobs_resource::{
@@ -27,7 +27,7 @@ pub struct UIRenderer {
     ectx: egui::Context,
     width: f32,
     height: f32,
-    material: Arc<Material>,
+    material: ResourceHandle<Material>,
     font_texture: HashMap<TextureId, Arc<MaterialInstance>>,
     input: Vec<Input>,
     mouse_position: (f32, f32),
@@ -50,12 +50,13 @@ impl UIRenderer {
         let vertex_attributes =
             VertexAttribute::POSITION | VertexAttribute::COLOR | VertexAttribute::TEXTURE;
 
-        let material = Material::builder(ctx, "ui.vert.spv", "ui.frag.spv")?
-            .vertex_attributes(vertex_attributes)
-            .prop("diffuse", MaterialProperty::Texture)
-            .no_culling()
-            .blend_mode(BlendMode::Premultiplied)
-            .build(pass, resource_manager);
+        let material_properties =
+            MaterialProperties::new(ctx, "ui.vert.spv", "ui.frag.spv", vertex_attributes, pass)
+                .prop("diffuse", MaterialProperty::Texture)
+                .no_culling()
+                .blend_mode(BlendMode::Premultiplied);
+
+        let material = resource_manager.add(material_properties, ResourceLifetime::Static);
 
         Ok(UIRenderer {
             ectx,
@@ -243,7 +244,7 @@ impl UIRenderer {
                     img,
                 );
 
-                let material = self.material.instantiate(vec![texture]);
+                let material = MaterialInstance::new(self.material, vec![texture]);
 
                 *self.font_texture.get_mut(id).unwrap() = material;
             } else {
@@ -284,7 +285,7 @@ impl UIRenderer {
 
                 let handle = resource_manager.add(properties, ResourceLifetime::Static);
 
-                self.material.instantiate(vec![handle])
+                MaterialInstance::new(self.material, vec![handle])
             }
         }
     }

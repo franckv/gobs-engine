@@ -8,7 +8,8 @@ use gobs_core::{Color, ImageExtent2D};
 use gobs_gfx::GfxDevice;
 use gobs_resource::{
     load::{self, AssetType},
-    resource::{Resource, ResourceLoader},
+    manager::ResourceRegistry,
+    resource::{Resource, ResourceHandle, ResourceLoader},
 };
 
 use crate::{
@@ -141,7 +142,15 @@ impl TextureLoader {
 }
 
 impl ResourceLoader<Texture> for TextureLoader {
-    fn load(&mut self, properties: &mut TextureProperties, _: &()) -> TextureData {
+    fn load(
+        &mut self,
+        handle: &ResourceHandle<Texture>,
+        _: &(),
+        registry: &mut ResourceRegistry,
+    ) -> TextureData {
+        let resource = registry.get_mut(handle);
+        let properties = &mut resource.properties;
+
         match &properties.path {
             TexturePath::Default => self.load_default(),
             TexturePath::File(filename) => self.load_file(filename, &mut properties.format),

@@ -8,7 +8,7 @@ use gobs::{
         app::{Application, Run},
         context::GameContext,
     },
-    render_graph::{PassType, RenderError},
+    render_graph::RenderError,
     resource::{entity::light::Light, load},
     scene::{graph::scenegraph::SceneGraph, scene::Scene},
     ui::UIRenderer,
@@ -38,7 +38,7 @@ impl Run for App {
         let ui = UIRenderer::new(
             &ctx.renderer.gfx,
             &mut ctx.resource_manager,
-            ctx.renderer.graph.pass_by_type(PassType::Ui)?,
+            ctx.renderer.ui_pass(),
         )?;
         let scene = Scene::new(camera, camera_position, light, light_position);
 
@@ -114,12 +114,10 @@ impl App {
     fn load_scene(&self, ctx: &mut GameContext) -> SceneGraph {
         let file_name = load::get_asset_dir("house2.glb", load::AssetType::MODEL).unwrap();
 
-        let mut gltf_loader = gltf_load::GLTFLoader::new(
-            &mut ctx.renderer.gfx,
-            &mut ctx.resource_manager,
-            ctx.renderer.graph.pass_by_type(PassType::Forward).unwrap(),
-        )
-        .unwrap();
+        let pass = ctx.renderer.ui_pass();
+        let mut gltf_loader =
+            gltf_load::GLTFLoader::new(&mut ctx.renderer.gfx, &mut ctx.resource_manager, pass)
+                .unwrap();
 
         gltf_loader
             .load(&mut ctx.resource_manager, file_name)

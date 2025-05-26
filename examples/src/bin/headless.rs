@@ -4,7 +4,7 @@ use pollster::FutureExt;
 use gobs::{
     core::{Color, Input, Transform},
     game::{AppError, app::Run, context::GameContext},
-    render::Model,
+    render::{MaterialInstance, Model},
     render_graph::RenderError,
     resource::{entity::light::Light, geometry::Shapes, resource::ResourceLifetime},
     scene::{components::NodeValue, scene::Scene},
@@ -57,8 +57,12 @@ impl Run for App {
 
 impl App {
     fn init(&mut self, ctx: &mut GameContext) {
-        let material = self.common.color_material(ctx);
-        let material_instance = material.instantiate(vec![]);
+        let material = self.common.color_material(
+            &ctx.renderer.gfx,
+            &mut ctx.resource_manager,
+            ctx.renderer.forward_pass(),
+        );
+        let material_instance = MaterialInstance::new(material, vec![]);
 
         let triangle = Model::builder("triangle")
             .mesh(

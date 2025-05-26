@@ -1,6 +1,8 @@
 use std::sync::Arc;
 
-use gobs_render::{Material, MaterialInstance, MaterialProperty, Texture, TextureProperties};
+use gobs_render::{
+    Material, MaterialInstance, MaterialProperties, MaterialProperty, Texture, TextureProperties,
+};
 use gobs_render_graph::{BlendMode, GfxContext, RenderPass};
 use gobs_resource::{
     geometry::VertexAttribute,
@@ -39,17 +41,17 @@ pub struct MaterialManager {
     pub texture_manager: TextureManager,
     pub instances: Vec<Arc<MaterialInstance>>,
     pub default_material_instance: Arc<MaterialInstance>,
-    pub texture: Arc<Material>,
-    pub transparent_texture: Arc<Material>,
-    pub texture_normal: Arc<Material>,
-    pub transparent_texture_normal: Arc<Material>,
+    pub texture: ResourceHandle<Material>,
+    pub transparent_texture: ResourceHandle<Material>,
+    pub texture_normal: ResourceHandle<Material>,
+    pub transparent_texture_normal: ResourceHandle<Material>,
     pub color_instance: Arc<MaterialInstance>,
     pub transparent_color_instance: Arc<MaterialInstance>,
 }
 
 impl MaterialManager {
     pub fn new(
-        ctx: &mut GfxContext,
+        ctx: &GfxContext,
         resource_manager: &mut ResourceManager,
         pass: RenderPass,
     ) -> Result<Self, AssetError> {
@@ -59,32 +61,57 @@ impl MaterialManager {
             | VertexAttribute::TANGENT
             | VertexAttribute::BITANGENT;
 
-        let texture = Material::builder(ctx, "gltf.texture.vert.spv", "gltf.texture.frag.spv")?
-            .vertex_attributes(vertex_attributes)
+        let texture = resource_manager.add(
+            MaterialProperties::new(
+                ctx,
+                "gltf.texture.vert.spv",
+                "gltf.texture.frag.spv",
+                vertex_attributes,
+                pass.clone(),
+            )
+            .prop("diffuse", MaterialProperty::Texture),
+            ResourceLifetime::Static,
+        );
+
+        let transparent_texture = resource_manager.add(
+            MaterialProperties::new(
+                ctx,
+                "gltf.texture.vert.spv",
+                "gltf.texture.frag.spv",
+                vertex_attributes,
+                pass.clone(),
+            )
             .prop("diffuse", MaterialProperty::Texture)
-            .build(pass.clone(), resource_manager);
+            .blend_mode(BlendMode::Alpha),
+            ResourceLifetime::Static,
+        );
 
-        let transparent_texture =
-            Material::builder(ctx, "gltf.texture.vert.spv", "gltf.texture.frag.spv")?
-                .vertex_attributes(vertex_attributes)
-                .prop("diffuse", MaterialProperty::Texture)
-                .blend_mode(BlendMode::Alpha)
-                .build(pass.clone(), resource_manager);
+        let texture_normal = resource_manager.add(
+            MaterialProperties::new(
+                ctx,
+                "gltf.texture.vert.spv",
+                "gltf.texture_n.frag.spv",
+                vertex_attributes,
+                pass.clone(),
+            )
+            .prop("diffuse", MaterialProperty::Texture)
+            .prop("normal", MaterialProperty::Texture),
+            ResourceLifetime::Static,
+        );
 
-        let texture_normal =
-            Material::builder(ctx, "gltf.texture.vert.spv", "gltf.texture_n.frag.spv")?
-                .vertex_attributes(vertex_attributes)
-                .prop("diffuse", MaterialProperty::Texture)
-                .prop("normal", MaterialProperty::Texture)
-                .build(pass.clone(), resource_manager);
-
-        let transparent_texture_normal =
-            Material::builder(ctx, "gltf.texture.vert.spv", "gltf.texture_n.frag.spv")?
-                .vertex_attributes(vertex_attributes)
-                .prop("diffuse", MaterialProperty::Texture)
-                .prop("normal", MaterialProperty::Texture)
-                .blend_mode(BlendMode::Alpha)
-                .build(pass.clone(), resource_manager);
+        let transparent_texture_normal = resource_manager.add(
+            MaterialProperties::new(
+                ctx,
+                "gltf.texture.vert.spv",
+                "gltf.texture_n.frag.spv",
+                vertex_attributes,
+                pass.clone(),
+            )
+            .prop("diffuse", MaterialProperty::Texture)
+            .prop("normal", MaterialProperty::Texture)
+            .blend_mode(BlendMode::Alpha),
+            ResourceLifetime::Static,
+        );
 
         let vertex_attributes = VertexAttribute::POSITION
             | VertexAttribute::COLOR
@@ -92,34 +119,39 @@ impl MaterialManager {
             | VertexAttribute::TANGENT
             | VertexAttribute::BITANGENT;
 
-        let color = Material::builder(
-            ctx,
-            "gltf.color_light.vert.spv",
-            "gltf.color_light.frag.spv",
-        )?
-        .vertex_attributes(vertex_attributes)
-        .build(pass.clone(), resource_manager);
+        let color = resource_manager.add(
+            MaterialProperties::new(
+                ctx,
+                "gltf.color_light.vert.spv",
+                "gltf.color_light.frag.spv",
+                vertex_attributes,
+                pass.clone(),
+            ),
+            ResourceLifetime::Static,
+        );
 
-        let transparent_color = Material::builder(
-            ctx,
-            "gltf.color_light.vert.spv",
-            "gltf.color_light.frag.spv",
-        )?
-        .vertex_attributes(vertex_attributes)
-        .blend_mode(BlendMode::Alpha)
-        .build(pass.clone(), resource_manager);
+        let transparent_color = resource_manager.add(
+            MaterialProperties::new(
+                ctx,
+                "gltf.color_light.vert.spv",
+                "gltf.color_light.frag.spv",
+                vertex_attributes,
+                pass,
+            )
+            .blend_mode(BlendMode::Alpha),
+            ResourceLifetime::Static,
+        );
 
         let texture_manager = TextureManager::new(resource_manager);
 
-        let default_material_instance = texture
-            .clone()
-            .instantiate(vec![texture_manager.default_texture]);
+        let default_material_instance =
+            MaterialInstance::new(texture, vec![texture_manager.default_texture]);
         tracing::debug!(target: "resources", "Default material id: {}", default_material_instance.id);
 
-        let color_instance = color.instantiate(vec![]);
+        let color_instance = MaterialInstance::new(color, vec![]);
         tracing::debug!(target: "resources", "Color material id: {}", color_instance.id);
 
-        let transparent_color_instance = transparent_color.instantiate(vec![]);
+        let transparent_color_instance = MaterialInstance::new(transparent_color, vec![]);
         tracing::debug!(target: "resources", "Color material id: {}", transparent_color_instance.id);
 
         Ok(MaterialManager {
@@ -151,8 +183,8 @@ impl MaterialManager {
         let texture = self.texture_manager.textures[texture];
 
         let material_instance = match alpha {
-            BlendMode::Alpha => self.transparent_texture.instantiate(vec![texture]),
-            _ => self.texture.instantiate(vec![texture]),
+            BlendMode::Alpha => MaterialInstance::new(self.transparent_texture, vec![texture]),
+            _ => MaterialInstance::new(self.texture, vec![texture]),
         };
         self.instances.push(material_instance.clone());
 
@@ -169,10 +201,10 @@ impl MaterialManager {
         let normal = self.texture_manager.textures[normal];
 
         let material_instance = match alpha {
-            BlendMode::Alpha => self
-                .transparent_texture_normal
-                .instantiate(vec![diffuse, normal]),
-            _ => self.texture_normal.instantiate(vec![diffuse, normal]),
+            BlendMode::Alpha => {
+                MaterialInstance::new(self.transparent_texture_normal, vec![diffuse, normal])
+            }
+            _ => MaterialInstance::new(self.texture_normal, vec![diffuse, normal]),
         };
         self.instances.push(material_instance.clone());
 

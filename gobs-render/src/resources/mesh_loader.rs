@@ -3,12 +3,13 @@ use std::sync::Arc;
 use gobs_gfx::{Buffer, BufferUsage, Command, Device, GfxBuffer, GfxDevice};
 use gobs_resource::{
     geometry::{MeshGeometry, VertexAttribute},
-    resource::{Resource, ResourceLoader},
+    manager::ResourceRegistry,
+    resource::{Resource, ResourceHandle, ResourceLoader},
 };
 
 use crate::{
     manager::Allocator,
-    resources::{Mesh, MeshData, MeshPath, MeshPrimitiveType, MeshProperties},
+    resources::{Mesh, MeshData, MeshPath, MeshPrimitiveType},
 };
 
 pub struct MeshLoader {
@@ -103,7 +104,15 @@ impl MeshLoader {
 }
 
 impl ResourceLoader<Mesh> for MeshLoader {
-    fn load(&mut self, properties: &mut MeshProperties, parameter: &VertexAttribute) -> MeshData {
+    fn load(
+        &mut self,
+        handle: &ResourceHandle<Mesh>,
+        parameter: &VertexAttribute,
+        registry: &mut ResourceRegistry,
+    ) -> MeshData {
+        let resource = registry.get_mut(handle);
+        let properties = &mut resource.properties;
+
         match &properties.path {
             MeshPath::Default => todo!(),
             MeshPath::File(_) => todo!(),

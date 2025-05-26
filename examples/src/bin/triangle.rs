@@ -7,8 +7,8 @@ use gobs::{
         app::{Application, Run},
         context::GameContext,
     },
-    render::Model,
-    render_graph::{PassType, RenderError},
+    render::{MaterialInstance, Model},
+    render_graph::RenderError,
     resource::{entity::light::Light, geometry::Shapes, resource::ResourceLifetime},
     scene::{components::NodeValue, scene::Scene},
     ui::UIRenderer,
@@ -35,7 +35,7 @@ impl Run for App {
         let ui = UIRenderer::new(
             &ctx.renderer.gfx,
             &mut ctx.resource_manager,
-            ctx.renderer.graph.pass_by_type(PassType::Ui)?,
+            ctx.renderer.ui_pass(),
         )?;
         let scene = Scene::new(camera, camera_position, light, light_position);
 
@@ -73,8 +73,12 @@ impl Run for App {
 
 impl App {
     fn init(&mut self, ctx: &mut GameContext) {
-        let material = self.common.color_material(ctx);
-        let material_instance = material.instantiate(vec![]);
+        let material = self.common.color_material(
+            &ctx.renderer.gfx,
+            &mut ctx.resource_manager,
+            ctx.renderer.forward_pass(),
+        );
+        let material_instance = MaterialInstance::new(material, vec![]);
 
         let triangle = Model::builder("triangle")
             .mesh(

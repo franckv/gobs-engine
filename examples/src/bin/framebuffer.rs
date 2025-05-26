@@ -7,8 +7,8 @@ use gobs::{
         app::{Application, Run},
         context::GameContext,
     },
-    render::{Model, TextureProperties},
-    render_graph::{PassType, RenderError},
+    render::{MaterialInstance, Model, TextureProperties},
+    render_graph::RenderError,
     resource::{entity::light::Light, geometry::Shapes, resource::ResourceLifetime},
     scene::{components::NodeValue, scene::Scene},
     ui::UIRenderer,
@@ -38,7 +38,7 @@ impl Run for App {
         let ui = UIRenderer::new(
             &ctx.renderer.gfx,
             &mut ctx.resource_manager,
-            ctx.renderer.graph.pass_by_type(PassType::Ui)?,
+            ctx.renderer.ui_pass(),
         )?;
         let scene = Scene::new(camera, camera_position, light, light_position);
 
@@ -96,7 +96,11 @@ impl App {
 
         let framebuffer = Self::generate_framebuffer(width, height);
 
-        let material = self.common.texture_material(ctx);
+        let material = self.common.texture_material(
+            &ctx.renderer.gfx,
+            &mut ctx.resource_manager,
+            ctx.renderer.forward_pass(),
+        );
 
         let properties = TextureProperties::with_colors("Framebuffer", framebuffer, extent);
 
@@ -104,7 +108,7 @@ impl App {
             .resource_manager
             .add(properties, ResourceLifetime::Static);
 
-        let material_instance = material.instantiate(vec![texture]);
+        let material_instance = MaterialInstance::new(material, vec![texture]);
 
         let rect = Model::builder("rect")
             .mesh(

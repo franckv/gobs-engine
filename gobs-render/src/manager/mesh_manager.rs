@@ -120,7 +120,8 @@ impl MeshResourceManager {
             match self.material_bindings.entry(material.id) {
                 Entry::Vacant(e) => {
                     if !material.textures.is_empty() {
-                        let pipeline_handle = material.material.pipeline;
+                        let pipeline_handle =
+                            resource_manager.get_data(&material.material, ()).pipeline;
 
                         tracing::debug!(target: "render",
                             "Create material binding for pipeline: {:?}",

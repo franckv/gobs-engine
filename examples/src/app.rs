@@ -1,14 +1,17 @@
-use std::sync::Arc;
-
 use image::{ImageBuffer, Rgba};
 use renderdoc::{RenderDoc, V141};
 
 use gobs::{
     core::{ImageFormat, Input, Key},
     game::context::GameContext,
-    render::{Material, MaterialProperty, Renderable},
-    render_graph::{BlendMode, PassType, RenderError},
-    resource::{entity::camera::Camera, geometry::VertexAttribute},
+    render::{Material, MaterialProperties, MaterialProperty, Renderable},
+    render_graph::{BlendMode, GfxContext, PassType, RenderError, RenderPass},
+    resource::{
+        entity::camera::Camera,
+        geometry::VertexAttribute,
+        manager::ResourceManager,
+        resource::{ResourceHandle, ResourceLifetime},
+    },
     scene::scene::Scene,
     ui::UIRenderer,
 };
@@ -59,94 +62,142 @@ impl SampleApp {
         CameraController::new(3., 0.4)
     }
 
-    pub fn color_material(&self, ctx: &mut GameContext) -> Arc<Material> {
+    pub fn color_material(
+        &self,
+        ctx: &GfxContext,
+        resource_manager: &mut ResourceManager,
+        pass: RenderPass,
+    ) -> ResourceHandle<Material> {
         let vertex_attributes = VertexAttribute::POSITION | VertexAttribute::COLOR;
 
-        Material::builder(&ctx.renderer.gfx, "color.vert.spv", "color.frag.spv")
-            .unwrap()
-            .vertex_attributes(vertex_attributes)
-            .build(
-                ctx.renderer.graph.pass_by_type(PassType::Forward).unwrap(),
-                &mut ctx.resource_manager,
-            )
+        resource_manager.add(
+            MaterialProperties::new(
+                ctx,
+                "color.vert.spv",
+                "color.frag.spv",
+                vertex_attributes,
+                pass,
+            ),
+            gobs::resource::resource::ResourceLifetime::Static,
+        )
     }
 
-    pub fn color_material_transparent(&self, ctx: &mut GameContext) -> Arc<Material> {
+    pub fn color_material_transparent(
+        &self,
+        ctx: &GfxContext,
+        resource_manager: &mut ResourceManager,
+        pass: RenderPass,
+    ) -> ResourceHandle<Material> {
         let vertex_attributes = VertexAttribute::POSITION | VertexAttribute::COLOR;
 
-        Material::builder(&ctx.renderer.gfx, "color.vert.spv", "color.frag.spv")
-            .unwrap()
-            .vertex_attributes(vertex_attributes)
-            .blend_mode(BlendMode::Alpha)
-            .build(
-                ctx.renderer.graph.pass_by_type(PassType::Forward).unwrap(),
-                &mut ctx.resource_manager,
+        resource_manager.add(
+            MaterialProperties::new(
+                ctx,
+                "color.vert.spv",
+                "color.frag.spv",
+                vertex_attributes,
+                pass,
             )
+            .blend_mode(BlendMode::Alpha),
+            ResourceLifetime::Static,
+        )
     }
 
-    pub fn texture_material(&self, ctx: &mut GameContext) -> Arc<Material> {
+    pub fn texture_material(
+        &self,
+        ctx: &GfxContext,
+        resource_manager: &mut ResourceManager,
+        pass: RenderPass,
+    ) -> ResourceHandle<Material> {
         let vertex_attributes = VertexAttribute::POSITION
             | VertexAttribute::TEXTURE
             | VertexAttribute::NORMAL
             | VertexAttribute::TANGENT
             | VertexAttribute::BITANGENT;
 
-        Material::builder(&ctx.renderer.gfx, "mesh.vert.spv", "mesh.frag.spv")
-            .unwrap()
-            .vertex_attributes(vertex_attributes)
-            .prop("diffuse", MaterialProperty::Texture)
-            .build(
-                ctx.renderer.graph.pass_by_type(PassType::Forward).unwrap(),
-                &mut ctx.resource_manager,
+        resource_manager.add(
+            MaterialProperties::new(
+                ctx,
+                "mesh.vert.spv",
+                "mesh.frag.spv",
+                vertex_attributes,
+                pass,
             )
+            .prop("diffuse", MaterialProperty::Texture),
+            ResourceLifetime::Static,
+        )
     }
 
-    pub fn texture_material_transparent(&self, ctx: &mut GameContext) -> Arc<Material> {
+    pub fn texture_material_transparent(
+        &self,
+        ctx: &GfxContext,
+        resource_manager: &mut ResourceManager,
+        pass: RenderPass,
+    ) -> ResourceHandle<Material> {
         let vertex_attributes = VertexAttribute::POSITION
             | VertexAttribute::TEXTURE
             | VertexAttribute::NORMAL
             | VertexAttribute::TANGENT
             | VertexAttribute::BITANGENT;
 
-        Material::builder(&ctx.renderer.gfx, "mesh.vert.spv", "mesh.frag.spv")
-            .unwrap()
-            .vertex_attributes(vertex_attributes)
-            .prop("diffuse", MaterialProperty::Texture)
-            .blend_mode(BlendMode::Alpha)
-            .build(
-                ctx.renderer.graph.pass_by_type(PassType::Forward).unwrap(),
-                &mut ctx.resource_manager,
+        resource_manager.add(
+            MaterialProperties::new(
+                ctx,
+                "mesh.vert.spv",
+                "mesh.frag.spv",
+                vertex_attributes,
+                pass,
             )
+            .prop("diffuse", MaterialProperty::Texture)
+            .blend_mode(BlendMode::Alpha),
+            ResourceLifetime::Static,
+        )
     }
 
-    pub fn normal_mapping_material(&self, ctx: &mut GameContext) -> Arc<Material> {
+    pub fn normal_mapping_material(
+        &self,
+        ctx: &GfxContext,
+        resource_manager: &mut ResourceManager,
+        pass: RenderPass,
+    ) -> ResourceHandle<Material> {
         let vertex_attributes = VertexAttribute::POSITION
             | VertexAttribute::TEXTURE
             | VertexAttribute::NORMAL
             | VertexAttribute::TANGENT
             | VertexAttribute::BITANGENT;
 
-        Material::builder(&ctx.renderer.gfx, "mesh.vert.spv", "mesh_n.frag.spv")
-            .unwrap()
-            .vertex_attributes(vertex_attributes)
-            .prop("diffuse", MaterialProperty::Texture)
-            .prop("normal", MaterialProperty::Texture)
-            .build(
-                ctx.renderer.graph.pass_by_type(PassType::Forward).unwrap(),
-                &mut ctx.resource_manager,
+        resource_manager.add(
+            MaterialProperties::new(
+                ctx,
+                "mesh.vert.spv",
+                "mesh_n.frag.spv",
+                vertex_attributes,
+                pass,
             )
+            .prop("diffuse", MaterialProperty::Texture)
+            .prop("normal", MaterialProperty::Texture),
+            ResourceLifetime::Static,
+        )
     }
 
-    pub fn depth_material(&self, ctx: &mut GameContext) -> Arc<Material> {
+    pub fn depth_material(
+        &self,
+        ctx: &GfxContext,
+        resource_manager: &mut ResourceManager,
+        pass: RenderPass,
+    ) -> ResourceHandle<Material> {
         let vertex_attributes = VertexAttribute::POSITION | VertexAttribute::COLOR;
 
-        Material::builder(&ctx.renderer.gfx, "color.vert.spv", "depth.frag.spv")
-            .unwrap()
-            .vertex_attributes(vertex_attributes)
-            .build(
-                ctx.renderer.graph.pass_by_type(PassType::Forward).unwrap(),
-                &mut ctx.resource_manager,
-            )
+        resource_manager.add(
+            MaterialProperties::new(
+                ctx,
+                "color.vert.spv",
+                "depth.frag.spv",
+                vertex_attributes,
+                pass,
+            ),
+            ResourceLifetime::Static,
+        )
     }
 
     pub fn update_ui(

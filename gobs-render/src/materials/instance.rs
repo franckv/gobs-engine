@@ -2,21 +2,22 @@ use std::{fmt::Debug, sync::Arc};
 
 use uuid::Uuid;
 
-use gobs_resource::{geometry::VertexAttribute, resource::ResourceHandle};
+use gobs_resource::resource::ResourceHandle;
 
-use crate::{Pipeline, Texture, materials::Material};
+use crate::Texture;
+use crate::resources::Material;
 
 pub type MaterialInstanceId = Uuid;
 
 pub struct MaterialInstance {
     pub id: MaterialInstanceId,
-    pub material: Arc<Material>,
+    pub material: ResourceHandle<Material>,
     pub textures: Vec<ResourceHandle<Texture>>,
 }
 
 impl MaterialInstance {
-    pub(crate) fn new(
-        material: Arc<Material>,
+    pub fn new(
+        material: ResourceHandle<Material>,
         textures: Vec<ResourceHandle<Texture>>,
     ) -> Arc<Self> {
         Arc::new(Self {
@@ -24,14 +25,6 @@ impl MaterialInstance {
             material,
             textures,
         })
-    }
-
-    pub fn pipeline(&self) -> ResourceHandle<Pipeline> {
-        self.material.pipeline
-    }
-
-    pub fn vertex_attributes(&self) -> VertexAttribute {
-        self.material.vertex_attributes
     }
 }
 
