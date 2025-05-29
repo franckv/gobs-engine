@@ -75,8 +75,6 @@ where
                     WindowEvent::CloseRequested => {
                         tracing::info!(target: "events", "Stopping");
                         self.close_requested = true;
-                        runnable.close(context);
-                        event_loop.exit();
                     }
                     WindowEvent::Resized(physical_size) => {
                         tracing::trace!(target: "events",
@@ -99,9 +97,6 @@ where
                         keyboard::Key::Named(NamedKey::Escape) => {
                             tracing::info!(target: "events", "Stopping");
                             self.close_requested = true;
-                            runnable.close(context);
-                            context.close();
-                            event_loop.exit();
                         }
                         _ => {
                             let key = key_code.into();
@@ -165,6 +160,11 @@ where
                 }
             }
         }
+
+        if self.close_requested {
+            self.close();
+            event_loop.exit();
+        }
     }
 
     fn device_event(
@@ -213,6 +213,15 @@ where
         event_loop.set_control_flow(winit::event_loop::ControlFlow::Poll);
 
         event_loop.run_app(self).unwrap();
+    }
+
+    pub fn close(&mut self) {
+        if let Some(runnable) = &mut self.runnable {
+            if let Some(context) = &mut self.context {
+                runnable.close(context);
+                context.close();
+            }
+        }
     }
 }
 

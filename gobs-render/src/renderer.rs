@@ -34,9 +34,9 @@ impl Renderer {
     pub fn draw(&mut self, draw_cmd: &mut dyn FnMut(RenderPass, &mut RenderBatch)) {
         tracing::debug!(target: "render", "Begin render batch");
 
-        self.batch.reset();
-
         self.graph.begin(&mut self.gfx).unwrap();
+
+        self.batch.reset();
 
         for pass in &self.graph.passes {
             draw_cmd(pass.clone(), &mut self.batch);
