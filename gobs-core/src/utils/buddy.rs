@@ -13,7 +13,7 @@ pub enum AllocError {
 pub struct Allocation {
     order: usize,
     idx: usize,
-    memory_start: usize,
+    pub memory_start: usize,
 }
 
 impl Allocation {
