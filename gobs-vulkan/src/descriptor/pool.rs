@@ -166,22 +166,21 @@ mod tests {
     use crate::descriptor::{
         DescriptorSetLayout, DescriptorSetPool, DescriptorStage, DescriptorType,
     };
-    use tracing::{Level, level_filters::LevelFilter};
-    use tracing_subscriber::{EnvFilter, FmtSubscriber, fmt::format::FmtSpan};
+    use tracing::Level;
+    use tracing_subscriber::{FmtSubscriber, fmt::format::FmtSpan};
+
+    fn setup() {
+        let sub = FmtSubscriber::builder()
+            .with_max_level(Level::DEBUG)
+            .with_span_events(FmtSpan::CLOSE)
+            .finish();
+        tracing::subscriber::set_global_default(sub).unwrap_or_default();
+    }
 
     #[test]
     #[cfg_attr(feature = "ci", ignore)]
     fn test_alloc() {
-        let sub = FmtSubscriber::builder()
-            .with_max_level(Level::INFO)
-            .with_span_events(FmtSpan::CLOSE)
-            .with_env_filter(
-                EnvFilter::builder()
-                    .with_default_directive(LevelFilter::INFO.into())
-                    .from_env_lossy(),
-            )
-            .finish();
-        tracing::subscriber::set_global_default(sub).unwrap_or_default();
+        setup();
 
         let ctx = crate::headless::Context::new("test");
 
