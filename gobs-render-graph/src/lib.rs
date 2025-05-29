@@ -1,5 +1,6 @@
 mod context;
 mod error;
+mod framedata;
 mod graph;
 mod pass;
 mod render_object;
@@ -11,6 +12,7 @@ pub use gobs_gfx::{BlendMode, CullMode, Display, ImageUsage};
 
 pub use context::GfxContext;
 pub use error::RenderError;
+pub use framedata::FrameData;
 pub use graph::FrameGraph;
 pub use pass::{PassId, PassType};
 pub use render_object::RenderObject;

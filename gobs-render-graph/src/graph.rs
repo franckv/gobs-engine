@@ -1,5 +1,5 @@
 mod frame;
 mod resource;
 
-pub use frame::{FrameData, FrameGraph};
+pub use frame::FrameGraph;
 pub use resource::GraphResourceManager;

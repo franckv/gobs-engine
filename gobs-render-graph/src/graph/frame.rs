@@ -2,12 +2,12 @@ use bytemuck::Pod;
 
 use gobs_core::{ImageExtent2D, ImageFormat};
 use gobs_gfx::{
-    Buffer, BufferUsage, Command, CommandQueueType, Device, Display, GfxBuffer, GfxCommand,
-    GfxImage, Image, ImageLayout, ImageUsage,
+    Buffer, BufferUsage, Command, Device, Display, GfxBuffer, GfxImage, Image, ImageLayout,
+    ImageUsage,
 };
 
 use crate::{
-    GfxContext, RenderError, RenderObject, RenderPass,
+    FrameData, GfxContext, RenderError, RenderObject, RenderPass,
     graph::resource::GraphResourceManager,
     pass::{
         PassId, PassType, bounds::BoundsPass, compute::ComputePass, depth::DepthPass,
@@ -18,29 +18,7 @@ use crate::{
 const FRAME_WIDTH: u32 = 1920;
 const FRAME_HEIGHT: u32 = 1080;
 
-pub struct FrameData {
-    pub id: usize,
-    pub command: GfxCommand,
-    //TODO: pub query_pool: QueryPool,
-}
-
-impl FrameData {
-    pub fn new(ctx: &GfxContext, id: usize) -> Self {
-        let command = GfxCommand::new(&ctx.device, "Frame", CommandQueueType::Graphics);
-
-        //TODO: let query_pool = QueryPool::new(ctx.device.clone(), QueryType::Timestamp, 2);
-
-        FrameData { id, command }
-    }
-
-    pub fn reset(&mut self) {
-        self.command.reset();
-    }
-}
-
 pub struct FrameGraph {
-    pub frames: Vec<FrameData>,
-    pub frame_number: usize,
     pub draw_extent: ImageExtent2D,
     pub render_scaling: f32,
     pub passes: Vec<RenderPass>,
@@ -51,13 +29,7 @@ impl FrameGraph {
     pub fn new(ctx: &GfxContext) -> Self {
         let draw_extent = ctx.extent();
 
-        let frames = (0..ctx.frames_in_flight)
-            .map(|id| FrameData::new(ctx, id))
-            .collect();
-
         Self {
-            frames,
-            frame_number: 0,
             draw_extent,
             render_scaling: 1.,
             passes: Vec::new(),
@@ -237,27 +209,8 @@ impl FrameGraph {
         self.get_pass(|pass| pass.name() == pass_name)
     }
 
-    pub fn begin(&mut self, ctx: &mut GfxContext) -> Result<(), RenderError> {
-        self.frame_number += 1;
-        let frame_id = self.frame_number % ctx.frames_in_flight;
-
-        tracing::debug!(target: "render", "Begin new frame: {} ({}/{})", self.frame_number, frame_id, ctx.frames_in_flight);
-
-        let frame = &mut self.frames[frame_id];
-        assert_eq!(frame.id, frame_id);
-
-        tracing::debug!(target: "sync", "Wait for frame: {} ({}/{})", self.frame_number, frame_id, ctx.frames_in_flight);
-        frame.reset();
-
+    pub fn begin(&mut self, ctx: &mut GfxContext, frame: &FrameData) -> Result<(), RenderError> {
         let cmd = &frame.command;
-
-        if self.frame_number >= ctx.frames_in_flight && self.frame_number % ctx.stats_refresh == 0 {
-            //TODO: let mut buf = [0 as u64; 2];
-            //frame.query_pool.get_query_pool_results(0, &mut buf);
-
-            //self.batch.render_stats.gpu_draw_time =
-            //    ((buf[1] - buf[0]) as f32 * frame.query_pool.period) / 1_000_000_000.;
-        }
 
         let draw_image_extent = self.resource_manager.image_read("draw").extent();
         if self.resource_manager.resources.contains_key("depth") {
@@ -274,7 +227,7 @@ impl FrameGraph {
 
         tracing::trace!(target: "render", "Draw extent {:?}", self.draw_extent);
 
-        if ctx.display.acquire(frame_id).is_err() {
+        if ctx.display.acquire(frame.id).is_err() {
             return Err(RenderError::Outdated);
         }
 
@@ -282,7 +235,7 @@ impl FrameGraph {
 
         cmd.begin();
 
-        cmd.begin_label(&format!("Frame {}", self.frame_number));
+        cmd.begin_label(&format!("Frame {}", frame.frame_number));
 
         //TODO: cmd.reset_query_pool(&frame.query_pool, 0, 2);
         //TODO: cmd.write_timestamp(&frame.query_pool, PipelineStage::TopOfPipe, 0);
@@ -290,11 +243,10 @@ impl FrameGraph {
         Ok(())
     }
 
-    pub fn end(&mut self, ctx: &mut GfxContext) -> Result<(), RenderError> {
+    pub fn end(&mut self, ctx: &mut GfxContext, frame: &FrameData) -> Result<(), RenderError> {
         tracing::debug!(target: "render", "End frame");
 
-        let frame_id = self.frame_number % ctx.frames_in_flight;
-        let frame = &self.frames[frame_id];
+        let frame_id = frame.frame_number % ctx.frames_in_flight;
         let cmd = &frame.command;
 
         //TODO: cmd.write_timestamp(&frame.query_pool, PipelineStage::BottomOfPipe, 1);
@@ -323,13 +275,10 @@ impl FrameGraph {
     pub fn render<'a>(
         &'a mut self,
         ctx: &mut GfxContext,
+        frame: &FrameData,
         render_list: &[RenderObject],
         uniform_cb: &dyn Fn(PassId) -> Option<&'a [u8]>,
     ) -> Result<(), RenderError> {
-        let frame_id = self.frame_number % ctx.frames_in_flight;
-
-        let frame = &self.frames[frame_id];
-
         for pass in &self.passes {
             tracing::debug!(target: "render", "Begin rendering pass {}", pass.name());
             let uniform_data = uniform_cb(pass.id());

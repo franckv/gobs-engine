@@ -5,8 +5,8 @@ use gobs_gfx::GfxPipeline;
 use gobs_resource::{entity::uniform::UniformLayout, geometry::VertexAttribute};
 
 use crate::{
-    GfxContext, RenderError, RenderObject,
-    graph::{FrameData, GraphResourceManager},
+    FrameData, GfxContext, RenderError, RenderObject,
+    graph::GraphResourceManager,
     pass::{PassId, PassType, RenderPass},
 };
 

@@ -12,8 +12,8 @@ use gobs_resource::{
 };
 
 use crate::{
-    GfxContext, RenderError, RenderObject,
-    graph::{FrameData, GraphResourceManager},
+    FrameData, GfxContext, RenderError, RenderObject,
+    graph::GraphResourceManager,
     pass::{PassFrameData, PassId, PassType, RenderPass, RenderState},
 };
 

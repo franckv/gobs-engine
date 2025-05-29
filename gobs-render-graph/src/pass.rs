@@ -13,8 +13,7 @@ use gobs_resource::{
 };
 
 use crate::{
-    GfxContext, RenderError, RenderObject, UniformBuffer,
-    graph::{FrameData, GraphResourceManager},
+    FrameData, GfxContext, RenderError, RenderObject, UniformBuffer, graph::GraphResourceManager,
 };
 
 pub mod bounds;

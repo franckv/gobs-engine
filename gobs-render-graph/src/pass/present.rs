@@ -4,8 +4,8 @@ use gobs_core::ImageExtent2D;
 use gobs_gfx::{Command, Display, GfxPipeline, Image, ImageLayout};
 
 use crate::{
-    GfxContext, RenderError, RenderObject,
-    graph::{FrameData, GraphResourceManager},
+    FrameData, GfxContext, RenderError, RenderObject,
+    graph::GraphResourceManager,
     pass::{PassId, PassType, RenderPass},
 };
 
