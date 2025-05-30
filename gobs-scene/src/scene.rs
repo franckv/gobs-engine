@@ -2,7 +2,7 @@ use glam::Vec3;
 
 use gobs_core::Transform;
 use gobs_render::{RenderBatch, Renderable};
-use gobs_render_graph::{GfxContext, RenderPass};
+use gobs_render_graph::{GfxContext, RenderError, RenderPass};
 use gobs_resource::entity::{camera::Camera, light::Light};
 use gobs_resource::manager::ResourceManager;
 
@@ -93,7 +93,7 @@ impl Scene {
         resource_manager: &mut ResourceManager,
         pass: RenderPass,
         batch: &mut RenderBatch,
-    ) {
+    ) -> Result<(), RenderError> {
         self.graph.visit(self.graph.root, &mut |node| {
             if let NodeValue::Model(_) = node.base.value {
                 batch.add_bounds(
@@ -101,13 +101,17 @@ impl Scene {
                     node.bounding.bounding_box,
                     node.global_transform(),
                     pass.clone(),
-                );
+                )?;
             }
-        });
+
+            Ok(())
+        })?;
 
         let (light_transform, light) = self.light();
         let (camera_transform, camera) = self.camera();
         batch.add_camera_data(camera, &camera_transform, light, &light_transform, pass);
+
+        Ok(())
     }
 
     pub fn resize(&mut self, width: u32, height: u32) {
@@ -124,7 +128,7 @@ impl Renderable for Scene {
         pass: RenderPass,
         batch: &mut RenderBatch,
         _transform: Option<Transform>,
-    ) {
+    ) -> Result<(), RenderError> {
         self.graph.visit(self.graph.root, &mut |node| {
             if let NodeValue::Model(model) = &node.base.value {
                 model.draw(
@@ -132,12 +136,16 @@ impl Renderable for Scene {
                     pass.clone(),
                     batch,
                     Some(node.global_transform()),
-                );
+                )?;
             }
-        });
+
+            Ok(())
+        })?;
 
         let (light_transform, light) = self.light();
         let (camera_transform, camera) = self.camera();
         batch.add_camera_data(camera, &camera_transform, light, &light_transform, pass);
+
+        Ok(())
     }
 }

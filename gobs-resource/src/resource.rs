@@ -1,7 +1,10 @@
 use std::{collections::HashMap, fmt::Debug, hash::Hash, marker::PhantomData};
 
 use serde::Serialize;
+use thiserror::Error;
 use uuid::Uuid;
+
+use gobs_core::memory::allocator::AllocationError;
 
 use crate::manager::ResourceRegistry;
 
@@ -73,13 +76,21 @@ impl<R: ResourceType> Resource<R> {
     }
 }
 
+#[derive(Error, Debug)]
+pub enum ResourceError {
+    #[error("resource loading error")]
+    ResourceLoadError,
+    #[error("allocation error")]
+    AllocationError(#[from] AllocationError),
+}
+
 pub trait ResourceLoader<R: ResourceType> {
     fn load(
         &mut self,
         handle: &ResourceHandle<R>,
         parameter: &R::ResourceParameter,
         resource_registry: &mut ResourceRegistry,
-    ) -> R::ResourceData;
+    ) -> Result<R::ResourceData, ResourceError>;
 
     fn unload(&mut self, resource: Resource<R>);
 }

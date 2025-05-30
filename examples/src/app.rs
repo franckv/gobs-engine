@@ -230,27 +230,30 @@ impl SampleApp {
 
         let resource_manager = &mut ctx.resource_manager;
 
-        ctx.renderer.draw(&mut |pass, batch| match pass.ty() {
-            PassType::Depth | PassType::Forward => {
-                scene.draw(resource_manager, pass, batch, None);
-            }
-            PassType::Wire => {
-                if self.draw_wire {
-                    scene.draw(resource_manager, pass, batch, None);
+        ctx.renderer.draw(&mut |pass, batch| {
+            match pass.ty() {
+                PassType::Depth | PassType::Forward => {
+                    scene.draw(resource_manager, pass, batch, None)?;
                 }
-            }
-            PassType::Bounds => {
-                if self.draw_bounds {
-                    scene.draw_bounds(resource_manager, pass, batch);
+                PassType::Wire => {
+                    if self.draw_wire {
+                        scene.draw(resource_manager, pass, batch, None)?;
+                    }
                 }
-            }
-            PassType::Ui => {
-                if self.draw_ui {
-                    ui.draw(resource_manager, pass, batch, None);
+                PassType::Bounds => {
+                    if self.draw_bounds {
+                        scene.draw_bounds(resource_manager, pass, batch)?;
+                    }
                 }
+                PassType::Ui => {
+                    if self.draw_ui {
+                        ui.draw(resource_manager, pass, batch, None)?;
+                    }
+                }
+                _ => {}
             }
-            _ => {}
-        });
+            Ok(())
+        })?;
 
         tracing::trace!(target: "app", "End render");
 
@@ -268,9 +271,11 @@ impl SampleApp {
 
         ctx.renderer.draw(&mut |pass, batch| {
             if pass.ty() == PassType::Ui {
-                ui.draw(resource_manager, pass, batch, None);
+                ui.draw(resource_manager, pass, batch, None)?;
             }
-        });
+
+            Ok(())
+        })?;
 
         tracing::trace!(target: "app", "End render");
 
@@ -288,10 +293,11 @@ impl SampleApp {
 
         ctx.renderer.draw(&mut |pass, batch| match pass.ty() {
             PassType::Depth | PassType::Forward => {
-                scene.draw(resource_manager, pass, batch, None);
+                scene.draw(resource_manager, pass, batch, None)?;
+                Ok(())
             }
-            _ => {}
-        });
+            _ => Ok(()),
+        })?;
 
         tracing::trace!(target: "app", "End render");
 

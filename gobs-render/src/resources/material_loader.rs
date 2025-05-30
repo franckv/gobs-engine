@@ -1,6 +1,6 @@
 use gobs_resource::{
     manager::ResourceRegistry,
-    resource::{Resource, ResourceHandle, ResourceLoader},
+    resource::{Resource, ResourceError, ResourceHandle, ResourceLoader},
 };
 
 use crate::resources::{MaterialData, Pipeline, material::Material};
@@ -27,7 +27,7 @@ impl ResourceLoader<Material> for MaterialLoader {
         handle: &ResourceHandle<Material>,
         _parameter: &(),
         registry: &mut ResourceRegistry,
-    ) -> MaterialData {
+    ) -> Result<MaterialData, ResourceError> {
         let (pipeline_properties, lifetime) = {
             let resource = registry.get(handle);
             (
@@ -38,9 +38,9 @@ impl ResourceLoader<Material> for MaterialLoader {
 
         let pipeline_handle = registry.add::<Pipeline>(pipeline_properties, lifetime);
 
-        MaterialData {
+        Ok(MaterialData {
             pipeline: pipeline_handle,
-        }
+        })
     }
 
     fn unload(&mut self, _resource: Resource<Material>) {}

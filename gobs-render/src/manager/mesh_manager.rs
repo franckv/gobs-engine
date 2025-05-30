@@ -120,15 +120,20 @@ impl MeshResourceManager {
             match self.material_bindings.entry(material.id) {
                 Entry::Vacant(e) => {
                     if !material.textures.is_empty() {
-                        let pipeline_handle =
-                            resource_manager.get_data(&material.material, ()).pipeline;
+                        let pipeline_handle = resource_manager
+                            .get_data(&material.material, ())
+                            .ok()?
+                            .pipeline;
 
                         tracing::debug!(target: "render",
                             "Create material binding for pipeline: {:?}",
                             pipeline_handle
                         );
 
-                        let pipeline = &resource_manager.get_data(&pipeline_handle, ()).pipeline;
+                        let pipeline = &resource_manager
+                            .get_data(&pipeline_handle, ())
+                            .ok()?
+                            .pipeline;
 
                         let binding = pipeline
                             .create_binding_group(BindingGroupType::MaterialData)
@@ -136,7 +141,7 @@ impl MeshResourceManager {
                         let mut updater = binding.update();
                         for texture in &material.textures {
                             // TODO: load texture
-                            let gpu_texture = resource_manager.get_data(texture, ());
+                            let gpu_texture = resource_manager.get_data(texture, ()).ok()?;
                             updater = updater
                                 .bind_sampled_image(&gpu_texture.image, ImageLayout::Shader)
                                 .bind_sampler(&gpu_texture.sampler);

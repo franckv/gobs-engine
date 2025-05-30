@@ -1,5 +1,6 @@
 use std::collections::{HashMap, hash_map::Entry};
 
+use gobs_render_graph::RenderError;
 use slotmap::SlotMap;
 
 use gobs_core::Transform;
@@ -203,25 +204,29 @@ impl SceneGraph {
         None
     }
 
-    pub fn visit<F>(&self, root: NodeId, f: &mut F)
+    pub fn visit<F>(&self, root: NodeId, f: &mut F) -> Result<(), RenderError>
     where
-        F: FnMut(&Node),
+        F: FnMut(&Node) -> Result<(), RenderError>,
     {
-        self.visit_local(root, f);
+        self.visit_local(root, f)?;
+
+        Ok(())
     }
 
-    fn visit_local<F>(&self, root: NodeId, f: &mut F)
+    fn visit_local<F>(&self, root: NodeId, f: &mut F) -> Result<(), RenderError>
     where
-        F: FnMut(&Node),
+        F: FnMut(&Node) -> Result<(), RenderError>,
     {
         if let Some(node) = self.get(root) {
             if node.base.enabled {
                 for &child in &node.base.children {
-                    self.visit_local(child, f);
+                    self.visit_local(child, f)?;
                 }
-                f(node);
+                f(node)?;
             }
         }
+
+        Ok(())
     }
 
     pub fn visit_update<F>(&mut self, key: NodeId, f: &mut F)
@@ -237,9 +242,9 @@ impl SceneGraph {
         self.update(key, f);
     }
 
-    pub fn visit_sorted<F>(&self, root: NodeId, f: &mut F)
+    pub fn visit_sorted<F>(&self, root: NodeId, f: &mut F) -> Result<(), RenderError>
     where
-        F: FnMut(&Transform, &NodeValue),
+        F: FnMut(&Transform, &NodeValue) -> Result<(), RenderError>,
     {
         let mut map: HashMap<ModelId, Vec<(Transform, NodeValue)>> = HashMap::new();
 
@@ -256,13 +261,16 @@ impl SceneGraph {
                     }
                 }
             }
-        });
+            Ok(())
+        })?;
 
         for model_id in map.keys() {
             for (transform, node) in map.get(model_id).unwrap() {
-                f(transform, node);
+                f(transform, node)?;
             }
         }
+
+        Ok(())
     }
 }
 

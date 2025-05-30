@@ -7,7 +7,7 @@ use gobs_resource::{
     entity::{camera::Camera, light::Light, uniform::UniformPropData},
     geometry::{BoundingBox, Shapes},
     manager::ResourceManager,
-    resource::ResourceLifetime,
+    resource::{ResourceError, ResourceLifetime},
 };
 
 use crate::{manager::MeshResourceManager, model::Model};
@@ -42,7 +42,7 @@ impl RenderBatch {
         model: Arc<Model>,
         transform: Transform,
         pass: RenderPass,
-    ) {
+    ) -> Result<(), ResourceError> {
         tracing::debug!(target: "render", "Add model: {}", model.meshes.len());
 
         for (mesh, material_id) in &model.meshes {
@@ -72,15 +72,15 @@ impl RenderBatch {
                     .properties
                     .blending_enabled;
 
-                let pipeline = resource_manager.get_data(&material.material, ()).pipeline;
-                let pipeline_data = resource_manager.get_data(&pipeline, ());
+                let pipeline = resource_manager.get_data(&material.material, ())?.pipeline;
+                let pipeline_data = resource_manager.get_data(&pipeline, ())?;
 
                 (Some(pipeline_data.pipeline.clone()), blending_enabled)
             } else {
                 (None, false)
             };
 
-            let mesh_data = resource_manager.get_data(mesh, vertex_attributes);
+            let mesh_data = resource_manager.get_data(mesh, vertex_attributes)?;
 
             self.render_list.push(RenderObject {
                 model_id: model.id,
@@ -100,6 +100,8 @@ impl RenderBatch {
         }
 
         // self.render_stats.add_object(&render_object);
+
+        Ok(())
     }
 
     pub fn add_bounds(
@@ -108,14 +110,16 @@ impl RenderBatch {
         bounding_box: BoundingBox,
         transform: Transform,
         pass: RenderPass,
-    ) {
+    ) -> Result<(), ResourceError> {
         let mesh = Shapes::bounding_box(bounding_box, self.vertex_padding);
 
         let model = Model::builder("box")
             .mesh(mesh, None, resource_manager, ResourceLifetime::Transient)
             .build(resource_manager);
 
-        self.add_model(resource_manager, model, transform, pass);
+        self.add_model(resource_manager, model, transform, pass)?;
+
+        Ok(())
     }
 
     pub fn add_camera_data(

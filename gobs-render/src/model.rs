@@ -7,7 +7,7 @@ use serde::Serialize;
 use uuid::Uuid;
 
 use gobs_core::Transform;
-use gobs_render_graph::RenderPass;
+use gobs_render_graph::{RenderError, RenderPass};
 use gobs_resource::{
     geometry::{Bounded, BoundingBox, MeshGeometry},
     manager::ResourceManager,
@@ -50,10 +50,12 @@ impl Renderable for Arc<Model> {
         pass: RenderPass,
         batch: &mut RenderBatch,
         transform: Option<Transform>,
-    ) {
+    ) -> Result<(), RenderError> {
         if let Some(transform) = transform {
-            batch.add_model(resource_manager, self.clone(), transform, pass.clone());
+            batch.add_model(resource_manager, self.clone(), transform, pass.clone())?;
         }
+
+        Ok(())
     }
 }
 

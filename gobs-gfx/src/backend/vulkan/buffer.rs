@@ -14,10 +14,6 @@ pub struct VkBuffer {
 }
 
 impl Buffer<VkRenderer> for VkBuffer {
-    fn id(&self) -> BufferId {
-        self.id
-    }
-
     fn new(
         name: &str,
         size: usize,
@@ -34,6 +30,10 @@ impl Buffer<VkRenderer> for VkBuffer {
                 device.allocator.clone(),
             ),
         }
+    }
+
+    fn id(&self) -> BufferId {
+        self.id
     }
 
     fn copy<T: Copy>(&mut self, entries: &[T], offset: usize) {
@@ -62,11 +62,15 @@ impl Allocable<VkDevice, BufferUsage> for VkBuffer {
         VkBuffer::new(name, size, family, device)
     }
 
+    fn resource_id(&self) -> BufferId {
+        self.id
+    }
+
     fn family(&self) -> BufferUsage {
         self.usage()
     }
 
-    fn size(&self) -> usize {
-        Buffer::size(self)
+    fn resource_size(&self) -> usize {
+        self.size()
     }
 }

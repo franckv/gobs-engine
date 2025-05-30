@@ -3,7 +3,8 @@ use uuid::Uuid;
 use gobs_core::data::{anymap::AnyMap, registry::ObjectRegistry};
 
 use crate::resource::{
-    Resource, ResourceHandle, ResourceLifetime, ResourceLoader, ResourceState, ResourceType,
+    Resource, ResourceError, ResourceHandle, ResourceLifetime, ResourceLoader, ResourceState,
+    ResourceType,
 };
 
 #[derive(Default)]
@@ -149,7 +150,7 @@ impl ResourceManager {
         &mut self,
         handle: &ResourceHandle<R>,
         parameter: &R::ResourceParameter,
-    ) {
+    ) -> Result<(), ResourceError> {
         let resource = self.registry.get_mut(handle);
 
         if !resource.is_loaded(parameter) {
@@ -161,7 +162,7 @@ impl ResourceManager {
                 });
 
             tracing::trace!(target: "resources", "Loading resource {:?}", handle);
-            let data = loader.load(handle, parameter, &mut self.registry);
+            let data = loader.load(handle, parameter, &mut self.registry)?;
 
             let resource = self
                 .registry
@@ -173,22 +174,25 @@ impl ResourceManager {
                 .data
                 .insert(parameter.clone(), ResourceState::Loaded(data));
         }
+
+        Ok(())
     }
 
     pub fn get_data<R: ResourceType + 'static>(
         &mut self,
         handle: &ResourceHandle<R>,
         parameter: R::ResourceParameter,
-    ) -> &R::ResourceData {
-        self.load_data::<R>(handle, &parameter);
+    ) -> Result<&R::ResourceData, ResourceError> {
+        self.load_data::<R>(handle, &parameter)?;
 
         let resource = self
             .registry
             .registry
             .get_mut::<Resource<R>>(&handle.id)
             .unwrap();
+
         match &resource.data.get(&parameter) {
-            Some(ResourceState::Loaded(data)) => data,
+            Some(ResourceState::Loaded(data)) => Ok(data),
             _ => unreachable!(),
         }
     }

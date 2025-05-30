@@ -6,7 +6,7 @@ use gobs_gfx::{
 };
 use gobs_resource::{
     manager::ResourceRegistry,
-    resource::{Resource, ResourceHandle, ResourceLoader},
+    resource::{Resource, ResourceError, ResourceHandle, ResourceLoader},
 };
 
 use crate::resources::pipeline::{
@@ -94,14 +94,16 @@ impl ResourceLoader<Pipeline> for PipelineLoader {
         handle: &ResourceHandle<Pipeline>,
         _: &(),
         registry: &mut ResourceRegistry,
-    ) -> PipelineData {
+    ) -> Result<PipelineData, ResourceError> {
         let resource = registry.get_mut(handle);
         let properties = &mut resource.properties;
 
-        match &properties {
+        let data = match &properties {
             PipelineProperties::Compute(properties) => self.load_compute(properties),
             PipelineProperties::Graphics(properties) => self.load_graphics(properties),
-        }
+        };
+
+        Ok(data)
     }
 
     fn unload(&mut self, _resource: Resource<Pipeline>) {}

@@ -9,7 +9,7 @@ use gobs_gfx::GfxDevice;
 use gobs_resource::{
     load::{self, AssetType},
     manager::ResourceRegistry,
-    resource::{Resource, ResourceHandle, ResourceLoader},
+    resource::{Resource, ResourceError, ResourceHandle, ResourceLoader},
 };
 
 use crate::{
@@ -147,11 +147,11 @@ impl ResourceLoader<Texture> for TextureLoader {
         handle: &ResourceHandle<Texture>,
         _: &(),
         registry: &mut ResourceRegistry,
-    ) -> TextureData {
+    ) -> Result<TextureData, ResourceError> {
         let resource = registry.get_mut(handle);
         let properties = &mut resource.properties;
 
-        match &properties.path {
+        let data = match &properties.path {
             TexturePath::Default => self.load_default(),
             TexturePath::File(filename) => self.load_file(filename, &mut properties.format),
             TexturePath::Bytes(data) => self.load_data(&properties.name, data, &properties.format),
@@ -163,7 +163,9 @@ impl ResourceLoader<Texture> for TextureLoader {
             TexturePath::Checker(color1, color2) => {
                 self.load_checker(*color1, *color2, &properties.format)
             }
-        }
+        };
+
+        Ok(data)
     }
 
     fn unload(&mut self, _resource: Resource<Texture>) {

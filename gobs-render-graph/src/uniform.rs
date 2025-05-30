@@ -3,6 +3,7 @@ use std::sync::Arc;
 use gobs_core::memory::allocator::Allocable;
 use gobs_gfx::{Buffer, BufferUsage, GfxBuffer, GfxDevice};
 use gobs_resource::entity::uniform::UniformLayout;
+use uuid::Uuid;
 
 pub struct UniformBuffer {
     pub layout: Arc<UniformLayout>,
@@ -22,11 +23,15 @@ impl UniformBuffer {
 }
 
 impl Allocable<GfxDevice, Arc<UniformLayout>> for UniformBuffer {
+    fn resource_id(&self) -> Uuid {
+        self.buffer.id()
+    }
+
     fn family(&self) -> Arc<UniformLayout> {
         self.layout.clone()
     }
 
-    fn size(&self) -> usize {
+    fn resource_size(&self) -> usize {
         1
     }
 

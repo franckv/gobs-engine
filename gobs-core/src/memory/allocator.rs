@@ -1,15 +1,26 @@
+use std::collections::HashMap;
 use std::fmt::Debug;
 use std::hash::Hash;
 use std::marker::PhantomData;
 
+use thiserror::Error;
+use uuid::Uuid;
+
 use crate::data::pool::ObjectPool;
+
+#[derive(Error, Debug)]
+pub enum AllocationError {
+    #[error("allocation failure")]
+    AllocationFailure,
+}
 
 pub trait ResourceFamily: Hash + Eq + Debug {}
 impl<U: Hash + Eq + Debug> ResourceFamily for U {}
 
 pub trait Allocable<D, F: ResourceFamily> {
+    fn resource_id(&self) -> Uuid;
     fn family(&self) -> F;
-    fn size(&self) -> usize;
+    fn resource_size(&self) -> usize;
     fn allocate(device: &D, name: &str, size: usize, family: F) -> Self;
 }
 
@@ -19,6 +30,7 @@ where
     A: Allocable<D, F>,
 {
     pub pool: ObjectPool<F, A>,
+    pub allocated: HashMap<Uuid, A>,
     device: PhantomData<D>,
 }
 
@@ -32,17 +44,24 @@ impl<D, F: ResourceFamily, A: Allocable<D, F>> Allocator<D, F, A> {
     pub fn new() -> Self {
         Self {
             pool: ObjectPool::new(),
+            allocated: HashMap::new(),
             device: PhantomData,
         }
     }
 
     #[tracing::instrument(target = "memory", skip_all, level = "trace")]
-    pub fn allocate(&mut self, device: &D, name: &str, size: usize, family: F) -> A {
+    pub fn allocate(
+        &mut self,
+        device: &D,
+        name: &str,
+        size: usize,
+        family: F,
+    ) -> Result<&mut A, AllocationError> {
         while self.pool.contains(&family) {
             let resource = self.pool.pop(&family);
 
             if let Some(resource) = resource {
-                if resource.size() >= size {
+                if resource.resource_size() >= size {
                     tracing::debug!(
                         "Reuse resource {:?}, {} ({})",
                         family,
@@ -50,17 +69,33 @@ impl<D, F: ResourceFamily, A: Allocable<D, F>> Allocator<D, F, A> {
                         self.pool.get(&family).unwrap().len()
                     );
 
-                    return resource;
+                    let id = resource.resource_id();
+                    self.allocated.insert(id, resource);
+
+                    return self
+                        .allocated
+                        .get_mut(&id)
+                        .ok_or(AllocationError::AllocationFailure);
                 }
             }
         }
 
         tracing::debug!(target: "memory", "Allocate new resource {:?}, {}", family, size);
-        A::allocate(device, name, size, family)
+        let resource = A::allocate(device, name, size, family);
+        let id = resource.resource_id();
+
+        self.allocated.insert(resource.resource_id(), resource);
+
+        self.allocated
+            .get_mut(&id)
+            .ok_or(AllocationError::AllocationFailure)
     }
 
     #[tracing::instrument(target = "memory", skip_all, level = "trace")]
-    pub fn recycle(&mut self, resource: A) {
-        self.pool.insert(resource.family(), resource);
+    pub fn recycle(&mut self, id: &Uuid) {
+        let resource = self.allocated.remove(id);
+        if let Some(resource) = resource {
+            self.pool.insert(resource.family(), resource);
+        }
     }
 }
