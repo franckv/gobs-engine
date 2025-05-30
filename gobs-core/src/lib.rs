@@ -1,7 +1,9 @@
 mod color;
+pub mod data;
 mod extent;
 mod format;
 mod input;
+pub mod memory;
 mod sampler;
 mod transform;
 pub mod utils;

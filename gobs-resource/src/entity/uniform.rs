@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Hash)]
 pub enum UniformProp {
     F32,
     U32,
@@ -40,7 +40,7 @@ impl UniformProp {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Eq, PartialEq, Hash)]
 pub struct UniformLayout {
     layout: Vec<UniformProp>,
     alignment: usize,

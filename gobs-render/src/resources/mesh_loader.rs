@@ -1,5 +1,6 @@
 use std::sync::Arc;
 
+use gobs_core::memory::allocator::Allocator;
 use gobs_gfx::{Buffer, BufferUsage, Command, Device, GfxBuffer, GfxDevice};
 use gobs_resource::{
     geometry::{MeshGeometry, VertexAttribute},
@@ -7,14 +8,11 @@ use gobs_resource::{
     resource::{Resource, ResourceHandle, ResourceLoader},
 };
 
-use crate::{
-    manager::Allocator,
-    resources::{Mesh, MeshData, MeshPath, MeshPrimitiveType},
-};
+use crate::resources::{Mesh, MeshData, MeshPath, MeshPrimitiveType};
 
 pub struct MeshLoader {
     device: Arc<GfxDevice>,
-    pub buffer_pool: Allocator<BufferUsage, GfxBuffer>,
+    pub buffer_pool: Allocator<GfxDevice, BufferUsage, GfxBuffer>,
 }
 
 const STAGING_BUFFER_SIZE: usize = 1_048_576;

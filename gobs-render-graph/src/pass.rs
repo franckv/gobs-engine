@@ -83,7 +83,7 @@ pub(crate) struct PassFrameData {
 
 impl PassFrameData {
     pub fn new(ctx: &GfxContext, uniform_layout: Arc<UniformLayout>) -> Self {
-        let uniform_buffer = UniformBuffer::new(ctx, uniform_layout.size());
+        let uniform_buffer = UniformBuffer::new(&ctx.device, uniform_layout);
 
         PassFrameData {
             uniform_buffer: RwLock::new(uniform_buffer),

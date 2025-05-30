@@ -1,58 +1,50 @@
 use std::fmt::Debug;
 use std::hash::Hash;
+use std::marker::PhantomData;
 
-use gobs_core::utils::pool::ObjectPool;
-use gobs_gfx::{Buffer, BufferUsage, GfxBuffer, GfxDevice};
+use crate::data::pool::ObjectPool;
 
 pub trait ResourceFamily: Hash + Eq + Debug {}
 impl<U: Hash + Eq + Debug> ResourceFamily for U {}
 
-pub trait Allocable<F: ResourceFamily> {
+pub trait Allocable<D, F: ResourceFamily> {
     fn family(&self) -> F;
     fn size(&self) -> usize;
-    fn allocate(device: &GfxDevice, name: &str, size: usize, family: F) -> Self;
+    fn allocate(device: &D, name: &str, size: usize, family: F) -> Self;
 }
 
-impl Allocable<BufferUsage> for GfxBuffer {
-    fn allocate(device: &GfxDevice, name: &str, size: usize, family: BufferUsage) -> Self {
-        GfxBuffer::new(name, size, family, device)
-    }
-
-    fn family(&self) -> BufferUsage {
-        self.usage()
-    }
-
-    fn size(&self) -> usize {
-        Buffer::size(self)
-    }
-}
-
-pub struct Allocator<F: ResourceFamily, A: Allocable<F>> {
+pub struct Allocator<D, F, A>
+where
+    F: ResourceFamily,
+    A: Allocable<D, F>,
+{
     pub pool: ObjectPool<F, A>,
+    device: PhantomData<D>,
 }
 
-impl<F: ResourceFamily, A: Allocable<F>> Default for Allocator<F, A> {
+impl<D, F: ResourceFamily, A: Allocable<D, F>> Default for Allocator<D, F, A> {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl<F: ResourceFamily, A: Allocable<F>> Allocator<F, A> {
+impl<D, F: ResourceFamily, A: Allocable<D, F>> Allocator<D, F, A> {
     pub fn new() -> Self {
         Self {
             pool: ObjectPool::new(),
+            device: PhantomData,
         }
     }
 
     #[tracing::instrument(target = "memory", skip_all, level = "trace")]
-    pub fn allocate(&mut self, device: &GfxDevice, name: &str, size: usize, family: F) -> A {
+    pub fn allocate(&mut self, device: &D, name: &str, size: usize, family: F) -> A {
         while self.pool.contains(&family) {
             let resource = self.pool.pop(&family);
 
             if let Some(resource) = resource {
                 if resource.size() >= size {
                     tracing::debug!(
-                        "Reuse buffer {:?}, {} ({})",
+                        "Reuse resource {:?}, {} ({})",
                         family,
                         size,
                         self.pool.get(&family).unwrap().len()

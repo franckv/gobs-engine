@@ -1,6 +1,6 @@
 use uuid::Uuid;
 
-use gobs_core::utils::{anymap::AnyMap, registry::ObjectRegistry};
+use gobs_core::data::{anymap::AnyMap, registry::ObjectRegistry};
 
 use crate::resource::{
     Resource, ResourceHandle, ResourceLifetime, ResourceLoader, ResourceState, ResourceType,

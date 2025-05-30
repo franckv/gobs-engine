@@ -1,6 +1,8 @@
 use bytemuck::Pod;
 
+use gobs_core::memory::allocator::Allocable;
 use gobs_vulkan as vk;
+use gobs_vulkan::buffers::BufferUsage;
 
 use crate::backend::vulkan::{device::VkDevice, renderer::VkRenderer};
 use crate::{Buffer, BufferId};
@@ -52,5 +54,19 @@ impl Buffer<VkRenderer> for VkBuffer {
 
     fn get_bytes<T: Pod>(&self, data: &mut Vec<T>) {
         self.buffer.get_bytes(data);
+    }
+}
+
+impl Allocable<VkDevice, BufferUsage> for VkBuffer {
+    fn allocate(device: &VkDevice, name: &str, size: usize, family: BufferUsage) -> Self {
+        VkBuffer::new(name, size, family, device)
+    }
+
+    fn family(&self) -> BufferUsage {
+        self.usage()
+    }
+
+    fn size(&self) -> usize {
+        Buffer::size(self)
     }
 }
