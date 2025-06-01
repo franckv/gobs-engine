@@ -254,6 +254,7 @@ impl App {
         }
     }
 }
+
 fn main() {
     examples::init_logger();
 

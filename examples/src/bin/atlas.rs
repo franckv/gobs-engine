@@ -164,6 +164,7 @@ impl App {
             .insert(self.scene.graph.root, NodeValue::Model(cube), transform);
     }
 }
+
 fn main() {
     examples::init_logger();
 

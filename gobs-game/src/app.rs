@@ -44,6 +44,8 @@ where
         #[cfg(not(debug_assertions))]
         let validation_enabled = false;
 
+        tracing::info!("Running with validation layers: {}", validation_enabled);
+
         let mut context = GameContext::new(&self.title, Some(window), validation_enabled).unwrap();
         tracing::info!(target: "events", "Start main loop");
 
