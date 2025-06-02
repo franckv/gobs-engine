@@ -90,14 +90,12 @@ impl Scene {
 
     pub fn draw_bounds(
         &mut self,
-        resource_manager: &mut ResourceManager,
         pass: RenderPass,
         batch: &mut RenderBatch,
     ) -> Result<(), RenderError> {
         self.graph.visit(self.graph.root, &mut |node| {
             if let NodeValue::Model(_) = node.base.value {
                 batch.add_bounds(
-                    resource_manager,
                     node.bounding.bounding_box,
                     node.global_transform(),
                     pass.clone(),

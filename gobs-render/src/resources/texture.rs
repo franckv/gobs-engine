@@ -221,6 +221,7 @@ impl TextureData {
 pub enum TextureType {
     Diffuse,
     Normal,
+    // TODO: Emissive, Specular, Opacity, Glossiness, ...
 }
 
 impl From<TextureType> for ImageFormat {

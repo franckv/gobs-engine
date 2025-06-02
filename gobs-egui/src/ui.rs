@@ -359,7 +359,7 @@ impl UIRenderer {
                 );
 
                 let mut mesh = MeshGeometry::builder("egui")
-                    .indices(&m.indices)
+                    .indices(&m.indices, false)
                     .generate_tangents(false);
 
                 for vertex in &m.vertices {

@@ -1,6 +1,7 @@
 use gobs_core::ImageExtent2D;
 use gobs_gfx::Device;
 use gobs_render_graph::{FrameData, FrameGraph, GfxContext, PassType, RenderError, RenderPass};
+use gobs_resource::manager::ResourceManager;
 
 use crate::RenderBatch;
 
@@ -57,7 +58,12 @@ impl Renderer {
 
     pub fn draw(
         &mut self,
-        draw_cmd: &mut dyn FnMut(RenderPass, &mut RenderBatch) -> Result<(), RenderError>,
+        resource_manager: &mut ResourceManager,
+        draw_cmd: &mut dyn FnMut(
+            RenderPass,
+            &mut RenderBatch,
+            &mut ResourceManager,
+        ) -> Result<(), RenderError>,
     ) -> Result<(), RenderError> {
         tracing::debug!(target: "render", "Begin render batch");
 
@@ -78,10 +84,10 @@ impl Renderer {
         self.batch.reset();
 
         for pass in &self.graph.passes {
-            draw_cmd(pass.clone(), &mut self.batch)?;
+            draw_cmd(pass.clone(), &mut self.batch, resource_manager)?;
         }
 
-        self.batch.finish();
+        self.batch.finish(resource_manager);
 
         self.graph
             .render(&mut self.gfx, frame, &self.batch.render_list, &|pass| {

@@ -3,7 +3,7 @@ use std::ops::{Add, Mul};
 use bitflags::bitflags;
 use glam::{Vec2, Vec3};
 
-use gobs_core::Color;
+use gobs_core::{Color, Transform};
 use serde::Serialize;
 
 const POS_SIZE: usize = 12;
@@ -102,6 +102,14 @@ impl VertexData {
         self.copy_data(flags, alignment, &mut data);
 
         data
+    }
+
+    pub fn transform(&self, transform: Transform) -> VertexData {
+        let mut vertex = *self;
+
+        vertex.position = transform * vertex.position;
+
+        vertex
     }
 
     pub fn copy_data(&self, flags: &VertexAttribute, alignment: usize, data: &mut Vec<u8>) {

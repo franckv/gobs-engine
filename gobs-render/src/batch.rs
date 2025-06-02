@@ -5,7 +5,7 @@ use gobs_core::{ImageExtent2D, Transform};
 use gobs_render_graph::{GfxContext, PassId, RenderObject, RenderPass};
 use gobs_resource::{
     entity::{camera::Camera, light::Light, uniform::UniformPropData},
-    geometry::{BoundingBox, Shapes},
+    geometry::{BoundingBox, MeshBuilder, MeshGeometry, Shapes},
     manager::ResourceManager,
     resource::{ResourceError, ResourceLifetime},
 };
@@ -17,6 +17,8 @@ pub struct RenderBatch {
     pub(crate) scene_data: HashMap<PassId, Vec<u8>>,
     pub(crate) mesh_resource_manager: MeshResourceManager,
     vertex_padding: bool,
+    bounding_geometry: Option<MeshBuilder>,
+    bounding_pass: Option<RenderPass>,
 }
 
 impl RenderBatch {
@@ -26,6 +28,8 @@ impl RenderBatch {
             scene_data: HashMap::new(),
             mesh_resource_manager: MeshResourceManager::new(),
             vertex_padding: ctx.vertex_padding,
+            bounding_geometry: None,
+            bounding_pass: None,
         }
     }
 
@@ -33,6 +37,7 @@ impl RenderBatch {
         self.render_list.clear();
         self.scene_data.clear();
         self.mesh_resource_manager.new_frame();
+        self.bounding_geometry = None;
     }
 
     #[tracing::instrument(target = "render", skip_all, level = "trace")]
@@ -106,18 +111,22 @@ impl RenderBatch {
 
     pub fn add_bounds(
         &mut self,
-        resource_manager: &mut ResourceManager,
         bounding_box: BoundingBox,
         transform: Transform,
         pass: RenderPass,
     ) -> Result<(), ResourceError> {
         let mesh = Shapes::bounding_box(bounding_box, self.vertex_padding);
 
-        let model = Model::builder("box")
-            .mesh(mesh, None, resource_manager, ResourceLifetime::Transient)
-            .build(resource_manager);
+        if self.bounding_geometry.is_none() {
+            self.bounding_geometry = Some(MeshGeometry::builder("bounding"));
+        }
 
-        self.add_model(resource_manager, model, transform, pass)?;
+        let builder = self.bounding_geometry.take();
+
+        if let Some(builder) = builder {
+            self.bounding_geometry = Some(builder.extend(mesh, transform));
+            self.bounding_pass = Some(pass);
+        }
 
         Ok(())
     }
@@ -159,7 +168,25 @@ impl RenderBatch {
         });
     }
 
-    pub fn finish(&mut self) {
+    pub fn finish(&mut self, resource_manager: &mut ResourceManager) {
+        let bb = self.bounding_geometry.take();
+
+        if let Some(bb) = bb {
+            let model = Model::builder("box")
+                .mesh(
+                    bb.build(),
+                    None,
+                    resource_manager,
+                    ResourceLifetime::Transient,
+                )
+                .build(resource_manager);
+
+            let pass = self.bounding_pass.take().unwrap();
+
+            self.add_model(resource_manager, model, Transform::IDENTITY, pass)
+                .expect("Add bounding box");
+        }
+
         self.sort();
     }
 }

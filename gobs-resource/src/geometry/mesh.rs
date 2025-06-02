@@ -4,6 +4,7 @@ use std::{
 };
 
 use glam::{Vec2, Vec3};
+use gobs_core::Transform;
 use serde::Serialize;
 use uuid::Uuid;
 
@@ -69,20 +70,48 @@ impl MeshBuilder {
         self
     }
 
+    pub fn vertices(mut self, data: &[VertexData]) -> Self {
+        self.vertices.extend(data);
+
+        self
+    }
+
+    pub fn vertices_with_transform(mut self, data: &[VertexData], transform: Transform) -> Self {
+        self.vertices
+            .extend(data.iter().map(|v| v.transform(transform)));
+
+        self
+    }
+
     pub fn index(mut self, idx: u32) -> Self {
         self.indices.push(idx);
 
         self
     }
 
-    pub fn indices(mut self, indices: &[u32]) -> Self {
-        self.indices.extend(indices);
+    pub fn indices(mut self, indices: &[u32], append: bool) -> Self {
+        if append {
+            let start = self.vertices.len();
+
+            self.indices
+                .extend(indices.iter().map(|&i| i + start as u32));
+        } else {
+            self.indices.extend(indices);
+        }
 
         self
     }
 
     pub fn generate_tangents(mut self, generate_tangents: bool) -> Self {
         self.generate_tangents = generate_tangents;
+
+        self
+    }
+
+    pub fn extend(mut self, mesh: Arc<MeshGeometry>, transform: Transform) -> Self {
+        self = self
+            .indices(&mesh.indices, true)
+            .vertices_with_transform(&mesh.vertices, transform);
 
         self
     }

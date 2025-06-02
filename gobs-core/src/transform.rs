@@ -1,6 +1,6 @@
 use std::{fmt::Debug, ops::Mul};
 
-use glam::{Mat4, Quat, Vec3, Vec4};
+use glam::{Mat4, Quat, Vec3, Vec4, Vec4Swizzles};
 
 #[derive(Clone, Copy)]
 pub struct Transform {
@@ -114,6 +114,14 @@ impl Mul<Vec4> for Transform {
 
     fn mul(self, rhs: Vec4) -> Vec4 {
         self.matrix * rhs
+    }
+}
+
+impl Mul<Vec3> for Transform {
+    type Output = Vec3;
+
+    fn mul(self, rhs: Vec3) -> Vec3 {
+        (self.matrix * rhs.extend(1.)).xyz()
     }
 }
 
