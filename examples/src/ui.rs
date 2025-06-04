@@ -33,6 +33,7 @@ impl Ui {
         scene: &Scene,
         camera: &Camera,
         camera_transform: &Transform,
+        delta: f32,
     ) {
         egui::Window::new("debug").show(ectx, |ui| {
             ui.visuals_mut().override_text_color = Some(egui::Color32::GREEN);
@@ -43,7 +44,7 @@ impl Ui {
             });
             ui.heading(&app_info.name);
             ui.separator();
-            // self.show_fps(ui, graph.render_stats().fps);
+            self.show_fps(ui, (1. / delta).round() as u32);
             // self.show_stats(ui, "Render Stats", graph);
             self.show_camera(ui, camera, camera_transform);
             self.show_scene(ui, &scene.graph);

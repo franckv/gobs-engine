@@ -5,7 +5,10 @@ use image::{DynamicImage, GenericImage, GenericImageView, ImageBuffer, imageops:
 use pollster::FutureExt;
 
 use gobs_core::{Color, ImageExtent2D};
-use gobs_gfx::GfxDevice;
+use gobs_gfx::{
+    Buffer, BufferUsage, Command, CommandQueueType, GfxBuffer, GfxCommand, GfxDevice, GfxImage,
+    GfxSampler, Image, ImageLayout, ImageUsage, Sampler,
+};
 use gobs_resource::{
     load::{self, AssetType},
     manager::ResourceRegistry,
@@ -22,11 +25,15 @@ use crate::{
 
 pub struct TextureLoader {
     device: Arc<GfxDevice>,
+    cmd: GfxCommand,
 }
 
 impl TextureLoader {
     pub fn new(device: Arc<GfxDevice>) -> Self {
-        Self { device }
+        Self {
+            device: device.clone(),
+            cmd: GfxCommand::new(&device, "Mesh loader", CommandQueueType::Transfer),
+        }
     }
 
     fn load_file(&self, filename: &str, format: &mut TextureFormat) -> TextureData {
@@ -44,7 +51,25 @@ impl TextureLoader {
     fn load_data(&self, name: &str, data: &[u8], format: &TextureFormat) -> TextureData {
         tracing::debug!(target: "resources", "Load texture data: {:?}", name);
 
-        TextureData::new(&self.device, name, format, data)
+        tracing::trace!(target: "resources", "Texture properties: {:?}", format);
+
+        let image_format = format.ty.into();
+        let mut image = GfxImage::new(
+            name,
+            &self.device,
+            image_format,
+            ImageUsage::Texture,
+            format.extent,
+        );
+        let sampler = GfxSampler::new(&self.device, format.mag_filter, format.min_filter);
+
+        self.upload_data(&self.device, data, &mut image);
+
+        TextureData {
+            format: image_format,
+            image,
+            sampler,
+        }
     }
 
     const CHECKER_SIZE: usize = 8;
@@ -138,6 +163,18 @@ impl TextureLoader {
         let properties = TextureProperties::default();
 
         self.load_color(Color::WHITE, &properties.format)
+    }
+
+    fn upload_data(&self, device: &GfxDevice, data: &[u8], image: &mut GfxImage) {
+        let mut staging = GfxBuffer::new("image staging", data.len(), BufferUsage::Staging, device);
+
+        staging.copy(data, 0);
+
+        self.cmd.run_immediate_mut("Texture upload", |cmd| {
+            cmd.transition_image_layout(image, ImageLayout::TransferDst);
+            cmd.copy_buffer_to_image(&staging, image, image.extent().width, image.extent().height);
+            cmd.transition_image_layout(image, ImageLayout::Shader);
+        });
     }
 }
 

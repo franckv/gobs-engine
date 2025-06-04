@@ -148,7 +148,7 @@ impl Command<VkRenderer> for VkCommand {
         self.command.draw_indexed(index_count, instance_count);
     }
 
-    fn reset(&mut self) {
+    fn reset(&self) {
         self.command.fence.wait();
 
         if self.command.fence.signaled() {
@@ -158,6 +158,38 @@ impl Command<VkRenderer> for VkCommand {
             tracing::warn!(target: "sync", "Fence unsignaled");
         }
         self.command.reset();
+    }
+
+    fn run_immediate<F>(&self, label: &str, callback: F)
+    where
+        F: Fn(&VkCommand),
+    {
+        self.reset();
+
+        self.command.begin();
+        self.command.begin_label(label);
+        callback(self);
+        self.command.end_label();
+        self.command.end();
+        self.command.submit2(None, None);
+
+        self.command.fence.wait();
+    }
+
+    fn run_immediate_mut<F>(&self, label: &str, mut callback: F)
+    where
+        F: FnMut(&VkCommand),
+    {
+        self.reset();
+
+        self.command.begin();
+        self.command.begin_label(label);
+        callback(self);
+        self.command.end_label();
+        self.command.end();
+        self.command.submit2(None, None);
+
+        self.command.fence.wait();
     }
 
     fn submit2(&self, display: &VkDisplay, frame: usize) {

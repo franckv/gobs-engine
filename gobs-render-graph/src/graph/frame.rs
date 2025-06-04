@@ -2,8 +2,8 @@ use bytemuck::Pod;
 
 use gobs_core::{ImageExtent2D, ImageFormat};
 use gobs_gfx::{
-    Buffer, BufferUsage, Command, Device, Display, GfxBuffer, GfxImage, Image, ImageLayout,
-    ImageUsage,
+    Buffer, BufferUsage, Command, CommandQueueType, Device, Display, GfxBuffer, GfxCommand,
+    GfxImage, Image, ImageLayout, ImageUsage,
 };
 
 use crate::{
@@ -177,7 +177,9 @@ impl FrameGraph {
             &ctx.device,
         );
 
-        ctx.device.run_immediate_mut(|cmd| {
+        let cmd = GfxCommand::new(&ctx.device, "Copy command", CommandQueueType::Graphics);
+
+        cmd.run_immediate_mut(label, |cmd| {
             cmd.transition_image_layout(&mut src_image, ImageLayout::TransferSrc);
             cmd.transition_image_layout(&mut mid_image, ImageLayout::TransferDst);
             let dst_extent = mid_image.extent();
@@ -258,8 +260,6 @@ impl FrameGraph {
         cmd.end_label();
 
         cmd.end();
-
-        ctx.device.wait_transfer();
 
         cmd.submit2(&ctx.display, frame_id);
 

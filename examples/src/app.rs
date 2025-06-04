@@ -215,7 +215,7 @@ impl SampleApp {
 
             ui.update(&mut ctx.resource_manager, delta, |ectx| {
                 self.ui
-                    .draw(&app_info, ectx, scene, camera, &camera_transform);
+                    .draw(&app_info, ectx, scene, camera, &camera_transform, delta);
             });
         }
     }

@@ -1,8 +1,5 @@
 use gobs_core::{Color, ImageExtent2D, ImageFormat, SamplerFilter};
-use gobs_gfx::{
-    Buffer, BufferUsage, Command, Device, GfxBuffer, GfxDevice, GfxImage, GfxSampler, Image,
-    ImageLayout, ImageUsage, Sampler,
-};
+use gobs_gfx::{GfxImage, GfxSampler};
 use gobs_resource::resource::{Resource, ResourceHandle, ResourceType};
 
 use crate::resources::TextureLoader;
@@ -177,44 +174,6 @@ pub struct TextureData {
     pub format: ImageFormat,
     pub image: GfxImage,
     pub sampler: GfxSampler,
-}
-
-impl TextureData {
-    pub(crate) fn new(device: &GfxDevice, name: &str, format: &TextureFormat, data: &[u8]) -> Self {
-        tracing::trace!(target: "resources", "Texture properties: {:?}", format);
-
-        let image_format = format.ty.into();
-        let mut image = GfxImage::new(
-            name,
-            device,
-            image_format,
-            ImageUsage::Texture,
-            format.extent,
-        );
-        let sampler = GfxSampler::new(device, format.mag_filter, format.min_filter);
-
-        Self::upload_data(device, data, &mut image);
-
-        Self {
-            format: image_format,
-            image,
-            sampler,
-        }
-    }
-
-    fn upload_data(device: &GfxDevice, data: &[u8], image: &mut GfxImage) {
-        let mut staging = GfxBuffer::new("image staging", data.len(), BufferUsage::Staging, device);
-
-        staging.copy(data, 0);
-
-        device.run_transfer_mut(|cmd| {
-            cmd.begin_label("Upload image");
-            cmd.transition_image_layout(image, ImageLayout::TransferDst);
-            cmd.copy_buffer_to_image(&staging, image, image.extent().width, image.extent().height);
-            cmd.transition_image_layout(image, ImageLayout::Shader);
-            cmd.end_label();
-        });
-    }
 }
 
 #[derive(Clone, Copy, Debug)]

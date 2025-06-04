@@ -44,6 +44,12 @@ pub trait Command<R: Renderer> {
     fn bind_index_buffer(&self, buffer: &R::Buffer, offset: usize);
     fn dispatch(&self, x: u32, y: u32, z: u32);
     fn draw_indexed(&self, index_count: usize, instance_count: usize);
-    fn reset(&mut self);
+    fn reset(&self);
+    fn run_immediate<F>(&self, label: &str, callback: F)
+    where
+        F: Fn(&Self);
+    fn run_immediate_mut<F>(&self, label: &str, callback: F)
+    where
+        F: FnMut(&Self);
     fn submit2(&self, display: &R::Display, frame: usize);
 }

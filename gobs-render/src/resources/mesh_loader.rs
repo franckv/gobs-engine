@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use gobs_core::memory::allocator::{AllocationError, Allocator};
-use gobs_gfx::{Buffer, BufferUsage, Command, Device, GfxBuffer, GfxDevice};
+use gobs_gfx::{Buffer, BufferUsage, Command, CommandQueueType, GfxBuffer, GfxCommand, GfxDevice};
 use gobs_resource::{
     geometry::{MeshGeometry, VertexAttribute},
     manager::ResourceRegistry,
@@ -13,6 +13,7 @@ use crate::resources::{Mesh, MeshData, MeshPath, MeshPrimitiveType};
 pub struct MeshLoader {
     device: Arc<GfxDevice>,
     pub buffer_pool: Allocator<GfxDevice, BufferUsage, GfxBuffer>,
+    cmd: GfxCommand,
 }
 
 const STAGING_BUFFER_SIZE: usize = 1_048_576;
@@ -20,8 +21,9 @@ const STAGING_BUFFER_SIZE: usize = 1_048_576;
 impl MeshLoader {
     pub fn new(device: Arc<GfxDevice>) -> Self {
         Self {
-            device,
+            device: device.clone(),
             buffer_pool: Allocator::new(),
+            cmd: GfxCommand::new(&device, "Mesh loader", CommandQueueType::Transfer),
         }
     }
 
@@ -88,11 +90,9 @@ impl MeshLoader {
         staging.copy(vertices, 0);
         staging.copy(indices, vertices_size);
 
-        self.device.run_transfer_mut(|cmd| {
-            cmd.begin_label("Upload buffer");
+        self.cmd.run_immediate_mut("Upload buffer", |cmd| {
             cmd.copy_buffer(staging, &mut vertex_buffer, vertices_size, 0);
             cmd.copy_buffer(staging, &mut index_buffer, indices_size, vertices_size);
-            cmd.end_label();
         });
 
         self.buffer_pool.recycle(&staging_id);
