@@ -164,11 +164,7 @@ impl ResourceManager {
             tracing::trace!(target: "resources", "Loading resource {:?}", handle);
             let data = loader.load(handle, parameter, &mut self.registry)?;
 
-            let resource = self
-                .registry
-                .registry
-                .get_mut::<Resource<R>>(&handle.id)
-                .unwrap();
+            let resource = self.get_mut::<R>(handle);
 
             resource
                 .data
@@ -185,11 +181,7 @@ impl ResourceManager {
     ) -> Result<&R::ResourceData, ResourceError> {
         self.load_data::<R>(handle, &parameter)?;
 
-        let resource = self
-            .registry
-            .registry
-            .get_mut::<Resource<R>>(&handle.id)
-            .unwrap();
+        let resource = self.get_mut::<R>(handle);
 
         match &resource.data.get(&parameter) {
             Some(ResourceState::Loaded(data)) => Ok(data),
