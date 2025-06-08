@@ -73,8 +73,10 @@ impl SampleApp {
         resource_manager.add(
             MaterialProperties::new(
                 ctx,
-                "color.vert.spv",
-                "color.frag.spv",
+                "color.spv",
+                "vertex_main",
+                "color.spv",
+                "fragment_main",
                 vertex_attributes,
                 pass,
             ),
@@ -93,8 +95,10 @@ impl SampleApp {
         resource_manager.add(
             MaterialProperties::new(
                 ctx,
-                "color.vert.spv",
-                "color.frag.spv",
+                "color.spv",
+                "vertex_main",
+                "color.spv",
+                "fragment_main",
                 vertex_attributes,
                 pass,
             )
@@ -119,7 +123,9 @@ impl SampleApp {
             MaterialProperties::new(
                 ctx,
                 "mesh.vert.spv",
+                "main",
                 "mesh.frag.spv",
+                "main",
                 vertex_attributes,
                 pass,
             )
@@ -144,7 +150,9 @@ impl SampleApp {
             MaterialProperties::new(
                 ctx,
                 "mesh.vert.spv",
+                "main",
                 "mesh.frag.spv",
+                "main",
                 vertex_attributes,
                 pass,
             )
@@ -170,7 +178,9 @@ impl SampleApp {
             MaterialProperties::new(
                 ctx,
                 "mesh.vert.spv",
+                "main",
                 "mesh_n.frag.spv",
+                "main",
                 vertex_attributes,
                 pass,
             )
@@ -191,8 +201,10 @@ impl SampleApp {
         resource_manager.add(
             MaterialProperties::new(
                 ctx,
-                "color.vert.spv",
-                "depth.frag.spv",
+                "color.spv",
+                "vertex_main",
+                "color.spv",
+                "depth_fragment_main",
                 vertex_attributes,
                 pass,
             ),

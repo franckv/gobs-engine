@@ -50,11 +50,18 @@ impl UIRenderer {
         let vertex_attributes =
             VertexAttribute::POSITION | VertexAttribute::COLOR | VertexAttribute::TEXTURE;
 
-        let material_properties =
-            MaterialProperties::new(ctx, "ui.vert.spv", "ui.frag.spv", vertex_attributes, pass)
-                .prop("diffuse", MaterialProperty::Texture)
-                .no_culling()
-                .blend_mode(BlendMode::Premultiplied);
+        let material_properties = MaterialProperties::new(
+            ctx,
+            "ui.vert.spv",
+            "main",
+            "ui.frag.spv",
+            "main",
+            vertex_attributes,
+            pass,
+        )
+        .prop("diffuse", MaterialProperty::Texture)
+        .no_culling()
+        .blend_mode(BlendMode::Premultiplied);
 
         let material = resource_manager.add(material_properties, ResourceLifetime::Static);
 

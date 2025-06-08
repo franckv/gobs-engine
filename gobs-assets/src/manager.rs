@@ -65,7 +65,9 @@ impl MaterialManager {
             MaterialProperties::new(
                 ctx,
                 "gltf.texture.vert.spv",
+                "main",
                 "gltf.texture.frag.spv",
+                "main",
                 vertex_attributes,
                 pass.clone(),
             )
@@ -77,7 +79,9 @@ impl MaterialManager {
             MaterialProperties::new(
                 ctx,
                 "gltf.texture.vert.spv",
+                "main",
                 "gltf.texture.frag.spv",
+                "main",
                 vertex_attributes,
                 pass.clone(),
             )
@@ -90,7 +94,9 @@ impl MaterialManager {
             MaterialProperties::new(
                 ctx,
                 "gltf.texture.vert.spv",
+                "main",
                 "gltf.texture_n.frag.spv",
+                "main",
                 vertex_attributes,
                 pass.clone(),
             )
@@ -103,7 +109,9 @@ impl MaterialManager {
             MaterialProperties::new(
                 ctx,
                 "gltf.texture.vert.spv",
+                "main",
                 "gltf.texture_n.frag.spv",
+                "main",
                 vertex_attributes,
                 pass.clone(),
             )
@@ -123,7 +131,9 @@ impl MaterialManager {
             MaterialProperties::new(
                 ctx,
                 "gltf.color_light.vert.spv",
+                "main",
                 "gltf.color_light.frag.spv",
+                "main",
                 vertex_attributes,
                 pass.clone(),
             ),
@@ -134,7 +144,9 @@ impl MaterialManager {
             MaterialProperties::new(
                 ctx,
                 "gltf.color_light.vert.spv",
+                "main",
                 "gltf.color_light.frag.spv",
+                "main",
                 vertex_attributes,
                 pass,
             )

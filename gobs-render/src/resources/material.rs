@@ -38,13 +38,17 @@ impl MaterialProperties {
     pub fn new(
         ctx: &GfxContext,
         vertex_shader: &str,
+        vertex_entry: &str,
         fragment_shader: &str,
+        fragment_entry: &str,
         vertex_attributes: VertexAttribute,
         pass: RenderPass,
     ) -> Self {
         let mut pipeline_properties = PipelineProperties::graphics("material")
             .vertex_shader(vertex_shader)
+            .vertex_entry(vertex_entry)
             .fragment_shader(fragment_shader)
+            .fragment_entry(fragment_entry)
             .pool_size(10)
             .depth_test_enable(false, CompareOp::LessEqual)
             .front_face(FrontFace::CCW)
