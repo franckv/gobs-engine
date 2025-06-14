@@ -1,14 +1,22 @@
 use ash::vk;
+use bitflags::bitflags;
 
 use crate::{Wrap, instance::Instance, physical::PhysicalDevice};
 
+bitflags! {
+    #[derive(Debug, Default, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+    struct Feature: u32 {
+        const FillModeNonSolid = 1;
+        const BufferDeviceAddress = 1 << 1;
+        const DescriptorIndexing = 1 << 2;
+        const DynamicRendering = 1 << 3;
+        const Synchronization2 = 1 << 4;
+    }
+}
+
 #[derive(Default)]
 pub struct Features {
-    pub fill_mode_non_solid: bool,
-    pub buffer_device_address: bool,
-    pub descriptor_indexing: bool,
-    pub dynamic_rendering: bool,
-    pub synchronization2: bool,
+    enabled_features: Feature,
 }
 
 impl Features {
@@ -43,65 +51,73 @@ impl Features {
             features13
         );
 
-        Self {
-            fill_mode_non_solid: features10.fill_mode_non_solid == 1,
-            buffer_device_address: features12.buffer_device_address == 1,
-            descriptor_indexing: features12.descriptor_indexing == 1,
-            dynamic_rendering: features13.dynamic_rendering == 1,
-            synchronization2: features13.synchronization2 == 1,
-        }
+        let mut enabled_features = Feature::empty();
+        enabled_features.set(
+            Feature::FillModeNonSolid,
+            features10.fill_mode_non_solid == 1,
+        );
+        enabled_features.set(
+            Feature::BufferDeviceAddress,
+            features12.buffer_device_address == 1,
+        );
+        enabled_features.set(
+            Feature::DescriptorIndexing,
+            features12.descriptor_indexing == 1,
+        );
+        enabled_features.set(Feature::DynamicRendering, features13.dynamic_rendering == 1);
+        enabled_features.set(Feature::Synchronization2, features13.synchronization2 == 1);
+
+        Self { enabled_features }
     }
 
     pub fn check_features(&self, expected: &Self) -> bool {
-        (!expected.fill_mode_non_solid || self.fill_mode_non_solid)
-            && (!expected.buffer_device_address || self.buffer_device_address)
-            && (!expected.descriptor_indexing || self.descriptor_indexing)
-            && (!expected.dynamic_rendering || self.dynamic_rendering)
-            && (!expected.synchronization2 || self.synchronization2)
+        self.enabled_features.contains(expected.enabled_features)
     }
 
     pub fn features10(&self) -> vk::PhysicalDeviceFeatures {
-        vk::PhysicalDeviceFeatures::default().fill_mode_non_solid(self.fill_mode_non_solid)
+        vk::PhysicalDeviceFeatures::default()
+            .fill_mode_non_solid(self.enabled_features.contains(Feature::FillModeNonSolid))
     }
 
     pub fn features12(&self) -> vk::PhysicalDeviceVulkan12Features {
         vk::PhysicalDeviceVulkan12Features::default()
-            .buffer_device_address(self.buffer_device_address)
-            .descriptor_indexing(self.descriptor_indexing)
+            .buffer_device_address(self.enabled_features.contains(Feature::BufferDeviceAddress))
+            .descriptor_indexing(self.enabled_features.contains(Feature::DescriptorIndexing))
     }
 
     pub fn features13(&self) -> vk::PhysicalDeviceVulkan13Features {
         vk::PhysicalDeviceVulkan13Features::default()
-            .dynamic_rendering(self.dynamic_rendering)
-            .synchronization2(self.synchronization2)
+            .dynamic_rendering(self.enabled_features.contains(Feature::DynamicRendering))
+            .synchronization2(self.enabled_features.contains(Feature::Synchronization2))
     }
 
     pub fn fill_mode_non_solid(mut self) -> Self {
-        self.fill_mode_non_solid = true;
+        self.enabled_features.set(Feature::FillModeNonSolid, true);
 
         self
     }
 
     pub fn buffer_device_address(mut self) -> Self {
-        self.buffer_device_address = true;
+        self.enabled_features
+            .set(Feature::BufferDeviceAddress, true);
 
         self
     }
 
     pub fn descriptor_indexing(mut self) -> Self {
-        self.descriptor_indexing = true;
+        self.enabled_features.set(Feature::DescriptorIndexing, true);
 
         self
     }
 
     pub fn dynamic_rendering(mut self) -> Self {
-        self.dynamic_rendering = true;
+        self.enabled_features.set(Feature::DynamicRendering, true);
 
         self
     }
 
     pub fn synchronization2(mut self) -> Self {
-        self.synchronization2 = true;
+        self.enabled_features.set(Feature::Synchronization2, true);
 
         self
     }
