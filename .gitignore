@@ -6,4 +6,5 @@ scripts/
 
 Cargo.lock
 *.spv
+*.spvasm
 *.png

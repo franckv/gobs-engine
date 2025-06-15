@@ -1,15 +1,16 @@
 use std::env;
-use std::fs;
-use std::io;
 use std::path::PathBuf;
-use std::process::Command;
 
 use fs_extra::dir::CopyOptions;
 use fs_extra::dir::copy;
 
-const SHADERS_IN_DIR: &str = "shaders/glsl";
+const SHADERS_GLSL_DIR: &str = "shaders/glsl";
+const SHADERS_SLANG_DIR: &str = "shaders/slang";
 const SHADERS_OUT_DIR: &str = "shaders/spv";
+const SHADERS_ASM_DIR: &str = "shaders/spvasm";
 const SHADERS_DIR: &str = "shaders";
+
+include!("src/shaders.rs");
 
 #[allow(unused_macros)]
 macro_rules! debug {
@@ -19,9 +20,13 @@ macro_rules! debug {
 }
 
 fn main() {
-    println!("cargo:rerun-if-changed={}/", SHADERS_IN_DIR);
+    println!("cargo:rerun-if-changed={}/", SHADERS_GLSL_DIR);
+    println!("cargo:rerun-if-changed={}/", SHADERS_SLANG_DIR);
 
-    compile_shaders(SHADERS_IN_DIR, SHADERS_OUT_DIR).expect("Compile shaders");
+    compile_glsl_shaders(SHADERS_GLSL_DIR, SHADERS_OUT_DIR, SHADERS_ASM_DIR)
+        .expect("Compile shaders");
+    compile_slang_shaders(SHADERS_SLANG_DIR, SHADERS_OUT_DIR, SHADERS_ASM_DIR)
+        .expect("Compile shaders");
     copy_files(SHADERS_OUT_DIR, SHADERS_DIR);
 }
 
@@ -43,52 +48,4 @@ fn copy_files(path: &str, dest: &str) {
     copy_options.content_only = true;
 
     copy(path, target, &copy_options).unwrap();
-}
-
-fn compile_shaders(path_in: &str, path_out: &str) -> Result<(), io::Error> {
-    for f in fs::read_dir(path_in)? {
-        let f = f?;
-        if !f.file_type()?.is_file() {
-            continue;
-        }
-
-        let file = f.path();
-        let file_name = file.to_str().unwrap();
-
-        let out = format!("{}.spv", file_name.replace(path_in, path_out));
-
-        match f.path().extension().unwrap().to_string_lossy().as_ref() {
-            "comp" | "vert" | "frag" => (),
-            _ => continue,
-        };
-
-        debug!("Shader: {} -> {}", file_name, out);
-
-        #[cfg(target_os = "windows")]
-        {
-            let output = Command::new("cmd")
-                .arg("/C")
-                .arg(&format!("glslangValidator.exe -V {} -o {}", file_name, out))
-                .output()
-                .expect("Error compiling shader");
-
-            if !output.status.success() {
-                panic!("Compile status={:?}", output);
-            }
-        }
-        #[cfg(target_os = "linux")]
-        {
-            let output = Command::new("sh")
-                .arg("-c")
-                .arg(format!("glslangValidator -V {} -o {}", file_name, out))
-                .output()
-                .expect("Error compiling shader");
-
-            if !output.status.success() {
-                panic!("Compile status={:?}", output);
-            }
-        }
-    }
-
-    Ok(())
 }
