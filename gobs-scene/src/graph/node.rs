@@ -46,9 +46,9 @@ impl Node {
         &self.transform
     }
 
-    pub fn update_transform<F>(&mut self, f: F)
+    pub fn update_transform<F>(&mut self, mut f: F)
     where
-        F: Fn(&mut Transform),
+        F: FnMut(&mut Transform),
     {
         f(&mut self.transform);
         self.base.updated = true;

@@ -46,6 +46,12 @@ impl SceneGraph {
         }
     }
 
+    pub fn set_enabled(&mut self, key: NodeId, enabled: bool) {
+        if let Some(node) = self.get_mut(key) {
+            node.base.enabled = enabled;
+        }
+    }
+
     pub fn parent(&self, key: NodeId) -> Option<&Node> {
         self.get(key)
             .and_then(|node| node.base.parent)

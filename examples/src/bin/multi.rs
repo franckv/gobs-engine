@@ -71,7 +71,8 @@ impl Run for App {
 
         self.scene.update(&ctx.renderer.gfx, delta);
 
-        self.common.update_ui(ctx, &self.scene, &mut self.ui, delta);
+        self.common
+            .update_ui(ctx, &mut self.scene, &mut self.ui, delta);
     }
 
     fn render(&mut self, ctx: &mut GameContext) -> Result<(), RenderError> {

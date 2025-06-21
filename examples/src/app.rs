@@ -215,19 +215,16 @@ impl SampleApp {
     pub fn update_ui(
         &mut self,
         ctx: &mut GameContext,
-        scene: &Scene,
+        scene: &mut Scene,
         ui: &mut UIRenderer,
         delta: f32,
     ) {
         if self.draw_ui {
-            let (camera_transform, camera) = scene.camera();
-
             // TODO: change this
             let app_info = ctx.app_info.clone();
 
             ui.update(&mut ctx.resource_manager, delta, |ectx| {
-                self.ui
-                    .draw(&app_info, ectx, scene, camera, &camera_transform, delta);
+                self.ui.draw(&app_info, ectx, scene, delta);
             });
         }
     }
