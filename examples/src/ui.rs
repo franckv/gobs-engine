@@ -47,7 +47,7 @@ impl Ui {
 
             ui.separator();
 
-            self.draw_graph(ui, &scene.graph);
+            self.draw_graph(ui, &mut scene.graph);
 
             ui.separator();
 
@@ -67,7 +67,9 @@ impl Ui {
         ui.strong(format!("FPS: {}", fps));
     }
 
-    pub fn draw_graph(&mut self, ui: &mut egui::Ui, graph: &SceneGraph) {
+    pub fn draw_graph(&mut self, ui: &mut egui::Ui, graph: &mut SceneGraph) {
+        let old_selected = self.selected_node;
+
         ui.strong("Graph");
         egui::CollapsingHeader::new("scene")
             .default_open(true)
@@ -76,6 +78,15 @@ impl Ui {
                     self.draw_node(ui, graph, graph.root);
                 });
             });
+
+        if self.selected_node != old_selected {
+            if let Some(node) = graph.get_mut(old_selected) {
+                node.base.selected = false;
+            }
+            if let Some(node) = graph.get_mut(self.selected_node) {
+                node.base.selected = true;
+            }
+        }
     }
 
     fn draw_node(&mut self, ui: &mut egui::Ui, graph: &SceneGraph, node_key: NodeId) {
