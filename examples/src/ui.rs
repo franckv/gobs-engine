@@ -1,5 +1,3 @@
-use std::collections::VecDeque;
-
 use gobs::{
     game::context::AppInfo,
     scene::{
@@ -70,34 +68,43 @@ impl Ui {
     }
 
     pub fn draw_graph(&mut self, ui: &mut egui::Ui, graph: &SceneGraph) {
-        let mut nodes = VecDeque::from([(0, graph.root)]);
-
         ui.strong("Graph");
         egui::CollapsingHeader::new("scene")
             .default_open(true)
             .show(ui, |ui| {
                 egui::ScrollArea::vertical().show(ui, |ui| {
-                    while !nodes.is_empty() {
-                        let (d, node_key) = nodes.pop_front().unwrap();
-                        let node = graph.get(node_key).unwrap();
-                        let node_name = match &node.base.value {
-                            NodeValue::None => "None",
-                            NodeValue::Model(_model) => "Model",
-                            NodeValue::Camera(_camera) => "Camera",
-                            NodeValue::Light(_light) => "Light",
-                        };
-                        ui.selectable_value(
-                            &mut self.selected_node,
-                            node.base.id,
-                            node_name.to_string(),
-                        );
-
-                        for child in graph.get(node_key).unwrap().base.children.iter().rev() {
-                            nodes.push_front((d + 1, *child));
-                        }
-                    }
+                    self.draw_node(ui, graph, graph.root);
                 });
             });
+    }
+
+    fn draw_node(&mut self, ui: &mut egui::Ui, graph: &SceneGraph, node_key: NodeId) {
+        let node = graph.get(node_key).unwrap();
+        let node_name = match &node.base.value {
+            NodeValue::None => "None",
+            NodeValue::Model(_model) => "Model",
+            NodeValue::Camera(_camera) => "Camera",
+            NodeValue::Light(_light) => "Light",
+        };
+        let has_children = !node.base.children.is_empty();
+
+        if has_children {
+            egui::collapsing_header::CollapsingState::load_with_default_open(
+                ui.ctx(),
+                ui.make_persistent_id(node.base.id),
+                true,
+            )
+            .show_header(ui, |ui| {
+                ui.selectable_value(&mut self.selected_node, node.base.id, node_name.to_string());
+            })
+            .body(|ui| {
+                for child in &graph.get(node_key).unwrap().base.children {
+                    self.draw_node(ui, graph, *child);
+                }
+            });
+        } else {
+            ui.selectable_value(&mut self.selected_node, node.base.id, node_name.to_string());
+        }
     }
 
     pub fn draw_camera(&mut self, ui: &mut egui::Ui, scene: &Scene) {
