@@ -113,7 +113,7 @@ pub fn compile_slang_shaders(
         #[cfg(target_os = "windows")]
         {
             let output = Command::new("cmd")
-                .arg("-c")
+                .arg("/C")
                 .arg(format!(
                     "slangc.exe {} -target spirv -o {}",
                     file_name, spv_out
@@ -126,7 +126,7 @@ pub fn compile_slang_shaders(
             }
 
             let output = Command::new("cmd")
-                .arg("-c")
+                .arg("/C")
                 .arg(format!(
                     "slangc.exe {} -target spirv-asm -o {}",
                     file_name, asm_out
