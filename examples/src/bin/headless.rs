@@ -37,7 +37,7 @@ impl Run for App {
     }
 
     fn render(&mut self, ctx: &mut GameContext) -> Result<(), RenderError> {
-        self.common.render_noui(ctx, &mut self.scene)
+        self.common.render(ctx, Some(&mut self.scene), None)
     }
 
     fn input(&mut self, _ctx: &mut GameContext, _input: Input) {}

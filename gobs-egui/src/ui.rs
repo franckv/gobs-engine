@@ -12,7 +12,7 @@ use gobs_render::{
     Material, MaterialInstance, MaterialProperties, MaterialProperty, Model, RenderBatch,
     Renderable, Texture, TextureProperties, TextureUpdate,
 };
-use gobs_render_graph::{BlendMode, GfxContext, RenderError, RenderPass};
+use gobs_render_graph::{BlendMode, GfxContext, PassType, RenderError, RenderPass};
 use gobs_resource::{
     geometry::{MeshGeometry, VertexAttribute, VertexData},
     manager::ResourceManager,
@@ -420,22 +420,23 @@ impl Renderable for UIRenderer {
         batch: &mut RenderBatch,
         transform: Option<Transform>,
     ) -> Result<(), RenderError> {
-        let output = self.output.write().take().unwrap();
+        if pass.ty() == PassType::Ui {
+            let output = self.output.write().take().unwrap();
 
-        let transform = match transform {
-            Some(transform) => transform,
-            None => Transform::IDENTITY,
-        };
+            let transform = match transform {
+                Some(transform) => transform,
+                None => Transform::IDENTITY,
+            };
 
-        if let Some(model) = self.load_model(resource_manager, output) {
-            batch.add_model(resource_manager, model, transform, pass.clone())?;
+            if let Some(model) = self.load_model(resource_manager, output) {
+                batch.add_model(resource_manager, model, transform, pass.clone())?;
+            }
+
+            batch.add_extent_data(
+                ImageExtent2D::new(self.width as u32, self.height as u32),
+                pass,
+            );
         }
-
-        batch.add_extent_data(
-            ImageExtent2D::new(self.width as u32, self.height as u32),
-            pass,
-        );
-
         Ok(())
     }
 }

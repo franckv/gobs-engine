@@ -249,11 +249,11 @@ impl RenderPass for WirePass {
         uniform_data: Option<&[u8]>,
         draw_extent: ImageExtent2D,
     ) -> Result<(), RenderError> {
-        tracing::debug!(target: "render", "Draw wire");
+        tracing::debug!(target: "render", "Draw {}", &self.name);
 
         let cmd = &frame.command;
 
-        cmd.begin_label("Draw wire");
+        cmd.begin_label(&format!("Draw {}", &self.name));
 
         let draw_attach = &self.attachments[0];
 

@@ -260,11 +260,11 @@ impl RenderPass for ForwardPass {
         uniform_data: Option<&[u8]>,
         draw_extent: ImageExtent2D,
     ) -> Result<(), RenderError> {
-        tracing::debug!(target: "render", "Draw forward");
+        tracing::debug!(target: "render", "Draw {}", &self.name);
 
         let cmd = &frame.command;
 
-        cmd.begin_label("Draw forward");
+        cmd.begin_label(&format!("Draw {}", &self.name));
 
         let draw_attach = &self.attachments[0];
         let depth_attach = &self.attachments[1];

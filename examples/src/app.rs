@@ -232,8 +232,8 @@ impl SampleApp {
     pub fn render(
         &mut self,
         ctx: &mut GameContext,
-        scene: &mut Scene,
-        ui: &mut UIRenderer,
+        scene: Option<&mut Scene>,
+        ui: Option<&mut UIRenderer>,
     ) -> Result<(), RenderError> {
         tracing::trace!(target: "app", "Render frame {}", ctx.renderer.frame_number());
 
@@ -241,77 +241,21 @@ impl SampleApp {
 
         ctx.renderer
             .draw(resource_manager, &mut |pass, batch, resource_manager| {
-                match pass.ty() {
-                    PassType::Depth | PassType::Forward => {
-                        scene.draw(resource_manager, pass, batch, None)?;
+                if let Some(scene) = &scene {
+                    if (self.draw_bounds || !(pass.ty() == PassType::Bounds))
+                        && (self.draw_wire || !(pass.ty() == PassType::Wire))
+                    {
+                        scene.draw(resource_manager, pass.clone(), batch, None)?;
                     }
-                    PassType::Wire => {
-                        if self.draw_wire {
-                            scene.draw(resource_manager, pass, batch, None)?;
-                        }
-                    }
-                    PassType::Bounds => {
-                        if self.draw_bounds {
-                            scene.draw_bounds(pass, batch)?;
-                        }
-                    }
-                    PassType::Ui => {
-                        if self.draw_ui {
-                            ui.draw(resource_manager, pass, batch, None)?;
-                        }
-                    }
-                    _ => {}
                 }
-                Ok(())
-            })?;
-
-        tracing::trace!(target: "app", "End render");
-
-        Ok(())
-    }
-
-    pub fn render_ui(
-        &mut self,
-        ctx: &mut GameContext,
-        ui: &mut UIRenderer,
-    ) -> Result<(), RenderError> {
-        tracing::trace!(target: "app", "Render frame {}", ctx.renderer.frame_number());
-
-        let resource_manager = &mut ctx.resource_manager;
-
-        ctx.renderer
-            .draw(resource_manager, &mut |pass, batch, resource_manager| {
-                if pass.ty() == PassType::Ui {
-                    ui.draw(resource_manager, pass, batch, None)?;
+                if let Some(ui) = &ui {
+                    if self.draw_ui {
+                        ui.draw(resource_manager, pass, batch, None)?;
+                    }
                 }
 
                 Ok(())
             })?;
-
-        tracing::trace!(target: "app", "End render");
-
-        Ok(())
-    }
-
-    pub fn render_noui(
-        &mut self,
-        ctx: &mut GameContext,
-        scene: &mut Scene,
-    ) -> Result<(), RenderError> {
-        tracing::trace!(target: "app", "Render frame {}", ctx.renderer.frame_number());
-
-        let resource_manager = &mut ctx.resource_manager;
-
-        ctx.renderer.draw(
-            resource_manager,
-            &mut |pass, batch, resource_manager| match pass.ty() {
-                PassType::Depth | PassType::Forward => {
-                    scene.draw(resource_manager, pass, batch, None)?;
-                    Ok(())
-                }
-                _ => Ok(()),
-            },
-        )?;
 
         tracing::trace!(target: "app", "End render");
 

@@ -234,11 +234,11 @@ impl RenderPass for UiPass {
         uniform_data: Option<&[u8]>,
         draw_extent: ImageExtent2D,
     ) -> Result<(), RenderError> {
-        tracing::debug!(target: "render", "Draw UI");
+        tracing::debug!(target: "render", "Draw {}", &self.name);
 
         let cmd = &frame.command;
 
-        cmd.begin_label("Draw UI");
+        cmd.begin_label(&format!("Draw {}", &self.name));
 
         let image_attach = &self.attachments[0];
 
