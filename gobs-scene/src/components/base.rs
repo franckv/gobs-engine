@@ -34,6 +34,7 @@ pub struct BaseComponent {
     pub id: NodeId,
     pub value: NodeValue,
     pub enabled: bool,
+    pub selected: bool,
     pub(crate) parent: Option<NodeId>,
     pub children: Vec<NodeId>,
     pub updated: bool,
@@ -41,14 +42,7 @@ pub struct BaseComponent {
 
 impl Default for BaseComponent {
     fn default() -> Self {
-        Self {
-            id: NodeId::null(),
-            value: NodeValue::None,
-            enabled: true,
-            parent: None,
-            children: Vec::new(),
-            updated: true,
-        }
+        Self::new(NodeValue::None, None)
     }
 }
 
@@ -58,6 +52,7 @@ impl BaseComponent {
             id: NodeId::null(),
             value,
             enabled: true,
+            selected: false,
             parent,
             children: Vec::new(),
             updated: true,

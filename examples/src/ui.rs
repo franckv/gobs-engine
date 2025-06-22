@@ -159,6 +159,7 @@ impl Ui {
                 });
             });
             ui.checkbox(&mut node.base.enabled, "enabled");
+            ui.checkbox(&mut node.base.selected, "selected");
         });
     }
 }

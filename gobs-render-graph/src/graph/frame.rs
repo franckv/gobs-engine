@@ -11,7 +11,8 @@ use crate::{
     graph::resource::GraphResourceManager,
     pass::{
         PassId, PassType, bounds::BoundsPass, compute::ComputePass, depth::DepthPass,
-        dummy::DummyPass, forward::ForwardPass, present::PresentPass, ui::UiPass, wire::WirePass,
+        dummy::DummyPass, forward::ForwardPass, present::PresentPass, select::SelectPass,
+        ui::UiPass, wire::WirePass,
     },
 };
 
@@ -63,6 +64,7 @@ impl FrameGraph {
         graph.register_pass(UiPass::new(ctx, "ui", false)?);
         graph.register_pass(WirePass::new(ctx, "wire")?);
         graph.register_pass(BoundsPass::new(ctx, "bounds")?);
+        graph.register_pass(SelectPass::new(ctx, "select")?);
         graph.register_pass(DummyPass::new(ctx, "dummy")?);
         graph.register_pass(PresentPass::new(ctx, "present")?);
 

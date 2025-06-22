@@ -22,6 +22,7 @@ pub mod depth;
 pub mod dummy;
 pub mod forward;
 pub mod present;
+pub mod select;
 pub mod ui;
 pub mod wire;
 
@@ -33,6 +34,7 @@ pub enum PassType {
     Dummy,
     Forward,
     Present,
+    Select,
     Wire,
     Ui,
 }

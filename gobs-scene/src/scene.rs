@@ -124,7 +124,18 @@ impl Renderable for Scene {
                         )?;
                     }
                 }
-                PassType::Select => {}
+                PassType::Select => {
+                    if node.base.selected {
+                        if let NodeValue::Model(model) = &node.base.value {
+                            model.draw(
+                                resource_manager,
+                                pass.clone(),
+                                batch,
+                                Some(node.global_transform()),
+                            )?;
+                        }
+                    }
+                }
                 _ => {}
             }
 
