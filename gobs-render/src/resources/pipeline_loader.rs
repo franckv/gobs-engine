@@ -57,15 +57,15 @@ impl PipelineLoader {
             .attachments(properties.color_format, properties.depth_format);
 
         if let Some(shader) = &properties.vertex_shader {
-            pipeline = pipeline
-                .vertex_shader(shader, &properties.vertex_entry)
-                .unwrap();
+            if let Some(entry) = &properties.vertex_entry {
+                pipeline = pipeline.vertex_shader(shader, entry).unwrap();
+            }
         }
 
         if let Some(shader) = &properties.fragment_shader {
-            pipeline = pipeline
-                .fragment_shader(shader, &properties.fragment_entry)
-                .unwrap();
+            if let Some(entry) = &properties.fragment_entry {
+                pipeline = pipeline.fragment_shader(shader, entry).unwrap();
+            }
         }
 
         if properties.depth_test_enable {

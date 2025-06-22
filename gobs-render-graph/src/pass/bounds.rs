@@ -47,8 +47,8 @@ impl BoundsPass {
             .build();
 
         let pipeline = GfxPipeline::graphics(name, &ctx.device)
-            .vertex_shader("wire.vert.spv", "main")?
-            .fragment_shader("wire.frag.spv", "main")?
+            .vertex_shader("wire.spv", "vertex_main")?
+            .fragment_shader("wire.spv", "fragment_main")?
             .pool_size(ctx.frames_in_flight)
             .push_constants(push_layout.size())
             .binding_group(BindingGroupType::SceneData)

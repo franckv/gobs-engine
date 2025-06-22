@@ -47,7 +47,7 @@ impl DepthPass {
             .build();
 
         let pipeline = GfxPipeline::graphics(name, &ctx.device)
-            .vertex_shader("depth.vert.spv", "main")?
+            .vertex_shader("depth.spv", "main")?
             .pool_size(ctx.frames_in_flight)
             .push_constants(push_layout.size())
             .binding_group(BindingGroupType::SceneData)

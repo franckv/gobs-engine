@@ -43,9 +43,9 @@ impl PipelineProperties {
 #[derive(Clone, Debug)]
 pub struct GraphicsPipelineProperties {
     pub name: String,
-    pub(crate) vertex_entry: String,
+    pub(crate) vertex_entry: Option<String>,
     pub(crate) vertex_shader: Option<String>,
-    pub(crate) fragment_entry: String,
+    pub(crate) fragment_entry: Option<String>,
     pub(crate) fragment_shader: Option<String>,
     pub(crate) binding_groups: Vec<(DescriptorStage, BindingGroupType, Vec<DescriptorType>)>,
     pub(crate) last_binding_group: BindingGroupType,
@@ -65,9 +65,9 @@ impl GraphicsPipelineProperties {
     pub fn new(name: &str) -> Self {
         Self {
             name: name.to_string(),
-            vertex_entry: "main".to_string(),
+            vertex_entry: None,
             vertex_shader: None,
-            fragment_entry: "main".to_string(),
+            fragment_entry: None,
             fragment_shader: None,
             binding_groups: Vec::new(),
             last_binding_group: BindingGroupType::None,
@@ -85,7 +85,7 @@ impl GraphicsPipelineProperties {
     }
 
     pub fn vertex_entry(mut self, entry: &str) -> Self {
-        self.vertex_entry = entry.to_string();
+        self.vertex_entry = Some(entry.to_string());
 
         self
     }
@@ -97,7 +97,7 @@ impl GraphicsPipelineProperties {
     }
 
     pub fn fragment_entry(mut self, entry: &str) -> Self {
-        self.fragment_entry = entry.to_string();
+        self.fragment_entry = Some(entry.to_string());
 
         self
     }
