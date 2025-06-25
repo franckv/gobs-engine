@@ -58,7 +58,13 @@ impl Run for App {
             &mut ctx.resource_manager,
             ctx.renderer.ui_pass(),
         )?;
-        let scene = Scene::new(camera, camera_position, light, light_position);
+        let scene = Scene::new(
+            &ctx.renderer.gfx,
+            camera,
+            camera_position,
+            light,
+            light_position,
+        );
 
         Ok(App {
             common,

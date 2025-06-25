@@ -1,4 +1,4 @@
-use glam::Vec3;
+use glam::{Vec3, Vec4};
 
 use gobs_core::Transform;
 use gobs_render::{RenderBatch, Renderable};
@@ -13,11 +13,21 @@ pub struct Scene {
     pub graph: SceneGraph,
     pub camera: NodeId,
     pub light: NodeId,
+    pub width: f32,
+    pub height: f32,
 }
 
 impl Scene {
-    pub fn new(camera: Camera, camera_position: Vec3, light: Light, light_position: Vec3) -> Self {
+    pub fn new(
+        ctx: &GfxContext,
+        camera: Camera,
+        camera_position: Vec3,
+        light: Light,
+        light_position: Vec3,
+    ) -> Self {
         let mut graph = SceneGraph::new();
+
+        let (width, height): (f32, f32) = ctx.extent().into();
 
         let camera = graph
             .insert(
@@ -39,6 +49,8 @@ impl Scene {
             graph,
             camera,
             light,
+            width,
+            height,
         }
     }
 
@@ -89,6 +101,9 @@ impl Scene {
     }
 
     pub fn resize(&mut self, width: u32, height: u32) {
+        self.width = width as f32;
+        self.height = height as f32;
+
         self.update_camera(|_, camera| {
             camera.resize(width, height);
         });

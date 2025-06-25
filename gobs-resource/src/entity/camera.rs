@@ -1,7 +1,9 @@
 use core::fmt;
 
-use glam::{Mat4, Vec3};
+use glam::{Mat4, Vec3, Vec4};
 use uuid::Uuid;
+
+use gobs_core::Transform;
 
 #[derive(Clone, Debug)]
 #[allow(dead_code)]
@@ -142,6 +144,25 @@ impl Camera {
                 projection.aspect = width as f32 / height as f32;
             }
         }
+    }
+
+    pub fn screen_to_ndc(&self, pos: Vec3, width: f32, height: f32) -> Vec3 {
+        Vec3::new(2. * pos.x / width - 1., 2. * pos.y / height - 1., pos.z)
+    }
+
+    pub fn screen_to_world(
+        &self,
+        pos: Vec3,
+        camera_transform: Transform,
+        width: f32,
+        height: f32,
+    ) -> Vec4 {
+        let view_proj = self.view_proj(camera_transform.translation());
+        let view_proj_inv = view_proj.inverse();
+
+        let pos_ndc = self.screen_to_ndc(pos, width, height).extend(1.);
+
+        view_proj_inv * pos_ndc
     }
 }
 

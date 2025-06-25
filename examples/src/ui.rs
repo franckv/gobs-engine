@@ -1,3 +1,5 @@
+use glam::Vec3;
+
 use gobs::{
     game::context::AppInfo,
     scene::{
@@ -43,7 +45,7 @@ impl Ui {
 
             ui.heading(&app_info.name);
 
-            self.draw_fps(ui, (1. / delta).round() as u32);
+            self.draw_general(ui, scene, (1. / delta).round() as u32);
 
             ui.separator();
 
@@ -63,8 +65,30 @@ impl Ui {
         self.ui_hovered = ectx.wants_pointer_input();
     }
 
-    pub fn draw_fps(&mut self, ui: &mut egui::Ui, fps: u32) {
+    pub fn draw_general(&mut self, ui: &mut egui::Ui, scene: &mut Scene, fps: u32) {
         ui.strong(format!("FPS: {}", fps));
+        ui.strong(format!("Screen: {}/{}", scene.width, scene.height));
+
+        let (camera_transform, camera) = scene.camera();
+
+        let (mut x, mut y) = (0., 0.);
+        ui.input(|input| {
+            if let Some(pos) = input.pointer.latest_pos() {
+                x = pos.x;
+                y = pos.y;
+            }
+        });
+        ui.strong(format!("Mouse: {}/{}", x, y));
+
+        let pos = Vec3::new(x, y, 0.);
+        let ndc = camera.screen_to_ndc(pos, scene.width, scene.height);
+        ui.strong(format!("NDC: {:.2},{:.2},{:.2}", ndc.x, ndc.y, ndc.z));
+
+        let pos_world = camera.screen_to_world(pos, camera_transform, scene.width, scene.height);
+        ui.strong(format!(
+            "World: {:.2},{:.2},{:.2},{:.2}",
+            pos_world.x, pos_world.y, pos_world.z, pos_world.w
+        ));
     }
 
     pub fn draw_graph(&mut self, ui: &mut egui::Ui, graph: &mut SceneGraph) {
@@ -169,6 +193,24 @@ impl Ui {
                     transform.set_translation(translation);
                 });
             });
+            ui.label("AABB");
+            ui.horizontal(|ui| {
+                ui.label("x min: ");
+                ui.add(egui::DragValue::new(&mut node.bounding.bounding_box.x_min).speed(speed));
+                ui.label("y min: ");
+                ui.add(egui::DragValue::new(&mut node.bounding.bounding_box.y_min).speed(speed));
+                ui.label("z min: ");
+                ui.add(egui::DragValue::new(&mut node.bounding.bounding_box.z_min).speed(speed));
+            });
+            ui.horizontal(|ui| {
+                ui.label("x max: ");
+                ui.add(egui::DragValue::new(&mut node.bounding.bounding_box.x_max).speed(speed));
+                ui.label("y max: ");
+                ui.add(egui::DragValue::new(&mut node.bounding.bounding_box.y_max).speed(speed));
+                ui.label("z max: ");
+                ui.add(egui::DragValue::new(&mut node.bounding.bounding_box.z_max).speed(speed));
+            });
+
             ui.checkbox(&mut node.base.enabled, "enabled");
             ui.checkbox(&mut node.base.selected, "selected");
         });
