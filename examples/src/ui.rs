@@ -104,12 +104,8 @@ impl Ui {
             });
 
         if self.selected_node != old_selected {
-            if let Some(node) = graph.get_mut(old_selected) {
-                node.base.selected = false;
-            }
-            if let Some(node) = graph.get_mut(self.selected_node) {
-                node.base.selected = true;
-            }
+            graph.set_selected(old_selected, false);
+            graph.set_selected(self.selected_node, true);
         }
     }
 
@@ -181,9 +177,12 @@ impl Ui {
 
             ui.strong("Properties");
             ui.label(node_name.to_string());
-            ui.horizontal(|ui| {
-                node.update_transform(|transform| {
+
+            ui.label("\nLocal");
+            node.update_transform(|transform| {
+                ui.horizontal(|ui| {
                     let mut translation = transform.translation();
+                    ui.label("Translation");
                     ui.label("x: ");
                     ui.add(egui::DragValue::new(&mut translation.x).speed(speed));
                     ui.label("y: ");
@@ -192,8 +191,72 @@ impl Ui {
                     ui.add(egui::DragValue::new(&mut translation.z).speed(speed));
                     transform.set_translation(translation);
                 });
+
+                ui.horizontal(|ui| {
+                    let mut rotation = transform.rotation();
+                    ui.label("Rotation");
+                    ui.label("x: ");
+                    ui.add(egui::DragValue::new(&mut rotation.x).speed(speed));
+                    ui.label("y: ");
+                    ui.add(egui::DragValue::new(&mut rotation.y).speed(speed));
+                    ui.label("z: ");
+                    ui.add(egui::DragValue::new(&mut rotation.z).speed(speed));
+                    ui.label("w: ");
+                    ui.add(egui::DragValue::new(&mut rotation.w).speed(speed));
+                    transform.set_rotation(rotation);
+                });
+
+                ui.horizontal(|ui| {
+                    let mut scaling = transform.scaling();
+                    ui.label("Scaling");
+                    ui.label("x: ");
+                    ui.add(egui::DragValue::new(&mut scaling.x).speed(speed));
+                    ui.label("y: ");
+                    ui.add(egui::DragValue::new(&mut scaling.y).speed(speed));
+                    ui.label("z: ");
+                    ui.add(egui::DragValue::new(&mut scaling.z).speed(speed));
+                    transform.set_scaling(scaling);
+                });
+
+                true
             });
-            ui.label("AABB");
+
+            ui.label("\nGlobal");
+            let global = node.global_transform();
+            ui.horizontal(|ui| {
+                let mut translation = global.translation();
+                ui.label("Translation");
+                ui.label("x: ");
+                ui.add(egui::DragValue::new(&mut translation.x).speed(speed));
+                ui.label("y: ");
+                ui.add(egui::DragValue::new(&mut translation.y).speed(speed));
+                ui.label("z: ");
+                ui.add(egui::DragValue::new(&mut translation.z).speed(speed));
+            });
+            ui.horizontal(|ui| {
+                let mut rotation = global.rotation();
+                ui.label("Rotation");
+                ui.label("x: ");
+                ui.add(egui::DragValue::new(&mut rotation.x).speed(speed));
+                ui.label("y: ");
+                ui.add(egui::DragValue::new(&mut rotation.y).speed(speed));
+                ui.label("z: ");
+                ui.add(egui::DragValue::new(&mut rotation.z).speed(speed));
+                ui.label("w: ");
+                ui.add(egui::DragValue::new(&mut rotation.w).speed(speed));
+            });
+            ui.horizontal(|ui| {
+                let mut scaling = global.scaling();
+                ui.label("Scaling");
+                ui.label("x: ");
+                ui.add(egui::DragValue::new(&mut scaling.x).speed(speed));
+                ui.label("y: ");
+                ui.add(egui::DragValue::new(&mut scaling.y).speed(speed));
+                ui.label("z: ");
+                ui.add(egui::DragValue::new(&mut scaling.z).speed(speed));
+            });
+
+            ui.label("\nAABB");
             ui.horizontal(|ui| {
                 ui.label("x min: ");
                 ui.add(egui::DragValue::new(&mut node.bounding.bounding_box.x_min).speed(speed));
@@ -211,8 +274,11 @@ impl Ui {
                 ui.add(egui::DragValue::new(&mut node.bounding.bounding_box.z_max).speed(speed));
             });
 
+            ui.label("");
             ui.checkbox(&mut node.base.enabled, "enabled");
             ui.checkbox(&mut node.base.selected, "selected");
+
+            true
         });
     }
 }

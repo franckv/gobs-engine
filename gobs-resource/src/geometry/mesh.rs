@@ -108,10 +108,8 @@ impl MeshBuilder {
         self
     }
 
-    pub fn extend(mut self, mesh: Arc<MeshGeometry>, transform: Transform) -> Self {
-        self = self
-            .indices(&mesh.indices, true)
-            .vertices_with_transform(&mesh.vertices, transform);
+    pub fn extend(mut self, mesh: Arc<MeshGeometry>) -> Self {
+        self = self.indices(&mesh.indices, true).vertices(&mesh.vertices);
 
         self
     }

@@ -7,7 +7,7 @@ pub struct Node {
     pub base: BaseComponent,
     pub bounding: BoundingComponent,
     pub(crate) transform: Transform,
-    pub parent_transform: Transform,
+    pub(crate) global_transform: Transform,
 }
 
 impl Default for Node {
@@ -19,7 +19,7 @@ impl Default for Node {
             base,
             bounding,
             transform: Transform::IDENTITY,
-            parent_transform: Transform::IDENTITY,
+            global_transform: Transform::IDENTITY,
         }
     }
 }
@@ -38,7 +38,7 @@ impl Node {
             base,
             bounding,
             transform,
-            parent_transform,
+            global_transform: parent_transform * transform,
         }
     }
 
@@ -46,23 +46,19 @@ impl Node {
         &self.transform
     }
 
+    pub fn global_transform(&self) -> &Transform {
+        &self.global_transform
+    }
+
     pub fn update_transform<F>(&mut self, mut f: F)
     where
-        F: FnMut(&mut Transform),
+        F: FnMut(&mut Transform) -> bool,
     {
-        f(&mut self.transform);
-        self.base.updated = true;
+        self.base.updated |= f(&mut self.transform);
     }
 
-    pub fn reset_bounding_box(&mut self) {
+    pub fn reset_bounding_box(&mut self, transform: Transform) {
         self.bounding.reset(&self.base.value);
-    }
-
-    pub fn global_transform(&self) -> Transform {
-        self.parent_transform * self.transform
-    }
-
-    pub(crate) fn set_parent_transform(&mut self, parent_transform: Transform) {
-        self.parent_transform = parent_transform;
+        self.bounding.bounding_box = self.bounding.bounding_box.transform(transform);
     }
 }

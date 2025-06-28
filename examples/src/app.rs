@@ -305,6 +305,8 @@ impl SampleApp {
                 Key::Equals => scene.update_camera(|_, camera| {
                     camera.pitch = 0.;
                     camera.yaw = 0.;
+
+                    true
                 }),
                 _ => {}
             }

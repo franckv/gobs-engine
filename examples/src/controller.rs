@@ -140,7 +140,7 @@ impl CameraController {
         camera: &mut Camera,
         camera_transform: &mut Transform,
         dt: f32,
-    ) {
+    ) -> bool {
         let forward = camera.dir().normalize();
         let right = camera.right().normalize();
         let up = camera.up().normalize();
@@ -164,5 +164,7 @@ impl CameraController {
         }
 
         camera.pitch = camera.pitch.clamp(-SAFE_FRAC_PI_2, SAFE_FRAC_PI_2);
+
+        true
     }
 }

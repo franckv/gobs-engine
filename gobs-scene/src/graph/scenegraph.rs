@@ -36,7 +36,7 @@ impl SceneGraph {
         self.arena.get(key)
     }
 
-    pub fn get_mut(&mut self, key: NodeId) -> Option<&mut Node> {
+    fn get_mut(&mut self, key: NodeId) -> Option<&mut Node> {
         self.arena.get_mut(key)
     }
 
@@ -52,53 +52,75 @@ impl SceneGraph {
         }
     }
 
+    pub fn set_selected(&mut self, key: NodeId, selected: bool) {
+        if let Some(node) = self.get_mut(key) {
+            node.base.selected = selected;
+        }
+    }
+
     pub fn parent(&self, key: NodeId) -> Option<&Node> {
         self.get(key)
             .and_then(|node| node.base.parent)
             .and_then(|parent| self.get(parent))
     }
 
-    pub fn parent_transform(&self, key: NodeId) -> Transform {
-        match self.parent(key) {
-            Some(parent) => parent.global_transform(),
-            None => Transform::IDENTITY,
+    pub fn update<F>(&mut self, key: NodeId, mut f: F)
+    where
+        F: FnMut(&mut Node) -> bool,
+    {
+        if let Some(node) = self.get_mut(key) {
+            node.base.updated |= f(node);
         }
     }
 
-    pub fn update<F>(&mut self, key: NodeId, mut f: F)
-    where
-        F: FnMut(&mut Node),
-    {
+    pub(crate) fn update_nodes(&mut self) {
+        self.update_node(self.root, Transform::IDENTITY, false);
+    }
+
+    fn update_node(
+        &mut self,
+        key: NodeId,
+        parent_transform: Transform,
+        parent_updated: bool,
+    ) -> bool {
+        let mut children = vec![];
+        let mut transform = parent_transform;
         let mut updated = false;
 
         if let Some(node) = self.get_mut(key) {
-            f(node);
-            updated = node.base.updated;
+            updated = node.base.updated | parent_updated;
             node.base.updated = false;
-        }
-
-        if updated {
-            let parent_transform = self.parent_transform(key);
-            self.update_global_transform(key, parent_transform);
-            self.update_bounding_box(key);
-        }
-    }
-
-    fn update_global_transform(&mut self, key: NodeId, parent_transform: Transform) {
-        let mut children = vec![];
-        let mut global_transform = Transform::IDENTITY;
-
-        if let Some(node) = self.get_mut(key) {
-            node.set_parent_transform(parent_transform);
-            global_transform = node.global_transform();
-
-            for &child in &node.base.children {
-                children.push(child);
+            transform = parent_transform * node.transform;
+            node.global_transform = transform;
+            for child in &node.base.children {
+                children.push(*child);
             }
         }
 
-        for child in children {
-            self.update_global_transform(child, global_transform);
+        let old_updated = updated;
+        for child in &children {
+            updated |= self.update_node(*child, transform, old_updated);
+        }
+
+        if updated {
+            if let Some(node) = self.get_mut(key) {
+                node.reset_bounding_box(node.global_transform);
+            }
+            let mut bb = self.bounding_box(key);
+            for child in children {
+                if let Some(child) = self.get(child) {
+                    let child_bb = child.bounding.bounding_box;
+                    bb.extends_box(child_bb);
+                }
+            }
+
+            if let Some(node) = self.get_mut(key) {
+                node.bounding.bounding_box = bb;
+            }
+
+            true
+        } else {
+            false
         }
     }
 
@@ -127,12 +149,7 @@ impl SceneGraph {
     ) -> Option<NodeId> {
         let node = match self.get(parent) {
             Some(parent_node) => {
-                let node = Node::new(
-                    value,
-                    transform,
-                    Some(parent),
-                    parent_node.global_transform(),
-                );
+                let node = Node::new(value, transform, Some(parent), parent_node.global_transform);
                 let node_id = self.arena.insert(node);
                 if let Some(node) = self.get_mut(node_id) {
                     node.base.id = node_id;
@@ -146,7 +163,6 @@ impl SceneGraph {
             if let Some(node) = node {
                 parent_node.base.children.push(node);
             }
-            self.update_bounding_box(parent);
         }
 
         node
@@ -156,33 +172,6 @@ impl SceneGraph {
         match self.get(key) {
             Some(node) => node.bounding.bounding_box,
             None => BoundingBox::default(),
-        }
-    }
-
-    pub fn update_bounding_box(&mut self, key: NodeId) {
-        if let Some(node) = self.get_mut(key) {
-            node.reset_bounding_box();
-        }
-
-        let mut bb = self.bounding_box(key);
-
-        if let Some(node) = self.get(key) {
-            for &child in &node.base.children {
-                if let Some(child) = self.get(child) {
-                    let child_bb = child.bounding.bounding_box.transform(child.transform);
-                    bb.extends_box(child_bb);
-                }
-            }
-        }
-
-        if let Some(node) = self.get_mut(key) {
-            node.bounding.bounding_box = bb;
-        }
-
-        if let Some(node) = self.get(key) {
-            if let Some(parent) = node.base.parent {
-                self.update_bounding_box(parent);
-            }
         }
     }
 
@@ -237,7 +226,7 @@ impl SceneGraph {
 
     pub fn visit_update<F>(&mut self, key: NodeId, f: &mut F)
     where
-        F: FnMut(&mut Node),
+        F: FnMut(&mut Node) -> bool,
     {
         if let Some(node) = self.get(key) {
             for &child in &node.base.children.clone() {
@@ -256,7 +245,7 @@ impl SceneGraph {
 
         self.visit(root, &mut |node| {
             if let NodeValue::Model(model) = &node.base.value {
-                let transform = node.global_transform();
+                let transform = node.global_transform;
                 match map.entry(model.id) {
                     Entry::Occupied(mut entry) => {
                         entry.get_mut().push((transform, node.base.value.clone()))

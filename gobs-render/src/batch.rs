@@ -112,7 +112,6 @@ impl RenderBatch {
     pub fn add_bounds(
         &mut self,
         bounding_box: BoundingBox,
-        transform: Transform,
         pass: RenderPass,
     ) -> Result<(), ResourceError> {
         let mesh = Shapes::bounding_box(bounding_box, self.vertex_padding);
@@ -124,7 +123,7 @@ impl RenderBatch {
         let builder = self.bounding_geometry.take();
 
         if let Some(builder) = builder {
-            self.bounding_geometry = Some(builder.extend(mesh, transform));
+            self.bounding_geometry = Some(builder.extend(mesh));
             self.bounding_pass = Some(pass);
         }
 

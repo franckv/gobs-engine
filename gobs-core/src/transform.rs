@@ -58,6 +58,16 @@ impl Transform {
         self.update_matrix();
     }
 
+    pub fn set_rotation(&mut self, rotation: Quat) {
+        self.rotation = rotation;
+        self.update_matrix();
+    }
+
+    pub fn set_scaling(&mut self, scale: Vec3) {
+        self.scale = scale;
+        self.update_matrix();
+    }
+
     pub fn translate(&mut self, translation: Vec3) {
         self.translation = translation + self.translation;
         self.update_matrix();

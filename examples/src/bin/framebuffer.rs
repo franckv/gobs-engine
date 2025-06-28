@@ -59,7 +59,7 @@ impl Run for App {
     fn update(&mut self, ctx: &mut GameContext, delta: f32) {
         self.scene.update_camera(|transform, camera| {
             self.camera_controller
-                .update_camera(camera, transform, delta);
+                .update_camera(camera, transform, delta)
         });
 
         self.scene.update(&ctx.renderer.gfx, delta);

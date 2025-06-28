@@ -84,12 +84,14 @@ impl Run for App {
                         * transform.translation();
 
                 transform.set_translation(translation);
+
+                true
             });
         }
 
         self.scene.update_camera(|transform, camera| {
             self.camera_controller
-                .update_camera(camera, transform, delta);
+                .update_camera(camera, transform, delta)
         });
 
         self.scene.update(&ctx.renderer.gfx, delta);
