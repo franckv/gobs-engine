@@ -53,6 +53,7 @@ impl Run for App {
             &ctx.renderer.gfx,
             &mut ctx.resource_manager,
             ctx.renderer.ui_pass(),
+            false,
         )?;
         let scene = Scene::new(
             &ctx.renderer.gfx,

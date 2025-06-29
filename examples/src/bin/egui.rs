@@ -25,8 +25,10 @@ impl Run for App {
             &ctx.renderer.gfx,
             &mut ctx.resource_manager,
             ctx.renderer.ui_pass(),
+            true,
         )?;
-        let common = SampleApp::new();
+        let mut common = SampleApp::new();
+        common.draw_ui = true;
 
         Ok(App {
             common,

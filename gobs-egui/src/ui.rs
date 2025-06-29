@@ -40,6 +40,7 @@ impl UIRenderer {
         ctx: &GfxContext,
         resource_manager: &mut ResourceManager,
         pass: RenderPass,
+        transparent: bool,
     ) -> Result<Self, UIError> {
         let ectx = egui::Context::default();
 
@@ -61,7 +62,11 @@ impl UIRenderer {
         )
         .prop("diffuse", MaterialProperty::Texture)
         .no_culling()
-        .blend_mode(BlendMode::Premultiplied);
+        .blend_mode(if transparent {
+            BlendMode::Premultiplied
+        } else {
+            BlendMode::None
+        });
 
         let material = resource_manager.add(material_properties, ResourceLifetime::Static);
 
