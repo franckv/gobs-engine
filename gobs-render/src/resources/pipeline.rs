@@ -5,7 +5,7 @@ use gobs_gfx::{
     BindingGroupType, BlendMode, CompareOp, CullMode, DescriptorStage, DescriptorType, FrontFace,
     GfxPipeline,
 };
-use gobs_resource::resource::ResourceType;
+use gobs_resource::resource::{ResourceProperties, ResourceType};
 
 use crate::resources::pipeline_loader::PipelineLoader;
 
@@ -28,6 +28,15 @@ pub struct PipelineData {
 pub enum PipelineProperties {
     Compute(ComputePipelineProperties),
     Graphics(GraphicsPipelineProperties),
+}
+
+impl ResourceProperties for PipelineProperties {
+    fn name(&self) -> &str {
+        match self {
+            PipelineProperties::Compute(props) => &props.name,
+            PipelineProperties::Graphics(props) => &props.name,
+        }
+    }
 }
 
 impl PipelineProperties {

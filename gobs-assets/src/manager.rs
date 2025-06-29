@@ -64,6 +64,7 @@ impl MaterialManager {
         let texture = resource_manager.add(
             MaterialProperties::new(
                 ctx,
+                "gltf.texture",
                 "gltf.texture.vert.spv",
                 "main",
                 "gltf.texture.frag.spv",
@@ -78,6 +79,7 @@ impl MaterialManager {
         let transparent_texture = resource_manager.add(
             MaterialProperties::new(
                 ctx,
+                "gltf.texture.transparent",
                 "gltf.texture.vert.spv",
                 "main",
                 "gltf.texture.frag.spv",
@@ -93,6 +95,7 @@ impl MaterialManager {
         let texture_normal = resource_manager.add(
             MaterialProperties::new(
                 ctx,
+                "gltf.texture.normal",
                 "gltf.texture.vert.spv",
                 "main",
                 "gltf.texture_n.frag.spv",
@@ -108,6 +111,7 @@ impl MaterialManager {
         let transparent_texture_normal = resource_manager.add(
             MaterialProperties::new(
                 ctx,
+                "gltf.texture.transparent.normal",
                 "gltf.texture.vert.spv",
                 "main",
                 "gltf.texture_n.frag.spv",
@@ -130,6 +134,7 @@ impl MaterialManager {
         let color = resource_manager.add(
             MaterialProperties::new(
                 ctx,
+                "gltf.color",
                 "gltf.color_light.vert.spv",
                 "main",
                 "gltf.color_light.frag.spv",
@@ -143,6 +148,7 @@ impl MaterialManager {
         let transparent_color = resource_manager.add(
             MaterialProperties::new(
                 ctx,
+                "gltf.color.transparent",
                 "gltf.color_light.vert.spv",
                 "main",
                 "gltf.color_light.frag.spv",

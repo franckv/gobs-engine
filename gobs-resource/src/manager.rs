@@ -1,15 +1,16 @@
 use uuid::Uuid;
 
-use gobs_core::data::{anymap::AnyMap, registry::ObjectRegistry};
+use gobs_core::data::{anymap::AnyMap, objectmap::ObjectMap, registry::ObjectRegistry};
 
 use crate::resource::{
-    Resource, ResourceError, ResourceHandle, ResourceLifetime, ResourceLoader, ResourceState,
-    ResourceType,
+    Resource, ResourceError, ResourceHandle, ResourceLifetime, ResourceLoader, ResourceProperties,
+    ResourceState, ResourceType,
 };
 
 #[derive(Default)]
 pub struct ResourceRegistry {
     registry: ObjectRegistry<Uuid>,
+    labels: ObjectMap<String, Uuid>,
 }
 
 impl ResourceRegistry {
@@ -18,6 +19,7 @@ impl ResourceRegistry {
         properties: R::ResourceProperties,
         lifetime: ResourceLifetime,
     ) -> ResourceHandle<R> {
+        let name = properties.name().to_string();
         let resource = Resource::<R>::new(properties, lifetime);
 
         let handle = resource.handle;
@@ -25,6 +27,9 @@ impl ResourceRegistry {
         tracing::trace!(target: "resources", "New resource: {:?}", handle.id);
 
         self.registry.insert(handle.id, resource);
+        if self.labels.insert::<R>(name, handle.id).is_some() {
+            tracing::debug!(target: "resources", "Replace resource: {}: {:?}", std::any::type_name::<R>(), handle.id);
+        }
 
         handle
     }
@@ -49,6 +54,12 @@ impl ResourceRegistry {
         old_resource.lifetime = ResourceLifetime::Transient;
 
         self.add(properties, lifetime)
+    }
+
+    pub fn get_by_name<R: ResourceType + 'static>(&self, name: &str) -> Option<ResourceHandle<R>> {
+        let id = self.labels.get::<R>(&name.to_string());
+
+        id.map(|id| ResourceHandle::with_uuid(*id))
     }
 
     pub fn get<R: ResourceType + 'static>(&self, handle: &ResourceHandle<R>) -> &Resource<R> {
@@ -104,6 +115,10 @@ impl ResourceManager {
         handle: &ResourceHandle<R>,
     ) -> ResourceHandle<R> {
         self.registry.replace(handle)
+    }
+
+    pub fn get_by_name<R: ResourceType + 'static>(&self, name: &str) -> Option<ResourceHandle<R>> {
+        self.registry.get_by_name(name)
     }
 
     pub fn get<R: ResourceType + 'static>(&mut self, handle: &ResourceHandle<R>) -> &Resource<R> {

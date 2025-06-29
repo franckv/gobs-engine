@@ -4,7 +4,7 @@ use gobs_gfx::{
 use gobs_render_graph::{GfxContext, RenderPass};
 use gobs_resource::{
     geometry::VertexAttribute,
-    resource::{ResourceHandle, ResourceType},
+    resource::{ResourceHandle, ResourceProperties, ResourceType},
 };
 
 use crate::resources::Pipeline;
@@ -29,14 +29,22 @@ pub enum MaterialProperty {
 
 #[derive(Clone, Debug)]
 pub struct MaterialProperties {
+    pub name: String,
     pub pipeline_properties: GraphicsPipelineProperties,
     pub vertex_attributes: VertexAttribute,
     pub blending_enabled: bool,
 }
 
+impl ResourceProperties for MaterialProperties {
+    fn name(&self) -> &str {
+        &self.name
+    }
+}
+
 impl MaterialProperties {
     pub fn new(
         ctx: &GfxContext,
+        name: &str,
         vertex_shader: &str,
         vertex_entry: &str,
         fragment_shader: &str,
@@ -62,6 +70,7 @@ impl MaterialProperties {
         };
 
         Self {
+            name: name.to_string(),
             pipeline_properties,
             vertex_attributes,
             blending_enabled: false,

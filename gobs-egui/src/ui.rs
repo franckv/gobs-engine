@@ -53,6 +53,7 @@ impl UIRenderer {
 
         let material_properties = MaterialProperties::new(
             ctx,
+            "ui",
             "ui.vert.spv",
             "main",
             "ui.frag.spv",

@@ -3,7 +3,7 @@ use std::sync::Arc;
 use gobs_gfx::GfxBuffer;
 use gobs_resource::{
     geometry::{MeshGeometry, VertexAttribute},
-    resource::ResourceType,
+    resource::{ResourceProperties, ResourceType},
 };
 
 use crate::resources::MeshLoader;
@@ -30,6 +30,12 @@ pub enum MeshPath {
 pub struct MeshProperties {
     pub name: String,
     pub path: MeshPath,
+}
+
+impl ResourceProperties for MeshProperties {
+    fn name(&self) -> &str {
+        &self.name
+    }
 }
 
 impl MeshProperties {

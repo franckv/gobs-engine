@@ -73,6 +73,7 @@ impl SampleApp {
         resource_manager.add(
             MaterialProperties::new(
                 ctx,
+                "color",
                 "color.spv",
                 "vertex_main",
                 "color.spv",
@@ -80,7 +81,7 @@ impl SampleApp {
                 vertex_attributes,
                 pass,
             ),
-            gobs::resource::resource::ResourceLifetime::Static,
+            ResourceLifetime::Static,
         )
     }
 
@@ -95,6 +96,7 @@ impl SampleApp {
         resource_manager.add(
             MaterialProperties::new(
                 ctx,
+                "color.transparent",
                 "color.spv",
                 "vertex_main",
                 "color.spv",
@@ -122,6 +124,7 @@ impl SampleApp {
         resource_manager.add(
             MaterialProperties::new(
                 ctx,
+                "texture",
                 "mesh.vert.spv",
                 "main",
                 "mesh.frag.spv",
@@ -149,6 +152,7 @@ impl SampleApp {
         resource_manager.add(
             MaterialProperties::new(
                 ctx,
+                "texture.transparent",
                 "mesh.vert.spv",
                 "main",
                 "mesh.frag.spv",
@@ -177,6 +181,7 @@ impl SampleApp {
         resource_manager.add(
             MaterialProperties::new(
                 ctx,
+                "normal",
                 "mesh.vert.spv",
                 "main",
                 "mesh_n.frag.spv",
@@ -201,6 +206,7 @@ impl SampleApp {
         resource_manager.add(
             MaterialProperties::new(
                 ctx,
+                "depth",
                 "color.spv",
                 "vertex_main",
                 "color.spv",

@@ -1,6 +1,6 @@
 use gobs_core::{Color, ImageExtent2D, ImageFormat, SamplerFilter};
 use gobs_gfx::{GfxImage, GfxSampler};
-use gobs_resource::resource::{Resource, ResourceHandle, ResourceType};
+use gobs_resource::resource::{Resource, ResourceHandle, ResourceProperties, ResourceType};
 
 use crate::resources::TextureLoader;
 
@@ -38,6 +38,12 @@ pub struct TextureProperties {
     pub name: String,
     pub path: TexturePath,
     pub format: TextureFormat,
+}
+
+impl ResourceProperties for TextureProperties {
+    fn name(&self) -> &str {
+        &self.name
+    }
 }
 
 impl TextureProperties {

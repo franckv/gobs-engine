@@ -35,6 +35,13 @@ impl<R: ResourceType> ResourceHandle<R> {
             ty: PhantomData,
         }
     }
+
+    pub fn with_uuid(id: Uuid) -> Self {
+        Self {
+            id,
+            ty: PhantomData,
+        }
+    }
 }
 
 impl<R: ResourceType> Default for ResourceHandle<R> {
@@ -45,7 +52,7 @@ impl<R: ResourceType> Default for ResourceHandle<R> {
 
 pub trait ResourceType: Copy + Debug {
     type ResourceData;
-    type ResourceProperties: Clone;
+    type ResourceProperties: ResourceProperties + Clone;
     type ResourceParameter: Clone + Hash + Eq;
     type ResourceLoader: ResourceLoader<Self>
     where
@@ -82,6 +89,10 @@ pub enum ResourceError {
     ResourceLoadError,
     #[error("allocation error")]
     AllocationError(#[from] AllocationError),
+}
+
+pub trait ResourceProperties {
+    fn name(&self) -> &str;
 }
 
 pub trait ResourceLoader<R: ResourceType> {
