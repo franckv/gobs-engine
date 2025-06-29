@@ -6,6 +6,7 @@ use gobs_resource::{
     geometry::VertexAttribute,
     resource::{ResourceHandle, ResourceProperties, ResourceType},
 };
+use serde::Deserialize;
 
 use crate::resources::Pipeline;
 use crate::resources::material_loader::MaterialLoader;
@@ -22,7 +23,7 @@ impl ResourceType for Material {
     type ResourceLoader = MaterialLoader;
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Copy, Debug, Deserialize)]
 pub enum MaterialProperty {
     Texture,
 }

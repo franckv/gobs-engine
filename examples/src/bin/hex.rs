@@ -72,7 +72,7 @@ impl Run for App {
     }
 
     async fn start(&mut self, ctx: &mut GameContext) {
-        self.init(ctx);
+        self.init(ctx).await;
     }
 
     fn close(&mut self, _ctx: &mut GameContext) {
@@ -81,12 +81,16 @@ impl Run for App {
 }
 
 impl App {
-    fn init(&mut self, ctx: &mut GameContext) {
-        let material = self.common.color_material(
+    async fn init(&mut self, ctx: &mut GameContext) {
+        SampleApp::load_resources(
             &ctx.renderer.gfx,
             &mut ctx.resource_manager,
             ctx.renderer.forward_pass(),
-        );
+        )
+        .await;
+
+        let material = ctx.resource_manager.get_by_name("color").unwrap();
+
         let material_instance = MaterialInstance::new(material, vec![]);
 
         let hex = Model::builder("hex")

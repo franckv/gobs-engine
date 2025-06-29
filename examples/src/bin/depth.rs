@@ -134,11 +134,14 @@ impl Run for App {
 
 impl App {
     async fn init(&mut self, ctx: &mut GameContext) {
-        let material = self.common.depth_material(
+        SampleApp::load_resources(
             &ctx.renderer.gfx,
             &mut ctx.resource_manager,
             ctx.renderer.forward_pass(),
-        );
+        )
+        .await;
+
+        let material = ctx.resource_manager.get_by_name("depth").unwrap();
 
         let material_instance =
             //NormalMaterial::instanciate(material, diffuse_texture, normal_texture);

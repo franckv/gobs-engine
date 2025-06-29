@@ -90,7 +90,7 @@ impl Run for App {
     }
 
     async fn start(&mut self, ctx: &mut GameContext) {
-        self.init(ctx);
+        self.init(ctx).await;
     }
 
     fn close(&mut self, _ctx: &mut GameContext) {
@@ -99,17 +99,20 @@ impl Run for App {
 }
 
 impl App {
-    fn init(&mut self, ctx: &mut GameContext) {
+    async fn init(&mut self, ctx: &mut GameContext) {
         let extent = ctx.renderer.graph.draw_extent;
         let (width, height) = (extent.width, extent.height);
 
         let framebuffer = Self::generate_framebuffer(width, height);
 
-        let material = self.common.texture_material(
+        SampleApp::load_resources(
             &ctx.renderer.gfx,
             &mut ctx.resource_manager,
             ctx.renderer.forward_pass(),
-        );
+        )
+        .await;
+
+        let material = ctx.resource_manager.get_by_name("texture").unwrap();
 
         let properties = TextureProperties::with_colors("Framebuffer", framebuffer, extent);
 

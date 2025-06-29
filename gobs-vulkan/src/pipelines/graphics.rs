@@ -1,6 +1,7 @@
 use std::sync::Arc;
 
 use ash::vk;
+use serde::Deserialize;
 
 use gobs_core::ImageFormat;
 
@@ -321,8 +322,9 @@ impl DepthStencilState {
     }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, Default, Deserialize, PartialEq)]
 pub enum BlendMode {
+    #[default]
     None,
     Additive,
     Alpha,

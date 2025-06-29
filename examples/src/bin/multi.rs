@@ -113,18 +113,15 @@ impl Run for App {
 
 impl App {
     async fn init(&mut self, ctx: &mut GameContext) {
-        let color_material = self.common.color_material(
+        SampleApp::load_resources(
             &ctx.renderer.gfx,
             &mut ctx.resource_manager,
             ctx.renderer.forward_pass(),
-        );
-        let color_material_instance = MaterialInstance::new(color_material, vec![]);
+        )
+        .await;
 
-        let diffuse_material = self.common.normal_mapping_material(
-            &ctx.renderer.gfx,
-            &mut ctx.resource_manager,
-            ctx.renderer.forward_pass(),
-        );
+        let color_material = ctx.resource_manager.get_by_name("color").unwrap();
+        let color_material_instance = MaterialInstance::new(color_material, vec![]);
 
         let properties = TextureProperties::with_file("Wall Diffuse", examples::WALL_TEXTURE);
         let diffuse_texture = ctx
@@ -137,6 +134,7 @@ impl App {
             .resource_manager
             .add(properties, ResourceLifetime::Static);
 
+        let diffuse_material = ctx.resource_manager.get_by_name("normal").unwrap();
         let diffuse_material_instance =
             MaterialInstance::new(diffuse_material, vec![diffuse_texture, normal_texture]);
 

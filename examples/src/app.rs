@@ -1,5 +1,8 @@
+use std::collections::HashMap;
+
 use image::{ImageBuffer, Rgba};
 use renderdoc::{RenderDoc, V141};
+use serde::Deserialize;
 
 use gobs::{
     core::{ImageFormat, Input, Key},
@@ -9,14 +12,33 @@ use gobs::{
     resource::{
         entity::camera::Camera,
         geometry::VertexAttribute,
+        load::{self, AssetType},
         manager::ResourceManager,
-        resource::{ResourceHandle, ResourceLifetime},
+        resource::ResourceLifetime,
     },
     scene::scene::Scene,
     ui::UIRenderer,
 };
 
 use crate::{CameraController, ui::Ui};
+
+#[derive(Debug, Deserialize)]
+struct AssetsConfig {
+    materials: HashMap<String, MaterialConfig>,
+}
+
+#[derive(Debug, Deserialize)]
+struct MaterialConfig {
+    vertex_shader: String,
+    vertex_entry: String,
+    fragment_shader: String,
+    fragment_entry: String,
+    vertex_attributes: VertexAttribute,
+    #[serde(default)]
+    blend_mode: BlendMode,
+    #[serde(default)]
+    properties: HashMap<String, MaterialProperty>,
+}
 
 pub struct SampleApp {
     pub process_updates: bool,
@@ -36,6 +58,37 @@ impl SampleApp {
             draw_bounds: false,
             draw_wire: false,
             ui: Ui::new(),
+        }
+    }
+
+    pub async fn load_resources(
+        ctx: &GfxContext,
+        resource_manager: &mut ResourceManager,
+        pass: RenderPass,
+    ) {
+        let resources = load::load_string("resources.ron", AssetType::DATA)
+            .await
+            .unwrap();
+        let config: AssetsConfig = ron::from_str(&resources).unwrap();
+
+        for (name, material) in &config.materials {
+            let mut props = MaterialProperties::new(
+                ctx,
+                name,
+                &material.vertex_shader,
+                &material.vertex_entry,
+                &material.fragment_shader,
+                &material.fragment_entry,
+                material.vertex_attributes,
+                pass.clone(),
+            )
+            .blend_mode(material.blend_mode);
+
+            for (prop_name, prop_type) in &material.properties {
+                props = props.prop(prop_name, *prop_type);
+            }
+
+            resource_manager.add::<Material>(props, ResourceLifetime::Static);
         }
     }
 
@@ -60,162 +113,6 @@ impl SampleApp {
 
     pub fn controller() -> CameraController {
         CameraController::new(3., 0.4)
-    }
-
-    pub fn color_material(
-        &self,
-        ctx: &GfxContext,
-        resource_manager: &mut ResourceManager,
-        pass: RenderPass,
-    ) -> ResourceHandle<Material> {
-        let vertex_attributes = VertexAttribute::POSITION | VertexAttribute::COLOR;
-
-        resource_manager.add(
-            MaterialProperties::new(
-                ctx,
-                "color",
-                "color.spv",
-                "vertex_main",
-                "color.spv",
-                "fragment_main",
-                vertex_attributes,
-                pass,
-            ),
-            ResourceLifetime::Static,
-        )
-    }
-
-    pub fn color_material_transparent(
-        &self,
-        ctx: &GfxContext,
-        resource_manager: &mut ResourceManager,
-        pass: RenderPass,
-    ) -> ResourceHandle<Material> {
-        let vertex_attributes = VertexAttribute::POSITION | VertexAttribute::COLOR;
-
-        resource_manager.add(
-            MaterialProperties::new(
-                ctx,
-                "color.transparent",
-                "color.spv",
-                "vertex_main",
-                "color.spv",
-                "fragment_main",
-                vertex_attributes,
-                pass,
-            )
-            .blend_mode(BlendMode::Alpha),
-            ResourceLifetime::Static,
-        )
-    }
-
-    pub fn texture_material(
-        &self,
-        ctx: &GfxContext,
-        resource_manager: &mut ResourceManager,
-        pass: RenderPass,
-    ) -> ResourceHandle<Material> {
-        let vertex_attributes = VertexAttribute::POSITION
-            | VertexAttribute::TEXTURE
-            | VertexAttribute::NORMAL
-            | VertexAttribute::TANGENT
-            | VertexAttribute::BITANGENT;
-
-        resource_manager.add(
-            MaterialProperties::new(
-                ctx,
-                "texture",
-                "mesh.vert.spv",
-                "main",
-                "mesh.frag.spv",
-                "main",
-                vertex_attributes,
-                pass,
-            )
-            .prop("diffuse", MaterialProperty::Texture),
-            ResourceLifetime::Static,
-        )
-    }
-
-    pub fn texture_material_transparent(
-        &self,
-        ctx: &GfxContext,
-        resource_manager: &mut ResourceManager,
-        pass: RenderPass,
-    ) -> ResourceHandle<Material> {
-        let vertex_attributes = VertexAttribute::POSITION
-            | VertexAttribute::TEXTURE
-            | VertexAttribute::NORMAL
-            | VertexAttribute::TANGENT
-            | VertexAttribute::BITANGENT;
-
-        resource_manager.add(
-            MaterialProperties::new(
-                ctx,
-                "texture.transparent",
-                "mesh.vert.spv",
-                "main",
-                "mesh.frag.spv",
-                "main",
-                vertex_attributes,
-                pass,
-            )
-            .prop("diffuse", MaterialProperty::Texture)
-            .blend_mode(BlendMode::Alpha),
-            ResourceLifetime::Static,
-        )
-    }
-
-    pub fn normal_mapping_material(
-        &self,
-        ctx: &GfxContext,
-        resource_manager: &mut ResourceManager,
-        pass: RenderPass,
-    ) -> ResourceHandle<Material> {
-        let vertex_attributes = VertexAttribute::POSITION
-            | VertexAttribute::TEXTURE
-            | VertexAttribute::NORMAL
-            | VertexAttribute::TANGENT
-            | VertexAttribute::BITANGENT;
-
-        resource_manager.add(
-            MaterialProperties::new(
-                ctx,
-                "normal",
-                "mesh.vert.spv",
-                "main",
-                "mesh_n.frag.spv",
-                "main",
-                vertex_attributes,
-                pass,
-            )
-            .prop("diffuse", MaterialProperty::Texture)
-            .prop("normal", MaterialProperty::Texture),
-            ResourceLifetime::Static,
-        )
-    }
-
-    pub fn depth_material(
-        &self,
-        ctx: &GfxContext,
-        resource_manager: &mut ResourceManager,
-        pass: RenderPass,
-    ) -> ResourceHandle<Material> {
-        let vertex_attributes = VertexAttribute::POSITION | VertexAttribute::COLOR;
-
-        resource_manager.add(
-            MaterialProperties::new(
-                ctx,
-                "depth",
-                "color.spv",
-                "vertex_main",
-                "color.spv",
-                "depth_fragment_main",
-                vertex_attributes,
-                pass,
-            ),
-            ResourceLifetime::Static,
-        )
     }
 
     pub fn update_ui(

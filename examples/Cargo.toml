@@ -13,6 +13,8 @@ gpu-allocator = { workspace = true }
 image = { workspace = true }
 pollster = { workspace = true }
 renderdoc = { workspace = true }
+ron = { workspace = true }
+serde = { workspace = true }
 slotmap = { workspace = true }
 tracing = { workspace = true }
 tracing-subscriber = { workspace = true }

@@ -4,7 +4,7 @@ use bitflags::bitflags;
 use glam::{Vec2, Vec3};
 
 use gobs_core::{Color, Transform};
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
 const POS_SIZE: usize = 12;
 const COLOR_SIZE: usize = 16;
@@ -23,7 +23,8 @@ const TANGENT_ALIGN: usize = 16;
 const BITANGENT_ALIGN: usize = 16;
 
 bitflags! {
-    #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+    #[derive(Debug, Clone, Copy, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash)]
+    #[serde(transparent)]
     pub struct VertexAttribute: u32 {
         const POSITION = 1;
         const COLOR = 1 << 1;

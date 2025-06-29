@@ -134,11 +134,14 @@ impl App {
     async fn load_scene(&mut self, ctx: &mut GameContext) {
         tracing::info!(target: "app", "Load scene");
 
-        let material = self.common.normal_mapping_material(
+        SampleApp::load_resources(
             &ctx.renderer.gfx,
             &mut ctx.resource_manager,
             ctx.renderer.forward_pass(),
-        );
+        )
+        .await;
+
+        let material = ctx.resource_manager.get_by_name("normal").unwrap();
 
         let properties =
             TextureProperties::with_atlas("Atlas Diffuse", examples::ATLAS, examples::ATLAS_COLS);
