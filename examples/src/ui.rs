@@ -36,7 +36,6 @@ impl Ui {
         delta: f32,
     ) {
         egui::SidePanel::left("left").show(ectx, |ui| {
-            ui.visuals_mut().override_text_color = Some(egui::Color32::GREEN);
             ectx.style_mut(|s| {
                 for (_, id) in s.text_styles.iter_mut() {
                     id.size = 16.;
@@ -66,41 +65,64 @@ impl Ui {
     }
 
     pub fn draw_general(&mut self, ui: &mut egui::Ui, scene: &mut Scene, fps: u32) {
-        ui.strong(format!("FPS: {}", fps));
-        ui.strong(format!("Screen: {}/{}", scene.width, scene.height));
+        egui::CollapsingHeader::new("Settings")
+            .default_open(true)
+            .show(ui, |ui| {
+                ui.label(format!("FPS: {}", fps));
+                ui.horizontal(|ui| {
+                    ui.label(format!("Screen"));
+                    ui.add(egui::Button::new(format!("{}", scene.width)));
+                    ui.add(egui::Button::new(format!("{}", scene.height)));
+                });
 
-        let (camera_transform, camera) = scene.camera();
+                let (camera_transform, camera) = scene.camera();
 
-        let (mut x, mut y) = (0., 0.);
-        ui.input(|input| {
-            if let Some(pos) = input.pointer.latest_pos() {
-                x = pos.x;
-                y = pos.y;
-            }
-        });
-        ui.strong(format!("Mouse: {}/{}", x, y));
+                let (mut x, mut y) = (0., 0.);
+                ui.input(|input| {
+                    if let Some(pos) = input.pointer.latest_pos() {
+                        x = pos.x;
+                        y = pos.y;
+                    }
+                });
+                ui.horizontal(|ui| {
+                    ui.label("Mouse");
+                    ui.add(egui::Button::new(format!("{}", x)));
+                    ui.add(egui::Button::new(format!("{}", y)));
+                });
 
-        let pos = Vec3::new(x, y, 0.);
-        let ndc = camera.screen_to_ndc(pos, scene.width, scene.height);
-        ui.strong(format!("NDC: {:.2},{:.2},{:.2}", ndc.x, ndc.y, ndc.z));
+                let pos = Vec3::new(x, y, 0.);
+                let ndc = camera.screen_to_ndc(pos, scene.width, scene.height);
+                ui.horizontal(|ui| {
+                    ui.label("NDC");
+                    ui.add(egui::Button::new(format!("{:.2}", ndc.x)));
+                    ui.add(egui::Button::new(format!("{:.2}", ndc.y)));
+                    ui.add(egui::Button::new(format!("{:.2}", ndc.z)));
+                });
 
-        let pos_world = camera.screen_to_world(pos, camera_transform, scene.width, scene.height);
-        ui.strong(format!(
-            "World: {:.2},{:.2},{:.2},{:.2}",
-            pos_world.x, pos_world.y, pos_world.z, pos_world.w
-        ));
+                let pos_world =
+                    camera.screen_to_world(pos, camera_transform, scene.width, scene.height);
+                ui.horizontal(|ui| {
+                    ui.label("World");
+                    ui.add(egui::Button::new(format!("{:.2}", pos_world.x)));
+                    ui.add(egui::Button::new(format!("{:.2}", pos_world.y)));
+                    ui.add(egui::Button::new(format!("{:.2}", pos_world.z)));
+                    ui.add(egui::Button::new(format!("{:.2}", pos_world.w)));
+                });
+            });
     }
 
     pub fn draw_graph(&mut self, ui: &mut egui::Ui, graph: &mut SceneGraph) {
         let old_selected = self.selected_node;
-
-        ui.strong("Graph");
-        egui::CollapsingHeader::new("scene")
+        egui::CollapsingHeader::new("Graph")
             .default_open(true)
             .show(ui, |ui| {
-                egui::ScrollArea::vertical().show(ui, |ui| {
-                    self.draw_node(ui, graph, graph.root);
-                });
+                egui::CollapsingHeader::new("scene")
+                    .default_open(true)
+                    .show(ui, |ui| {
+                        egui::ScrollArea::vertical().show(ui, |ui| {
+                            self.draw_node(ui, graph, graph.root);
+                        });
+                    });
             });
 
         if self.selected_node != old_selected {
@@ -145,23 +167,26 @@ impl Ui {
         let mut yaw = camera.yaw.to_degrees();
         let mut pitch = camera.pitch.to_degrees();
 
-        ui.strong("Camera");
-        ui.label("Position");
-        ui.horizontal(|ui| {
-            ui.label("x: ");
-            ui.add(egui::DragValue::new(&mut translation.x));
-            ui.label("y: ");
-            ui.add(egui::DragValue::new(&mut translation.y));
-            ui.label("z: ");
-            ui.add(egui::DragValue::new(&mut translation.z));
-        });
-        ui.label("Orientation");
-        ui.horizontal(|ui| {
-            ui.label("pitch: ");
-            ui.add(egui::DragValue::new(&mut pitch));
-            ui.label("yaw: ");
-            ui.add(egui::DragValue::new(&mut yaw));
-        });
+        egui::CollapsingHeader::new("Camera")
+            .default_open(true)
+            .show(ui, |ui| {
+                ui.label("Position");
+                ui.horizontal(|ui| {
+                    ui.label("x: ");
+                    ui.add(egui::DragValue::new(&mut translation.x));
+                    ui.label("y: ");
+                    ui.add(egui::DragValue::new(&mut translation.y));
+                    ui.label("z: ");
+                    ui.add(egui::DragValue::new(&mut translation.z));
+                });
+                ui.label("Orientation");
+                ui.horizontal(|ui| {
+                    ui.label("pitch: ");
+                    ui.add(egui::DragValue::new(&mut pitch));
+                    ui.label("yaw: ");
+                    ui.add(egui::DragValue::new(&mut yaw));
+                });
+            });
     }
 
     pub fn draw_properties(&mut self, ui: &mut egui::Ui, graph: &mut SceneGraph) {
@@ -175,139 +200,142 @@ impl Ui {
                 NodeValue::Light(_light) => "Light",
             };
 
-            ui.strong("Properties");
-            ui.label(node_name.to_string());
-
-            egui::CollapsingHeader::new("Local")
+            egui::CollapsingHeader::new("Properties")
                 .default_open(true)
                 .show(ui, |ui| {
-                    node.update_transform(|transform| {
-                        ui.horizontal(|ui| {
-                            let mut translation = transform.translation();
-                            ui.label("Translation");
-                            ui.label("x: ");
-                            ui.add(egui::DragValue::new(&mut translation.x).speed(speed));
-                            ui.label("y: ");
-                            ui.add(egui::DragValue::new(&mut translation.y).speed(speed));
-                            ui.label("z: ");
-                            ui.add(egui::DragValue::new(&mut translation.z).speed(speed));
-                            transform.set_translation(translation);
+                    ui.label(node_name.to_string());
+
+                    egui::CollapsingHeader::new("Local")
+                        .default_open(true)
+                        .show(ui, |ui| {
+                            node.update_transform(|transform| {
+                                ui.horizontal(|ui| {
+                                    let mut translation = transform.translation();
+                                    ui.label("Translation");
+                                    ui.label("x: ");
+                                    ui.add(egui::DragValue::new(&mut translation.x).speed(speed));
+                                    ui.label("y: ");
+                                    ui.add(egui::DragValue::new(&mut translation.y).speed(speed));
+                                    ui.label("z: ");
+                                    ui.add(egui::DragValue::new(&mut translation.z).speed(speed));
+                                    transform.set_translation(translation);
+                                });
+
+                                ui.horizontal(|ui| {
+                                    let mut rotation = transform.rotation();
+                                    ui.label("Rotation     ");
+                                    ui.label("x: ");
+                                    ui.add(egui::DragValue::new(&mut rotation.x).speed(speed));
+                                    ui.label("y: ");
+                                    ui.add(egui::DragValue::new(&mut rotation.y).speed(speed));
+                                    ui.label("z: ");
+                                    ui.add(egui::DragValue::new(&mut rotation.z).speed(speed));
+                                    ui.label("w: ");
+                                    ui.add(egui::DragValue::new(&mut rotation.w).speed(speed));
+                                    transform.set_rotation(rotation);
+                                });
+
+                                ui.horizontal(|ui| {
+                                    let mut scaling = transform.scaling();
+                                    ui.label("Scaling        ");
+                                    ui.label("x: ");
+                                    ui.add(egui::DragValue::new(&mut scaling.x).speed(speed));
+                                    ui.label("y: ");
+                                    ui.add(egui::DragValue::new(&mut scaling.y).speed(speed));
+                                    ui.label("z: ");
+                                    ui.add(egui::DragValue::new(&mut scaling.z).speed(speed));
+                                    transform.set_scaling(scaling);
+                                });
+
+                                true
+                            });
+
+                            ui.label("");
                         });
 
-                        ui.horizontal(|ui| {
-                            let mut rotation = transform.rotation();
-                            ui.label("Rotation     ");
-                            ui.label("x: ");
-                            ui.add(egui::DragValue::new(&mut rotation.x).speed(speed));
-                            ui.label("y: ");
-                            ui.add(egui::DragValue::new(&mut rotation.y).speed(speed));
-                            ui.label("z: ");
-                            ui.add(egui::DragValue::new(&mut rotation.z).speed(speed));
-                            ui.label("w: ");
-                            ui.add(egui::DragValue::new(&mut rotation.w).speed(speed));
-                            transform.set_rotation(rotation);
+                    egui::CollapsingHeader::new("Global")
+                        .default_open(true)
+                        .show(ui, |ui| {
+                            let global = node.global_transform();
+                            ui.horizontal(|ui| {
+                                let mut translation = global.translation();
+                                ui.label("Translation");
+                                ui.label("x: ");
+                                ui.add(egui::DragValue::new(&mut translation.x).speed(speed));
+                                ui.label("y: ");
+                                ui.add(egui::DragValue::new(&mut translation.y).speed(speed));
+                                ui.label("z: ");
+                                ui.add(egui::DragValue::new(&mut translation.z).speed(speed));
+                            });
+                            ui.horizontal(|ui| {
+                                let mut rotation = global.rotation();
+                                ui.label("Rotation     ");
+                                ui.label("x: ");
+                                ui.add(egui::DragValue::new(&mut rotation.x).speed(speed));
+                                ui.label("y: ");
+                                ui.add(egui::DragValue::new(&mut rotation.y).speed(speed));
+                                ui.label("z: ");
+                                ui.add(egui::DragValue::new(&mut rotation.z).speed(speed));
+                                ui.label("w: ");
+                                ui.add(egui::DragValue::new(&mut rotation.w).speed(speed));
+                            });
+                            ui.horizontal(|ui| {
+                                let mut scaling = global.scaling();
+                                ui.label("Scaling        ");
+                                ui.label("x: ");
+                                ui.add(egui::DragValue::new(&mut scaling.x).speed(speed));
+                                ui.label("y: ");
+                                ui.add(egui::DragValue::new(&mut scaling.y).speed(speed));
+                                ui.label("z: ");
+                                ui.add(egui::DragValue::new(&mut scaling.z).speed(speed));
+                            });
+
+                            ui.label("");
                         });
 
-                        ui.horizontal(|ui| {
-                            let mut scaling = transform.scaling();
-                            ui.label("Scaling        ");
-                            ui.label("x: ");
-                            ui.add(egui::DragValue::new(&mut scaling.x).speed(speed));
-                            ui.label("y: ");
-                            ui.add(egui::DragValue::new(&mut scaling.y).speed(speed));
-                            ui.label("z: ");
-                            ui.add(egui::DragValue::new(&mut scaling.z).speed(speed));
-                            transform.set_scaling(scaling);
+                    egui::CollapsingHeader::new("AABB")
+                        .default_open(true)
+                        .show(ui, |ui| {
+                            ui.horizontal(|ui| {
+                                ui.label("x min: ");
+                                ui.add(
+                                    egui::DragValue::new(&mut node.bounding.bounding_box.x_min)
+                                        .speed(speed),
+                                );
+                                ui.label("y min: ");
+                                ui.add(
+                                    egui::DragValue::new(&mut node.bounding.bounding_box.y_min)
+                                        .speed(speed),
+                                );
+                                ui.label("z min: ");
+                                ui.add(
+                                    egui::DragValue::new(&mut node.bounding.bounding_box.z_min)
+                                        .speed(speed),
+                                );
+                            });
+                            ui.horizontal(|ui| {
+                                ui.label("x max: ");
+                                ui.add(
+                                    egui::DragValue::new(&mut node.bounding.bounding_box.x_max)
+                                        .speed(speed),
+                                );
+                                ui.label("y max: ");
+                                ui.add(
+                                    egui::DragValue::new(&mut node.bounding.bounding_box.y_max)
+                                        .speed(speed),
+                                );
+                                ui.label("z max: ");
+                                ui.add(
+                                    egui::DragValue::new(&mut node.bounding.bounding_box.z_max)
+                                        .speed(speed),
+                                );
+                            });
+                            ui.label("");
                         });
 
-                        true
-                    });
-
-                    ui.label("");
+                    ui.checkbox(&mut node.base.enabled, "enabled");
+                    ui.checkbox(&mut node.base.selected, "selected");
                 });
-
-            egui::CollapsingHeader::new("Global")
-                .default_open(true)
-                .show(ui, |ui| {
-                    let global = node.global_transform();
-                    ui.horizontal(|ui| {
-                        let mut translation = global.translation();
-                        ui.label("Translation");
-                        ui.label("x: ");
-                        ui.add(egui::DragValue::new(&mut translation.x).speed(speed));
-                        ui.label("y: ");
-                        ui.add(egui::DragValue::new(&mut translation.y).speed(speed));
-                        ui.label("z: ");
-                        ui.add(egui::DragValue::new(&mut translation.z).speed(speed));
-                    });
-                    ui.horizontal(|ui| {
-                        let mut rotation = global.rotation();
-                        ui.label("Rotation     ");
-                        ui.label("x: ");
-                        ui.add(egui::DragValue::new(&mut rotation.x).speed(speed));
-                        ui.label("y: ");
-                        ui.add(egui::DragValue::new(&mut rotation.y).speed(speed));
-                        ui.label("z: ");
-                        ui.add(egui::DragValue::new(&mut rotation.z).speed(speed));
-                        ui.label("w: ");
-                        ui.add(egui::DragValue::new(&mut rotation.w).speed(speed));
-                    });
-                    ui.horizontal(|ui| {
-                        let mut scaling = global.scaling();
-                        ui.label("Scaling        ");
-                        ui.label("x: ");
-                        ui.add(egui::DragValue::new(&mut scaling.x).speed(speed));
-                        ui.label("y: ");
-                        ui.add(egui::DragValue::new(&mut scaling.y).speed(speed));
-                        ui.label("z: ");
-                        ui.add(egui::DragValue::new(&mut scaling.z).speed(speed));
-                    });
-
-                    ui.label("");
-                });
-
-            egui::CollapsingHeader::new("AABB")
-                .default_open(true)
-                .show(ui, |ui| {
-                    ui.horizontal(|ui| {
-                        ui.label("x min: ");
-                        ui.add(
-                            egui::DragValue::new(&mut node.bounding.bounding_box.x_min)
-                                .speed(speed),
-                        );
-                        ui.label("y min: ");
-                        ui.add(
-                            egui::DragValue::new(&mut node.bounding.bounding_box.y_min)
-                                .speed(speed),
-                        );
-                        ui.label("z min: ");
-                        ui.add(
-                            egui::DragValue::new(&mut node.bounding.bounding_box.z_min)
-                                .speed(speed),
-                        );
-                    });
-                    ui.horizontal(|ui| {
-                        ui.label("x max: ");
-                        ui.add(
-                            egui::DragValue::new(&mut node.bounding.bounding_box.x_max)
-                                .speed(speed),
-                        );
-                        ui.label("y max: ");
-                        ui.add(
-                            egui::DragValue::new(&mut node.bounding.bounding_box.y_max)
-                                .speed(speed),
-                        );
-                        ui.label("z max: ");
-                        ui.add(
-                            egui::DragValue::new(&mut node.bounding.bounding_box.z_max)
-                                .speed(speed),
-                        );
-                    });
-                    ui.label("");
-                });
-
-            ui.checkbox(&mut node.base.enabled, "enabled");
-            ui.checkbox(&mut node.base.selected, "selected");
 
             true
         });
