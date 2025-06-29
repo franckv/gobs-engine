@@ -5,10 +5,9 @@ use slotmap::SlotMap;
 
 use gobs_core::Transform;
 use gobs_render::ModelId;
-use gobs_resource::geometry::BoundingBox;
 
 use crate::{
-    components::{NodeId, NodeValue},
+    components::{BoundingComponent, NodeId, NodeValue},
     graph::node::Node,
 };
 
@@ -36,7 +35,7 @@ impl SceneGraph {
         self.arena.get(key)
     }
 
-    fn get_mut(&mut self, key: NodeId) -> Option<&mut Node> {
+    pub(crate) fn get_mut(&mut self, key: NodeId) -> Option<&mut Node> {
         self.arena.get_mut(key)
     }
 
@@ -90,8 +89,10 @@ impl SceneGraph {
         if let Some(node) = self.get_mut(key) {
             updated = node.base.updated | parent_updated;
             node.base.updated = false;
+
             transform = parent_transform * node.transform;
             node.global_transform = transform;
+
             for child in &node.base.children {
                 children.push(*child);
             }
@@ -103,20 +104,7 @@ impl SceneGraph {
         }
 
         if updated {
-            if let Some(node) = self.get_mut(key) {
-                node.reset_bounding_box(node.global_transform);
-            }
-            let mut bb = self.bounding_box(key);
-            for child in children {
-                if let Some(child) = self.get(child) {
-                    let child_bb = child.bounding.bounding_box;
-                    bb.extends_box(child_bb);
-                }
-            }
-
-            if let Some(node) = self.get_mut(key) {
-                node.bounding.bounding_box = bb;
-            }
+            BoundingComponent::update(key, self);
 
             true
         } else {
@@ -166,13 +154,6 @@ impl SceneGraph {
         }
 
         node
-    }
-
-    fn bounding_box(&self, key: NodeId) -> BoundingBox {
-        match self.get(key) {
-            Some(node) => node.bounding.bounding_box,
-            None => BoundingBox::default(),
-        }
     }
 
     pub fn insert_subgraph(

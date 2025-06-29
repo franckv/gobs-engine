@@ -56,9 +56,4 @@ impl Node {
     {
         self.base.updated |= f(&mut self.transform);
     }
-
-    pub fn reset_bounding_box(&mut self, transform: Transform) {
-        self.bounding.reset(&self.base.value);
-        self.bounding.bounding_box = self.bounding.bounding_box.transform(transform);
-    }
 }
