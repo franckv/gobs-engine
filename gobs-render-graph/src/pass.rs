@@ -41,6 +41,17 @@ pub enum PassType {
 
 pub type PassId = Uuid;
 
+pub enum AttachmentAccess {
+    Read,
+    Write,
+    ReadWrite,
+}
+
+pub struct Attachment {
+    name: String,
+    access: AttachmentAccess,
+}
+
 pub trait RenderPass {
     fn id(&self) -> PassId;
     fn name(&self) -> &str;
