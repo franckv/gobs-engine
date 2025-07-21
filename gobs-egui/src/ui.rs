@@ -438,10 +438,7 @@ impl Renderable for UIRenderer {
                 batch.add_model(resource_manager, model, transform, pass.clone())?;
             }
 
-            batch.add_extent_data(
-                ImageExtent2D::new(self.width as u32, self.height as u32),
-                pass,
-            );
+            batch.add_extent_data(ImageExtent2D::new(self.width as u32, self.height as u32));
         }
         Ok(())
     }

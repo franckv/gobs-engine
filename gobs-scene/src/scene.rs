@@ -173,7 +173,7 @@ impl Renderable for Scene {
 
         let (light_transform, light) = self.light();
         let (camera_transform, camera) = self.camera();
-        batch.add_camera_data(camera, &camera_transform, light, &light_transform, pass);
+        batch.add_camera_data(camera, camera_transform, light, light_transform);
 
         Ok(())
     }

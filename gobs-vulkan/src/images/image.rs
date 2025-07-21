@@ -9,8 +9,9 @@ use crate::{
     Wrap, alloc::Allocator, debug, device::Device, images::format::VkFormat, memory::Memory,
 };
 
-#[derive(Copy, Clone, Debug, PartialEq)]
+#[derive(Copy, Clone, Debug, Default, PartialEq)]
 pub enum ImageLayout {
+    #[default]
     Undefined,
     General,
     TransferSrc,
@@ -36,10 +37,11 @@ impl From<ImageLayout> for vk::ImageLayout {
     }
 }
 
-#[derive(Copy, Clone, PartialEq)]
+#[derive(Copy, Clone, Default, PartialEq)]
 pub enum ImageUsage {
     Swapchain,
     Texture,
+    #[default]
     Color,
     Depth,
     File,

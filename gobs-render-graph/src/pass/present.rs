@@ -2,9 +2,11 @@ use std::sync::Arc;
 
 use gobs_core::ImageExtent2D;
 use gobs_gfx::{Command, Display, GfxPipeline, Image, ImageLayout};
+use gobs_resource::geometry::VertexAttribute;
 
 use crate::{
     FrameData, GfxContext, RenderError, RenderObject,
+    data::{SceneData, UniformLayout},
     graph::GraphResourceManager,
     pass::{PassId, PassType, RenderPass},
 };
@@ -44,17 +46,15 @@ impl RenderPass for PresentPass {
         None
     }
 
-    fn vertex_attributes(&self) -> Option<gobs_resource::geometry::VertexAttribute> {
+    fn vertex_attributes(&self) -> Option<VertexAttribute> {
         None
     }
 
-    fn push_layout(&self) -> Option<std::sync::Arc<gobs_resource::entity::uniform::UniformLayout>> {
+    fn push_layout(&self) -> Option<std::sync::Arc<UniformLayout>> {
         None
     }
 
-    fn uniform_data_layout(
-        &self,
-    ) -> Option<std::sync::Arc<gobs_resource::entity::uniform::UniformLayout>> {
+    fn uniform_data_layout(&self) -> Option<std::sync::Arc<UniformLayout>> {
         None
     }
 
@@ -76,7 +76,7 @@ impl RenderPass for PresentPass {
         frame: &FrameData,
         resource_manager: &GraphResourceManager,
         _render_list: &[RenderObject],
-        _uniform_data: Option<&[u8]>,
+        _scene_data: &SceneData,
         draw_extent: ImageExtent2D,
     ) -> Result<(), RenderError> {
         tracing::debug!(target: "render", "Present");

@@ -6,12 +6,13 @@ use gobs_gfx::{
     DescriptorType, GfxBindingGroup, GfxPipeline, ImageLayout, Pipeline,
 };
 use gobs_resource::{
-    entity::{camera::Camera, light::Light, uniform::UniformLayout},
+    entity::{camera::Camera, light::Light},
     geometry::VertexAttribute,
 };
 
 use crate::{
     FrameData, GfxContext, RenderError, RenderObject,
+    data::{SceneData, UniformLayout},
     graph::GraphResourceManager,
     pass::{PassId, PassType, RenderPass},
 };
@@ -123,7 +124,7 @@ impl RenderPass for ComputePass {
         frame: &FrameData,
         resource_manager: &GraphResourceManager,
         _render_list: &[RenderObject],
-        _uniform_data: Option<&[u8]>,
+        _scene_data: &SceneData,
         draw_extent: ImageExtent2D,
     ) -> Result<(), RenderError> {
         tracing::debug!(target: "render", "Draw compute");

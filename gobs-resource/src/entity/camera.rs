@@ -54,6 +54,22 @@ pub struct Camera {
     pub pitch: f32,
 }
 
+impl Default for Camera {
+    fn default() -> Self {
+        Self {
+            id: Default::default(),
+            mode: ProjectionMode::Ortho(OrthoProjection {
+                width: 800.,
+                height: 600.,
+                near: 0.,
+                far: 10.,
+            }),
+            yaw: 0.,
+            pitch: 0.,
+        }
+    }
+}
+
 impl Camera {
     pub fn perspective(aspect: f32, fovy: f32, near: f32, far: f32, yaw: f32, pitch: f32) -> Self {
         let projection = PerspectiveProjection {

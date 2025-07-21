@@ -1,5 +1,6 @@
-#[derive(Copy, Clone, Debug, PartialEq)]
+#[derive(Copy, Clone, Debug, Default, PartialEq)]
 pub enum ImageFormat {
+    #[default]
     Undefined,
     R4g4UnormPack8,
     R4g4b4a4UnormPack16,

@@ -2,10 +2,11 @@ use std::sync::Arc;
 
 use gobs_core::ImageExtent2D;
 use gobs_gfx::GfxPipeline;
-use gobs_resource::{entity::uniform::UniformLayout, geometry::VertexAttribute};
+use gobs_resource::geometry::VertexAttribute;
 
 use crate::{
     FrameData, GfxContext, RenderError, RenderObject,
+    data::{SceneData, UniformLayout},
     graph::GraphResourceManager,
     pass::{PassId, PassType, RenderPass},
 };
@@ -75,7 +76,7 @@ impl RenderPass for DummyPass {
         _frame: &FrameData,
         _resource_manager: &GraphResourceManager,
         _render_list: &[RenderObject],
-        _uniform_data: Option<&[u8]>,
+        _scene_data: &SceneData,
         _draw_extent: ImageExtent2D,
     ) -> Result<(), RenderError> {
         tracing::debug!(target: "render", "Rendering {}", &self.name);

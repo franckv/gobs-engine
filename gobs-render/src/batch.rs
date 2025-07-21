@@ -1,10 +1,9 @@
-use std::collections::HashMap;
 use std::sync::Arc;
 
 use gobs_core::{ImageExtent2D, Transform};
-use gobs_render_graph::{GfxContext, PassId, RenderObject, RenderPass};
+use gobs_render_graph::{GfxContext, RenderObject, RenderPass, SceneData};
 use gobs_resource::{
-    entity::{camera::Camera, light::Light, uniform::UniformPropData},
+    entity::{camera::Camera, light::Light},
     geometry::{BoundingBox, MeshBuilder, MeshGeometry, Shapes},
     manager::ResourceManager,
     resource::{ResourceError, ResourceLifetime},
@@ -14,28 +13,33 @@ use crate::{manager::MeshResourceManager, model::Model};
 
 pub struct RenderBatch {
     pub(crate) render_list: Vec<RenderObject>,
-    pub(crate) scene_data: HashMap<PassId, Vec<u8>>,
     pub(crate) mesh_resource_manager: MeshResourceManager,
     vertex_padding: bool,
     bounding_geometry: Option<MeshBuilder>,
     bounding_pass: Option<RenderPass>,
+    pub(crate) camera: Camera,
+    pub(crate) camera_transform: Transform,
+    pub(crate) lights: Vec<(Light, Transform)>,
+    pub(crate) extent: ImageExtent2D,
 }
 
 impl RenderBatch {
     pub fn new(ctx: &GfxContext) -> Self {
         Self {
             render_list: Vec::new(),
-            scene_data: HashMap::new(),
             mesh_resource_manager: MeshResourceManager::new(),
             vertex_padding: ctx.vertex_padding,
             bounding_geometry: None,
             bounding_pass: None,
+            camera: Camera::default(),
+            camera_transform: Transform::default(),
+            lights: vec![],
+            extent: ImageExtent2D::default(),
         }
     }
 
     pub fn reset(&mut self) {
         self.render_list.clear();
-        self.scene_data.clear();
         self.mesh_resource_manager.new_frame();
         self.bounding_geometry = None;
     }
@@ -50,6 +54,7 @@ impl RenderBatch {
     ) -> Result<(), ResourceError> {
         tracing::debug!(target: "render", "Add model: {}", model.meshes.len());
 
+        // TODO: add material data for forward pass only
         for (mesh, material_id) in &model.meshes {
             let material = model.materials.get(material_id).cloned();
             let material_binding = self
@@ -133,28 +138,29 @@ impl RenderBatch {
     pub fn add_camera_data(
         &mut self,
         camera: &Camera,
-        camera_transform: &Transform,
+        camera_transform: Transform,
         light: &Light,
-        light_transform: &Transform,
-        pass: RenderPass,
+        light_transform: Transform,
     ) {
-        if pass.uniform_data_layout().is_some() {
-            let scene_data =
-                pass.get_uniform_data(camera, camera_transform, light, light_transform);
-            self.scene_data.insert(pass.id(), scene_data);
-        }
+        self.camera = camera.clone();
+        self.camera_transform = camera_transform;
+        self.lights.push((light.clone(), light_transform));
     }
 
-    pub fn add_extent_data(&mut self, extent: ImageExtent2D, pass: RenderPass) {
-        if let Some(data_layout) = pass.uniform_data_layout() {
-            let scene_data = data_layout.data(&[UniformPropData::Vec2F(extent.into())]);
-
-            self.scene_data.insert(pass.id(), scene_data);
-        }
+    pub fn add_extent_data(&mut self, extent: ImageExtent2D) {
+        self.extent = extent;
     }
 
-    pub fn scene_data(&self, pass_id: PassId) -> Option<&[u8]> {
-        self.scene_data.get(&pass_id).map(Vec::as_slice)
+    pub fn scene_data(&self) -> SceneData {
+        let default_light = &self.lights[0];
+
+        SceneData {
+            camera: &self.camera,
+            camera_transform: &self.camera_transform,
+            light: &default_light.0,
+            light_transform: &default_light.1,
+            extent: self.extent,
+        }
     }
 
     fn sort(&mut self) {

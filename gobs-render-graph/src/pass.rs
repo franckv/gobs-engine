@@ -2,18 +2,19 @@
 
 use std::sync::Arc;
 
-use parking_lot::RwLock;
 use uuid::Uuid;
 
-use gobs_core::{ImageExtent2D, Transform};
-use gobs_gfx::{BufferId, GfxPipeline, PipelineId};
+use gobs_core::{ImageExtent2D, ImageFormat, Transform};
+use gobs_gfx::{GfxPipeline, ImageLayout, ImageUsage};
 use gobs_resource::{
-    entity::{camera::Camera, light::Light, uniform::UniformLayout},
+    entity::{camera::Camera, light::Light},
     geometry::VertexAttribute,
 };
 
 use crate::{
-    FrameData, GfxContext, RenderError, RenderObject, UniformBuffer, graph::GraphResourceManager,
+    FrameData, GfxContext, RenderError, RenderObject,
+    data::{SceneData, UniformLayout},
+    graph::GraphResourceManager,
 };
 
 pub mod bounds;
@@ -21,6 +22,7 @@ pub mod compute;
 pub mod depth;
 pub mod dummy;
 pub mod forward;
+pub mod material;
 pub mod present;
 pub mod select;
 pub mod ui;
@@ -33,6 +35,7 @@ pub enum PassType {
     Depth,
     Dummy,
     Forward,
+    Material,
     Present,
     Select,
     Wire,
@@ -41,15 +44,85 @@ pub enum PassType {
 
 pub type PassId = Uuid;
 
+#[allow(dead_code)]
+#[derive(Default)]
 pub enum AttachmentAccess {
+    #[default]
     Read,
     Write,
     ReadWrite,
 }
 
+#[allow(dead_code)]
+#[derive(Clone, Copy, Debug, Default)]
+pub enum AttachmentType {
+    #[default]
+    Input,
+    Color,
+    Depth,
+    Resolve,
+    Preserve,
+}
+
+#[allow(dead_code)]
+#[derive(Default)]
 pub struct Attachment {
-    name: String,
+    ty: AttachmentType,
     access: AttachmentAccess,
+    format: ImageFormat,
+    usage: ImageUsage,
+    extent: ImageExtent2D,
+    layout: ImageLayout,
+    clear: bool,
+    scaling: f32,
+}
+
+impl Attachment {
+    pub fn new(ty: AttachmentType, access: AttachmentAccess) -> Self {
+        Self {
+            ty,
+            access,
+            scaling: 1.,
+            ..Default::default()
+        }
+    }
+
+    pub fn with_format(&mut self, format: ImageFormat) -> &mut Self {
+        self.format = format;
+
+        self
+    }
+
+    pub fn with_usage(&mut self, usage: ImageUsage) -> &mut Self {
+        self.usage = usage;
+
+        self
+    }
+
+    pub fn with_extent(&mut self, extent: ImageExtent2D) -> &mut Self {
+        self.extent = extent;
+
+        self
+    }
+
+    pub fn with_layout(&mut self, layout: ImageLayout) -> &mut Self {
+        self.layout = layout;
+
+        self
+    }
+
+    pub fn with_clear(&mut self, clear: bool) -> &mut Self {
+        self.clear = clear;
+
+        self
+    }
+
+    pub fn scaled_extent(&self) -> ImageExtent2D {
+        ImageExtent2D::new(
+            (self.extent.width as f32 * self.scaling) as u32,
+            (self.extent.height as f32 * self.scaling) as u32,
+        )
+    }
 }
 
 pub trait RenderPass {
@@ -69,7 +142,7 @@ pub trait RenderPass {
         frame: &FrameData,
         resource_manager: &GraphResourceManager,
         render_list: &[RenderObject],
-        uniform_data: Option<&[u8]>,
+        scene_data: &SceneData,
         draw_extent: ImageExtent2D,
     ) -> Result<(), RenderError>;
     fn get_uniform_data(
@@ -79,27 +152,4 @@ pub trait RenderPass {
         light: &Light,
         light_transform: &Transform,
     ) -> Vec<u8>;
-}
-
-#[derive(Default)]
-pub(crate) struct RenderState {
-    last_pipeline: PipelineId,
-    last_index_buffer: BufferId,
-    last_indices_offset: usize,
-    scene_data_bound: bool,
-    object_data: Vec<u8>,
-}
-
-pub(crate) struct PassFrameData {
-    pub uniform_buffer: RwLock<UniformBuffer>,
-}
-
-impl PassFrameData {
-    pub fn new(ctx: &GfxContext, uniform_layout: Arc<UniformLayout>) -> Self {
-        let uniform_buffer = UniformBuffer::new(&ctx.device, uniform_layout);
-
-        PassFrameData {
-            uniform_buffer: RwLock::new(uniform_buffer),
-        }
-    }
 }

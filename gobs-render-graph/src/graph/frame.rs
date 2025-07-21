@@ -8,6 +8,7 @@ use gobs_gfx::{
 
 use crate::{
     FrameData, GfxContext, RenderError, RenderObject, RenderPass,
+    data::SceneData,
     graph::resource::GraphResourceManager,
     pass::{
         PassId, PassType, bounds::BoundsPass, compute::ComputePass, depth::DepthPass,
@@ -279,18 +280,17 @@ impl FrameGraph {
         ctx: &mut GfxContext,
         frame: &FrameData,
         render_list: &[RenderObject],
-        uniform_cb: &dyn Fn(PassId) -> Option<&'a [u8]>,
+        scene_data: &SceneData,
     ) -> Result<(), RenderError> {
-        for pass in &self.passes {
+        for pass in &mut self.passes {
             tracing::debug!(target: "render", "Begin rendering pass {}", pass.name());
-            let uniform_data = uniform_cb(pass.id());
 
             pass.render(
                 ctx,
                 frame,
                 &self.resource_manager,
                 render_list,
-                uniform_data,
+                scene_data,
                 self.draw_extent,
             )?;
 

@@ -20,3 +20,6 @@ thiserror = { workspace = true }
 tracing = { workspace = true }
 uuid = { workspace = true }
 winit = { workspace = true }
+
+[dev-dependencies]
+tracing-subscriber = { workspace = true }

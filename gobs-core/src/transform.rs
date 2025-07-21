@@ -10,6 +10,12 @@ pub struct Transform {
     matrix: Mat4,
 }
 
+impl Default for Transform {
+    fn default() -> Self {
+        Transform::IDENTITY
+    }
+}
+
 impl Transform {
     pub const IDENTITY: Self = Transform {
         translation: Vec3::ZERO,

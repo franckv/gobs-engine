@@ -90,9 +90,12 @@ impl Renderer {
         self.batch.finish(resource_manager);
 
         self.graph
-            .render(&mut self.gfx, frame, &self.batch.render_list, &|pass| {
-                self.batch.scene_data(pass)
-            })
+            .render(
+                &mut self.gfx,
+                frame,
+                &self.batch.render_list,
+                &self.batch.scene_data(),
+            )
             .unwrap();
 
         self.graph.end(&mut self.gfx, frame).unwrap();
