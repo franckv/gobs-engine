@@ -1,14 +1,11 @@
 use std::sync::Arc;
 
-use gobs_core::{ImageExtent2D, Transform};
+use gobs_core::ImageExtent2D;
 use gobs_gfx::{
     BindingGroup, BindingGroupType, BindingGroupUpdates, Command, ComputePipelineBuilder,
     DescriptorType, GfxBindingGroup, GfxPipeline, ImageLayout, Pipeline,
 };
-use gobs_resource::{
-    entity::{camera::Camera, light::Light},
-    geometry::VertexAttribute,
-};
+use gobs_resource::geometry::VertexAttribute;
 
 use crate::{
     FrameData, GfxContext, RenderError, RenderObject,
@@ -84,38 +81,12 @@ impl RenderPass for ComputePass {
         &self.attachments
     }
 
-    fn color_clear(&self) -> bool {
-        false
-    }
-
-    fn depth_clear(&self) -> bool {
-        false
-    }
-
-    fn pipeline(&self) -> Option<Arc<GfxPipeline>> {
-        Some(self.pipeline.clone())
-    }
-
     fn vertex_attributes(&self) -> Option<VertexAttribute> {
         None
     }
 
     fn push_layout(&self) -> Option<Arc<UniformLayout>> {
         None
-    }
-
-    fn uniform_data_layout(&self) -> Option<Arc<UniformLayout>> {
-        None
-    }
-
-    fn get_uniform_data(
-        &self,
-        _camera: &Camera,
-        _camera_transform: &Transform,
-        _light: &Light,
-        _light_transform: &Transform,
-    ) -> Vec<u8> {
-        vec![]
     }
 
     fn render(

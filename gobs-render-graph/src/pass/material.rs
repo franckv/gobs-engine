@@ -187,10 +187,6 @@ impl MaterialPass {
         tracing::debug!(target: "render", "Stop render job");
     }
 
-    pub fn uniform_data_layout(&self) -> Option<Arc<UniformLayout>> {
-        Some(self.scene_layout.uniform_layout())
-    }
-
     pub fn push_layout(&self) -> Option<Arc<UniformLayout>> {
         Some(self.object_layout.uniform_layout())
     }

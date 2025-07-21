@@ -61,8 +61,8 @@ impl FrameGraph {
 
         graph.register_pass(ComputePass::new(ctx, "compute")?);
         graph.register_pass(DepthPass::new(ctx, "depth")?);
-        graph.register_pass(ForwardPass::new(ctx, "forward", false, false)?);
-        graph.register_pass(UiPass::new(ctx, "ui", false)?);
+        graph.register_pass(ForwardPass::new(ctx, "forward")?);
+        graph.register_pass(UiPass::new(ctx, "ui")?);
         graph.register_pass(WirePass::new(ctx, "wire")?);
         graph.register_pass(BoundsPass::new(ctx, "bounds")?);
         graph.register_pass(SelectPass::new(ctx, "select")?);
@@ -94,7 +94,7 @@ impl FrameGraph {
 
         graph.register_pass(ComputePass::new(ctx, "compute")?);
         graph.register_pass(DepthPass::new(ctx, "depth")?);
-        graph.register_pass(ForwardPass::new(ctx, "forward", false, false)?);
+        graph.register_pass(ForwardPass::new(ctx, "forward")?);
         graph.register_pass(DummyPass::new(ctx, "dummy")?);
 
         Ok(graph)
@@ -113,7 +113,7 @@ impl FrameGraph {
             extent,
         );
 
-        graph.register_pass(UiPass::new(ctx, "ui", true)?);
+        graph.register_pass(UiPass::new(ctx, "ui")?);
         graph.register_pass(PresentPass::new(ctx, "present")?);
 
         Ok(graph)
@@ -275,8 +275,8 @@ impl FrameGraph {
 
     pub fn update(&mut self, _ctx: &GfxContext, _delta: f32) {}
 
-    pub fn render<'a>(
-        &'a mut self,
+    pub fn render(
+        &mut self,
         ctx: &mut GfxContext,
         frame: &FrameData,
         render_list: &[RenderObject],

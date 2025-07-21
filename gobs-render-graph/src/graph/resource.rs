@@ -40,8 +40,7 @@ impl GraphResourceManager {
     pub fn image_read(&self, label: &str) -> RwLockReadGuard<'_, GfxImage> {
         assert!(
             self.resources.contains_key(label),
-            "Missing resource {}",
-            label
+            "Missing resource {label}",
         );
 
         self.resources[label].read()
@@ -50,8 +49,7 @@ impl GraphResourceManager {
     pub fn image_write(&self, label: &str) -> RwLockWriteGuard<'_, GfxImage> {
         assert!(
             self.resources.contains_key(label),
-            "Missing resource {}",
-            label
+            "Missing resource {label}",
         );
 
         self.resources[label].write()

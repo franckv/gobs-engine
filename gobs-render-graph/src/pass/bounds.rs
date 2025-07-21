@@ -1,21 +1,17 @@
 use std::sync::Arc;
 
-use gobs_core::{ImageExtent2D, Transform};
+use gobs_core::ImageExtent2D;
 use gobs_gfx::{
     BindingGroupType, CullMode, DescriptorStage, DescriptorType, DynamicStateElem, FrontFace,
     GfxPipeline, GraphicsPipelineBuilder, ImageLayout, ImageUsage, Pipeline, PolygonMode, Rect2D,
     Viewport,
 };
-use gobs_resource::{
-    entity::{camera::Camera, light::Light},
-    geometry::VertexAttribute,
-};
+use gobs_resource::geometry::VertexAttribute;
 
 use crate::{
     FrameData, GfxContext, RenderError, RenderObject,
     data::{
         ObjectDataLayout, ObjectDataProp, SceneData, SceneDataLayout, SceneDataProp, UniformLayout,
-        UniformPropData,
     },
     graph::GraphResourceManager,
     pass::{
@@ -29,7 +25,6 @@ const FRAME_HEIGHT: u32 = 1080;
 pub struct BoundsPass {
     ty: PassType,
     attachments: Vec<String>,
-    pipeline: Arc<GfxPipeline>,
     material_pass: MaterialPass,
 }
 
@@ -87,7 +82,6 @@ impl BoundsPass {
         Ok(Arc::new(Self {
             ty: PassType::Bounds,
             attachments: vec![String::from("draw")],
-            pipeline,
             material_pass,
         }))
     }
@@ -110,45 +104,12 @@ impl RenderPass for BoundsPass {
         &self.attachments
     }
 
-    fn color_clear(&self) -> bool {
-        false
-    }
-
-    fn depth_clear(&self) -> bool {
-        false
-    }
-
-    fn pipeline(&self) -> Option<Arc<GfxPipeline>> {
-        Some(self.pipeline.clone())
-    }
-
     fn vertex_attributes(&self) -> Option<VertexAttribute> {
         self.material_pass.vertex_attributes
     }
 
     fn push_layout(&self) -> Option<Arc<UniformLayout>> {
         self.material_pass.push_layout()
-    }
-
-    fn uniform_data_layout(&self) -> Option<Arc<UniformLayout>> {
-        self.material_pass.uniform_data_layout()
-    }
-
-    fn get_uniform_data(
-        &self,
-        camera: &Camera,
-        camera_transform: &Transform,
-        _light: &Light,
-        _light_transform: &Transform,
-    ) -> Vec<u8> {
-        self.material_pass
-            .uniform_data_layout()
-            .unwrap()
-            .data(&[UniformPropData::Mat4F(
-                camera
-                    .view_proj(camera_transform.translation())
-                    .to_cols_array_2d(),
-            )])
     }
 
     fn render(

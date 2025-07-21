@@ -1,7 +1,6 @@
 use std::sync::Arc;
 
 use gobs_core::ImageExtent2D;
-use gobs_gfx::GfxPipeline;
 use gobs_resource::geometry::VertexAttribute;
 
 use crate::{
@@ -42,10 +41,6 @@ impl RenderPass for DummyPass {
         self.ty
     }
 
-    fn pipeline(&self) -> Option<Arc<GfxPipeline>> {
-        None
-    }
-
     fn vertex_attributes(&self) -> Option<VertexAttribute> {
         None
     }
@@ -54,20 +49,8 @@ impl RenderPass for DummyPass {
         None
     }
 
-    fn uniform_data_layout(&self) -> Option<std::sync::Arc<UniformLayout>> {
-        None
-    }
-
     fn attachments(&self) -> &[String] {
         &self.attachments
-    }
-
-    fn color_clear(&self) -> bool {
-        false
-    }
-
-    fn depth_clear(&self) -> bool {
-        false
     }
 
     fn render(
@@ -81,15 +64,5 @@ impl RenderPass for DummyPass {
     ) -> Result<(), RenderError> {
         tracing::debug!(target: "render", "Rendering {}", &self.name);
         Ok(())
-    }
-
-    fn get_uniform_data(
-        &self,
-        _camera: &gobs_resource::entity::camera::Camera,
-        _camera_transform: &gobs_core::Transform,
-        _light: &gobs_resource::entity::light::Light,
-        _light_transform: &gobs_core::Transform,
-    ) -> Vec<u8> {
-        vec![]
     }
 }

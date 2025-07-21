@@ -4,12 +4,9 @@ use std::sync::Arc;
 
 use uuid::Uuid;
 
-use gobs_core::{ImageExtent2D, ImageFormat, Transform};
-use gobs_gfx::{GfxPipeline, ImageLayout, ImageUsage};
-use gobs_resource::{
-    entity::{camera::Camera, light::Light},
-    geometry::VertexAttribute,
-};
+use gobs_core::{ImageExtent2D, ImageFormat};
+use gobs_gfx::{ImageLayout, ImageUsage};
+use gobs_resource::geometry::VertexAttribute;
 
 use crate::{
     FrameData, GfxContext, RenderError, RenderObject,
@@ -129,13 +126,9 @@ pub trait RenderPass {
     fn id(&self) -> PassId;
     fn name(&self) -> &str;
     fn ty(&self) -> PassType;
-    fn pipeline(&self) -> Option<Arc<GfxPipeline>>;
     fn vertex_attributes(&self) -> Option<VertexAttribute>;
     fn push_layout(&self) -> Option<Arc<UniformLayout>>;
-    fn uniform_data_layout(&self) -> Option<Arc<UniformLayout>>;
     fn attachments(&self) -> &[String];
-    fn color_clear(&self) -> bool;
-    fn depth_clear(&self) -> bool;
     fn render(
         &self,
         ctx: &mut GfxContext,
@@ -145,11 +138,4 @@ pub trait RenderPass {
         scene_data: &SceneData,
         draw_extent: ImageExtent2D,
     ) -> Result<(), RenderError>;
-    fn get_uniform_data(
-        &self,
-        camera: &Camera,
-        camera_transform: &Transform,
-        light: &Light,
-        light_transform: &Transform,
-    ) -> Vec<u8>;
 }

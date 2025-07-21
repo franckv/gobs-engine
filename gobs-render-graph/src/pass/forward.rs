@@ -1,11 +1,8 @@
 use std::sync::Arc;
 
-use gobs_core::{ImageExtent2D, Transform};
-use gobs_gfx::{GfxPipeline, ImageLayout, ImageUsage};
-use gobs_resource::{
-    entity::{camera::Camera, light::Light},
-    geometry::VertexAttribute,
-};
+use gobs_core::ImageExtent2D;
+use gobs_gfx::{ImageLayout, ImageUsage};
+use gobs_resource::geometry::VertexAttribute;
 
 use crate::{
     FrameData, GfxContext, RenderError, RenderObject,
@@ -24,18 +21,11 @@ const FRAME_HEIGHT: u32 = 1080;
 pub struct ForwardPass {
     ty: PassType,
     attachments: Vec<String>,
-    color_clear: bool,
-    depth_clear: bool,
     material_pass: MaterialPass,
 }
 
 impl ForwardPass {
-    pub fn new(
-        ctx: &GfxContext,
-        name: &str,
-        color_clear: bool,
-        depth_clear: bool,
-    ) -> Result<Arc<dyn RenderPass>, RenderError> {
+    pub fn new(ctx: &GfxContext, name: &str) -> Result<Arc<dyn RenderPass>, RenderError> {
         let scene_layout = SceneDataLayout::builder()
             .prop(SceneDataProp::CameraPosition)
             .prop(SceneDataProp::CameraViewProj)
@@ -78,8 +68,6 @@ impl ForwardPass {
         Ok(Arc::new(Self {
             ty: PassType::Forward,
             attachments: vec![String::from("draw"), String::from("depth")],
-            color_clear,
-            depth_clear,
             material_pass,
         }))
     }
@@ -102,38 +90,12 @@ impl RenderPass for ForwardPass {
         &self.attachments
     }
 
-    fn color_clear(&self) -> bool {
-        self.color_clear
-    }
-
-    fn depth_clear(&self) -> bool {
-        self.depth_clear
-    }
-
-    fn pipeline(&self) -> Option<Arc<GfxPipeline>> {
-        None
-    }
-
     fn vertex_attributes(&self) -> Option<VertexAttribute> {
         None
     }
 
     fn push_layout(&self) -> Option<Arc<UniformLayout>> {
         self.material_pass.push_layout()
-    }
-
-    fn uniform_data_layout(&self) -> Option<Arc<UniformLayout>> {
-        self.material_pass.uniform_data_layout()
-    }
-
-    fn get_uniform_data(
-        &self,
-        _camera: &Camera,
-        _camera_transform: &Transform,
-        _light: &Light,
-        _light_transform: &Transform,
-    ) -> Vec<u8> {
-        vec![]
     }
 
     fn render(
