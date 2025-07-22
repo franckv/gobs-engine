@@ -6,7 +6,6 @@ edition = { workspace = true }
 
 [dependencies]
 gobs-core = { workspace = true }
-gobs-render-graph = { workspace = true }
 gobs-render = { workspace = true }
 gobs-resource = { workspace = true }
 gobs-egui = { workspace = true }

@@ -7,8 +7,9 @@ use serde::Deserialize;
 use gobs::{
     core::{ImageFormat, Input, Key},
     game::context::GameContext,
-    render::{Material, MaterialProperties, MaterialProperty, Renderable},
-    render_graph::{BlendMode, GfxContext, PassType, RenderError, RenderPass},
+    gfx::BlendMode,
+    render::{GfxContext, Material, MaterialProperties, MaterialProperty, RenderError, Renderable},
+    render_graph::{PassType, RenderPass},
     resource::{
         entity::camera::Camera,
         geometry::VertexAttribute,

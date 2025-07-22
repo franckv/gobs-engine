@@ -9,7 +9,7 @@ use winit::{
 };
 
 use gobs_core::{Input, utils::timer::Timer};
-use gobs_render_graph::{Display, RenderError};
+use gobs_render::{Display, RenderError};
 
 use crate::{AppError, context::GameContext};
 

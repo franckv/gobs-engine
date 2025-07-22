@@ -8,7 +8,7 @@ use gobs::{
         app::{Application, Run},
         context::GameContext,
     },
-    render_graph::RenderError,
+    render::RenderError,
     resource::{entity::light::Light, load},
     scene::{graph::scenegraph::SceneGraph, scene::Scene},
     ui::UIRenderer,

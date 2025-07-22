@@ -1,5 +1,6 @@
 use gobs_core::Transform;
-use gobs_render_graph::{RenderError, RenderPass};
+use gobs_render_graph::RenderPass;
+use gobs_render_low::RenderError;
 use gobs_resource::manager::ResourceManager;
 
 use crate::RenderBatch;

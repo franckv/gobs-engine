@@ -3,11 +3,12 @@ use std::collections::hash_map::Entry;
 use std::fmt::Debug;
 use std::sync::Arc;
 
+use gobs_render_low::RenderError;
 use serde::Serialize;
 use uuid::Uuid;
 
 use gobs_core::Transform;
-use gobs_render_graph::{RenderError, RenderPass};
+use gobs_render_graph::RenderPass;
 use gobs_resource::{
     geometry::{Bounded, BoundingBox, MeshGeometry},
     manager::ResourceManager,

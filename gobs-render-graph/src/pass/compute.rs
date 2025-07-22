@@ -5,11 +5,11 @@ use gobs_gfx::{
     BindingGroup, BindingGroupType, BindingGroupUpdates, Command, ComputePipelineBuilder,
     DescriptorType, GfxBindingGroup, GfxPipeline, ImageLayout, Pipeline,
 };
+use gobs_render_low::{GfxContext, RenderError, RenderObject, SceneData, UniformLayout};
 use gobs_resource::geometry::VertexAttribute;
 
 use crate::{
-    FrameData, GfxContext, RenderError, RenderObject,
-    data::{SceneData, UniformLayout},
+    FrameData,
     graph::GraphResourceManager,
     pass::{PassId, PassType, RenderPass},
 };

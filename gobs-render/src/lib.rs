@@ -6,6 +6,9 @@ mod renderable;
 mod renderer;
 mod resources;
 
+pub use gobs_gfx::{BlendMode, CullMode, Display, ImageUsage};
+pub use gobs_render_low::{GfxContext, RenderError};
+
 pub use batch::RenderBatch;
 pub use materials::MaterialInstance;
 pub use model::{Model, ModelId};

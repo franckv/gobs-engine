@@ -6,13 +6,14 @@ use gobs_gfx::{
     GfxPipeline, GraphicsPipelineBuilder, ImageLayout, ImageUsage, Pipeline, PolygonMode, Rect2D,
     Viewport,
 };
+use gobs_render_low::{
+    GfxContext, ObjectDataLayout, ObjectDataProp, RenderError, RenderObject, SceneData,
+    SceneDataLayout, SceneDataProp, UniformLayout,
+};
 use gobs_resource::geometry::VertexAttribute;
 
 use crate::{
-    FrameData, GfxContext, RenderError, RenderObject,
-    data::{
-        ObjectDataLayout, ObjectDataProp, SceneData, SceneDataLayout, SceneDataProp, UniformLayout,
-    },
+    FrameData,
     graph::GraphResourceManager,
     pass::{
         AttachmentAccess, AttachmentType, PassId, PassType, RenderPass, material::MaterialPass,

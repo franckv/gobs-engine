@@ -4,11 +4,9 @@ use parking_lot::RwLock;
 use thiserror::Error;
 
 use gobs_gfx::{Buffer, BufferId, Command, GfxCommand, GfxPipeline, Pipeline, PipelineId};
+use uuid::Uuid;
 
-use crate::{
-    GfxContext, PassId, RenderObject, UniformBuffer,
-    data::{ObjectDataLayout, UniformLayout},
-};
+use crate::{GfxContext, ObjectDataLayout, RenderObject, UniformBuffer, UniformLayout};
 
 #[derive(Debug, Error)]
 pub enum RenderJobError {
@@ -37,7 +35,7 @@ impl RenderJobState {
 }
 
 pub struct RenderJob {
-    pass_id: PassId,
+    pass_id: Uuid,
     fixed_pipeline: Option<Arc<GfxPipeline>>,
     uniform_buffer: RwLock<UniformBuffer>,
     object_layout: ObjectDataLayout,
@@ -48,7 +46,7 @@ pub struct RenderJob {
 impl RenderJob {
     pub fn new(
         ctx: &GfxContext,
-        pass_id: PassId,
+        pass_id: Uuid,
         object_layout: ObjectDataLayout,
         scene_data_layout: Arc<UniformLayout>,
         render_transparent: bool,
@@ -75,8 +73,8 @@ impl RenderJob {
     }
 
     pub fn should_render(&self, render_object: &RenderObject) -> bool {
-        tracing::trace!(target: "render", "Object render pass {}", render_object.pass.name());
-        if render_object.pass.id() != self.pass_id
+        tracing::trace!(target: "render", "Object render pass {}", render_object.pass_id);
+        if render_object.pass_id != self.pass_id
             || (render_object.is_transparent() && !self.render_transparent)
             || (!render_object.is_transparent() && !self.render_opaque)
         {

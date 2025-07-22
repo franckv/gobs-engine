@@ -9,10 +9,10 @@ use parking_lot::RwLock;
 
 use gobs_core::{Color, ImageExtent2D, Input, Key, MouseButton, Transform};
 use gobs_render::{
-    Material, MaterialInstance, MaterialProperties, MaterialProperty, Model, RenderBatch,
-    Renderable, Texture, TextureProperties, TextureUpdate,
+    BlendMode, GfxContext, Material, MaterialInstance, MaterialProperties, MaterialProperty, Model,
+    RenderBatch, RenderError, Renderable, Texture, TextureProperties, TextureUpdate,
 };
-use gobs_render_graph::{BlendMode, GfxContext, PassType, RenderError, RenderPass};
+use gobs_render_graph::{PassType, RenderPass};
 use gobs_resource::{
     geometry::{MeshGeometry, VertexAttribute, VertexData},
     manager::ResourceManager,
@@ -285,10 +285,8 @@ impl UIRenderer {
         img: &ImageDelta,
     ) -> Arc<MaterialInstance> {
         match &img.image {
-            egui::ImageData::Color(_) => todo!(),
-            egui::ImageData::Font(font) => {
-                let pixels = font.srgba_pixels(None).collect::<Vec<_>>();
-                let bytes: Vec<u8> = bytemuck::cast_slice(pixels.as_slice()).to_vec();
+            egui::ImageData::Color(color) => {
+                let bytes: Vec<u8> = bytemuck::cast_slice(color.pixels.as_ref()).to_vec();
 
                 let properties = TextureProperties::with_data(
                     "Font texture",
@@ -311,19 +309,17 @@ impl UIRenderer {
         img: &ImageDelta,
     ) -> ResourceHandle<Texture> {
         match &img.image {
-            egui::ImageData::Color(_) => todo!(),
-            egui::ImageData::Font(font) => {
-                let pixels = font.srgba_pixels(None).collect::<Vec<_>>();
-                let bytes: &[u8] = bytemuck::cast_slice(pixels.as_slice());
+            egui::ImageData::Color(color) => {
+                let bytes: &[u8] = bytemuck::cast_slice(color.pixels.as_ref());
 
                 let pos = img.pos.expect("Can only patch texture with start position");
 
                 tracing::trace!(target: "ui",
-                    "Patching texture origin: {}/{}, size: {}/{}, len={}",
+                    "Patching texture origin: {}/{}, size: {}/{} len={}",
+                    color.width(),
+                    color.height(),
                     pos[0],
                     pos[1],
-                    font.width(),
-                    font.height(),
                     bytes.len()
                 );
 
@@ -337,8 +333,8 @@ impl UIRenderer {
                 texture.patch(
                     pos[0] as u32,
                     pos[1] as u32,
-                    font.width() as u32,
-                    font.height() as u32,
+                    color.width() as u32,
+                    color.height() as u32,
                     bytes,
                 )
             }

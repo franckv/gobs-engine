@@ -1,10 +1,9 @@
 use winit::window::Window;
 
 use gobs_render::{
-    Material, MaterialLoader, Mesh, MeshLoader, Pipeline, PipelineLoader, Renderer, Texture,
-    TextureLoader,
+    GfxContext, Material, MaterialLoader, Mesh, MeshLoader, Pipeline, PipelineLoader, RenderError,
+    Renderer, Texture, TextureLoader,
 };
-use gobs_render_graph::{GfxContext, RenderError};
 use gobs_resource::manager::ResourceManager;
 
 #[derive(Clone, Debug)]

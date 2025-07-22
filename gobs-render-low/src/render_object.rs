@@ -5,12 +5,10 @@ use uuid::Uuid;
 use gobs_core::Transform;
 use gobs_gfx::{GfxBindingGroup, GfxBuffer, GfxPipeline, Pipeline, PipelineId};
 
-use crate::RenderPass;
-
 pub struct RenderObject {
     pub model_id: Uuid,
     pub transform: Transform,
-    pub pass: RenderPass,
+    pub pass_id: Uuid,
     pub vertex_buffer: Arc<GfxBuffer>,
     pub vertices_offset: u64,
     pub vertices_len: usize,

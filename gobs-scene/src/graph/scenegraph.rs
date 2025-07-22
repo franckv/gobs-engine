@@ -1,10 +1,9 @@
 use std::collections::{HashMap, hash_map::Entry};
 
-use gobs_render_graph::RenderError;
 use slotmap::SlotMap;
 
 use gobs_core::Transform;
-use gobs_render::ModelId;
+use gobs_render::{ModelId, RenderError};
 
 use crate::{
     components::{BoundingComponent, NodeId, NodeValue},

@@ -1,7 +1,8 @@
 use std::sync::Arc;
 
 use gobs_core::{ImageExtent2D, Transform};
-use gobs_render_graph::{GfxContext, RenderObject, RenderPass, SceneData};
+use gobs_render_graph::RenderPass;
+use gobs_render_low::{GfxContext, RenderObject, SceneData};
 use gobs_resource::{
     entity::{camera::Camera, light::Light},
     geometry::{BoundingBox, MeshBuilder, MeshGeometry, Shapes},
@@ -95,7 +96,7 @@ impl RenderBatch {
             self.render_list.push(RenderObject {
                 model_id: model.id,
                 transform,
-                pass: pass.clone(),
+                pass_id: pass.id(),
                 pipeline,
                 is_transparent,
                 bind_groups,
@@ -166,7 +167,7 @@ impl RenderBatch {
     fn sort(&mut self) {
         self.render_list.sort_by(|a, b| {
             // sort order: pass, transparent, material, model
-            (a.pass.id().cmp(&b.pass.id()))
+            (a.pass_id.cmp(&b.pass_id))
                 .then(a.is_transparent().cmp(&b.is_transparent()))
                 .then(a.pipeline_id().cmp(&b.pipeline_id()))
                 .then(a.model_id.cmp(&b.model_id))

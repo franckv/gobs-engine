@@ -4,7 +4,7 @@ pub mod shaders;
 
 use thiserror::Error;
 
-use gobs_render_graph::RenderError;
+use gobs_render::RenderError;
 
 #[derive(Debug, Error)]
 pub enum AssetError {

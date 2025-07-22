@@ -7,7 +7,7 @@ use gobs::{
         app::{Application, Run},
         context::GameContext,
     },
-    render_graph::RenderError,
+    render::RenderError,
     ui::UIRenderer,
 };
 

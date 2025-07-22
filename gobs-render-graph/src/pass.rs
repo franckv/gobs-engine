@@ -2,17 +2,14 @@
 
 use std::sync::Arc;
 
+use gobs_render_low::{GfxContext, RenderError, RenderObject, SceneData, UniformLayout};
 use uuid::Uuid;
 
 use gobs_core::{ImageExtent2D, ImageFormat};
 use gobs_gfx::{ImageLayout, ImageUsage};
 use gobs_resource::geometry::VertexAttribute;
 
-use crate::{
-    FrameData, GfxContext, RenderError, RenderObject,
-    data::{SceneData, UniformLayout},
-    graph::GraphResourceManager,
-};
+use crate::{FrameData, graph::GraphResourceManager};
 
 pub mod bounds;
 pub mod compute;

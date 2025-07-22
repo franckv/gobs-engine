@@ -1,13 +1,15 @@
 use std::{collections::HashMap, sync::Arc};
 
 use gobs_gfx::{Command, GfxCommand, GfxPipeline};
+use gobs_render_low::{
+    GfxContext, ObjectDataLayout, RenderJob, RenderObject, SceneData, SceneDataLayout,
+    UniformLayout,
+};
 use gobs_resource::geometry::VertexAttribute;
 
 use crate::{
-    FrameData, GfxContext, PassId, RenderObject,
-    data::{ObjectDataLayout, SceneData, SceneDataLayout, UniformLayout},
+    FrameData, PassId,
     graph::GraphResourceManager,
-    job::RenderJob,
     pass::{Attachment, AttachmentAccess, AttachmentType},
 };
 

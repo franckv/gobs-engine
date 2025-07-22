@@ -102,3 +102,9 @@ impl ObjectDataLayoutBuilder {
         }
     }
 }
+
+impl Default for ObjectDataLayoutBuilder {
+    fn default() -> Self {
+        Self::new()
+    }
+}

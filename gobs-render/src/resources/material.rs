@@ -1,7 +1,8 @@
 use gobs_gfx::{
     BindingGroupType, BlendMode, CompareOp, CullMode, DescriptorStage, DescriptorType, FrontFace,
 };
-use gobs_render_graph::{GfxContext, RenderPass};
+use gobs_render_graph::RenderPass;
+use gobs_render_low::GfxContext;
 use gobs_resource::{
     geometry::VertexAttribute,
     resource::{ResourceHandle, ResourceProperties, ResourceType},

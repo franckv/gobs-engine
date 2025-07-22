@@ -1,11 +1,10 @@
 use std::collections::HashMap;
 
+use gobs_render_low::GfxContext;
 use parking_lot::{RwLock, RwLockReadGuard, RwLockWriteGuard};
 
 use gobs_core::{ImageExtent2D, ImageFormat};
 use gobs_gfx::{GfxImage, Image, ImageUsage};
-
-use crate::GfxContext;
 
 pub struct GraphResourceManager {
     pub resources: HashMap<String, RwLock<GfxImage>>,

@@ -1,6 +1,5 @@
 use gobs_gfx::{Command, CommandQueueType, GfxCommand};
-
-use crate::GfxContext;
+use gobs_render_low::GfxContext;
 
 pub struct FrameData {
     pub id: usize,

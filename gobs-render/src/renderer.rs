@@ -1,6 +1,7 @@
 use gobs_core::ImageExtent2D;
 use gobs_gfx::Device;
-use gobs_render_graph::{FrameData, FrameGraph, GfxContext, PassType, RenderError, RenderPass};
+use gobs_render_graph::{FrameData, FrameGraph, PassType, RenderPass};
+use gobs_render_low::{GfxContext, RenderError};
 use gobs_resource::manager::ResourceManager;
 
 use crate::RenderBatch;

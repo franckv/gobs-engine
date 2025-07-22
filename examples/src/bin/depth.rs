@@ -7,8 +7,7 @@ use gobs::{
         app::{Application, Run},
         context::GameContext,
     },
-    render::{MaterialInstance, Model},
-    render_graph::RenderError,
+    render::{MaterialInstance, Model, RenderError},
     resource::{
         entity::{camera::Camera, light::Light},
         geometry::Shapes,

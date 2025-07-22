@@ -2,11 +2,11 @@ use std::sync::Arc;
 
 use gobs_core::ImageExtent2D;
 use gobs_gfx::{Command, Display, Image, ImageLayout};
+use gobs_render_low::{GfxContext, RenderError, RenderObject, SceneData, UniformLayout};
 use gobs_resource::geometry::VertexAttribute;
 
 use crate::{
-    FrameData, GfxContext, RenderError, RenderObject,
-    data::{SceneData, UniformLayout},
+    FrameData,
     graph::GraphResourceManager,
     pass::{PassId, PassType, RenderPass},
 };

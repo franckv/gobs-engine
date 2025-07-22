@@ -5,10 +5,10 @@ use gobs_gfx::{
     Buffer, BufferUsage, Command, CommandQueueType, Device, Display, GfxBuffer, GfxCommand,
     GfxImage, Image, ImageLayout, ImageUsage,
 };
+use gobs_render_low::{GfxContext, RenderError, RenderObject, SceneData};
 
 use crate::{
-    FrameData, GfxContext, RenderError, RenderObject, RenderPass,
-    data::SceneData,
+    FrameData, RenderPass,
     graph::resource::GraphResourceManager,
     pass::{
         PassId, PassType, bounds::BoundsPass, compute::ComputePass, depth::DepthPass,
