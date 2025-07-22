@@ -13,9 +13,7 @@ gobs-gfx = { workspace = true }
 gobs-resource = { workspace = true }
 image = { workspace = true }
 parking_lot = { workspace = true }
-pollster = { workspace = true }
 serde = { workspace = true }
-serde_json = { workspace = true }
 thiserror = { workspace = true }
 tracing = { workspace = true }
 uuid = { workspace = true }
