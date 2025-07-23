@@ -133,6 +133,7 @@ impl App {
     async fn init(&mut self, ctx: &mut GameContext) {
         SampleApp::load_resources(
             &ctx.renderer.gfx,
+            "resources.ron",
             &mut ctx.resource_manager,
             ctx.renderer.forward_pass(),
         )

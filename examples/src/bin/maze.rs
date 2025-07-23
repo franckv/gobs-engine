@@ -135,6 +135,7 @@ impl App {
 
         SampleApp::load_resources(
             &ctx.renderer.gfx,
+            "resources.ron",
             &mut ctx.resource_manager,
             ctx.renderer.forward_pass(),
         )

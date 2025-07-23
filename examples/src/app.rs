@@ -64,10 +64,11 @@ impl SampleApp {
 
     pub async fn load_resources(
         ctx: &GfxContext,
+        filename: &str,
         resource_manager: &mut ResourceManager,
         pass: RenderPass,
     ) {
-        let resources = load::load_string("resources.ron", AssetType::RESOURCES)
+        let resources = load::load_string(filename, AssetType::RESOURCES)
             .await
             .unwrap();
         let config: AssetsConfig = ron::from_str(&resources).unwrap();
