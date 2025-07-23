@@ -67,7 +67,7 @@ impl SampleApp {
         resource_manager: &mut ResourceManager,
         pass: RenderPass,
     ) {
-        let resources = load::load_string("resources.ron", AssetType::DATA)
+        let resources = load::load_string("resources.ron", AssetType::RESOURCES)
             .await
             .unwrap();
         let config: AssetsConfig = ron::from_str(&resources).unwrap();

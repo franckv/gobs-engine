@@ -10,6 +10,7 @@ pub enum AssetType {
     IMAGE,
     MODEL,
     DATA,
+    RESOURCES,
 }
 
 #[derive(Debug, Error)]
@@ -29,9 +30,10 @@ pub fn get_asset_dir(file_name: &str, ty: AssetType) -> Result<PathBuf, LoadingE
         .ok_or(LoadingError::AssetNotFound(file_name.to_owned()))?;
     let path = match ty {
         AssetType::SHADER => current_dir.join("shaders"),
-        AssetType::MODEL => current_dir.join("assets/Models"),
-        AssetType::IMAGE => current_dir.join("assets/Textures"),
-        AssetType::DATA => current_dir.join("assets"),
+        AssetType::MODEL => current_dir.join("assets/models"),
+        AssetType::IMAGE => current_dir.join("assets/textures"),
+        AssetType::DATA => current_dir.join("assets/data"),
+        AssetType::RESOURCES => current_dir.join("resources"),
     };
 
     Ok(path.join(file_name))

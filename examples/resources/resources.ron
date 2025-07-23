@@ -1,0 +1,58 @@
+AssetsConfig(
+    materials: {
+        "color": MaterialConfig (
+            vertex_shader: "color.spv",
+            vertex_entry: "vertex_main",
+            fragment_shader: "color.spv",
+            fragment_entry: "fragment_main",
+            vertex_attributes: "POSITION | COLOR",
+        ),
+        "color.transparent": MaterialConfig (
+            vertex_shader: "color.spv",
+            vertex_entry: "vertex_main",
+            fragment_shader: "color.spv",
+            fragment_entry: "fragment_main",
+            vertex_attributes: "POSITION | COLOR",
+            blend_mode: Alpha,
+        ),
+        "texture": MaterialConfig (
+            vertex_shader: "mesh.vert.spv",
+            vertex_entry: "main",
+            fragment_shader: "mesh.frag.spv",
+            fragment_entry: "main",
+            vertex_attributes: "POSITION | TEXTURE | NORMAL | TANGENT | BITANGENT",
+            properties: {
+                "diffuse": Texture
+            }
+        ),
+        "texture.transparent": MaterialConfig (
+            vertex_shader: "mesh.vert.spv",
+            vertex_entry: "main",
+            fragment_shader: "mesh.frag.spv",
+            fragment_entry: "main",
+            vertex_attributes: "POSITION | TEXTURE | NORMAL | TANGENT | BITANGENT",
+            blend_mode: Alpha,
+            properties: {
+                "diffuse": Texture
+            }
+        ),
+        "normal": MaterialConfig (
+            vertex_shader: "mesh.vert.spv",
+            vertex_entry: "main",
+            fragment_shader: "mesh_n.frag.spv",
+            fragment_entry: "main",
+            vertex_attributes: "POSITION | TEXTURE | NORMAL | TANGENT | BITANGENT",
+            properties: {
+                "diffuse": Texture,
+                "normal": Texture
+            }
+        ),
+        "depth": MaterialConfig (
+            vertex_shader: "color.spv",
+            vertex_entry: "vertex_main",
+            fragment_shader: "color.spv",
+            fragment_entry: "depth_fragment_main",
+            vertex_attributes: "POSITION | COLOR",
+        ),
+    }
+)
