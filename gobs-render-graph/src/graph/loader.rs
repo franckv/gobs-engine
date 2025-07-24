@@ -17,6 +17,7 @@ const FRAME_HEIGHT: u32 = 1080;
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct GraphConfig {
+    schedule: Vec<String>,
     passes: HashMap<String, RenderPassConfig>,
     attachments: HashMap<String, ImageAttachmentInfo>,
 }
@@ -159,7 +160,10 @@ mod tests {
     fn test_serialize() {
         setup();
 
+        let pass_name = "bounds".to_string();
+
         let mut graph = GraphConfig {
+            schedule: vec![pass_name.clone()],
             passes: HashMap::new(),
             attachments: HashMap::new(),
         };
@@ -180,7 +184,7 @@ mod tests {
 
         pass.attachments.insert("draw".to_string(), attach);
 
-        graph.passes.insert("bounds".to_string(), pass);
+        graph.passes.insert(pass_name, pass);
 
         let ron = ron::ser::to_string_pretty(&graph, ron::ser::PrettyConfig::default()).unwrap();
 

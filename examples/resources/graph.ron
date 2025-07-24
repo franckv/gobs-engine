@@ -1,4 +1,15 @@
 GraphConfig(
+    schedule: [
+        "compute",
+        "depth",
+        "forward",
+        "ui",
+        "wire",
+        "bounds",
+        "select",
+        "dummy",
+        "present",
+    ],
     passes: {
         "bounds": (
             ty: Material,
