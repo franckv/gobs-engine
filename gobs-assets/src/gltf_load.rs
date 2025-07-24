@@ -9,7 +9,6 @@ use gltf::{
 
 use gobs_core::{Color, ImageExtent2D, SamplerFilter, Transform};
 use gobs_render::{BlendMode, GfxContext, Model, TextureProperties, TextureType};
-use gobs_render_graph::RenderPass;
 use gobs_resource::{
     geometry::{MeshGeometry, VertexData},
     manager::ResourceManager,
@@ -33,9 +32,8 @@ impl GLTFLoader {
     pub fn new(
         ctx: &mut GfxContext,
         resource_manager: &mut ResourceManager,
-        pass: RenderPass,
     ) -> Result<Self, AssetError> {
-        let material_manager = MaterialManager::new(ctx, resource_manager, pass)?;
+        let material_manager = MaterialManager::new(ctx, resource_manager)?;
 
         Ok(Self {
             material_manager,

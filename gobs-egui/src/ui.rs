@@ -10,7 +10,8 @@ use parking_lot::RwLock;
 use gobs_core::{Color, ImageExtent2D, Input, Key, MouseButton, Transform};
 use gobs_render::{
     BlendMode, GfxContext, Material, MaterialInstance, MaterialProperties, MaterialProperty, Model,
-    RenderBatch, RenderError, Renderable, Texture, TextureProperties, TextureUpdate,
+    ObjectDataLayout, ObjectDataProp, RenderBatch, RenderError, Renderable, Texture,
+    TextureProperties, TextureUpdate,
 };
 use gobs_render_graph::{PassType, RenderPass};
 use gobs_resource::{
@@ -39,7 +40,6 @@ impl UIRenderer {
     pub fn new(
         ctx: &GfxContext,
         resource_manager: &mut ResourceManager,
-        pass: RenderPass,
         transparent: bool,
     ) -> Result<Self, UIError> {
         let ectx = egui::Context::default();
@@ -51,6 +51,10 @@ impl UIRenderer {
         let vertex_attributes =
             VertexAttribute::POSITION | VertexAttribute::COLOR | VertexAttribute::TEXTURE;
 
+        let object_layout = ObjectDataLayout::builder()
+            .prop(ObjectDataProp::VertexBufferAddress)
+            .build();
+
         let material_properties = MaterialProperties::new(
             ctx,
             "ui",
@@ -59,7 +63,7 @@ impl UIRenderer {
             "ui.frag.spv",
             "main",
             vertex_attributes,
-            pass,
+            &object_layout,
         )
         .prop("diffuse", MaterialProperty::Texture)
         .no_culling()

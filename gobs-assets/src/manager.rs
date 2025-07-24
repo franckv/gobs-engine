@@ -2,9 +2,8 @@ use std::sync::Arc;
 
 use gobs_render::{
     BlendMode, GfxContext, Material, MaterialInstance, MaterialProperties, MaterialProperty,
-    Texture, TextureProperties,
+    ObjectDataLayout, ObjectDataProp, Texture, TextureProperties,
 };
-use gobs_render_graph::RenderPass;
 use gobs_resource::{
     geometry::VertexAttribute,
     manager::ResourceManager,
@@ -54,13 +53,18 @@ impl MaterialManager {
     pub fn new(
         ctx: &GfxContext,
         resource_manager: &mut ResourceManager,
-        pass: RenderPass,
     ) -> Result<Self, AssetError> {
         let vertex_attributes = VertexAttribute::POSITION
             | VertexAttribute::TEXTURE
             | VertexAttribute::NORMAL
             | VertexAttribute::TANGENT
             | VertexAttribute::BITANGENT;
+
+        let object_layout = ObjectDataLayout::builder()
+            .prop(ObjectDataProp::WorldMatrix)
+            .prop(ObjectDataProp::NormalMatrix)
+            .prop(ObjectDataProp::VertexBufferAddress)
+            .build();
 
         let texture = resource_manager.add(
             MaterialProperties::new(
@@ -71,7 +75,7 @@ impl MaterialManager {
                 "gltf.texture.frag.spv",
                 "main",
                 vertex_attributes,
-                pass.clone(),
+                &object_layout,
             )
             .prop("diffuse", MaterialProperty::Texture),
             ResourceLifetime::Static,
@@ -86,7 +90,7 @@ impl MaterialManager {
                 "gltf.texture.frag.spv",
                 "main",
                 vertex_attributes,
-                pass.clone(),
+                &object_layout,
             )
             .prop("diffuse", MaterialProperty::Texture)
             .blend_mode(BlendMode::Alpha),
@@ -102,7 +106,7 @@ impl MaterialManager {
                 "gltf.texture_n.frag.spv",
                 "main",
                 vertex_attributes,
-                pass.clone(),
+                &object_layout,
             )
             .prop("diffuse", MaterialProperty::Texture)
             .prop("normal", MaterialProperty::Texture),
@@ -118,7 +122,7 @@ impl MaterialManager {
                 "gltf.texture_n.frag.spv",
                 "main",
                 vertex_attributes,
-                pass.clone(),
+                &object_layout,
             )
             .prop("diffuse", MaterialProperty::Texture)
             .prop("normal", MaterialProperty::Texture)
@@ -141,7 +145,7 @@ impl MaterialManager {
                 "gltf.color_light.frag.spv",
                 "main",
                 vertex_attributes,
-                pass.clone(),
+                &object_layout,
             ),
             ResourceLifetime::Static,
         );
@@ -155,7 +159,7 @@ impl MaterialManager {
                 "gltf.color_light.frag.spv",
                 "main",
                 vertex_attributes,
-                pass,
+                &object_layout,
             )
             .blend_mode(BlendMode::Alpha),
             ResourceLifetime::Static,

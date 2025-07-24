@@ -7,7 +7,7 @@ use gobs::{
         app::{Application, Run},
         context::GameContext,
     },
-    render::{MaterialInstance, Model, RenderError},
+    render::{MaterialInstance, MaterialsConfig, Model, RenderError},
     resource::{
         entity::{camera::Camera, light::Light},
         geometry::Shapes,
@@ -47,12 +47,7 @@ impl Run for App {
 
         let camera_controller = SampleApp::controller();
 
-        let ui = UIRenderer::new(
-            &ctx.renderer.gfx,
-            &mut ctx.resource_manager,
-            ctx.renderer.ui_pass(),
-            true,
-        )?;
+        let ui = UIRenderer::new(&ctx.renderer.gfx, &mut ctx.resource_manager, true)?;
         let scene = Scene::new(
             &ctx.renderer.gfx,
             camera,
@@ -133,11 +128,10 @@ impl Run for App {
 
 impl App {
     async fn init(&mut self, ctx: &mut GameContext) {
-        SampleApp::load_resources(
+        MaterialsConfig::load_resources(
             &ctx.renderer.gfx,
-            "resources.ron",
+            "materials.ron",
             &mut ctx.resource_manager,
-            ctx.renderer.forward_pass(),
         )
         .await;
 

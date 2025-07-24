@@ -7,7 +7,9 @@ use gobs::{
         app::{Application, Run},
         context::GameContext,
     },
-    render::{MaterialInstance, Model, RenderError, TextureProperties, TextureType},
+    render::{
+        MaterialInstance, MaterialsConfig, Model, RenderError, TextureProperties, TextureType,
+    },
     resource::{
         entity::{camera::Camera, light::Light},
         geometry::Shapes,
@@ -48,12 +50,7 @@ impl Run for App {
 
         let camera_controller = SampleApp::controller();
 
-        let ui = UIRenderer::new(
-            &ctx.renderer.gfx,
-            &mut ctx.resource_manager,
-            ctx.renderer.ui_pass(),
-            true,
-        )?;
+        let ui = UIRenderer::new(&ctx.renderer.gfx, &mut ctx.resource_manager, true)?;
         let scene = Scene::new(
             &ctx.renderer.gfx,
             camera,
@@ -133,11 +130,10 @@ impl App {
     async fn load_scene(&mut self, ctx: &mut GameContext) {
         tracing::info!(target: "app", "Load scene");
 
-        SampleApp::load_resources(
+        MaterialsConfig::load_resources(
             &ctx.renderer.gfx,
-            "resources.ron",
+            "materials.ron",
             &mut ctx.resource_manager,
-            ctx.renderer.forward_pass(),
         )
         .await;
 

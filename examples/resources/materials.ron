@@ -1,4 +1,12 @@
-AssetsConfig(
+MaterialsConfig(
+    default: DefaultMaterialConfig (
+        // must match material pass layout
+        object_layout: [
+            WorldMatrix,
+            NormalMatrix,
+            VertexBufferAddress,
+        ],
+    ),
     materials: {
         "color": MaterialConfig (
             vertex_shader: "color.spv",

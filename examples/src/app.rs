@@ -1,45 +1,17 @@
-use std::collections::HashMap;
-
 use image::{ImageBuffer, Rgba};
 use renderdoc::{RenderDoc, V141};
-use serde::Deserialize;
 
 use gobs::{
     core::{ImageFormat, Input, Key},
     game::context::GameContext,
-    gfx::BlendMode,
-    render::{GfxContext, Material, MaterialProperties, MaterialProperty, RenderError, Renderable},
-    render_graph::{PassType, RenderPass},
-    resource::{
-        entity::camera::Camera,
-        geometry::VertexAttribute,
-        load::{self, AssetType},
-        manager::ResourceManager,
-        resource::ResourceLifetime,
-    },
+    render::{RenderError, Renderable},
+    render_graph::PassType,
+    resource::entity::camera::Camera,
     scene::scene::Scene,
     ui::UIRenderer,
 };
 
 use crate::{CameraController, ui::Ui};
-
-#[derive(Debug, Deserialize)]
-struct AssetsConfig {
-    materials: HashMap<String, MaterialConfig>,
-}
-
-#[derive(Debug, Deserialize)]
-struct MaterialConfig {
-    vertex_shader: String,
-    vertex_entry: String,
-    fragment_shader: String,
-    fragment_entry: String,
-    vertex_attributes: VertexAttribute,
-    #[serde(default)]
-    blend_mode: BlendMode,
-    #[serde(default)]
-    properties: HashMap<String, MaterialProperty>,
-}
 
 pub struct SampleApp {
     pub process_updates: bool,
@@ -59,38 +31,6 @@ impl SampleApp {
             draw_bounds: false,
             draw_wire: false,
             ui: Ui::new(),
-        }
-    }
-
-    pub async fn load_resources(
-        ctx: &GfxContext,
-        filename: &str,
-        resource_manager: &mut ResourceManager,
-        pass: RenderPass,
-    ) {
-        let resources = load::load_string(filename, AssetType::RESOURCES)
-            .await
-            .unwrap();
-        let config: AssetsConfig = ron::from_str(&resources).unwrap();
-
-        for (name, material) in &config.materials {
-            let mut props = MaterialProperties::new(
-                ctx,
-                name,
-                &material.vertex_shader,
-                &material.vertex_entry,
-                &material.fragment_shader,
-                &material.fragment_entry,
-                material.vertex_attributes,
-                pass.clone(),
-            )
-            .blend_mode(material.blend_mode);
-
-            for (prop_name, prop_type) in &material.properties {
-                props = props.prop(prop_name, *prop_type);
-            }
-
-            resource_manager.add::<Material>(props, ResourceLifetime::Static);
         }
     }
 

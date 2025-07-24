@@ -1,6 +1,6 @@
 use gobs_core::ImageExtent2D;
 use gobs_gfx::Device;
-use gobs_render_graph::{FrameData, FrameGraph, PassType, RenderPass};
+use gobs_render_graph::{FrameData, FrameGraph, RenderPass};
 use gobs_render_low::{GfxContext, RenderError};
 use gobs_resource::manager::ResourceManager;
 
@@ -110,13 +110,5 @@ impl Renderer {
 
     pub fn wait(&self) {
         self.gfx.device.wait();
-    }
-
-    pub fn forward_pass(&self) -> RenderPass {
-        self.graph.pass_by_type(PassType::Forward).unwrap()
-    }
-
-    pub fn ui_pass(&self) -> RenderPass {
-        self.graph.pass_by_type(PassType::Forward).unwrap()
     }
 }

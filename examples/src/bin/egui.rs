@@ -21,12 +21,7 @@ struct App {
 
 impl Run for App {
     async fn create(ctx: &mut GameContext) -> Result<Self, AppError> {
-        let ui = UIRenderer::new(
-            &ctx.renderer.gfx,
-            &mut ctx.resource_manager,
-            ctx.renderer.ui_pass(),
-            true,
-        )?;
+        let ui = UIRenderer::new(&ctx.renderer.gfx, &mut ctx.resource_manager, true)?;
         let mut common = SampleApp::new();
         common.draw_ui = true;
 

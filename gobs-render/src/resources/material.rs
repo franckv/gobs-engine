@@ -1,8 +1,7 @@
 use gobs_gfx::{
     BindingGroupType, BlendMode, CompareOp, CullMode, DescriptorStage, DescriptorType, FrontFace,
 };
-use gobs_render_graph::RenderPass;
-use gobs_render_low::GfxContext;
+use gobs_render_low::{GfxContext, ObjectDataLayout};
 use gobs_resource::{
     geometry::VertexAttribute,
     resource::{ResourceHandle, ResourceProperties, ResourceType},
@@ -52,24 +51,21 @@ impl MaterialProperties {
         fragment_shader: &str,
         fragment_entry: &str,
         vertex_attributes: VertexAttribute,
-        pass: RenderPass,
+        object_data_layout: &ObjectDataLayout,
     ) -> Self {
-        let mut pipeline_properties = PipelineProperties::graphics("material")
+        let pipeline_properties = PipelineProperties::graphics("material")
             .vertex_shader(vertex_shader)
             .vertex_entry(vertex_entry)
             .fragment_shader(fragment_shader)
             .fragment_entry(fragment_entry)
             .pool_size(10)
+            .push_constants(object_data_layout.uniform_layout().size())
             .depth_test_enable(false, CompareOp::LessEqual)
             .front_face(FrontFace::CCW)
             .binding_group(DescriptorStage::All, BindingGroupType::SceneData)
             .binding(DescriptorType::Uniform)
             .color_format(ctx.color_format)
             .depth_format(ctx.depth_format);
-
-        if let Some(layout) = pass.push_layout() {
-            pipeline_properties = pipeline_properties.push_constants(layout.size());
-        };
 
         Self {
             name: name.to_string(),

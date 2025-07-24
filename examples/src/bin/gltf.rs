@@ -35,12 +35,7 @@ impl Run for App {
 
         let camera_controller = SampleApp::controller();
 
-        let ui = UIRenderer::new(
-            &ctx.renderer.gfx,
-            &mut ctx.resource_manager,
-            ctx.renderer.ui_pass(),
-            true,
-        )?;
+        let ui = UIRenderer::new(&ctx.renderer.gfx, &mut ctx.resource_manager, true)?;
         let scene = Scene::new(
             &ctx.renderer.gfx,
             camera,
@@ -125,10 +120,8 @@ impl App {
     fn load_scene(&self, ctx: &mut GameContext) -> SceneGraph {
         let file_name = load::get_asset_dir("house2.glb", load::AssetType::MODEL).unwrap();
 
-        let pass = ctx.renderer.ui_pass();
         let mut gltf_loader =
-            gltf_load::GLTFLoader::new(&mut ctx.renderer.gfx, &mut ctx.resource_manager, pass)
-                .unwrap();
+            gltf_load::GLTFLoader::new(&mut ctx.renderer.gfx, &mut ctx.resource_manager).unwrap();
 
         gltf_loader
             .load(&mut ctx.resource_manager, file_name)

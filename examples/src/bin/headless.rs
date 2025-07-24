@@ -4,7 +4,7 @@ use pollster::FutureExt;
 use gobs::{
     core::{Color, Input, Transform},
     game::{AppError, app::Run, context::GameContext},
-    render::{MaterialInstance, Model, RenderError},
+    render::{MaterialInstance, MaterialsConfig, Model, RenderError},
     resource::{entity::light::Light, geometry::Shapes, resource::ResourceLifetime},
     scene::{components::NodeValue, scene::Scene},
 };
@@ -62,11 +62,10 @@ impl Run for App {
 
 impl App {
     async fn init(&mut self, ctx: &mut GameContext) {
-        SampleApp::load_resources(
+        MaterialsConfig::load_resources(
             &ctx.renderer.gfx,
-            "resources.ron",
+            "materials.ron",
             &mut ctx.resource_manager,
-            ctx.renderer.forward_pass(),
         )
         .await;
 
