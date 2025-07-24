@@ -14,7 +14,6 @@ pub struct DummyPass {
     id: PassId,
     name: String,
     ty: PassType,
-    attachments: Vec<String>,
 }
 
 impl DummyPass {
@@ -23,7 +22,6 @@ impl DummyPass {
             id: PassId::new_v4(),
             name: name.to_string(),
             ty: PassType::Dummy,
-            attachments: vec![],
         }))
     }
 }
@@ -47,10 +45,6 @@ impl RenderPass for DummyPass {
 
     fn push_layout(&self) -> Option<Arc<UniformLayout>> {
         None
-    }
-
-    fn attachments(&self) -> &[String] {
-        &self.attachments
     }
 
     fn render(

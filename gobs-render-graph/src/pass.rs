@@ -3,6 +3,7 @@
 use std::sync::Arc;
 
 use gobs_render_low::{GfxContext, RenderError, RenderObject, SceneData, UniformLayout};
+use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 use gobs_core::{ImageExtent2D, ImageFormat};
@@ -36,10 +37,17 @@ pub enum PassType {
     Ui,
 }
 
+#[derive(Clone, Copy, Debug, Deserialize, Serialize, PartialEq)]
+pub enum RenderPassType {
+    Compute,
+    Material,
+    Present,
+}
+
 pub type PassId = Uuid;
 
 #[allow(dead_code)]
-#[derive(Default)]
+#[derive(Clone, Copy, Debug, Default, Deserialize, Serialize)]
 pub enum AttachmentAccess {
     #[default]
     Read,
@@ -125,7 +133,6 @@ pub trait RenderPass {
     fn ty(&self) -> PassType;
     fn vertex_attributes(&self) -> Option<VertexAttribute>;
     fn push_layout(&self) -> Option<Arc<UniformLayout>>;
-    fn attachments(&self) -> &[String];
     fn render(
         &self,
         ctx: &mut GfxContext,

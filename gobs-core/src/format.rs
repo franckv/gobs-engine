@@ -1,4 +1,6 @@
-#[derive(Copy, Clone, Debug, Default, PartialEq)]
+use serde::{Deserialize, Serialize};
+
+#[derive(Copy, Clone, Debug, Default, Deserialize, Serialize, PartialEq)]
 pub enum ImageFormat {
     #[default]
     Undefined,

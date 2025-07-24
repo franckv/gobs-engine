@@ -3,61 +3,26 @@ use std::sync::Arc;
 use gobs_core::ImageExtent2D;
 use gobs_gfx::{
     BindingGroupType, CullMode, DescriptorStage, DescriptorType, DynamicStateElem, FrontFace,
-    GfxPipeline, GraphicsPipelineBuilder, ImageLayout, ImageUsage, Pipeline, PolygonMode, Rect2D,
-    Viewport,
+    GfxPipeline, GraphicsPipelineBuilder, Pipeline, PolygonMode, Rect2D, Viewport,
 };
-use gobs_render_low::{
-    GfxContext, ObjectDataLayout, ObjectDataProp, RenderError, RenderObject, SceneData,
-    SceneDataLayout, SceneDataProp, UniformLayout,
-};
+use gobs_render_low::{GfxContext, RenderError, RenderObject, SceneData, UniformLayout};
 use gobs_resource::geometry::VertexAttribute;
 
 use crate::{
-    FrameData,
+    FrameData, GraphConfig,
     graph::GraphResourceManager,
-    pass::{
-        AttachmentAccess, AttachmentType, PassId, PassType, RenderPass, material::MaterialPass,
-    },
+    pass::{PassId, PassType, RenderPass, material::MaterialPass},
 };
-
-const FRAME_WIDTH: u32 = 1920;
-const FRAME_HEIGHT: u32 = 1080;
 
 pub struct BoundsPass {
     ty: PassType,
-    attachments: Vec<String>,
     material_pass: MaterialPass,
 }
 
 impl BoundsPass {
     pub fn new(ctx: &GfxContext, name: &str) -> Result<Arc<dyn RenderPass>, RenderError> {
-        let scene_layout = SceneDataLayout::builder()
-            .prop(SceneDataProp::CameraViewProj)
-            .build();
-
-        let object_layout = ObjectDataLayout::builder()
-            .prop(ObjectDataProp::WorldMatrix)
-            .prop(ObjectDataProp::VertexBufferAddress)
-            .build();
-
-        let push_layout = object_layout.uniform_layout();
-
         let mut material_pass =
-            MaterialPass::new(ctx, name, object_layout, scene_layout, false, true);
-
-        let extent = ctx.extent();
-        let extent = ImageExtent2D::new(
-            extent.width.max(FRAME_WIDTH),
-            extent.height.max(FRAME_HEIGHT),
-        );
-
-        material_pass
-            .add_attachment("draw", AttachmentType::Color, AttachmentAccess::ReadWrite)
-            .with_usage(ImageUsage::Color)
-            .with_extent(extent)
-            .with_format(ctx.color_format)
-            .with_clear(false)
-            .with_layout(ImageLayout::Color);
+            GraphConfig::load_pass(ctx, "graph.ron", name).ok_or(RenderError::PassNotFound)?;
 
         let vertex_attributes = VertexAttribute::POSITION;
 
@@ -65,7 +30,7 @@ impl BoundsPass {
             .vertex_shader("wire.spv", "vertex_main")?
             .fragment_shader("wire.spv", "fragment_main")?
             .pool_size(ctx.frames_in_flight)
-            .push_constants(push_layout.size())
+            .push_constants(material_pass.push_constant_size())
             .binding_group(BindingGroupType::SceneData)
             .binding(DescriptorType::Uniform, DescriptorStage::All)
             .polygon_mode(PolygonMode::Line)
@@ -82,7 +47,6 @@ impl BoundsPass {
 
         Ok(Arc::new(Self {
             ty: PassType::Bounds,
-            attachments: vec![String::from("draw")],
             material_pass,
         }))
     }
@@ -99,10 +63,6 @@ impl RenderPass for BoundsPass {
 
     fn ty(&self) -> PassType {
         self.ty
-    }
-
-    fn attachments(&self) -> &[String] {
-        &self.attachments
     }
 
     fn vertex_attributes(&self) -> Option<VertexAttribute> {

@@ -25,6 +25,7 @@ fn main() {
     println!("cargo:rerun-if-changed={}/", SHADERS_GLSL_DIR);
     println!("cargo:rerun-if-changed={}/", SHADERS_SLANG_DIR);
     println!("cargo:rerun-if-changed={}/", ASSETS_DIR);
+    println!("cargo:rerun-if-changed={}/", RESOURCES_DIR);
 
     compile_glsl_shaders(SHADERS_GLSL_DIR, SHADERS_OUT_DIR, SHADERS_ASM_DIR)
         .expect("Compile shaders");

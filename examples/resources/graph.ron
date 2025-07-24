@@ -1,0 +1,140 @@
+GraphConfig(
+    passes: {
+        "bounds": (
+            ty: Material,
+            attachments: {
+                "draw": ColorAttachment(
+                    access: ReadWrite,
+                    clear: false,
+                )
+            },
+            render_transparent: false,
+            render_opaque: true,
+            object_layout: [
+                WorldMatrix,
+                VertexBufferAddress,
+            ],
+            scene_layout: [
+                CameraViewProj,
+            ],
+        ),
+        "select": (
+            ty: Material,
+            attachments: {
+                "draw": ColorAttachment(
+                    access: ReadWrite,
+                    clear: false,
+                )
+            },
+            render_transparent: false,
+            render_opaque: true,
+            object_layout: [
+                WorldMatrix,
+                VertexBufferAddress,
+            ],
+            scene_layout: [
+                CameraViewProj,
+            ],
+
+        ),
+        "wire": (
+            ty: Material,
+            attachments: {
+                "draw": ColorAttachment(
+                    access: ReadWrite,
+                    clear: false,
+                )
+            },
+            render_transparent: false,
+            render_opaque: true,
+            object_layout: [
+                WorldMatrix,
+                VertexBufferAddress,
+            ],
+            scene_layout: [
+                CameraViewProj,
+            ],
+        ),
+        "depth": (
+            ty: Material,
+            attachments: {
+                "depth": DepthAttachment(
+                    access: ReadWrite,
+                    clear: true,
+                )
+            },
+            render_transparent: false,
+            render_opaque: true,
+            object_layout: [
+                WorldMatrix,
+                VertexBufferAddress,
+            ],
+            scene_layout: [
+                CameraViewProj,
+            ],
+        ),
+        "forward": (
+            ty: Material,
+            attachments: {
+                "draw": ColorAttachment(
+                    access: ReadWrite,
+                    clear: false,
+                ),
+                "depth": DepthAttachment(
+                    access: Read,
+                    clear: false,
+                )
+            },
+            render_transparent: true,
+            render_opaque: true,
+            object_layout: [
+                WorldMatrix,
+                NormalMatrix,
+                VertexBufferAddress,
+            ],
+            scene_layout: [
+                CameraPosition,
+                CameraViewProj,
+                LightDirection,
+                LightColor,
+                LightAmbientColor,
+            ],
+        ),
+        "ui": (
+            ty: Material,
+            attachments: {
+                "draw": ColorAttachment(
+                    access: ReadWrite,
+                    clear: false,
+                )
+            },
+            render_transparent: true,
+            render_opaque: true,
+            object_layout: [
+                VertexBufferAddress,
+            ],
+            scene_layout: [
+                CameraViewPort,
+            ],
+        ),
+        "present": (
+            ty: Present,
+            target: "draw",
+        )
+    },
+    attachments: {
+        "draw": (
+            usage: Color,
+            format: R16g16b16a16Sfloat,
+            layout: Color,
+            // default extent
+        ),
+        "depth": (
+            usage: Depth,
+            format: D32Sfloat,
+            layout: Depth,
+            // default extent
+        ),
+    }
+)
+

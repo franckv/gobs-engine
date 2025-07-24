@@ -15,7 +15,6 @@ pub struct PresentPass {
     id: PassId,
     name: String,
     ty: PassType,
-    attachments: Vec<String>,
 }
 
 impl PresentPass {
@@ -24,7 +23,6 @@ impl PresentPass {
             id: PassId::new_v4(),
             name: name.to_string(),
             ty: PassType::Present,
-            attachments: vec![String::from("draw")],
         }))
     }
 }
@@ -48,10 +46,6 @@ impl RenderPass for PresentPass {
 
     fn push_layout(&self) -> Option<std::sync::Arc<UniformLayout>> {
         None
-    }
-
-    fn attachments(&self) -> &[String] {
-        &self.attachments
     }
 
     fn render(

@@ -40,6 +40,10 @@ pub fn get_asset_dir(file_name: &str, ty: AssetType) -> Result<PathBuf, LoadingE
 }
 
 pub async fn load_string(file_name: &str, ty: AssetType) -> Result<String, LoadingError> {
+    load_string_sync(file_name, ty)
+}
+
+pub fn load_string_sync(file_name: &str, ty: AssetType) -> Result<String, LoadingError> {
     let path = get_asset_dir(file_name, ty)?;
 
     tracing::debug!(target: "resources", "Loading string: {:?}", path);

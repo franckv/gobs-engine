@@ -72,6 +72,10 @@ impl MaterialPass {
         &self.name
     }
 
+    pub fn push_constant_size(&self) -> usize {
+        self.object_layout.uniform_layout().size()
+    }
+
     pub fn set_fixed_pipeline(
         &mut self,
         pipeline: Arc<GfxPipeline>,

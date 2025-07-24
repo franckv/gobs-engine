@@ -77,10 +77,6 @@ impl RenderPass for ComputePass {
         self.ty
     }
 
-    fn attachments(&self) -> &[String] {
-        &self.attachments
-    }
-
     fn vertex_attributes(&self) -> Option<VertexAttribute> {
         None
     }

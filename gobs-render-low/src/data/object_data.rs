@@ -1,6 +1,8 @@
 use std::sync::Arc;
 
 use glam::Mat3;
+use serde::{Deserialize, Serialize};
+
 use gobs_gfx::Buffer;
 
 use crate::{
@@ -8,7 +10,7 @@ use crate::{
     data::{UniformLayout, UniformProp, UniformPropData},
 };
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Copy, Debug, Deserialize, Serialize)]
 pub enum ObjectDataProp {
     WorldMatrix,
     NormalMatrix,

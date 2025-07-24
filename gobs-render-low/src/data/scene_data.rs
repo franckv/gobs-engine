@@ -1,10 +1,13 @@
 use std::sync::Arc;
 
+use serde::{Deserialize, Serialize};
+
 use gobs_core::{ImageExtent2D, Transform};
 use gobs_resource::entity::{camera::Camera, light::Light};
 
 use crate::data::{UniformLayout, UniformProp, UniformPropData};
 
+#[derive(Clone, Copy, Debug, Deserialize, Serialize)]
 pub enum SceneDataProp {
     CameraPosition,
     CameraViewProj,

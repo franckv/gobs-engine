@@ -73,7 +73,7 @@ path = "./gobs-vulkan"
 ash = { version = "0.38", features = ["linked", "debug"] }
 ash-window = "0.13"
 anyhow = "1.0"
-bitflags = "2.9"
+bitflags = { version="2.9", features=["serde"] }
 bytemuck = { version = "1.23", features = ["derive"] }
 egui = { version = "0.32", features = ["bytemuck", "serde"] }
 env_logger = "0.11"

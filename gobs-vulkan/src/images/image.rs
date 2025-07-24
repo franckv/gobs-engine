@@ -4,12 +4,13 @@ use std::sync::Arc;
 use ash::vk;
 
 use gobs_core::{ImageExtent2D, ImageFormat};
+use serde::{Deserialize, Serialize};
 
 use crate::{
     Wrap, alloc::Allocator, debug, device::Device, images::format::VkFormat, memory::Memory,
 };
 
-#[derive(Copy, Clone, Debug, Default, PartialEq)]
+#[derive(Copy, Clone, Debug, Default, Deserialize, Serialize, PartialEq)]
 pub enum ImageLayout {
     #[default]
     Undefined,
@@ -37,7 +38,7 @@ impl From<ImageLayout> for vk::ImageLayout {
     }
 }
 
-#[derive(Copy, Clone, Default, PartialEq)]
+#[derive(Copy, Clone, Debug, Default, Deserialize, Serialize, PartialEq)]
 pub enum ImageUsage {
     Swapchain,
     Texture,

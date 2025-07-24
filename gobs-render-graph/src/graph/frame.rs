@@ -128,10 +128,6 @@ impl FrameGraph {
     }
 
     fn register_pass(&mut self, pass: RenderPass) {
-        for attach in pass.attachments() {
-            assert!(self.resource_manager.resources.contains_key(attach));
-        }
-
         self.passes.push(pass);
     }
 
