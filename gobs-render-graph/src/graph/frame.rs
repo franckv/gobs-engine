@@ -9,13 +9,9 @@ use gobs_render_low::{GfxContext, RenderError, RenderObject, SceneData};
 use gobs_resource::manager::ResourceManager;
 
 use crate::{
-    FrameData, Pipeline, RenderPass,
+    FrameData, GraphConfig, RenderPass,
     graph::resource::GraphResourceManager,
-    pass::{
-        PassId, PassType, bounds::BoundsPass, compute::ComputePass, depth::DepthPass,
-        dummy::DummyPass, forward::ForwardPass, present::PresentPass, select::SelectPass,
-        ui::UiPass, wire::WirePass,
-    },
+    pass::{PassId, PassType, compute::ComputePass, present::PresentPass},
 };
 
 const FRAME_WIDTH: u32 = 1920;
@@ -63,32 +59,15 @@ impl FrameGraph {
             extent,
         );
 
-        let depth_pipeline_handle = resource_manager
-            .get_by_name::<Pipeline>("depth")
-            .ok_or(RenderError::InvalidData)?;
-        let depth_pipeline = resource_manager
-            .get_data(&depth_pipeline_handle, ())
-            .map_err(|_| RenderError::InvalidData)?
-            .pipeline
-            .clone();
-
-        let wire_pipeline_handle = resource_manager
-            .get_by_name::<Pipeline>("wireframe")
-            .ok_or(RenderError::InvalidData)?;
-        let wire_pipeline = resource_manager
-            .get_data(&wire_pipeline_handle, ())
-            .map_err(|_| RenderError::InvalidData)?
-            .pipeline
-            .clone();
+        let passes = GraphConfig::load_graph(ctx, "graph.ron", resource_manager)
+            .map_err(|_| RenderError::InvalidData)?;
 
         graph.register_pass(ComputePass::new(ctx, "compute")?);
-        graph.register_pass(DepthPass::new(ctx, "depth", depth_pipeline)?);
-        graph.register_pass(ForwardPass::new(ctx, "forward")?);
-        graph.register_pass(UiPass::new(ctx, "ui")?);
-        graph.register_pass(WirePass::new(ctx, "wire", wire_pipeline.clone())?);
-        graph.register_pass(BoundsPass::new(ctx, "bounds", wire_pipeline.clone())?);
-        graph.register_pass(SelectPass::new(ctx, "select", wire_pipeline)?);
-        graph.register_pass(DummyPass::new(ctx, "dummy")?);
+
+        for pass in &passes {
+            graph.register_pass(pass.clone());
+        }
+
         graph.register_pass(PresentPass::new(ctx, "present")?);
 
         Ok(graph)
@@ -117,24 +96,26 @@ impl FrameGraph {
             extent,
         );
 
-        let depth_pipeline_handle = resource_manager
-            .get_by_name::<Pipeline>("depth")
-            .ok_or(RenderError::InvalidData)?;
-        let depth_pipeline = resource_manager
-            .get_data(&depth_pipeline_handle, ())
-            .map_err(|_| RenderError::InvalidData)?
-            .pipeline
-            .clone();
+        let graph_config = GraphConfig::load("graph.ron").map_err(|_| RenderError::InvalidData)?;
 
         graph.register_pass(ComputePass::new(ctx, "compute")?);
-        graph.register_pass(DepthPass::new(ctx, "depth", depth_pipeline)?);
-        graph.register_pass(ForwardPass::new(ctx, "forward")?);
-        graph.register_pass(DummyPass::new(ctx, "dummy")?);
+
+        if let Some(pass) = GraphConfig::load_pass(ctx, &graph_config, "depth", resource_manager) {
+            graph.register_pass(pass);
+        }
+
+        if let Some(pass) = GraphConfig::load_pass(ctx, &graph_config, "forward", resource_manager)
+        {
+            graph.register_pass(pass);
+        }
 
         Ok(graph)
     }
 
-    pub fn ui(ctx: &GfxContext) -> Result<Self, RenderError> {
+    pub fn ui(
+        ctx: &GfxContext,
+        resource_manager: &mut ResourceManager,
+    ) -> Result<Self, RenderError> {
         let mut graph = Self::new(ctx);
 
         let extent = Self::get_render_target_extent(ctx);
@@ -147,7 +128,12 @@ impl FrameGraph {
             extent,
         );
 
-        graph.register_pass(UiPass::new(ctx, "ui")?);
+        let graph_config = GraphConfig::load("graph.ron").map_err(|_| RenderError::InvalidData)?;
+
+        if let Some(pass) = GraphConfig::load_pass(ctx, &graph_config, "ui", resource_manager) {
+            graph.register_pass(pass);
+        }
+
         graph.register_pass(PresentPass::new(ctx, "present")?);
 
         Ok(graph)
@@ -161,7 +147,7 @@ impl FrameGraph {
         )
     }
 
-    fn register_pass(&mut self, pass: RenderPass) {
+    pub fn register_pass(&mut self, pass: RenderPass) {
         self.passes.push(pass);
     }
 

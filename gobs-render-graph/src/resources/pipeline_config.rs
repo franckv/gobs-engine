@@ -192,7 +192,7 @@ mod tests {
 
         let data = include_str!("../../../examples/resources/pipelines.ron");
 
-        let mut resource_manager = ResourceManager::new(3);
+        let mut resource_manager = ResourceManager::new(ctx.frames_in_flight);
 
         PipelinesConfig::load_resources_with_data(&ctx, data, &mut resource_manager).unwrap();
     }

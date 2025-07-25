@@ -1,19 +1,17 @@
 GraphConfig(
     schedule: [
-        "compute",
         "depth",
         "forward",
         "ui",
         "wire",
         "bounds",
         "select",
-        "dummy",
-        "present",
     ],
     passes: {
         "bounds": (
             ty: Material,
             tag: Bounds,
+            pipeline: "wireframe",
             attachments: {
                 "draw": ColorAttachment(
                     access: ReadWrite,
@@ -33,6 +31,7 @@ GraphConfig(
         "select": (
             ty: Material,
             tag: Select,
+            pipeline: "wireframe",
             attachments: {
                 "draw": ColorAttachment(
                     access: ReadWrite,
@@ -53,6 +52,7 @@ GraphConfig(
         "wire": (
             ty: Material,
             tag: Wire,
+            pipeline: "wireframe",
             attachments: {
                 "draw": ColorAttachment(
                     access: ReadWrite,
@@ -72,6 +72,7 @@ GraphConfig(
         "depth": (
             ty: Material,
             tag: Depth,
+            pipeline: "depth",
             attachments: {
                 "depth": DepthAttachment(
                     access: ReadWrite,

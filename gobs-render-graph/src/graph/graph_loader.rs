@@ -1,17 +1,21 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, sync::Arc};
+
+use serde::{Deserialize, Serialize};
 
 use gobs_core::{ImageExtent2D, ImageFormat};
 use gobs_gfx::{ImageLayout, ImageUsage};
-use gobs_resource::load::{self, AssetType};
-use serde::{Deserialize, Serialize};
-
 use gobs_render_low::{
     GfxContext, ObjectDataLayout, ObjectDataProp, SceneDataLayout, SceneDataProp,
 };
+use gobs_resource::{
+    load::{self, AssetType},
+    manager::ResourceManager,
+    resource::ResourceError,
+};
 
 use crate::{
-    PassType,
-    pass::{AttachmentAccess, AttachmentType, RenderPassType, material::MaterialPass},
+    PassType, Pipeline,
+    pass::{AttachmentAccess, AttachmentType, RenderPass, RenderPassType, material::MaterialPass},
 };
 
 // TODO: store in config file
@@ -29,6 +33,7 @@ pub struct GraphConfig {
 struct RenderPassConfig {
     ty: RenderPassType,
     tag: PassType,
+    pipeline: Option<String>,
     #[serde(default)]
     attachments: HashMap<String, AttachmentInfo>,
     #[serde(default)]
@@ -61,15 +66,43 @@ struct ImageAttachmentInfo {
 }
 
 impl GraphConfig {
-    pub fn load_pass(ctx: &GfxContext, filename: &str, passname: &str) -> Option<MaterialPass> {
-        let data = load::load_string_sync(filename, AssetType::RESOURCES).ok()?;
+    pub fn load(filename: &str) -> Result<Self, ResourceError> {
+        let data = load::load_string_sync(filename, AssetType::RESOURCES)?;
 
-        Self::load_pass_with_data(ctx, &data, passname)
+        Self::load_with_data(&data)
     }
 
-    fn load_pass_with_data(ctx: &GfxContext, data: &str, passname: &str) -> Option<MaterialPass> {
-        let graph: GraphConfig = ron::from_str(data).ok()?;
+    fn load_with_data(data: &str) -> Result<Self, ResourceError> {
+        let options = ron::options::Options::default()
+            .with_default_extension(ron::extensions::Extensions::IMPLICIT_SOME);
 
+        options
+            .from_str(data)
+            .map_err(|_| ResourceError::InvalidData)
+    }
+
+    pub fn load_graph(
+        ctx: &GfxContext,
+        filename: &str,
+        resource_manager: &mut ResourceManager,
+    ) -> Result<Vec<Arc<dyn RenderPass>>, ResourceError> {
+        let graph = Self::load(filename)?;
+
+        let passes = graph
+            .schedule
+            .iter()
+            .filter_map(|passname| Self::load_pass(ctx, &graph, passname, resource_manager))
+            .collect();
+
+        Ok(passes)
+    }
+
+    pub fn load_pass(
+        ctx: &GfxContext,
+        graph: &GraphConfig,
+        passname: &str,
+        resource_manager: &mut ResourceManager,
+    ) -> Option<Arc<dyn RenderPass>> {
         let pass = graph.passes.get(passname)?;
 
         let mut scene_layout = SceneDataLayout::builder();
@@ -98,6 +131,13 @@ impl GraphConfig {
             pass.render_opaque,
         );
 
+        if let Some(pipeline) = &pass.pipeline {
+            let pipeline_handle = resource_manager.get_by_name::<Pipeline>(pipeline)?;
+            let pipeline = resource_manager.get_data(&pipeline_handle, ()).ok()?;
+
+            material_pass.set_fixed_pipeline(pipeline.pipeline.clone());
+        }
+
         for (attach_name, attach_config) in &pass.attachments {
             let image_info = graph.attachments.get(attach_name)?;
 
@@ -124,7 +164,7 @@ impl GraphConfig {
             }
         }
 
-        Some(material_pass)
+        Some(Arc::new(material_pass))
     }
 }
 
@@ -132,6 +172,7 @@ impl GraphConfig {
 mod tests {
     use std::collections::HashMap;
 
+    use gobs_resource::manager::ResourceManager;
     use tracing::Level;
     use tracing_subscriber::{FmtSubscriber, fmt::format::FmtSpan};
 
@@ -156,9 +197,15 @@ mod tests {
         setup();
 
         let ctx = GfxContext::new("test", None, true).unwrap();
-        let graph_config = include_str!("../../../examples/resources/graph.ron");
 
-        let _pass = GraphConfig::load_pass_with_data(&ctx, graph_config, "bounds").unwrap();
+        let mut resource_manager = ResourceManager::new(ctx.frames_in_flight);
+
+        let data = include_str!("../../../examples/resources/graph.ron");
+
+        let graph_config = GraphConfig::load_with_data(data).unwrap();
+
+        let _pass =
+            GraphConfig::load_pass(&ctx, &graph_config, "forward", &mut resource_manager).unwrap();
     }
 
     #[test]
@@ -174,6 +221,7 @@ mod tests {
                 RenderPassConfig {
                     ty: RenderPassType::Material,
                     tag: PassType::Bounds,
+                    pipeline: None,
                     attachments: HashMap::from([(
                         "draw".to_string(),
                         AttachmentInfo::ColorAttachment {
@@ -199,7 +247,8 @@ mod tests {
     fn test_deserialize() {
         setup();
 
-        let graph_config = include_str!("../../../examples/resources/graph.ron");
-        let _graph: GraphConfig = ron::from_str(graph_config).unwrap();
+        let _graph_config =
+            GraphConfig::load_with_data(include_str!("../../../examples/resources/graph.ron"))
+                .unwrap();
     }
 }

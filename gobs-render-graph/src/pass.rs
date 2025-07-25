@@ -12,16 +12,9 @@ use gobs_resource::geometry::VertexAttribute;
 
 use crate::{FrameData, graph::GraphResourceManager};
 
-pub mod bounds;
 pub mod compute;
-pub mod depth;
-pub mod dummy;
-pub mod forward;
 pub mod material;
 pub mod present;
-pub mod select;
-pub mod ui;
-pub mod wire;
 
 #[derive(Clone, Copy, Debug, Deserialize, Serialize, PartialEq)]
 pub enum PassType {

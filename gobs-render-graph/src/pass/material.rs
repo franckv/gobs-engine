@@ -68,10 +68,6 @@ impl MaterialPass {
         }
     }
 
-    pub fn push_constant_size(&self) -> usize {
-        self.object_layout.uniform_layout().size()
-    }
-
     pub fn set_fixed_pipeline(&mut self, pipeline: Arc<GfxPipeline>) {
         self.fixed_pipeline = Some(pipeline.clone());
         for job in &mut self.render_jobs {
@@ -100,7 +96,7 @@ impl MaterialPass {
         self.attachments.get_mut(name).expect("insert attachment")
     }
 
-    pub fn begin_pass(&self, cmd: &GfxCommand, resource_manager: &GraphResourceManager) {
+    fn begin_pass(&self, cmd: &GfxCommand, resource_manager: &GraphResourceManager) {
         tracing::debug!(target: "render", "Begin material pass {}", &self.name);
 
         cmd.begin_label(&format!("Draw {}", &self.name));
@@ -144,16 +140,12 @@ impl MaterialPass {
         cmd.set_viewport(extent.width, extent.height);
     }
 
-    pub fn end_pass(&self, cmd: &GfxCommand) {
+    fn end_pass(&self, cmd: &GfxCommand) {
         cmd.end_rendering();
         cmd.end_label();
     }
 
-    pub fn transition_attachments(
-        &self,
-        cmd: &GfxCommand,
-        resource_manager: &GraphResourceManager,
-    ) {
+    fn transition_attachments(&self, cmd: &GfxCommand, resource_manager: &GraphResourceManager) {
         for (name, attachment) in &self.attachments {
             cmd.transition_image_layout(&mut resource_manager.image_write(name), attachment.layout);
         }
