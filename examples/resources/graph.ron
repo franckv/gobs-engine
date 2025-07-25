@@ -13,6 +13,7 @@ GraphConfig(
     passes: {
         "bounds": (
             ty: Material,
+            tag: Bounds,
             attachments: {
                 "draw": ColorAttachment(
                     access: ReadWrite,
@@ -31,6 +32,7 @@ GraphConfig(
         ),
         "select": (
             ty: Material,
+            tag: Select,
             attachments: {
                 "draw": ColorAttachment(
                     access: ReadWrite,
@@ -50,6 +52,7 @@ GraphConfig(
         ),
         "wire": (
             ty: Material,
+            tag: Wire,
             attachments: {
                 "draw": ColorAttachment(
                     access: ReadWrite,
@@ -68,6 +71,7 @@ GraphConfig(
         ),
         "depth": (
             ty: Material,
+            tag: Depth,
             attachments: {
                 "depth": DepthAttachment(
                     access: ReadWrite,
@@ -86,6 +90,7 @@ GraphConfig(
         ),
         "forward": (
             ty: Material,
+            tag: Forward,
             attachments: {
                 "draw": ColorAttachment(
                     access: ReadWrite,
@@ -113,6 +118,7 @@ GraphConfig(
         ),
         "ui": (
             ty: Material,
+            tag: Ui,
             attachments: {
                 "draw": ColorAttachment(
                     access: ReadWrite,
@@ -130,6 +136,7 @@ GraphConfig(
         ),
         "present": (
             ty: Present,
+            tag: Present,
             target: "draw",
         )
     },

@@ -3,7 +3,6 @@ use std::collections::hash_map::Entry;
 use std::fmt::Debug;
 use std::sync::Arc;
 
-use gobs_render_low::RenderError;
 use serde::Serialize;
 use uuid::Uuid;
 
@@ -12,7 +11,7 @@ use gobs_render_graph::RenderPass;
 use gobs_resource::{
     geometry::{Bounded, BoundingBox, MeshGeometry},
     manager::ResourceManager,
-    resource::{ResourceHandle, ResourceLifetime},
+    resource::{ResourceError, ResourceHandle, ResourceLifetime},
 };
 
 use crate::{
@@ -51,7 +50,7 @@ impl Renderable for Arc<Model> {
         pass: RenderPass,
         batch: &mut RenderBatch,
         transform: Option<Transform>,
-    ) -> Result<(), RenderError> {
+    ) -> Result<(), ResourceError> {
         if let Some(transform) = transform {
             batch.add_model(resource_manager, self.clone(), transform, pass.clone())?;
         }

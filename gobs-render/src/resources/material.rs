@@ -1,17 +1,16 @@
+use serde::Deserialize;
+
 use gobs_gfx::{
     BindingGroupType, BlendMode, CompareOp, CullMode, DescriptorStage, DescriptorType, FrontFace,
 };
+use gobs_render_graph::{GraphicsPipelineProperties, Pipeline, PipelineProperties};
 use gobs_render_low::{GfxContext, ObjectDataLayout};
 use gobs_resource::{
     geometry::VertexAttribute,
     resource::{ResourceHandle, ResourceProperties, ResourceType},
 };
-use serde::Deserialize;
 
-use crate::resources::Pipeline;
 use crate::resources::material_loader::MaterialLoader;
-
-use super::{PipelineProperties, pipeline::GraphicsPipelineProperties};
 
 #[derive(Clone, Copy, Debug)]
 pub struct Material;

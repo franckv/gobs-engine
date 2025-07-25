@@ -1,0 +1,63 @@
+PipelinesConfig(
+    pipelines: {
+        "wireframe": (
+            vertex_shader: (
+                file: "wire.spv",
+                entry: "vertex_main",
+            ),
+            fragment_shader: (
+                file: "wire.spv",
+                entry: "fragment_main",
+            ),
+            object_layout: [
+                WorldMatrix,
+                VertexBufferAddress,
+            ],
+            bindings: [
+            (
+                    group: SceneData,
+                    stage: All,
+                    descriptor_type: Uniform),
+            ],
+            polygon_mode: Line,
+            attachments: (
+                color_format: R16g16b16a16Sfloat,
+                depth_format: D32Sfloat,
+            ),
+            depth_test: (
+                enable: false,
+            ),
+            cull_mode: Back,
+            front_face: CCW,
+        ),
+        "depth": (
+            vertex_shader: (
+                file: "depth.spv",
+                entry: "main",
+            ),
+            object_layout: [
+                WorldMatrix,
+                VertexBufferAddress,
+            ],
+            bindings: [
+            (
+                    group: SceneData,
+                    stage: Vertex,
+                    descriptor_type: Uniform
+                ),
+            ],
+            polygon_mode: Fill,
+            attachments: (
+                depth_format: D32Sfloat,
+            ),
+            depth_test: (
+                enable: true,
+                write_enable: true,
+                compare: Less,
+            ),
+            cull_mode: Back,
+            front_face: CCW,
+        )
+    }
+)
+

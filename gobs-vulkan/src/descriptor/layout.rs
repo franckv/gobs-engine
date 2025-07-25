@@ -2,10 +2,11 @@ use std::ptr;
 use std::sync::Arc;
 
 use ash::vk;
+use serde::{Deserialize, Serialize};
 
 use crate::device::Device;
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, Serialize, Deserialize)]
 pub enum DescriptorType {
     Uniform,
     UniformDynamic,
@@ -28,7 +29,7 @@ impl From<DescriptorType> for vk::DescriptorType {
     }
 }
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, Serialize, Deserialize)]
 pub enum DescriptorStage {
     Compute,
     Vertex,

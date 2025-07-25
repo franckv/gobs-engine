@@ -9,7 +9,10 @@ use gobs_render_low::{
     GfxContext, ObjectDataLayout, ObjectDataProp, SceneDataLayout, SceneDataProp,
 };
 
-use crate::pass::{AttachmentAccess, AttachmentType, RenderPassType, material::MaterialPass};
+use crate::{
+    PassType,
+    pass::{AttachmentAccess, AttachmentType, RenderPassType, material::MaterialPass},
+};
 
 // TODO: store in config file
 const FRAME_WIDTH: u32 = 1920;
@@ -25,6 +28,7 @@ pub struct GraphConfig {
 #[derive(Debug, Deserialize, Serialize)]
 struct RenderPassConfig {
     ty: RenderPassType,
+    tag: PassType,
     #[serde(default)]
     attachments: HashMap<String, AttachmentInfo>,
     #[serde(default)]
@@ -87,6 +91,7 @@ impl GraphConfig {
         let mut material_pass = MaterialPass::new(
             ctx,
             passname,
+            pass.tag,
             object_layout.build(),
             scene_layout.build(),
             pass.render_transparent,
@@ -133,8 +138,8 @@ mod tests {
     use gobs_render_low::GfxContext;
 
     use crate::{
-        GraphConfig,
-        graph::loader::{AttachmentInfo, RenderPassConfig},
+        GraphConfig, PassType,
+        graph::graph_loader::{AttachmentInfo, RenderPassConfig},
         pass::{AttachmentAccess, RenderPassType},
     };
 
@@ -162,29 +167,28 @@ mod tests {
 
         let pass_name = "bounds".to_string();
 
-        let mut graph = GraphConfig {
+        let graph = GraphConfig {
             schedule: vec![pass_name.clone()],
-            passes: HashMap::new(),
+            passes: HashMap::from([(
+                pass_name,
+                RenderPassConfig {
+                    ty: RenderPassType::Material,
+                    tag: PassType::Bounds,
+                    attachments: HashMap::from([(
+                        "draw".to_string(),
+                        AttachmentInfo::ColorAttachment {
+                            access: AttachmentAccess::ReadWrite,
+                            clear: true,
+                        },
+                    )]),
+                    object_layout: Vec::new(),
+                    scene_layout: Vec::new(),
+                    render_transparent: true,
+                    render_opaque: true,
+                },
+            )]),
             attachments: HashMap::new(),
         };
-
-        let mut pass = RenderPassConfig {
-            ty: RenderPassType::Material,
-            attachments: HashMap::new(),
-            object_layout: Vec::new(),
-            scene_layout: Vec::new(),
-            render_transparent: true,
-            render_opaque: true,
-        };
-
-        let attach = AttachmentInfo::ColorAttachment {
-            access: AttachmentAccess::ReadWrite,
-            clear: true,
-        };
-
-        pass.attachments.insert("draw".to_string(), attach);
-
-        graph.passes.insert(pass_name, pass);
 
         let ron = ron::ser::to_string_pretty(&graph, ron::ser::PrettyConfig::default()).unwrap();
 

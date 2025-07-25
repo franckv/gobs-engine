@@ -90,12 +90,15 @@ impl SampleApp {
                     if (self.draw_bounds || !(pass.ty() == PassType::Bounds))
                         && (self.draw_wire || !(pass.ty() == PassType::Wire))
                     {
-                        scene.draw(resource_manager, pass.clone(), batch, None)?;
+                        scene
+                            .draw(resource_manager, pass.clone(), batch, None)
+                            .map_err(|_| RenderError::InvalidData)?;
                     }
                 }
                 if let Some(ui) = &ui {
                     if self.draw_ui {
-                        ui.draw(resource_manager, pass, batch, None)?;
+                        ui.draw(resource_manager, pass, batch, None)
+                            .map_err(|_| RenderError::InvalidData)?;
                     }
                 }
 

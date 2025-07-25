@@ -55,22 +55,15 @@ impl RenderPass for ForwardPass {
         resource_manager: &GraphResourceManager,
         render_list: &[RenderObject],
         scene_data: &SceneData,
-        _draw_extent: ImageExtent2D,
+        draw_extent: ImageExtent2D,
     ) -> Result<(), RenderError> {
-        tracing::debug!(target: "render", "Draw {}", &self.material_pass.name());
-
-        let cmd = &frame.command;
-
-        self.material_pass
-            .transition_attachments(cmd, resource_manager);
-
-        self.material_pass.begin_pass(cmd, resource_manager);
-
-        self.material_pass
-            .render(ctx, frame, cmd, render_list, scene_data);
-
-        self.material_pass.end_pass(cmd);
-
-        Ok(())
+        self.material_pass.render(
+            ctx,
+            frame,
+            resource_manager,
+            render_list,
+            scene_data,
+            draw_extent,
+        )
     }
 }

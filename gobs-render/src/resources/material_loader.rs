@@ -1,11 +1,10 @@
+use gobs_render_graph::{Pipeline, PipelineProperties};
 use gobs_resource::{
     manager::ResourceRegistry,
     resource::{Resource, ResourceError, ResourceHandle, ResourceLoader},
 };
 
-use crate::resources::{MaterialData, Pipeline, material::Material};
-
-use super::PipelineProperties;
+use crate::resources::{MaterialData, material::Material};
 
 pub struct MaterialLoader {}
 

@@ -1,10 +1,11 @@
 use glam::{Vec3, Vec4};
 
 use gobs_core::Transform;
-use gobs_render::{GfxContext, RenderBatch, RenderError, Renderable};
+use gobs_render::{GfxContext, RenderBatch, Renderable};
 use gobs_render_graph::{PassType, RenderPass};
 use gobs_resource::entity::{camera::Camera, light::Light};
 use gobs_resource::manager::ResourceManager;
+use gobs_resource::resource::ResourceError;
 
 use crate::components::{NodeId, NodeValue};
 use crate::graph::scenegraph::SceneGraph;
@@ -135,7 +136,7 @@ impl Renderable for Scene {
         pass: RenderPass,
         batch: &mut RenderBatch,
         _transform: Option<Transform>,
-    ) -> Result<(), RenderError> {
+    ) -> Result<(), ResourceError> {
         self.graph.visit(self.graph.root, &mut |node| {
             match pass.ty() {
                 PassType::Bounds => {

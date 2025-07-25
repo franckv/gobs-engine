@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use ash::vk;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 use gobs_core::ImageFormat;
 
@@ -136,7 +136,7 @@ impl InputAssemblyState {
     }
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, Serialize, Deserialize)]
 pub enum PolygonMode {
     Fill,
     Line,
@@ -159,16 +159,11 @@ impl From<PolygonMode> for vk::PolygonMode {
     }
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, Default, Serialize, Deserialize)]
 pub enum FrontFace {
     CW,
+    #[default]
     CCW,
-}
-
-impl Default for FrontFace {
-    fn default() -> Self {
-        Self::CCW
-    }
 }
 
 impl From<FrontFace> for vk::FrontFace {
@@ -180,18 +175,13 @@ impl From<FrontFace> for vk::FrontFace {
     }
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, Default, Serialize, Deserialize)]
 pub enum CullMode {
     None,
     Front,
+    #[default]
     Back,
     FrontBack,
-}
-
-impl Default for CullMode {
-    fn default() -> Self {
-        Self::Back
-    }
 }
 
 impl From<CullMode> for vk::CullModeFlags {
@@ -268,8 +258,9 @@ impl StencilOpState {
     }
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, Default, Serialize, Deserialize)]
 pub enum CompareOp {
+    #[default]
     Never,
     Less,
     Equal,

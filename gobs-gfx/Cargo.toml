@@ -12,6 +12,7 @@ gobs-vulkan = { workspace = true }
 image = { workspace = true }
 indexmap = { workspace = true }
 parking_lot = { workspace = true }
+serde = { workspace = true }
 thiserror = { workspace = true }
 tracing = { workspace = true }
 uuid = { workspace = true }

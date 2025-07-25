@@ -1,6 +1,6 @@
 use gobs_core::ImageExtent2D;
 use gobs_gfx::Device;
-use gobs_render_graph::{FrameData, FrameGraph, RenderPass};
+use gobs_render_graph::{FrameData, FrameGraph, PipelinesConfig, RenderPass};
 use gobs_render_low::{GfxContext, RenderError};
 use gobs_resource::manager::ResourceManager;
 
@@ -15,13 +15,16 @@ pub struct Renderer {
 }
 
 impl Renderer {
-    pub fn new(gfx: GfxContext) -> Self {
+    pub fn new(gfx: GfxContext, resource_manager: &mut ResourceManager) -> Self {
         let frames = (0..gfx.frames_in_flight)
             .map(|id| FrameData::new(&gfx, id))
             .collect();
 
+        PipelinesConfig::load_resources(&gfx, "pipelines.ron", resource_manager)
+            .expect("Load pipelines");
+
         Self {
-            graph: FrameGraph::default(&gfx).unwrap(),
+            graph: FrameGraph::default(&gfx, resource_manager).unwrap(),
             batch: RenderBatch::new(&gfx),
             gfx,
             frames,

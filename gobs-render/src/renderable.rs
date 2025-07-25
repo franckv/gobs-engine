@@ -1,7 +1,6 @@
 use gobs_core::Transform;
 use gobs_render_graph::RenderPass;
-use gobs_render_low::RenderError;
-use gobs_resource::manager::ResourceManager;
+use gobs_resource::{manager::ResourceManager, resource::ResourceError};
 
 use crate::RenderBatch;
 
@@ -12,5 +11,5 @@ pub trait Renderable {
         pass: RenderPass,
         batch: &mut RenderBatch,
         transform: Option<Transform>,
-    ) -> Result<(), RenderError>;
+    ) -> Result<(), ResourceError>;
 }

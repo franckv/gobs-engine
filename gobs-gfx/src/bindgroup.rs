@@ -1,7 +1,10 @@
+use serde::Deserialize;
+use serde::Serialize;
+
 use crate::ImageLayout;
 use crate::Renderer;
 
-#[derive(Copy, Clone, Debug, Eq, Hash, PartialEq)]
+#[derive(Copy, Clone, Debug, Eq, Hash, Serialize, Deserialize, PartialEq)]
 pub enum BindingGroupType {
     None,
     ComputeData,

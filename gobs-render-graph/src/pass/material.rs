@@ -1,21 +1,23 @@
 use std::{collections::HashMap, sync::Arc};
 
+use gobs_core::ImageExtent2D;
 use gobs_gfx::{Command, GfxCommand, GfxPipeline};
 use gobs_render_low::{
-    GfxContext, ObjectDataLayout, RenderJob, RenderObject, SceneData, SceneDataLayout,
+    GfxContext, ObjectDataLayout, RenderError, RenderJob, RenderObject, SceneData, SceneDataLayout,
     UniformLayout,
 };
 use gobs_resource::geometry::VertexAttribute;
 
 use crate::{
-    FrameData, PassId,
+    FrameData, PassId, PassType,
     graph::GraphResourceManager,
-    pass::{Attachment, AttachmentAccess, AttachmentType},
+    pass::{Attachment, AttachmentAccess, AttachmentType, RenderPass},
 };
 
 pub struct MaterialPass {
     id: PassId,
     name: String,
+    ty: PassType,
     attachments: HashMap<String, Attachment>,
     input_attachments: Vec<String>,
     color_attachments: Vec<String>,
@@ -30,6 +32,7 @@ impl MaterialPass {
     pub fn new(
         ctx: &GfxContext,
         name: &str,
+        ty: PassType,
         object_layout: ObjectDataLayout,
         scene_layout: SceneDataLayout,
         render_transparent: bool,
@@ -53,6 +56,7 @@ impl MaterialPass {
         Self {
             id,
             name: name.to_string(),
+            ty,
             attachments: Default::default(),
             input_attachments: vec![],
             color_attachments: vec![],
@@ -62,14 +66,6 @@ impl MaterialPass {
             scene_layout,
             render_jobs,
         }
-    }
-
-    pub fn id(&self) -> PassId {
-        self.id
-    }
-
-    pub fn name(&self) -> &str {
-        &self.name
     }
 
     pub fn push_constant_size(&self) -> usize {
@@ -167,15 +163,46 @@ impl MaterialPass {
             cmd.transition_image_layout(&mut resource_manager.image_write(name), attachment.layout);
         }
     }
+}
 
-    pub fn render(
+impl RenderPass for MaterialPass {
+    fn id(&self) -> PassId {
+        self.id
+    }
+
+    fn name(&self) -> &str {
+        &self.name
+    }
+
+    fn ty(&self) -> PassType {
+        self.ty
+    }
+
+    fn vertex_attributes(&self) -> Option<VertexAttribute> {
+        self.vertex_attributes
+    }
+
+    fn push_layout(&self) -> Option<Arc<UniformLayout>> {
+        Some(self.object_layout.uniform_layout())
+    }
+
+    fn render(
         &self,
-        ctx: &GfxContext,
+        ctx: &mut GfxContext,
         frame: &FrameData,
-        cmd: &GfxCommand,
+        resource_manager: &GraphResourceManager,
         render_list: &[RenderObject],
         scene_data: &SceneData,
-    ) {
+        _draw_extent: ImageExtent2D,
+    ) -> Result<(), RenderError> {
+        tracing::debug!(target: "render", "Draw {}", &self.name());
+
+        let cmd = &frame.command;
+
+        self.transition_attachments(cmd, resource_manager);
+
+        self.begin_pass(cmd, resource_manager);
+
         tracing::debug!(target: "render", "Start render job");
         let render_job = &self.render_jobs[frame.id];
 
@@ -191,9 +218,9 @@ impl MaterialPass {
             .expect("Render error");
 
         tracing::debug!(target: "render", "Stop render job");
-    }
 
-    pub fn push_layout(&self) -> Option<Arc<UniformLayout>> {
-        Some(self.object_layout.uniform_layout())
+        self.end_pass(cmd);
+
+        Ok(())
     }
 }

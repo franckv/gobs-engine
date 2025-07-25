@@ -43,14 +43,13 @@ impl PipelineLoader {
     }
 
     pub fn load_graphics(&self, properties: &GraphicsPipelineProperties) -> PipelineData {
-        let mut pipeline = GfxPipeline::graphics(&properties.name, &self.device);
-
-        pipeline = pipeline
+        let mut pipeline = GfxPipeline::graphics(&properties.name, &self.device)
             .pool_size(properties.ds_pool_size)
             .push_constants(properties.push_constants)
             .viewports(vec![Viewport::new(0., 0., 0., 0.)])
             .scissors(vec![Rect2D::new(0, 0, 0, 0)])
             .dynamic_states(&[DynamicStateElem::Viewport, DynamicStateElem::Scissor])
+            .polygon_mode(properties.polygon_mode)
             .front_face(properties.front_face)
             .cull_mode(properties.cull_mode)
             .blending_enabled(properties.blend_mode)

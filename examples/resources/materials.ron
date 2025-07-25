@@ -1,5 +1,5 @@
 MaterialsConfig(
-    default: DefaultMaterialConfig (
+    default: (
         // must match material pass layout
         object_layout: [
             WorldMatrix,
@@ -8,14 +8,14 @@ MaterialsConfig(
         ],
     ),
     materials: {
-        "color": MaterialConfig (
+        "color": (
             vertex_shader: "color.spv",
             vertex_entry: "vertex_main",
             fragment_shader: "color.spv",
             fragment_entry: "fragment_main",
             vertex_attributes: "POSITION | COLOR",
         ),
-        "color.transparent": MaterialConfig (
+        "color.transparent": (
             vertex_shader: "color.spv",
             vertex_entry: "vertex_main",
             fragment_shader: "color.spv",
@@ -23,7 +23,7 @@ MaterialsConfig(
             vertex_attributes: "POSITION | COLOR",
             blend_mode: Alpha,
         ),
-        "texture": MaterialConfig (
+        "texture": (
             vertex_shader: "mesh.vert.spv",
             vertex_entry: "main",
             fragment_shader: "mesh.frag.spv",
@@ -33,7 +33,7 @@ MaterialsConfig(
                 "diffuse": Texture
             }
         ),
-        "texture.transparent": MaterialConfig (
+        "texture.transparent": (
             vertex_shader: "mesh.vert.spv",
             vertex_entry: "main",
             fragment_shader: "mesh.frag.spv",
@@ -44,7 +44,7 @@ MaterialsConfig(
                 "diffuse": Texture
             }
         ),
-        "normal": MaterialConfig (
+        "normal": (
             vertex_shader: "mesh.vert.spv",
             vertex_entry: "main",
             fragment_shader: "mesh_n.frag.spv",
@@ -55,7 +55,7 @@ MaterialsConfig(
                 "normal": Texture
             }
         ),
-        "depth": MaterialConfig (
+        "depth": (
             vertex_shader: "color.spv",
             vertex_entry: "vertex_main",
             fragment_shader: "color.spv",

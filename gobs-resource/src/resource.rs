@@ -6,7 +6,7 @@ use uuid::Uuid;
 
 use gobs_core::memory::allocator::AllocationError;
 
-use crate::manager::ResourceRegistry;
+use crate::{load::LoadingError, manager::ResourceRegistry};
 
 pub enum ResourceState<R: ResourceType> {
     Unloaded,
@@ -86,9 +86,11 @@ impl<R: ResourceType> Resource<R> {
 #[derive(Error, Debug)]
 pub enum ResourceError {
     #[error("resource loading error")]
-    ResourceLoadError,
+    ResourceLoadError(#[from] LoadingError),
     #[error("allocation error")]
     AllocationError(#[from] AllocationError),
+    #[error("invalid data")]
+    InvalidData,
 }
 
 pub trait ResourceProperties {

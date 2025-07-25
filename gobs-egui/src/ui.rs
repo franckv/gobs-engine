@@ -10,14 +10,14 @@ use parking_lot::RwLock;
 use gobs_core::{Color, ImageExtent2D, Input, Key, MouseButton, Transform};
 use gobs_render::{
     BlendMode, GfxContext, Material, MaterialInstance, MaterialProperties, MaterialProperty, Model,
-    ObjectDataLayout, ObjectDataProp, RenderBatch, RenderError, Renderable, Texture,
-    TextureProperties, TextureUpdate,
+    ObjectDataLayout, ObjectDataProp, RenderBatch, Renderable, Texture, TextureProperties,
+    TextureUpdate,
 };
 use gobs_render_graph::{PassType, RenderPass};
 use gobs_resource::{
     geometry::{MeshGeometry, VertexAttribute, VertexData},
     manager::ResourceManager,
-    resource::{ResourceHandle, ResourceLifetime},
+    resource::{ResourceError, ResourceHandle, ResourceLifetime},
 };
 
 use crate::UIError;
@@ -425,7 +425,7 @@ impl Renderable for UIRenderer {
         pass: RenderPass,
         batch: &mut RenderBatch,
         transform: Option<Transform>,
-    ) -> Result<(), RenderError> {
+    ) -> Result<(), ResourceError> {
         if pass.ty() == PassType::Ui {
             let output = self.output.write().take().unwrap();
 

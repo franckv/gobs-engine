@@ -16,7 +16,6 @@ pub use renderable::Renderable;
 pub use renderer::Renderer;
 pub use resources::{
     Material, MaterialData, MaterialLoader, MaterialProperties, MaterialProperty, MaterialsConfig,
-    Mesh, MeshData, MeshLoader, Pipeline, PipelineData, PipelineLoader, PipelineProperties,
-    Texture, TextureData, TextureLoader, TexturePath, TextureProperties, TextureType,
-    TextureUpdate,
+    Mesh, MeshData, MeshLoader, Texture, TextureData, TextureLoader, TexturePath,
+    TextureProperties, TextureType, TextureUpdate,
 };

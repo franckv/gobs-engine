@@ -3,7 +3,7 @@ use std::sync::Arc;
 use gobs_core::ImageFormat;
 use gobs_gfx::{
     BindingGroupType, BlendMode, CompareOp, CullMode, DescriptorStage, DescriptorType, FrontFace,
-    GfxPipeline,
+    GfxPipeline, PolygonMode,
 };
 use gobs_resource::resource::{ResourceProperties, ResourceType};
 
@@ -57,7 +57,7 @@ pub struct GraphicsPipelineProperties {
     pub(crate) fragment_entry: Option<String>,
     pub(crate) fragment_shader: Option<String>,
     pub(crate) binding_groups: Vec<(DescriptorStage, BindingGroupType, Vec<DescriptorType>)>,
-    pub(crate) last_binding_group: BindingGroupType,
+    pub last_binding_group: BindingGroupType,
     pub(crate) ds_pool_size: usize,
     pub(crate) push_constants: usize,
     pub(crate) color_format: Option<ImageFormat>,
@@ -66,6 +66,7 @@ pub struct GraphicsPipelineProperties {
     pub(crate) depth_test_write_enable: bool,
     pub(crate) depth_test_op: CompareOp,
     pub(crate) front_face: FrontFace,
+    pub(crate) polygon_mode: PolygonMode,
     pub(crate) cull_mode: CullMode,
     pub(crate) blend_mode: BlendMode,
 }
@@ -87,6 +88,7 @@ impl GraphicsPipelineProperties {
             depth_test_enable: true,
             depth_test_write_enable: true,
             depth_test_op: CompareOp::Never,
+            polygon_mode: PolygonMode::default(),
             front_face: FrontFace::default(),
             cull_mode: CullMode::default(),
             blend_mode: BlendMode::None,
@@ -151,6 +153,12 @@ impl GraphicsPipelineProperties {
 
     pub fn cull_mode(mut self, cull_mode: CullMode) -> Self {
         self.cull_mode = cull_mode;
+
+        self
+    }
+
+    pub fn polygon_mode(mut self, polygon_mode: PolygonMode) -> Self {
+        self.polygon_mode = polygon_mode;
 
         self
     }

@@ -23,7 +23,7 @@ pub mod select;
 pub mod ui;
 pub mod wire;
 
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, Deserialize, Serialize, PartialEq)]
 pub enum PassType {
     Bounds,
     Compute,
