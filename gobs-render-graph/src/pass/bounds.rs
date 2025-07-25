@@ -25,9 +25,7 @@ impl BoundsPass {
         let mut material_pass =
             GraphConfig::load_pass(ctx, "graph.ron", name).ok_or(RenderError::PassNotFound)?;
 
-        let vertex_attributes = VertexAttribute::POSITION;
-
-        material_pass.set_fixed_pipeline(pipeline.clone(), vertex_attributes);
+        material_pass.set_fixed_pipeline(pipeline.clone());
 
         Ok(Arc::new(Self {
             ty: PassType::Bounds,
@@ -50,7 +48,7 @@ impl RenderPass for BoundsPass {
     }
 
     fn vertex_attributes(&self) -> Option<VertexAttribute> {
-        self.material_pass.vertex_attributes
+        self.material_pass.vertex_attributes()
     }
 
     fn push_layout(&self) -> Option<Arc<UniformLayout>> {

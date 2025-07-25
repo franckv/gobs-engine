@@ -31,7 +31,6 @@ pub enum MaterialProperty {
 pub struct MaterialProperties {
     pub name: String,
     pub pipeline_properties: GraphicsPipelineProperties,
-    pub vertex_attributes: VertexAttribute,
     pub blending_enabled: bool,
 }
 
@@ -59,6 +58,7 @@ impl MaterialProperties {
             .fragment_entry(fragment_entry)
             .pool_size(10)
             .push_constants(object_data_layout.uniform_layout().size())
+            .vertex_attributes(vertex_attributes)
             .depth_test_enable(false, CompareOp::LessEqual)
             .front_face(FrontFace::CCW)
             .binding_group(DescriptorStage::All, BindingGroupType::SceneData)
@@ -69,7 +69,6 @@ impl MaterialProperties {
         Self {
             name: name.to_string(),
             pipeline_properties,
-            vertex_attributes,
             blending_enabled: false,
         }
     }

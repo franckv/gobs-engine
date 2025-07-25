@@ -20,6 +20,8 @@ impl Buffer<VkRenderer> for VkBuffer {
         usage: vk::buffers::BufferUsage,
         device: &VkDevice,
     ) -> VkBuffer {
+        tracing::debug!(target: "resources", "Create buffer {}, size={}", name, size);
+
         Self {
             id: BufferId::new_v4(),
             buffer: vk::buffers::Buffer::new(

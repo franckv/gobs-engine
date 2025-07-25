@@ -1,5 +1,6 @@
 use std::sync::Arc;
 
+use gobs_resource::geometry::VertexAttribute;
 use indexmap::IndexMap;
 use parking_lot::RwLock;
 
@@ -19,6 +20,8 @@ use crate::{
 pub struct VkPipeline {
     pub(crate) name: String,
     pub(crate) id: PipelineId,
+    // TODO: handle compute shaders attributes
+    pub(crate) vertex_attributes: VertexAttribute,
     pub(crate) pipeline: Arc<vk::pipelines::Pipeline>,
     pub(crate) ds_pools: IndexMap<BindingGroupType, RwLock<vk::descriptor::DescriptorSetPool>>,
 }
@@ -30,6 +33,10 @@ impl Pipeline<VkRenderer> for VkPipeline {
 
     fn id(&self) -> PipelineId {
         self.id
+    }
+
+    fn vertex_attributes(&self) -> VertexAttribute {
+        self.vertex_attributes
     }
 
     fn graphics(name: &str, device: &VkDevice) -> VkGraphicsPipelineBuilder {
@@ -74,6 +81,7 @@ pub struct VkGraphicsPipelineBuilder {
     ds_pools: IndexMap<BindingGroupType, RwLock<vk::descriptor::DescriptorSetPool>>,
     ds_pool_size: usize,
     push_constants: usize,
+    vertex_attributes: VertexAttribute,
 }
 
 impl GraphicsPipelineBuilder<VkRenderer> for VkGraphicsPipelineBuilder {
@@ -111,6 +119,12 @@ impl GraphicsPipelineBuilder<VkRenderer> for VkGraphicsPipelineBuilder {
 
     fn push_constants(mut self, size: usize) -> Self {
         self.push_constants = size;
+
+        self
+    }
+
+    fn vertex_attributes(mut self, vertex_attributes: VertexAttribute) -> Self {
+        self.vertex_attributes = vertex_attributes;
 
         self
     }
@@ -227,6 +241,7 @@ impl GraphicsPipelineBuilder<VkRenderer> for VkGraphicsPipelineBuilder {
         Arc::new(VkPipeline {
             name: self.name,
             id: PipelineId::new_v4(),
+            vertex_attributes: self.vertex_attributes,
             pipeline,
             ds_pools,
         })
@@ -244,6 +259,7 @@ impl VkGraphicsPipelineBuilder {
             ds_pools: IndexMap::new(),
             ds_pool_size: 10,
             push_constants: 0,
+            vertex_attributes: VertexAttribute::empty(),
         }
     }
 
@@ -339,6 +355,7 @@ impl ComputePipelineBuilder<VkRenderer> for VkComputePipelineBuilder {
             id: PipelineId::new_v4(),
             pipeline,
             ds_pools,
+            vertex_attributes: VertexAttribute::empty(),
         })
     }
 }

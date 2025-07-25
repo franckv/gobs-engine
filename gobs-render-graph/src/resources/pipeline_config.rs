@@ -8,6 +8,7 @@ use gobs_gfx::{
 };
 use gobs_render_low::{GfxContext, ObjectDataLayout, ObjectDataProp};
 use gobs_resource::{
+    geometry::VertexAttribute,
     load::{self, AssetType},
     manager::ResourceManager,
     resource::{ResourceError, ResourceLifetime},
@@ -26,6 +27,7 @@ struct PipelineConfig {
     fragment_shader: Option<ShaderConfig>,
     #[serde(default)]
     object_layout: Vec<ObjectDataProp>,
+    vertex_attributes: VertexAttribute,
     #[serde(default)]
     bindings: Vec<BindingConfig>,
     polygon_mode: PolygonMode,
@@ -111,6 +113,7 @@ impl PipelinesConfig {
         let mut props = PipelineProperties::graphics(name)
             .push_constants(object_layout.uniform_layout().size())
             .pool_size(ctx.frames_in_flight)
+            .vertex_attributes(pipeline.vertex_attributes)
             .polygon_mode(pipeline.polygon_mode)
             .cull_mode(pipeline.cull_mode)
             .front_face(pipeline.front_face);
@@ -160,7 +163,7 @@ impl PipelinesConfig {
 mod tests {
     use std::collections::HashMap;
 
-    use gobs_resource::manager::ResourceManager;
+    use gobs_resource::{geometry::VertexAttribute, manager::ResourceManager};
     use tracing::Level;
     use tracing_subscriber::{FmtSubscriber, fmt::format::FmtSpan};
 
@@ -222,6 +225,7 @@ mod tests {
                     vertex_shader: None,
                     fragment_shader: None,
                     object_layout: Vec::new(),
+                    vertex_attributes: VertexAttribute::POSITION,
                     bindings: Vec::new(),
                     polygon_mode: PolygonMode::Fill,
                     attachments: AttachmentFormat {

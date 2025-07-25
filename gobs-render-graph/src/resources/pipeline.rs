@@ -5,7 +5,10 @@ use gobs_gfx::{
     BindingGroupType, BlendMode, CompareOp, CullMode, DescriptorStage, DescriptorType, FrontFace,
     GfxPipeline, PolygonMode,
 };
-use gobs_resource::resource::{ResourceProperties, ResourceType};
+use gobs_resource::{
+    geometry::VertexAttribute,
+    resource::{ResourceProperties, ResourceType},
+};
 
 use crate::resources::pipeline_loader::PipelineLoader;
 
@@ -60,6 +63,7 @@ pub struct GraphicsPipelineProperties {
     pub last_binding_group: BindingGroupType,
     pub(crate) ds_pool_size: usize,
     pub(crate) push_constants: usize,
+    pub vertex_attributes: VertexAttribute,
     pub(crate) color_format: Option<ImageFormat>,
     pub(crate) depth_format: Option<ImageFormat>,
     pub(crate) depth_test_enable: bool,
@@ -83,6 +87,7 @@ impl GraphicsPipelineProperties {
             last_binding_group: BindingGroupType::None,
             ds_pool_size: 10,
             push_constants: 0,
+            vertex_attributes: VertexAttribute::empty(),
             color_format: None,
             depth_format: None,
             depth_test_enable: true,
@@ -192,6 +197,12 @@ impl GraphicsPipelineProperties {
 
     pub fn push_constants(mut self, size: usize) -> Self {
         self.push_constants = size;
+
+        self
+    }
+
+    pub fn vertex_attributes(mut self, vertex_attributes: VertexAttribute) -> Self {
+        self.vertex_attributes = vertex_attributes;
 
         self
     }

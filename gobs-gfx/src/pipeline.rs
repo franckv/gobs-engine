@@ -1,5 +1,6 @@
 use std::sync::Arc;
 
+use gobs_resource::geometry::VertexAttribute;
 use uuid::Uuid;
 
 use gobs_core::ImageFormat;
@@ -14,6 +15,7 @@ pub type PipelineId = Uuid;
 pub trait Pipeline<R: Renderer> {
     fn name(&self) -> &str;
     fn id(&self) -> PipelineId;
+    fn vertex_attributes(&self) -> VertexAttribute;
     fn graphics(name: &str, device: &R::Device) -> R::GraphicsPipelineBuilder;
     fn compute(name: &str, device: &R::Device) -> R::ComputePipelineBuilder;
     fn create_binding_group(
@@ -43,6 +45,7 @@ pub trait GraphicsPipelineBuilder<R: Renderer> {
     ) -> Result<R::GraphicsPipelineBuilder, GfxError>;
     fn pool_size(self, size: usize) -> Self;
     fn push_constants(self, size: usize) -> Self;
+    fn vertex_attributes(self, vertex_attributes: VertexAttribute) -> Self;
     fn binding_group(self, binding_group_type: BindingGroupType) -> Self;
     fn current_binding_group(&self) -> Option<BindingGroupType>;
     fn binding(self, ty: DescriptorType, stage: DescriptorStage) -> Self;

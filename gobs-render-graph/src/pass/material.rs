@@ -1,7 +1,7 @@
 use std::{collections::HashMap, sync::Arc};
 
 use gobs_core::ImageExtent2D;
-use gobs_gfx::{Command, GfxCommand, GfxPipeline};
+use gobs_gfx::{Command, GfxCommand, GfxPipeline, Pipeline};
 use gobs_render_low::{
     GfxContext, ObjectDataLayout, RenderError, RenderJob, RenderObject, SceneData, SceneDataLayout,
     UniformLayout,
@@ -22,10 +22,10 @@ pub struct MaterialPass {
     input_attachments: Vec<String>,
     color_attachments: Vec<String>,
     depth_attachments: Vec<String>,
-    pub(crate) vertex_attributes: Option<VertexAttribute>,
     object_layout: ObjectDataLayout,
     scene_layout: SceneDataLayout,
     render_jobs: Vec<RenderJob>,
+    fixed_pipeline: Option<Arc<GfxPipeline>>,
 }
 
 impl MaterialPass {
@@ -61,10 +61,10 @@ impl MaterialPass {
             input_attachments: vec![],
             color_attachments: vec![],
             depth_attachments: vec![],
-            vertex_attributes: None,
             object_layout,
             scene_layout,
             render_jobs,
+            fixed_pipeline: None,
         }
     }
 
@@ -72,13 +72,8 @@ impl MaterialPass {
         self.object_layout.uniform_layout().size()
     }
 
-    pub fn set_fixed_pipeline(
-        &mut self,
-        pipeline: Arc<GfxPipeline>,
-        vertex_attributes: VertexAttribute,
-    ) {
-        self.vertex_attributes = Some(vertex_attributes);
-
+    pub fn set_fixed_pipeline(&mut self, pipeline: Arc<GfxPipeline>) {
+        self.fixed_pipeline = Some(pipeline.clone());
         for job in &mut self.render_jobs {
             job.set_pipeline(pipeline.clone());
         }
@@ -179,7 +174,7 @@ impl RenderPass for MaterialPass {
     }
 
     fn vertex_attributes(&self) -> Option<VertexAttribute> {
-        self.vertex_attributes
+        self.fixed_pipeline.as_ref().map(|p| p.vertex_attributes())
     }
 
     fn push_layout(&self) -> Option<Arc<UniformLayout>> {

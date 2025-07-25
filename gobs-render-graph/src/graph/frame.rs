@@ -63,29 +63,41 @@ impl FrameGraph {
             extent,
         );
 
-        let pipeline_handle = resource_manager
+        let depth_pipeline_handle = resource_manager
+            .get_by_name::<Pipeline>("depth")
+            .ok_or(RenderError::InvalidData)?;
+        let depth_pipeline = resource_manager
+            .get_data(&depth_pipeline_handle, ())
+            .map_err(|_| RenderError::InvalidData)?
+            .pipeline
+            .clone();
+
+        let wire_pipeline_handle = resource_manager
             .get_by_name::<Pipeline>("wireframe")
             .ok_or(RenderError::InvalidData)?;
-        let pipeline = resource_manager
-            .get_data(&pipeline_handle, ())
+        let wire_pipeline = resource_manager
+            .get_data(&wire_pipeline_handle, ())
             .map_err(|_| RenderError::InvalidData)?
             .pipeline
             .clone();
 
         graph.register_pass(ComputePass::new(ctx, "compute")?);
-        graph.register_pass(DepthPass::new(ctx, "depth")?);
+        graph.register_pass(DepthPass::new(ctx, "depth", depth_pipeline)?);
         graph.register_pass(ForwardPass::new(ctx, "forward")?);
         graph.register_pass(UiPass::new(ctx, "ui")?);
-        graph.register_pass(WirePass::new(ctx, "wire", pipeline.clone())?);
-        graph.register_pass(BoundsPass::new(ctx, "bounds", pipeline.clone())?);
-        graph.register_pass(SelectPass::new(ctx, "select", pipeline)?);
+        graph.register_pass(WirePass::new(ctx, "wire", wire_pipeline.clone())?);
+        graph.register_pass(BoundsPass::new(ctx, "bounds", wire_pipeline.clone())?);
+        graph.register_pass(SelectPass::new(ctx, "select", wire_pipeline)?);
         graph.register_pass(DummyPass::new(ctx, "dummy")?);
         graph.register_pass(PresentPass::new(ctx, "present")?);
 
         Ok(graph)
     }
 
-    pub fn headless(ctx: &GfxContext) -> Result<Self, RenderError> {
+    pub fn headless(
+        ctx: &GfxContext,
+        resource_manager: &mut ResourceManager,
+    ) -> Result<Self, RenderError> {
         let mut graph = Self::new(ctx);
 
         let extent = Self::get_render_target_extent(ctx);
@@ -105,8 +117,17 @@ impl FrameGraph {
             extent,
         );
 
+        let depth_pipeline_handle = resource_manager
+            .get_by_name::<Pipeline>("depth")
+            .ok_or(RenderError::InvalidData)?;
+        let depth_pipeline = resource_manager
+            .get_data(&depth_pipeline_handle, ())
+            .map_err(|_| RenderError::InvalidData)?
+            .pipeline
+            .clone();
+
         graph.register_pass(ComputePass::new(ctx, "compute")?);
-        graph.register_pass(DepthPass::new(ctx, "depth")?);
+        graph.register_pass(DepthPass::new(ctx, "depth", depth_pipeline)?);
         graph.register_pass(ForwardPass::new(ctx, "forward")?);
         graph.register_pass(DummyPass::new(ctx, "dummy")?);
 

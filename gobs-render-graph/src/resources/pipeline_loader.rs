@@ -46,6 +46,7 @@ impl PipelineLoader {
         let mut pipeline = GfxPipeline::graphics(&properties.name, &self.device)
             .pool_size(properties.ds_pool_size)
             .push_constants(properties.push_constants)
+            .vertex_attributes(properties.vertex_attributes)
             .viewports(vec![Viewport::new(0., 0., 0., 0.)])
             .scissors(vec![Rect2D::new(0, 0, 0, 0)])
             .dynamic_states(&[DynamicStateElem::Viewport, DynamicStateElem::Scissor])

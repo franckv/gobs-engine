@@ -23,7 +23,7 @@ const TANGENT_ALIGN: usize = 16;
 const BITANGENT_ALIGN: usize = 16;
 
 bitflags! {
-    #[derive(Debug, Clone, Copy, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash)]
+    #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash)]
     #[serde(transparent)]
     pub struct VertexAttribute: u32 {
         const POSITION = 1;

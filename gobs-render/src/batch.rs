@@ -73,6 +73,7 @@ impl RenderBatch {
                     resource_manager
                         .get(&model.materials[material_id].material)
                         .properties
+                        .pipeline_properties
                         .vertex_attributes
                 }
             };
