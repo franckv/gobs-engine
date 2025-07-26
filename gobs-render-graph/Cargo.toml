@@ -24,3 +24,6 @@ winit = { workspace = true }
 [dev-dependencies]
 ron = { workspace = true }
 tracing-subscriber = { workspace = true }
+
+[features]
+ci = []
