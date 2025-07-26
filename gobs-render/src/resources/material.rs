@@ -74,10 +74,11 @@ impl MaterialProperties {
     }
 
     pub fn prop(mut self, _name: &str, prop: MaterialProperty) -> Self {
-        if self.pipeline_properties.last_binding_group != BindingGroupType::MaterialData {
-            self.pipeline_properties = self
-                .pipeline_properties
-                .binding_group(DescriptorStage::Fragment, BindingGroupType::MaterialData);
+        if self.pipeline_properties.last_binding_group != BindingGroupType::MaterialTextures {
+            self.pipeline_properties = self.pipeline_properties.binding_group(
+                DescriptorStage::Fragment,
+                BindingGroupType::MaterialTextures,
+            );
         }
 
         match prop {

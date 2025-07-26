@@ -184,7 +184,7 @@ mod tests {
 
         let ctx = crate::headless::Context::new("test");
 
-        let layout = DescriptorSetLayout::builder()
+        let layout = DescriptorSetLayout::builder(0)
             .binding(DescriptorType::ImageSampler, DescriptorStage::Compute)
             .binding(DescriptorType::Uniform, DescriptorStage::Compute)
             .binding(DescriptorType::ImageSampler, DescriptorStage::Compute)

@@ -132,8 +132,9 @@ impl GraphicsPipelineBuilder<VkRenderer> for VkGraphicsPipelineBuilder {
     fn binding_group(mut self, binding_group_type: BindingGroupType) -> Self {
         self = self.save_binding_group();
 
+        let set = binding_group_type.set();
         self.current_binding_group = Some(binding_group_type);
-        self.current_ds_layout = Some(vk::descriptor::DescriptorSetLayout::builder());
+        self.current_ds_layout = Some(vk::descriptor::DescriptorSetLayout::builder(set));
 
         self
     }
@@ -232,7 +233,7 @@ impl GraphicsPipelineBuilder<VkRenderer> for VkGraphicsPipelineBuilder {
 
         let pipeline_layout = vk::pipelines::PipelineLayout::new(
             self.device.clone(),
-            &descriptor_layouts,
+            descriptor_layouts,
             self.push_constants,
         );
 
@@ -315,8 +316,9 @@ impl ComputePipelineBuilder<VkRenderer> for VkComputePipelineBuilder {
     fn binding_group(mut self, binding_group_type: BindingGroupType) -> Self {
         self = self.save_binding_group();
 
+        let set = binding_group_type.set();
         self.current_binding_group = Some(binding_group_type);
-        self.current_ds_layout = Some(vk::descriptor::DescriptorSetLayout::builder());
+        self.current_ds_layout = Some(vk::descriptor::DescriptorSetLayout::builder(set));
 
         self
     }
@@ -344,7 +346,7 @@ impl ComputePipelineBuilder<VkRenderer> for VkComputePipelineBuilder {
 
         let pipeline_layout = vk::pipelines::PipelineLayout::new(
             self.device.clone(),
-            &descriptor_layouts,
+            descriptor_layouts,
             self.push_constants,
         );
 

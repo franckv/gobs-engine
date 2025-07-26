@@ -56,7 +56,7 @@ impl MeshResourceManager {
                             .pipeline;
 
                         let binding = pipeline
-                            .create_binding_group(BindingGroupType::MaterialData)
+                            .create_binding_group(BindingGroupType::MaterialTextures)
                             .unwrap();
                         let mut updater = binding.update();
                         for texture in &material.textures {

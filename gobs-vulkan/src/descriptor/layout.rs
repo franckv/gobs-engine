@@ -56,12 +56,14 @@ pub struct DescriptorSetLayoutBinding {
 
 pub struct DescriptorSetLayoutBuilder {
     bindings: Vec<DescriptorSetLayoutBinding>,
+    set: u32,
 }
 
 impl DescriptorSetLayoutBuilder {
-    fn new() -> Self {
+    fn new(set: u32) -> Self {
         DescriptorSetLayoutBuilder {
             bindings: Vec::new(),
+            set,
         }
     }
 
@@ -75,7 +77,7 @@ impl DescriptorSetLayoutBuilder {
         let mut bindings = Vec::new();
         bindings.append(&mut self.bindings);
 
-        DescriptorSetLayout::new(device, bindings, push)
+        DescriptorSetLayout::new(device, bindings, self.set, push)
     }
 }
 
@@ -84,16 +86,18 @@ pub struct DescriptorSetLayout {
     device: Arc<Device>,
     pub(crate) layout: vk::DescriptorSetLayout,
     pub bindings: Vec<DescriptorSetLayoutBinding>,
+    pub set: u32,
 }
 
 impl DescriptorSetLayout {
-    pub fn builder() -> DescriptorSetLayoutBuilder {
-        DescriptorSetLayoutBuilder::new()
+    pub fn builder(set: u32) -> DescriptorSetLayoutBuilder {
+        DescriptorSetLayoutBuilder::new(set)
     }
 
     fn new(
         device: Arc<Device>,
         bindings: Vec<DescriptorSetLayoutBinding>,
+        set: u32,
         push: bool,
     ) -> Arc<Self> {
         let vk_bindings: Vec<vk::DescriptorSetLayoutBinding> = bindings
@@ -109,8 +113,11 @@ impl DescriptorSetLayout {
             })
             .collect();
 
-        let mut descriptor_info =
-            vk::DescriptorSetLayoutCreateInfo::default().bindings(&vk_bindings);
+        let mut descriptor_info = vk::DescriptorSetLayoutCreateInfo::default();
+
+        if !vk_bindings.is_empty() {
+            descriptor_info = descriptor_info.bindings(&vk_bindings);
+        }
 
         if push {
             descriptor_info =
@@ -128,6 +135,7 @@ impl DescriptorSetLayout {
             device,
             layout,
             bindings,
+            set,
         })
     }
 }

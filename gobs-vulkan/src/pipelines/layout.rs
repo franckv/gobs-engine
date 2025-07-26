@@ -16,18 +16,46 @@ pub struct PipelineLayout {
 impl PipelineLayout {
     pub fn new(
         device: Arc<Device>,
-        descriptor_layouts: &[Arc<DescriptorSetLayout>],
+        mut descriptor_layouts: Vec<Arc<DescriptorSetLayout>>,
         push_constant_size: usize,
     ) -> Arc<Self> {
         let mut layout_info = vk::PipelineLayoutCreateInfo::default();
 
         let mut set_layout = vec![];
-        for descriptor_layout in descriptor_layouts {
-            set_layout.push(descriptor_layout.layout);
+
+        let mut idx = 0;
+        for descriptor_layout in descriptor_layouts.clone().iter() {
+            let set = descriptor_layout.set as usize;
+            if idx == set {
+                set_layout.push(descriptor_layout.layout);
+            } else if idx > set {
+                tracing::error!("Wrong order for descriptor sets layouts");
+                panic!("Wrong order for descriptor sets layouts");
+            } else {
+                tracing::info!(target: "Render", "Gap in pipeline descriptors layout: {}", idx);
+
+                let mut gaps = set - idx;
+
+                while gaps > 0 {
+                    let empty_descriptor =
+                        DescriptorSetLayout::builder(idx as u32).build(device.clone(), false);
+                    set_layout.push(empty_descriptor.layout);
+                    descriptor_layouts.insert(idx, empty_descriptor);
+                    gaps -= 1;
+                    idx += 1;
+                }
+
+                set_layout.push(descriptor_layout.layout);
+            }
+
+            idx += 1;
         }
-        if !set_layout.is_empty() {
-            layout_info = layout_info.set_layouts(&set_layout);
-        }
+
+        tracing::debug!(target: "Render", "Create pipline layout with {} descriptor sets", set_layout.len());
+
+        assert_eq!(set_layout.len(), descriptor_layouts.len());
+
+        layout_info = layout_info.set_layouts(&set_layout);
 
         let mut push_constant_range = vec![];
         if push_constant_size > 0 {
@@ -44,7 +72,7 @@ impl PipelineLayout {
         let layout = unsafe {
             PipelineLayout {
                 device: device.clone(),
-                _descriptor_layouts: descriptor_layouts.to_vec(),
+                _descriptor_layouts: descriptor_layouts,
                 layout: device
                     .raw()
                     .create_pipeline_layout(&layout_info, None)

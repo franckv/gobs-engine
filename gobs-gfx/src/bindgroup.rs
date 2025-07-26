@@ -9,7 +9,7 @@ pub enum BindingGroupType {
     None,
     ComputeData,
     SceneData,
-    MaterialData,
+    MaterialTextures,
 }
 
 impl BindingGroupType {
@@ -18,7 +18,7 @@ impl BindingGroupType {
             BindingGroupType::None => panic!("Invalid binding group"),
             BindingGroupType::ComputeData => 0,
             BindingGroupType::SceneData => 0,
-            BindingGroupType::MaterialData => 1,
+            BindingGroupType::MaterialTextures => 2,
         }
     }
 }
