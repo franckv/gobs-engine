@@ -3,6 +3,8 @@ use std::sync::{Arc, Mutex};
 use ash::vk::{self, Handle};
 use gpu_allocator::{AllocatorDebugSettings, MemoryLocation, vulkan};
 
+use gobs_core::logger;
+
 use crate::{Wrap, buffers::BufferUsage, device::Device, memory::Memory};
 
 pub struct Allocator {
@@ -42,7 +44,7 @@ impl Allocator {
         label: &str,
     ) -> Memory {
         let mem_req = unsafe { self.device.raw().get_buffer_memory_requirements(buffer) };
-        tracing::debug!(target: "memory", "Allocating buffer {}: {:?}", label, mem_req);
+        tracing::debug!(target: logger::MEMORY, "Allocating buffer {}: {:?}", label, mem_req);
 
         let allocation = self
             .allocator
@@ -58,7 +60,7 @@ impl Allocator {
             .unwrap();
 
         unsafe {
-            tracing::debug!(target: "memory",
+            tracing::debug!(target: logger::MEMORY,
                 "Binding memory {:x} with buffer {}",
                 allocation.memory().as_raw(),
                 label
@@ -79,7 +81,7 @@ impl Allocator {
 
     pub fn allocate_image(self: Arc<Self>, image: vk::Image, label: &str) -> Memory {
         let mem_req = unsafe { self.device.raw().get_image_memory_requirements(image) };
-        tracing::debug!(target: "memory", "Allocating image {}: {:?}", label, mem_req);
+        tracing::debug!(target: logger::MEMORY, "Allocating image {}: {:?}", label, mem_req);
 
         let allocation = self
             .allocator
@@ -95,7 +97,7 @@ impl Allocator {
             .unwrap();
 
         unsafe {
-            tracing::debug!(target: "memory",
+            tracing::debug!(target: logger::MEMORY,
                 "Binding memory {:x} with image {}",
                 allocation.memory().as_raw(),
                 label
@@ -117,6 +119,6 @@ impl Allocator {
 
 impl Drop for Allocator {
     fn drop(&mut self) {
-        tracing::debug!(target: "memory", "Drop allocator: {:?}", self.allocator.lock().unwrap());
+        tracing::debug!(target: logger::MEMORY, "Drop allocator: {:?}", self.allocator.lock().unwrap());
     }
 }

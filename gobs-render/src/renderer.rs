@@ -1,4 +1,4 @@
-use gobs_core::ImageExtent2D;
+use gobs_core::{ImageExtent2D, logger};
 use gobs_gfx::Device;
 use gobs_render_graph::{FrameData, FrameGraph, PipelinesConfig, RenderPass};
 use gobs_render_low::{GfxContext, RenderError};
@@ -48,14 +48,14 @@ impl Renderer {
         self.frame_number += 1;
         let frame_id = self.frame_number % self.gfx.frames_in_flight;
 
-        tracing::debug!(target: "render", "Begin new frame: {} ({}/{})", self.frame_number, frame_id, self.gfx.frames_in_flight);
+        tracing::debug!(target: logger::RENDER, "Begin new frame: {} ({}/{})", self.frame_number, frame_id, self.gfx.frames_in_flight);
 
         let frame = &mut self.frames[frame_id];
         assert_eq!(frame.id, frame_id);
 
         frame.frame_number = self.frame_number;
 
-        tracing::debug!(target: "sync", "Wait for frame: {} ({}/{})", self.frame_number, frame_id, self.gfx.frames_in_flight);
+        tracing::debug!(target: logger::SYNC, "Wait for frame: {} ({}/{})", self.frame_number, frame_id, self.gfx.frames_in_flight);
 
         frame.reset();
     }
@@ -69,7 +69,7 @@ impl Renderer {
             &mut ResourceManager,
         ) -> Result<(), RenderError>,
     ) -> Result<(), RenderError> {
-        tracing::debug!(target: "render", "Begin render batch");
+        tracing::debug!(target: logger::RENDER, "Begin render batch");
 
         self.new_frame();
 

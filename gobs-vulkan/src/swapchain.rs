@@ -4,6 +4,8 @@ use std::sync::Arc;
 use ash::khr::swapchain;
 use ash::vk;
 
+use gobs_core::logger;
+
 use crate::Wrap;
 use crate::device::Device;
 use crate::error::VulkanError;
@@ -40,7 +42,7 @@ impl From<PresentationMode> for vk::PresentModeKHR {
             PresentationMode::FifoRelaxed => vk::PresentModeKHR::FIFO_RELAXED,
             PresentationMode::Mailbox => vk::PresentModeKHR::MAILBOX,
             PresentationMode::Immediate => vk::PresentModeKHR::IMMEDIATE,
-            _ => panic!("Invalid present mode: {:?}", val),
+            _ => panic!("Invalid present mode: {val:?}"),
         }
     }
 }
@@ -111,7 +113,7 @@ impl SwapChain {
             let vk_images = self.loader.get_swapchain_images(self.swapchain).unwrap();
 
             tracing::debug!(
-                target: "init",
+                target: logger::INIT,
                 "actual image count={}, requested={}",
                 vk_images.len(),
                 self.image_count
@@ -179,7 +181,7 @@ impl SwapChain {
 
 impl Drop for SwapChain {
     fn drop(&mut self) {
-        tracing::debug!(target: "memory", "Drop swapchain");
+        tracing::debug!(target: logger::MEMORY, "Drop swapchain");
         self.cleanup();
     }
 }

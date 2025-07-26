@@ -3,6 +3,7 @@ use std::{
     sync::Arc,
 };
 
+use gobs_core::logger;
 use gobs_gfx::{
     BindingGroup, BindingGroupType, BindingGroupUpdates, GfxBindingGroup, ImageLayout, Pipeline,
 };
@@ -22,7 +23,7 @@ impl MeshResourceManager {
     }
 
     fn debug_stats(&self) {
-        tracing::debug!(target: "render", "Bindings: {}", self.material_bindings.keys().len());
+        tracing::debug!(target: logger::RENDER, "Bindings: {}", self.material_bindings.keys().len());
     }
 
     pub fn new_frame(&mut self) {
@@ -35,7 +36,7 @@ impl MeshResourceManager {
         material: Option<Arc<MaterialInstance>>,
     ) -> Option<GfxBindingGroup> {
         if let Some(ref material) = material {
-            tracing::debug!(target: "render", "Save binding for {}", material.id);
+            tracing::debug!(target: logger::RENDER, "Save binding for {}", material.id);
 
             match self.material_bindings.entry(material.id) {
                 Entry::Vacant(e) => {
@@ -45,7 +46,7 @@ impl MeshResourceManager {
                             .ok()?
                             .pipeline;
 
-                        tracing::debug!(target: "render",
+                        tracing::debug!(target: logger::RENDER,
                             "Create material binding for pipeline: {:?}",
                             pipeline_handle
                         );

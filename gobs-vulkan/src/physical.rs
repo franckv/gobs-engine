@@ -2,6 +2,8 @@ use std::ffi::CStr;
 
 use ash::vk;
 
+use gobs_core::logger;
+
 use crate::Wrap;
 use crate::feature::Features;
 use crate::instance::Instance;
@@ -87,9 +89,9 @@ impl PhysicalDevice {
     }
 
     pub fn check_features(&self, instance: &Instance, expected_features: &Features) -> bool {
-        tracing::debug!(target: "init", "Checking device: {:?}", self.name);
+        tracing::debug!(target: logger::INIT, "Checking device: {:?}", self.name);
 
-        tracing::debug!(target: "init", "Device type: {:?}", self.props.device_type);
+        tracing::debug!(target: logger::INIT, "Device type: {:?}", self.props.device_type);
 
         let vram = self
             .mem_props
@@ -105,21 +107,21 @@ impl PhysicalDevice {
             .max()
             .unwrap_or(0);
 
-        tracing::debug!(target: "init", "VRAM size: {}", vram);
+        tracing::debug!(target: logger::INIT, "VRAM size: {}", vram);
 
         if self.props.api_version < vk::make_api_version(0, 1, 3, 0) {
-            tracing::debug!(target: "init", "Reject: wrong version");
+            tracing::debug!(target: logger::INIT, "Reject: wrong version");
             return false;
         }
 
         let features = Features::from_device(instance, self);
 
         if !features.check_features(expected_features) {
-            tracing::debug!(target: "init", "Reject: missing features");
+            tracing::debug!(target: logger::INIT, "Reject: missing features");
             return false;
         }
 
-        tracing::debug!(target: "init", "Accepted");
+        tracing::debug!(target: logger::INIT, "Accepted");
 
         true
     }
@@ -148,7 +150,7 @@ impl PhysicalDevice {
                     .contains(vk::QueueFlags::TRANSFER),
             };
 
-            tracing::debug!(target: "init", "Queue family: {:?}", &family);
+            tracing::debug!(target: logger::INIT, "Queue family: {:?}", &family);
 
             results.push(family);
         }

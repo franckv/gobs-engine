@@ -3,6 +3,8 @@ use std::sync::Arc;
 
 use ash::vk;
 
+use gobs_core::logger;
+
 use crate::device::Device;
 use crate::{Wrap, debug};
 
@@ -23,7 +25,7 @@ impl Fence {
 
         let fence = unsafe { device.raw().create_fence(&fence_info, None).unwrap() };
 
-        let fence_label = format!("[Fence] {}", label);
+        let fence_label = format!("[Fence] {label}");
 
         debug::add_label(device.clone(), &fence_label, fence);
 
@@ -81,7 +83,7 @@ impl Wrap<vk::Fence> for Fence {
 
 impl Drop for Fence {
     fn drop(&mut self) {
-        tracing::debug!(target: "memory", "Drop fence");
+        tracing::debug!(target: logger::MEMORY, "Drop fence");
         unsafe {
             self.device.raw().destroy_fence(self.fence, None);
         }

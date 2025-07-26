@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use ash::vk;
 
-use gobs_core::SamplerFilter;
+use gobs_core::{SamplerFilter, logger};
 
 use crate::Wrap;
 use crate::device::Device;
@@ -49,7 +49,7 @@ impl Wrap<vk::Sampler> for Sampler {
 
 impl Drop for Sampler {
     fn drop(&mut self) {
-        tracing::debug!(target: "memory", "Drop sampler");
+        tracing::debug!(target: logger::MEMORY, "Drop sampler");
         unsafe {
             self.device.raw().destroy_sampler(self.sampler, None);
         }

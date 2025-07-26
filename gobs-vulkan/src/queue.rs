@@ -3,6 +3,8 @@ use std::sync::Arc;
 
 use ash::vk;
 
+use gobs_core::logger;
+
 use crate::Wrap;
 use crate::device::Device;
 
@@ -47,7 +49,7 @@ pub struct Queue {
 impl Queue {
     pub fn new(device: Arc<Device>, family: QueueFamily, index: u32) -> Arc<Self> {
         let queue = unsafe {
-            tracing::debug!(target: "init", "Create queue");
+            tracing::debug!(target: logger::INIT, "Create queue");
             device.raw().get_device_queue(family.index, index)
         };
 

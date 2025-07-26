@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use winit::window::Window;
 
-use gobs_core::{ImageExtent2D, ImageFormat};
+use gobs_core::{ImageExtent2D, ImageFormat, logger};
 use gobs_vulkan as vk;
 
 use crate::GfxError;
@@ -73,7 +73,7 @@ impl Display<VkRenderer> for VkDisplay {
 
     fn get_render_target(&mut self) -> Option<&mut VkImage> {
         if self.swapchain.is_some() {
-            tracing::trace!(target: "sync", "Use render target {}", self.swapchain_idx);
+            tracing::trace!(target: logger::SYNC, "Use render target {}", self.swapchain_idx);
             Some(&mut self.swapchain_images[self.swapchain_idx])
         } else {
             None
@@ -82,11 +82,11 @@ impl Display<VkRenderer> for VkDisplay {
 
     fn acquire(&mut self, frame: usize) -> Result<(), GfxError> {
         if let Some(swapchain) = &mut self.swapchain {
-            tracing::trace!(target: "sync", "Acquire with swapchain semaphore {}", frame);
+            tracing::trace!(target: logger::SYNC, "Acquire with swapchain semaphore {}", frame);
             let semaphore = &self.swapchain_semaphores[frame];
 
             let image_index = swapchain.acquire_image(semaphore)?;
-            tracing::trace!(target: "sync", "Acquire image {}", image_index);
+            tracing::trace!(target: logger::SYNC, "Acquire image {}", image_index);
 
             self.swapchain_idx = image_index;
             self.swapchain_images[image_index].invalidate();
@@ -97,7 +97,7 @@ impl Display<VkRenderer> for VkDisplay {
 
     fn present(&mut self, device: &VkDevice) -> Result<(), GfxError> {
         if let Some(swapchain) = &mut self.swapchain {
-            tracing::trace!(target: "sync", "Present with render semaphore {}", self.swapchain_idx);
+            tracing::trace!(target: logger::SYNC, "Present with render semaphore {}", self.swapchain_idx);
             swapchain.present(
                 self.swapchain_idx,
                 &device.graphics_queue,
@@ -166,7 +166,7 @@ impl VkDisplay {
 
         let caps = surface.get_capabilities(&device);
 
-        tracing::debug!(target: "init",
+        tracing::debug!(target: logger::INIT,
             "image count: {}-{}",
             caps.min_image_count,
             caps.max_image_count
@@ -187,7 +187,7 @@ impl VkDisplay {
             })
             .unwrap();
 
-        tracing::debug!(target: "init", "Swapchain format: {:?}", format);
+        tracing::debug!(target: logger::INIT, "Swapchain format: {:?}", format);
 
         vk::swapchain::SwapChain::new(
             device.clone(),

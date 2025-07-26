@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use gobs_core::{ImageExtent2D, Transform};
+use gobs_core::{ImageExtent2D, Transform, logger};
 use gobs_render_graph::RenderPass;
 use gobs_render_low::{GfxContext, RenderObject, SceneData};
 use gobs_resource::{
@@ -53,7 +53,7 @@ impl RenderBatch {
         transform: Transform,
         pass: RenderPass,
     ) -> Result<(), ResourceError> {
-        tracing::debug!(target: "render", "Add model: {}", model.meshes.len());
+        tracing::debug!(target: logger::RENDER, "Add model: {}", model.meshes.len());
 
         // TODO: add material data for forward pass only
         for (mesh, material_id) in &model.meshes {

@@ -1,6 +1,9 @@
 use uuid::Uuid;
 
-use gobs_core::data::{anymap::AnyMap, objectmap::ObjectMap, registry::ObjectRegistry};
+use gobs_core::{
+    data::{anymap::AnyMap, objectmap::ObjectMap, registry::ObjectRegistry},
+    logger,
+};
 
 use crate::resource::{
     Resource, ResourceError, ResourceHandle, ResourceLifetime, ResourceLoader, ResourceProperties,
@@ -24,11 +27,11 @@ impl ResourceRegistry {
 
         let handle = resource.handle;
 
-        tracing::trace!(target: "resources", "New resource: {:?}", handle.id);
+        tracing::trace!(target: logger::RESOURCES, "New resource: {:?}", handle.id);
 
         self.registry.insert(handle.id, resource);
         if self.labels.insert::<R>(name, handle.id).is_some() {
-            tracing::debug!(target: "resources", "Replace resource: {}: {:?}", std::any::type_name::<R>(), handle.id);
+            tracing::debug!(target: logger::RESOURCES, "Replace resource: {}: {:?}", std::any::type_name::<R>(), handle.id);
         }
 
         handle
@@ -45,7 +48,7 @@ impl ResourceRegistry {
         &mut self,
         handle: &ResourceHandle<R>,
     ) -> ResourceHandle<R> {
-        tracing::trace!(target: "resources", "Resource cloned: {:?}", handle);
+        tracing::trace!(target: logger::RESOURCES, "Resource cloned: {:?}", handle);
 
         let old_resource = self.get_mut::<R>(handle);
         let properties = old_resource.properties.clone();
@@ -141,17 +144,17 @@ impl ResourceManager {
     }
 
     pub fn update<R: ResourceType + 'static>(&mut self) {
-        tracing::trace!(target: "resources", "Update registry");
+        tracing::trace!(target: logger::RESOURCES, "Update registry");
 
         let mut to_delete = vec![];
 
         for value in self.registry.values_mut() {
-            tracing::trace!(target: "resources", "Registry Type={:?}, key={:?}, life={}, lifetime={:?}", std::any::type_name::<R>(), value.handle.id, value.life, value.lifetime);
+            tracing::trace!(target: logger::RESOURCES, "Registry Type={:?}, key={:?}, life={}, lifetime={:?}", std::any::type_name::<R>(), value.handle.id, value.life, value.lifetime);
 
             if value.lifetime == ResourceLifetime::Transient {
                 value.life += 1;
                 if value.life > self.frames_in_flight {
-                    tracing::trace!(target: "resources", "Transient resource to be removed: {}", value.handle.id);
+                    tracing::trace!(target: logger::RESOURCES, "Transient resource to be removed: {}", value.handle.id);
                     to_delete.push(value.handle);
                 }
             }
@@ -184,7 +187,7 @@ impl ResourceManager {
                     panic!("Loader not registered: {:?}", std::any::type_name::<R>())
                 });
 
-            tracing::trace!(target: "resources", "Loading resource {:?}", handle);
+            tracing::trace!(target: logger::RESOURCES, "Loading resource {:?}", handle);
             let data = loader.load(handle, parameter, &mut self.registry)?;
 
             let resource = self.get_mut::<R>(handle);

@@ -2,6 +2,8 @@ use std::sync::Arc;
 
 use ash::vk;
 
+use gobs_core::logger;
+
 use crate::Wrap;
 use crate::device::Device;
 use crate::queue::QueueFamily;
@@ -19,7 +21,7 @@ impl CommandPool {
             .queue_family_index(queue_family.index);
 
         let pool = unsafe {
-            tracing::debug!(target: "init", "Create command pool");
+            tracing::debug!(target: logger::INIT, "Create command pool");
             device.raw().create_command_pool(&pool_info, None).unwrap()
         };
 
@@ -34,7 +36,7 @@ impl Wrap<vk::CommandPool> for CommandPool {
 }
 impl Drop for CommandPool {
     fn drop(&mut self) {
-        tracing::debug!(target: "memory", "Drop command pool");
+        tracing::debug!(target: logger::MEMORY, "Drop command pool");
         unsafe {
             self.device.raw().destroy_command_pool(self.pool, None);
         }

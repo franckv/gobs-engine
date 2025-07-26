@@ -2,9 +2,9 @@ use std::fmt::Debug;
 use std::sync::Arc;
 
 use ash::vk;
-
-use gobs_core::{ImageExtent2D, ImageFormat};
 use serde::{Deserialize, Serialize};
+
+use gobs_core::{ImageExtent2D, ImageFormat, logger};
 
 use crate::{
     Wrap, alloc::Allocator, debug, device::Device, images::format::VkFormat, memory::Memory,
@@ -117,7 +117,7 @@ impl Image {
         extent: ImageExtent2D,
         allocator: Arc<Allocator>,
     ) -> Self {
-        let image_label = format!("[Image] {}", label);
+        let image_label = format!("[Image] {label}");
 
         let image = Self::create_image(&device, extent, format, usage);
 
@@ -127,7 +127,7 @@ impl Image {
 
         let image_view = Self::create_image_view(device.clone(), image, format, usage);
 
-        let view_label = format!("[Image View] {}", label);
+        let view_label = format!("[Image View] {label}");
 
         debug::add_label(device.clone(), &view_label, image_view);
 
@@ -154,13 +154,13 @@ impl Image {
         usage: ImageUsage,
         extent: ImageExtent2D,
     ) -> Self {
-        let image_label = format!("[Image] {}", label);
+        let image_label = format!("[Image] {label}");
 
         debug::add_label(device.clone(), &image_label, image);
 
         let image_view = Self::create_image_view(device.clone(), image, format, usage);
 
-        let view_label = format!("[Image View] {}", label);
+        let view_label = format!("[Image View] {label}");
         debug::add_label(device.clone(), &view_label, image_view);
 
         let layout = ImageLayout::Undefined;
@@ -245,11 +245,11 @@ impl Wrap<vk::Image> for Image {
 
 impl Drop for Image {
     fn drop(&mut self) {
-        tracing::debug!(target: "memory", "Drop image {}", self.label);
+        tracing::debug!(target: logger::MEMORY, "Drop image {}", self.label);
         unsafe {
             self.device.raw().destroy_image_view(self.image_view, None);
             if self.memory.is_some() {
-                tracing::debug!(target: "memory", "Destroy image {}", self.label);
+                tracing::debug!(target: logger::MEMORY, "Destroy image {}", self.label);
                 self.device.raw().destroy_image(self.image, None);
             }
         }

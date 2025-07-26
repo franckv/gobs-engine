@@ -3,7 +3,7 @@ use std::sync::Arc;
 
 use ash::vk;
 
-use gobs_core::ImageExtent2D;
+use gobs_core::{ImageExtent2D, logger};
 
 use crate::Wrap;
 use crate::device::Device;
@@ -71,7 +71,7 @@ impl Wrap<vk::Framebuffer> for Framebuffer {
 
 impl Drop for Framebuffer {
     fn drop(&mut self) {
-        tracing::debug!(target: "memory", "Drop framebuffer");
+        tracing::debug!(target: logger::MEMORY, "Drop framebuffer");
         unsafe {
             self.device
                 .raw()

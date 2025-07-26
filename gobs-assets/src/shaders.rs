@@ -3,8 +3,6 @@ use std::io;
 use std::path::Path;
 use std::process::Command;
 
-use tracing::debug;
-
 pub fn compile_glsl_shaders(path_in: &str, path_out: &str, asm_out: &str) -> Result<(), io::Error> {
     for f in fs::read_dir(path_in)? {
         let f = f?;
@@ -23,7 +21,7 @@ pub fn compile_glsl_shaders(path_in: &str, path_out: &str, asm_out: &str) -> Res
             _ => continue,
         };
 
-        debug!("Shader (glsl): {} -> {}", file_name, spv_out);
+        tracing::debug!("Shader (glsl): {} -> {}", file_name, spv_out);
 
         #[cfg(target_os = "windows")]
         {
@@ -108,7 +106,7 @@ pub fn compile_slang_shaders(
             _ => continue,
         };
 
-        debug!("Shader (slang): {} -> {}", file_name, spv_out);
+        tracing::debug!("Shader (slang): {} -> {}", file_name, spv_out);
 
         #[cfg(target_os = "windows")]
         {

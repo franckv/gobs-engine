@@ -1,5 +1,7 @@
 use std::sync::Arc;
 
+use gobs_core::logger;
+
 use crate::{device::Device, feature::Features, instance::Instance};
 
 pub struct Context {
@@ -21,7 +23,7 @@ impl Context {
             .find_adapter(&expected_features, None)
             .expect("Find suitable adapter");
 
-        tracing::info!(target: "render", "Using adapter {}", physical_device.name);
+        tracing::info!(target: logger::RENDER, "Using adapter {}", physical_device.name);
 
         let device =
             Device::new(instance.clone(), physical_device, None).expect("Failed to init Device");

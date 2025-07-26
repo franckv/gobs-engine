@@ -1,4 +1,4 @@
-use gobs_core::{Color, ImageExtent2D, ImageFormat, SamplerFilter};
+use gobs_core::{Color, ImageExtent2D, ImageFormat, SamplerFilter, logger};
 use gobs_gfx::{GfxImage, GfxSampler};
 use gobs_resource::resource::{Resource, ResourceHandle, ResourceProperties, ResourceType};
 
@@ -169,7 +169,7 @@ impl TextureUpdate for Resource<Texture> {
 
             self.properties.path = TexturePath::Bytes(new_data);
         } else {
-            tracing::error!(target: "resources", "Cannot patch resource: self.source");
+            tracing::error!(target: logger::RESOURCES, "Cannot patch resource: self.source");
         }
 
         self.handle

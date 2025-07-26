@@ -7,7 +7,7 @@ use egui::{
 use glam::{Vec2, Vec3};
 use parking_lot::RwLock;
 
-use gobs_core::{Color, ImageExtent2D, Input, Key, MouseButton, Transform};
+use gobs_core::{Color, ImageExtent2D, Input, Key, MouseButton, Transform, logger};
 use gobs_render::{
     BlendMode, GfxContext, Material, MaterialInstance, MaterialProperties, MaterialProperty, Model,
     ObjectDataLayout, ObjectDataProp, RenderBatch, Renderable, Texture, TextureProperties,
@@ -245,16 +245,16 @@ impl UIRenderer {
     #[tracing::instrument(target = "ui", skip_all, level = "trace")]
     fn update_textures(&mut self, resource_manager: &mut ResourceManager, output: &FullOutput) {
         for (id, material) in self.font_texture.iter() {
-            tracing::debug!(target: "ui", "Font texture id={:?}, material={}", id, material.id);
+            tracing::debug!(target: logger::UI, "Font texture id={:?}, material={}", id, material.id);
             for texture in &material.textures {
-                tracing::debug!(target: "ui", "  Using texture={:?}", texture.id);
+                tracing::debug!(target: logger::UI, "  Using texture={:?}", texture.id);
             }
         }
 
         for (id, img) in &output.textures_delta.set {
-            tracing::debug!(target: "ui", "New texture {:?}", id);
+            tracing::debug!(target: logger::UI, "New texture {:?}", id);
             if img.pos.is_some() {
-                tracing::debug!(target: "ui", "Patching texture");
+                tracing::debug!(target: logger::UI, "Patching texture");
                 let texture = self.patch_texture(
                     resource_manager,
                     self.font_texture
@@ -268,10 +268,10 @@ impl UIRenderer {
 
                 *self.font_texture.get_mut(id).unwrap() = material;
             } else {
-                tracing::debug!(target: "ui", "Allocate new texture");
+                tracing::debug!(target: logger::UI, "Allocate new texture");
                 let texture = self.decode_texture(resource_manager, img);
                 self.font_texture.insert(*id, texture);
-                tracing::trace!(target: "ui", "Texture loaded");
+                tracing::trace!(target: logger::UI, "Texture loaded");
             }
         }
     }
@@ -279,7 +279,7 @@ impl UIRenderer {
     #[tracing::instrument(target = "ui", skip_all, level = "trace")]
     fn cleanup_textures(&mut self, output: &FullOutput) {
         for id in &output.textures_delta.free {
-            tracing::debug!(target: "ui", "Remove texture {:?}", id);
+            tracing::debug!(target: logger::UI, "Remove texture {:?}", id);
 
             self.font_texture.remove(id);
         }
@@ -321,7 +321,7 @@ impl UIRenderer {
 
                 let pos = img.pos.expect("Can only patch texture with start position");
 
-                tracing::trace!(target: "ui",
+                tracing::trace!(target: logger::UI,
                     "Patching texture origin: {}/{}, size: {}/{} len={}",
                     color.width(),
                     color.height(),
@@ -332,7 +332,7 @@ impl UIRenderer {
 
                 let handle = resource_manager.replace(&material.textures[0]);
                 let texture = resource_manager.get_mut(&handle);
-                tracing::trace!(target: "ui",
+                tracing::trace!(target: logger::UI,
                     "Patching texture original size: {:?}",
                     texture.properties.format.extent
                 );
@@ -354,11 +354,11 @@ impl UIRenderer {
         resource_manager: &mut ResourceManager,
         output: FullOutput,
     ) -> Option<Arc<Model>> {
-        tracing::debug!(target: "ui", "Loading model");
+        tracing::debug!(target: logger::UI, "Loading model");
 
         let primitives = self.ectx.tessellate(output.shapes, PIXEL_PER_POINT);
 
-        tracing::debug!(target: "ui", "Load {} primitives", primitives.len());
+        tracing::debug!(target: logger::UI, "Load {} primitives", primitives.len());
 
         if primitives.is_empty() {
             return None;
@@ -368,7 +368,7 @@ impl UIRenderer {
 
         for primitive in &primitives {
             if let Primitive::Mesh(m) = &primitive.primitive {
-                tracing::trace!(target: "ui",
+                tracing::trace!(target: logger::UI,
                     "Primitive: {} vertices, {} indices",
                     m.vertices.len(),
                     m.indices.len()
@@ -407,7 +407,7 @@ impl UIRenderer {
                     ResourceLifetime::Transient,
                 );
             } else {
-                tracing::error!(target: "ui", "Primitive unknown");
+                tracing::error!(target: logger::UI, "Primitive unknown");
             }
         }
 

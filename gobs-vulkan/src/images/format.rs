@@ -38,7 +38,7 @@ impl From<ImageFormat> for VkFormat {
             ImageFormat::R32g32b32Sfloat => VkFormat(vk::Format::R32G32B32_SFLOAT),
             ImageFormat::R32g32b32a32Sfloat => VkFormat(vk::Format::R32G32B32A32_SFLOAT),
             ImageFormat::D32Sfloat => VkFormat(vk::Format::D32_SFLOAT),
-            _ => panic!("Format not implemented: {:?}", value),
+            _ => panic!("Format not implemented: {value:?}"),
         }
     }
 }

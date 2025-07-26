@@ -6,7 +6,7 @@ use std::sync::Arc;
 use serde::Serialize;
 use uuid::Uuid;
 
-use gobs_core::Transform;
+use gobs_core::{Transform, logger};
 use gobs_render_graph::RenderPass;
 use gobs_resource::{
     geometry::{Bounded, BoundingBox, MeshGeometry},
@@ -73,7 +73,7 @@ impl Bounded for Model {
 
 impl Drop for Model {
     fn drop(&mut self) {
-        tracing::debug!(target: "memory", "Drop Model: {}", &self.name);
+        tracing::debug!(target: logger::MEMORY, "Drop Model: {}", &self.name);
     }
 }
 

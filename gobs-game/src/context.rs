@@ -1,5 +1,6 @@
 use winit::window::Window;
 
+use gobs_core::logger;
 use gobs_render::{
     GfxContext, Material, MaterialLoader, Mesh, MeshLoader, RenderError, Renderer, Texture,
     TextureLoader,
@@ -64,6 +65,6 @@ impl GameContext {
 
 impl Drop for GameContext {
     fn drop(&mut self) {
-        tracing::debug!(target: "memory", "Drop context");
+        tracing::debug!(target: logger::MEMORY, "Drop context");
     }
 }

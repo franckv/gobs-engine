@@ -1,4 +1,4 @@
-use gobs_core::ImageExtent2D;
+use gobs_core::{ImageExtent2D, logger};
 use gobs_vulkan as vk;
 
 use crate::backend::vulkan::{
@@ -96,11 +96,11 @@ impl Command<VkRenderer> for VkCommand {
                 .device
                 .support_blit(dst.format(), dst.usage(), false)
         {
-            tracing::debug!(target: "render", "Blit from {:?} to {:?}", src.format(), dst.format());
+            tracing::debug!(target: logger::RENDER, "Blit from {:?} to {:?}", src.format(), dst.format());
             self.command
                 .copy_image_to_image_blit(&src.image, src_size, &dst.image, dst_size);
         } else {
-            tracing::debug!(target: "render", "Copy from {:?} to {:?}", src.format(), dst.format());
+            tracing::debug!(target: logger::RENDER, "Copy from {:?} to {:?}", src.format(), dst.format());
             self.command.copy_image_to_image(&src.image, &dst.image);
         }
     }
@@ -119,7 +119,7 @@ impl Command<VkRenderer> for VkCommand {
     }
 
     fn bind_pipeline(&self, pipeline: &VkPipeline) {
-        tracing::debug!(target: "render", "Binding pipeline {}", pipeline.name);
+        tracing::debug!(target: logger::RENDER, "Binding pipeline {}", pipeline.name);
         self.command.bind_pipeline(&pipeline.pipeline);
     }
 
@@ -155,7 +155,7 @@ impl Command<VkRenderer> for VkCommand {
             self.command.fence.reset();
             debug_assert!(!self.command.fence.signaled());
         } else {
-            tracing::warn!(target: "sync", "Fence unsignaled");
+            tracing::warn!(target: logger::SYNC, "Fence unsignaled");
         }
         self.command.reset();
     }
@@ -194,7 +194,7 @@ impl Command<VkRenderer> for VkCommand {
 
     fn submit2(&self, display: &VkDisplay, frame: usize) {
         let swapchain_idx = display.swapchain_idx;
-        tracing::trace!(target: "sync", "Submit with swapchain semaphore: {}, render semaphore: {}", frame, swapchain_idx);
+        tracing::trace!(target: logger::SYNC, "Submit with swapchain semaphore: {}, render semaphore: {}", frame, swapchain_idx);
         let (wait, signal) = if display.swapchain.is_some() {
             let wait = Some(&display.swapchain_semaphores[frame]);
             let signal = Some(&display.render_semaphores[swapchain_idx]);

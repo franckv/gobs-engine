@@ -1,6 +1,9 @@
 use std::sync::Arc;
 
-use gobs_core::memory::allocator::{AllocationError, Allocator};
+use gobs_core::{
+    logger,
+    memory::allocator::{AllocationError, Allocator},
+};
 use gobs_gfx::{Buffer, BufferUsage, Command, CommandQueueType, GfxBuffer, GfxCommand, GfxDevice};
 use gobs_resource::{
     geometry::{MeshGeometry, VertexAttribute},
@@ -38,7 +41,7 @@ impl MeshLoader {
         let vertices_offset = vertices.len();
         let indices_offset = indices.len();
 
-        tracing::trace!(target: "resources", "Vertex offset: {}, {}", vertices_offset, indices_offset);
+        tracing::trace!(target: logger::RESOURCES, "Vertex offset: {}, {}", vertices_offset, indices_offset);
 
         // TODO: hot path
         let alignment = vertex_attributes.alignment();

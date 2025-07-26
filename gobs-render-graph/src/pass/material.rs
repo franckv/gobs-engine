@@ -1,6 +1,6 @@
 use std::{collections::HashMap, sync::Arc};
 
-use gobs_core::ImageExtent2D;
+use gobs_core::{ImageExtent2D, logger};
 use gobs_gfx::{Command, GfxCommand, GfxPipeline, Pipeline};
 use gobs_render_low::{
     GfxContext, ObjectDataLayout, RenderError, RenderJob, RenderObject, SceneData, SceneDataLayout,
@@ -97,7 +97,7 @@ impl MaterialPass {
     }
 
     fn begin_pass(&self, cmd: &GfxCommand, resource_manager: &GraphResourceManager) {
-        tracing::debug!(target: "render", "Begin material pass {}", &self.name);
+        tracing::debug!(target: logger::RENDER, "Begin material pass {}", &self.name);
 
         cmd.begin_label(&format!("Draw {}", &self.name));
 
@@ -182,7 +182,7 @@ impl RenderPass for MaterialPass {
         scene_data: &SceneData,
         _draw_extent: ImageExtent2D,
     ) -> Result<(), RenderError> {
-        tracing::debug!(target: "render", "Draw {}", &self.name());
+        tracing::debug!(target: logger::RENDER, "Draw {}", &self.name());
 
         let cmd = &frame.command;
 
@@ -190,21 +190,21 @@ impl RenderPass for MaterialPass {
 
         self.begin_pass(cmd, resource_manager);
 
-        tracing::debug!(target: "render", "Start render job");
+        tracing::debug!(target: logger::RENDER, "Start render job");
         let render_job = &self.render_jobs[frame.id];
 
-        tracing::debug!(target: "render", "Upload scene data");
+        tracing::debug!(target: logger::RENDER, "Upload scene data");
         let scene_data_bytes = self.scene_layout.data(scene_data);
 
-        tracing::debug!(target: "render", "Update Uniform");
+        tracing::debug!(target: logger::RENDER, "Update Uniform");
         render_job.update_uniform(&scene_data_bytes);
 
-        tracing::debug!(target: "render", "Render object list");
+        tracing::debug!(target: logger::RENDER, "Render object list");
         render_job
             .draw_list(ctx, cmd, render_list)
             .expect("Render error");
 
-        tracing::debug!(target: "render", "Stop render job");
+        tracing::debug!(target: logger::RENDER, "Stop render job");
 
         self.end_pass(cmd);
 

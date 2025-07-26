@@ -1,5 +1,6 @@
 use bytemuck::Pod;
 
+use gobs_core::logger;
 use gobs_core::memory::allocator::Allocable;
 use gobs_vulkan as vk;
 use gobs_vulkan::buffers::BufferUsage;
@@ -20,7 +21,7 @@ impl Buffer<VkRenderer> for VkBuffer {
         usage: vk::buffers::BufferUsage,
         device: &VkDevice,
     ) -> VkBuffer {
-        tracing::debug!(target: "resources", "Create buffer {}, size={}", name, size);
+        tracing::debug!(target: logger::RESOURCES, "Create buffer {}, size={}", name, size);
 
         Self {
             id: BufferId::new_v4(),

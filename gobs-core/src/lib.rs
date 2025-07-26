@@ -3,6 +3,7 @@ pub mod data;
 mod extent;
 mod format;
 mod input;
+pub mod logger;
 pub mod memory;
 mod sampler;
 mod transform;

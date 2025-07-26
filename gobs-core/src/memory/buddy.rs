@@ -1,5 +1,7 @@
 use thiserror::Error;
 
+use crate::logger;
+
 #[derive(Debug, Error)]
 pub enum AllocError {
     #[error("out of memory")]
@@ -88,7 +90,7 @@ impl BuddyAllocator {
     }
 
     fn split_block(&mut self, order: usize, idx: usize) {
-        tracing::trace!(target: "alloc", "splitting block {},{}", order, idx);
+        tracing::trace!(target: logger::MEMORY, "splitting block {},{}", order, idx);
 
         self.toggle_free_block(order, idx);
         self.toggle_free_block(order + 1, 2 * idx);
@@ -96,7 +98,7 @@ impl BuddyAllocator {
     }
 
     fn merge_block(&mut self, order: usize, idx: usize) {
-        tracing::trace!(target: "alloc", "merging block {},{}", order, idx);
+        tracing::trace!(target: logger::MEMORY, "merging block {},{}", order, idx);
 
         assert!(
             self.is_free(order, idx)
@@ -186,7 +188,7 @@ impl BuddyAllocator {
     pub fn allocate(&mut self, size: usize) -> Result<Allocation, AllocError> {
         let target_order = self.get_order(size)?;
 
-        tracing::trace!(target: "alloc", "allocate {}, target order {}", size, target_order);
+        tracing::trace!(target: logger::MEMORY, "allocate {}, target order {}", size, target_order);
 
         if !self.has_free(target_order) {
             let mut start_order = target_order;
@@ -197,7 +199,7 @@ impl BuddyAllocator {
                     break;
                 }
             }
-            tracing::trace!(target: "alloc", "starting from {}", start_order);
+            tracing::trace!(target: logger::MEMORY, "starting from {}", start_order);
 
             // split blocks from parent to target
             if start_order < target_order {
@@ -218,7 +220,7 @@ impl BuddyAllocator {
     }
 
     pub fn release(&mut self, allocation: Allocation) {
-        tracing::trace!(target: "alloc", "release block {},{}", allocation.order, allocation.idx);
+        tracing::trace!(target: logger::MEMORY, "release block {},{}", allocation.order, allocation.idx);
 
         self.toggle_free_block(allocation.order, allocation.idx);
 

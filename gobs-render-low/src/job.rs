@@ -1,5 +1,6 @@
 use std::sync::Arc;
 
+use gobs_core::logger;
 use parking_lot::RwLock;
 use thiserror::Error;
 
@@ -73,12 +74,12 @@ impl RenderJob {
     }
 
     pub fn should_render(&self, render_object: &RenderObject) -> bool {
-        tracing::trace!(target: "render", "Object render pass {}", render_object.pass_id);
+        tracing::trace!(target: logger::RENDER, "Object render pass {}", render_object.pass_id);
         if render_object.pass_id != self.pass_id
             || (render_object.is_transparent() && !self.render_transparent)
             || (!render_object.is_transparent() && !self.render_opaque)
         {
-            tracing::trace!(target: "render", "Skip object");
+            tracing::trace!(target: logger::RENDER, "Skip object");
             false
         } else {
             true
@@ -103,7 +104,7 @@ impl RenderJob {
             self.bind_pipeline(cmd, &pipeline, &mut state);
 
             // bind camera and lights
-            tracing::debug!(target: "render", "Bind scene data");
+            tracing::debug!(target: logger::RENDER, "Bind scene data");
             if !state.scene_data_bound {
                 let uniform_buffer = self.uniform_buffer.read();
 
@@ -113,16 +114,16 @@ impl RenderJob {
 
             // bind materials...
             if self.fixed_pipeline.is_none() {
-                tracing::debug!(target: "render", "Bind resources");
+                tracing::debug!(target: logger::RENDER, "Bind resources");
                 for bind_group in &render_object.bind_groups {
                     cmd.bind_resource(bind_group);
                 }
             }
 
-            tracing::debug!(target: "render", "Bind object data");
+            tracing::debug!(target: logger::RENDER, "Bind object data");
             self.bind_object_data(ctx, cmd, render_object, &mut state)?;
 
-            tracing::debug!(target: "render", "Draw object");
+            tracing::debug!(target: logger::RENDER, "Draw object");
             cmd.draw_indexed(render_object.indices_len, 1);
         }
 
@@ -134,10 +135,10 @@ impl RenderJob {
         render_object: &RenderObject,
     ) -> Result<Arc<GfxPipeline>, RenderJobError> {
         if let Some(pipeline) = &self.fixed_pipeline {
-            tracing::debug!(target: "render", "Use fixed pipeline");
+            tracing::debug!(target: logger::RENDER, "Use fixed pipeline");
             Ok(pipeline.clone())
         } else if let Some(pipeline) = &render_object.pipeline {
-            tracing::debug!(target: "render", "Use object pipeline");
+            tracing::debug!(target: logger::RENDER, "Use object pipeline");
             Ok(pipeline.clone())
         } else {
             Err(RenderJobError::InvalidPipeline)
@@ -146,7 +147,7 @@ impl RenderJob {
 
     fn bind_pipeline(&self, cmd: &GfxCommand, pipeline: &GfxPipeline, state: &mut RenderJobState) {
         if state.last_pipeline != pipeline.id() {
-            tracing::debug!(target: "render", "Bind pipeline: {}", pipeline.id());
+            tracing::debug!(target: logger::RENDER, "Bind pipeline: {}", pipeline.id());
             cmd.bind_pipeline(pipeline);
             state.last_pipeline = pipeline.id();
         }
@@ -159,13 +160,13 @@ impl RenderJob {
         render_object: &RenderObject,
         state: &mut RenderJobState,
     ) -> Result<(), RenderJobError> {
-        tracing::trace!(target: "render", "Bind push constants");
+        tracing::trace!(target: logger::RENDER, "Bind push constants");
 
         state.object_data.clear();
 
         let pipeline = self.get_pipeline(render_object)?;
 
-        tracing::trace!(target: "render", "Copy object data: {}", self.object_layout.uniform_layout().size());
+        tracing::trace!(target: logger::RENDER, "Copy object data: {}", self.object_layout.uniform_layout().size());
 
         self.object_layout
             .copy_data(ctx, render_object, &mut state.object_data);

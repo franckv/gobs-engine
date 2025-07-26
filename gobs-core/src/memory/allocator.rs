@@ -7,6 +7,7 @@ use thiserror::Error;
 use uuid::Uuid;
 
 use crate::data::pool::ObjectPool;
+use crate::logger;
 
 #[derive(Error, Debug)]
 pub enum AllocationError {
@@ -63,6 +64,7 @@ impl<D, F: ResourceFamily, A: Allocable<D, F>> Allocator<D, F, A> {
             if let Some(resource) = resource {
                 if resource.resource_size() >= size {
                     tracing::debug!(
+                        target: logger::RENDER,
                         "Reuse resource {:?}, {} ({})",
                         family,
                         size,
@@ -80,7 +82,7 @@ impl<D, F: ResourceFamily, A: Allocable<D, F>> Allocator<D, F, A> {
             }
         }
 
-        tracing::debug!(target: "memory", "Allocate new resource {:?}, {}", family, size);
+        tracing::debug!(target: logger::MEMORY, "Allocate new resource {:?}, {}", family, size);
         let resource = A::allocate(device, name, size, family);
         let id = resource.resource_id();
 

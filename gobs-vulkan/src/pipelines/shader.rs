@@ -7,6 +7,8 @@ use std::sync::Arc;
 
 use ash::vk;
 
+use gobs_core::logger;
+
 use crate::Wrap;
 use crate::device::Device;
 use crate::error::VulkanError;
@@ -65,7 +67,7 @@ impl Wrap<vk::ShaderModule> for Shader {
 
 impl Drop for Shader {
     fn drop(&mut self) {
-        tracing::debug!(target: "memory", "Drop shader");
+        tracing::debug!(target: logger::MEMORY, "Drop shader");
         unsafe {
             self.device.raw().destroy_shader_module(self.shader, None);
         }

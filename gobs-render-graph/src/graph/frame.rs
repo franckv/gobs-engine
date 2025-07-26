@@ -1,6 +1,6 @@
 use bytemuck::Pod;
 
-use gobs_core::{ImageExtent2D, ImageFormat};
+use gobs_core::{ImageExtent2D, ImageFormat, logger};
 use gobs_gfx::{
     Buffer, BufferUsage, Command, CommandQueueType, Device, Display, GfxBuffer, GfxCommand,
     GfxImage, Image, ImageLayout, ImageUsage,
@@ -246,7 +246,7 @@ impl FrameGraph {
             (draw_image_extent.height as f32 * self.render_scaling) as u32,
         );
 
-        tracing::trace!(target: "render", "Draw extent {:?}", self.draw_extent);
+        tracing::trace!(target: logger::RENDER, "Draw extent {:?}", self.draw_extent);
 
         if ctx.display.acquire(frame.id).is_err() {
             return Err(RenderError::Outdated);
@@ -265,7 +265,7 @@ impl FrameGraph {
     }
 
     pub fn end(&mut self, ctx: &mut GfxContext, frame: &FrameData) -> Result<(), RenderError> {
-        tracing::debug!(target: "render", "End frame");
+        tracing::debug!(target: logger::RENDER, "End frame");
 
         let frame_id = frame.frame_number % ctx.frames_in_flight;
         let cmd = &frame.command;
@@ -299,7 +299,7 @@ impl FrameGraph {
         scene_data: &SceneData,
     ) -> Result<(), RenderError> {
         for pass in &mut self.passes {
-            tracing::debug!(target: "render", "Begin rendering pass {}", pass.name());
+            tracing::debug!(target: logger::RENDER, "Begin rendering pass {}", pass.name());
 
             pass.render(
                 ctx,
@@ -310,7 +310,7 @@ impl FrameGraph {
                 self.draw_extent,
             )?;
 
-            tracing::debug!(target: "render", "End rendering pass");
+            tracing::debug!(target: logger::RENDER, "End rendering pass");
         }
 
         Ok(())

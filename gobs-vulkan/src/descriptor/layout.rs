@@ -4,6 +4,8 @@ use std::sync::Arc;
 use ash::vk;
 use serde::{Deserialize, Serialize};
 
+use gobs_core::logger;
+
 use crate::device::Device;
 
 #[derive(Copy, Clone, Debug, Serialize, Deserialize)]
@@ -142,7 +144,7 @@ impl DescriptorSetLayout {
 
 impl Drop for DescriptorSetLayout {
     fn drop(&mut self) {
-        tracing::debug!(target: "memory", "Drop DescriptorSetLayout");
+        tracing::debug!(target: logger::MEMORY, "Drop DescriptorSetLayout");
 
         unsafe {
             self.device

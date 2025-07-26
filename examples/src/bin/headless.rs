@@ -2,7 +2,7 @@ use glam::{Quat, Vec3};
 use pollster::FutureExt;
 
 use gobs::{
-    core::{Color, Input, Transform},
+    core::{Color, Input, Transform, logger},
     game::{AppError, app::Run, context::GameContext},
     render::{MaterialInstance, MaterialsConfig, Model, RenderError},
     resource::{entity::light::Light, geometry::Shapes, resource::ResourceLifetime},
@@ -56,7 +56,7 @@ impl Run for App {
     }
 
     fn close(&mut self, _ctx: &mut GameContext) {
-        tracing::info!(target: "app", "Closed");
+        tracing::info!(target: logger::APP, "Closed");
     }
 }
 
@@ -100,7 +100,7 @@ impl App {
 fn main() {
     examples::init_logger();
 
-    tracing::info!(target: "app", "Engine start");
+    tracing::info!(target: logger::APP, "Engine start");
 
     let mut ctx = GameContext::new("Triangle", None, true).unwrap();
 

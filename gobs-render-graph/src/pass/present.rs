@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use gobs_core::ImageExtent2D;
+use gobs_core::{ImageExtent2D, logger};
 use gobs_gfx::{Command, Display, Image, ImageLayout};
 use gobs_render_low::{GfxContext, RenderError, RenderObject, SceneData, UniformLayout};
 use gobs_resource::geometry::VertexAttribute;
@@ -57,7 +57,7 @@ impl RenderPass for PresentPass {
         _scene_data: &SceneData,
         draw_extent: ImageExtent2D,
     ) -> Result<(), RenderError> {
-        tracing::debug!(target: "render", "Present");
+        tracing::debug!(target: logger::RENDER, "Present");
 
         let cmd = &frame.command;
 

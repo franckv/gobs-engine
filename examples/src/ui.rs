@@ -119,9 +119,9 @@ impl Ui {
         egui::CollapsingHeader::new("Settings")
             .default_open(true)
             .show(ui, |ui| {
-                ui.label(format!("FPS: {}", fps));
+                ui.label(format!("FPS: {fps}"));
                 ui.horizontal(|ui| {
-                    ui.label(format!("Screen"));
+                    ui.label("Screen");
                     ui.add(egui::Button::new(format!("{}", scene.width)));
                     ui.add(egui::Button::new(format!("{}", scene.height)));
                 });
@@ -137,8 +137,8 @@ impl Ui {
                 });
                 ui.horizontal(|ui| {
                     ui.label("Mouse");
-                    ui.add(egui::Button::new(format!("{}", x)));
-                    ui.add(egui::Button::new(format!("{}", y)));
+                    ui.add(egui::Button::new(format!("{x}")));
+                    ui.add(egui::Button::new(format!("{y}")));
                 });
 
                 let pos = Vec3::new(x, y, 0.);

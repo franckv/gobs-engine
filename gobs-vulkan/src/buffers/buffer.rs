@@ -5,6 +5,8 @@ use ash::vk::{self, Handle};
 use bytemuck::Pod;
 use gpu_allocator::MemoryLocation;
 
+use gobs_core::logger;
+
 use crate::alloc::Allocator;
 use crate::device::Device;
 use crate::memory::Memory;
@@ -102,13 +104,13 @@ impl Buffer {
 
         let buffer = unsafe { device.raw().create_buffer(&buffer_info, None).unwrap() };
 
-        let buffer_label = format!("[Buffer] {}", label);
+        let buffer_label = format!("[Buffer] {label}");
 
         debug::add_label(device.clone(), &buffer_label, buffer);
 
         let memory = allocator.allocate_buffer(usage, buffer, &buffer_label);
 
-        tracing::trace!(target: "memory", "Create buffer {} [{:x}]", buffer_label, buffer.as_raw());
+        tracing::trace!(target: logger::MEMORY, "Create buffer {} [{:x}]", buffer_label, buffer.as_raw());
 
         Buffer {
             label: buffer_label,
@@ -149,7 +151,7 @@ impl Wrap<vk::Buffer> for Buffer {
 
 impl Drop for Buffer {
     fn drop(&mut self) {
-        tracing::trace!(target: "memory", "Drop buffer {}", self.label);
+        tracing::trace!(target: logger::MEMORY, "Drop buffer {}", self.label);
         unsafe {
             self.device.raw().destroy_buffer(self.buffer, None);
         }

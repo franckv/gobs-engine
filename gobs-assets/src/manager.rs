@@ -1,5 +1,6 @@
 use std::sync::Arc;
 
+use gobs_core::logger;
 use gobs_render::{
     BlendMode, GfxContext, Material, MaterialInstance, MaterialsConfig, Texture, TextureProperties,
 };
@@ -77,13 +78,13 @@ impl MaterialManager {
 
         let default_material_instance =
             MaterialInstance::new(texture, vec![texture_manager.default_texture]);
-        tracing::debug!(target: "resources", "Default material id: {}", default_material_instance.id);
+        tracing::debug!(target: logger::RESOURCES, "Default material id: {}", default_material_instance.id);
 
         let color_instance = MaterialInstance::new(color, vec![]);
-        tracing::debug!(target: "resources", "Color material id: {}", color_instance.id);
+        tracing::debug!(target: logger::RESOURCES, "Color material id: {}", color_instance.id);
 
         let transparent_color_instance = MaterialInstance::new(transparent_color, vec![]);
-        tracing::debug!(target: "resources", "Color material id: {}", transparent_color_instance.id);
+        tracing::debug!(target: logger::RESOURCES, "Color material id: {}", transparent_color_instance.id);
 
         Ok(MaterialManager {
             texture_manager,

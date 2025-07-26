@@ -4,7 +4,7 @@ use std::sync::Arc;
 use ash::vk::{self, Extent3D, ImageSubresourceLayers, Offset3D};
 use bytemuck::Pod;
 
-use gobs_core::ImageExtent2D;
+use gobs_core::{ImageExtent2D, logger};
 
 use crate::buffers::Buffer;
 use crate::command::CommandPool;
@@ -60,7 +60,7 @@ impl CommandBuffer {
 
         let command_buffer = command_buffers.remove(0);
 
-        let command_label = format!("[Command Buffer] {}", label);
+        let command_label = format!("[Command Buffer] {label}");
 
         debug::add_label(device.clone(), &command_label, command_buffer);
 
@@ -492,7 +492,7 @@ impl CommandBuffer {
         dst: &Image,
         dst_size: ImageExtent2D,
     ) {
-        tracing::trace!(target: "render",
+        tracing::trace!(target: logger::RENDER,
             "Blitting image {}/{} to {}/{}",
             src_size.width,
             src_size.height,
@@ -570,7 +570,7 @@ impl CommandBuffer {
     }
 
     pub fn transition_image_layout(&self, image: &mut Image, dst_layout: ImageLayout) {
-        tracing::trace!(target: "render",
+        tracing::trace!(target: logger::RENDER,
             "Transition [{}] from {:?} to {:?}",
             &image.label,
             image.layout,
@@ -671,7 +671,7 @@ impl CommandBuffer {
     where
         F: Fn(&CommandBuffer),
     {
-        tracing::debug!(target: "render", "Submit immediate command");
+        tracing::debug!(target: logger::RENDER, "Submit immediate command");
         self.fence.reset();
         assert!(!self.fence.signaled());
 
@@ -686,14 +686,14 @@ impl CommandBuffer {
         self.submit2(None, None);
 
         self.fence.wait();
-        tracing::debug!(target: "render", "Immediate command done");
+        tracing::debug!(target: logger::RENDER, "Immediate command done");
     }
 
     pub fn immediate_mut<F>(&self, mut callback: F)
     where
         F: FnMut(&CommandBuffer),
     {
-        tracing::debug!(target: "render", "Submit immediate command");
+        tracing::debug!(target: logger::RENDER, "Submit immediate command");
         self.fence.reset();
         assert!(!self.fence.signaled());
 
@@ -708,7 +708,7 @@ impl CommandBuffer {
         self.submit2(None, None);
 
         self.fence.wait();
-        tracing::debug!(target: "render", "Immediate command done");
+        tracing::debug!(target: logger::RENDER, "Immediate command done");
     }
 }
 
@@ -720,7 +720,7 @@ impl Wrap<vk::CommandBuffer> for CommandBuffer {
 
 impl Drop for CommandBuffer {
     fn drop(&mut self) {
-        tracing::debug!(target: "memory", "Drop command buffer");
+        tracing::debug!(target: logger::MEMORY, "Drop command buffer");
 
         unsafe {
             self.device

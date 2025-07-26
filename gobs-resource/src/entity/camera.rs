@@ -216,6 +216,8 @@ mod tests {
     use tracing::{Level, level_filters::LevelFilter};
     use tracing_subscriber::{EnvFilter, FmtSubscriber, fmt::format::FmtSpan};
 
+    use gobs_core::logger;
+
     use crate::entity::camera::Camera;
 
     fn setup() {
@@ -232,7 +234,7 @@ mod tests {
     }
 
     fn check_dir(yaw: f32, pitch: f32, expected: Vec3) {
-        tracing::debug!(target: "resources", "yaw={:?}, pitch={:?}, dir={:?}", yaw, pitch, expected);
+        tracing::debug!(target: logger::RESOURCES, "yaw={:?}, pitch={:?}, dir={:?}", yaw, pitch, expected);
 
         let camera = Camera::ortho(
             320_f32,

@@ -2,6 +2,8 @@ use std::sync::Arc;
 
 use ash::vk;
 
+use gobs_core::logger;
+
 use crate::Wrap;
 use crate::descriptor::DescriptorSetLayout;
 use crate::device::Device;
@@ -32,7 +34,7 @@ impl PipelineLayout {
                 tracing::error!("Wrong order for descriptor sets layouts");
                 panic!("Wrong order for descriptor sets layouts");
             } else {
-                tracing::info!(target: "Render", "Gap in pipeline descriptors layout: {}", idx);
+                tracing::info!(target: logger::RENDER, "Gap in pipeline descriptors layout: {}", idx);
 
                 let mut gaps = set - idx;
 
@@ -51,7 +53,7 @@ impl PipelineLayout {
             idx += 1;
         }
 
-        tracing::debug!(target: "Render", "Create pipline layout with {} descriptor sets", set_layout.len());
+        tracing::debug!(target: logger::RENDER, "Create pipline layout with {} descriptor sets", set_layout.len());
 
         assert_eq!(set_layout.len(), descriptor_layouts.len());
 
@@ -92,7 +94,7 @@ impl Wrap<vk::PipelineLayout> for PipelineLayout {
 
 impl Drop for PipelineLayout {
     fn drop(&mut self) {
-        tracing::debug!(target: "memory", "Drop pipeline layout");
+        tracing::debug!(target: logger::MEMORY, "Drop pipeline layout");
         unsafe {
             self.device.raw().destroy_pipeline_layout(self.layout, None);
         }

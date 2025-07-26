@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use gobs_core::ImageExtent2D;
+use gobs_core::{ImageExtent2D, logger};
 use gobs_gfx::{
     BindingGroup, BindingGroupType, BindingGroupUpdates, Command, ComputePipelineBuilder,
     DescriptorType, GfxBindingGroup, GfxPipeline, ImageLayout, Pipeline,
@@ -94,7 +94,7 @@ impl RenderPass for ComputePass {
         _scene_data: &SceneData,
         draw_extent: ImageExtent2D,
     ) -> Result<(), RenderError> {
-        tracing::debug!(target: "render", "Draw compute");
+        tracing::debug!(target: logger::RENDER, "Draw compute");
 
         let cmd = &frame.command;
 

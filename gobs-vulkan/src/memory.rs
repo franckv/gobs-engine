@@ -5,6 +5,8 @@ use ash::vk::Handle;
 use bytemuck::Pod;
 use gpu_allocator::vulkan;
 
+use gobs_core::logger;
+
 use crate::alloc::Allocator;
 use crate::device::Device;
 
@@ -19,7 +21,7 @@ impl Memory {
     pub fn upload<T: Copy>(&mut self, entries: &[T], offset: usize) {
         let size = std::mem::size_of_val(entries) as u64;
 
-        tracing::debug!(target: "memory",
+        tracing::debug!(target: logger::MEMORY,
             "Uploading data to buffer (Size={}, offset={}, align={}, len={})",
             size,
             offset,
@@ -53,7 +55,7 @@ impl Drop for Memory {
     fn drop(&mut self) {
         if let Some(allocation) = &self.allocation {
             unsafe {
-                tracing::debug!(target: "memory", "Free memory: {:x}", allocation.memory().as_raw())
+                tracing::debug!(target: logger::MEMORY, "Free memory: {:x}", allocation.memory().as_raw())
             };
         }
 

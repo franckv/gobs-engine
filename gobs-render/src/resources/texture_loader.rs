@@ -4,7 +4,7 @@ use futures::future::try_join_all;
 use image::{DynamicImage, GenericImage, GenericImageView, ImageBuffer, imageops::FilterType};
 use pollster::FutureExt;
 
-use gobs_core::{Color, ImageExtent2D};
+use gobs_core::{Color, ImageExtent2D, logger};
 use gobs_gfx::{
     Buffer, BufferUsage, Command, CommandQueueType, GfxBuffer, GfxCommand, GfxDevice, GfxImage,
     GfxSampler, Image, ImageLayout, ImageUsage, Sampler,
@@ -37,7 +37,7 @@ impl TextureLoader {
     }
 
     fn load_file(&self, filename: &str, format: &mut TextureFormat) -> TextureData {
-        tracing::debug!(target: "resources", "Load file: {:?}", &filename);
+        tracing::debug!(target: logger::RESOURCES, "Load file: {:?}", &filename);
 
         let img = load::load_image(filename, AssetType::IMAGE);
         let img = img.block_on().unwrap();
@@ -49,9 +49,9 @@ impl TextureLoader {
     }
 
     fn load_data(&self, name: &str, data: &[u8], format: &TextureFormat) -> TextureData {
-        tracing::debug!(target: "resources", "Load texture data: {:?}", name);
+        tracing::debug!(target: logger::RESOURCES, "Load texture data: {:?}", name);
 
-        tracing::trace!(target: "resources", "Texture properties: {:?}", format);
+        tracing::trace!(target: logger::RESOURCES, "Texture properties: {:?}", format);
 
         let image_format = format.ty.into();
         let mut image = GfxImage::new(

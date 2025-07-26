@@ -2,6 +2,8 @@ use std::sync::Arc;
 
 use ash::vk;
 
+use gobs_core::logger;
+
 use crate::device::Device;
 use crate::{Wrap, debug};
 
@@ -21,7 +23,7 @@ impl Semaphore {
                 .unwrap()
         };
 
-        let semaphore_label = format!("[Semaphore] {}", label);
+        let semaphore_label = format!("[Semaphore] {label}");
 
         debug::add_label(device.clone(), &semaphore_label, semaphore);
 
@@ -37,7 +39,7 @@ impl Wrap<vk::Semaphore> for Semaphore {
 
 impl Drop for Semaphore {
     fn drop(&mut self) {
-        tracing::debug!(target: "memory", "Drop semaphore");
+        tracing::debug!(target: logger::MEMORY, "Drop semaphore");
         unsafe {
             self.device.raw().destroy_semaphore(self.semaphore, None);
         }

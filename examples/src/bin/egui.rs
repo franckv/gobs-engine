@@ -1,7 +1,7 @@
 use renderdoc::{RenderDoc, V141};
 
 use gobs::{
-    core::{Input, Key},
+    core::{Input, Key, logger},
     game::{
         AppError,
         app::{Application, Run},
@@ -62,7 +62,7 @@ impl Run for App {
     async fn start(&mut self, _ctx: &mut GameContext) {}
 
     fn close(&mut self, _ctx: &mut GameContext) {
-        tracing::info!(target: "app", "Closed");
+        tracing::info!(target: logger::APP, "Closed");
     }
 }
 
@@ -695,7 +695,7 @@ fn text_layout_demo(ui: &mut egui::Ui) {
 fn main() {
     examples::init_logger();
 
-    tracing::info!(target: "app", "Engine start");
+    tracing::info!(target: logger::APP, "Engine start");
 
     Application::<App>::new("Egui", examples::WIDTH, examples::HEIGHT).run();
 }

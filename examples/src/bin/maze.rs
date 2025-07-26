@@ -1,7 +1,7 @@
 use glam::{Quat, Vec3};
 
 use gobs::{
-    core::{Color, Input, Transform},
+    core::{Color, Input, Transform, logger},
     game::{
         AppError,
         app::{Application, Run},
@@ -118,7 +118,7 @@ impl Run for App {
     }
 
     fn close(&mut self, _ctx: &mut GameContext) {
-        tracing::info!(target: "app", "Closed");
+        tracing::info!(target: logger::APP, "Closed");
     }
 }
 
@@ -128,7 +128,7 @@ impl App {
     }
 
     async fn load_scene(&mut self, ctx: &mut GameContext) {
-        tracing::info!(target: "app", "Load scene");
+        tracing::info!(target: logger::APP, "Load scene");
 
         MaterialsConfig::load_resources(
             &ctx.renderer.gfx,
@@ -268,7 +268,7 @@ impl App {
 fn main() {
     examples::init_logger();
 
-    tracing::info!(target: "app", "Engine start");
+    tracing::info!(target: logger::APP, "Engine start");
 
     Application::<App>::new("Maze", examples::WIDTH, examples::HEIGHT).run();
 }

@@ -2,6 +2,8 @@ use std::sync::Arc;
 
 use ash::vk;
 
+use gobs_core::logger;
+
 use crate::device::Device;
 
 pub enum QueryType {
@@ -51,7 +53,7 @@ impl QueryPool {
 
 impl Drop for QueryPool {
     fn drop(&mut self) {
-        tracing::debug!(target: "memory", "Drop query pool");
+        tracing::debug!(target: logger::MEMORY, "Drop query pool");
 
         unsafe {
             self.device.raw().destroy_query_pool(self.pool, None);

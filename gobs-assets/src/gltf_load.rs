@@ -7,7 +7,7 @@ use gltf::{
     mesh::util::{ReadColors, ReadIndices},
 };
 
-use gobs_core::{Color, ImageExtent2D, SamplerFilter, Transform};
+use gobs_core::{Color, ImageExtent2D, SamplerFilter, Transform, logger};
 use gobs_render::{BlendMode, GfxContext, Model, TextureProperties, TextureType};
 use gobs_resource::{
     geometry::{MeshGeometry, VertexData},
@@ -94,7 +94,7 @@ impl GLTFLoader {
     ) {
         for m in doc.meshes() {
             let name = m.name().unwrap_or_default();
-            tracing::trace!(target: "resources",
+            tracing::trace!(target: logger::RESOURCES,
                 "Mesh #{}: {}, primitives: {}",
                 m.index(),
                 name,
@@ -104,7 +104,7 @@ impl GLTFLoader {
             let mut model = Model::builder(name);
 
             for p in m.primitives() {
-                tracing::trace!(target: "resources",
+                tracing::trace!(target: logger::RESOURCES,
                     "Primitive #{}, material {:?}",
                     p.index(),
                     p.material().index()
@@ -203,7 +203,7 @@ impl GLTFLoader {
             self.models.push(model.build(resource_manager));
         }
 
-        tracing::debug!(target: "resources", "{} models loaded", self.models.len());
+        tracing::debug!(target: logger::RESOURCES, "{} models loaded", self.models.len());
     }
 
     fn load_textures(
@@ -212,7 +212,7 @@ impl GLTFLoader {
         doc: &Document,
         images: &[image::Data],
     ) {
-        tracing::trace!(target: "resources", "Reading {} images", images.len());
+        tracing::trace!(target: logger::RESOURCES, "Reading {} images", images.len());
 
         for t in doc.textures() {
             let name = t.name().unwrap_or_default();
@@ -251,7 +251,7 @@ impl GLTFLoader {
 
             let name = format!("Texture #{}: {}", t.index(), name);
 
-            tracing::trace!(target: "resources",
+            tracing::trace!(target: logger::RESOURCES,
                 "{}, image #{}, format: {:?}, type: {:?}",
                 &name,
                 image.index(),
@@ -296,12 +296,12 @@ impl GLTFLoader {
                 }
                 _ => {
                     self.material_manager.add_default_texture();
-                    tracing::warn!(target: "resources","Unsupported image format: {:?}", data.format)
+                    tracing::warn!(target: logger::RESOURCES,"Unsupported image format: {:?}", data.format)
                 }
             };
         }
 
-        tracing::debug!(target: "resources",
+        tracing::debug!(target: logger::RESOURCES,
             "{} textures loaded",
             self.material_manager.texture_manager.textures.len()
         );
@@ -325,14 +325,14 @@ impl GLTFLoader {
         for mat in doc.materials() {
             let name = mat.name().unwrap_or_default();
             if let Some(idx) = mat.index() {
-                tracing::trace!(target: "resources", "Material #{}: {}", idx, name);
+                tracing::trace!(target: logger::RESOURCES, "Material #{}: {}", idx, name);
 
                 let pbr = mat.pbr_metallic_roughness();
                 let diffuse = pbr.base_color_texture();
 
                 match diffuse {
                     Some(tex_info) => {
-                        tracing::trace!(target: "resources",
+                        tracing::trace!(target: logger::RESOURCES,
                             "Using texture #{}: {}",
                             tex_info.texture().index(),
                             tex_info.texture().name().unwrap_or_default()
@@ -355,16 +355,16 @@ impl GLTFLoader {
                     }
                     None => {
                         let color: Color = pbr.base_color_factor().into();
-                        tracing::trace!(target: "resources", "Using color material: {:?}", color);
+                        tracing::trace!(target: logger::RESOURCES, "Using color material: {:?}", color);
                         self.material_manager
                             .add_color_instance(Self::into_blend_mode(mat.alpha_mode()));
                     }
                 }
             } else {
-                tracing::trace!(target: "resources", "Using default material");
+                tracing::trace!(target: logger::RESOURCES, "Using default material");
             }
         }
 
-        tracing::trace!(target: "resources", "{} materials loaded", self.material_manager.instances.len());
+        tracing::trace!(target: logger::RESOURCES, "{} materials loaded", self.material_manager.instances.len());
     }
 }

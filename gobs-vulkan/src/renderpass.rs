@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use ash::vk;
 
-use gobs_core::ImageFormat;
+use gobs_core::{ImageFormat, logger};
 
 use crate::Wrap;
 use crate::device::Device;
@@ -63,7 +63,7 @@ impl RenderPass {
             .dependencies(std::slice::from_ref(&dependency));
 
         let renderpass = unsafe {
-            tracing::debug!(target: "render", "Create renderpass");
+            tracing::debug!(target: logger::RENDER, "Create renderpass");
             device
                 .raw()
                 .create_render_pass(&renderpass_info, None)
@@ -82,7 +82,7 @@ impl Wrap<vk::RenderPass> for RenderPass {
 
 impl Drop for RenderPass {
     fn drop(&mut self) {
-        tracing::trace!(target: "memory", "Drop renderpass");
+        tracing::trace!(target: logger::MEMORY, "Drop renderpass");
         unsafe {
             self.device.raw().destroy_render_pass(self.renderpass, None);
         }

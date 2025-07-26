@@ -5,7 +5,7 @@ use ash::vk;
 use raw_window_handle::{HasDisplayHandle, HasWindowHandle};
 use winit::window::Window;
 
-use gobs_core::{ImageExtent2D, ImageFormat};
+use gobs_core::{ImageExtent2D, ImageFormat, logger};
 
 use crate::Wrap;
 use crate::device::Device;
@@ -158,7 +158,7 @@ impl Wrap<vk::SurfaceKHR> for Surface {
 
 impl Drop for Surface {
     fn drop(&mut self) {
-        tracing::debug!(target: "memory", "Drop surface");
+        tracing::debug!(target: logger::MEMORY, "Drop surface");
         unsafe {
             self.instance
                 .surface_loader

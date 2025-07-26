@@ -1,6 +1,8 @@
 use ash::vk;
 use bitflags::bitflags;
 
+use gobs_core::logger;
+
 use crate::{Wrap, instance::Instance, physical::PhysicalDevice};
 
 bitflags! {
@@ -43,7 +45,7 @@ impl Features {
 
         let features10 = features.features;
 
-        tracing::debug!(
+        tracing::debug!(target: logger::RENDER,
             "Features: {:?},{:?},{:?},{:?}",
             features10,
             features11,

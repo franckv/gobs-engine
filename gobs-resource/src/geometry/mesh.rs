@@ -4,9 +4,10 @@ use std::{
 };
 
 use glam::{Vec2, Vec3};
-use gobs_core::Transform;
 use serde::Serialize;
 use uuid::Uuid;
+
+use gobs_core::{Transform, logger};
 
 use crate::geometry::{Bounded, BoundingBox, VertexData};
 
@@ -116,13 +117,13 @@ impl MeshBuilder {
 
     fn autoindex(mut self) -> Self {
         if !self.indices.is_empty() {
-            tracing::trace!(target: "resources", "Skip indices");
+            tracing::trace!(target: logger::RESOURCES, "Skip indices");
             return self;
         }
 
         let mut unique = HashMap::new();
 
-        tracing::trace!(target: "resources", "Indexing {} vertices", self.vertices.len());
+        tracing::trace!(target: logger::RESOURCES, "Indexing {} vertices", self.vertices.len());
 
         let mut idx = 0;
         let vertices = self
@@ -179,7 +180,7 @@ impl MeshBuilder {
     }
 
     fn update_tangent(mut self) -> Self {
-        tracing::trace!(target: "resources", "Calculating tangents for {} indices", self.indices.len());
+        tracing::trace!(target: logger::RESOURCES, "Calculating tangents for {} indices", self.indices.len());
 
         let mut triangles_included = vec![0; self.vertices.len()];
 
@@ -221,7 +222,7 @@ impl MeshBuilder {
             self = self.update_tangent();
         }
 
-        tracing::debug!(target: "resources",
+        tracing::debug!(target: logger::RESOURCES,
             "Load mesh {} ({} vertices / {} indices)",
             self.name,
             self.vertices.len(),

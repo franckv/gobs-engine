@@ -7,7 +7,7 @@ use ash::{
     vk::{self, FormatFeatureFlags},
 };
 
-use gobs_core::ImageFormat;
+use gobs_core::{ImageFormat, logger};
 
 use crate::{
     Wrap,
@@ -39,7 +39,7 @@ impl Device {
         surface: Option<&Surface>,
     ) -> Result<Arc<Self>, VulkanError> {
         let (graphics_family, transfer_family) = p_device.find_family(surface);
-        tracing::debug!(target: "init", "Using queue families Graphics={:?}, Transfer={:?}", &graphics_family, &transfer_family);
+        tracing::debug!(target: logger::INIT, "Using queue families Graphics={:?}, Transfer={:?}", &graphics_family, &transfer_family);
 
         let priorities = if transfer_family.index != graphics_family.index {
             vec![1.0]
@@ -76,7 +76,7 @@ impl Device {
             .push_next(&mut features13);
 
         let device: ash::Device = unsafe {
-            tracing::debug!(target: "init", "Create device");
+            tracing::debug!(target: logger::INIT, "Create device");
             instance
                 .instance
                 .create_device(p_device.raw(), &device_info, None)?
@@ -159,7 +159,7 @@ impl Debug for Device {
 
 impl Drop for Device {
     fn drop(&mut self) {
-        tracing::debug!(target: "memory", "Drop device");
+        tracing::debug!(target: logger::MEMORY, "Drop device");
         unsafe {
             self.device.destroy_device(None);
         }

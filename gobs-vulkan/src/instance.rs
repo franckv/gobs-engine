@@ -4,6 +4,7 @@ use std::ffi::{CStr, CString};
 use std::sync::Arc;
 
 use ash::{ext::debug_utils, khr::surface, vk};
+use gobs_core::logger;
 use raw_window_handle::HasDisplayHandle;
 use winit::window::Window;
 
@@ -38,7 +39,7 @@ unsafe extern "system" fn debug_cb(
 
         match message_severity {
             vk::DebugUtilsMessageSeverityFlagsEXT::WARNING => {
-                tracing::warn!(target: "render",
+                tracing::warn!(target: logger::RENDER,
                     "{:?} [{} ({})] : {}",
                     message_type,
                     message_id_name,
@@ -47,7 +48,7 @@ unsafe extern "system" fn debug_cb(
                 );
             }
             vk::DebugUtilsMessageSeverityFlagsEXT::INFO => {
-                tracing::info!(target: "render",
+                tracing::info!(target: logger::RENDER,
                     "{:?} [{} ({})] : {}",
                     message_type,
                     message_id_name,
@@ -56,7 +57,7 @@ unsafe extern "system" fn debug_cb(
                 );
             }
             vk::DebugUtilsMessageSeverityFlagsEXT::VERBOSE => {
-                tracing::debug!(target: "render",
+                tracing::debug!(target: logger::RENDER,
                     "{:?} [{} ({})] : {}",
                     message_type,
                     message_id_name,
@@ -65,7 +66,7 @@ unsafe extern "system" fn debug_cb(
                 );
             }
             _ => {
-                tracing::error!(target: "render",
+                tracing::error!(target: logger::RENDER,
                     "{:?} [{} ({})] : {}",
                     message_type,
                     message_id_name,
@@ -137,7 +138,7 @@ impl Instance {
         let entry = ash::Entry::linked();
 
         let instance: ash::Instance = unsafe {
-            tracing::info!(target: "init", "Create instance");
+            tracing::info!(target: logger::INIT, "Create instance");
 
             entry.create_instance(&instance_info, None)?
         };
@@ -180,7 +181,7 @@ impl Instance {
         let mut p_devices = PhysicalDevice::enumerate(self);
         let mut candidates = vec![];
 
-        tracing::debug!(target: "init", "{} physical devices found", p_devices.len());
+        tracing::debug!(target: logger::INIT, "{} physical devices found", p_devices.len());
 
         for p_device in p_devices.drain(..) {
             if p_device.check_features(self, expected_features) {
@@ -208,7 +209,7 @@ impl Instance {
 
 impl Drop for Instance {
     fn drop(&mut self) {
-        tracing::debug!(target: "memory", "Drop instance");
+        tracing::debug!(target: logger::MEMORY, "Drop instance");
         unsafe {
             self.debug_utils_loader
                 .destroy_debug_utils_messenger(self.debug_call_back, None);

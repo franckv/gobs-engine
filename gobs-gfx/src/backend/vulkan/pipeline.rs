@@ -1,11 +1,10 @@
 use std::sync::Arc;
 
-use gobs_resource::geometry::VertexAttribute;
 use indexmap::IndexMap;
 use parking_lot::RwLock;
 
-use gobs_core::ImageFormat;
-
+use gobs_core::{ImageFormat, logger};
+use gobs_resource::geometry::VertexAttribute;
 use gobs_resource::load;
 use gobs_vulkan as vk;
 
@@ -220,7 +219,7 @@ impl GraphicsPipelineBuilder<VkRenderer> for VkGraphicsPipelineBuilder {
     }
 
     fn build(mut self) -> Arc<VkPipeline> {
-        tracing::debug!(target: "render", "Creating pipeline: {}", self.name);
+        tracing::debug!(target: logger::RENDER, "Creating pipeline: {}", self.name);
 
         self = self.save_binding_group();
 

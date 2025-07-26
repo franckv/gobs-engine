@@ -1,5 +1,6 @@
 use std::sync::Arc;
 
+use gobs_core::logger;
 use gobs_vulkan as vk;
 
 use crate::Device;
@@ -31,7 +32,7 @@ impl Device<VkRenderer> for VkDevice {
             .find_adapter(&expected_features, display.surface.as_deref())
             .ok_or(GfxError::DeviceCreate)?;
 
-        tracing::info!(target: "init", "Using adapter {}", p_device.name);
+        tracing::info!(target: logger::INIT, "Using adapter {}", p_device.name);
 
         let device = vk::device::Device::new(
             instance.instance.clone(),

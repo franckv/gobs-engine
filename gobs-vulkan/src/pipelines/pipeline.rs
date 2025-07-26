@@ -2,6 +2,8 @@ use std::{ffi::CString, sync::Arc};
 
 use ash::vk;
 
+use gobs_core::logger;
+
 use crate::{
     Wrap,
     device::Device,
@@ -116,7 +118,7 @@ impl Wrap<vk::Pipeline> for Pipeline {
 
 impl Drop for Pipeline {
     fn drop(&mut self) {
-        tracing::debug!(target: "memory", "Drop pipeline");
+        tracing::debug!(target: logger::MEMORY, "Drop pipeline");
         unsafe {
             self.device.raw().destroy_pipeline(self.pipeline, None);
         }

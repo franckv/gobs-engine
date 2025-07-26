@@ -2,7 +2,7 @@ use image::{ImageBuffer, Rgba};
 use renderdoc::{RenderDoc, V141};
 
 use gobs::{
-    core::{ImageFormat, Input, Key},
+    core::{ImageFormat, Input, Key, logger},
     game::context::GameContext,
     render::{RenderError, Renderable},
     render_graph::PassType,
@@ -23,7 +23,7 @@ pub struct SampleApp {
 
 impl SampleApp {
     pub fn new() -> Self {
-        tracing::info!(target: "app", "Create");
+        tracing::info!(target: logger::APP, "Create");
 
         Self {
             process_updates: false,
@@ -82,7 +82,7 @@ impl SampleApp {
         scene: Option<&mut Scene>,
         ui: Option<&mut UIRenderer>,
     ) -> Result<(), RenderError> {
-        tracing::trace!(target: "app", "Render frame {}", ctx.renderer.frame_number());
+        tracing::trace!(target: logger::APP, "Render frame {}", ctx.renderer.frame_number());
 
         let resource_manager = &mut ctx.resource_manager;
 
@@ -107,7 +107,7 @@ impl SampleApp {
                 Ok(())
             })?;
 
-        tracing::trace!(target: "app", "End render");
+        tracing::trace!(target: logger::APP, "End render");
 
         Ok(())
     }
@@ -120,7 +120,7 @@ impl SampleApp {
         ui: &mut UIRenderer,
         camera_controller: Option<&mut CameraController>,
     ) {
-        tracing::trace!(target: "app", "Input");
+        tracing::trace!(target: logger::APP, "Input");
 
         ui.input(input);
         if let Some(camera_controller) = camera_controller {
@@ -145,7 +145,7 @@ impl SampleApp {
                     }
                 }
                 Key::L => {
-                    tracing::info!(target: "app", "{:?}", ctx.renderer.gfx.device.allocator.allocator.lock().unwrap())
+                    tracing::info!(target: logger::APP, "{:?}", ctx.renderer.gfx.device.allocator.allocator.lock().unwrap())
                 }
                 Key::P => self.process_updates = !self.process_updates,
                 Key::Z => self.draw_wire = !self.draw_wire,
@@ -173,7 +173,7 @@ impl SampleApp {
             ImageFormat::R16g16b16a16Unorm,
         );
 
-        tracing::info!(target: "app", "Screenshot \"{}\" ({} bytes)", filename, data.len());
+        tracing::info!(target: logger::APP, "Screenshot \"{}\" ({} bytes)", filename, data.len());
 
         let img: ImageBuffer<Rgba<u16>, Vec<u16>> =
             ImageBuffer::from_raw(extent.width, extent.height, data).unwrap();
