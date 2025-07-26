@@ -49,13 +49,28 @@ impl MaterialsConfig {
             .unwrap();
         let config: MaterialsConfig = ron::from_str(&resources).unwrap();
 
+        config.load_materials(ctx, resource_manager);
+    }
+
+    pub fn load_resources_sync(
+        ctx: &GfxContext,
+        filename: &str,
+        resource_manager: &mut ResourceManager,
+    ) {
+        let resources = load::load_string_sync(filename, AssetType::RESOURCES).unwrap();
+        let config: MaterialsConfig = ron::from_str(&resources).unwrap();
+
+        config.load_materials(ctx, resource_manager);
+    }
+
+    fn load_materials(&self, ctx: &GfxContext, resource_manager: &mut ResourceManager) {
         let mut object_layout = ObjectDataLayout::builder();
-        for prop in &config.default.object_layout {
+        for prop in &self.default.object_layout {
             object_layout = object_layout.prop(*prop);
         }
         let object_layout = object_layout.build();
 
-        for (name, material) in &config.materials {
+        for (name, material) in &self.materials {
             let mut props = MaterialProperties::new(
                 ctx,
                 name,

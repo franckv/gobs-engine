@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use gobs_render::{
     BlendMode, GfxContext, Material, MaterialInstance, MaterialProperties, MaterialProperty,
-    ObjectDataLayout, ObjectDataProp, Texture, TextureProperties,
+    MaterialsConfig, ObjectDataLayout, ObjectDataProp, Texture, TextureProperties,
 };
 use gobs_resource::{
     geometry::VertexAttribute,
@@ -54,116 +54,26 @@ impl MaterialManager {
         ctx: &GfxContext,
         resource_manager: &mut ResourceManager,
     ) -> Result<Self, AssetError> {
-        let vertex_attributes = VertexAttribute::POSITION
-            | VertexAttribute::TEXTURE
-            | VertexAttribute::NORMAL
-            | VertexAttribute::TANGENT
-            | VertexAttribute::BITANGENT;
+        MaterialsConfig::load_resources_sync(ctx, "gltf_materials.ron", resource_manager);
 
-        let object_layout = ObjectDataLayout::builder()
-            .prop(ObjectDataProp::WorldMatrix)
-            .prop(ObjectDataProp::NormalMatrix)
-            .prop(ObjectDataProp::VertexBufferAddress)
-            .build();
-
-        let texture = resource_manager.add(
-            MaterialProperties::new(
-                ctx,
-                "gltf.texture",
-                "gltf.texture.vert.spv",
-                "main",
-                "gltf.texture.frag.spv",
-                "main",
-                vertex_attributes,
-                &object_layout,
-            )
-            .prop("diffuse", MaterialProperty::Texture),
-            ResourceLifetime::Static,
-        );
-
-        let transparent_texture = resource_manager.add(
-            MaterialProperties::new(
-                ctx,
-                "gltf.texture.transparent",
-                "gltf.texture.vert.spv",
-                "main",
-                "gltf.texture.frag.spv",
-                "main",
-                vertex_attributes,
-                &object_layout,
-            )
-            .prop("diffuse", MaterialProperty::Texture)
-            .blend_mode(BlendMode::Alpha),
-            ResourceLifetime::Static,
-        );
-
-        let texture_normal = resource_manager.add(
-            MaterialProperties::new(
-                ctx,
-                "gltf.texture.normal",
-                "gltf.texture.vert.spv",
-                "main",
-                "gltf.texture_n.frag.spv",
-                "main",
-                vertex_attributes,
-                &object_layout,
-            )
-            .prop("diffuse", MaterialProperty::Texture)
-            .prop("normal", MaterialProperty::Texture),
-            ResourceLifetime::Static,
-        );
-
-        let transparent_texture_normal = resource_manager.add(
-            MaterialProperties::new(
-                ctx,
-                "gltf.texture.transparent.normal",
-                "gltf.texture.vert.spv",
-                "main",
-                "gltf.texture_n.frag.spv",
-                "main",
-                vertex_attributes,
-                &object_layout,
-            )
-            .prop("diffuse", MaterialProperty::Texture)
-            .prop("normal", MaterialProperty::Texture)
-            .blend_mode(BlendMode::Alpha),
-            ResourceLifetime::Static,
-        );
-
-        let vertex_attributes = VertexAttribute::POSITION
-            | VertexAttribute::COLOR
-            | VertexAttribute::NORMAL
-            | VertexAttribute::TANGENT
-            | VertexAttribute::BITANGENT;
-
-        let color = resource_manager.add(
-            MaterialProperties::new(
-                ctx,
-                "gltf.color",
-                "gltf.color_light.vert.spv",
-                "main",
-                "gltf.color_light.frag.spv",
-                "main",
-                vertex_attributes,
-                &object_layout,
-            ),
-            ResourceLifetime::Static,
-        );
-
-        let transparent_color = resource_manager.add(
-            MaterialProperties::new(
-                ctx,
-                "gltf.color.transparent",
-                "gltf.color_light.vert.spv",
-                "main",
-                "gltf.color_light.frag.spv",
-                "main",
-                vertex_attributes,
-                &object_layout,
-            )
-            .blend_mode(BlendMode::Alpha),
-            ResourceLifetime::Static,
-        );
+        let texture = resource_manager
+            .get_by_name("gltf.texture")
+            .ok_or(AssetError::AssetNotFound)?;
+        let transparent_texture = resource_manager
+            .get_by_name("gltf.texture.transparent")
+            .ok_or(AssetError::AssetNotFound)?;
+        let texture_normal = resource_manager
+            .get_by_name("gltf.texture.normal")
+            .ok_or(AssetError::AssetNotFound)?;
+        let transparent_texture_normal = resource_manager
+            .get_by_name("gltf.texture.transparent.normal")
+            .ok_or(AssetError::AssetNotFound)?;
+        let color = resource_manager
+            .get_by_name("gltf.color")
+            .ok_or(AssetError::AssetNotFound)?;
+        let transparent_color = resource_manager
+            .get_by_name("gltf.color.transparent")
+            .ok_or(AssetError::AssetNotFound)?;
 
         let texture_manager = TextureManager::new(resource_manager);
 

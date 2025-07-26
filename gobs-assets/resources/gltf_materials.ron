@@ -1,0 +1,71 @@
+MaterialsConfig(
+    default: (
+        // must match material pass layout
+        object_layout: [
+            WorldMatrix,
+            NormalMatrix,
+            VertexBufferAddress,
+        ],
+    ),
+    materials: {
+        "gltf.texture": (
+            vertex_shader: "gltf.texture.vert.spv",
+            vertex_entry: "main",
+            fragment_shader: "gltf.texture.frag.spv",
+            fragment_entry: "main",
+            vertex_attributes: "POSITION | TEXTURE | NORMAL | TANGENT | BITANGENT",
+            properties: {
+                "diffuse": Texture
+            }
+        ),
+        "gltf.texture.transparent": (
+            vertex_shader: "gltf.texture.vert.spv",
+            vertex_entry: "main",
+            fragment_shader: "gltf.texture.frag.spv",
+            fragment_entry: "main",
+            vertex_attributes: "POSITION | TEXTURE | NORMAL | TANGENT | BITANGENT",
+            blend_mode: Alpha,
+            properties: {
+                "diffuse": Texture
+            }
+        ),
+        "gltf.texture.normal": (
+            vertex_shader: "gltf.texture.vert.spv",
+            vertex_entry: "main",
+            fragment_shader: "gltf.texture_n.frag.spv",
+            fragment_entry: "main",
+            vertex_attributes: "POSITION | TEXTURE | NORMAL | TANGENT | BITANGENT",
+            properties: {
+                "diffuse": Texture,
+                "normal": Texture
+            }
+        ),
+        "gltf.texture.transparent.normal": (
+            vertex_shader: "gltf.texture.vert.spv",
+            vertex_entry: "main",
+            fragment_shader: "gltf.texture_n.frag.spv",
+            fragment_entry: "main",
+            vertex_attributes: "POSITION | TEXTURE | NORMAL | TANGENT | BITANGENT",
+            blend_mode: Alpha,
+            properties: {
+                "diffuse": Texture,
+                "normal": Texture
+            }
+        ),
+        "gltf.color": (
+            vertex_shader: "gltf.color_light.vert.spv",
+            vertex_entry: "main",
+            fragment_shader: "gltf.color_light.frag.spv",
+            fragment_entry: "main",
+            vertex_attributes: "POSITION | COLOR | NORMAL | TANGENT | BITANGENT",
+        ),
+         "gltf.color.transparent": (
+            vertex_shader: "gltf.color_light.vert.spv",
+            vertex_entry: "main",
+            fragment_shader: "gltf.color_light.frag.spv",
+            fragment_entry: "main",
+            vertex_attributes: "POSITION | COLOR | NORMAL | TANGENT | BITANGENT",
+            blend_mode: Alpha,
+        ),
+   }
+)
