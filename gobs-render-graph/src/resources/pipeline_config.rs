@@ -188,7 +188,7 @@ mod tests {
     fn test_load_resources() {
         setup();
 
-        let ctx = GfxContext::new("test", None, true).unwrap();
+        let ctx = GfxContext::new("test", None, false).unwrap();
 
         let data = include_str!("../../../examples/resources/pipelines.ron");
 
@@ -201,7 +201,7 @@ mod tests {
     fn test_load_pipeline() {
         setup();
 
-        let ctx = GfxContext::new("test", None, true).unwrap();
+        let ctx = GfxContext::new("test", None, false).unwrap();
 
         let data = include_str!("../../../examples/resources/pipelines.ron");
 

@@ -196,7 +196,7 @@ mod tests {
     fn test_load() {
         setup();
 
-        let ctx = GfxContext::new("test", None, true).unwrap();
+        let ctx = GfxContext::new("test", None, false).unwrap();
 
         let mut resource_manager = ResourceManager::new(ctx.frames_in_flight);
 
