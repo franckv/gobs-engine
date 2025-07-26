@@ -66,11 +66,13 @@ impl SampleApp {
     ) {
         if self.draw_ui {
             // TODO: change this
-            let app_info = ctx.app_info.clone();
+            // let app_info = ctx.app_info.clone();
 
-            ui.update(&mut ctx.resource_manager, delta, |ectx| {
-                self.ui.draw(&app_info, ectx, scene, delta);
+            let output = ui.draw_ui(delta, |ectx| {
+                self.ui.draw(ectx, ctx, scene, delta);
             });
+
+            ui.update(&mut ctx.resource_manager, output);
         }
     }
 

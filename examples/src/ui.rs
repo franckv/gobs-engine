@@ -1,7 +1,13 @@
 use glam::Vec3;
 
 use gobs::{
-    game::context::AppInfo,
+    game::context::GameContext,
+    render::{Material, Mesh, Texture},
+    render_graph::Pipeline,
+    resource::{
+        manager::ResourceManager,
+        resource::{ResourceProperties, ResourceType},
+    },
     scene::{
         components::{NodeId, NodeValue},
         graph::scenegraph::SceneGraph,
@@ -13,6 +19,7 @@ pub struct Ui {
     pub show_camera: bool,
     pub show_light: bool,
     pub show_models: bool,
+    pub show_resources: bool,
     pub ui_hovered: bool,
     pub selected_node: NodeId,
 }
@@ -23,6 +30,7 @@ impl Ui {
             show_camera: true,
             show_light: true,
             show_models: true,
+            show_resources: false,
             ui_hovered: false,
             selected_node: NodeId::default(),
         }
@@ -30,8 +38,8 @@ impl Ui {
 
     pub fn draw(
         &mut self,
-        app_info: &AppInfo,
         ectx: &egui::Context,
+        ctx: &mut GameContext,
         scene: &mut Scene,
         delta: f32,
     ) {
@@ -42,7 +50,9 @@ impl Ui {
                 }
             });
 
-            ui.heading(&app_info.name);
+            ui.heading(&ctx.app_info.name);
+
+            self.show_resources(ectx, ui, &mut ctx.resource_manager);
 
             self.draw_general(ui, scene, (1. / delta).round() as u32);
 
@@ -62,6 +72,47 @@ impl Ui {
         });
 
         self.ui_hovered = ectx.wants_pointer_input();
+    }
+
+    pub fn show_resources(
+        &mut self,
+        ectx: &egui::Context,
+        ui: &mut egui::Ui,
+        resource_manager: &mut ResourceManager,
+    ) {
+        if ui.button("Show resources").clicked() {
+            self.show_resources = true;
+        }
+
+        let mut show_resources = self.show_resources;
+
+        egui::Window::new("Resources")
+            .open(&mut show_resources)
+            .show(ectx, |ui| {
+                egui::ScrollArea::vertical().show(ui, |ui| {
+                    self.show_resource::<Texture>(ui, "Textures", resource_manager);
+                    self.show_resource::<Pipeline>(ui, "Pipelines", resource_manager);
+                    self.show_resource::<Material>(ui, "Materials", resource_manager);
+                    self.show_resource::<Mesh>(ui, "Meshes", resource_manager);
+                });
+            });
+
+        self.show_resources = show_resources;
+    }
+
+    fn show_resource<R: ResourceType + 'static>(
+        &mut self,
+        ui: &mut egui::Ui,
+        label: &str,
+        resource_manager: &mut ResourceManager,
+    ) {
+        egui::CollapsingHeader::new(label)
+            .default_open(true)
+            .show(ui, |ui| {
+                for resource in resource_manager.values::<R>() {
+                    ui.label(format!(" {:?}", &resource.properties.name()));
+                }
+            });
     }
 
     pub fn draw_general(&mut self, ui: &mut egui::Ui, scene: &mut Scene, fps: u32) {

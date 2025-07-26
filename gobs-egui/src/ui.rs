@@ -89,13 +89,16 @@ impl UIRenderer {
     }
 
     #[tracing::instrument(target = "ui", skip_all, level = "trace")]
-    pub fn update<F>(&mut self, resource_manager: &mut ResourceManager, delta: f32, callback: F)
+    pub fn draw_ui<F>(&mut self, delta: f32, callback: F) -> FullOutput
     where
         F: FnMut(&egui::Context),
     {
         let input = self.prepare_inputs(delta);
-        let output = self.ectx.run(input, callback);
+        self.ectx.run(input, callback)
+    }
 
+    #[tracing::instrument(target = "ui", skip_all, level = "trace")]
+    pub fn update(&mut self, resource_manager: &mut ResourceManager, output: FullOutput) {
         self.update_textures(resource_manager, &output);
         self.cleanup_textures(&output);
 

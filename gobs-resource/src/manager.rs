@@ -73,6 +73,10 @@ impl ResourceRegistry {
         self.registry.get_mut::<Resource<R>>(&handle.id).unwrap()
     }
 
+    pub fn values<R: ResourceType + 'static>(&self) -> impl Iterator<Item = &Resource<R>> {
+        self.registry.values()
+    }
+
     pub fn values_mut<R: ResourceType + 'static>(
         &mut self,
     ) -> impl Iterator<Item = &mut Resource<R>> {
@@ -130,6 +134,10 @@ impl ResourceManager {
         handle: &ResourceHandle<R>,
     ) -> &mut Resource<R> {
         self.registry.get_mut(handle)
+    }
+
+    pub fn values<R: ResourceType + 'static>(&self) -> impl Iterator<Item = &Resource<R>> {
+        self.registry.values()
     }
 
     pub fn update<R: ResourceType + 'static>(&mut self) {

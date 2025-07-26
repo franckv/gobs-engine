@@ -23,6 +23,13 @@ impl<Key: Hash + Eq + Debug> ObjectRegistry<Key> {
             .flat_map(|entries| entries.keys())
     }
 
+    pub fn values<T: Any>(&self) -> impl Iterator<Item = &T> {
+        self.registry
+            .get(&TypeId::of::<T>())
+            .into_iter()
+            .flat_map(|entries| entries.values().flat_map(|entry| entry.downcast_ref::<T>()))
+    }
+
     pub fn values_mut<T: Any>(&mut self) -> impl Iterator<Item = &mut T> {
         self.registry
             .get_mut(&TypeId::of::<T>())

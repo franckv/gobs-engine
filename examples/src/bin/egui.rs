@@ -33,9 +33,11 @@ impl Run for App {
     }
 
     fn update(&mut self, ctx: &mut GameContext, delta: f32) {
-        self.ui.update(&mut ctx.resource_manager, delta, |ectx| {
-            self.demo.show(ectx, &mut true)
-        });
+        let output = self
+            .ui
+            .draw_ui(delta, |ectx| self.demo.show(ectx, &mut true));
+
+        self.ui.update(&mut ctx.resource_manager, output);
     }
 
     fn render(&mut self, ctx: &mut GameContext) -> Result<(), RenderError> {
