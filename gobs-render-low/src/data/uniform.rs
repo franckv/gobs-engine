@@ -41,6 +41,7 @@ impl Allocable<GfxDevice, Arc<UniformLayout>> for UniformBuffer {
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Hash)]
 pub enum UniformProp {
+    Bool,
     F32,
     U32,
     U64,
@@ -54,6 +55,7 @@ pub enum UniformProp {
 impl UniformProp {
     fn alignment(&self) -> usize {
         match self {
+            UniformProp::Bool => 4,
             UniformProp::F32 => 4,
             UniformProp::U32 => 4,
             UniformProp::U64 => 16,
@@ -67,6 +69,7 @@ impl UniformProp {
 
     fn size(&self) -> usize {
         match self {
+            UniformProp::Bool => 4,
             UniformProp::F32 => 4,
             UniformProp::U32 => 4,
             UniformProp::U64 => 8,
@@ -157,6 +160,7 @@ impl UniformLayoutBuilder {
 
 #[derive(Clone, Copy, Debug)]
 pub enum UniformPropData {
+    Bool(bool),
     F32(f32),
     U32(u32),
     U64(u64),
@@ -170,6 +174,7 @@ pub enum UniformPropData {
 impl UniformPropData {
     fn ty(&self) -> UniformProp {
         match self {
+            UniformPropData::Bool(_) => UniformProp::Bool,
             UniformPropData::F32(_) => UniformProp::F32,
             UniformPropData::U32(_) => UniformProp::U32,
             UniformPropData::U64(_) => UniformProp::U64,
@@ -183,6 +188,7 @@ impl UniformPropData {
 
     fn copy(&self, data: &mut Vec<u8>) {
         match self {
+            UniformPropData::Bool(d) => data.extend_from_slice(bytemuck::cast_slice(&[*d])),
             UniformPropData::F32(d) => data.extend_from_slice(bytemuck::cast_slice(&[*d])),
             UniformPropData::U32(d) => data.extend_from_slice(bytemuck::cast_slice(&[*d])),
             UniformPropData::U64(d) => data.extend_from_slice(bytemuck::cast_slice(&[*d])),
