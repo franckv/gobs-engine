@@ -1,5 +1,5 @@
 assets/
-target/
+target
 scripts/
 .vscode/
 .cargo/

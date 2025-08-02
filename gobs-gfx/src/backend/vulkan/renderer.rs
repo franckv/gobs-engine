@@ -1,7 +1,7 @@
 use crate::{
     Renderer,
     backend::vulkan::{
-        bindgroup::{VkBindingGroup, VkBindingGroupUpdates},
+        bindgroup::{VkBindingGroup, VkBindingGroupLayout, VkBindingGroupUpdates},
         buffer::VkBuffer,
         command::VkCommand,
         device::VkDevice,
@@ -20,6 +20,7 @@ impl Renderer for VkRenderer {
     type Image = VkImage;
     type Instance = VkInstance;
     type BindingGroup = VkBindingGroup;
+    type BindingGroupLayout = VkBindingGroupLayout;
     type BindingGroupUpdates = VkBindingGroupUpdates;
     type Buffer = VkBuffer;
     type Command = VkCommand;

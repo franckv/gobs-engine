@@ -207,7 +207,7 @@ impl ResourceManager {
     ) -> Result<&R::ResourceData, ResourceError> {
         self.load_data::<R>(handle, &parameter)?;
 
-        let resource = self.get_mut::<R>(handle);
+        let resource = self.get_mut(handle);
 
         match &resource.data.get(&parameter) {
             Some(ResourceState::Loaded(data)) => Ok(data),

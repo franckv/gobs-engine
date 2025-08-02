@@ -8,7 +8,7 @@ mod instance;
 mod pipeline;
 mod renderer;
 
-use bindgroup::VkBindingGroup;
+use bindgroup::{VkBindingGroup, VkBindingGroupLayout, VkBindingGroupPool};
 use buffer::VkBuffer;
 use command::VkCommand;
 use device::VkDevice;
@@ -28,3 +28,5 @@ pub type GfxCommand = VkCommand;
 pub type GfxGraphicsPipelineBuilder = VkGraphicsPipelineBuilder;
 pub type GfxComputePipelineBuilder = VkComputePipelineBuilder;
 pub type GfxBindingGroup = VkBindingGroup;
+pub type GfxBindingGroupPool = VkBindingGroupPool;
+pub type GfxBindingGroupLayout = VkBindingGroupLayout;

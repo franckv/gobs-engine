@@ -61,7 +61,7 @@ pub struct GraphicsPipelineProperties {
     pub(crate) fragment_shader: Option<String>,
     pub(crate) binding_groups: Vec<(DescriptorStage, BindingGroupType, Vec<DescriptorType>)>,
     pub last_binding_group: BindingGroupType,
-    pub(crate) ds_pool_size: usize,
+    pub ds_pool_size: usize,
     pub(crate) push_constants: usize,
     pub vertex_attributes: VertexAttribute,
     pub(crate) color_format: Option<ImageFormat>,

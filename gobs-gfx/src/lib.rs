@@ -10,7 +10,9 @@ mod instance;
 mod pipeline;
 mod renderer;
 
-pub use bindgroup::{BindingGroup, BindingGroupType, BindingGroupUpdates};
+pub use bindgroup::{
+    BindingGroup, BindingGroupLayout, BindingGroupPool, BindingGroupType, BindingGroupUpdates,
+};
 pub use buffer::{Buffer, BufferId};
 pub use command::{Command, CommandQueueType};
 pub use device::Device;

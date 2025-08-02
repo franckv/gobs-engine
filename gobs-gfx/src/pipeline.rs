@@ -6,8 +6,8 @@ use uuid::Uuid;
 use gobs_core::ImageFormat;
 
 use crate::{
-    BindingGroupType, BlendMode, CompareOp, CullMode, DescriptorStage, DescriptorType,
-    DynamicStateElem, FrontFace, GfxError, PolygonMode, Rect2D, Renderer, Viewport,
+    BindingGroupType, BlendMode, CompareOp, CullMode, DynamicStateElem, FrontFace, GfxError,
+    PolygonMode, Rect2D, Renderer, Viewport,
 };
 
 pub type PipelineId = Uuid;
@@ -16,8 +16,8 @@ pub trait Pipeline<R: Renderer> {
     fn name(&self) -> &str;
     fn id(&self) -> PipelineId;
     fn vertex_attributes(&self) -> VertexAttribute;
-    fn graphics(name: &str, device: &R::Device) -> R::GraphicsPipelineBuilder;
-    fn compute(name: &str, device: &R::Device) -> R::ComputePipelineBuilder;
+    fn graphics(name: &str, device: Arc<R::Device>) -> R::GraphicsPipelineBuilder;
+    fn compute(name: &str, device: Arc<R::Device>) -> R::ComputePipelineBuilder;
     fn create_binding_group(
         self: &Arc<Self>,
         ty: BindingGroupType,
@@ -27,8 +27,7 @@ pub trait Pipeline<R: Renderer> {
 
 pub trait ComputePipelineBuilder<R: Renderer> {
     fn shader(self, filename: &str, entry: &str) -> Result<R::ComputePipelineBuilder, GfxError>;
-    fn binding_group(self, binding_group_type: BindingGroupType) -> Self;
-    fn binding(self, ty: DescriptorType) -> Self;
+    fn binding_group(self, binding_group_layout: R::BindingGroupLayout) -> Self;
     fn build(self) -> Arc<R::Pipeline>;
 }
 
@@ -46,10 +45,7 @@ pub trait GraphicsPipelineBuilder<R: Renderer> {
     fn pool_size(self, size: usize) -> Self;
     fn push_constants(self, size: usize) -> Self;
     fn vertex_attributes(self, vertex_attributes: VertexAttribute) -> Self;
-    fn binding_group(self, binding_group_type: BindingGroupType) -> Self;
-    fn current_binding_group(&self) -> Option<BindingGroupType>;
-    fn binding(self, ty: DescriptorType, stage: DescriptorStage) -> Self;
-
+    fn binding_group(self, binding_group_layout: R::BindingGroupLayout) -> Self;
     fn polygon_mode(self, mode: PolygonMode) -> Self;
     fn viewports(self, viewports: Vec<Viewport>) -> Self;
     fn scissors(self, scissors: Vec<Rect2D>) -> Self;

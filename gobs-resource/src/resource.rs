@@ -20,11 +20,11 @@ pub enum ResourceLifetime {
     Transient,
 }
 
-// pub type ResourceHandle = Uuid;
+pub type ResourceId = Uuid;
 
 #[derive(Copy, Clone, Debug, PartialEq, Serialize)]
 pub struct ResourceHandle<R: ResourceType> {
-    pub id: Uuid,
+    pub id: ResourceId,
     pub(crate) ty: PhantomData<R>,
 }
 

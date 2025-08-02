@@ -2,8 +2,9 @@ use std::sync::Arc;
 
 use gobs_core::{ImageExtent2D, logger};
 use gobs_gfx::{
-    BindingGroup, BindingGroupType, BindingGroupUpdates, Command, ComputePipelineBuilder,
-    DescriptorType, GfxBindingGroup, GfxPipeline, ImageLayout, Pipeline,
+    BindingGroup, BindingGroupLayout, BindingGroupType, BindingGroupUpdates, Command,
+    ComputePipelineBuilder, DescriptorType, GfxBindingGroup, GfxBindingGroupLayout, GfxPipeline,
+    ImageLayout, Pipeline,
 };
 use gobs_render_low::{GfxContext, RenderError, RenderObject, SceneData, UniformLayout};
 use gobs_resource::geometry::VertexAttribute;
@@ -35,12 +36,16 @@ pub struct ComputePass {
 
 impl ComputePass {
     pub fn new(ctx: &GfxContext, name: &str) -> Result<Arc<dyn RenderPass>, RenderError> {
-        let pipeline_builder = GfxPipeline::compute(name, &ctx.device);
+        let pipeline_builder = GfxPipeline::compute(name, ctx.device.clone());
+
+        let binding_layout = GfxBindingGroupLayout::new(BindingGroupType::ComputeData).add_binding(
+            DescriptorType::StorageImage,
+            gobs_gfx::DescriptorStage::Compute,
+        );
 
         let pipeline = pipeline_builder
             .shader("sky.comp.spv", "main")?
-            .binding_group(BindingGroupType::ComputeData)
-            .binding(DescriptorType::StorageImage)
+            .binding_group(binding_layout)
             .build();
 
         let frame_data = (0..ctx.frames_in_flight)

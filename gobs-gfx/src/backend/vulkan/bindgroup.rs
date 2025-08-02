@@ -1,11 +1,82 @@
 use std::sync::Arc;
 
 use gobs_vulkan as vk;
+use gobs_vulkan::descriptor::DescriptorSetLayout;
 
 use crate::backend::vulkan::{
-    buffer::VkBuffer, image::VkImage, image::VkSampler, pipeline::VkPipeline, renderer::VkRenderer,
+    buffer::VkBuffer, device::VkDevice, image::VkImage, image::VkSampler, pipeline::VkPipeline,
+    renderer::VkRenderer,
 };
-use crate::{BindingGroup, BindingGroupType, BindingGroupUpdates, ImageLayout};
+use crate::bindgroup::{BindingGroupLayout, BindingGroupPool};
+use crate::{
+    BindingGroup, BindingGroupType, BindingGroupUpdates, DescriptorStage, DescriptorType,
+    ImageLayout,
+};
+
+#[derive(Debug)]
+pub struct VkBindingGroupLayout {
+    pub binding_group_type: BindingGroupType,
+    pub bindings: Vec<(DescriptorType, DescriptorStage)>,
+}
+
+impl BindingGroupLayout<VkRenderer> for VkBindingGroupLayout {
+    fn new(binding_group_type: BindingGroupType) -> Self {
+        Self {
+            binding_group_type,
+            bindings: Vec::new(),
+        }
+    }
+
+    fn add_binding(mut self, ty: DescriptorType, stage: DescriptorStage) -> Self {
+        self.bindings.push((ty, stage));
+
+        self
+    }
+}
+
+#[derive(Debug)]
+pub struct VkBindingGroupPool {
+    pub(crate) bind_group_type: BindingGroupType,
+    pub(crate) layout: Arc<DescriptorSetLayout>,
+    pool: vk::descriptor::DescriptorSetPool,
+}
+
+impl VkBindingGroupPool {
+    pub fn new(
+        device: Arc<VkDevice>,
+        bind_group_type: BindingGroupType,
+        pool_size: usize,
+        layout: Arc<DescriptorSetLayout>,
+    ) -> Self {
+        let pool = vk::descriptor::DescriptorSetPool::new(
+            device.device.clone(),
+            layout.clone(),
+            pool_size,
+        );
+
+        Self {
+            bind_group_type,
+            pool,
+            layout,
+        }
+    }
+}
+
+impl BindingGroupPool<VkRenderer> for VkBindingGroupPool {
+    fn allocate(&mut self, pipeline: Arc<VkPipeline>) -> VkBindingGroup {
+        let ds = self.pool.allocate();
+
+        VkBindingGroup {
+            ds,
+            bind_group_type: self.bind_group_type,
+            pipeline,
+        }
+    }
+
+    fn reset(&mut self) {
+        self.pool.reset();
+    }
+}
 
 #[derive(Clone, Debug)]
 pub struct VkBindingGroup {

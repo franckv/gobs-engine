@@ -1,8 +1,9 @@
 use std::sync::Arc;
 
 use gobs_gfx::{
-    BindingGroupType, ComputePipelineBuilder, DynamicStateElem, GfxDevice, GfxPipeline,
-    GraphicsPipelineBuilder, Pipeline as _, Rect2D, Viewport,
+    BindingGroupLayout, BindingGroupType, ComputePipelineBuilder, DescriptorStage,
+    DynamicStateElem, GfxBindingGroupLayout, GfxDevice, GfxPipeline, GraphicsPipelineBuilder,
+    Pipeline as _, Rect2D, Viewport,
 };
 use gobs_resource::{
     manager::ResourceRegistry,
@@ -24,17 +25,22 @@ impl PipelineLoader {
     }
 
     pub fn load_compute(&self, properties: &ComputePipelineProperties) -> PipelineData {
-        let mut pipeline = GfxPipeline::compute(&properties.name, &self.device);
+        let mut pipeline = GfxPipeline::compute(&properties.name, self.device.clone());
 
         if let Some(shader) = &properties.compute_shader {
             pipeline = pipeline.shader(shader, &properties.compute_entry).unwrap();
         }
 
         for (_, bindings) in &properties.binding_groups {
-            pipeline = pipeline.binding_group(BindingGroupType::ComputeData);
+            let mut binding_group_layout =
+                GfxBindingGroupLayout::new(BindingGroupType::ComputeData);
+
             for binding in bindings {
-                pipeline = pipeline.binding(*binding);
+                binding_group_layout =
+                    binding_group_layout.add_binding(*binding, DescriptorStage::Compute);
             }
+
+            pipeline = pipeline.binding_group(binding_group_layout);
         }
 
         PipelineData {
@@ -43,7 +49,7 @@ impl PipelineLoader {
     }
 
     pub fn load_graphics(&self, properties: &GraphicsPipelineProperties) -> PipelineData {
-        let mut pipeline = GfxPipeline::graphics(&properties.name, &self.device)
+        let mut pipeline = GfxPipeline::graphics(&properties.name, self.device.clone())
             .pool_size(properties.ds_pool_size)
             .push_constants(properties.push_constants)
             .vertex_attributes(properties.vertex_attributes)
@@ -76,10 +82,12 @@ impl PipelineLoader {
         }
 
         for (stage, ty, bindings) in &properties.binding_groups {
-            pipeline = pipeline.binding_group(*ty);
+            let mut binding_group_layout = GfxBindingGroupLayout::new(*ty);
             for binding in bindings {
-                pipeline = pipeline.binding(*binding, *stage);
+                binding_group_layout = binding_group_layout.add_binding(*binding, *stage);
             }
+
+            pipeline = pipeline.binding_group(binding_group_layout);
         }
 
         PipelineData {

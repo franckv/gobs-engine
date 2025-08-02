@@ -41,33 +41,7 @@ impl MeshResourceManager {
             match self.material_bindings.entry(material.id) {
                 Entry::Vacant(e) => {
                     if !material.textures.is_empty() {
-                        let pipeline_handle = resource_manager
-                            .get_data(&material.material, ())
-                            .ok()?
-                            .pipeline;
-
-                        tracing::debug!(target: logger::RENDER,
-                            "Create material binding for pipeline: {:?}",
-                            pipeline_handle
-                        );
-
-                        let pipeline = &resource_manager
-                            .get_data(&pipeline_handle, ())
-                            .ok()?
-                            .pipeline;
-
-                        let binding = pipeline
-                            .create_binding_group(BindingGroupType::MaterialTextures)
-                            .unwrap();
-                        let mut updater = binding.update();
-                        for texture in &material.textures {
-                            // TODO: load texture
-                            let gpu_texture = resource_manager.get_data(texture, ()).ok()?;
-                            updater = updater
-                                .bind_sampled_image(&gpu_texture.image, ImageLayout::Shader)
-                                .bind_sampler(&gpu_texture.sampler);
-                        }
-                        updater.end();
+                        let binding = Self::load_binding(resource_manager, material)?;
 
                         Some(e.insert(binding).clone())
                     } else {
@@ -79,5 +53,40 @@ impl MeshResourceManager {
         } else {
             None
         }
+    }
+
+    fn load_binding(
+        resource_manager: &mut ResourceManager,
+        material: &MaterialInstance,
+    ) -> Option<GfxBindingGroup> {
+        let pipeline_handle = resource_manager
+            .get_data(&material.material, ())
+            .ok()?
+            .pipeline;
+
+        tracing::debug!(target: logger::RENDER,
+            "Create material binding for pipeline: {:?}",
+            pipeline_handle
+        );
+
+        let pipeline = &resource_manager
+            .get_data(&pipeline_handle, ())
+            .ok()?
+            .pipeline;
+
+        let binding = pipeline
+            .create_binding_group(BindingGroupType::MaterialTextures)
+            .unwrap();
+        let mut updater = binding.update();
+        for texture in &material.textures {
+            // TODO: load texture
+            let gpu_texture = resource_manager.get_data(texture, ()).ok()?;
+            updater = updater
+                .bind_sampled_image(&gpu_texture.image, ImageLayout::Shader)
+                .bind_sampler(&gpu_texture.sampler);
+        }
+        updater.end();
+
+        Some(binding)
     }
 }
