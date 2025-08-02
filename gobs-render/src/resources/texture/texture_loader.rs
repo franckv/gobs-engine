@@ -15,12 +15,8 @@ use gobs_resource::{
     resource::{Resource, ResourceError, ResourceHandle, ResourceLoader},
 };
 
-use crate::{
-    Texture,
-    resources::{
-        TextureData, TextureProperties,
-        texture::{TextureFormat, TexturePath},
-    },
+use crate::resources::{
+    Texture, TextureData, TextureFormat, TextureProperties, texture::TexturePath,
 };
 
 pub struct TextureLoader {
