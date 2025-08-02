@@ -3,8 +3,7 @@ use std::sync::Arc;
 use gobs_vulkan as vk;
 
 use crate::backend::vulkan::{
-    buffer::VkBuffer, device::VkDevice, image::VkImage, image::VkSampler, pipeline::VkPipeline,
-    renderer::VkRenderer,
+    buffer::VkBuffer, device::VkDevice, image::VkImage, image::VkSampler, renderer::VkRenderer,
 };
 use crate::bindgroup::{BindingGroupLayout, BindingGroupPool};
 use crate::{
@@ -67,13 +66,12 @@ impl VkBindingGroupPool {
 }
 
 impl BindingGroupPool<VkRenderer> for VkBindingGroupPool {
-    fn allocate(&mut self, pipeline: Arc<VkPipeline>) -> VkBindingGroup {
+    fn allocate(&mut self) -> VkBindingGroup {
         let ds = self.pool.allocate();
 
         VkBindingGroup {
             ds,
             bind_group_type: self.layout.binding_group_type,
-            pipeline,
         }
     }
 
@@ -84,9 +82,8 @@ impl BindingGroupPool<VkRenderer> for VkBindingGroupPool {
 
 #[derive(Clone, Debug)]
 pub struct VkBindingGroup {
-    pub(crate) ds: vk::descriptor::DescriptorSet,
-    pub(crate) bind_group_type: BindingGroupType,
-    pub(crate) pipeline: Arc<VkPipeline>,
+    pub ds: vk::descriptor::DescriptorSet,
+    pub bind_group_type: BindingGroupType,
 }
 
 impl BindingGroup<VkRenderer> for VkBindingGroup {

@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use serde::Deserialize;
 
 use gobs_gfx::BlendMode;
-use gobs_render_low::{GfxContext, ObjectDataLayout, ObjectDataProp};
+use gobs_render_low::{GfxContext, ObjectDataLayout, ObjectDataProp, TextureDataProp};
 use gobs_resource::{
     geometry::VertexAttribute,
     load::{self, AssetType},
@@ -11,7 +11,7 @@ use gobs_resource::{
     resource::ResourceLifetime,
 };
 
-use crate::{Material, MaterialProperties, MaterialProperty};
+use crate::{Material, MaterialProperties};
 
 #[derive(Debug, Deserialize)]
 pub struct MaterialsConfig {
@@ -35,7 +35,7 @@ struct MaterialConfig {
     #[serde(default)]
     blend_mode: BlendMode,
     #[serde(default)]
-    properties: HashMap<String, MaterialProperty>,
+    texture_layout: Vec<TextureDataProp>,
 }
 
 impl MaterialsConfig {
@@ -83,8 +83,8 @@ impl MaterialsConfig {
             )
             .blend_mode(material.blend_mode);
 
-            for (prop_name, prop_type) in &material.properties {
-                props = props.prop(prop_name, *prop_type);
+            for prop in &material.texture_layout {
+                props = props.texture(*prop);
             }
 
             resource_manager.add::<Material>(props, ResourceLifetime::Static);

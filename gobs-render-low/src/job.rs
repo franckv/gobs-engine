@@ -5,7 +5,9 @@ use thiserror::Error;
 use uuid::Uuid;
 
 use gobs_core::logger;
-use gobs_gfx::{Buffer, BufferId, Command, GfxCommand, GfxPipeline, Pipeline, PipelineId};
+use gobs_gfx::{
+    Buffer, BufferId, Command, GfxBindingGroup, GfxCommand, GfxPipeline, Pipeline, PipelineId,
+};
 
 use crate::{GfxContext, ObjectDataLayout, RenderObject, UniformBuffer, UniformLayout};
 
@@ -116,7 +118,7 @@ impl RenderJob {
             if self.fixed_pipeline.is_none() {
                 tracing::debug!(target: logger::RENDER, "Bind resources");
                 for bind_group in &render_object.bind_groups {
-                    cmd.bind_resource(bind_group);
+                    self.bind_resource(cmd, bind_group, &pipeline, &mut state);
                 }
             }
 
@@ -143,6 +145,19 @@ impl RenderJob {
         } else {
             Err(RenderJobError::InvalidPipeline)
         }
+    }
+
+    fn bind_resource(
+        &self,
+        cmd: &GfxCommand,
+        bind_group: &GfxBindingGroup,
+        pipeline: &GfxPipeline,
+        _state: &mut RenderJobState,
+    ) {
+        tracing::trace!(target: logger::RENDER, "Bind resource: {:?} ({:?})", bind_group.bind_group_type, bind_group.ds.layout);
+        tracing::trace!(target: logger::RENDER, "Bind pipeline: {:?}", pipeline.pipeline.layout.descriptor_layouts);
+
+        cmd.bind_resource(bind_group, pipeline);
     }
 
     fn bind_pipeline(&self, cmd: &GfxCommand, pipeline: &GfxPipeline, state: &mut RenderJobState) {

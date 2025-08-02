@@ -9,9 +9,9 @@ use parking_lot::RwLock;
 
 use gobs_core::{Color, ImageExtent2D, Input, Key, MouseButton, Transform, logger};
 use gobs_render::{
-    BlendMode, GfxContext, Material, MaterialInstance, MaterialProperties, MaterialProperty, Model,
-    ObjectDataLayout, ObjectDataProp, RenderBatch, Renderable, Texture, TextureProperties,
-    TextureUpdate,
+    BlendMode, GfxContext, Material, MaterialInstance, MaterialInstanceProperties,
+    MaterialProperties, Model, ObjectDataLayout, ObjectDataProp, RenderBatch, Renderable, Texture,
+    TextureDataProp, TextureProperties, TextureUpdate,
 };
 use gobs_render_graph::{PassType, RenderPass};
 use gobs_resource::{
@@ -29,7 +29,7 @@ pub struct UIRenderer {
     width: f32,
     height: f32,
     material: ResourceHandle<Material>,
-    font_texture: HashMap<TextureId, Arc<MaterialInstance>>,
+    font_texture: HashMap<TextureId, ResourceHandle<MaterialInstance>>,
     input: Vec<Input>,
     mouse_position: (f32, f32),
     output: RwLock<Option<FullOutput>>,
@@ -65,7 +65,7 @@ impl UIRenderer {
             vertex_attributes,
             &object_layout,
         )
-        .prop("diffuse", MaterialProperty::Texture)
+        .texture(TextureDataProp::Diffuse)
         .no_culling()
         .blend_mode(if transparent {
             BlendMode::Premultiplied
@@ -246,7 +246,8 @@ impl UIRenderer {
     fn update_textures(&mut self, resource_manager: &mut ResourceManager, output: &FullOutput) {
         for (id, material) in self.font_texture.iter() {
             tracing::debug!(target: logger::UI, "Font texture id={:?}, material={}", id, material.id);
-            for texture in &material.textures {
+            let material_instance = resource_manager.get(material);
+            for texture in &material_instance.properties.textures {
                 tracing::debug!(target: logger::UI, "  Using texture={:?}", texture.id);
             }
         }
@@ -264,9 +265,13 @@ impl UIRenderer {
                     img,
                 );
 
-                let material = MaterialInstance::new(self.material, vec![texture]);
+                let material_properties =
+                    MaterialInstanceProperties::new("font", self.material, vec![texture]);
 
-                *self.font_texture.get_mut(id).unwrap() = material;
+                let material_instance = resource_manager
+                    .add::<MaterialInstance>(material_properties, ResourceLifetime::Static);
+
+                *self.font_texture.get_mut(id).unwrap() = material_instance;
             } else {
                 tracing::debug!(target: logger::UI, "Allocate new texture");
                 let texture = self.decode_texture(resource_manager, img);
@@ -290,20 +295,25 @@ impl UIRenderer {
         &self,
         resource_manager: &mut ResourceManager,
         img: &ImageDelta,
-    ) -> Arc<MaterialInstance> {
+    ) -> ResourceHandle<MaterialInstance> {
         match &img.image {
             egui::ImageData::Color(color) => {
                 let bytes: Vec<u8> = bytemuck::cast_slice(color.pixels.as_ref()).to_vec();
 
-                let properties = TextureProperties::with_data(
+                let texture_properties = TextureProperties::with_data(
                     "Font texture",
                     bytes,
                     ImageExtent2D::new(img.image.width() as u32, img.image.height() as u32),
                 );
 
-                let handle = resource_manager.add(properties, ResourceLifetime::Static);
+                let texture_handle =
+                    resource_manager.add(texture_properties, ResourceLifetime::Static);
 
-                MaterialInstance::new(self.material, vec![handle])
+                let material_properties =
+                    MaterialInstanceProperties::new("font", self.material, vec![texture_handle]);
+
+                resource_manager
+                    .add::<MaterialInstance>(material_properties, ResourceLifetime::Static)
             }
         }
     }
@@ -312,7 +322,7 @@ impl UIRenderer {
     fn patch_texture(
         &self,
         resource_manager: &mut ResourceManager,
-        material: Arc<MaterialInstance>,
+        material: ResourceHandle<MaterialInstance>,
         img: &ImageDelta,
     ) -> ResourceHandle<Texture> {
         match &img.image {
@@ -330,7 +340,8 @@ impl UIRenderer {
                     bytes.len()
                 );
 
-                let handle = resource_manager.replace(&material.textures[0]);
+                let texture = resource_manager.get(&material).properties.textures[0];
+                let handle = resource_manager.replace(&texture);
                 let texture = resource_manager.get_mut(&handle);
                 tracing::trace!(target: logger::UI,
                     "Patching texture original size: {:?}",

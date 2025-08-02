@@ -11,7 +11,7 @@ use crate::device::Device;
 #[derive(Debug)]
 pub struct PipelineLayout {
     device: Arc<Device>,
-    _descriptor_layouts: Vec<Arc<DescriptorSetLayout>>,
+    pub descriptor_layouts: Vec<Arc<DescriptorSetLayout>>,
     pub(crate) layout: vk::PipelineLayout,
 }
 
@@ -74,7 +74,7 @@ impl PipelineLayout {
         let layout = unsafe {
             PipelineLayout {
                 device: device.clone(),
-                _descriptor_layouts: descriptor_layouts,
+                descriptor_layouts,
                 layout: device
                     .raw()
                     .create_pipeline_layout(&layout_info, None)

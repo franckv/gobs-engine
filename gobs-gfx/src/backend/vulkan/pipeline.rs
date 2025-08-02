@@ -25,7 +25,7 @@ pub struct VkPipeline {
     pub(crate) id: PipelineId,
     // TODO: handle compute shaders attributes
     pub(crate) vertex_attributes: VertexAttribute,
-    pub(crate) pipeline: Arc<vk::pipelines::Pipeline>,
+    pub pipeline: Arc<vk::pipelines::Pipeline>,
     pub(crate) ds_pools: IndexMap<BindingGroupType, RwLock<VkBindingGroupPool>>,
 }
 
@@ -59,7 +59,7 @@ impl Pipeline<VkRenderer> for VkPipeline {
             .get(&ty)
             .ok_or(GfxError::DsPoolCreation)?
             .write()
-            .allocate(self.clone());
+            .allocate();
 
         Ok(ds)
     }
@@ -234,8 +234,6 @@ impl VkGraphicsPipelineBuilder {
             name: name.to_string(),
             device: device.clone(),
             builder: vk::pipelines::Pipeline::graphics_builder(device.device.clone()),
-            // current_binding_group: None,
-            // current_ds_layout: None,
             ds_pools: IndexMap::new(),
             ds_pool_size: 10,
             push_constants: 0,
@@ -248,8 +246,6 @@ pub struct VkComputePipelineBuilder {
     name: String,
     device: Arc<VkDevice>,
     builder: vk::pipelines::ComputePipelineBuilder,
-    // current_binding_group: Option<BindingGroupType>,
-    // current_ds_layout: Option<vk::descriptor::DescriptorSetLayoutBuilder>,
     ds_pools: IndexMap<BindingGroupType, RwLock<VkBindingGroupPool>>,
     ds_pool_size: usize,
     push_constants: usize,

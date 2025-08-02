@@ -4,7 +4,7 @@ use pollster::FutureExt;
 use gobs::{
     core::{Color, Input, Transform, logger},
     game::{AppError, app::Run, context::GameContext},
-    render::{MaterialInstance, MaterialsConfig, Model, RenderError},
+    render::{MaterialInstanceProperties, MaterialsConfig, Model, RenderError},
     resource::{entity::light::Light, geometry::Shapes, resource::ResourceLifetime},
     scene::{components::NodeValue, scene::Scene},
 };
@@ -70,8 +70,11 @@ impl App {
         .await;
 
         let material = ctx.resource_manager.get_by_name("color").unwrap();
-
-        let material_instance = MaterialInstance::new(material, vec![]);
+        let material_instance_properties =
+            MaterialInstanceProperties::new("color", material, vec![]);
+        let material_instance = ctx
+            .resource_manager
+            .add(material_instance_properties, ResourceLifetime::Static);
 
         let triangle = Model::builder("triangle")
             .mesh(

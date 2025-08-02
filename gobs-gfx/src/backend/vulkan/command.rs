@@ -123,10 +123,10 @@ impl Command<VkRenderer> for VkCommand {
         self.command.bind_pipeline(&pipeline.pipeline);
     }
 
-    fn bind_resource(&self, binding_group: &VkBindingGroup) {
+    fn bind_resource(&self, binding_group: &VkBindingGroup, pipeline: &VkPipeline) {
         let set = binding_group.bind_group_type.set();
         self.command
-            .bind_descriptor_set(&binding_group.ds, set, &binding_group.pipeline.pipeline);
+            .bind_descriptor_set(&binding_group.ds, set, &pipeline.pipeline);
     }
 
     fn bind_resource_buffer(&self, buffer: &VkBuffer, pipeline: &VkPipeline) {

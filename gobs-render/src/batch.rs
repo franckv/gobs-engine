@@ -1,20 +1,20 @@
 use std::sync::Arc;
 
 use gobs_core::{ImageExtent2D, Transform, logger};
+use gobs_gfx::{BindingGroup, BindingGroupUpdates, GfxBindingGroup};
 use gobs_render_graph::RenderPass;
 use gobs_render_low::{GfxContext, RenderObject, SceneData};
 use gobs_resource::{
     entity::{camera::Camera, light::Light},
     geometry::{BoundingBox, MeshBuilder, MeshGeometry, Shapes},
     manager::ResourceManager,
-    resource::{ResourceError, ResourceLifetime},
+    resource::{ResourceError, ResourceHandle, ResourceLifetime},
 };
 
-use crate::{manager::MeshResourceManager, model::Model};
+use crate::{MaterialInstance, model::Model};
 
 pub struct RenderBatch {
     pub(crate) render_list: Vec<RenderObject>,
-    pub(crate) mesh_resource_manager: MeshResourceManager,
     vertex_padding: bool,
     bounding_geometry: Option<MeshBuilder>,
     bounding_pass: Option<RenderPass>,
@@ -28,7 +28,6 @@ impl RenderBatch {
     pub fn new(ctx: &GfxContext) -> Self {
         Self {
             render_list: Vec::new(),
-            mesh_resource_manager: MeshResourceManager::new(),
             vertex_padding: ctx.vertex_padding,
             bounding_geometry: None,
             bounding_pass: None,
@@ -41,8 +40,57 @@ impl RenderBatch {
 
     pub fn reset(&mut self) {
         self.render_list.clear();
-        self.mesh_resource_manager.new_frame();
         self.bounding_geometry = None;
+    }
+
+    fn get_bind_groups(
+        material_instance: Option<&ResourceHandle<MaterialInstance>>,
+        resource_manager: &mut ResourceManager,
+    ) -> Vec<GfxBindingGroup> {
+        let mut bind_groups = Vec::new();
+
+        let bind_group = if let Some(material_instance_handle) = material_instance {
+            let material_instance = resource_manager.get_data(material_instance_handle, ()).ok();
+
+            if let Some(material_instance) = material_instance {
+                material_instance.texture_binding.clone()
+            } else {
+                None
+            }
+        } else {
+            None
+        };
+
+        if let Some(bind_group) = bind_group {
+            if let Some(material_instance) = material_instance {
+                let bound = resource_manager
+                    .get_data(material_instance, ())
+                    .is_ok_and(|data| data.bound);
+
+                if !bound {
+                    let textures = resource_manager
+                        .get(material_instance)
+                        .properties
+                        .textures
+                        .clone();
+                    let mut updater = bind_group.update();
+                    for texture_handle in &textures {
+                        let texture = resource_manager.get_data(texture_handle, ()).unwrap();
+                        updater = updater
+                            .bind_sampled_image(&texture.image, gobs_gfx::ImageLayout::Shader)
+                            .bind_sampler(&texture.sampler);
+                    }
+                    updater.end();
+
+                    if let Ok(data) = resource_manager.get_data_mut(material_instance, ()) {
+                        data.bound = true;
+                    }
+                }
+            }
+            bind_groups.push(bind_group);
+        }
+
+        bind_groups
     }
 
     #[tracing::instrument(target = "render", skip_all, level = "trace")]
@@ -56,36 +104,36 @@ impl RenderBatch {
         tracing::debug!(target: logger::RENDER, "Add model: {}", model.meshes.len());
 
         // TODO: add material data for forward pass only
-        for (mesh, material_id) in &model.meshes {
-            let material = model.materials.get(material_id).cloned();
-            let material_binding = self
-                .mesh_resource_manager
-                .load_material(resource_manager, material.clone());
+        for (mesh, material_instance) in &model.meshes {
+            let bind_groups = Self::get_bind_groups(material_instance.as_ref(), resource_manager);
 
-            let mut bind_groups = Vec::new();
-            if let Some(bind_group) = material_binding {
-                bind_groups.push(bind_group);
-            }
+            let material_handle = material_instance.as_ref().and_then(|material_instance| {
+                resource_manager
+                    .get_data(material_instance, ())
+                    .ok()
+                    .map(|material_instance_data| material_instance_data.material)
+            });
 
             let vertex_attributes = match pass.vertex_attributes() {
                 Some(vertex_attributes) => vertex_attributes,
                 None => {
-                    resource_manager
-                        .get(&model.materials[material_id].material)
-                        .properties
-                        .pipeline_properties
-                        .vertex_attributes
+                    if let Some(material_handle) = material_handle {
+                        let material = resource_manager.get(&material_handle);
+
+                        material.properties.pipeline_properties.vertex_attributes
+                    } else {
+                        return Err(ResourceError::InvalidData);
+                    }
                 }
             };
 
-            let (pipeline, is_transparent) = if let Some(material) = &material {
-                let blending_enabled = resource_manager
-                    .get(&material.material)
-                    .properties
-                    .blending_enabled;
+            let (pipeline, is_transparent) = if let Some(material_handle) = material_handle {
+                let material = resource_manager.get(&material_handle);
+                let blending_enabled = material.properties.blending_enabled;
 
-                let pipeline = resource_manager.get_data(&material.material, ())?.pipeline;
-                let pipeline_data = resource_manager.get_data(&pipeline, ())?;
+                let pipeline_handle = resource_manager.get_data(&material_handle, ())?.pipeline;
+
+                let pipeline_data = resource_manager.get_data(&pipeline_handle, ())?;
 
                 (Some(pipeline_data.pipeline.clone()), blending_enabled)
             } else {

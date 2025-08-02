@@ -2,8 +2,8 @@ use winit::window::Window;
 
 use gobs_core::logger;
 use gobs_render::{
-    GfxContext, Material, MaterialLoader, Mesh, MeshLoader, RenderError, Renderer, Texture,
-    TextureLoader,
+    GfxContext, Material, MaterialInstance, MaterialInstanceLoader, MaterialLoader, Mesh,
+    MeshLoader, RenderError, Renderer, Texture, TextureLoader,
 };
 use gobs_render_graph::{Pipeline, PipelineLoader};
 use gobs_resource::manager::ResourceManager;
@@ -35,6 +35,9 @@ impl GameContext {
 
         let material_loader = MaterialLoader::new();
         resource_manager.register_resource::<Material>(material_loader);
+
+        let material_instance_loader = MaterialInstanceLoader::new(gfx.device.clone());
+        resource_manager.register_resource::<MaterialInstance>(material_instance_loader);
 
         let renderer = Renderer::new(gfx, &mut resource_manager);
 

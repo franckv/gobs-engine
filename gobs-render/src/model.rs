@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-use std::collections::hash_map::Entry;
 use std::fmt::Debug;
 use std::sync::Arc;
 
@@ -14,12 +12,7 @@ use gobs_resource::{
     resource::{ResourceError, ResourceHandle, ResourceLifetime},
 };
 
-use crate::{
-    Mesh, Renderable,
-    batch::RenderBatch,
-    materials::{MaterialInstance, MaterialInstanceId},
-    resources::MeshProperties,
-};
+use crate::{MaterialInstance, Mesh, Renderable, batch::RenderBatch, resources::MeshProperties};
 
 pub type ModelId = Uuid;
 
@@ -27,9 +20,11 @@ pub type ModelId = Uuid;
 pub struct Model {
     pub name: String,
     pub id: ModelId,
-    pub meshes: Vec<(ResourceHandle<Mesh>, MaterialInstanceId)>,
+    pub meshes: Vec<(
+        ResourceHandle<Mesh>,
+        Option<ResourceHandle<MaterialInstance>>,
+    )>,
     #[serde(skip)]
-    pub materials: HashMap<MaterialInstanceId, Arc<MaterialInstance>>,
     pub bounding_box: BoundingBox,
 }
 
@@ -80,8 +75,10 @@ impl Drop for Model {
 pub struct ModelBuilder {
     pub name: String,
     pub id: ModelId,
-    pub meshes: Vec<(ResourceHandle<Mesh>, MaterialInstanceId)>,
-    pub materials: HashMap<MaterialInstanceId, Arc<MaterialInstance>>,
+    pub meshes: Vec<(
+        ResourceHandle<Mesh>,
+        Option<ResourceHandle<MaterialInstance>>,
+    )>,
     pub bounding_box: BoundingBox,
 }
 
@@ -91,7 +88,6 @@ impl ModelBuilder {
             name: name.to_string(),
             id: Uuid::new_v4(),
             meshes: Vec::new(),
-            materials: HashMap::new(),
             bounding_box: BoundingBox::default(),
         }
     }
@@ -105,22 +101,19 @@ impl ModelBuilder {
     pub fn mesh(
         mut self,
         mesh: Arc<MeshGeometry>,
-        material_instance: Option<Arc<MaterialInstance>>,
+        material_instance: Option<ResourceHandle<MaterialInstance>>,
         resource_manager: &mut ResourceManager,
         lifetime: ResourceLifetime,
     ) -> Self {
         self.bounding_box.extends_box(mesh.boundings());
 
-        let handle = resource_manager.add(MeshProperties::with_geometry("mesh", mesh), lifetime);
+        let mesh_handle =
+            resource_manager.add(MeshProperties::with_geometry("mesh", mesh), lifetime);
 
         if let Some(material_instance) = material_instance {
-            self.meshes.push((handle, material_instance.id));
-
-            if let Entry::Vacant(entry) = self.materials.entry(material_instance.id) {
-                entry.insert(material_instance);
-            }
+            self.meshes.push((mesh_handle, Some(material_instance)));
         } else {
-            self.meshes.push((handle, MaterialInstanceId::nil()))
+            self.meshes.push((mesh_handle, None))
         }
 
         self
@@ -131,7 +124,6 @@ impl ModelBuilder {
             name: self.name,
             id: self.id,
             meshes: self.meshes,
-            materials: self.materials,
             bounding_box: self.bounding_box,
         })
     }

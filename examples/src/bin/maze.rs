@@ -8,7 +8,8 @@ use gobs::{
         context::GameContext,
     },
     render::{
-        MaterialInstance, MaterialsConfig, Model, RenderError, TextureProperties, TextureType,
+        MaterialInstanceProperties, MaterialsConfig, Model, RenderError, TextureProperties,
+        TextureType,
     },
     resource::{
         entity::{camera::Camera, light::Light},
@@ -152,8 +153,14 @@ impl App {
             .resource_manager
             .add(properties, ResourceLifetime::Static);
 
-        let material_instance =
-            MaterialInstance::new(material, vec![diffuse_texture, normal_texture]);
+        let material_instance_properties = MaterialInstanceProperties::new(
+            "normal",
+            material,
+            vec![diffuse_texture, normal_texture],
+        );
+        let material_instance = ctx
+            .resource_manager
+            .add(material_instance_properties, ResourceLifetime::Static);
 
         let wall = Model::builder("wall")
             .mesh(

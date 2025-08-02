@@ -1,8 +1,7 @@
-use std::sync::Arc;
-
 use gobs_core::logger;
 use gobs_render::{
-    BlendMode, GfxContext, Material, MaterialInstance, MaterialsConfig, Texture, TextureProperties,
+    BlendMode, GfxContext, Material, MaterialInstance, MaterialInstanceProperties, MaterialsConfig,
+    Texture, TextureProperties,
 };
 use gobs_resource::{
     manager::ResourceManager,
@@ -38,14 +37,14 @@ impl TextureManager {
 
 pub struct MaterialManager {
     pub texture_manager: TextureManager,
-    pub instances: Vec<Arc<MaterialInstance>>,
-    pub default_material_instance: Arc<MaterialInstance>,
+    pub instances: Vec<ResourceHandle<MaterialInstance>>,
+    pub default_material_instance: ResourceHandle<MaterialInstance>,
     pub texture: ResourceHandle<Material>,
     pub transparent_texture: ResourceHandle<Material>,
     pub texture_normal: ResourceHandle<Material>,
     pub transparent_texture_normal: ResourceHandle<Material>,
-    pub color_instance: Arc<MaterialInstance>,
-    pub transparent_color_instance: Arc<MaterialInstance>,
+    pub color_instance: ResourceHandle<MaterialInstance>,
+    pub transparent_color_instance: ResourceHandle<MaterialInstance>,
 }
 
 impl MaterialManager {
@@ -76,14 +75,27 @@ impl MaterialManager {
 
         let texture_manager = TextureManager::new(resource_manager);
 
-        let default_material_instance =
-            MaterialInstance::new(texture, vec![texture_manager.default_texture]);
+        let default_material_instance = resource_manager.add::<MaterialInstance>(
+            MaterialInstanceProperties::new(
+                "default",
+                texture,
+                vec![texture_manager.default_texture],
+            ),
+            ResourceLifetime::Static,
+        );
+
         tracing::debug!(target: logger::RESOURCES, "Default material id: {}", default_material_instance.id);
 
-        let color_instance = MaterialInstance::new(color, vec![]);
+        let color_instance = resource_manager.add::<MaterialInstance>(
+            MaterialInstanceProperties::new("color", color, vec![]),
+            ResourceLifetime::Static,
+        );
         tracing::debug!(target: logger::RESOURCES, "Color material id: {}", color_instance.id);
 
-        let transparent_color_instance = MaterialInstance::new(transparent_color, vec![]);
+        let transparent_color_instance = resource_manager.add::<MaterialInstance>(
+            MaterialInstanceProperties::new("transparent color", transparent_color, vec![]),
+            ResourceLifetime::Static,
+        );
         tracing::debug!(target: logger::RESOURCES, "Color material id: {}", transparent_color_instance.id);
 
         Ok(MaterialManager {
@@ -109,14 +121,22 @@ impl MaterialManager {
 
     pub fn add_texture_instance(
         &mut self,
+        name: &str,
+        resource_manager: &mut ResourceManager,
         alpha: BlendMode,
         texture: usize,
-    ) -> Arc<MaterialInstance> {
+    ) -> ResourceHandle<MaterialInstance> {
         let texture = self.texture_manager.textures[texture];
 
         let material_instance = match alpha {
-            BlendMode::Alpha => MaterialInstance::new(self.transparent_texture, vec![texture]),
-            _ => MaterialInstance::new(self.texture, vec![texture]),
+            BlendMode::Alpha => resource_manager.add::<MaterialInstance>(
+                MaterialInstanceProperties::new(name, self.transparent_texture, vec![texture]),
+                ResourceLifetime::Static,
+            ),
+            _ => resource_manager.add::<MaterialInstance>(
+                MaterialInstanceProperties::new(name, self.texture, vec![texture]),
+                ResourceLifetime::Static,
+            ),
         };
         self.instances.push(material_instance.clone());
 
@@ -125,25 +145,35 @@ impl MaterialManager {
 
     pub fn add_texture_normal_instance(
         &mut self,
+        name: &str,
+        resource_manager: &mut ResourceManager,
         alpha: BlendMode,
         diffuse: usize,
         normal: usize,
-    ) -> Arc<MaterialInstance> {
+    ) -> ResourceHandle<MaterialInstance> {
         let diffuse = self.texture_manager.textures[diffuse];
         let normal = self.texture_manager.textures[normal];
 
         let material_instance = match alpha {
-            BlendMode::Alpha => {
-                MaterialInstance::new(self.transparent_texture_normal, vec![diffuse, normal])
-            }
-            _ => MaterialInstance::new(self.texture_normal, vec![diffuse, normal]),
+            BlendMode::Alpha => resource_manager.add::<MaterialInstance>(
+                MaterialInstanceProperties::new(
+                    name,
+                    self.transparent_texture_normal,
+                    vec![diffuse, normal],
+                ),
+                ResourceLifetime::Static,
+            ),
+            _ => resource_manager.add::<MaterialInstance>(
+                MaterialInstanceProperties::new(name, self.texture_normal, vec![diffuse, normal]),
+                ResourceLifetime::Static,
+            ),
         };
         self.instances.push(material_instance.clone());
 
         material_instance
     }
 
-    pub fn add_color_instance(&mut self, alpha: BlendMode) -> Arc<MaterialInstance> {
+    pub fn add_color_instance(&mut self, alpha: BlendMode) -> ResourceHandle<MaterialInstance> {
         let material_instance = match alpha {
             BlendMode::Alpha => self.transparent_color_instance.clone(),
             _ => self.color_instance.clone(),

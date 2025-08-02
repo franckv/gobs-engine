@@ -1,5 +1,3 @@
-use std::sync::Arc;
-
 use serde::Deserialize;
 use serde::Serialize;
 
@@ -43,7 +41,7 @@ pub trait BindingGroupLayout<R: Renderer> {
 }
 
 pub trait BindingGroupPool<R: Renderer> {
-    fn allocate(&mut self, pipeline: Arc<R::Pipeline>) -> R::BindingGroup;
+    fn allocate(&mut self) -> R::BindingGroup;
     fn reset(&mut self);
 }
 

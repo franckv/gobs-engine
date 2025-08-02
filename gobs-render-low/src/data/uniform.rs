@@ -82,7 +82,7 @@ impl UniformProp {
     }
 }
 
-#[derive(Debug, Eq, PartialEq, Hash)]
+#[derive(Debug, Eq, PartialEq, Hash, Default)]
 pub struct UniformLayout {
     layout: Vec<UniformProp>,
     alignment: usize,

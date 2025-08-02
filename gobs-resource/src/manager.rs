@@ -44,6 +44,7 @@ impl ResourceRegistry {
         self.registry.remove::<Resource<R>>(&handle.id)
     }
 
+    /// Clone a resource and schedule old resource for deletion
     pub fn replace<R: ResourceType + 'static>(
         &mut self,
         handle: &ResourceHandle<R>,
@@ -65,6 +66,7 @@ impl ResourceRegistry {
         id.map(|id| ResourceHandle::with_uuid(*id))
     }
 
+    // TODO: return option
     pub fn get<R: ResourceType + 'static>(&self, handle: &ResourceHandle<R>) -> &Resource<R> {
         self.registry.get::<Resource<R>>(&handle.id).unwrap()
     }
@@ -209,7 +211,22 @@ impl ResourceManager {
 
         let resource = self.get_mut(handle);
 
-        match &resource.data.get(&parameter) {
+        match resource.data.get(&parameter) {
+            Some(ResourceState::Loaded(data)) => Ok(data),
+            _ => unreachable!(),
+        }
+    }
+
+    pub fn get_data_mut<R: ResourceType + 'static>(
+        &mut self,
+        handle: &ResourceHandle<R>,
+        parameter: R::ResourceParameter,
+    ) -> Result<&mut R::ResourceData, ResourceError> {
+        self.load_data::<R>(handle, &parameter)?;
+
+        let resource = self.get_mut(handle);
+
+        match resource.data.get_mut(&parameter) {
             Some(ResourceState::Loaded(data)) => Ok(data),
             _ => unreachable!(),
         }

@@ -4,7 +4,9 @@ use gobs_gfx::{
     BindingGroupType, BlendMode, CompareOp, CullMode, DescriptorStage, DescriptorType, FrontFace,
 };
 use gobs_render_graph::{GraphicsPipelineProperties, Pipeline, PipelineProperties};
-use gobs_render_low::{GfxContext, ObjectDataLayout};
+use gobs_render_low::{
+    GfxContext, MaterialDataLayout, ObjectDataLayout, TextureDataLayout, TextureDataProp,
+};
 use gobs_resource::{
     geometry::VertexAttribute,
     resource::{ResourceHandle, ResourceProperties, ResourceType},
@@ -32,6 +34,8 @@ pub struct MaterialProperties {
     pub name: String,
     pub pipeline_properties: GraphicsPipelineProperties,
     pub blending_enabled: bool,
+    pub texture_data_layout: TextureDataLayout,
+    pub material_data_layout: MaterialDataLayout,
 }
 
 impl ResourceProperties for MaterialProperties {
@@ -71,10 +75,12 @@ impl MaterialProperties {
             name: name.to_string(),
             pipeline_properties,
             blending_enabled: false,
+            texture_data_layout: TextureDataLayout::default(),
+            material_data_layout: MaterialDataLayout::default(),
         }
     }
 
-    pub fn prop(mut self, _name: &str, prop: MaterialProperty) -> Self {
+    pub fn texture(mut self, prop: TextureDataProp) -> Self {
         if self.pipeline_properties.last_binding_group != BindingGroupType::MaterialTextures {
             self.pipeline_properties = self.pipeline_properties.binding_group(
                 DescriptorStage::Fragment,
@@ -82,13 +88,22 @@ impl MaterialProperties {
             );
         }
 
+        self.texture_data_layout.prop(prop);
+
         match prop {
-            MaterialProperty::Texture => {
+            TextureDataProp::Diffuse => {
                 self.pipeline_properties = self
                     .pipeline_properties
                     .binding(DescriptorType::SampledImage)
                     .binding(DescriptorType::Sampler);
             }
+            TextureDataProp::Normal => {
+                self.pipeline_properties = self
+                    .pipeline_properties
+                    .binding(DescriptorType::SampledImage)
+                    .binding(DescriptorType::Sampler);
+            }
+            _ => unimplemented!(),
         }
 
         self

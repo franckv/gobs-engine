@@ -8,7 +8,8 @@ use gobs::{
         context::GameContext,
     },
     render::{
-        MaterialInstance, MaterialsConfig, Model, RenderError, TextureProperties, TextureType,
+        MaterialInstanceProperties, MaterialsConfig, Model, RenderError, TextureProperties,
+        TextureType,
     },
     resource::{
         entity::{camera::Camera, light::Light},
@@ -117,7 +118,13 @@ impl App {
         .await;
 
         let color_material = ctx.resource_manager.get_by_name("color").unwrap();
-        let color_material_instance = MaterialInstance::new(color_material, vec![]);
+
+        let color_instance_properties =
+            MaterialInstanceProperties::new("color instance", color_material, vec![]);
+
+        let color_material_instance = ctx
+            .resource_manager
+            .add(color_instance_properties, ResourceLifetime::Static);
 
         let properties = TextureProperties::with_file("Wall Diffuse", examples::WALL_TEXTURE);
         let diffuse_texture = ctx
@@ -131,8 +138,16 @@ impl App {
             .add(properties, ResourceLifetime::Static);
 
         let diffuse_material = ctx.resource_manager.get_by_name("normal").unwrap();
-        let diffuse_material_instance =
-            MaterialInstance::new(diffuse_material, vec![diffuse_texture, normal_texture]);
+
+        let diffuse_instance_properties = MaterialInstanceProperties::new(
+            "diffuse instance",
+            diffuse_material,
+            vec![diffuse_texture, normal_texture],
+        );
+
+        let diffuse_material_instance = ctx
+            .resource_manager
+            .add(diffuse_instance_properties, ResourceLifetime::Static);
 
         let model = Model::builder("multi")
             .mesh(

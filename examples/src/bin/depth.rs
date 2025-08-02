@@ -7,7 +7,7 @@ use gobs::{
         app::{Application, Run},
         context::GameContext,
     },
-    render::{MaterialInstance, MaterialsConfig, Model, RenderError},
+    render::{MaterialInstanceProperties, MaterialsConfig, Model, RenderError},
     resource::{
         entity::{camera::Camera, light::Light},
         geometry::Shapes,
@@ -137,9 +137,13 @@ impl App {
 
         let material = ctx.resource_manager.get_by_name("depth").unwrap();
 
-        let material_instance =
+        let material_instance_properties =
             //NormalMaterial::instanciate(material, diffuse_texture, normal_texture);
-            MaterialInstance::new(material,vec![]);
+            MaterialInstanceProperties::new("depth", material,vec![]);
+
+        let material_instance = ctx
+            .resource_manager
+            .add(material_instance_properties, ResourceLifetime::Static);
 
         let cube = Model::builder("cube")
             .mesh(

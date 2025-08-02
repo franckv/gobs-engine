@@ -15,6 +15,13 @@ MaterialsConfig(
             fragment_entry: "fragment_main",
             vertex_attributes: "POSITION | COLOR",
         ),
+        "color.material": (
+            vertex_shader: "color_mat.spv",
+            vertex_entry: "vertex_main",
+            fragment_shader: "color_mat.spv",
+            fragment_entry: "fragment_main",
+            vertex_attributes: "POSITION",
+        ),
         "color.transparent": (
             vertex_shader: "color.spv",
             vertex_entry: "vertex_main",
@@ -29,9 +36,9 @@ MaterialsConfig(
             fragment_shader: "mesh.frag.spv",
             fragment_entry: "main",
             vertex_attributes: "POSITION | TEXTURE | NORMAL | TANGENT | BITANGENT",
-            properties: {
-                "diffuse": Texture
-            }
+            texture_layout: [
+                Diffuse,
+            ],
         ),
         "texture.transparent": (
             vertex_shader: "mesh.vert.spv",
@@ -40,9 +47,9 @@ MaterialsConfig(
             fragment_entry: "main",
             vertex_attributes: "POSITION | TEXTURE | NORMAL | TANGENT | BITANGENT",
             blend_mode: Alpha,
-            properties: {
-                "diffuse": Texture
-            }
+            texture_layout: [
+                Diffuse,
+            ],
         ),
         "normal": (
             vertex_shader: "mesh.vert.spv",
@@ -50,10 +57,10 @@ MaterialsConfig(
             fragment_shader: "mesh_n.frag.spv",
             fragment_entry: "main",
             vertex_attributes: "POSITION | TEXTURE | NORMAL | TANGENT | BITANGENT",
-            properties: {
-                "diffuse": Texture,
-                "normal": Texture
-            }
+            texture_layout: [
+                Diffuse,
+                Normal
+            ],
         ),
         "depth": (
             vertex_shader: "color.spv",

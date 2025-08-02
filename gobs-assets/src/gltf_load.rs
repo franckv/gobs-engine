@@ -342,12 +342,16 @@ impl GLTFLoader {
                             Some(normal) => {
                                 let normal_texture = normal.texture().index();
                                 self.material_manager.add_texture_normal_instance(
+                                    name,
+                                    resource_manager,
                                     Self::into_blend_mode(mat.alpha_mode()),
                                     texture,
                                     normal_texture,
                                 )
                             }
                             None => self.material_manager.add_texture_instance(
+                                name,
+                                resource_manager,
                                 Self::into_blend_mode(mat.alpha_mode()),
                                 texture,
                             ),

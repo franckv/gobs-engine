@@ -83,9 +83,9 @@ impl App {
         )
         .await;
 
-        let material = ctx.resource_manager.get_by_name("color").unwrap();
+        let material = ctx.resource_manager.get_by_name("color.material").unwrap();
         let material_instance_properties =
-            MaterialInstanceProperties::new("color", material, vec![]);
+            MaterialInstanceProperties::new("color.material", material, vec![]);
         let material_instance = ctx
             .resource_manager
             .add(material_instance_properties, ResourceLifetime::Static);
@@ -93,9 +93,9 @@ impl App {
         let triangle = Model::builder("triangle")
             .mesh(
                 Shapes::triangle(
-                    Color::RED,
-                    Color::GREEN,
-                    Color::BLUE,
+                    Color::WHITE,
+                    Color::WHITE,
+                    Color::WHITE,
                     1.,
                     ctx.renderer.gfx.vertex_padding,
                 ),
@@ -118,5 +118,5 @@ fn main() {
 
     tracing::info!(target: logger::APP, "Engine start");
 
-    Application::<App>::new("Triangle", examples::WIDTH, examples::HEIGHT).run();
+    Application::<App>::new("Color", examples::WIDTH, examples::HEIGHT).run();
 }

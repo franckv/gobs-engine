@@ -7,7 +7,7 @@ use gobs::{
         app::{Application, Run},
         context::GameContext,
     },
-    render::{MaterialInstance, MaterialsConfig, Model, RenderError, TextureProperties},
+    render::{MaterialInstanceProperties, MaterialsConfig, Model, RenderError, TextureProperties},
     resource::{entity::light::Light, geometry::Shapes, resource::ResourceLifetime},
     scene::{components::NodeValue, scene::Scene},
     ui::UIRenderer,
@@ -114,7 +114,11 @@ impl App {
             .resource_manager
             .add(properties, ResourceLifetime::Static);
 
-        let material_instance = MaterialInstance::new(material, vec![texture]);
+        let material_instance_properties =
+            MaterialInstanceProperties::new("texture", material, vec![texture]);
+        let material_instance = ctx
+            .resource_manager
+            .add(material_instance_properties, ResourceLifetime::Static);
 
         let rect = Model::builder("rect")
             .mesh(
