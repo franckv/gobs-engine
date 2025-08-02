@@ -144,6 +144,7 @@ impl CommandBuffer {
         }
     }
 
+    #[allow(clippy::too_many_arguments)]
     pub fn begin_rendering(
         &self,
         color: Option<&Image>,

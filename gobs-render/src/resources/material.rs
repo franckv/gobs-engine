@@ -1,3 +1,4 @@
+#[allow(clippy::module_inception)]
 mod material;
 mod material_config;
 mod material_loader;

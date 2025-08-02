@@ -41,6 +41,7 @@ impl ResourceProperties for MaterialProperties {
 }
 
 impl MaterialProperties {
+    #[allow(clippy::too_many_arguments)]
     pub fn new(
         ctx: &GfxContext,
         name: &str,

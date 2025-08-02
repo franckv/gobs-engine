@@ -16,6 +16,7 @@ pub trait Command<R: Renderer> {
     fn end_label(&self);
     fn copy_buffer(&self, src: &R::Buffer, dst: &mut R::Buffer, size: usize, offset: usize);
     fn copy_buffer_to_image(&self, src: &R::Buffer, dst: &mut R::Image, width: u32, height: u32);
+    #[allow(clippy::too_many_arguments)]
     fn begin_rendering(
         &self,
         color: Option<&R::Image>,
