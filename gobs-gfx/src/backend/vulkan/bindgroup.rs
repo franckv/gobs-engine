@@ -1,7 +1,6 @@
 use std::sync::Arc;
 
 use gobs_vulkan as vk;
-use gobs_vulkan::descriptor::DescriptorSetLayout;
 
 use crate::backend::vulkan::{
     buffer::VkBuffer, device::VkDevice, image::VkImage, image::VkSampler, pipeline::VkPipeline,
@@ -13,7 +12,7 @@ use crate::{
     ImageLayout,
 };
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct VkBindingGroupLayout {
     pub binding_group_type: BindingGroupType,
     pub bindings: Vec<(DescriptorType, DescriptorStage)>,
@@ -34,31 +33,36 @@ impl BindingGroupLayout<VkRenderer> for VkBindingGroupLayout {
     }
 }
 
+impl VkBindingGroupLayout {
+    pub(crate) fn vk_layout(
+        &self,
+        device: Arc<VkDevice>,
+    ) -> Arc<vk::descriptor::DescriptorSetLayout> {
+        let mut ds_layout =
+            vk::descriptor::DescriptorSetLayout::builder(self.binding_group_type.set());
+
+        for (ty, stage) in &self.bindings {
+            ds_layout = ds_layout.binding(*ty, *stage);
+        }
+
+        ds_layout.build(device.device.clone(), self.binding_group_type.is_push())
+    }
+}
+
 #[derive(Debug)]
 pub struct VkBindingGroupPool {
-    pub(crate) bind_group_type: BindingGroupType,
-    pub(crate) layout: Arc<DescriptorSetLayout>,
+    pub(crate) layout: VkBindingGroupLayout,
     pool: vk::descriptor::DescriptorSetPool,
 }
 
 impl VkBindingGroupPool {
-    pub fn new(
-        device: Arc<VkDevice>,
-        bind_group_type: BindingGroupType,
-        pool_size: usize,
-        layout: Arc<DescriptorSetLayout>,
-    ) -> Self {
-        let pool = vk::descriptor::DescriptorSetPool::new(
-            device.device.clone(),
-            layout.clone(),
-            pool_size,
-        );
+    pub fn new(device: Arc<VkDevice>, pool_size: usize, layout: VkBindingGroupLayout) -> Self {
+        let ds_layout = layout.vk_layout(device.clone());
 
-        Self {
-            bind_group_type,
-            pool,
-            layout,
-        }
+        let pool =
+            vk::descriptor::DescriptorSetPool::new(device.device.clone(), ds_layout, pool_size);
+
+        Self { pool, layout }
     }
 }
 
@@ -68,7 +72,7 @@ impl BindingGroupPool<VkRenderer> for VkBindingGroupPool {
 
         VkBindingGroup {
             ds,
-            bind_group_type: self.bind_group_type,
+            bind_group_type: self.layout.binding_group_type,
             pipeline,
         }
     }

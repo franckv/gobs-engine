@@ -129,20 +129,7 @@ impl GraphicsPipelineBuilder<VkRenderer> for VkGraphicsPipelineBuilder {
     fn binding_group(mut self, layout: VkBindingGroupLayout) -> Self {
         let group_type = layout.binding_group_type;
 
-        let mut ds_layout = vk::descriptor::DescriptorSetLayout::builder(group_type.set());
-
-        for (ty, stage) in &layout.bindings {
-            ds_layout = ds_layout.binding(*ty, *stage);
-        }
-
-        let ds_layout = ds_layout.build(self.device.device.clone(), group_type.is_push());
-
-        let ds_pool = VkBindingGroupPool::new(
-            self.device.clone(),
-            group_type,
-            self.ds_pool_size,
-            ds_layout,
-        );
+        let ds_pool = VkBindingGroupPool::new(self.device.clone(), self.ds_pool_size, layout);
 
         self.ds_pools.insert(group_type, RwLock::new(ds_pool));
 
@@ -220,7 +207,7 @@ impl GraphicsPipelineBuilder<VkRenderer> for VkGraphicsPipelineBuilder {
         let mut descriptor_layouts = vec![];
 
         for (_, ds_pool) in &ds_pools {
-            descriptor_layouts.push(ds_pool.read().layout.clone());
+            descriptor_layouts.push(ds_pool.read().layout.vk_layout(self.device.clone()));
         }
 
         let pipeline_layout = vk::pipelines::PipelineLayout::new(
@@ -285,20 +272,7 @@ impl ComputePipelineBuilder<VkRenderer> for VkComputePipelineBuilder {
     fn binding_group(mut self, layout: VkBindingGroupLayout) -> Self {
         let group_type = layout.binding_group_type;
 
-        let mut ds_layout = vk::descriptor::DescriptorSetLayout::builder(group_type.set());
-
-        for (ty, stage) in &layout.bindings {
-            ds_layout = ds_layout.binding(*ty, *stage);
-        }
-
-        let ds_layout = ds_layout.build(self.device.device.clone(), group_type.is_push());
-
-        let ds_pool = VkBindingGroupPool::new(
-            self.device.clone(),
-            group_type,
-            self.ds_pool_size,
-            ds_layout,
-        );
+        let ds_pool = VkBindingGroupPool::new(self.device.clone(), self.ds_pool_size, layout);
 
         self.ds_pools.insert(group_type, RwLock::new(ds_pool));
 
@@ -310,7 +284,7 @@ impl ComputePipelineBuilder<VkRenderer> for VkComputePipelineBuilder {
         let mut descriptor_layouts = vec![];
 
         for (_, ds_pool) in &ds_pools {
-            descriptor_layouts.push(ds_pool.read().layout.clone());
+            descriptor_layouts.push(ds_pool.read().layout.vk_layout(self.device.clone()));
         }
 
         let pipeline_layout = vk::pipelines::PipelineLayout::new(
