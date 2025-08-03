@@ -1,22 +1,16 @@
 use std::sync::Arc;
 
-use indexmap::IndexMap;
-use parking_lot::RwLock;
-
 use gobs_core::{ImageFormat, logger};
 use gobs_resource::geometry::VertexAttribute;
 use gobs_resource::load;
 use gobs_vulkan as vk;
 
 use crate::backend::vulkan::{
-    bindgroup::{VkBindingGroup, VkBindingGroupLayout, VkBindingGroupPool},
-    device::VkDevice,
-    renderer::VkRenderer,
+    bindgroup::VkBindingGroupLayout, device::VkDevice, renderer::VkRenderer,
 };
 use crate::{
-    BindingGroupPool, BindingGroupType, BlendMode, CompareOp, ComputePipelineBuilder, CullMode,
-    DynamicStateElem, FrontFace, GfxError, GraphicsPipelineBuilder, Pipeline, PipelineId,
-    PolygonMode, Rect2D, Viewport,
+    BlendMode, CompareOp, ComputePipelineBuilder, CullMode, DynamicStateElem, FrontFace, GfxError,
+    GraphicsPipelineBuilder, Pipeline, PipelineId, PolygonMode, Rect2D, Viewport,
 };
 
 #[derive(Debug)]
@@ -26,7 +20,6 @@ pub struct VkPipeline {
     // TODO: handle compute shaders attributes
     pub(crate) vertex_attributes: VertexAttribute,
     pub pipeline: Arc<vk::pipelines::Pipeline>,
-    pub(crate) ds_pools: IndexMap<BindingGroupType, RwLock<VkBindingGroupPool>>,
 }
 
 impl Pipeline<VkRenderer> for VkPipeline {
@@ -49,34 +42,13 @@ impl Pipeline<VkRenderer> for VkPipeline {
     fn compute(name: &str, device: Arc<VkDevice>) -> VkComputePipelineBuilder {
         VkComputePipelineBuilder::new(name, device)
     }
-
-    fn create_binding_group(
-        self: &Arc<Self>,
-        ty: BindingGroupType,
-    ) -> Result<VkBindingGroup, GfxError> {
-        let ds = self
-            .ds_pools
-            .get(&ty)
-            .ok_or(GfxError::DsPoolCreation)?
-            .write()
-            .allocate();
-
-        Ok(ds)
-    }
-
-    fn reset_binding_group(self: &Arc<Self>, ty: BindingGroupType) {
-        if let Some(ds_pool) = self.ds_pools.get(&ty) {
-            ds_pool.write().reset();
-        }
-    }
 }
 
 pub struct VkGraphicsPipelineBuilder {
     name: String,
     device: Arc<VkDevice>,
     builder: vk::pipelines::GraphicsPipelineBuilder,
-    ds_pools: IndexMap<BindingGroupType, RwLock<VkBindingGroupPool>>,
-    ds_pool_size: usize,
+    descriptor_layouts: Vec<VkBindingGroupLayout>,
     push_constants: usize,
     vertex_attributes: VertexAttribute,
 }
@@ -108,12 +80,6 @@ impl GraphicsPipelineBuilder<VkRenderer> for VkGraphicsPipelineBuilder {
         Ok(self)
     }
 
-    fn pool_size(mut self, size: usize) -> Self {
-        self.ds_pool_size = size;
-
-        self
-    }
-
     fn push_constants(mut self, size: usize) -> Self {
         self.push_constants = size;
 
@@ -127,11 +93,7 @@ impl GraphicsPipelineBuilder<VkRenderer> for VkGraphicsPipelineBuilder {
     }
 
     fn binding_group(mut self, layout: VkBindingGroupLayout) -> Self {
-        let group_type = layout.binding_group_type;
-
-        let ds_pool = VkBindingGroupPool::new(self.device.clone(), self.ds_pool_size, layout);
-
-        self.ds_pools.insert(group_type, RwLock::new(ds_pool));
+        self.descriptor_layouts.push(layout);
 
         self
     }
@@ -203,12 +165,11 @@ impl GraphicsPipelineBuilder<VkRenderer> for VkGraphicsPipelineBuilder {
     fn build(self) -> Arc<VkPipeline> {
         tracing::debug!(target: logger::RENDER, "Creating pipeline: {}", self.name);
 
-        let ds_pools = self.ds_pools;
-        let mut descriptor_layouts = vec![];
-
-        for (_, ds_pool) in &ds_pools {
-            descriptor_layouts.push(ds_pool.read().layout.vk_layout(self.device.clone()));
-        }
+        let descriptor_layouts = self
+            .descriptor_layouts
+            .iter()
+            .map(|layout| layout.vk_layout(self.device.clone()))
+            .collect();
 
         let pipeline_layout = vk::pipelines::PipelineLayout::new(
             self.device.device.clone(),
@@ -223,7 +184,6 @@ impl GraphicsPipelineBuilder<VkRenderer> for VkGraphicsPipelineBuilder {
             id: PipelineId::new_v4(),
             vertex_attributes: self.vertex_attributes,
             pipeline,
-            ds_pools,
         })
     }
 }
@@ -234,8 +194,7 @@ impl VkGraphicsPipelineBuilder {
             name: name.to_string(),
             device: device.clone(),
             builder: vk::pipelines::Pipeline::graphics_builder(device.device.clone()),
-            ds_pools: IndexMap::new(),
-            ds_pool_size: 10,
+            descriptor_layouts: Vec::new(),
             push_constants: 0,
             vertex_attributes: VertexAttribute::empty(),
         }
@@ -246,8 +205,7 @@ pub struct VkComputePipelineBuilder {
     name: String,
     device: Arc<VkDevice>,
     builder: vk::pipelines::ComputePipelineBuilder,
-    ds_pools: IndexMap<BindingGroupType, RwLock<VkBindingGroupPool>>,
-    ds_pool_size: usize,
+    descriptor_layouts: Vec<VkBindingGroupLayout>,
     push_constants: usize,
 }
 
@@ -266,22 +224,17 @@ impl ComputePipelineBuilder<VkRenderer> for VkComputePipelineBuilder {
     }
 
     fn binding_group(mut self, layout: VkBindingGroupLayout) -> Self {
-        let group_type = layout.binding_group_type;
-
-        let ds_pool = VkBindingGroupPool::new(self.device.clone(), self.ds_pool_size, layout);
-
-        self.ds_pools.insert(group_type, RwLock::new(ds_pool));
+        self.descriptor_layouts.push(layout);
 
         self
     }
 
     fn build(self) -> Arc<VkPipeline> {
-        let ds_pools = self.ds_pools;
-        let mut descriptor_layouts = vec![];
-
-        for (_, ds_pool) in &ds_pools {
-            descriptor_layouts.push(ds_pool.read().layout.vk_layout(self.device.clone()));
-        }
+        let descriptor_layouts = self
+            .descriptor_layouts
+            .iter()
+            .map(|layout| layout.vk_layout(self.device.clone()))
+            .collect();
 
         let pipeline_layout = vk::pipelines::PipelineLayout::new(
             self.device.device.clone(),
@@ -295,7 +248,6 @@ impl ComputePipelineBuilder<VkRenderer> for VkComputePipelineBuilder {
             name: self.name,
             id: PipelineId::new_v4(),
             pipeline,
-            ds_pools,
             vertex_attributes: VertexAttribute::empty(),
         })
     }
@@ -307,8 +259,7 @@ impl VkComputePipelineBuilder {
             name: name.to_string(),
             device: device.clone(),
             builder: vk::pipelines::Pipeline::compute_builder(device.device.clone()),
-            ds_pools: IndexMap::new(),
-            ds_pool_size: 10,
+            descriptor_layouts: Vec::new(),
             push_constants: 0,
         }
     }

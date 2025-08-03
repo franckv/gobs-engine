@@ -2,9 +2,9 @@ use std::sync::Arc;
 
 use gobs_core::{ImageExtent2D, logger};
 use gobs_gfx::{
-    BindingGroup, BindingGroupLayout, BindingGroupType, BindingGroupUpdates, Command,
-    ComputePipelineBuilder, DescriptorType, GfxBindingGroup, GfxBindingGroupLayout, GfxPipeline,
-    ImageLayout, Pipeline,
+    BindingGroup, BindingGroupLayout, BindingGroupPool, BindingGroupType, BindingGroupUpdates,
+    Command, ComputePipelineBuilder, DescriptorType, GfxBindingGroup, GfxBindingGroupLayout,
+    GfxBindingGroupPool, GfxPipeline, ImageLayout, Pipeline,
 };
 use gobs_render_low::{GfxContext, RenderError, RenderObject, SceneData, UniformLayout};
 use gobs_resource::geometry::VertexAttribute;
@@ -32,6 +32,7 @@ pub struct ComputePass {
     attachments: Vec<String>,
     frame_data: Vec<PassFrameData>,
     pub pipeline: Arc<GfxPipeline>,
+    _ds_pool: GfxBindingGroupPool,
 }
 
 impl ComputePass {
@@ -43,19 +44,19 @@ impl ComputePass {
             gobs_gfx::DescriptorStage::Compute,
         );
 
+        let mut _ds_pool = GfxBindingGroupPool::new(
+            ctx.device.clone(),
+            ctx.frames_in_flight,
+            binding_layout.clone(),
+        );
+
         let pipeline = pipeline_builder
             .shader("sky.comp.spv", "main")?
             .binding_group(binding_layout)
             .build();
 
         let frame_data = (0..ctx.frames_in_flight)
-            .map(|_| {
-                PassFrameData::new(
-                    pipeline
-                        .create_binding_group(BindingGroupType::ComputeData)
-                        .unwrap(),
-                )
-            })
+            .map(|_| PassFrameData::new(_ds_pool.allocate()))
             .collect();
 
         Ok(Arc::new(Self {
@@ -65,6 +66,7 @@ impl ComputePass {
             attachments: vec![String::from("draw")],
             frame_data,
             pipeline,
+            _ds_pool,
         }))
     }
 }

@@ -6,8 +6,8 @@ use uuid::Uuid;
 use gobs_core::ImageFormat;
 
 use crate::{
-    BindingGroupType, BlendMode, CompareOp, CullMode, DynamicStateElem, FrontFace, GfxError,
-    PolygonMode, Rect2D, Renderer, Viewport,
+    BlendMode, CompareOp, CullMode, DynamicStateElem, FrontFace, GfxError, PolygonMode, Rect2D,
+    Renderer, Viewport,
 };
 
 pub type PipelineId = Uuid;
@@ -18,11 +18,6 @@ pub trait Pipeline<R: Renderer> {
     fn vertex_attributes(&self) -> VertexAttribute;
     fn graphics(name: &str, device: Arc<R::Device>) -> R::GraphicsPipelineBuilder;
     fn compute(name: &str, device: Arc<R::Device>) -> R::ComputePipelineBuilder;
-    fn create_binding_group(
-        self: &Arc<Self>,
-        ty: BindingGroupType,
-    ) -> Result<R::BindingGroup, GfxError>;
-    fn reset_binding_group(self: &Arc<Self>, ty: BindingGroupType);
 }
 
 pub trait ComputePipelineBuilder<R: Renderer> {
@@ -42,7 +37,6 @@ pub trait GraphicsPipelineBuilder<R: Renderer> {
         filename: &str,
         entry: &str,
     ) -> Result<R::GraphicsPipelineBuilder, GfxError>;
-    fn pool_size(self, size: usize) -> Self;
     fn push_constants(self, size: usize) -> Self;
     fn vertex_attributes(self, vertex_attributes: VertexAttribute) -> Self;
     fn binding_group(self, binding_group_layout: R::BindingGroupLayout) -> Self;

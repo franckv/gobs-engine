@@ -50,7 +50,6 @@ impl PipelineLoader {
 
     pub fn load_graphics(&self, properties: &GraphicsPipelineProperties) -> PipelineData {
         let mut pipeline = GfxPipeline::graphics(&properties.name, self.device.clone())
-            .pool_size(properties.ds_pool_size)
             .push_constants(properties.push_constants)
             .vertex_attributes(properties.vertex_attributes)
             .viewports(vec![Viewport::new(0., 0., 0., 0.)])
