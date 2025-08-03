@@ -16,6 +16,16 @@ pub struct ResourceRegistry {
     labels: ObjectMap<String, Uuid>,
 }
 
+pub struct ResourceData<'res, R: ResourceType> {
+    pub data: &'res R::ResourceData,
+    pub properties: &'res R::ResourceProperties,
+}
+
+pub struct ResourceDataMut<'res, R: ResourceType> {
+    pub data: &'res mut R::ResourceData,
+    pub properties: &'res mut R::ResourceProperties,
+}
+
 impl ResourceRegistry {
     pub fn add<R: ResourceType + 'static>(
         &mut self,
@@ -206,29 +216,39 @@ impl ResourceManager {
         &mut self,
         handle: &ResourceHandle<R>,
         parameter: R::ResourceParameter,
-    ) -> Result<&R::ResourceData, ResourceError> {
+    ) -> Result<ResourceData<R>, ResourceError> {
         self.load_data::<R>(handle, &parameter)?;
 
         let resource = self.get(handle);
 
-        match resource.data.get(&parameter) {
-            Some(ResourceState::Loaded(data)) => Ok(data),
+        let data = match resource.data.get(&parameter) {
+            Some(ResourceState::Loaded(data)) => data,
             _ => unreachable!(),
-        }
+        };
+
+        Ok(ResourceData {
+            data,
+            properties: &resource.properties,
+        })
     }
 
     pub fn get_data_mut<R: ResourceType + 'static>(
         &mut self,
         handle: &ResourceHandle<R>,
         parameter: R::ResourceParameter,
-    ) -> Result<&mut R::ResourceData, ResourceError> {
+    ) -> Result<ResourceDataMut<R>, ResourceError> {
         self.load_data::<R>(handle, &parameter)?;
 
         let resource = self.get_mut(handle);
 
-        match resource.data.get_mut(&parameter) {
-            Some(ResourceState::Loaded(data)) => Ok(data),
+        let data = match resource.data.get_mut(&parameter) {
+            Some(ResourceState::Loaded(data)) => data,
             _ => unreachable!(),
-        }
+        };
+
+        Ok(ResourceDataMut {
+            data,
+            properties: &mut resource.properties,
+        })
     }
 }

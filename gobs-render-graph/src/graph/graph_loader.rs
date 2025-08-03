@@ -135,7 +135,7 @@ impl GraphConfig {
             let pipeline_handle = resource_manager.get_by_name::<Pipeline>(pipeline)?;
             let pipeline = resource_manager.get_data(&pipeline_handle, ()).ok()?;
 
-            material_pass.set_fixed_pipeline(pipeline.pipeline.clone());
+            material_pass.set_fixed_pipeline(pipeline.data.pipeline.clone());
         }
 
         for (attach_name, attach_config) in &pass.attachments {

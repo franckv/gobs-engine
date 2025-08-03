@@ -141,26 +141,10 @@ impl MaterialInstanceLoader {
         if !material_properties.texture_data_layout.is_empty() {
             let binding = pool.allocate();
 
-            // let mut update = binding.update();
-            // for texture in &properties.textures {
-            //     update = update
-            //         .bind_sampled_image(image, gobs_gfx::ImageLayout::Shader)
-            //         .bind_sampler(sampler);
-            // }
-
             Some(binding)
         } else {
             None
         }
-
-        // for texture in &material.textures {
-        //     // TODO: load texture
-        //     let gpu_texture = resource_manager.get_data(texture, ()).ok()?;
-        //     updater = updater
-        //         .bind_sampled_image(&gpu_texture.image, ImageLayout::Shader)
-        //         .bind_sampler(&gpu_texture.sampler);
-        // }
-        // updater.end();
     }
 
     fn load_material(material_properties: &MaterialProperties) -> Option<GfxBindingGroup> {

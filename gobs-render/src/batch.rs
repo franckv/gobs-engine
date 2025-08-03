@@ -49,45 +49,31 @@ impl RenderBatch {
     ) -> Vec<GfxBindingGroup> {
         let mut bind_groups = Vec::new();
 
-        let bind_group = if let Some(material_instance_handle) = material_instance {
-            let material_instance = resource_manager.get_data(material_instance_handle, ()).ok();
+        if let Some(material_instance_handle) = material_instance {
+            if let Ok(material_instance) =
+                resource_manager.get_data_mut(material_instance_handle, ())
+            {
+                let bind_group = material_instance.data.texture_binding.clone();
 
-            if let Some(material_instance) = material_instance {
-                material_instance.texture_binding.clone()
-            } else {
-                None
-            }
-        } else {
-            None
-        };
+                if let Some(bind_group) = bind_group {
+                    if !material_instance.data.bound {
+                        material_instance.data.bound = true;
 
-        if let Some(bind_group) = bind_group {
-            if let Some(material_instance) = material_instance {
-                let bound = resource_manager
-                    .get_data(material_instance, ())
-                    .is_ok_and(|data| data.bound);
-
-                if !bound {
-                    let textures = resource_manager
-                        .get(material_instance)
-                        .properties
-                        .textures
-                        .clone();
-                    let mut updater = bind_group.update();
-                    for texture_handle in &textures {
-                        let texture = resource_manager.get_data(texture_handle, ()).unwrap();
-                        updater = updater
-                            .bind_sampled_image(&texture.image, gobs_gfx::ImageLayout::Shader)
-                            .bind_sampler(&texture.sampler);
+                        let textures = material_instance.properties.textures.clone();
+                        let mut updater = bind_group.update();
+                        for texture_handle in &textures {
+                            let texture =
+                                resource_manager.get_data(texture_handle, ()).unwrap().data;
+                            updater = updater
+                                .bind_sampled_image(&texture.image, gobs_gfx::ImageLayout::Shader)
+                                .bind_sampler(&texture.sampler);
+                        }
+                        updater.end();
                     }
-                    updater.end();
 
-                    if let Ok(data) = resource_manager.get_data_mut(material_instance, ()) {
-                        data.bound = true;
-                    }
+                    bind_groups.push(bind_group);
                 }
             }
-            bind_groups.push(bind_group);
         }
 
         bind_groups
@@ -111,7 +97,7 @@ impl RenderBatch {
                 resource_manager
                     .get_data(material_instance, ())
                     .ok()
-                    .map(|material_instance_data| material_instance_data.material)
+                    .map(|material_instance_data| material_instance_data.data.material)
             });
 
             let vertex_attributes = match pass.vertex_attributes() {
@@ -131,16 +117,19 @@ impl RenderBatch {
                 let material = resource_manager.get(&material_handle);
                 let blending_enabled = material.properties.blending_enabled;
 
-                let pipeline_handle = resource_manager.get_data(&material_handle, ())?.pipeline;
+                let pipeline_handle = resource_manager
+                    .get_data(&material_handle, ())?
+                    .data
+                    .pipeline;
 
-                let pipeline_data = resource_manager.get_data(&pipeline_handle, ())?;
+                let pipeline_data = resource_manager.get_data(&pipeline_handle, ())?.data;
 
                 (Some(pipeline_data.pipeline.clone()), blending_enabled)
             } else {
                 (None, false)
             };
 
-            let mesh_data = resource_manager.get_data(mesh, vertex_attributes)?;
+            let mesh_data = resource_manager.get_data(mesh, vertex_attributes)?.data;
 
             self.render_list.push(RenderObject {
                 model_id: model.id,
