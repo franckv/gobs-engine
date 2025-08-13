@@ -28,6 +28,8 @@ impl Device<VkRenderer> for VkDevice {
             .dynamic_rendering()
             .synchronization2();
 
+        tracing::info!(target: logger::INIT, "Features: {:?}", expected_features);
+
         let p_device = instance
             .instance
             .find_adapter(&expected_features, display.surface.as_deref())

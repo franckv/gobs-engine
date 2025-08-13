@@ -17,7 +17,7 @@ bitflags! {
     }
 }
 
-#[derive(Default)]
+#[derive(Debug, Default)]
 pub struct Features {
     enabled_features: Feature,
 }
