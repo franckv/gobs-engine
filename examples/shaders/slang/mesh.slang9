@@ -1,0 +1,75 @@
+struct SceneData {
+    float3 camera_position;
+	float4x4 view_proj;
+	float3 light_direction;
+	float4 light_color;
+	float4 ambient_color;
+}
+[[vk::binding(0, 0)]]
+ConstantBuffer<SceneData> scene_data;
+
+struct Vertex {
+    float3 position;
+    float pad;
+    float2 uv;
+    float3 normal;
+    float pad2;
+    float3 tangent;
+    float pad3;
+    float3 bitangent;
+}
+
+struct PushConstants {
+    float4x4 world_matrix;
+    float3x3 normal_matrix;
+    ConstBufferPointer<Vertex> vertex_reference;
+}
+[[vk::push_constant]]
+PushConstants push_constants;
+
+struct VSOutput {
+    float4 position: SV_POSITION;
+    float2 uv;
+    float3 normal;
+    float3 tangent_position;
+    float3 tangent_view_position;
+    float3 tangent_light_dir;
+}
+
+float3x3 tangent_matrix(float3x3 normal_matrix, float3 normal, float3 tangent, float3 bitangent) {
+    float3 world_normal = normalize(mul(normal_matrix, normal));
+    float3 world_tangent = normalize(mul(normal_matrix, tangent));
+    float3 world_bitangent = normalize(mul(normal_matrix, bitangent));
+
+    return transpose(float3x3(
+        world_tangent,
+        world_bitangent,
+        world_normal
+    ));
+}
+
+[shader("vertex")]
+VSOutput vertex_main(uint vertex_index: SV_VertexID) {
+    Vertex v = push_constants.vertex_reference[vertex_index];
+    VSOutput output;
+
+    float3x3 tangent_matrix = tangent_matrix(push_constants.normal_matrix, v.normal, v.tangent, v.bitangent); 
+    float4 world_position = mul(push_constants.world_matrix, float4(v.position, 1.0));
+
+    output.position = mul(scene_data.view_proj, world_position);
+    output.uv = v.uv;
+    output.normal = mul(push_constants.normal_matrix, v.normal);
+    output.tangent_position = mul(tangent_matrix, world_position.xyz);
+    output.tangent_view_position = mul(tangent_matrix, scene_data.camera_position.xyz);
+    output.tangent_light_dir = normalize(mul(tangent_matrix, scene_data.light_direction));
+
+    return output;
+}
+
+[shader("fragment")]
+float4 fragment_main(VSOutput input) {
+    float4 color = input.color;
+
+    return color;
+}
+

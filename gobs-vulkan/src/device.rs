@@ -65,6 +65,7 @@ impl Device {
 
         let features = Features::from_device(&instance, &p_device);
         let features10 = features.features10();
+        let mut features11 = features.features11();
         let mut features12 = features.features12();
         let mut features13 = features.features13();
 
@@ -72,6 +73,7 @@ impl Device {
             .queue_create_infos(&queues)
             .enabled_extension_names(&extensions)
             .enabled_features(&features10)
+            .push_next(&mut features11)
             .push_next(&mut features12)
             .push_next(&mut features13);
 

@@ -13,6 +13,7 @@ bitflags! {
         const DescriptorIndexing = 1 << 2;
         const DynamicRendering = 1 << 3;
         const Synchronization2 = 1 << 4;
+        const ShaderDrawParameters = 1 << 5;
     }
 }
 
@@ -59,6 +60,10 @@ impl Features {
             features10.fill_mode_non_solid == 1,
         );
         enabled_features.set(
+            Feature::ShaderDrawParameters,
+            features11.shader_draw_parameters == 1,
+        );
+        enabled_features.set(
             Feature::BufferDeviceAddress,
             features12.buffer_device_address == 1,
         );
@@ -79,6 +84,13 @@ impl Features {
     pub fn features10(&self) -> vk::PhysicalDeviceFeatures {
         vk::PhysicalDeviceFeatures::default()
             .fill_mode_non_solid(self.enabled_features.contains(Feature::FillModeNonSolid))
+    }
+
+    pub fn features11(&self) -> vk::PhysicalDeviceVulkan11Features {
+        vk::PhysicalDeviceVulkan11Features::default().shader_draw_parameters(
+            self.enabled_features
+                .contains(Feature::ShaderDrawParameters),
+        )
     }
 
     pub fn features12(&self) -> vk::PhysicalDeviceVulkan12Features {
