@@ -14,6 +14,7 @@ impl Context {
 
         let expected_features = Features::default()
             .fill_mode_non_solid()
+            .shader_draw_parameters()
             .buffer_device_address()
             .descriptor_indexing()
             .dynamic_rendering()

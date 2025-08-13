@@ -111,6 +111,13 @@ impl Features {
         self
     }
 
+    pub fn shader_draw_parameters(mut self) -> Self {
+        self.enabled_features
+            .set(Feature::ShaderDrawParameters, true);
+
+        self
+    }
+
     pub fn buffer_device_address(mut self) -> Self {
         self.enabled_features
             .set(Feature::BufferDeviceAddress, true);

@@ -22,6 +22,7 @@ impl Device<VkRenderer> for VkDevice {
     {
         let expected_features = vk::feature::Features::default()
             .fill_mode_non_solid()
+            .shader_draw_parameters()
             .buffer_device_address()
             .descriptor_indexing()
             .dynamic_rendering()
