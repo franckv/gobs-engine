@@ -6,11 +6,12 @@ use gobs_gfx::{
     Command, ComputePipelineBuilder, DescriptorType, GfxBindingGroup, GfxBindingGroupLayout,
     GfxBindingGroupPool, GfxPipeline, ImageLayout, Pipeline,
 };
-use gobs_render_low::{GfxContext, RenderError, RenderObject, SceneData, UniformLayout};
+use gobs_render_low::{
+    FrameData, GfxContext, RenderError, RenderObject, RenderStats, SceneData, UniformLayout,
+};
 use gobs_resource::geometry::VertexAttribute;
 
 use crate::{
-    FrameData,
     graph::GraphResourceManager,
     pass::{PassId, PassType, RenderPass},
 };
@@ -95,13 +96,15 @@ impl RenderPass for ComputePass {
     fn render(
         &self,
         _ctx: &mut GfxContext,
-        frame: &FrameData,
+        frame: &mut FrameData,
         resource_manager: &GraphResourceManager,
         _render_list: &[RenderObject],
         _scene_data: &SceneData,
         draw_extent: ImageExtent2D,
     ) -> Result<(), RenderError> {
         tracing::debug!(target: logger::RENDER, "Draw compute");
+
+        let mut stats = RenderStats::default();
 
         let cmd = &frame.command;
 
@@ -127,11 +130,16 @@ impl RenderPass for ComputePass {
         );
 
         cmd.bind_pipeline(&self.pipeline);
+        stats.bind();
         cmd.bind_resource(draw_bindings, &self.pipeline);
+        stats.bind();
 
         cmd.dispatch(draw_extent.width / 16 + 1, draw_extent.height / 16 + 1, 1);
+        stats.draw();
 
         cmd.end_label();
+
+        stats.finish();
 
         Ok(())
     }

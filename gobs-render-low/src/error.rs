@@ -2,6 +2,8 @@ use thiserror::Error;
 
 use gobs_gfx::GfxError;
 
+use crate::job::RenderJobError;
+
 #[derive(Debug, Error)]
 pub enum RenderError {
     #[error("swapchain lost")]
@@ -12,6 +14,8 @@ pub enum RenderError {
     PassNotFound,
     #[error("gfx error")]
     Gfx(#[from] GfxError),
+    #[error("render job error")]
+    RenderJob(#[from] RenderJobError),
     #[error("invalid data")]
     InvalidData,
 }

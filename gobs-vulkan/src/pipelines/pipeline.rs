@@ -80,7 +80,7 @@ impl ShaderStage {
         }
     }
 
-    pub fn info(&self) -> vk::PipelineShaderStageCreateInfo {
+    pub fn info(&'_ self) -> vk::PipelineShaderStageCreateInfo<'_> {
         vk::PipelineShaderStageCreateInfo::default()
             .stage(match self.shader.ty {
                 ShaderType::Compute => vk::ShaderStageFlags::COMPUTE,

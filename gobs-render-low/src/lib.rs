@@ -1,6 +1,7 @@
 mod context;
 mod data;
 mod error;
+mod framedata;
 mod job;
 mod render_object;
 
@@ -13,5 +14,6 @@ pub use data::{
     UniformLayout, UniformPropData,
 };
 pub use error::RenderError;
-pub use job::RenderJob;
+pub use framedata::FrameData;
+pub use job::{RenderJob, RenderStats};
 pub use render_object::RenderObject;

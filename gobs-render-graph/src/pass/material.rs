@@ -3,13 +3,13 @@ use std::{collections::HashMap, sync::Arc};
 use gobs_core::{ImageExtent2D, logger};
 use gobs_gfx::{Command, GfxCommand, GfxPipeline, Pipeline};
 use gobs_render_low::{
-    GfxContext, ObjectDataLayout, RenderError, RenderJob, RenderObject, SceneData, SceneDataLayout,
-    UniformLayout,
+    FrameData, GfxContext, ObjectDataLayout, RenderError, RenderJob, RenderObject, SceneData,
+    SceneDataLayout, UniformLayout,
 };
 use gobs_resource::geometry::VertexAttribute;
 
 use crate::{
-    FrameData, PassId, PassType,
+    PassId, PassType,
     graph::GraphResourceManager,
     pass::{Attachment, AttachmentAccess, AttachmentType, RenderPass},
 };
@@ -176,7 +176,7 @@ impl RenderPass for MaterialPass {
     fn render(
         &self,
         ctx: &mut GfxContext,
-        frame: &FrameData,
+        frame: &mut FrameData,
         resource_manager: &GraphResourceManager,
         render_list: &[RenderObject],
         scene_data: &SceneData,
@@ -184,11 +184,9 @@ impl RenderPass for MaterialPass {
     ) -> Result<(), RenderError> {
         tracing::debug!(target: logger::RENDER, "Draw {}", &self.name());
 
-        let cmd = &frame.command;
+        self.transition_attachments(&frame.command, resource_manager);
 
-        self.transition_attachments(cmd, resource_manager);
-
-        self.begin_pass(cmd, resource_manager);
+        self.begin_pass(&frame.command, resource_manager);
 
         tracing::debug!(target: logger::RENDER, "Start render job");
         let render_job = &self.render_jobs[frame.id];
@@ -200,13 +198,11 @@ impl RenderPass for MaterialPass {
         render_job.update_uniform(&scene_data_bytes);
 
         tracing::debug!(target: logger::RENDER, "Render object list");
-        render_job
-            .draw_list(ctx, cmd, render_list)
-            .expect("Render error");
+        render_job.draw_list(ctx, frame, render_list)?;
 
         tracing::debug!(target: logger::RENDER, "Stop render job");
 
-        self.end_pass(cmd);
+        self.end_pass(&frame.command);
 
         Ok(())
     }

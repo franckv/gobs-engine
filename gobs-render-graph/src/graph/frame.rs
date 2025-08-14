@@ -5,11 +5,11 @@ use gobs_gfx::{
     Buffer, BufferUsage, Command, CommandQueueType, Device, Display, GfxBuffer, GfxCommand,
     GfxImage, Image, ImageLayout, ImageUsage,
 };
-use gobs_render_low::{GfxContext, RenderError, RenderObject, SceneData};
+use gobs_render_low::{FrameData, GfxContext, RenderError, RenderObject, SceneData};
 use gobs_resource::manager::ResourceManager;
 
 use crate::{
-    FrameData, GraphConfig, RenderPass,
+    GraphConfig, RenderPass,
     graph::resource::GraphResourceManager,
     pass::{PassId, PassType, compute::ComputePass, present::PresentPass},
 };
@@ -294,7 +294,7 @@ impl FrameGraph {
     pub fn render(
         &mut self,
         ctx: &mut GfxContext,
-        frame: &FrameData,
+        frame: &mut FrameData,
         render_list: &[RenderObject],
         scene_data: &SceneData,
     ) -> Result<(), RenderError> {

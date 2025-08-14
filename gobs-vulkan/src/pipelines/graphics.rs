@@ -61,7 +61,7 @@ impl ViewportState {
         }
     }
 
-    fn info(&self) -> vk::PipelineViewportStateCreateInfo {
+    fn info(&'_ self) -> vk::PipelineViewportStateCreateInfo<'_> {
         vk::PipelineViewportStateCreateInfo::default()
             .scissors(&self.scissors)
             .viewports(&self.viewports)
@@ -96,7 +96,7 @@ impl DynamicStates {
         }
     }
 
-    fn info(&self) -> vk::PipelineDynamicStateCreateInfo {
+    fn info(&'_ self) -> vk::PipelineDynamicStateCreateInfo<'_> {
         vk::PipelineDynamicStateCreateInfo::default().dynamic_states(&self.dynamic_states)
     }
 }
@@ -129,7 +129,7 @@ impl InputAssemblyState {
         InputAssemblyState { primitive_topology }
     }
 
-    fn info(&self) -> vk::PipelineInputAssemblyStateCreateInfo {
+    fn info(&'_ self) -> vk::PipelineInputAssemblyStateCreateInfo<'_> {
         vk::PipelineInputAssemblyStateCreateInfo::default()
             .topology(self.primitive_topology.into())
             .primitive_restart_enable(false)
@@ -210,7 +210,7 @@ impl RasterizationState {
         }
     }
 
-    fn info(&self) -> vk::PipelineRasterizationStateCreateInfo {
+    fn info(&'_ self) -> vk::PipelineRasterizationStateCreateInfo<'_> {
         vk::PipelineRasterizationStateCreateInfo::default()
             .line_width(1.)
             .front_face(self.front_face.into())
@@ -226,7 +226,7 @@ impl MultisampleState {
         MultisampleState
     }
 
-    fn info(&self) -> vk::PipelineMultisampleStateCreateInfo {
+    fn info(&'_ self) -> vk::PipelineMultisampleStateCreateInfo<'_> {
         vk::PipelineMultisampleStateCreateInfo::default()
             .sample_shading_enable(false)
             .rasterization_samples(vk::SampleCountFlags::TYPE_1)
@@ -301,7 +301,7 @@ impl DepthStencilState {
         }
     }
 
-    fn info(&self) -> vk::PipelineDepthStencilStateCreateInfo {
+    fn info(&'_ self) -> vk::PipelineDepthStencilStateCreateInfo<'_> {
         vk::PipelineDepthStencilStateCreateInfo::default()
             .depth_test_enable(self.test_enable)
             .depth_write_enable(self.write_enable)
@@ -378,7 +378,7 @@ impl ColorBlendState {
         }
     }
 
-    fn info(&self) -> vk::PipelineColorBlendStateCreateInfo {
+    fn info(&'_ self) -> vk::PipelineColorBlendStateCreateInfo<'_> {
         vk::PipelineColorBlendStateCreateInfo::default()
             .logic_op(vk::LogicOp::COPY)
             .attachments(&self.attachment_state)
@@ -399,7 +399,7 @@ impl VertexInputState {
         }
     }
 
-    fn info(&self) -> vk::PipelineVertexInputStateCreateInfo {
+    fn info(&'_ self) -> vk::PipelineVertexInputStateCreateInfo<'_> {
         vk::PipelineVertexInputStateCreateInfo::default()
             .vertex_binding_descriptions(&self.binding_desc)
             .vertex_attribute_descriptions(&self.attribute_desc)
@@ -426,7 +426,7 @@ impl RenderingState {
         }
     }
 
-    fn info(&self) -> vk::PipelineRenderingCreateInfo {
+    fn info(&'_ self) -> vk::PipelineRenderingCreateInfo<'_> {
         match self.depth_format {
             Some(depth_format) => vk::PipelineRenderingCreateInfo::default()
                 .color_attachment_formats(&self.color_format)

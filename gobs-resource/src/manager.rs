@@ -213,10 +213,10 @@ impl ResourceManager {
     }
 
     pub fn get_data<R: ResourceType + 'static>(
-        &mut self,
+        &'_ mut self,
         handle: &ResourceHandle<R>,
         parameter: R::ResourceParameter,
-    ) -> Result<ResourceData<R>, ResourceError> {
+    ) -> Result<ResourceData<'_, R>, ResourceError> {
         self.load_data::<R>(handle, &parameter)?;
 
         let resource = self.get(handle);
@@ -233,10 +233,10 @@ impl ResourceManager {
     }
 
     pub fn get_data_mut<R: ResourceType + 'static>(
-        &mut self,
+        &'_ mut self,
         handle: &ResourceHandle<R>,
         parameter: R::ResourceParameter,
-    ) -> Result<ResourceDataMut<R>, ResourceError> {
+    ) -> Result<ResourceDataMut<'_, R>, ResourceError> {
         self.load_data::<R>(handle, &parameter)?;
 
         let resource = self.get_mut(handle);

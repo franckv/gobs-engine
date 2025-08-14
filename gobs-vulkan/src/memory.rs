@@ -43,10 +43,10 @@ impl Memory {
     }
 
     pub fn download<T: Pod>(&self, data: &mut Vec<T>) {
-        if let Some(allocation) = &self.allocation {
-            if let Some(bytes) = allocation.mapped_slice() {
-                data.extend_from_slice(bytemuck::cast_slice(bytes));
-            }
+        if let Some(allocation) = &self.allocation
+            && let Some(bytes) = allocation.mapped_slice()
+        {
+            data.extend_from_slice(bytemuck::cast_slice(bytes));
         }
     }
 }

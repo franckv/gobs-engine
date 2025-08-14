@@ -49,30 +49,28 @@ impl RenderBatch {
     ) -> Vec<GfxBindingGroup> {
         let mut bind_groups = Vec::new();
 
-        if let Some(material_instance_handle) = material_instance {
-            if let Ok(material_instance) =
+        if let Some(material_instance_handle) = material_instance
+            && let Ok(material_instance) =
                 resource_manager.get_data_mut(material_instance_handle, ())
-            {
-                let bind_group = material_instance.data.texture_binding.clone();
+        {
+            let bind_group = material_instance.data.texture_binding.clone();
 
-                if let Some(bind_group) = bind_group {
-                    if !material_instance.data.bound {
-                        material_instance.data.bound = true;
+            if let Some(bind_group) = bind_group {
+                if !material_instance.data.bound {
+                    material_instance.data.bound = true;
 
-                        let textures = material_instance.properties.textures.clone();
-                        let mut updater = bind_group.update();
-                        for texture_handle in &textures {
-                            let texture =
-                                resource_manager.get_data(texture_handle, ()).unwrap().data;
-                            updater = updater
-                                .bind_sampled_image(&texture.image, gobs_gfx::ImageLayout::Shader)
-                                .bind_sampler(&texture.sampler);
-                        }
-                        updater.end();
+                    let textures = material_instance.properties.textures.clone();
+                    let mut updater = bind_group.update();
+                    for texture_handle in &textures {
+                        let texture = resource_manager.get_data(texture_handle, ()).unwrap().data;
+                        updater = updater
+                            .bind_sampled_image(&texture.image, gobs_gfx::ImageLayout::Shader)
+                            .bind_sampler(&texture.sampler);
                     }
-
-                    bind_groups.push(bind_group);
+                    updater.end();
                 }
+
+                bind_groups.push(bind_group);
             }
         }
 
@@ -190,7 +188,7 @@ impl RenderBatch {
         self.extent = extent;
     }
 
-    pub fn scene_data(&self) -> SceneData {
+    pub fn scene_data(&'_ self) -> SceneData<'_> {
         let default_light = &self.lights[0];
 
         SceneData {

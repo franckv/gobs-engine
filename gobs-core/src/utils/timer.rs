@@ -1,5 +1,6 @@
 use std::time;
 
+#[derive(Clone, Debug)]
 pub struct Timer {
     last_tick: time::Instant,
 }

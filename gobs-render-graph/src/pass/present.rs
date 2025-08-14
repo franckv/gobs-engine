@@ -2,11 +2,12 @@ use std::sync::Arc;
 
 use gobs_core::{ImageExtent2D, logger};
 use gobs_gfx::{Command, Display, Image, ImageLayout};
-use gobs_render_low::{GfxContext, RenderError, RenderObject, SceneData, UniformLayout};
+use gobs_render_low::{
+    FrameData, GfxContext, RenderError, RenderObject, RenderStats, SceneData, UniformLayout,
+};
 use gobs_resource::geometry::VertexAttribute;
 
 use crate::{
-    FrameData,
     graph::GraphResourceManager,
     pass::{PassId, PassType, RenderPass},
 };
@@ -51,13 +52,15 @@ impl RenderPass for PresentPass {
     fn render(
         &self,
         ctx: &mut GfxContext,
-        frame: &FrameData,
+        frame: &mut FrameData,
         resource_manager: &GraphResourceManager,
         _render_list: &[RenderObject],
         _scene_data: &SceneData,
         draw_extent: ImageExtent2D,
     ) -> Result<(), RenderError> {
         tracing::debug!(target: logger::RENDER, "Present");
+
+        let mut stats = RenderStats::default();
 
         let cmd = &frame.command;
 
@@ -76,6 +79,8 @@ impl RenderPass for PresentPass {
                 render_target.extent(),
             );
         }
+
+        stats.finish();
 
         Ok(())
     }

@@ -2,15 +2,15 @@
 
 use std::sync::Arc;
 
-use gobs_render_low::{GfxContext, RenderError, RenderObject, SceneData, UniformLayout};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 use gobs_core::{ImageExtent2D, ImageFormat};
 use gobs_gfx::{ImageLayout, ImageUsage};
+use gobs_render_low::{FrameData, GfxContext, RenderError, RenderObject, SceneData, UniformLayout};
 use gobs_resource::geometry::VertexAttribute;
 
-use crate::{FrameData, graph::GraphResourceManager};
+use crate::graph::GraphResourceManager;
 
 pub mod compute;
 pub mod material;
@@ -129,7 +129,7 @@ pub trait RenderPass {
     fn render(
         &self,
         ctx: &mut GfxContext,
-        frame: &FrameData,
+        frame: &mut FrameData,
         resource_manager: &GraphResourceManager,
         render_list: &[RenderObject],
         scene_data: &SceneData,

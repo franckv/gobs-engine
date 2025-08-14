@@ -1,7 +1,7 @@
 use gobs_core::{ImageExtent2D, logger};
 use gobs_gfx::Device;
-use gobs_render_graph::{FrameData, FrameGraph, PipelinesConfig, RenderPass};
-use gobs_render_low::{GfxContext, RenderError};
+use gobs_render_graph::{FrameGraph, PipelinesConfig, RenderPass};
+use gobs_render_low::{FrameData, GfxContext, RenderError};
 use gobs_resource::manager::ResourceManager;
 
 use crate::RenderBatch;
@@ -17,7 +17,7 @@ pub struct Renderer {
 impl Renderer {
     pub fn new(gfx: GfxContext, resource_manager: &mut ResourceManager) -> Self {
         let frames = (0..gfx.frames_in_flight)
-            .map(|id| FrameData::new(&gfx, id))
+            .map(|id| FrameData::new(&gfx, id, gfx.frames_in_flight))
             .collect();
 
         PipelinesConfig::load_resources(&gfx, "pipelines.ron", resource_manager)
@@ -44,22 +44,6 @@ impl Renderer {
         self.graph.update(&self.gfx, delta);
     }
 
-    fn new_frame(&mut self) {
-        self.frame_number += 1;
-        let frame_id = self.frame_number % self.gfx.frames_in_flight;
-
-        tracing::debug!(target: logger::RENDER, "Begin new frame: {} ({}/{})", self.frame_number, frame_id, self.gfx.frames_in_flight);
-
-        let frame = &mut self.frames[frame_id];
-        assert_eq!(frame.id, frame_id);
-
-        frame.frame_number = self.frame_number;
-
-        tracing::debug!(target: logger::SYNC, "Wait for frame: {} ({}/{})", self.frame_number, frame_id, self.gfx.frames_in_flight);
-
-        frame.reset();
-    }
-
     pub fn draw(
         &mut self,
         resource_manager: &mut ResourceManager,
@@ -71,9 +55,11 @@ impl Renderer {
     ) -> Result<(), RenderError> {
         tracing::debug!(target: logger::RENDER, "Begin render batch");
 
-        self.new_frame();
+        self.frame_number += 1;
 
-        let frame = &self.frames[self.frame_number % self.gfx.frames_in_flight];
+        let frame = &mut self.frames[self.frame_number % self.gfx.frames_in_flight];
+
+        frame.reset(self.frame_number);
 
         {
             //TODO: let mut buf = [0 as u64; 2];

@@ -86,20 +86,20 @@ impl Features {
             .fill_mode_non_solid(self.enabled_features.contains(Feature::FillModeNonSolid))
     }
 
-    pub fn features11(&self) -> vk::PhysicalDeviceVulkan11Features {
+    pub fn features11(&'_ self) -> vk::PhysicalDeviceVulkan11Features<'_> {
         vk::PhysicalDeviceVulkan11Features::default().shader_draw_parameters(
             self.enabled_features
                 .contains(Feature::ShaderDrawParameters),
         )
     }
 
-    pub fn features12(&self) -> vk::PhysicalDeviceVulkan12Features {
+    pub fn features12(&'_ self) -> vk::PhysicalDeviceVulkan12Features<'_> {
         vk::PhysicalDeviceVulkan12Features::default()
             .buffer_device_address(self.enabled_features.contains(Feature::BufferDeviceAddress))
             .descriptor_indexing(self.enabled_features.contains(Feature::DescriptorIndexing))
     }
 
-    pub fn features13(&self) -> vk::PhysicalDeviceVulkan13Features {
+    pub fn features13(&'_ self) -> vk::PhysicalDeviceVulkan13Features<'_> {
         vk::PhysicalDeviceVulkan13Features::default()
             .dynamic_rendering(self.enabled_features.contains(Feature::DynamicRendering))
             .synchronization2(self.enabled_features.contains(Feature::Synchronization2))
