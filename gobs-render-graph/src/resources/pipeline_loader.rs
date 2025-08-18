@@ -1,5 +1,6 @@
 use std::sync::Arc;
 
+use gobs_core::logger;
 use gobs_gfx::{
     BindingGroupLayout, BindingGroupType, ComputePipelineBuilder, DescriptorStage,
     DynamicStateElem, GfxBindingGroupLayout, GfxDevice, GfxPipeline, GraphicsPipelineBuilder,
@@ -7,7 +8,7 @@ use gobs_gfx::{
 };
 use gobs_resource::{
     manager::ResourceRegistry,
-    resource::{Resource, ResourceError, ResourceHandle, ResourceLoader},
+    resource::{Resource, ResourceError, ResourceHandle, ResourceLoader, ResourceProperties},
 };
 
 use crate::resources::pipeline::{
@@ -61,16 +62,16 @@ impl PipelineLoader {
             .blending_enabled(properties.blend_mode)
             .attachments(properties.color_format, properties.depth_format);
 
-        if let Some(shader) = &properties.vertex_shader {
-            if let Some(entry) = &properties.vertex_entry {
-                pipeline = pipeline.vertex_shader(shader, entry).unwrap();
-            }
+        if let Some(shader) = &properties.vertex_shader
+            && let Some(entry) = &properties.vertex_entry
+        {
+            pipeline = pipeline.vertex_shader(shader, entry).unwrap();
         }
 
-        if let Some(shader) = &properties.fragment_shader {
-            if let Some(entry) = &properties.fragment_entry {
-                pipeline = pipeline.fragment_shader(shader, entry).unwrap();
-            }
+        if let Some(shader) = &properties.fragment_shader
+            && let Some(entry) = &properties.fragment_entry
+        {
+            pipeline = pipeline.fragment_shader(shader, entry).unwrap();
         }
 
         if properties.depth_test_enable {
@@ -104,6 +105,8 @@ impl ResourceLoader<Pipeline> for PipelineLoader {
     ) -> Result<PipelineData, ResourceError> {
         let resource = registry.get_mut(handle);
         let properties = &mut resource.properties;
+
+        tracing::debug!(target: logger::RESOURCES, "Load pipeline resource {}", properties.name());
 
         let data = match &properties {
             PipelineProperties::Compute(properties) => self.load_compute(properties),

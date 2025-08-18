@@ -56,7 +56,7 @@ impl MaterialProperties {
         vertex_attributes: VertexAttribute,
         object_data_layout: &ObjectDataLayout,
     ) -> Self {
-        let pipeline_properties = PipelineProperties::graphics("material")
+        let pipeline_properties = PipelineProperties::graphics(name)
             .vertex_shader(vertex_shader)
             .vertex_entry(vertex_entry)
             .fragment_shader(fragment_shader)

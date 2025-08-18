@@ -1,7 +1,8 @@
+use gobs_core::logger;
 use gobs_render_graph::{Pipeline, PipelineProperties};
 use gobs_resource::{
     manager::ResourceRegistry,
-    resource::{Resource, ResourceError, ResourceHandle, ResourceLoader},
+    resource::{Resource, ResourceError, ResourceHandle, ResourceLoader, ResourceProperties},
 };
 
 use crate::resources::{MaterialData, material::Material};
@@ -29,6 +30,7 @@ impl ResourceLoader<Material> for MaterialLoader {
     ) -> Result<MaterialData, ResourceError> {
         let (pipeline_properties, lifetime) = {
             let resource = registry.get(handle);
+            tracing::debug!(target: logger::RESOURCES, "Load material resource {}", resource.properties.name());
             (
                 PipelineProperties::Graphics(resource.properties.pipeline_properties.clone()),
                 resource.lifetime,

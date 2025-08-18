@@ -8,7 +8,7 @@ use gobs_gfx::{Buffer, BufferUsage, Command, CommandQueueType, GfxBuffer, GfxCom
 use gobs_resource::{
     geometry::{MeshGeometry, VertexAttribute},
     manager::ResourceRegistry,
-    resource::{Resource, ResourceError, ResourceHandle, ResourceLoader},
+    resource::{Resource, ResourceError, ResourceHandle, ResourceLoader, ResourceProperties},
 };
 
 use crate::resources::{Mesh, MeshData, MeshPath, MeshPrimitiveType};
@@ -113,6 +113,8 @@ impl ResourceLoader<Mesh> for MeshLoader {
     ) -> Result<MeshData, ResourceError> {
         let resource = registry.get_mut(handle);
         let properties = &mut resource.properties;
+
+        tracing::debug!(target: logger::RESOURCES, "Load mesh resource {}", properties.name());
 
         let data = match &properties.path {
             MeshPath::Default => todo!(),

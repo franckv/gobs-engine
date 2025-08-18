@@ -14,9 +14,9 @@ MaterialsConfig(
             fragment_shader: "gltf.texture.frag.spv",
             fragment_entry: "main",
             vertex_attributes: "POSITION | TEXTURE | NORMAL | TANGENT | BITANGENT",
-            properties: {
-                "diffuse": Texture
-            }
+            texture_layout: [
+                Diffuse
+            ]
         ),
         "gltf.texture.transparent": (
             vertex_shader: "gltf.texture.vert.spv",
@@ -25,9 +25,9 @@ MaterialsConfig(
             fragment_entry: "main",
             vertex_attributes: "POSITION | TEXTURE | NORMAL | TANGENT | BITANGENT",
             blend_mode: Alpha,
-            properties: {
-                "diffuse": Texture
-            }
+            texture_layout: [
+                Diffuse
+            ]
         ),
         "gltf.texture.normal": (
             vertex_shader: "gltf.texture.vert.spv",
@@ -35,10 +35,10 @@ MaterialsConfig(
             fragment_shader: "gltf.texture_n.frag.spv",
             fragment_entry: "main",
             vertex_attributes: "POSITION | TEXTURE | NORMAL | TANGENT | BITANGENT",
-            properties: {
-                "diffuse": Texture,
-                "normal": Texture
-            }
+            texture_layout: [
+                Diffuse,
+                Normal
+            ]
         ),
         "gltf.texture.transparent.normal": (
             vertex_shader: "gltf.texture.vert.spv",
@@ -47,10 +47,10 @@ MaterialsConfig(
             fragment_entry: "main",
             vertex_attributes: "POSITION | TEXTURE | NORMAL | TANGENT | BITANGENT",
             blend_mode: Alpha,
-            properties: {
-                "diffuse": Texture,
-                "normal": Texture
-            }
+            texture_layout: [
+                Diffuse,
+                Normal
+            ]
         ),
         "gltf.color": (
             vertex_shader: "gltf.color_light.vert.spv",

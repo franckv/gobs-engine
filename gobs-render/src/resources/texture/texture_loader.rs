@@ -12,7 +12,7 @@ use gobs_gfx::{
 use gobs_resource::{
     load::{self, AssetType},
     manager::ResourceRegistry,
-    resource::{Resource, ResourceError, ResourceHandle, ResourceLoader},
+    resource::{Resource, ResourceError, ResourceHandle, ResourceLoader, ResourceProperties},
 };
 
 use crate::resources::{
@@ -183,6 +183,8 @@ impl ResourceLoader<Texture> for TextureLoader {
     ) -> Result<TextureData, ResourceError> {
         let resource = registry.get_mut(handle);
         let properties = &mut resource.properties;
+
+        tracing::debug!(target: logger::RESOURCES, "Load texture resource {}", properties.name());
 
         let data = match &properties.path {
             TexturePath::Default => self.load_default(),
