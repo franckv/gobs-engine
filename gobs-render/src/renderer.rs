@@ -79,6 +79,9 @@ impl Renderer {
 
         self.batch.finish(resource_manager);
 
+        frame.stats.prepare();
+        frame.stats.objects(self.batch.render_list.len() as u32);
+
         self.graph
             .render(
                 &mut self.gfx,
@@ -91,6 +94,10 @@ impl Renderer {
         self.graph.end(&mut self.gfx, frame).unwrap();
 
         Ok(())
+    }
+
+    pub fn frame(&self) -> &FrameData {
+        &self.frames[self.frame_number % self.gfx.frames_in_flight]
     }
 
     pub fn frame_number(&self) -> usize {

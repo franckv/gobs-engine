@@ -80,7 +80,7 @@ impl RenderPass for PresentPass {
             );
         }
 
-        stats.finish();
+        stats.finish(self.id);
 
         Ok(())
     }

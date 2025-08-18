@@ -130,16 +130,16 @@ impl RenderPass for ComputePass {
         );
 
         cmd.bind_pipeline(&self.pipeline);
-        stats.bind();
+        stats.bind_pipeline(self.id);
         cmd.bind_resource(draw_bindings, &self.pipeline);
-        stats.bind();
+        stats.bind_resource(self.id);
 
         cmd.dispatch(draw_extent.width / 16 + 1, draw_extent.height / 16 + 1, 1);
-        stats.draw();
+        stats.draw(self.id, 0);
 
         cmd.end_label();
 
-        stats.finish();
+        stats.finish(self.id);
 
         Ok(())
     }

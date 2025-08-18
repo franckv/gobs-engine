@@ -4,7 +4,7 @@ use parking_lot::RwLock;
 use thiserror::Error;
 use uuid::Uuid;
 
-use gobs_core::{logger, utils::timer::Timer};
+use gobs_core::logger;
 use gobs_gfx::{Buffer, BufferId, Command, GfxBindingGroup, GfxPipeline, Pipeline, PipelineId};
 
 use crate::{FrameData, GfxContext, ObjectDataLayout, RenderObject, UniformBuffer, UniformLayout};
@@ -13,35 +13,6 @@ use crate::{FrameData, GfxContext, ObjectDataLayout, RenderObject, UniformBuffer
 pub enum RenderJobError {
     #[error("invalid pipeline")]
     InvalidPipeline,
-}
-
-#[derive(Clone, Debug, Default)]
-pub struct RenderStats {
-    draws: u32,
-    binds: u32,
-    cpu_draw_time: f32,
-    pub gpu_draw_time: f32,
-    timer: Timer,
-}
-
-impl RenderStats {
-    pub fn reset(&mut self) {
-        self.draws = 0;
-        self.binds = 0;
-        self.timer.reset();
-    }
-
-    pub fn draw(&mut self) {
-        self.draws += 1;
-    }
-
-    pub fn bind(&mut self) {
-        self.binds += 1;
-    }
-
-    pub fn finish(&mut self) {
-        self.cpu_draw_time = self.timer.delta();
-    }
 }
 
 struct RenderJobState {
@@ -140,6 +111,7 @@ impl RenderJob {
                 frame
                     .command
                     .bind_resource_buffer(&uniform_buffer.buffer, &pipeline);
+                frame.stats.bind_resource(self.pass_id);
                 state.scene_data_bound = true;
             }
 
@@ -156,10 +128,12 @@ impl RenderJob {
 
             tracing::debug!(target: logger::RENDER, "Draw object");
             frame.command.draw_indexed(render_object.indices_len, 1);
-            frame.stats.draw();
+            frame
+                .stats
+                .draw(self.pass_id, render_object.indices_len as u32);
         }
 
-        frame.stats.finish();
+        frame.stats.finish(self.pass_id);
 
         Ok(())
     }
@@ -190,7 +164,7 @@ impl RenderJob {
         tracing::trace!(target: logger::RENDER, "Bind pipeline: {:?}", pipeline.pipeline.layout.descriptor_layouts);
 
         frame.command.bind_resource(bind_group, pipeline);
-        frame.stats.bind();
+        frame.stats.bind_resource(self.pass_id);
     }
 
     fn bind_pipeline(
@@ -202,7 +176,7 @@ impl RenderJob {
         if state.last_pipeline != pipeline.id() {
             tracing::debug!(target: logger::RENDER, "Bind pipeline: {}", pipeline.id());
             frame.command.bind_pipeline(pipeline);
-            frame.stats.bind();
+            frame.stats.bind_pipeline(self.pass_id);
             state.last_pipeline = pipeline.id();
         }
     }
@@ -233,7 +207,7 @@ impl RenderJob {
             frame
                 .command
                 .bind_index_buffer(&render_object.index_buffer, render_object.indices_offset);
-            frame.stats.bind();
+            frame.stats.bind_resource(self.pass_id);
             state.last_index_buffer = render_object.index_buffer.id();
             state.last_indices_offset = render_object.indices_offset;
         }

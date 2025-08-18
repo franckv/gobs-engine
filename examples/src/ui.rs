@@ -3,7 +3,8 @@ use glam::Vec3;
 use gobs::{
     game::context::GameContext,
     render::{Material, Mesh, Texture},
-    render_graph::Pipeline,
+    render_graph::{FrameGraph, Pipeline},
+    render_low::FrameData,
     resource::{
         manager::ResourceManager,
         resource::{ResourceProperties, ResourceType},
@@ -55,6 +56,10 @@ impl Ui {
             self.show_resources(ectx, ui, &mut ctx.resource_manager);
 
             self.draw_general(ui, scene, (1. / delta).round() as u32);
+
+            ui.separator();
+
+            self.draw_frame(ui, &ctx.renderer.graph, ctx.renderer.frame());
 
             ui.separator();
 
@@ -390,6 +395,34 @@ impl Ui {
 
             true
         });
+    }
+
+    fn draw_frame(&self, ui: &mut egui::Ui, graph: &FrameGraph, frame: &FrameData) {
+        egui::CollapsingHeader::new("Stats")
+            .default_open(true)
+            .show(ui, |ui| {
+                ui.label(format!(
+                    "Prepare time: {:.2} ms",
+                    1000. * frame.stats.cpu_prepare_time
+                ));
+                ui.label(format!("Objects: {}", frame.stats.objects));
+                for pass in &graph.passes {
+                    if let Some(stats) = frame.stats.pass(pass.id()) {
+                        egui::CollapsingHeader::new(format!("Pass: {}", pass.name()))
+                            .default_open(true)
+                            .show(ui, |ui| {
+                                ui.label(format!("Pipeline binds: {}", stats.pipeline_binds));
+                                ui.label(format!("Resource binds: {}", stats.resource_binds));
+                                ui.label(format!("Draws: {}", stats.draws));
+                                ui.label(format!("Indices: {}", stats.indices));
+                                ui.label(format!(
+                                    "CPU time: {:.2} ms",
+                                    1000. * stats.cpu_draw_time
+                                ));
+                            });
+                    }
+                }
+            });
     }
 }
 
