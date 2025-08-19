@@ -257,19 +257,19 @@ impl Shapes {
         ];
 
         let vi = [
-            3, 4, 2, 3, 2, 1, // F
-            8, 7, 5, 8, 5, 6, // B
-            7, 3, 1, 7, 1, 5, // L
-            4, 8, 6, 4, 6, 2, // R
-            1, 2, 6, 1, 6, 5, // U
-            7, 8, 4, 7, 4, 3, // D
+            2, 3, 1, 2, 1, 0, // F
+            7, 6, 4, 7, 4, 5, // B
+            6, 2, 0, 6, 0, 4, // L
+            3, 7, 5, 3, 5, 1, // R
+            0, 1, 5, 0, 5, 4, // U
+            6, 7, 3, 6, 3, 2, // D
         ];
 
         let mut builder = MeshGeometry::builder("bounds");
 
-        for i in 0..vi.len() {
+        for vertex in v {
             let vertex_data = VertexData::builder()
-                .position(v[vi[i] as usize - 1].into())
+                .position(vertex.into())
                 .padding(padding)
                 .build();
 
