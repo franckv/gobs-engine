@@ -15,13 +15,7 @@ const T_MAX: f32 = 1. - T_MIN;
 pub struct Shapes;
 
 impl Shapes {
-    pub fn triangle(
-        color1: Color,
-        color2: Color,
-        color3: Color,
-        size: f32,
-        padding: bool,
-    ) -> Arc<MeshGeometry> {
+    pub fn triangle(colors: &[Color], size: f32, padding: bool) -> Arc<MeshGeometry> {
         let mut builder = MeshGeometry::builder("triangle");
 
         let (top, bottom, left, right) = (size / 2., -size / 2., -size / 2., size / 2.);
@@ -31,8 +25,6 @@ impl Shapes {
             [right, bottom, 0.],
             [(left + right) / 2., top, 0.],
         ];
-
-        let c = [color1, color2, color3];
 
         let n = [[0., 0., 1.]];
 
@@ -49,7 +41,7 @@ impl Shapes {
         for i in 0..vi.len() {
             let vertex_data = VertexData::builder()
                 .position(v[vi[i] - 1].into())
-                .color(c[vi[i] - 1])
+                .color(colors[(vi[i] - 1) % colors.len()])
                 .normal(n[ni[i] - 1].into())
                 .texture(t[vi[i] - 1].into())
                 .padding(padding)
@@ -62,7 +54,7 @@ impl Shapes {
     }
 
     pub fn rect(
-        color: Color,
+        colors: &[Color],
         top: f32,
         bottom: f32,
         left: f32,
@@ -94,7 +86,7 @@ impl Shapes {
         for i in 0..vi.len() {
             let vertex_data = VertexData::builder()
                 .position(v[vi[i] - 1].into())
-                .color(color)
+                .color(colors[(vi[i] - 1) % colors.len()])
                 .texture(t[vi[i] - 1].into())
                 .normal(n[ni[i] - 1].into())
                 .padding(padding)
@@ -106,11 +98,11 @@ impl Shapes {
         builder.build()
     }
 
-    pub fn quad(color: Color, padding: bool) -> Arc<MeshGeometry> {
-        Self::rect(color, 0.5, -0.5, -0.5, 0.5, padding)
+    pub fn quad(colors: &[Color], padding: bool) -> Arc<MeshGeometry> {
+        Self::rect(colors, 0.5, -0.5, -0.5, 0.5, padding)
     }
 
-    pub fn hexagon(colors: [Color; 7], padding: bool) -> Arc<MeshGeometry> {
+    pub fn hexagon(colors: &[Color], padding: bool) -> Arc<MeshGeometry> {
         let mut builder = MeshGeometry::builder("hexagon");
 
         let width = 1.;
@@ -145,7 +137,7 @@ impl Shapes {
         for i in 0..vi.len() {
             let vertex_data = VertexData::builder()
                 .position(v[vi[i] - 1].into())
-                .color(colors[vi[i] - 1])
+                .color(colors[(vi[i] - 1) % colors.len()])
                 .texture(t[vi[i] - 1].into())
                 .normal(n[ni[i] - 1].into())
                 .padding(padding)
@@ -325,12 +317,12 @@ mod tests {
         let n = 1000;
 
         for _ in 0..n {
-            let _ = Shapes::triangle(Color::RED, Color::BLUE, Color::GREEN, 1., false);
+            let _ = Shapes::triangle(&[Color::RED, Color::BLUE, Color::GREEN], 1., false);
         }
         tracing::info!(target: logger::RENDER, "Build {} triangles: {}", n, 1000. * timer.delta());
 
         for _ in 0..n {
-            let _ = Shapes::rect(Color::RED, 1., 0., 0., 1., false);
+            let _ = Shapes::rect(&[Color::RED], 1., 0., 0., 1., false);
         }
         tracing::info!(target: logger::RENDER, "Build {} rects: {}", n, 1000. * timer.delta());
 

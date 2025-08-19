@@ -121,9 +121,7 @@ impl App {
         let triangle = Model::builder("triangle")
             .mesh(
                 Shapes::triangle(
-                    Color::RED,
-                    Color::GREEN,
-                    Color::BLUE,
+                    &[Color::RED, Color::GREEN, Color::BLUE],
                     1.,
                     ctx.renderer.gfx.vertex_padding,
                 ),
@@ -135,7 +133,10 @@ impl App {
 
         let square = Model::builder("square")
             .mesh(
-                Shapes::quad(Color::new(1., 1., 1., 0.5), ctx.renderer.gfx.vertex_padding),
+                Shapes::quad(
+                    &[Color::new(1., 1., 1., 0.5)],
+                    ctx.renderer.gfx.vertex_padding,
+                ),
                 Some(transparent_material_instance),
                 &mut ctx.resource_manager,
                 ResourceLifetime::Static,

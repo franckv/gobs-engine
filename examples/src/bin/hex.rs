@@ -93,7 +93,7 @@ impl App {
         let hex = Model::builder("hex")
             .mesh(
                 Shapes::hexagon(
-                    [
+                    &[
                         Color::WHITE,
                         Color::RED,
                         Color::GREEN,

@@ -152,9 +152,7 @@ impl App {
         let model = Model::builder("multi")
             .mesh(
                 Shapes::triangle(
-                    Color::RED,
-                    Color::GREEN,
-                    Color::BLUE,
+                    &[Color::RED, Color::GREEN, Color::BLUE],
                     1.5,
                     ctx.renderer.gfx.vertex_padding,
                 ),
