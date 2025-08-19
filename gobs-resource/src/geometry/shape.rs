@@ -277,12 +277,14 @@ impl Shapes {
 
         for i in 0..vi.len() {
             let vertex_data = VertexData::builder()
-                .position(v[vi[i] - 1].into())
+                .position(v[vi[i] as usize - 1].into())
                 .padding(padding)
                 .build();
 
             builder = builder.vertex(vertex_data);
         }
+
+        builder = builder.generate_tangents(false).indices(&vi, false);
 
         builder.build()
     }
@@ -295,5 +297,47 @@ impl Shapes {
         let v = (row + tex_coords.y) / rows as f32;
 
         Vec2::new(u, v)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use tracing::Level;
+    use tracing_subscriber::{FmtSubscriber, fmt::format::FmtSpan};
+
+    use gobs_core::{Color, logger, utils::timer::Timer};
+
+    use crate::geometry::{BoundingBox, Shapes};
+
+    fn setup() {
+        let sub = FmtSubscriber::builder()
+            .with_max_level(Level::INFO)
+            .with_span_events(FmtSpan::CLOSE)
+            .finish();
+        tracing::subscriber::set_global_default(sub).unwrap_or_default();
+    }
+
+    #[test]
+    fn test_shapes() {
+        setup();
+
+        let mut timer = Timer::new();
+        let n = 1000;
+
+        for _ in 0..n {
+            let _ = Shapes::triangle(Color::RED, Color::BLUE, Color::GREEN, 1., false);
+        }
+        tracing::info!(target: logger::RENDER, "Build {} triangles: {}", n, 1000. * timer.delta());
+
+        for _ in 0..n {
+            let _ = Shapes::rect(Color::RED, 1., 0., 0., 1., false);
+        }
+        tracing::info!(target: logger::RENDER, "Build {} rects: {}", n, 1000. * timer.delta());
+
+        let bounding_box = BoundingBox::default();
+        for _ in 0..n {
+            let _ = Shapes::bounding_box(bounding_box, false);
+        }
+        tracing::info!(target: logger::RENDER, "Build {} boxes: {}", n, 1000. * timer.delta());
     }
 }

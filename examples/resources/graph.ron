@@ -2,10 +2,10 @@ GraphConfig(
     schedule: [
         "depth",
         "forward",
-        "ui",
         "wire",
         "bounds",
         "select",
+        "ui",
     ],
     passes: {
         "bounds": (

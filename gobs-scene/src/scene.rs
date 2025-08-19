@@ -3,9 +3,11 @@ use glam::{Vec3, Vec4};
 use gobs_core::Transform;
 use gobs_render::{GfxContext, RenderBatch, Renderable};
 use gobs_render_graph::{PassType, RenderPass};
-use gobs_resource::entity::{camera::Camera, light::Light};
-use gobs_resource::manager::ResourceManager;
-use gobs_resource::resource::ResourceError;
+use gobs_resource::{
+    entity::{camera::Camera, light::Light},
+    manager::ResourceManager,
+    resource::ResourceError,
+};
 
 use crate::components::{NodeId, NodeValue};
 use crate::graph::scenegraph::SceneGraph;
@@ -60,10 +62,10 @@ impl Scene {
     }
 
     pub fn camera(&self) -> (Transform, &Camera) {
-        if let Some(node) = self.graph.get(self.camera) {
-            if let NodeValue::Camera(camera) = &node.base.value {
-                return (*node.global_transform(), camera);
-            }
+        if let Some(node) = self.graph.get(self.camera)
+            && let NodeValue::Camera(camera) = &node.base.value
+        {
+            return (*node.global_transform(), camera);
         }
 
         unreachable!()
@@ -83,10 +85,10 @@ impl Scene {
     }
 
     pub fn light(&self) -> (Transform, &Light) {
-        if let Some(node) = self.graph.get(self.light) {
-            if let NodeValue::Light(light) = &node.base.value {
-                return (*node.global_transform(), light);
-            }
+        if let Some(node) = self.graph.get(self.light)
+            && let NodeValue::Light(light) = &node.base.value
+        {
+            return (*node.global_transform(), light);
         }
 
         unreachable!();
@@ -155,15 +157,15 @@ impl Renderable for Scene {
                     }
                 }
                 PassType::Select => {
-                    if node.base.selected {
-                        if let NodeValue::Model(model) = &node.base.value {
-                            model.draw(
-                                resource_manager,
-                                pass.clone(),
-                                batch,
-                                Some(*node.global_transform()),
-                            )?;
-                        }
+                    if node.base.selected
+                        && let NodeValue::Model(model) = &node.base.value
+                    {
+                        model.draw(
+                            resource_manager,
+                            pass.clone(),
+                            batch,
+                            Some(*node.global_transform()),
+                        )?;
                     }
                 }
                 _ => {}
