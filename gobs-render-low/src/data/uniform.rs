@@ -1,41 +1,18 @@
-use std::sync::Arc;
-
-use gobs_core::memory::allocator::Allocable;
 use gobs_gfx::{Buffer, BufferUsage, GfxBuffer, GfxDevice};
-use uuid::Uuid;
 
 pub struct UniformBuffer {
-    pub layout: Arc<UniformLayout>,
     pub buffer: GfxBuffer,
 }
 
 impl UniformBuffer {
-    pub fn new(device: &GfxDevice, layout: Arc<UniformLayout>) -> Self {
+    pub fn new(device: &GfxDevice, layout: &UniformLayout) -> Self {
         let buffer = GfxBuffer::new("uniform", layout.size(), BufferUsage::Uniform, device);
 
-        UniformBuffer { layout, buffer }
+        UniformBuffer { buffer }
     }
 
     pub fn update(&mut self, uniform_data: &[u8]) {
         self.buffer.copy(uniform_data, 0);
-    }
-}
-
-impl Allocable<GfxDevice, Arc<UniformLayout>> for UniformBuffer {
-    fn resource_id(&self) -> Uuid {
-        self.buffer.id()
-    }
-
-    fn family(&self) -> Arc<UniformLayout> {
-        self.layout.clone()
-    }
-
-    fn resource_size(&self) -> usize {
-        1
-    }
-
-    fn allocate(device: &GfxDevice, _name: &str, _size: usize, layout: Arc<UniformLayout>) -> Self {
-        Self::new(device, layout)
     }
 }
 
@@ -82,15 +59,29 @@ impl UniformProp {
     }
 }
 
-#[derive(Debug, Eq, PartialEq, Hash, Default)]
+#[derive(Clone, Debug, Eq, PartialEq, Hash, Default)]
 pub struct UniformLayout {
     layout: Vec<UniformProp>,
     alignment: usize,
 }
 
 impl UniformLayout {
-    pub fn builder() -> UniformLayoutBuilder {
-        UniformLayoutBuilder::new()
+    pub fn new() -> Self {
+        Self {
+            layout: Vec::new(),
+            alignment: 0,
+        }
+    }
+
+    pub fn prop(mut self, _label: &str, prop: UniformProp) -> Self {
+        let align = prop.alignment();
+        if self.alignment < align {
+            self.alignment = align;
+        }
+
+        self.layout.push(prop);
+
+        self
     }
 
     pub fn len(&self) -> usize {
@@ -130,31 +121,6 @@ impl UniformLayout {
                 data.push(0_u8);
             }
         }
-    }
-}
-
-pub struct UniformLayoutBuilder {
-    layout: Vec<UniformProp>,
-}
-
-impl UniformLayoutBuilder {
-    fn new() -> Self {
-        UniformLayoutBuilder { layout: Vec::new() }
-    }
-
-    pub fn prop(mut self, _label: &str, prop: UniformProp) -> Self {
-        self.layout.push(prop);
-
-        self
-    }
-
-    pub fn build(self) -> Arc<UniformLayout> {
-        let alignment = self.layout.iter().map(|p| p.alignment()).max().unwrap();
-
-        Arc::new(UniformLayout {
-            layout: self.layout,
-            alignment,
-        })
     }
 }
 
@@ -240,10 +206,9 @@ mod tests {
             view_proj: Mat4::IDENTITY.to_cols_array_2d(),
         };
 
-        let camera_layout = UniformLayout::builder()
+        let camera_layout = UniformLayout::new()
             .prop("position", UniformProp::Vec4F)
-            .prop("view_proj", UniformProp::Mat4F)
-            .build();
+            .prop("view_proj", UniformProp::Mat4F);
 
         let camera = camera_layout.data(&[
             UniformPropData::Vec4F(camera_data.view_position),
@@ -273,10 +238,9 @@ mod tests {
             _padding2: 0,
         };
 
-        let light_layout = UniformLayout::builder()
+        let light_layout = UniformLayout::new()
             .prop("position", UniformProp::Vec3F)
-            .prop("colour", UniformProp::Vec3F)
-            .build();
+            .prop("colour", UniformProp::Vec3F);
 
         let light = light_layout.data(&[
             UniformPropData::Vec3F(light_data.position),
@@ -295,9 +259,7 @@ mod tests {
     fn test_align() {
         setup();
         let mat3 = [[0 as f32; 3]; 3];
-        let layout = UniformLayout::builder()
-            .prop("mat3", UniformProp::Mat3F)
-            .build();
+        let layout = UniformLayout::new().prop("mat3", UniformProp::Mat3F);
 
         let mat = layout.data(&[UniformPropData::Mat3F(mat3)]);
 
@@ -311,11 +273,10 @@ mod tests {
         let mat4 = [[0 as f32; 4]; 4];
         let u = 0_u64;
 
-        let layout = UniformLayout::builder()
+        let layout = UniformLayout::new()
             .prop("mat4", UniformProp::Mat4F)
             .prop("mat3", UniformProp::Mat3F)
-            .prop("u64", UniformProp::U64)
-            .build();
+            .prop("u64", UniformProp::U64);
 
         let uniform = layout.data(&[
             UniformPropData::Mat4F(mat4),

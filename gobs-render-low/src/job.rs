@@ -5,7 +5,7 @@ use thiserror::Error;
 use uuid::Uuid;
 
 use gobs_core::logger;
-use gobs_gfx::{Buffer, BufferId, Command, GfxBindingGroup, GfxPipeline, Pipeline, PipelineId};
+use gobs_gfx::{BindingGroupType, Buffer, BufferId, Command, GfxPipeline, Pipeline, PipelineId};
 
 use crate::{FrameData, GfxContext, ObjectDataLayout, RenderObject, UniformBuffer, UniformLayout};
 
@@ -49,7 +49,7 @@ impl RenderJob {
         ctx: &GfxContext,
         pass_id: Uuid,
         object_layout: ObjectDataLayout,
-        scene_data_layout: Arc<UniformLayout>,
+        scene_data_layout: &UniformLayout,
         render_transparent: bool,
         render_opaque: bool,
     ) -> Self {
@@ -99,31 +99,15 @@ impl RenderJob {
                 continue;
             }
 
-            let pipeline = self.get_pipeline(render_object)?;
+            self.bind_pipeline(frame, render_object, &mut state)?;
 
-            self.bind_pipeline(frame, &pipeline, &mut state);
+            // bind camera and lights (push, set=0)
+            self.bind_scene_data(frame, render_object, &mut state)?;
 
-            // bind camera and lights
-            tracing::debug!(target: logger::RENDER, "Bind scene data");
-            if !state.scene_data_bound {
-                let uniform_buffer = self.uniform_buffer.read();
+            // bind materials (ds, set 1=material, 2=textures)
+            self.bind_material_data(frame, render_object)?;
 
-                frame
-                    .command
-                    .bind_resource_buffer(&uniform_buffer.buffer, &pipeline);
-                frame.stats.bind_resource(self.pass_id);
-                state.scene_data_bound = true;
-            }
-
-            // bind materials...
-            if self.fixed_pipeline.is_none() {
-                tracing::debug!(target: logger::RENDER, "Bind resources");
-                for bind_group in &render_object.bind_groups {
-                    self.bind_resource(frame, bind_group, &pipeline, &mut state);
-                }
-            }
-
-            tracing::debug!(target: logger::RENDER, "Bind object data");
+            // push constants + index buffer
             self.bind_object_data(ctx, frame, render_object, &mut state)?;
 
             tracing::debug!(target: logger::RENDER, "Draw object");
@@ -153,32 +137,67 @@ impl RenderJob {
         }
     }
 
-    fn bind_resource(
-        &self,
-        frame: &mut FrameData,
-        bind_group: &GfxBindingGroup,
-        pipeline: &GfxPipeline,
-        _state: &mut RenderJobState,
-    ) {
-        tracing::trace!(target: logger::RENDER, "Bind resource: {:?} ({:?})", bind_group.bind_group_type, bind_group.ds.layout);
-        tracing::trace!(target: logger::RENDER, "Bind pipeline: {:?}", pipeline.pipeline.layout.descriptor_layouts);
-
-        frame.command.bind_resource(bind_group, pipeline);
-        frame.stats.bind_resource(self.pass_id);
-    }
-
     fn bind_pipeline(
         &self,
         frame: &mut FrameData,
-        pipeline: &GfxPipeline,
+        render_object: &RenderObject,
         state: &mut RenderJobState,
-    ) {
+    ) -> Result<(), RenderJobError> {
+        let pipeline = self.get_pipeline(render_object)?;
+
         if state.last_pipeline != pipeline.id() {
             tracing::debug!(target: logger::RENDER, "Bind pipeline: {}", pipeline.id());
-            frame.command.bind_pipeline(pipeline);
+            frame.command.bind_pipeline(&pipeline);
             frame.stats.bind_pipeline(self.pass_id);
             state.last_pipeline = pipeline.id();
         }
+
+        Ok(())
+    }
+
+    fn bind_material_data(
+        &self,
+        frame: &mut FrameData,
+        render_object: &RenderObject,
+    ) -> Result<(), RenderJobError> {
+        if self.fixed_pipeline.is_none() {
+            let pipeline = self.get_pipeline(render_object)?;
+
+            tracing::debug!(target: logger::RENDER, "Bind resources");
+            for bind_group in &render_object.bind_groups {
+                tracing::trace!(target: logger::RENDER, "Bind resource: {:?} ({:?})", bind_group.bind_group_type, bind_group.ds.layout);
+
+                frame.command.bind_resource(bind_group, &pipeline);
+                frame.stats.bind_resource(self.pass_id);
+            }
+        }
+
+        Ok(())
+    }
+
+    fn bind_scene_data(
+        &self,
+        frame: &mut FrameData,
+        render_object: &RenderObject,
+        state: &mut RenderJobState,
+    ) -> Result<(), RenderJobError> {
+        tracing::debug!(target: logger::RENDER, "Bind scene data");
+        if !state.scene_data_bound {
+            let uniform_buffer = self.uniform_buffer.read();
+
+            let pipeline = self.get_pipeline(render_object)?;
+
+            // bind scene data (push, set 0)
+            frame.command.bind_resource_buffer(
+                &uniform_buffer.buffer,
+                BindingGroupType::SceneData,
+                &pipeline,
+            );
+            frame.stats.bind_resource(self.pass_id);
+            state.scene_data_bound = true;
+        }
+
+        Ok(())
     }
 
     fn bind_object_data(

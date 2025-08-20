@@ -34,7 +34,7 @@ impl TextureDataLayout {
         layout
     }
 
-    pub fn prop(&mut self, prop: TextureDataProp) -> &mut Self {
+    pub fn prop(mut self, prop: TextureDataProp) -> Self {
         self.layout.push(prop);
 
         self

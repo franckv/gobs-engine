@@ -1,5 +1,3 @@
-use std::sync::Arc;
-
 use gobs_gfx::{
     BindingGroupLayout, BindingGroupType, DescriptorStage, DescriptorType, GfxBindingGroupLayout,
 };
@@ -19,14 +17,10 @@ pub enum MaterialDataProp {
 #[derive(Clone, Debug, Default)]
 pub struct MaterialDataLayout {
     layout: Vec<MaterialDataProp>,
-    uniform_layout: Arc<UniformLayout>,
+    uniform_layout: UniformLayout,
 }
 
 impl MaterialDataLayout {
-    pub fn builder() -> MaterialDataLayoutBuilder {
-        MaterialDataLayoutBuilder::new()
-    }
-
     pub fn data(&self) -> Vec<u8> {
         let layout = self.uniform_layout();
 
@@ -49,63 +43,38 @@ impl MaterialDataLayout {
             .add_binding(DescriptorType::Uniform, DescriptorStage::Fragment)
     }
 
-    pub fn uniform_layout(&self) -> Arc<UniformLayout> {
-        self.uniform_layout.clone()
+    pub fn uniform_layout(&self) -> &UniformLayout {
+        &self.uniform_layout
     }
 
     pub fn is_empty(&self) -> bool {
         self.layout.is_empty()
     }
-}
-
-pub struct MaterialDataLayoutBuilder {
-    layout: Vec<MaterialDataProp>,
-}
-
-impl MaterialDataLayoutBuilder {
-    pub fn new() -> Self {
-        Self {
-            layout: Default::default(),
-        }
-    }
 
     pub fn prop(mut self, prop: MaterialDataProp) -> Self {
         self.layout.push(prop);
 
-        self
-    }
-
-    pub fn build(self) -> MaterialDataLayout {
-        let mut layout = UniformLayout::builder();
-
-        for prop in &self.layout {
-            match prop {
-                MaterialDataProp::DiffuseColor => {
-                    layout = layout.prop("diffuse color", UniformProp::Vec4F)
-                }
-                MaterialDataProp::EmissionColor => {
-                    layout = layout.prop("emission color", UniformProp::Vec4F)
-                }
-                MaterialDataProp::SpecularColor => {
-                    layout = layout.prop("specular color", UniformProp::Vec4F)
-                }
-                MaterialDataProp::SpecularPower => {
-                    layout = layout.prop("specular power", UniformProp::F32)
-                }
+        match prop {
+            MaterialDataProp::DiffuseColor => {
+                self.uniform_layout = self
+                    .uniform_layout
+                    .prop("diffuse color", UniformProp::Vec4F)
             }
-        }
+            MaterialDataProp::EmissionColor => {
+                self.uniform_layout = self
+                    .uniform_layout
+                    .prop("emission color", UniformProp::Vec4F)
+            }
+            MaterialDataProp::SpecularColor => {
+                self.uniform_layout = self
+                    .uniform_layout
+                    .prop("specular color", UniformProp::Vec4F)
+            }
+            MaterialDataProp::SpecularPower => {
+                self.uniform_layout = self.uniform_layout.prop("specular power", UniformProp::F32)
+            }
+        };
 
-        let uniform_layout = layout.build();
-
-        MaterialDataLayout {
-            layout: self.layout,
-            uniform_layout,
-        }
-    }
-}
-
-impl Default for MaterialDataLayoutBuilder {
-    fn default() -> Self {
-        Self::new()
+        self
     }
 }

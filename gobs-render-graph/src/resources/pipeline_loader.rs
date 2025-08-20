@@ -50,6 +50,8 @@ impl PipelineLoader {
     }
 
     pub fn load_graphics(&self, properties: &GraphicsPipelineProperties) -> PipelineData {
+        tracing::debug!(target: logger::RESOURCES, "Loading pipeline: {:?}", properties);
+
         let mut pipeline = GfxPipeline::graphics(&properties.name, self.device.clone())
             .push_constants(properties.push_constants)
             .vertex_attributes(properties.vertex_attributes)
@@ -90,9 +92,11 @@ impl PipelineLoader {
             pipeline = pipeline.binding_group(binding_group_layout);
         }
 
-        PipelineData {
-            pipeline: pipeline.build(),
-        }
+        let pipeline = pipeline.build();
+
+        tracing::debug!(target: logger::RESOURCES, "Loaded pipeline: {:?}", pipeline);
+
+        PipelineData { pipeline }
     }
 }
 

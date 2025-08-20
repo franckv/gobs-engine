@@ -1,5 +1,3 @@
-use std::sync::Arc;
-
 use serde::{Deserialize, Serialize};
 
 use gobs_core::{ImageExtent2D, Transform};
@@ -19,7 +17,7 @@ pub enum SceneDataProp {
 
 pub struct SceneDataLayout {
     layout: Vec<SceneDataProp>,
-    uniform_layout: Arc<UniformLayout>,
+    uniform_layout: UniformLayout,
 }
 
 impl SceneDataLayout {
@@ -67,8 +65,8 @@ impl SceneDataLayout {
         layout.data(&props)
     }
 
-    pub fn uniform_layout(&self) -> Arc<UniformLayout> {
-        self.uniform_layout.clone()
+    pub fn uniform_layout(&self) -> &UniformLayout {
+        &self.uniform_layout
     }
 }
 
@@ -90,32 +88,30 @@ impl SceneDataLayoutBuilder {
     }
 
     pub fn build(self) -> SceneDataLayout {
-        let mut layout = UniformLayout::builder();
+        let mut uniform_layout = UniformLayout::new();
 
         for prop in &self.layout {
             match prop {
                 SceneDataProp::CameraPosition => {
-                    layout = layout.prop("camera_position", UniformProp::Vec3F)
+                    uniform_layout = uniform_layout.prop("camera_position", UniformProp::Vec3F)
                 }
                 SceneDataProp::CameraViewProj => {
-                    layout = layout.prop("view_proj", UniformProp::Mat4F)
+                    uniform_layout = uniform_layout.prop("view_proj", UniformProp::Mat4F)
                 }
                 SceneDataProp::CameraViewPort => {
-                    layout = layout.prop("screen_size", UniformProp::Vec2F)
+                    uniform_layout = uniform_layout.prop("screen_size", UniformProp::Vec2F)
                 }
                 SceneDataProp::LightDirection => {
-                    layout = layout.prop("light_direction", UniformProp::Vec3F)
+                    uniform_layout = uniform_layout.prop("light_direction", UniformProp::Vec3F)
                 }
                 SceneDataProp::LightColor => {
-                    layout = layout.prop("light_color", UniformProp::Vec4F)
+                    uniform_layout = uniform_layout.prop("light_color", UniformProp::Vec4F)
                 }
                 SceneDataProp::LightAmbientColor => {
-                    layout = layout.prop("ambient_color", UniformProp::Vec4F)
+                    uniform_layout = uniform_layout.prop("ambient_color", UniformProp::Vec4F)
                 }
-            }
+            };
         }
-
-        let uniform_layout = layout.build();
 
         SceneDataLayout {
             layout: self.layout,

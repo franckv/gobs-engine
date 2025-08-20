@@ -1,7 +1,5 @@
 #![allow(clippy::new_ret_no_self)]
 
-use std::sync::Arc;
-
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
@@ -125,7 +123,7 @@ pub trait RenderPass {
     fn name(&self) -> &str;
     fn ty(&self) -> PassType;
     fn vertex_attributes(&self) -> Option<VertexAttribute>;
-    fn push_layout(&self) -> Option<Arc<UniformLayout>>;
+    fn push_layout(&self) -> Option<&UniformLayout>;
     fn render(
         &self,
         ctx: &mut GfxContext,

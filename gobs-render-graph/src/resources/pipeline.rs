@@ -1,3 +1,4 @@
+use std::fmt::Debug;
 use std::sync::Arc;
 
 use gobs_core::ImageFormat;
@@ -52,7 +53,7 @@ impl PipelineProperties {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Debug, Clone)]
 pub struct GraphicsPipelineProperties {
     pub name: String,
     pub(crate) vertex_entry: Option<String>,

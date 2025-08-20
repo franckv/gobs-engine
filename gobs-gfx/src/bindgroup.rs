@@ -1,3 +1,5 @@
+use std::fmt::Debug;
+
 use serde::Deserialize;
 use serde::Serialize;
 
@@ -6,13 +8,25 @@ use crate::DescriptorType;
 use crate::ImageLayout;
 use crate::Renderer;
 
-#[derive(Copy, Clone, Debug, Eq, Hash, Serialize, Deserialize, PartialEq)]
+#[derive(Copy, Clone, Eq, Hash, Serialize, Deserialize, PartialEq)]
 pub enum BindingGroupType {
     None,
     ComputeData,
     SceneData,
     MaterialData,
     MaterialTextures,
+}
+
+impl Debug for BindingGroupType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::None => write!(f, "None"),
+            Self::ComputeData => write!(f, "ComputeData ({})", self.set()),
+            Self::SceneData => write!(f, "SceneData ({}, push)", self.set()),
+            Self::MaterialData => write!(f, "MaterialData ({})", self.set()),
+            Self::MaterialTextures => write!(f, "MaterialTextures ({})", self.set()),
+        }
+    }
 }
 
 impl BindingGroupType {

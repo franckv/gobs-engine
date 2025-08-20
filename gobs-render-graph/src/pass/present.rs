@@ -45,7 +45,7 @@ impl RenderPass for PresentPass {
         None
     }
 
-    fn push_layout(&self) -> Option<std::sync::Arc<UniformLayout>> {
+    fn push_layout(&self) -> Option<&UniformLayout> {
         None
     }
 

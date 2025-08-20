@@ -89,7 +89,7 @@ impl RenderPass for ComputePass {
         None
     }
 
-    fn push_layout(&self) -> Option<Arc<UniformLayout>> {
+    fn push_layout(&self) -> Option<&UniformLayout> {
         None
     }
 

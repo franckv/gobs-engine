@@ -6,7 +6,7 @@ use crate::backend::vulkan::{
     image::VkImage, pipeline::VkPipeline, renderer::VkRenderer,
 };
 use crate::command::CommandQueueType;
-use crate::{Command, Image, ImageLayout};
+use crate::{BindingGroupType, Command, Image, ImageLayout};
 
 pub struct VkCommand {
     pub(crate) command: vk::command::CommandBuffer,
@@ -129,10 +129,16 @@ impl Command<VkRenderer> for VkCommand {
             .bind_descriptor_set(&binding_group.ds, set, &pipeline.pipeline);
     }
 
-    fn bind_resource_buffer(&self, buffer: &VkBuffer, pipeline: &VkPipeline) {
+    fn bind_resource_buffer(
+        &self,
+        buffer: &VkBuffer,
+        binding_group_type: BindingGroupType,
+        pipeline: &VkPipeline,
+    ) {
+        assert!(binding_group_type.is_push());
         vk::descriptor::DescriptorSetUpdates::new(self.command.device.clone())
             .bind_buffer(&buffer.buffer, 0, buffer.buffer.size)
-            .push_descriptors(&self.command, &pipeline.pipeline, 0);
+            .push_descriptors(&self.command, &pipeline.pipeline, binding_group_type.set());
     }
 
     fn bind_index_buffer(&self, buffer: &VkBuffer, offset: usize) {

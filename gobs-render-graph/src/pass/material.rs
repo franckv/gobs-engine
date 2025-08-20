@@ -169,7 +169,7 @@ impl RenderPass for MaterialPass {
         self.fixed_pipeline.as_ref().map(|p| p.vertex_attributes())
     }
 
-    fn push_layout(&self) -> Option<Arc<UniformLayout>> {
+    fn push_layout(&self) -> Option<&UniformLayout> {
         Some(self.object_layout.uniform_layout())
     }
 

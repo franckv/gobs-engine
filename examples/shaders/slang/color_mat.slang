@@ -11,7 +11,7 @@ ConstantBuffer<SceneData> scene_data;
 struct Material {
     float4 color;
 }
-[[vk::binding(1, 0)]]
+[[vk::binding(0, 1)]]
 ConstantBuffer<Material> material;
 
 // alignment 16
@@ -30,7 +30,6 @@ PushConstants push_constants;
 
 struct VSOutput {
     float4 position: SV_POSITION;
-    float4 color;
 }
 
 [shader("vertex")]
@@ -38,14 +37,13 @@ VSOutput vertex_main(uint vertex_index: SV_VertexID) {
     Vertex v = push_constants.vertex_reference[vertex_index];
     VSOutput output;
     output.position = mul(scene_data.view_proj, mul(push_constants.world_matrix, float4(v.position, 1.0)));
-    output.color = material.color;
 
     return output;
 }
 
 [shader("fragment")]
 float4 fragment_main(VSOutput input) {
-    float4 color = input.color;
+    float4 color = material.color;
 
     return color;
 }

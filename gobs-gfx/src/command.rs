@@ -1,6 +1,6 @@
 use gobs_core::ImageExtent2D;
 
-use crate::{ImageLayout, Renderer};
+use crate::{BindingGroupType, ImageLayout, Renderer};
 
 pub enum CommandQueueType {
     Graphics,
@@ -41,7 +41,12 @@ pub trait Command<R: Renderer> {
     fn set_viewport(&self, width: u32, height: u32);
     fn bind_pipeline(&self, pipeline: &R::Pipeline);
     fn bind_resource(&self, binding_group: &R::BindingGroup, pipeline: &R::Pipeline);
-    fn bind_resource_buffer(&self, buffer: &R::Buffer, pipeline: &R::Pipeline);
+    fn bind_resource_buffer(
+        &self,
+        buffer: &R::Buffer,
+        binding_group_type: BindingGroupType,
+        pipeline: &R::Pipeline,
+    );
     fn bind_index_buffer(&self, buffer: &R::Buffer, offset: usize);
     fn dispatch(&self, x: u32, y: u32, z: u32);
     fn draw_indexed(&self, index_count: usize, instance_count: usize);

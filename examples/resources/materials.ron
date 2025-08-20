@@ -21,6 +21,9 @@ MaterialsConfig(
             fragment_shader: "color_mat.spv",
             fragment_entry: "fragment_main",
             vertex_attributes: "POSITION",
+            material_layout: [
+                DiffuseColor
+            ]
         ),
         "color.transparent": (
             vertex_shader: "color.spv",

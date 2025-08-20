@@ -1,5 +1,3 @@
-use std::sync::Arc;
-
 use glam::Mat3;
 use serde::{Deserialize, Serialize};
 
@@ -20,7 +18,7 @@ pub enum ObjectDataProp {
 #[derive(Clone, Debug)]
 pub struct ObjectDataLayout {
     layout: Vec<ObjectDataProp>,
-    uniform_layout: Arc<UniformLayout>,
+    uniform_layout: UniformLayout,
 }
 
 impl ObjectDataLayout {
@@ -57,8 +55,8 @@ impl ObjectDataLayout {
         layout.copy_data(&props, buffer);
     }
 
-    pub fn uniform_layout(&self) -> Arc<UniformLayout> {
-        self.uniform_layout.clone()
+    pub fn uniform_layout(&self) -> &UniformLayout {
+        &self.uniform_layout
     }
 }
 
@@ -80,23 +78,21 @@ impl ObjectDataLayoutBuilder {
     }
 
     pub fn build(self) -> ObjectDataLayout {
-        let mut layout = UniformLayout::builder();
+        let mut uniform_layout = UniformLayout::new();
 
         for prop in &self.layout {
             match prop {
                 ObjectDataProp::WorldMatrix => {
-                    layout = layout.prop("world_matrix", UniformProp::Mat4F);
+                    uniform_layout = uniform_layout.prop("world_matrix", UniformProp::Mat4F);
                 }
                 ObjectDataProp::NormalMatrix => {
-                    layout = layout.prop("normal_matrix", UniformProp::Mat3F);
+                    uniform_layout = uniform_layout.prop("normal_matrix", UniformProp::Mat3F);
                 }
                 ObjectDataProp::VertexBufferAddress => {
-                    layout = layout.prop("buffer_reference", UniformProp::U64);
+                    uniform_layout = uniform_layout.prop("buffer_reference", UniformProp::U64);
                 }
             }
         }
-
-        let uniform_layout = layout.build();
 
         ObjectDataLayout {
             layout: self.layout,

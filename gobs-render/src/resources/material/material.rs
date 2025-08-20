@@ -5,7 +5,8 @@ use gobs_gfx::{
 };
 use gobs_render_graph::{GraphicsPipelineProperties, Pipeline, PipelineProperties};
 use gobs_render_low::{
-    GfxContext, MaterialDataLayout, ObjectDataLayout, TextureDataLayout, TextureDataProp,
+    GfxContext, MaterialDataLayout, MaterialDataProp, ObjectDataLayout, TextureDataLayout,
+    TextureDataProp,
 };
 use gobs_resource::{
     geometry::VertexAttribute,
@@ -80,6 +81,19 @@ impl MaterialProperties {
         }
     }
 
+    pub fn property(mut self, prop: MaterialDataProp) -> Self {
+        if self.pipeline_properties.last_binding_group != BindingGroupType::MaterialData {
+            self.pipeline_properties = self
+                .pipeline_properties
+                .binding_group(DescriptorStage::Fragment, BindingGroupType::MaterialData);
+            self.pipeline_properties = self.pipeline_properties.binding(DescriptorType::Uniform);
+        }
+
+        self.material_data_layout = self.material_data_layout.prop(prop);
+
+        self
+    }
+
     pub fn texture(mut self, prop: TextureDataProp) -> Self {
         if self.pipeline_properties.last_binding_group != BindingGroupType::MaterialTextures {
             self.pipeline_properties = self.pipeline_properties.binding_group(
@@ -88,7 +102,7 @@ impl MaterialProperties {
             );
         }
 
-        self.texture_data_layout.prop(prop);
+        self.texture_data_layout = self.texture_data_layout.prop(prop);
 
         match prop {
             TextureDataProp::Diffuse => {

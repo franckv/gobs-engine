@@ -66,10 +66,3 @@ VSOutput vertex_main(uint vertex_index: SV_VertexID) {
     return output;
 }
 
-[shader("fragment")]
-float4 fragment_main(VSOutput input) {
-    float4 color = input.color;
-
-    return color;
-}
-
