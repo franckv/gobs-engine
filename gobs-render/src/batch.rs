@@ -181,6 +181,7 @@ impl RenderBatch {
     ) {
         self.camera = camera.clone();
         self.camera_transform = camera_transform;
+        self.lights.clear();
         self.lights.push((light.clone(), light_transform));
     }
 

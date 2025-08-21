@@ -88,20 +88,19 @@ impl SampleApp {
 
         ctx.renderer
             .draw(resource_manager, &mut |pass, batch, resource_manager| {
-                if let Some(scene) = &scene {
-                    if (self.draw_bounds || !(pass.ty() == PassType::Bounds))
-                        && (self.draw_wire || !(pass.ty() == PassType::Wire))
-                    {
-                        scene
-                            .draw(resource_manager, pass.clone(), batch, None)
-                            .map_err(|_| RenderError::InvalidData)?;
-                    }
+                if let Some(scene) = &scene
+                    && (self.draw_bounds || !(pass.ty() == PassType::Bounds))
+                    && (self.draw_wire || !(pass.ty() == PassType::Wire))
+                {
+                    scene
+                        .draw(resource_manager, pass.clone(), batch, None)
+                        .map_err(|_| RenderError::InvalidData)?;
                 }
-                if let Some(ui) = &ui {
-                    if self.draw_ui {
-                        ui.draw(resource_manager, pass, batch, None)
-                            .map_err(|_| RenderError::InvalidData)?;
-                    }
+                if let Some(ui) = &ui
+                    && self.draw_ui
+                {
+                    ui.draw(resource_manager, pass, batch, None)
+                        .map_err(|_| RenderError::InvalidData)?;
                 }
 
                 Ok(())
@@ -140,8 +139,13 @@ impl SampleApp {
                 Key::R => {
                     let rd: Result<RenderDoc<V141>, _> = RenderDoc::new();
 
-                    if let Ok(mut rd) = rd {
-                        rd.trigger_capture();
+                    match rd {
+                        Ok(mut rd) => {
+                            rd.trigger_capture();
+                        }
+                        Err(e) => {
+                            tracing::error!("Renderdoc not available: {}", e);
+                        }
                     }
                 }
                 Key::L => {
