@@ -401,11 +401,33 @@ impl Ui {
         egui::CollapsingHeader::new("Stats")
             .default_open(true)
             .show(ui, |ui| {
-                ui.label(format!(
-                    "Prepare time: {:.2} ms",
-                    1000. * frame.stats.cpu_prepare_time
-                ));
-                ui.label(format!("Objects: {}", frame.stats.objects));
+                egui::CollapsingHeader::new("Global")
+                    .default_open(true)
+                    .show(ui, |ui| {
+                        ui.label(format!(
+                            "Prepare time: {:.2} ms",
+                            1000. * frame.stats.cpu_prepare_time
+                        ));
+                        ui.label(format!("Objects: {}", frame.stats.objects));
+
+                        let mut pipeline_binds = 0;
+                        let mut resource_binds = 0;
+                        let mut draws = 0;
+                        let mut cpu_draw_time = 0.;
+                        for pass in &graph.passes {
+                            if let Some(stats) = frame.stats.pass(pass.id()) {
+                                pipeline_binds += stats.pipeline_binds;
+                                resource_binds += stats.resource_binds;
+                                draws += stats.draws;
+                                cpu_draw_time += stats.cpu_draw_time;
+                            }
+                        }
+                        ui.label(format!("Pipeline binds: {}", pipeline_binds));
+                        ui.label(format!("Resource binds: {}", resource_binds));
+                        ui.label(format!("Draws: {}", draws));
+                        ui.label(format!("CPU time: {:.2} ms", 1000. * cpu_draw_time));
+                    });
+
                 for pass in &graph.passes {
                     if let Some(stats) = frame.stats.pass(pass.id()) {
                         egui::CollapsingHeader::new(format!("Pass: {}", pass.name()))
