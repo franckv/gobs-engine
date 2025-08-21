@@ -2,9 +2,7 @@ use std::sync::Arc;
 
 use gobs_core::{ImageExtent2D, logger};
 use gobs_gfx::{Command, Display, Image, ImageLayout};
-use gobs_render_low::{
-    FrameData, GfxContext, RenderError, RenderObject, RenderStats, SceneData, UniformLayout,
-};
+use gobs_render_low::{FrameData, GfxContext, RenderError, RenderObject, RenderStats, SceneData};
 use gobs_resource::geometry::VertexAttribute;
 
 use crate::{
@@ -42,10 +40,6 @@ impl RenderPass for PresentPass {
     }
 
     fn vertex_attributes(&self) -> Option<VertexAttribute> {
-        None
-    }
-
-    fn push_layout(&self) -> Option<&UniformLayout> {
         None
     }
 

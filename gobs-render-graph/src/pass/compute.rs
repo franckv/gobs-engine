@@ -6,9 +6,7 @@ use gobs_gfx::{
     Command, ComputePipelineBuilder, DescriptorType, GfxBindingGroup, GfxBindingGroupLayout,
     GfxBindingGroupPool, GfxPipeline, ImageLayout, Pipeline,
 };
-use gobs_render_low::{
-    FrameData, GfxContext, RenderError, RenderObject, RenderStats, SceneData, UniformLayout,
-};
+use gobs_render_low::{FrameData, GfxContext, RenderError, RenderObject, RenderStats, SceneData};
 use gobs_resource::geometry::VertexAttribute;
 
 use crate::{
@@ -86,10 +84,6 @@ impl RenderPass for ComputePass {
     }
 
     fn vertex_attributes(&self) -> Option<VertexAttribute> {
-        None
-    }
-
-    fn push_layout(&self) -> Option<&UniformLayout> {
         None
     }
 

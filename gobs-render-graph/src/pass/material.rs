@@ -4,7 +4,7 @@ use gobs_core::{ImageExtent2D, logger};
 use gobs_gfx::{Command, GfxCommand, GfxPipeline, Pipeline};
 use gobs_render_low::{
     FrameData, GfxContext, ObjectDataLayout, RenderError, RenderJob, RenderObject, SceneData,
-    SceneDataLayout, UniformLayout,
+    SceneDataLayout,
 };
 use gobs_resource::geometry::VertexAttribute;
 
@@ -169,10 +169,6 @@ impl RenderPass for MaterialPass {
         self.fixed_pipeline.as_ref().map(|p| p.vertex_attributes())
     }
 
-    fn push_layout(&self) -> Option<&UniformLayout> {
-        Some(self.object_layout.uniform_layout())
-    }
-
     fn render(
         &self,
         ctx: &mut GfxContext,
@@ -194,7 +190,7 @@ impl RenderPass for MaterialPass {
         tracing::debug!(target: logger::RENDER, "Upload scene data");
         let scene_data_bytes = self.scene_layout.data(scene_data);
 
-        tracing::debug!(target: logger::RENDER, "Update Uniform");
+        tracing::debug!(target: logger::RENDER, "Update Uniform (scene data, push)");
         render_job.update_uniform(&scene_data_bytes);
 
         tracing::debug!(target: logger::RENDER, "Render object list");

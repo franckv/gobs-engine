@@ -5,7 +5,7 @@ use uuid::Uuid;
 
 use gobs_core::{ImageExtent2D, ImageFormat};
 use gobs_gfx::{ImageLayout, ImageUsage};
-use gobs_render_low::{FrameData, GfxContext, RenderError, RenderObject, SceneData, UniformLayout};
+use gobs_render_low::{FrameData, GfxContext, RenderError, RenderObject, SceneData};
 use gobs_resource::geometry::VertexAttribute;
 
 use crate::graph::GraphResourceManager;
@@ -123,7 +123,6 @@ pub trait RenderPass {
     fn name(&self) -> &str;
     fn ty(&self) -> PassType;
     fn vertex_attributes(&self) -> Option<VertexAttribute>;
-    fn push_layout(&self) -> Option<&UniformLayout>;
     fn render(
         &self,
         ctx: &mut GfxContext,
