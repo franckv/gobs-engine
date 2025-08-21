@@ -137,12 +137,34 @@ impl Instance {
 
         let entry = ash::Entry::linked();
 
-        let instance: ash::Instance = unsafe {
-            tracing::info!(target: logger::INIT, "Create instance");
+        unsafe {
+            tracing::debug!(
+            target: logger::INIT,
+                            "Available extensions: {:?}",
+                            entry
+                                .enumerate_instance_extension_properties(None)?
+                                .iter()
+                                .map(|ext| ext.extension_name_as_c_str().unwrap())
+                                .collect::<Vec<&CStr>>()
+                        );
 
-            entry.create_instance(&instance_info, None)?
-        };
+            tracing::debug!(
+            target: logger::INIT,
+                            "Available layers: {:?}",
+                            entry
+                                .enumerate_instance_layer_properties()?
+                                .iter()
+                                .map(|layer| layer.layer_name_as_c_str().unwrap())
+                                .collect::<Vec<&CStr>>()
+                        );
+            tracing::debug!(target: logger::INIT, "Enabled extensions {:?}", extensions.iter().map(|ext| CStr::from_ptr(*ext)).collect::<Vec<&CStr>>());
+            tracing::debug!(target: logger::INIT, "Enabled layers {:?}", layers.iter().map(|ext| CStr::from_ptr(*ext)).collect::<Vec<&CStr>>());
+        }
 
+        tracing::info!(target: logger::INIT, "Create instance");
+        let instance: ash::Instance = unsafe { entry.create_instance(&instance_info, None)? };
+
+        tracing::debug!(target: logger::INIT, "Create surface loader");
         let surface_loader = surface::Instance::new(&entry, &instance);
 
         let debug_info = vk::DebugUtilsMessengerCreateInfoEXT::default()
