@@ -7,6 +7,7 @@ use gobs_core::logger;
 use gobs_gfx::{
     BindingGroupPool, GfxBindingGroup, GfxBindingGroupLayout, GfxBindingGroupPool, GfxDevice,
 };
+use gobs_render_low::UniformData;
 use gobs_resource::{
     manager::ResourceRegistry,
     resource::{
@@ -127,7 +128,10 @@ impl MaterialInstanceLoader {
                     self.texture_binding_pools.get_mut(&handle.id).unwrap(),
                 );
 
-                let material_binding = Self::load_material(material_properties);
+                let material_binding = Self::load_material(
+                    material_properties,
+                    self.material_binding_pools.get_mut(&handle.id).unwrap(),
+                );
 
                 e.insert((material_binding, texture_binding)).clone()
             }
@@ -147,9 +151,14 @@ impl MaterialInstanceLoader {
         }
     }
 
-    fn load_material(material_properties: &MaterialProperties) -> Option<GfxBindingGroup> {
+    fn load_material(
+        material_properties: &MaterialProperties,
+        pool: &mut GfxBindingGroupPool,
+    ) -> Option<GfxBindingGroup> {
         if !material_properties.material_data_layout.is_empty() {
-            None
+            let binding = pool.allocate();
+
+            Some(binding)
         } else {
             None
         }

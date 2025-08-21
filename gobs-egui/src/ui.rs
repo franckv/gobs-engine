@@ -11,7 +11,7 @@ use gobs_core::{Color, ImageExtent2D, Input, Key, MouseButton, Transform, logger
 use gobs_render::{
     BlendMode, GfxContext, Material, MaterialInstance, MaterialInstanceProperties,
     MaterialProperties, Model, ObjectDataLayout, ObjectDataProp, RenderBatch, Renderable, Texture,
-    TextureDataProp, TextureProperties, TextureUpdate,
+    TextureDataProp, TextureProperties, TextureUpdate, UniformData,
 };
 use gobs_render_graph::{PassType, RenderPass};
 use gobs_resource::{
@@ -51,9 +51,7 @@ impl UIRenderer {
         let vertex_attributes =
             VertexAttribute::POSITION | VertexAttribute::COLOR | VertexAttribute::TEXTURE;
 
-        let object_layout = ObjectDataLayout::builder()
-            .prop(ObjectDataProp::VertexBufferAddress)
-            .build();
+        let object_layout = ObjectDataLayout::default().prop(ObjectDataProp::VertexBufferAddress);
 
         let material_properties = MaterialProperties::new(
             ctx,

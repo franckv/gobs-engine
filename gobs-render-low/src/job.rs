@@ -7,7 +7,10 @@ use uuid::Uuid;
 use gobs_core::logger;
 use gobs_gfx::{BindingGroupType, Buffer, BufferId, Command, GfxPipeline, Pipeline, PipelineId};
 
-use crate::{FrameData, GfxContext, ObjectDataLayout, RenderObject, UniformBuffer, UniformLayout};
+use crate::{
+    FrameData, GfxContext, ObjectDataLayout, RenderObject, UniformBuffer, UniformData,
+    UniformLayout,
+};
 
 #[derive(Debug, Error)]
 pub enum RenderJobError {

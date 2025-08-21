@@ -11,7 +11,7 @@ pub use gobs_gfx::{BlendMode, CullMode, Display, ImageUsage};
 pub use context::GfxContext;
 pub use data::{
     MaterialDataLayout, MaterialDataProp, ObjectDataLayout, ObjectDataProp, SceneData,
-    SceneDataLayout, SceneDataProp, TextureDataLayout, TextureDataProp, UniformBuffer,
+    SceneDataLayout, SceneDataProp, TextureDataLayout, TextureDataProp, UniformBuffer, UniformData,
     UniformLayout, UniformPropData,
 };
 pub use error::RenderError;

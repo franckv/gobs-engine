@@ -6,7 +6,7 @@ use gobs_gfx::{
 use gobs_render_graph::{GraphicsPipelineProperties, Pipeline, PipelineProperties};
 use gobs_render_low::{
     GfxContext, MaterialDataLayout, MaterialDataProp, ObjectDataLayout, TextureDataLayout,
-    TextureDataProp,
+    TextureDataProp, UniformData,
 };
 use gobs_resource::{
     geometry::VertexAttribute,

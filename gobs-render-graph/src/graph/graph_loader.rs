@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 use gobs_core::{ImageExtent2D, ImageFormat};
 use gobs_gfx::{ImageLayout, ImageUsage};
 use gobs_render_low::{
-    GfxContext, ObjectDataLayout, ObjectDataProp, SceneDataLayout, SceneDataProp,
+    GfxContext, ObjectDataLayout, ObjectDataProp, SceneDataLayout, SceneDataProp, UniformData,
 };
 use gobs_resource::{
     load::{self, AssetType},
@@ -105,12 +105,12 @@ impl GraphConfig {
     ) -> Option<Arc<dyn RenderPass>> {
         let pass = graph.passes.get(passname)?;
 
-        let mut scene_layout = SceneDataLayout::builder();
+        let mut scene_layout = SceneDataLayout::default();
         for prop in &pass.scene_layout {
             scene_layout = scene_layout.prop(*prop);
         }
 
-        let mut object_layout = ObjectDataLayout::builder();
+        let mut object_layout = ObjectDataLayout::default();
         for prop in &pass.object_layout {
             object_layout = object_layout.prop(*prop);
         }
@@ -125,8 +125,8 @@ impl GraphConfig {
             ctx,
             passname,
             pass.tag,
-            object_layout.build(),
-            scene_layout.build(),
+            object_layout,
+            scene_layout,
             pass.render_transparent,
             pass.render_opaque,
         );

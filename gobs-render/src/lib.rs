@@ -7,7 +7,7 @@ mod resources;
 pub use gobs_gfx::{BlendMode, CullMode, Display, ImageUsage};
 pub use gobs_render_low::{
     GfxContext, MaterialDataLayout, MaterialDataProp, ObjectDataLayout, ObjectDataProp,
-    RenderError, TextureDataLayout, TextureDataProp,
+    RenderError, TextureDataLayout, TextureDataProp, UniformData,
 };
 
 pub use batch::RenderBatch;

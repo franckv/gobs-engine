@@ -3,7 +3,10 @@ use serde::{Deserialize, Serialize};
 use gobs_core::{ImageExtent2D, Transform};
 use gobs_resource::entity::{camera::Camera, light::Light};
 
-use crate::data::{UniformLayout, UniformProp, UniformPropData};
+use crate::{
+    GfxContext, UniformData,
+    data::{UniformLayout, UniformProp, UniformPropData},
+};
 
 #[derive(Clone, Copy, Debug, Deserialize, Serialize)]
 pub enum SceneDataProp {
@@ -15,17 +18,51 @@ pub enum SceneDataProp {
     LightAmbientColor,
 }
 
+#[derive(Clone, Debug, Default)]
 pub struct SceneDataLayout {
     layout: Vec<SceneDataProp>,
     uniform_layout: UniformLayout,
 }
 
-impl SceneDataLayout {
-    pub fn builder() -> SceneDataLayoutBuilder {
-        SceneDataLayoutBuilder::new()
+impl UniformData<SceneDataProp, SceneData<'_>> for SceneDataLayout {
+    fn prop(mut self, prop: SceneDataProp) -> Self {
+        self.layout.push(prop);
+
+        match prop {
+            SceneDataProp::CameraPosition => {
+                self.uniform_layout = self
+                    .uniform_layout
+                    .prop("camera_position", UniformProp::Vec3F)
+            }
+            SceneDataProp::CameraViewProj => {
+                self.uniform_layout = self.uniform_layout.prop("view_proj", UniformProp::Mat4F)
+            }
+            SceneDataProp::CameraViewPort => {
+                self.uniform_layout = self.uniform_layout.prop("screen_size", UniformProp::Vec2F)
+            }
+            SceneDataProp::LightDirection => {
+                self.uniform_layout = self
+                    .uniform_layout
+                    .prop("light_direction", UniformProp::Vec3F)
+            }
+            SceneDataProp::LightColor => {
+                self.uniform_layout = self.uniform_layout.prop("light_color", UniformProp::Vec4F)
+            }
+            SceneDataProp::LightAmbientColor => {
+                self.uniform_layout = self
+                    .uniform_layout
+                    .prop("ambient_color", UniformProp::Vec4F)
+            }
+        }
+
+        self
     }
 
-    pub fn data(&self, scene_data: &SceneData) -> Vec<u8> {
+    fn uniform_layout(&self) -> &UniformLayout {
+        &self.uniform_layout
+    }
+
+    fn copy_data(&self, _ctx: &GfxContext, scene_data: &SceneData, buffer: &mut Vec<u8>) {
         let layout = self.uniform_layout();
 
         let mut props = Vec::new();
@@ -62,61 +99,11 @@ impl SceneDataLayout {
             }
         }
 
-        layout.data(&props)
+        layout.copy_data(&props, buffer)
     }
 
-    pub fn uniform_layout(&self) -> &UniformLayout {
-        &self.uniform_layout
-    }
-}
-
-pub struct SceneDataLayoutBuilder {
-    layout: Vec<SceneDataProp>,
-}
-
-impl SceneDataLayoutBuilder {
-    fn new() -> Self {
-        Self {
-            layout: Default::default(),
-        }
-    }
-
-    pub fn prop(mut self, prop: SceneDataProp) -> Self {
-        self.layout.push(prop);
-
-        self
-    }
-
-    pub fn build(self) -> SceneDataLayout {
-        let mut uniform_layout = UniformLayout::new();
-
-        for prop in &self.layout {
-            match prop {
-                SceneDataProp::CameraPosition => {
-                    uniform_layout = uniform_layout.prop("camera_position", UniformProp::Vec3F)
-                }
-                SceneDataProp::CameraViewProj => {
-                    uniform_layout = uniform_layout.prop("view_proj", UniformProp::Mat4F)
-                }
-                SceneDataProp::CameraViewPort => {
-                    uniform_layout = uniform_layout.prop("screen_size", UniformProp::Vec2F)
-                }
-                SceneDataProp::LightDirection => {
-                    uniform_layout = uniform_layout.prop("light_direction", UniformProp::Vec3F)
-                }
-                SceneDataProp::LightColor => {
-                    uniform_layout = uniform_layout.prop("light_color", UniformProp::Vec4F)
-                }
-                SceneDataProp::LightAmbientColor => {
-                    uniform_layout = uniform_layout.prop("ambient_color", UniformProp::Vec4F)
-                }
-            };
-        }
-
-        SceneDataLayout {
-            layout: self.layout,
-            uniform_layout,
-        }
+    fn is_empty(&self) -> bool {
+        self.layout.is_empty()
     }
 }
 

@@ -8,4 +8,4 @@ pub use material_data::{MaterialDataLayout, MaterialDataProp};
 pub use object_data::{ObjectDataLayout, ObjectDataProp};
 pub use scene_data::{SceneData, SceneDataLayout, SceneDataProp};
 pub use texture_data::{TextureDataLayout, TextureDataProp};
-pub use uniform::{UniformBuffer, UniformLayout, UniformProp, UniformPropData};
+pub use uniform::{UniformBuffer, UniformData, UniformLayout, UniformProp, UniformPropData};

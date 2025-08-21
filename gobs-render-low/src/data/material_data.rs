@@ -3,7 +3,10 @@ use gobs_gfx::{
 };
 use serde::{Deserialize, Serialize};
 
-use crate::data::{UniformLayout, UniformProp};
+use crate::{
+    GfxContext, UniformData,
+    data::{UniformLayout, UniformProp},
+};
 
 // TODO: Emissive, Specular, Opacity, Glossiness, ...
 #[derive(Clone, Copy, Debug, Deserialize, Serialize)]
@@ -20,38 +23,8 @@ pub struct MaterialDataLayout {
     uniform_layout: UniformLayout,
 }
 
-impl MaterialDataLayout {
-    pub fn data(&self) -> Vec<u8> {
-        let layout = self.uniform_layout();
-
-        let props = Vec::new();
-
-        for prop in &self.layout {
-            match prop {
-                MaterialDataProp::DiffuseColor => {}
-                MaterialDataProp::EmissionColor => {}
-                MaterialDataProp::SpecularColor => {}
-                MaterialDataProp::SpecularPower => {}
-            }
-        }
-
-        layout.data(&props)
-    }
-
-    pub fn bindings_layout(&self) -> GfxBindingGroupLayout {
-        GfxBindingGroupLayout::new(BindingGroupType::MaterialData)
-            .add_binding(DescriptorType::Uniform, DescriptorStage::Fragment)
-    }
-
-    pub fn uniform_layout(&self) -> &UniformLayout {
-        &self.uniform_layout
-    }
-
-    pub fn is_empty(&self) -> bool {
-        self.layout.is_empty()
-    }
-
-    pub fn prop(mut self, prop: MaterialDataProp) -> Self {
+impl UniformData<MaterialDataProp, ()> for MaterialDataLayout {
+    fn prop(mut self, prop: MaterialDataProp) -> Self {
         self.layout.push(prop);
 
         match prop {
@@ -73,8 +46,40 @@ impl MaterialDataLayout {
             MaterialDataProp::SpecularPower => {
                 self.uniform_layout = self.uniform_layout.prop("specular power", UniformProp::F32)
             }
-        };
+        }
 
         self
+    }
+
+    fn uniform_layout(&self) -> &UniformLayout {
+        &self.uniform_layout
+    }
+
+    fn copy_data(&self, _ctx: &GfxContext, _: &(), buffer: &mut Vec<u8>) {
+        let layout = self.uniform_layout();
+
+        let props = Vec::new();
+
+        for prop in &self.layout {
+            match prop {
+                MaterialDataProp::DiffuseColor => {}
+                MaterialDataProp::EmissionColor => {}
+                MaterialDataProp::SpecularColor => {}
+                MaterialDataProp::SpecularPower => {}
+            }
+        }
+
+        layout.copy_data(&props, buffer)
+    }
+
+    fn is_empty(&self) -> bool {
+        self.layout.is_empty()
+    }
+}
+
+impl MaterialDataLayout {
+    pub fn bindings_layout(&self) -> GfxBindingGroupLayout {
+        GfxBindingGroupLayout::new(BindingGroupType::MaterialData)
+            .add_binding(DescriptorType::Uniform, DescriptorStage::Fragment)
     }
 }

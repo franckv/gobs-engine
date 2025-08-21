@@ -6,7 +6,7 @@ use gobs_core::ImageFormat;
 use gobs_gfx::{
     BindingGroupType, CompareOp, CullMode, DescriptorStage, DescriptorType, FrontFace, PolygonMode,
 };
-use gobs_render_low::{GfxContext, ObjectDataLayout, ObjectDataProp};
+use gobs_render_low::{GfxContext, ObjectDataLayout, ObjectDataProp, UniformData};
 use gobs_resource::{
     geometry::VertexAttribute,
     load::{self, AssetType},
@@ -104,11 +104,10 @@ impl PipelinesConfig {
     ) -> Option<PipelineProperties> {
         let pipeline = config.pipelines.get(name)?;
 
-        let mut object_layout = ObjectDataLayout::builder();
+        let mut object_layout = ObjectDataLayout::default();
         for prop in &pipeline.object_layout {
             object_layout = object_layout.prop(*prop);
         }
-        let object_layout = object_layout.build();
 
         let mut props = PipelineProperties::graphics(name)
             .push_constants(object_layout.uniform_layout().size())

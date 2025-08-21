@@ -4,7 +4,7 @@ use gobs_core::{ImageExtent2D, logger};
 use gobs_gfx::{Command, GfxCommand, GfxPipeline, Pipeline};
 use gobs_render_low::{
     FrameData, GfxContext, ObjectDataLayout, RenderError, RenderJob, RenderObject, SceneData,
-    SceneDataLayout,
+    SceneDataLayout, UniformData,
 };
 use gobs_resource::geometry::VertexAttribute;
 
@@ -22,7 +22,6 @@ pub struct MaterialPass {
     input_attachments: Vec<String>,
     color_attachments: Vec<String>,
     depth_attachments: Vec<String>,
-    object_layout: ObjectDataLayout,
     scene_layout: SceneDataLayout,
     render_jobs: Vec<RenderJob>,
     fixed_pipeline: Option<Arc<GfxPipeline>>,
@@ -61,7 +60,6 @@ impl MaterialPass {
             input_attachments: vec![],
             color_attachments: vec![],
             depth_attachments: vec![],
-            object_layout,
             scene_layout,
             render_jobs,
             fixed_pipeline: None,
@@ -188,7 +186,9 @@ impl RenderPass for MaterialPass {
         let render_job = &self.render_jobs[frame.id];
 
         tracing::debug!(target: logger::RENDER, "Upload scene data");
-        let scene_data_bytes = self.scene_layout.data(scene_data);
+        let mut scene_data_bytes = Vec::new();
+        self.scene_layout
+            .copy_data(ctx, scene_data, &mut scene_data_bytes);
 
         tracing::debug!(target: logger::RENDER, "Update Uniform (scene data, push)");
         render_job.update_uniform(&scene_data_bytes);

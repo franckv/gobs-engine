@@ -1,5 +1,7 @@
 use gobs_gfx::{Buffer, BufferUsage, GfxBuffer, GfxDevice};
 
+use crate::GfxContext;
+
 pub struct UniformBuffer {
     pub buffer: GfxBuffer,
 }
@@ -14,6 +16,18 @@ impl UniformBuffer {
     pub fn update(&mut self, uniform_data: &[u8]) {
         self.buffer.copy(uniform_data, 0);
     }
+}
+
+pub trait UniformData<DataProp, Data> {
+    fn prop(self, prop: DataProp) -> Self
+    where
+        Self: Sized;
+
+    fn uniform_layout(&self) -> &UniformLayout;
+
+    fn copy_data(&self, ctx: &GfxContext, data: &Data, buffer: &mut Vec<u8>);
+
+    fn is_empty(&self) -> bool;
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Hash)]

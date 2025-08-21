@@ -4,7 +4,7 @@ use serde::Deserialize;
 
 use gobs_gfx::BlendMode;
 use gobs_render_low::{
-    GfxContext, MaterialDataProp, ObjectDataLayout, ObjectDataProp, TextureDataProp,
+    GfxContext, MaterialDataProp, ObjectDataLayout, ObjectDataProp, TextureDataProp, UniformData,
 };
 use gobs_resource::{
     geometry::VertexAttribute,
@@ -68,11 +68,10 @@ impl MaterialsConfig {
     }
 
     fn load_materials(&self, ctx: &GfxContext, resource_manager: &mut ResourceManager) {
-        let mut object_layout = ObjectDataLayout::builder();
+        let mut object_layout = ObjectDataLayout::default();
         for prop in &self.default.object_layout {
             object_layout = object_layout.prop(*prop);
         }
-        let object_layout = object_layout.build();
 
         for (name, material) in &self.materials {
             let mut props = MaterialProperties::new(
