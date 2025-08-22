@@ -3,7 +3,7 @@ use gobs_resource::resource::{ResourceHandle, ResourceProperties, ResourceType};
 
 use crate::resources::{Material, MaterialInstanceLoader, Texture};
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub struct MaterialInstance;
 
 impl ResourceType for MaterialInstance {

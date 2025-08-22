@@ -101,7 +101,7 @@ impl App {
                 &mut ctx.resource_manager,
                 ResourceLifetime::Static,
             )
-            .build(&mut ctx.resource_manager);
+            .build();
 
         let transform =
             Transform::new([0., 0., 0.].into(), Quat::IDENTITY, [300., 300., 1.].into());

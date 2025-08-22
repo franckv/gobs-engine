@@ -61,24 +61,24 @@ impl<D, F: ResourceFamily, A: Allocable<D, F>> Allocator<D, F, A> {
         while self.pool.contains(&family) {
             let resource = self.pool.pop(&family);
 
-            if let Some(resource) = resource {
-                if resource.resource_size() >= size {
-                    tracing::debug!(
-                        target: logger::RENDER,
-                        "Reuse resource {:?}, {} ({})",
-                        family,
-                        size,
-                        self.pool.get(&family).unwrap().len()
-                    );
+            if let Some(resource) = resource
+                && resource.resource_size() >= size
+            {
+                tracing::debug!(
+                    target: logger::RENDER,
+                    "Reuse resource {:?}, {} ({})",
+                    family,
+                    size,
+                    self.pool.get(&family).unwrap().len()
+                );
 
-                    let id = resource.resource_id();
-                    self.allocated.insert(id, resource);
+                let id = resource.resource_id();
+                self.allocated.insert(id, resource);
 
-                    return self
-                        .allocated
-                        .get_mut(&id)
-                        .ok_or(AllocationError::AllocationFailure);
-                }
+                return self
+                    .allocated
+                    .get_mut(&id)
+                    .ok_or(AllocationError::AllocationFailure);
             }
         }
 

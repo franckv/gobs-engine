@@ -14,7 +14,7 @@ use gobs_resource::{
 use crate::{MaterialInstance, model::Model};
 
 pub struct RenderBatch {
-    pub(crate) render_list: Vec<RenderObject>,
+    pub render_list: Vec<RenderObject>,
     vertex_padding: bool,
     bounding_geometry: Option<MeshBuilder>,
     bounding_pass: Option<RenderPass>,
@@ -85,7 +85,7 @@ impl RenderBatch {
         transform: Transform,
         pass: RenderPass,
     ) -> Result<(), ResourceError> {
-        tracing::debug!(target: logger::RENDER, "Add model: {}", model.meshes.len());
+        tracing::debug!(target: logger::RENDER, "Add model: {} to pass {}", model.name(), pass.name());
 
         // TODO: add material data for forward pass only
         for (mesh, material_instance) in &model.meshes {
@@ -124,6 +124,7 @@ impl RenderBatch {
 
                 (Some(pipeline_data.pipeline.clone()), blending_enabled)
             } else {
+                tracing::warn!("No material for model {}", model.name());
                 (None, false)
             };
 
@@ -145,8 +146,6 @@ impl RenderBatch {
                 indices_len: mesh_data.indices_len,
             });
         }
-
-        // self.render_stats.add_object(&render_object);
 
         Ok(())
     }
@@ -222,7 +221,7 @@ impl RenderBatch {
                     resource_manager,
                     ResourceLifetime::Transient,
                 )
-                .build(resource_manager);
+                .build();
 
             let pass = self.bounding_pass.take().unwrap();
 

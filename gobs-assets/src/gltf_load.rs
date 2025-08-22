@@ -94,7 +94,7 @@ impl GLTFLoader {
     ) {
         for m in doc.meshes() {
             let name = m.name().unwrap_or_default();
-            tracing::trace!(target: logger::RESOURCES,
+            tracing::debug!(target: logger::RESOURCES,
                 "Mesh #{}: {}, primitives: {}",
                 m.index(),
                 name,
@@ -104,17 +104,18 @@ impl GLTFLoader {
             let mut model = Model::builder(name);
 
             for p in m.primitives() {
-                tracing::trace!(target: logger::RESOURCES,
+                tracing::debug!(target: logger::RESOURCES,
                     "Primitive #{}, material {:?}",
                     p.index(),
                     p.material().index()
                 );
                 let material = match p.material().index() {
-                    Some(mat_idx) => self.material_manager.instances[mat_idx].clone(),
-                    None => self.material_manager.default_material_instance.clone(),
+                    Some(mat_idx) => self.material_manager.instances[mat_idx],
+                    None => self.material_manager.default_material_instance,
                 };
 
-                let mut mesh_data = MeshGeometry::builder(name);
+                let name = format!("{}.{}", &name, p.index());
+                let mut mesh_data = MeshGeometry::builder(&name);
 
                 let reader = p.reader(|buffer| Some(&buffers[buffer.index()]));
 
@@ -200,7 +201,7 @@ impl GLTFLoader {
                 );
             }
 
-            self.models.push(model.build(resource_manager));
+            self.models.push(model.build());
         }
 
         tracing::debug!(target: logger::RESOURCES, "{} models loaded", self.models.len());
@@ -242,10 +243,10 @@ impl GLTFLoader {
 
             let mut ty = TextureType::Diffuse;
             for mat in doc.materials() {
-                if let Some(normal) = mat.normal_texture() {
-                    if normal.texture().index() == t.index() {
-                        ty = TextureType::Normal;
-                    }
+                if let Some(normal) = mat.normal_texture()
+                    && normal.texture().index() == t.index()
+                {
+                    ty = TextureType::Normal;
                 }
             }
 
@@ -280,6 +281,27 @@ impl GLTFLoader {
                         if i % 3 == 2 {
                             pixels.push(255);
                         }
+                    }
+
+                    let mut properties = TextureProperties::with_data(
+                        &name,
+                        pixels,
+                        ImageExtent2D::new(data.width, data.height),
+                    );
+                    properties.format.mag_filter = mag_filter;
+                    properties.format.min_filter = min_filter;
+
+                    let handle = resource_manager.add(properties, ResourceLifetime::Static);
+
+                    self.material_manager.add_texture(handle);
+                }
+                image::Format::R8 => {
+                    let mut pixels = vec![];
+                    for pixel in &data.pixels {
+                        pixels.push(*pixel);
+                        pixels.push(0);
+                        pixels.push(0);
+                        pixels.push(255);
                     }
 
                     let mut properties = TextureProperties::with_data(
@@ -369,6 +391,6 @@ impl GLTFLoader {
             }
         }
 
-        tracing::trace!(target: logger::RESOURCES, "{} materials loaded", self.material_manager.instances.len());
+        tracing::debug!(target: logger::RESOURCES, "{} materials loaded", self.material_manager.instances.len());
     }
 }

@@ -182,7 +182,7 @@ impl App {
                 &mut ctx.resource_manager,
                 ResourceLifetime::Static,
             )
-            .build(&mut ctx.resource_manager);
+            .build();
 
         let graph = &mut self.scene.graph;
 

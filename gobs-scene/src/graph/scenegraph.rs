@@ -147,10 +147,10 @@ impl SceneGraph {
             None => None,
         };
 
-        if let Some(parent_node) = self.get_mut(parent) {
-            if let Some(node) = node {
-                parent_node.base.children.push(node);
-            }
+        if let Some(parent_node) = self.get_mut(parent)
+            && let Some(node) = node
+        {
+            parent_node.base.children.push(node);
         }
 
         node
@@ -193,13 +193,13 @@ impl SceneGraph {
     where
         F: FnMut(&Node) -> Result<(), ResourceError>,
     {
-        if let Some(node) = self.get(root) {
-            if node.base.enabled {
-                for &child in &node.base.children {
-                    self.visit_local(child, f)?;
-                }
-                f(node)?;
+        if let Some(node) = self.get(root)
+            && node.base.enabled
+        {
+            for &child in &node.base.children {
+                self.visit_local(child, f)?;
             }
+            f(node)?;
         }
 
         Ok(())

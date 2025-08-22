@@ -118,7 +118,7 @@ impl App {
     }
 
     fn load_scene(&self, ctx: &mut GameContext) -> SceneGraph {
-        let file_name = load::get_asset_dir("house2.glb", load::AssetType::MODEL).unwrap();
+        let file_name = load::get_asset_dir(examples::GLTF_MODEL, load::AssetType::MODEL).unwrap();
 
         let mut gltf_loader =
             gltf_load::GLTFLoader::new(&mut ctx.renderer.gfx, &mut ctx.resource_manager).unwrap();

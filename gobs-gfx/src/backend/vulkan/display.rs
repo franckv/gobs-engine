@@ -109,28 +109,28 @@ impl Display<VkRenderer> for VkDisplay {
     }
 
     fn resize(&mut self, device: &VkDevice) {
-        if let Some(swapchain) = &self.swapchain {
-            if let Some(surface) = &self.surface {
-                let extent = surface.get_extent(&device.device);
-                if extent.width == 0 || extent.height == 0 {
-                    return;
-                }
-
-                let swapchain = vk::swapchain::SwapChain::new(
-                    device.device.clone(),
-                    surface.clone(),
-                    swapchain.format,
-                    swapchain.present,
-                    swapchain.image_count,
-                    Some(swapchain),
-                );
-                self.swapchain_images = swapchain
-                    .create_images(&device.device)
-                    .into_iter()
-                    .map(VkImage::from_raw)
-                    .collect();
-                self.swapchain = Some(swapchain);
+        if let Some(swapchain) = &self.swapchain
+            && let Some(surface) = &self.surface
+        {
+            let extent = surface.get_extent(&device.device);
+            if extent.width == 0 || extent.height == 0 {
+                return;
             }
+
+            let swapchain = vk::swapchain::SwapChain::new(
+                device.device.clone(),
+                surface.clone(),
+                swapchain.format,
+                swapchain.present,
+                swapchain.image_count,
+                Some(swapchain),
+            );
+            self.swapchain_images = swapchain
+                .create_images(&device.device)
+                .into_iter()
+                .map(VkImage::from_raw)
+                .collect();
+            self.swapchain = Some(swapchain);
         }
     }
 

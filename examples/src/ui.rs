@@ -1,17 +1,18 @@
 use glam::Vec3;
 
 use gobs::{
+    core::Transform,
     game::context::GameContext,
-    render::{Material, Mesh, Texture},
+    render::{Material, MaterialInstance, Mesh, RenderBatch, Texture},
     render_graph::{FrameGraph, Pipeline},
     render_low::FrameData,
     resource::{
         manager::ResourceManager,
-        resource::{ResourceProperties, ResourceType},
+        resource::{ResourceHandle, ResourceProperties, ResourceType},
     },
     scene::{
         components::{NodeId, NodeValue},
-        graph::scenegraph::SceneGraph,
+        graph::{node::Node, scenegraph::SceneGraph},
         scene::Scene,
     },
 };
@@ -21,8 +22,13 @@ pub struct Ui {
     pub show_light: bool,
     pub show_models: bool,
     pub show_resources: bool,
+    pub show_batch: bool,
     pub ui_hovered: bool,
     pub selected_node: NodeId,
+    pub selected_mesh: (
+        Option<ResourceHandle<Mesh>>,
+        Option<ResourceHandle<MaterialInstance>>,
+    ),
 }
 
 impl Ui {
@@ -32,8 +38,10 @@ impl Ui {
             show_light: true,
             show_models: true,
             show_resources: false,
+            show_batch: false,
             ui_hovered: false,
             selected_node: NodeId::default(),
+            selected_mesh: (None, None),
         }
     }
 
@@ -44,16 +52,18 @@ impl Ui {
         scene: &mut Scene,
         delta: f32,
     ) {
-        egui::SidePanel::left("left").show(ectx, |ui| {
-            ectx.style_mut(|s| {
-                for (_, id) in s.text_styles.iter_mut() {
-                    id.size = 16.;
-                }
-            });
+        ectx.style_mut(|s| {
+            for (_, id) in s.text_styles.iter_mut() {
+                id.size = 14.;
+            }
+        });
 
+        egui::SidePanel::left("left").show(ectx, |ui| {
             ui.heading(&ctx.app_info.name);
 
-            self.show_resources(ectx, ui, &mut ctx.resource_manager);
+            self.show_resources(ectx, ui, &ctx.resource_manager);
+
+            self.show_batch(ectx, ui, &ctx.renderer.batch);
 
             self.draw_general(ui, scene, (1. / delta).round() as u32);
 
@@ -70,11 +80,14 @@ impl Ui {
             self.draw_camera(ui, scene);
 
             ui.separator();
-
-            self.draw_properties(ui, &mut scene.graph);
-
-            ui.separator();
         });
+
+        if self.selected_node != NodeId::default() {
+            egui::SidePanel::right("right").show(ectx, |ui| {
+                self.draw_properties(ui, &mut scene.graph, &ctx.resource_manager);
+                ui.separator();
+            });
+        }
 
         self.ui_hovered = ectx.wants_pointer_input();
     }
@@ -83,7 +96,7 @@ impl Ui {
         &mut self,
         ectx: &egui::Context,
         ui: &mut egui::Ui,
-        resource_manager: &mut ResourceManager,
+        resource_manager: &ResourceManager,
     ) {
         if ui.button("Show resources").clicked() {
             self.show_resources = true;
@@ -98,6 +111,11 @@ impl Ui {
                     self.show_resource::<Texture>(ui, "Textures", resource_manager);
                     self.show_resource::<Pipeline>(ui, "Pipelines", resource_manager);
                     self.show_resource::<Material>(ui, "Materials", resource_manager);
+                    self.show_resource::<MaterialInstance>(
+                        ui,
+                        "Material instances",
+                        resource_manager,
+                    );
                     self.show_resource::<Mesh>(ui, "Meshes", resource_manager);
                 });
             });
@@ -105,11 +123,31 @@ impl Ui {
         self.show_resources = show_resources;
     }
 
+    pub fn show_batch(&mut self, ectx: &egui::Context, ui: &mut egui::Ui, batch: &RenderBatch) {
+        if ui.button("Show batch").clicked() {
+            self.show_batch = true;
+        }
+
+        let mut show_batch = self.show_batch;
+
+        egui::Window::new("Batch")
+            .open(&mut show_batch)
+            .show(ectx, |ui| {
+                egui::ScrollArea::vertical().show(ui, |ui| {
+                    for object in &batch.render_list {
+                        ui.label(format!(" {:?}", object.model_id));
+                    }
+                });
+            });
+
+        self.show_batch = show_batch;
+    }
+
     fn show_resource<R: ResourceType + 'static>(
         &mut self,
         ui: &mut egui::Ui,
         label: &str,
-        resource_manager: &mut ResourceManager,
+        resource_manager: &ResourceManager,
     ) {
         egui::CollapsingHeader::new(label)
             .default_open(true)
@@ -245,9 +283,201 @@ impl Ui {
             });
     }
 
-    pub fn draw_properties(&mut self, ui: &mut egui::Ui, graph: &mut SceneGraph) {
-        let speed = 0.05;
+    const SPEED: f64 = 0.05;
 
+    fn draw_transform(&mut self, ui: &mut egui::Ui, transform: &mut Transform, update: bool) {
+        ui.horizontal(|ui| {
+            let mut translation = transform.translation();
+            ui.label("Translation");
+            ui.label("x: ");
+            ui.add(egui::DragValue::new(&mut translation.x).speed(Self::SPEED));
+            ui.label("y: ");
+            ui.add(egui::DragValue::new(&mut translation.y).speed(Self::SPEED));
+            ui.label("z: ");
+            ui.add(egui::DragValue::new(&mut translation.z).speed(Self::SPEED));
+            if update {
+                transform.set_translation(translation);
+            }
+        });
+
+        ui.horizontal(|ui| {
+            let mut rotation = transform.rotation();
+            ui.label("Rotation     ");
+            ui.label("x: ");
+            ui.add(egui::DragValue::new(&mut rotation.x).speed(Self::SPEED));
+            ui.label("y: ");
+            ui.add(egui::DragValue::new(&mut rotation.y).speed(Self::SPEED));
+            ui.label("z: ");
+            ui.add(egui::DragValue::new(&mut rotation.z).speed(Self::SPEED));
+            ui.label("w: ");
+            ui.add(egui::DragValue::new(&mut rotation.w).speed(Self::SPEED));
+            if update {
+                transform.set_rotation(rotation);
+            }
+        });
+
+        ui.horizontal(|ui| {
+            let mut scaling = transform.scaling();
+            ui.label("Scaling        ");
+            ui.label("x: ");
+            ui.add(egui::DragValue::new(&mut scaling.x).speed(Self::SPEED));
+            ui.label("y: ");
+            ui.add(egui::DragValue::new(&mut scaling.y).speed(Self::SPEED));
+            ui.label("z: ");
+            ui.add(egui::DragValue::new(&mut scaling.z).speed(Self::SPEED));
+            if update {
+                transform.set_scaling(scaling);
+            }
+        });
+    }
+
+    fn draw_local_properties(&mut self, ui: &mut egui::Ui, node: &mut Node) {
+        egui::CollapsingHeader::new("Local")
+            .default_open(true)
+            .show(ui, |ui| {
+                node.update_transform(|transform| {
+                    self.draw_transform(ui, transform, true);
+
+                    true
+                });
+
+                ui.label("");
+            });
+    }
+
+    fn draw_global_properties(&mut self, ui: &mut egui::Ui, node: &mut Node) {
+        egui::CollapsingHeader::new("Global")
+            .default_open(true)
+            .show(ui, |ui| {
+                let global = node.global_transform();
+                self.draw_transform(ui, &mut global.clone(), false);
+
+                ui.label("");
+            });
+    }
+
+    fn draw_aabb(&mut self, ui: &mut egui::Ui, node: &mut Node) {
+        egui::CollapsingHeader::new("AABB")
+            .default_open(true)
+            .show(ui, |ui| {
+                ui.horizontal(|ui| {
+                    ui.label("x min: ");
+                    ui.add(
+                        egui::DragValue::new(&mut node.bounding.bounding_box.x_min)
+                            .speed(Self::SPEED),
+                    );
+                    ui.label("y min: ");
+                    ui.add(
+                        egui::DragValue::new(&mut node.bounding.bounding_box.y_min)
+                            .speed(Self::SPEED),
+                    );
+                    ui.label("z min: ");
+                    ui.add(
+                        egui::DragValue::new(&mut node.bounding.bounding_box.z_min)
+                            .speed(Self::SPEED),
+                    );
+                });
+                ui.horizontal(|ui| {
+                    ui.label("x max: ");
+                    ui.add(
+                        egui::DragValue::new(&mut node.bounding.bounding_box.x_max)
+                            .speed(Self::SPEED),
+                    );
+                    ui.label("y max: ");
+                    ui.add(
+                        egui::DragValue::new(&mut node.bounding.bounding_box.y_max)
+                            .speed(Self::SPEED),
+                    );
+                    ui.label("z max: ");
+                    ui.add(
+                        egui::DragValue::new(&mut node.bounding.bounding_box.z_max)
+                            .speed(Self::SPEED),
+                    );
+                });
+                ui.label("");
+            });
+    }
+
+    fn draw_mesh(&mut self, ui: &mut egui::Ui, resource_manager: &ResourceManager) {
+        let (mesh, _) = &self.selected_mesh;
+
+        if let Some(mesh) = mesh {
+            let mesh_props = &resource_manager.get(mesh).properties;
+            egui::CollapsingHeader::new("Mesh")
+                .default_open(true)
+                .show(ui, |ui| {
+                    ui.label(format!("Name: {}", mesh_props.name()));
+                    ui.label(format!("Id: {}", mesh.id));
+                });
+        }
+    }
+
+    fn draw_material(&mut self, ui: &mut egui::Ui, resource_manager: &ResourceManager) {
+        let (_, material) = &self.selected_mesh;
+        if let Some(material) = material {
+            let mat_instance_props = &resource_manager.get(material).properties;
+            let mat_props = &resource_manager
+                .get(&mat_instance_props.material)
+                .properties;
+
+            egui::CollapsingHeader::new("Material")
+                .default_open(true)
+                .show(ui, |ui| {
+                    ui.label(format!("Material instance: {}", mat_instance_props.name(),));
+                    ui.label(format!("Material: {}", mat_props.name(),));
+                    ui.label(format!("Id: {}", material.id));
+
+                    if !mat_instance_props.textures.is_empty() {
+                        ui.label("Textures:");
+                    }
+                    for texture in &mat_instance_props.textures {
+                        let texture_props = &resource_manager.get(texture).properties;
+
+                        ui.label(format!("Name: {}", texture_props.name(),));
+                        ui.label(format!("Id: {}", texture.id));
+                    }
+                });
+        }
+    }
+
+    fn draw_model(
+        &mut self,
+        ui: &mut egui::Ui,
+        node: &mut Node,
+        resource_manager: &ResourceManager,
+    ) {
+        if let NodeValue::Model(model) = &node.base.value {
+            egui::CollapsingHeader::new("Model")
+                .default_open(true)
+                .show(ui, |ui| {
+                    ui.label(format!("Name: {}", model.name()));
+                    ui.label(format!("Id: {}", model.id));
+                    ui.label(format!("# Meshes: {}", model.meshes.len()));
+                    for (mesh, material) in &model.meshes {
+                        ui.selectable_value(
+                            &mut self.selected_mesh,
+                            (Some(*mesh), *material),
+                            mesh.id.to_string(),
+                        );
+                    }
+                    ui.label("");
+
+                    if self.selected_mesh.0.is_some() {
+                        self.draw_mesh(ui, resource_manager);
+                        ui.label("");
+                        self.draw_material(ui, resource_manager);
+                        ui.label("");
+                    }
+                });
+        }
+    }
+
+    fn draw_properties(
+        &mut self,
+        ui: &mut egui::Ui,
+        graph: &mut SceneGraph,
+        resource_manager: &ResourceManager,
+    ) {
         graph.update(self.selected_node, |node| {
             let node_name = match &node.base.value {
                 NodeValue::None => "None",
@@ -259,138 +489,19 @@ impl Ui {
             egui::CollapsingHeader::new("Properties")
                 .default_open(true)
                 .show(ui, |ui| {
-                    ui.label(node_name.to_string());
+                    ui.label(format!("Type: {}", node_name));
 
-                    egui::CollapsingHeader::new("Local")
-                        .default_open(true)
-                        .show(ui, |ui| {
-                            node.update_transform(|transform| {
-                                ui.horizontal(|ui| {
-                                    let mut translation = transform.translation();
-                                    ui.label("Translation");
-                                    ui.label("x: ");
-                                    ui.add(egui::DragValue::new(&mut translation.x).speed(speed));
-                                    ui.label("y: ");
-                                    ui.add(egui::DragValue::new(&mut translation.y).speed(speed));
-                                    ui.label("z: ");
-                                    ui.add(egui::DragValue::new(&mut translation.z).speed(speed));
-                                    transform.set_translation(translation);
-                                });
-
-                                ui.horizontal(|ui| {
-                                    let mut rotation = transform.rotation();
-                                    ui.label("Rotation     ");
-                                    ui.label("x: ");
-                                    ui.add(egui::DragValue::new(&mut rotation.x).speed(speed));
-                                    ui.label("y: ");
-                                    ui.add(egui::DragValue::new(&mut rotation.y).speed(speed));
-                                    ui.label("z: ");
-                                    ui.add(egui::DragValue::new(&mut rotation.z).speed(speed));
-                                    ui.label("w: ");
-                                    ui.add(egui::DragValue::new(&mut rotation.w).speed(speed));
-                                    transform.set_rotation(rotation);
-                                });
-
-                                ui.horizontal(|ui| {
-                                    let mut scaling = transform.scaling();
-                                    ui.label("Scaling        ");
-                                    ui.label("x: ");
-                                    ui.add(egui::DragValue::new(&mut scaling.x).speed(speed));
-                                    ui.label("y: ");
-                                    ui.add(egui::DragValue::new(&mut scaling.y).speed(speed));
-                                    ui.label("z: ");
-                                    ui.add(egui::DragValue::new(&mut scaling.z).speed(speed));
-                                    transform.set_scaling(scaling);
-                                });
-
-                                true
-                            });
-
-                            ui.label("");
-                        });
-
-                    egui::CollapsingHeader::new("Global")
-                        .default_open(true)
-                        .show(ui, |ui| {
-                            let global = node.global_transform();
-                            ui.horizontal(|ui| {
-                                let mut translation = global.translation();
-                                ui.label("Translation");
-                                ui.label("x: ");
-                                ui.add(egui::DragValue::new(&mut translation.x).speed(speed));
-                                ui.label("y: ");
-                                ui.add(egui::DragValue::new(&mut translation.y).speed(speed));
-                                ui.label("z: ");
-                                ui.add(egui::DragValue::new(&mut translation.z).speed(speed));
-                            });
-                            ui.horizontal(|ui| {
-                                let mut rotation = global.rotation();
-                                ui.label("Rotation     ");
-                                ui.label("x: ");
-                                ui.add(egui::DragValue::new(&mut rotation.x).speed(speed));
-                                ui.label("y: ");
-                                ui.add(egui::DragValue::new(&mut rotation.y).speed(speed));
-                                ui.label("z: ");
-                                ui.add(egui::DragValue::new(&mut rotation.z).speed(speed));
-                                ui.label("w: ");
-                                ui.add(egui::DragValue::new(&mut rotation.w).speed(speed));
-                            });
-                            ui.horizontal(|ui| {
-                                let mut scaling = global.scaling();
-                                ui.label("Scaling        ");
-                                ui.label("x: ");
-                                ui.add(egui::DragValue::new(&mut scaling.x).speed(speed));
-                                ui.label("y: ");
-                                ui.add(egui::DragValue::new(&mut scaling.y).speed(speed));
-                                ui.label("z: ");
-                                ui.add(egui::DragValue::new(&mut scaling.z).speed(speed));
-                            });
-
-                            ui.label("");
-                        });
-
-                    egui::CollapsingHeader::new("AABB")
-                        .default_open(true)
-                        .show(ui, |ui| {
-                            ui.horizontal(|ui| {
-                                ui.label("x min: ");
-                                ui.add(
-                                    egui::DragValue::new(&mut node.bounding.bounding_box.x_min)
-                                        .speed(speed),
-                                );
-                                ui.label("y min: ");
-                                ui.add(
-                                    egui::DragValue::new(&mut node.bounding.bounding_box.y_min)
-                                        .speed(speed),
-                                );
-                                ui.label("z min: ");
-                                ui.add(
-                                    egui::DragValue::new(&mut node.bounding.bounding_box.z_min)
-                                        .speed(speed),
-                                );
-                            });
-                            ui.horizontal(|ui| {
-                                ui.label("x max: ");
-                                ui.add(
-                                    egui::DragValue::new(&mut node.bounding.bounding_box.x_max)
-                                        .speed(speed),
-                                );
-                                ui.label("y max: ");
-                                ui.add(
-                                    egui::DragValue::new(&mut node.bounding.bounding_box.y_max)
-                                        .speed(speed),
-                                );
-                                ui.label("z max: ");
-                                ui.add(
-                                    egui::DragValue::new(&mut node.bounding.bounding_box.z_max)
-                                        .speed(speed),
-                                );
-                            });
-                            ui.label("");
-                        });
+                    self.draw_local_properties(ui, node);
+                    self.draw_global_properties(ui, node);
+                    self.draw_aabb(ui, node);
+                    self.draw_model(ui, node, resource_manager);
 
                     ui.checkbox(&mut node.base.enabled, "enabled");
                     ui.checkbox(&mut node.base.selected, "selected");
+
+                    if !node.base.selected {
+                        self.selected_node = NodeId::default();
+                    }
                 });
 
             true
@@ -399,7 +510,7 @@ impl Ui {
 
     fn draw_frame(&self, ui: &mut egui::Ui, graph: &FrameGraph, frame: &FrameData) {
         egui::CollapsingHeader::new("Stats")
-            .default_open(true)
+            .default_open(false)
             .show(ui, |ui| {
                 egui::CollapsingHeader::new("Global")
                     .default_open(true)

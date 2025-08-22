@@ -29,6 +29,10 @@ pub struct Model {
 }
 
 impl Model {
+    pub fn name(&self) -> &str {
+        &self.name
+    }
+
     pub fn builder(name: &str) -> ModelBuilder {
         ModelBuilder::new(name)
     }
@@ -48,6 +52,8 @@ impl Renderable for Arc<Model> {
     ) -> Result<(), ResourceError> {
         if let Some(transform) = transform {
             batch.add_model(resource_manager, self.clone(), transform, pass.clone())?;
+        } else {
+            tracing::warn!("No transform");
         }
 
         Ok(())
@@ -107,8 +113,7 @@ impl ModelBuilder {
     ) -> Self {
         self.bounding_box.extends_box(mesh.boundings());
 
-        let mesh_handle =
-            resource_manager.add(MeshProperties::with_geometry("mesh", mesh), lifetime);
+        let mesh_handle = resource_manager.add(MeshProperties::with_geometry(mesh), lifetime);
 
         if let Some(material_instance) = material_instance {
             self.meshes.push((mesh_handle, Some(material_instance)));
@@ -119,7 +124,9 @@ impl ModelBuilder {
         self
     }
 
-    pub fn build(self, _resource_manager: &mut ResourceManager) -> Arc<Model> {
+    pub fn build(self) -> Arc<Model> {
+        tracing::debug!(target: logger::RESOURCES, "Load model {} ({} meshes)", self.name, self.meshes.len());
+
         Arc::new(Model {
             name: self.name,
             id: self.id,

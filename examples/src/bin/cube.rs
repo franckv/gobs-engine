@@ -168,7 +168,7 @@ impl App {
                 &mut ctx.resource_manager,
                 ResourceLifetime::Static,
             )
-            .build(&mut ctx.resource_manager);
+            .build();
 
         let transform = Transform::new([0., 0., -2.].into(), Quat::IDENTITY, Vec3::splat(1.));
         self.scene

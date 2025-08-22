@@ -171,11 +171,11 @@ impl App {
                     1.,
                     ctx.renderer.gfx.vertex_padding,
                 ),
-                Some(material_instance.clone()),
+                Some(material_instance),
                 &mut ctx.resource_manager,
                 ResourceLifetime::Static,
             )
-            .build(&mut ctx.resource_manager);
+            .build();
 
         let floor = Model::builder("floor")
             .mesh(
@@ -186,11 +186,11 @@ impl App {
                     1.,
                     ctx.renderer.gfx.vertex_padding,
                 ),
-                Some(material_instance.clone()),
+                Some(material_instance),
                 &mut ctx.resource_manager,
                 ResourceLifetime::Static,
             )
-            .build(&mut ctx.resource_manager);
+            .build();
 
         let offset = 16.;
 

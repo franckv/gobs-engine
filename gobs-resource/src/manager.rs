@@ -32,16 +32,25 @@ impl ResourceRegistry {
         properties: R::ResourceProperties,
         lifetime: ResourceLifetime,
     ) -> ResourceHandle<R> {
+        self.add_or_replace(properties, lifetime, false)
+    }
+
+    fn add_or_replace<R: ResourceType + 'static>(
+        &mut self,
+        properties: R::ResourceProperties,
+        lifetime: ResourceLifetime,
+        replace: bool,
+    ) -> ResourceHandle<R> {
         let name = properties.name().to_string();
         let resource = Resource::<R>::new(properties, lifetime);
 
         let handle = resource.handle;
 
-        tracing::trace!(target: logger::RESOURCES, "New resource: {:?}", handle.id);
+        tracing::debug!(target: logger::RESOURCES, "New resource: {} ({}): {:?}", &name, std::any::type_name::<R>(), handle.id);
 
         self.registry.insert(handle.id, resource);
-        if self.labels.insert::<R>(name, handle.id).is_some() {
-            tracing::debug!(target: logger::RESOURCES, "Replace resource: {}: {:?}", std::any::type_name::<R>(), handle.id);
+        if !replace && self.labels.insert::<R>(name.clone(), handle.id).is_some() {
+            tracing::debug!(target: logger::RESOURCES, "Replace resource: {} ({}): {:?}", &name, std::any::type_name::<R>(), handle.id);
         }
 
         handle
@@ -67,7 +76,7 @@ impl ResourceRegistry {
         old_resource.life = 0;
         old_resource.lifetime = ResourceLifetime::Transient;
 
-        self.add(properties, lifetime)
+        self.add_or_replace(properties, lifetime, true)
     }
 
     pub fn get_by_name<R: ResourceType + 'static>(&self, name: &str) -> Option<ResourceHandle<R>> {
@@ -140,7 +149,7 @@ impl ResourceManager {
         self.registry.get_by_name(name)
     }
 
-    pub fn get<R: ResourceType + 'static>(&mut self, handle: &ResourceHandle<R>) -> &Resource<R> {
+    pub fn get<R: ResourceType + 'static>(&self, handle: &ResourceHandle<R>) -> &Resource<R> {
         self.registry.get(handle)
     }
 

@@ -69,97 +69,97 @@ where
         _window_id: winit::window::WindowId,
         event: winit::event::WindowEvent,
     ) {
-        if let Some(runnable) = &mut self.runnable {
-            if let Some(context) = &mut self.context {
-                tracing::trace!(target: logger::EVENTS, "evt={:?}", event);
+        if let Some(runnable) = &mut self.runnable
+            && let Some(context) = &mut self.context
+        {
+            tracing::trace!(target: logger::EVENTS, "evt={:?}", event);
 
-                match event {
-                    WindowEvent::CloseRequested => {
+            match event {
+                WindowEvent::CloseRequested => {
+                    tracing::info!(target: logger::EVENTS, "Stopping");
+                    self.close_requested = true;
+                }
+                WindowEvent::Resized(physical_size) => {
+                    tracing::trace!(target: logger::EVENTS,
+                        "Resize to : {}/{}",
+                        physical_size.width,
+                        physical_size.height
+                    );
+                    context.resize(physical_size.width, physical_size.height);
+                    runnable.resize(context, physical_size.width, physical_size.height);
+                }
+                WindowEvent::KeyboardInput {
+                    event:
+                        KeyEvent {
+                            logical_key: key_code,
+                            state,
+                            ..
+                        },
+                    ..
+                } => match key_code {
+                    keyboard::Key::Named(NamedKey::Escape) => {
                         tracing::info!(target: logger::EVENTS, "Stopping");
                         self.close_requested = true;
                     }
-                    WindowEvent::Resized(physical_size) => {
-                        tracing::trace!(target: logger::EVENTS,
-                            "Resize to : {}/{}",
-                            physical_size.width,
-                            physical_size.height
-                        );
-                        context.resize(physical_size.width, physical_size.height);
-                        runnable.resize(context, physical_size.width, physical_size.height);
-                    }
-                    WindowEvent::KeyboardInput {
-                        event:
-                            KeyEvent {
-                                logical_key: key_code,
-                                state,
-                                ..
-                            },
-                        ..
-                    } => match key_code {
-                        keyboard::Key::Named(NamedKey::Escape) => {
-                            tracing::info!(target: logger::EVENTS, "Stopping");
-                            self.close_requested = true;
-                        }
-                        _ => {
-                            let key = key_code.into();
-                            match state {
-                                ElementState::Pressed => {
-                                    runnable.input(context, Input::KeyPressed(key))
-                                }
-                                ElementState::Released => {
-                                    runnable.input(context, Input::KeyReleased(key))
-                                }
+                    _ => {
+                        let key = key_code.into();
+                        match state {
+                            ElementState::Pressed => {
+                                runnable.input(context, Input::KeyPressed(key))
                             }
-                        }
-                    },
-                    WindowEvent::CursorMoved { position, .. } => {
-                        runnable.input(context, Input::CursorMoved(position.x, position.y));
-                    }
-                    WindowEvent::MouseWheel { delta, .. } => {
-                        let delta = match delta {
-                            MouseScrollDelta::LineDelta(_, scroll) => scroll * 100.,
-                            MouseScrollDelta::PixelDelta(PhysicalPosition {
-                                y: scroll, ..
-                            }) => scroll as f32,
-                        };
-                        runnable.input(context, Input::MouseWheel(delta));
-                    }
-                    WindowEvent::MouseInput { button, state, .. } => match state {
-                        ElementState::Pressed => {
-                            runnable.input(context, Input::MousePressed(button.into()))
-                        }
-                        ElementState::Released => {
-                            runnable.input(context, Input::MouseReleased(button.into()))
-                        }
-                    },
-                    WindowEvent::RedrawRequested => {
-                        let delta = self.timer.delta();
-
-                        if !self.close_requested {
-                            context.update(delta);
-                            runnable.update(context, delta);
-                            tracing::trace!(target: logger::EVENTS, "[Redraw] FPS: {}", 1. / delta);
-                            if !context.renderer.gfx.display.is_minimized() {
-                                if self.is_minimized {
-                                    self.is_minimized = false;
-                                    context
-                                        .renderer
-                                        .gfx
-                                        .display
-                                        .resize(&context.renderer.gfx.device);
-                                }
-                                match runnable.render(context) {
-                                    Ok(_) => {}
-                                    Err(RenderError::Lost | RenderError::Outdated) => {}
-                                    Err(e) => tracing::error!(target: logger::EVENTS, "{:?}", e),
-                                }
-                            } else {
-                                self.is_minimized = true;
+                            ElementState::Released => {
+                                runnable.input(context, Input::KeyReleased(key))
                             }
                         }
                     }
-                    _ => (),
+                },
+                WindowEvent::CursorMoved { position, .. } => {
+                    runnable.input(context, Input::CursorMoved(position.x, position.y));
                 }
+                WindowEvent::MouseWheel { delta, .. } => {
+                    let delta = match delta {
+                        MouseScrollDelta::LineDelta(_, scroll) => scroll * 100.,
+                        MouseScrollDelta::PixelDelta(PhysicalPosition { y: scroll, .. }) => {
+                            scroll as f32
+                        }
+                    };
+                    runnable.input(context, Input::MouseWheel(delta));
+                }
+                WindowEvent::MouseInput { button, state, .. } => match state {
+                    ElementState::Pressed => {
+                        runnable.input(context, Input::MousePressed(button.into()))
+                    }
+                    ElementState::Released => {
+                        runnable.input(context, Input::MouseReleased(button.into()))
+                    }
+                },
+                WindowEvent::RedrawRequested => {
+                    let delta = self.timer.delta();
+
+                    if !self.close_requested {
+                        context.update(delta);
+                        runnable.update(context, delta);
+                        tracing::trace!(target: logger::EVENTS, "[Redraw] FPS: {}", 1. / delta);
+                        if !context.renderer.gfx.display.is_minimized() {
+                            if self.is_minimized {
+                                self.is_minimized = false;
+                                context
+                                    .renderer
+                                    .gfx
+                                    .display
+                                    .resize(&context.renderer.gfx.device);
+                            }
+                            match runnable.render(context) {
+                                Ok(_) => {}
+                                Err(RenderError::Lost | RenderError::Outdated) => {}
+                                Err(e) => tracing::error!(target: logger::EVENTS, "{:?}", e),
+                            }
+                        } else {
+                            self.is_minimized = true;
+                        }
+                    }
+                }
+                _ => (),
             }
         }
 
@@ -175,13 +175,13 @@ where
         _device_id: winit::event::DeviceId,
         event: winit::event::DeviceEvent,
     ) {
-        if let Some(runnable) = &mut self.runnable {
-            if let Some(context) = &mut self.context {
-                tracing::trace!(target: logger::EVENTS, "evt={:?}", event);
+        if let Some(runnable) = &mut self.runnable
+            && let Some(context) = &mut self.context
+        {
+            tracing::trace!(target: logger::EVENTS, "evt={:?}", event);
 
-                if let DeviceEvent::MouseMotion { delta } = event {
-                    runnable.input(context, Input::MouseMotion(delta.0, delta.1))
-                }
+            if let DeviceEvent::MouseMotion { delta } = event {
+                runnable.input(context, Input::MouseMotion(delta.0, delta.1))
             }
         }
     }
@@ -218,11 +218,11 @@ where
     }
 
     pub fn close(&mut self) {
-        if let Some(runnable) = &mut self.runnable {
-            if let Some(context) = &mut self.context {
-                runnable.close(context);
-                context.close();
-            }
+        if let Some(runnable) = &mut self.runnable
+            && let Some(context) = &mut self.context
+        {
+            runnable.close(context);
+            context.close();
         }
     }
 }

@@ -8,7 +8,7 @@ use gobs_resource::{
 
 use crate::resources::MeshLoader;
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Mesh;
 
 impl ResourceType for Mesh {
@@ -39,9 +39,9 @@ impl ResourceProperties for MeshProperties {
 }
 
 impl MeshProperties {
-    pub fn with_geometry(name: &str, geometry: Arc<MeshGeometry>) -> Self {
+    pub fn with_geometry(geometry: Arc<MeshGeometry>) -> Self {
         Self {
-            name: name.to_string(),
+            name: geometry.name.clone(),
             path: MeshPath::Mesh(geometry),
         }
     }

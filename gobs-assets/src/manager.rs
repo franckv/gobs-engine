@@ -138,7 +138,7 @@ impl MaterialManager {
                 ResourceLifetime::Static,
             ),
         };
-        self.instances.push(material_instance.clone());
+        self.instances.push(material_instance);
 
         material_instance
     }
@@ -168,17 +168,17 @@ impl MaterialManager {
                 ResourceLifetime::Static,
             ),
         };
-        self.instances.push(material_instance.clone());
+        self.instances.push(material_instance);
 
         material_instance
     }
 
     pub fn add_color_instance(&mut self, alpha: BlendMode) -> ResourceHandle<MaterialInstance> {
         let material_instance = match alpha {
-            BlendMode::Alpha => self.transparent_color_instance.clone(),
-            _ => self.color_instance.clone(),
+            BlendMode::Alpha => self.transparent_color_instance,
+            _ => self.color_instance,
         };
-        self.instances.push(material_instance.clone());
+        self.instances.push(material_instance);
 
         material_instance
     }

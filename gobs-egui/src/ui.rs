@@ -420,7 +420,7 @@ impl UIRenderer {
             }
         }
 
-        Some(model.build(resource_manager))
+        Some(model.build())
     }
 
     pub fn resize(&mut self, width: u32, height: u32) {
