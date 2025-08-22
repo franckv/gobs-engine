@@ -31,6 +31,14 @@ impl SceneGraph {
         }
     }
 
+    pub fn len(&self) -> usize {
+        self.arena.len()
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.len() == 0
+    }
+
     pub fn get(&self, key: NodeId) -> Option<&Node> {
         self.arena.get(key)
     }

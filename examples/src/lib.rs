@@ -33,6 +33,7 @@ pub const TILE_SIZE: f32 = 1.;
 pub const WIDTH: u32 = 1920;
 pub const HEIGHT: u32 = 1080;
 pub const GLTF_MODEL: &str = "structure.glb";
+pub const GLTF_MODEL2: &str = "house2.glb";
 
 pub fn init_logger() {
     FmtSubscriber::builder()

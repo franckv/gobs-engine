@@ -62,10 +62,12 @@ impl GLTFLoader {
     }
 
     fn load_scene(&mut self, doc: &Document) {
-        if let Some(scene) = doc.default_scene() {
+        tracing::info!(target: logger::RESOURCES, "{} scenes found, default={}", doc.scenes().len(), doc.as_json().scene.unwrap());
+        for scene in doc.scenes() {
             for node in scene.nodes() {
                 self.add_node(self.scene.root, &node);
             }
+            tracing::info!(target: logger::RESOURCES, "{} scene nodes loaded", self.scene.len());
         }
     }
 
@@ -204,7 +206,8 @@ impl GLTFLoader {
             self.models.push(model.build());
         }
 
-        tracing::debug!(target: logger::RESOURCES, "{} models loaded", self.models.len());
+        tracing::info!(target: logger::RESOURCES, "{} models loaded", self.models.len());
+        tracing::info!(target: logger::RESOURCES, "{} meshes loaded", self.models.iter().map(|m| m.meshes.len()).sum::<usize>());
     }
 
     fn load_textures(
@@ -323,7 +326,7 @@ impl GLTFLoader {
             };
         }
 
-        tracing::debug!(target: logger::RESOURCES,
+        tracing::info!(target: logger::RESOURCES,
             "{} textures loaded",
             self.material_manager.texture_manager.textures.len()
         );
@@ -391,6 +394,6 @@ impl GLTFLoader {
             }
         }
 
-        tracing::debug!(target: logger::RESOURCES, "{} materials loaded", self.material_manager.instances.len());
+        tracing::info!(target: logger::RESOURCES, "{} materials loaded", self.material_manager.instances.len());
     }
 }
