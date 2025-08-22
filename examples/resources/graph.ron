@@ -18,7 +18,7 @@ GraphConfig(
                     clear: false,
                 )
             },
-            render_transparent: false,
+            render_transparent: true,
             render_opaque: true,
             object_layout: [
                 WorldMatrix,
@@ -38,7 +38,7 @@ GraphConfig(
                     clear: false,
                 )
             },
-            render_transparent: false,
+            render_transparent: true,
             render_opaque: true,
             object_layout: [
                 WorldMatrix,
@@ -59,7 +59,7 @@ GraphConfig(
                     clear: false,
                 )
             },
-            render_transparent: false,
+            render_transparent: true,
             render_opaque: true,
             object_layout: [
                 WorldMatrix,
