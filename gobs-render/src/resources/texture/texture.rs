@@ -120,7 +120,7 @@ impl Default for TextureProperties {
             path: TexturePath::Default,
             format: TextureFormat {
                 ty: TextureType::Diffuse,
-                extent: ImageExtent2D::new(0, 0),
+                extent: ImageExtent2D::new(1, 1),
                 mag_filter: SamplerFilter::FilterLinear,
                 min_filter: SamplerFilter::FilterLinear,
             },
