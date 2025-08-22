@@ -109,7 +109,7 @@ impl Run for App {
 
 impl App {
     fn init(&mut self, ctx: &mut GameContext) {
-        tracing::info!(target: logger::APP, "Load scene 0");
+        tracing::info!(target: logger::APP, "Load scene");
         let graph = self.load_scene(ctx);
         self.scene
             .graph

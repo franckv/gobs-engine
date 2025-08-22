@@ -133,6 +133,7 @@ impl Ui {
         egui::Window::new("Batch")
             .open(&mut show_batch)
             .show(ectx, |ui| {
+                ui.label(format!("Count: {}", batch.render_list.len()));
                 egui::ScrollArea::vertical().show(ui, |ui| {
                     for object in &batch.render_list {
                         ui.label(format!(" {:?}", object.model_id));
@@ -222,6 +223,7 @@ impl Ui {
         if self.selected_node != old_selected {
             graph.set_selected(old_selected, false);
             graph.set_selected(self.selected_node, true);
+            self.selected_mesh = (None, None);
         }
     }
 
@@ -426,6 +428,7 @@ impl Ui {
                     ui.label(format!("Material instance: {}", mat_instance_props.name(),));
                     ui.label(format!("Material: {}", mat_props.name(),));
                     ui.label(format!("Id: {}", material.id));
+                    ui.label(format!("Transparent: {}", mat_props.blending_enabled));
 
                     if !mat_instance_props.textures.is_empty() {
                         ui.label("Textures:");
