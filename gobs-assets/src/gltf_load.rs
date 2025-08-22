@@ -302,8 +302,8 @@ impl GLTFLoader {
                     let mut pixels = vec![];
                     for pixel in &data.pixels {
                         pixels.push(*pixel);
-                        pixels.push(0);
-                        pixels.push(0);
+                        pixels.push(*pixel);
+                        pixels.push(*pixel);
                         pixels.push(255);
                     }
 
