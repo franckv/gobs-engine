@@ -9,7 +9,8 @@ struct SceneData {
 ConstantBuffer<SceneData> scene_data;
 
 struct Material {
-    float4 color;
+    float4 diffuse_color;
+    float4 emissive_color;
 }
 [[vk::binding(0, 1)]]
 ConstantBuffer<Material> material;
@@ -43,7 +44,7 @@ VSOutput vertex_main(uint vertex_index: SV_VertexID) {
 
 [shader("fragment")]
 float4 fragment_main(VSOutput input) {
-    float4 color = material.color;
+    float4 color = material.diffuse_color + material.emissive_color;
 
     return color;
 }

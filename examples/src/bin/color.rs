@@ -83,7 +83,10 @@ impl App {
         let material = ctx.resource_manager.get_by_name("color.material").unwrap();
         let material_instance_properties =
             MaterialInstanceProperties::new("color.material", material)
-                .prop(MaterialDataPropData::DiffuseColor(Color::PURPLE.into()));
+                .prop(MaterialDataPropData::DiffuseColor(Color::GREY.into()))
+                .prop(MaterialDataPropData::EmissionColor(
+                    Color::new(0., 0.1, 0., 1.).into(),
+                ));
 
         let material_instance = ctx
             .resource_manager
