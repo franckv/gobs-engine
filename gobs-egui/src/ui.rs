@@ -264,7 +264,7 @@ impl UIRenderer {
                 );
 
                 let material_properties =
-                    MaterialInstanceProperties::new("font", self.material, vec![texture]);
+                    MaterialInstanceProperties::new("font", self.material).textures(&[texture]);
 
                 let material_instance = resource_manager
                     .add::<MaterialInstance>(material_properties, ResourceLifetime::Static);
@@ -307,8 +307,8 @@ impl UIRenderer {
                 let texture_handle =
                     resource_manager.add(texture_properties, ResourceLifetime::Static);
 
-                let material_properties =
-                    MaterialInstanceProperties::new("font", self.material, vec![texture_handle]);
+                let material_properties = MaterialInstanceProperties::new("font", self.material)
+                    .textures(&[texture_handle]);
 
                 resource_manager
                     .add::<MaterialInstance>(material_properties, ResourceLifetime::Static)

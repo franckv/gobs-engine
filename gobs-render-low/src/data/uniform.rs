@@ -25,7 +25,7 @@ pub trait UniformData<DataProp, Data> {
 
     fn uniform_layout(&self) -> &UniformLayout;
 
-    fn copy_data(&self, ctx: &GfxContext, data: &Data, buffer: &mut Vec<u8>);
+    fn copy_data(&self, ctx: Option<&GfxContext>, data: &Data, buffer: &mut Vec<u8>);
 
     fn is_empty(&self) -> bool;
 }

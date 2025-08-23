@@ -188,7 +188,7 @@ impl RenderPass for MaterialPass {
         tracing::debug!(target: logger::RENDER, "Upload scene data");
         let mut scene_data_bytes = Vec::new();
         self.scene_layout
-            .copy_data(ctx, scene_data, &mut scene_data_bytes);
+            .copy_data(Some(ctx), scene_data, &mut scene_data_bytes);
 
         tracing::debug!(target: logger::RENDER, "Update Uniform (scene data, push)");
         render_job.update_uniform(&scene_data_bytes);

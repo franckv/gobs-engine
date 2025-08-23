@@ -124,7 +124,7 @@ impl RenderBatch {
 
                 (Some(pipeline_data.pipeline.clone()), blending_enabled)
             } else {
-                tracing::warn!("No material for model {}", model.name());
+                tracing::debug!("No material for model {}", model.name());
                 (None, false)
             };
 
@@ -189,13 +189,13 @@ impl RenderBatch {
     }
 
     pub fn scene_data(&'_ self) -> SceneData<'_> {
-        let default_light = &self.lights[0];
+        let default_light = &self.lights.first();
 
         SceneData {
             camera: &self.camera,
             camera_transform: &self.camera_transform,
-            light: &default_light.0,
-            light_transform: &default_light.1,
+            light: default_light.map(|l| &l.0),
+            light_transform: default_light.map(|l| &l.1),
             extent: self.extent,
         }
     }

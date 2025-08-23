@@ -62,7 +62,7 @@ impl UniformData<SceneDataProp, SceneData<'_>> for SceneDataLayout {
         &self.uniform_layout
     }
 
-    fn copy_data(&self, _ctx: &GfxContext, scene_data: &SceneData, buffer: &mut Vec<u8>) {
+    fn copy_data(&self, _ctx: Option<&GfxContext>, scene_data: &SceneData, buffer: &mut Vec<u8>) {
         let layout = self.uniform_layout();
 
         let mut props = Vec::new();
@@ -87,11 +87,18 @@ impl UniformData<SceneDataProp, SceneData<'_>> for SceneDataLayout {
                 }
                 SceneDataProp::LightDirection => {
                     props.push(UniformPropData::Vec3F(
-                        scene_data.light_transform.translation().normalize().into(),
+                        scene_data
+                            .light_transform
+                            .unwrap()
+                            .translation()
+                            .normalize()
+                            .into(),
                     ));
                 }
                 SceneDataProp::LightColor => {
-                    props.push(UniformPropData::Vec4F(scene_data.light.colour.into()));
+                    props.push(UniformPropData::Vec4F(
+                        scene_data.light.unwrap().colour.into(),
+                    ));
                 }
                 SceneDataProp::LightAmbientColor => {
                     props.push(UniformPropData::Vec4F([0.1, 0.1, 0.1, 1.]));
@@ -110,7 +117,7 @@ impl UniformData<SceneDataProp, SceneData<'_>> for SceneDataLayout {
 pub struct SceneData<'data> {
     pub camera_transform: &'data Transform,
     pub camera: &'data Camera,
-    pub light_transform: &'data Transform,
-    pub light: &'data Light,
+    pub light_transform: Option<&'data Transform>,
+    pub light: Option<&'data Light>,
     pub extent: ImageExtent2D,
 }

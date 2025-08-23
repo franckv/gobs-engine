@@ -1,12 +1,22 @@
+use serde::{Deserialize, Serialize};
+
 use gobs_gfx::{
     BindingGroupLayout, BindingGroupType, DescriptorStage, DescriptorType, GfxBindingGroupLayout,
 };
-use serde::{Deserialize, Serialize};
 
 use crate::{
-    GfxContext, UniformData,
+    GfxContext, UniformData, UniformPropData,
     data::{UniformLayout, UniformProp},
 };
+//
+// TODO: Emissive, Specular, Opacity, Glossiness, ...
+#[derive(Clone, Copy, Debug, Deserialize, Serialize)]
+pub enum MaterialDataPropData {
+    DiffuseColor([f32; 4]),
+    EmissionColor([f32; 4]),
+    SpecularColor([f32; 4]),
+    SpecularPower(f32),
+}
 
 // TODO: Emissive, Specular, Opacity, Glossiness, ...
 #[derive(Clone, Copy, Debug, Deserialize, Serialize)]
@@ -23,7 +33,7 @@ pub struct MaterialDataLayout {
     uniform_layout: UniformLayout,
 }
 
-impl UniformData<MaterialDataProp, ()> for MaterialDataLayout {
+impl UniformData<MaterialDataProp, MaterialConstantData> for MaterialDataLayout {
     fn prop(mut self, prop: MaterialDataProp) -> Self {
         self.layout.push(prop);
 
@@ -55,17 +65,30 @@ impl UniformData<MaterialDataProp, ()> for MaterialDataLayout {
         &self.uniform_layout
     }
 
-    fn copy_data(&self, _ctx: &GfxContext, _: &(), buffer: &mut Vec<u8>) {
+    fn copy_data(
+        &self,
+        _ctx: Option<&GfxContext>,
+        data: &MaterialConstantData,
+        buffer: &mut Vec<u8>,
+    ) {
         let layout = self.uniform_layout();
 
-        let props = Vec::new();
+        let mut props = Vec::new();
 
         for prop in &self.layout {
             match prop {
-                MaterialDataProp::DiffuseColor => {}
-                MaterialDataProp::EmissionColor => {}
-                MaterialDataProp::SpecularColor => {}
-                MaterialDataProp::SpecularPower => {}
+                MaterialDataProp::DiffuseColor => {
+                    props.push(UniformPropData::Vec4F(data.diffuse_color))
+                }
+                MaterialDataProp::EmissionColor => {
+                    props.push(UniformPropData::Vec4F(data.emission_color))
+                }
+                MaterialDataProp::SpecularColor => {
+                    props.push(UniformPropData::Vec4F(data.specular_color))
+                }
+                MaterialDataProp::SpecularPower => {
+                    props.push(UniformPropData::F32(data.specular_power))
+                }
             }
         }
 
@@ -82,4 +105,12 @@ impl MaterialDataLayout {
         GfxBindingGroupLayout::new(BindingGroupType::MaterialData)
             .add_binding(DescriptorType::Uniform, DescriptorStage::Fragment)
     }
+}
+
+#[derive(Clone, Debug, Default)]
+pub struct MaterialConstantData {
+    pub diffuse_color: [f32; 4],
+    pub emission_color: [f32; 4],
+    pub specular_color: [f32; 4],
+    pub specular_power: f32,
 }

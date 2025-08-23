@@ -5,9 +5,10 @@ use std::{
 
 use gobs_core::logger;
 use gobs_gfx::{
-    BindingGroupPool, GfxBindingGroup, GfxBindingGroupLayout, GfxBindingGroupPool, GfxDevice,
+    BindingGroupPool, GfxBindingGroup, GfxBindingGroupLayout, GfxBindingGroupPool, GfxBuffer,
+    GfxDevice,
 };
-use gobs_render_low::UniformData;
+use gobs_render_low::{MaterialConstantData, MaterialDataLayout, UniformData};
 use gobs_resource::{
     manager::ResourceRegistry,
     resource::{
@@ -72,11 +73,17 @@ impl ResourceLoader<MaterialInstance> for MaterialInstanceLoader {
             material,
         );
 
+        let material_buffer = self.create_buffer(
+            &properties.material_data_layout,
+            properties.material_data.as_ref(),
+        );
+
         let (material_binding, texture_binding) =
             self.load_material_bindings(handle, &material.properties);
 
         let data = MaterialInstanceData {
             material: properties.material,
+            material_buffer,
             texture_binding,
             material_binding,
             bound: false,
@@ -109,6 +116,22 @@ impl MaterialInstanceLoader {
 
                 pools.insert(pool);
             }
+        }
+    }
+
+    fn create_buffer(
+        &self,
+        material_data_layout: &MaterialDataLayout,
+        material_data: Option<&MaterialConstantData>,
+    ) -> Option<Arc<GfxBuffer>> {
+        let mut buffer = Vec::new();
+
+        if let Some(material_data) = material_data {
+            material_data_layout.copy_data(None, material_data, &mut buffer);
+
+            None
+        } else {
+            None
         }
     }
 

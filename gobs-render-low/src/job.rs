@@ -219,7 +219,7 @@ impl RenderJob {
         tracing::trace!(target: logger::RENDER, "Copy object data: {}", self.object_layout.uniform_layout().size());
 
         self.object_layout
-            .copy_data(ctx, render_object, &mut state.object_data);
+            .copy_data(Some(ctx), render_object, &mut state.object_data);
 
         frame.command.push_constants(&pipeline, &state.object_data);
 

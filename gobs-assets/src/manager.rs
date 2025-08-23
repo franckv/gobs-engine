@@ -76,24 +76,21 @@ impl MaterialManager {
         let texture_manager = TextureManager::new(resource_manager);
 
         let default_material_instance = resource_manager.add::<MaterialInstance>(
-            MaterialInstanceProperties::new(
-                "default",
-                texture,
-                vec![texture_manager.default_texture],
-            ),
+            MaterialInstanceProperties::new("default", texture)
+                .textures(&[texture_manager.default_texture]),
             ResourceLifetime::Static,
         );
 
         tracing::debug!(target: logger::RESOURCES, "Default material id: {}", default_material_instance.id);
 
         let color_instance = resource_manager.add::<MaterialInstance>(
-            MaterialInstanceProperties::new("color", color, vec![]),
+            MaterialInstanceProperties::new("color", color),
             ResourceLifetime::Static,
         );
         tracing::debug!(target: logger::RESOURCES, "Color material id: {}", color_instance.id);
 
         let transparent_color_instance = resource_manager.add::<MaterialInstance>(
-            MaterialInstanceProperties::new("transparent color", transparent_color, vec![]),
+            MaterialInstanceProperties::new("transparent color", transparent_color),
             ResourceLifetime::Static,
         );
         tracing::debug!(target: logger::RESOURCES, "Color material id: {}", transparent_color_instance.id);
@@ -130,11 +127,12 @@ impl MaterialManager {
 
         let material_instance = match alpha {
             BlendMode::Alpha => resource_manager.add::<MaterialInstance>(
-                MaterialInstanceProperties::new(name, self.transparent_texture, vec![texture]),
+                MaterialInstanceProperties::new(name, self.transparent_texture)
+                    .textures(&[texture]),
                 ResourceLifetime::Static,
             ),
             _ => resource_manager.add::<MaterialInstance>(
-                MaterialInstanceProperties::new(name, self.texture, vec![texture]),
+                MaterialInstanceProperties::new(name, self.texture).textures(&[texture]),
                 ResourceLifetime::Static,
             ),
         };
@@ -156,15 +154,13 @@ impl MaterialManager {
 
         let material_instance = match alpha {
             BlendMode::Alpha => resource_manager.add::<MaterialInstance>(
-                MaterialInstanceProperties::new(
-                    name,
-                    self.transparent_texture_normal,
-                    vec![diffuse, normal],
-                ),
+                MaterialInstanceProperties::new(name, self.transparent_texture_normal)
+                    .textures(&[diffuse, normal]),
                 ResourceLifetime::Static,
             ),
             _ => resource_manager.add::<MaterialInstance>(
-                MaterialInstanceProperties::new(name, self.texture_normal, vec![diffuse, normal]),
+                MaterialInstanceProperties::new(name, self.texture_normal)
+                    .textures(&[diffuse, normal]),
                 ResourceLifetime::Static,
             ),
         };

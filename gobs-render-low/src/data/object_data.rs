@@ -48,7 +48,12 @@ impl UniformData<ObjectDataProp, RenderObject> for ObjectDataLayout {
         &self.uniform_layout
     }
 
-    fn copy_data(&self, ctx: &GfxContext, render_object: &RenderObject, buffer: &mut Vec<u8>) {
+    fn copy_data(
+        &self,
+        ctx: Option<&GfxContext>,
+        render_object: &RenderObject,
+        buffer: &mut Vec<u8>,
+    ) {
         let layout = self.uniform_layout();
 
         let mut props = Vec::new();
@@ -67,7 +72,7 @@ impl UniformData<ObjectDataProp, RenderObject> for ObjectDataLayout {
                 }
                 ObjectDataProp::VertexBufferAddress => {
                     props.push(UniformPropData::U64(
-                        render_object.vertex_buffer.address(&ctx.device)
+                        render_object.vertex_buffer.address(&ctx.unwrap().device)
                             + render_object.vertices_offset,
                     ));
                 }
