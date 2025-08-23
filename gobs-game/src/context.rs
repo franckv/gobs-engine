@@ -8,6 +8,8 @@ use gobs_render::{
 use gobs_render_graph::{Pipeline, PipelineLoader};
 use gobs_resource::manager::ResourceManager;
 
+use crate::GameOptions;
+
 #[derive(Clone, Debug)]
 pub struct AppInfo {
     pub name: String,
@@ -20,7 +22,12 @@ pub struct GameContext {
 }
 
 impl GameContext {
-    pub fn new(name: &str, window: Option<Window>, validation: bool) -> Result<Self, RenderError> {
+    pub fn new(
+        name: &str,
+        options: &GameOptions,
+        window: Option<Window>,
+        validation: bool,
+    ) -> Result<Self, RenderError> {
         let gfx = GfxContext::new(name, window, validation)?;
         let mut resource_manager = ResourceManager::new(gfx.frames_in_flight);
 
@@ -39,7 +46,7 @@ impl GameContext {
         let material_instance_loader = MaterialInstanceLoader::new(gfx.device.clone());
         resource_manager.register_resource::<MaterialInstance>(material_instance_loader);
 
-        let renderer = Renderer::new(gfx, &mut resource_manager);
+        let renderer = Renderer::new(gfx, &options.renderer, &mut resource_manager);
 
         Ok(Self {
             app_info: AppInfo {

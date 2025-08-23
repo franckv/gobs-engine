@@ -3,11 +3,7 @@ use glam::{Quat, Vec3};
 use gobs::{
     assets::gltf_load,
     core::{Color, Input, logger},
-    game::{
-        AppError,
-        app::{Application, Run},
-        context::GameContext,
-    },
+    game::{AppError, Application, GameContext, GameOptions, Run},
     render::RenderError,
     resource::{entity::light::Light, load},
     scene::{graph::scenegraph::SceneGraph, scene::Scene},
@@ -136,5 +132,11 @@ fn main() {
 
     tracing::info!(target: logger::APP, "Engine start");
 
-    Application::<App>::new("glTF", examples::WIDTH, examples::HEIGHT).run();
+    Application::<App>::new(
+        "glTF",
+        GameOptions::default(),
+        examples::WIDTH,
+        examples::HEIGHT,
+    )
+    .run();
 }

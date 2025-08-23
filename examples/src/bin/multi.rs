@@ -2,11 +2,7 @@ use glam::{Quat, Vec3};
 
 use gobs::{
     core::{Color, Input, Transform, logger},
-    game::{
-        AppError,
-        app::{Application, Run},
-        context::GameContext,
-    },
+    game::{AppError, Application, GameContext, GameOptions, Run},
     render::{
         MaterialInstanceProperties, MaterialsConfig, Model, RenderError, TextureProperties,
         TextureType,
@@ -120,7 +116,7 @@ impl App {
         let color_material = ctx.resource_manager.get_by_name("color").unwrap();
 
         let color_instance_properties =
-            MaterialInstanceProperties::new("color instance", color_material, vec![]);
+            MaterialInstanceProperties::new("color instance", color_material);
 
         let color_material_instance = ctx
             .resource_manager
@@ -139,11 +135,9 @@ impl App {
 
         let diffuse_material = ctx.resource_manager.get_by_name("normal").unwrap();
 
-        let diffuse_instance_properties = MaterialInstanceProperties::new(
-            "diffuse instance",
-            diffuse_material,
-            vec![diffuse_texture, normal_texture],
-        );
+        let diffuse_instance_properties =
+            MaterialInstanceProperties::new("diffuse instance", diffuse_material)
+                .textures(&[diffuse_texture, normal_texture]);
 
         let diffuse_material_instance = ctx
             .resource_manager
@@ -180,5 +174,11 @@ fn main() {
 
     tracing::info!(target: logger::APP, "Engine start");
 
-    Application::<App>::new("Multi", examples::WIDTH, examples::HEIGHT).run();
+    Application::<App>::new(
+        "Multi",
+        GameOptions::default(),
+        examples::WIDTH,
+        examples::HEIGHT,
+    )
+    .run();
 }

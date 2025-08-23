@@ -2,11 +2,7 @@ use glam::{Quat, Vec3};
 
 use gobs::{
     core::{Color, Input, Transform, logger},
-    game::{
-        AppError,
-        app::{Application, Run},
-        context::GameContext,
-    },
+    game::{AppError, Application, GameContext, GameOptions, Run},
     render::{MaterialInstanceProperties, MaterialsConfig, Model, RenderError},
     resource::{entity::light::Light, geometry::Shapes, resource::ResourceLifetime},
     scene::{components::NodeValue, scene::Scene},
@@ -85,7 +81,7 @@ impl App {
 
         let material = ctx.resource_manager.get_by_name("color.material").unwrap();
         let material_instance_properties =
-            MaterialInstanceProperties::new("color.material", material, vec![]);
+            MaterialInstanceProperties::new("color.material", material);
         let material_instance = ctx
             .resource_manager
             .add(material_instance_properties, ResourceLifetime::Static);
@@ -112,5 +108,11 @@ fn main() {
 
     tracing::info!(target: logger::APP, "Engine start");
 
-    Application::<App>::new("Color", examples::WIDTH, examples::HEIGHT).run();
+    Application::<App>::new(
+        "Color",
+        GameOptions::default(),
+        examples::WIDTH,
+        examples::HEIGHT,
+    )
+    .run();
 }

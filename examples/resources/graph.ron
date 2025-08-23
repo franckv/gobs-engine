@@ -1,12 +1,21 @@
 GraphConfig(
-    schedule: [
-        "depth",
-        "forward",
-        "wire",
-        "bounds",
-        "select",
-        "ui",
-    ],
+    graphes: {
+        "scene": [
+            "depth",
+            "forward",
+            "wire",
+            "bounds",
+            "select",
+            "ui"
+        ],
+        "headless": [
+            "depth",
+            "forward"
+        ],
+        "ui": [
+            "ui"
+        ],
+    },
     passes: {
         "bounds": (
             ty: Material,

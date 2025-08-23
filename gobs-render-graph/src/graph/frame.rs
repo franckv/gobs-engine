@@ -9,7 +9,7 @@ use gobs_render_low::{FrameData, GfxContext, RenderError, RenderObject, SceneDat
 use gobs_resource::manager::ResourceManager;
 
 use crate::{
-    GraphConfig, RenderPass,
+    GraphConfig, PipelinesConfig, RenderPass,
     graph::resource::GraphResourceManager,
     pass::{PassId, PassType, compute::ComputePass, present::PresentPass},
 };
@@ -59,12 +59,16 @@ impl FrameGraph {
             extent,
         );
 
-        let passes = GraphConfig::load_graph(ctx, "graph.ron", resource_manager)
-            .map_err(|_| RenderError::InvalidData)?;
-
         graph.register_pass(ComputePass::new(ctx, "compute")?);
 
+        PipelinesConfig::load_resources(ctx, "pipelines.ron", resource_manager)
+            .expect("Load pipelines");
+
+        tracing::debug!(target: logger::INIT, "Load graph: {}", "scene");
+        let passes = GraphConfig::load_graph(ctx, "graph.ron", "scene", resource_manager)
+            .map_err(|_| RenderError::InvalidData)?;
         for pass in &passes {
+            tracing::debug!(target: logger::INIT, "Load pass: {}", pass.name());
             graph.register_pass(pass.clone());
         }
 
@@ -96,17 +100,16 @@ impl FrameGraph {
             extent,
         );
 
-        let graph_config = GraphConfig::load("graph.ron").map_err(|_| RenderError::InvalidData)?;
+        PipelinesConfig::load_resources(ctx, "pipelines.ron", resource_manager)
+            .expect("Load pipelines");
+
+        let passes = GraphConfig::load_graph(ctx, "graph.ron", "headless", resource_manager)
+            .map_err(|_| RenderError::InvalidData)?;
 
         graph.register_pass(ComputePass::new(ctx, "compute")?);
 
-        if let Some(pass) = GraphConfig::load_pass(ctx, &graph_config, "depth", resource_manager) {
-            graph.register_pass(pass);
-        }
-
-        if let Some(pass) = GraphConfig::load_pass(ctx, &graph_config, "forward", resource_manager)
-        {
-            graph.register_pass(pass);
+        for pass in &passes {
+            graph.register_pass(pass.clone());
         }
 
         Ok(graph)
@@ -128,10 +131,14 @@ impl FrameGraph {
             extent,
         );
 
-        let graph_config = GraphConfig::load("graph.ron").map_err(|_| RenderError::InvalidData)?;
+        PipelinesConfig::load_resources(ctx, "pipelines.ron", resource_manager)
+            .expect("Load pipelines");
 
-        if let Some(pass) = GraphConfig::load_pass(ctx, &graph_config, "ui", resource_manager) {
-            graph.register_pass(pass);
+        let passes = GraphConfig::load_graph(ctx, "graph.ron", "ui", resource_manager)
+            .map_err(|_| RenderError::InvalidData)?;
+
+        for pass in &passes {
+            graph.register_pass(pass.clone());
         }
 
         graph.register_pass(PresentPass::new(ctx, "present")?);

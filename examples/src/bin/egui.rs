@@ -2,12 +2,8 @@ use renderdoc::{RenderDoc, V141};
 
 use gobs::{
     core::{Input, Key, logger},
-    game::{
-        AppError,
-        app::{Application, Run},
-        context::GameContext,
-    },
-    render::RenderError,
+    game::{AppError, Application, GameContext, GameOptions, Run},
+    render::{BuiltinGraphs, RenderError},
     ui::UIRenderer,
 };
 
@@ -697,5 +693,8 @@ fn main() {
 
     tracing::info!(target: logger::APP, "Engine start");
 
-    Application::<App>::new("Egui", examples::WIDTH, examples::HEIGHT).run();
+    let mut options = GameOptions::default();
+    options.renderer.graph = BuiltinGraphs::Ui;
+
+    Application::<App>::new("Egui", options, examples::WIDTH, examples::HEIGHT).run();
 }

@@ -3,8 +3,8 @@ use pollster::FutureExt;
 
 use gobs::{
     core::{Color, Input, Transform, logger},
-    game::{AppError, app::Run, context::GameContext},
-    render::{MaterialInstanceProperties, MaterialsConfig, Model, RenderError},
+    game::{AppError, GameContext, GameOptions, Run},
+    render::{BuiltinGraphs, MaterialInstanceProperties, MaterialsConfig, Model, RenderError},
     resource::{entity::light::Light, geometry::Shapes, resource::ResourceLifetime},
     scene::{components::NodeValue, scene::Scene},
 };
@@ -70,8 +70,7 @@ impl App {
         .await;
 
         let material = ctx.resource_manager.get_by_name("color").unwrap();
-        let material_instance_properties =
-            MaterialInstanceProperties::new("color", material, vec![]);
+        let material_instance_properties = MaterialInstanceProperties::new("color", material);
         let material_instance = ctx
             .resource_manager
             .add(material_instance_properties, ResourceLifetime::Static);
@@ -103,7 +102,10 @@ fn main() {
 
     tracing::info!(target: logger::APP, "Engine start");
 
-    let mut ctx = GameContext::new("Triangle", None, true).unwrap();
+    let mut options = GameOptions::default();
+    options.renderer.graph = BuiltinGraphs::Headless;
+
+    let mut ctx = GameContext::new("Triangle", &options, None, true).unwrap();
 
     let future = async {
         let mut app = App::create(&mut ctx).await.unwrap();

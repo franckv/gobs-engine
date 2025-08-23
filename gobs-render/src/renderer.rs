@@ -1,10 +1,23 @@
 use gobs_core::{ImageExtent2D, logger};
 use gobs_gfx::Device;
-use gobs_render_graph::{FrameGraph, PipelinesConfig, RenderPass};
+use gobs_render_graph::{FrameGraph, RenderPass};
 use gobs_render_low::{FrameData, GfxContext, RenderError};
 use gobs_resource::manager::ResourceManager;
 
 use crate::RenderBatch;
+
+#[derive(Debug, Default)]
+pub enum BuiltinGraphs {
+    #[default]
+    Scene,
+    Headless,
+    Ui,
+}
+
+#[derive(Debug, Default)]
+pub struct RendererOptions {
+    pub graph: BuiltinGraphs,
+}
 
 pub struct Renderer {
     pub graph: FrameGraph,
@@ -15,16 +28,23 @@ pub struct Renderer {
 }
 
 impl Renderer {
-    pub fn new(gfx: GfxContext, resource_manager: &mut ResourceManager) -> Self {
+    pub fn new(
+        gfx: GfxContext,
+        options: &RendererOptions,
+        resource_manager: &mut ResourceManager,
+    ) -> Self {
+        let graph = match options.graph {
+            BuiltinGraphs::Scene => FrameGraph::default(&gfx, resource_manager).unwrap(),
+            BuiltinGraphs::Headless => FrameGraph::headless(&gfx, resource_manager).unwrap(),
+            BuiltinGraphs::Ui => FrameGraph::ui(&gfx, resource_manager).unwrap(),
+        };
+
         let frames = (0..gfx.frames_in_flight)
             .map(|id| FrameData::new(&gfx, id, gfx.frames_in_flight))
             .collect();
 
-        PipelinesConfig::load_resources(&gfx, "pipelines.ron", resource_manager)
-            .expect("Load pipelines");
-
         Self {
-            graph: FrameGraph::default(&gfx, resource_manager).unwrap(),
+            graph,
             batch: RenderBatch::new(&gfx),
             gfx,
             frames,

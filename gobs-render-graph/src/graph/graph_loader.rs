@@ -2,7 +2,7 @@ use std::{collections::HashMap, sync::Arc};
 
 use serde::{Deserialize, Serialize};
 
-use gobs_core::{ImageExtent2D, ImageFormat};
+use gobs_core::{ImageExtent2D, ImageFormat, logger};
 use gobs_gfx::{ImageLayout, ImageUsage};
 use gobs_render_low::{
     GfxContext, ObjectDataLayout, ObjectDataProp, SceneDataLayout, SceneDataProp, UniformData,
@@ -24,7 +24,7 @@ const FRAME_HEIGHT: u32 = 1080;
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct GraphConfig {
-    schedule: Vec<String>,
+    graphes: HashMap<String, Vec<String>>,
     passes: HashMap<String, RenderPassConfig>,
     attachments: HashMap<String, ImageAttachmentInfo>,
 }
@@ -84,14 +84,28 @@ impl GraphConfig {
     pub fn load_graph(
         ctx: &GfxContext,
         filename: &str,
+        name: &str,
         resource_manager: &mut ResourceManager,
     ) -> Result<Vec<Arc<dyn RenderPass>>, ResourceError> {
-        let graph = Self::load(filename)?;
+        let data = load::load_string_sync(filename, AssetType::RESOURCES)?;
 
-        let passes = graph
-            .schedule
+        Self::load_graph_with_data(ctx, &data, name, resource_manager)
+    }
+
+    fn load_graph_with_data(
+        ctx: &GfxContext,
+        data: &str,
+        name: &str,
+        resource_manager: &mut ResourceManager,
+    ) -> Result<Vec<Arc<dyn RenderPass>>, ResourceError> {
+        let graph = Self::load_with_data(data)?;
+
+        let passes = graph.graphes[name]
             .iter()
-            .filter_map(|passname| Self::load_pass(ctx, &graph, passname, resource_manager))
+            .map(|passname| {
+                Self::load_pass(ctx, &graph, passname, resource_manager)
+                    .expect(&format!("Failed to load pass {}", passname))
+            })
             .collect();
 
         Ok(passes)
@@ -103,6 +117,8 @@ impl GraphConfig {
         passname: &str,
         resource_manager: &mut ResourceManager,
     ) -> Option<Arc<dyn RenderPass>> {
+        tracing::info!(target: logger::INIT, "Load pass: {}", passname);
+
         let pass = graph.passes.get(passname)?;
 
         let mut scene_layout = SceneDataLayout::default();
@@ -203,6 +219,28 @@ mod tests {
 
         let data = include_str!("../../../examples/resources/graph.ron");
 
+        let graph = GraphConfig::load_with_data(data).unwrap();
+        tracing::info!("Graph: {:?}", graph.graphes["scene"]);
+
+        let passes =
+            GraphConfig::load_graph_with_data(&ctx, data, "ui", &mut resource_manager).unwrap();
+
+        for pass in passes {
+            tracing::info!("Load pass: {}", pass.name());
+        }
+    }
+
+    #[test]
+    #[cfg_attr(feature = "ci", ignore)]
+    fn test_load_pass() {
+        setup();
+
+        let ctx = GfxContext::new("test", None, false).unwrap();
+
+        let mut resource_manager = ResourceManager::new(ctx.frames_in_flight);
+
+        let data = include_str!("../../../examples/resources/graph.ron");
+
         let graph_config = GraphConfig::load_with_data(data).unwrap();
 
         let _pass =
@@ -216,7 +254,7 @@ mod tests {
         let pass_name = "bounds".to_string();
 
         let graph = GraphConfig {
-            schedule: vec![pass_name.clone()],
+            graphes: HashMap::from([("scene".to_string(), vec![pass_name.clone()])]),
             passes: HashMap::from([(
                 pass_name,
                 RenderPassConfig {

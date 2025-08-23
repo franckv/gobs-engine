@@ -13,7 +13,7 @@ pub use gobs_render_low::{
 pub use batch::RenderBatch;
 pub use model::{Model, ModelId};
 pub use renderable::Renderable;
-pub use renderer::Renderer;
+pub use renderer::{BuiltinGraphs, Renderer, RendererOptions};
 pub use resources::{
     Material, MaterialData, MaterialInstance, MaterialInstanceLoader, MaterialInstanceProperties,
     MaterialLoader, MaterialProperties, MaterialProperty, MaterialsConfig, Mesh, MeshData,

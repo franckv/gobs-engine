@@ -2,11 +2,7 @@ use glam::{Quat, Vec3};
 
 use gobs::{
     core::{Color, Input, Transform, logger},
-    game::{
-        AppError,
-        app::{Application, Run},
-        context::GameContext,
-    },
+    game::{AppError, Application, GameContext, GameOptions, Run},
     render::{MaterialInstanceProperties, MaterialsConfig, Model, RenderError},
     resource::{
         entity::{camera::Camera, light::Light},
@@ -139,7 +135,7 @@ impl App {
 
         let material_instance_properties =
             //NormalMaterial::instanciate(material, diffuse_texture, normal_texture);
-            MaterialInstanceProperties::new("depth", material,vec![]);
+            MaterialInstanceProperties::new("depth", material);
 
         let material_instance = ctx
             .resource_manager
@@ -166,5 +162,11 @@ fn main() {
 
     tracing::info!(target: logger::APP, "Engine start");
 
-    Application::<App>::new("Depth test", examples::WIDTH, examples::HEIGHT).run();
+    Application::<App>::new(
+        "Depth test",
+        GameOptions::default(),
+        examples::WIDTH,
+        examples::HEIGHT,
+    )
+    .run();
 }

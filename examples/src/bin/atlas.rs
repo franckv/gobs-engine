@@ -2,11 +2,7 @@ use glam::{Quat, Vec3};
 
 use gobs::{
     core::{Color, Input, Transform, logger},
-    game::{
-        AppError,
-        app::{Application, Run},
-        context::GameContext,
-    },
+    game::{AppError, Application, GameContext, GameOptions, Run},
     render::{
         MaterialInstanceProperties, MaterialsConfig, Model, RenderError, TextureProperties,
         TextureType,
@@ -151,11 +147,8 @@ impl App {
             .resource_manager
             .add(properties, ResourceLifetime::Static);
 
-        let material_instance_properties = MaterialInstanceProperties::new(
-            "atlas",
-            material,
-            vec![diffuse_texture, normal_texture],
-        );
+        let material_instance_properties = MaterialInstanceProperties::new("atlas", material)
+            .textures(&[diffuse_texture, normal_texture]);
 
         let material_instance = ctx
             .resource_manager
@@ -188,5 +181,11 @@ fn main() {
 
     tracing::info!(target: logger::APP, "Engine start");
 
-    Application::<App>::new("Atlas", examples::WIDTH, examples::HEIGHT).run();
+    Application::<App>::new(
+        "Atlas",
+        GameOptions::default(),
+        examples::WIDTH,
+        examples::HEIGHT,
+    )
+    .run();
 }

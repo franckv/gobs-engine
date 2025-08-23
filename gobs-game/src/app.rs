@@ -11,7 +11,7 @@ use winit::{
 use gobs_core::{Input, logger, utils::timer::Timer};
 use gobs_render::{Display, RenderError};
 
-use crate::{AppError, context::GameContext};
+use crate::{AppError, context::GameContext, options::GameOptions};
 
 pub struct Application<R>
 where
@@ -23,6 +23,7 @@ where
     close_requested: bool,
     is_minimized: bool,
     title: String,
+    options: GameOptions,
     width: u32,
     height: u32,
 }
@@ -46,7 +47,8 @@ where
 
         tracing::info!("Running with validation layers: {}", validation_enabled);
 
-        let mut context = GameContext::new(&self.title, Some(window), validation_enabled).unwrap();
+        let mut context =
+            GameContext::new(&self.title, &self.options, Some(window), validation_enabled).unwrap();
         tracing::info!(target: logger::EVENTS, "Start main loop");
 
         let future = async {
@@ -197,7 +199,7 @@ impl<R> Application<R>
 where
     R: Run + 'static,
 {
-    pub fn new(title: &str, width: u32, height: u32) -> Application<R> {
+    pub fn new(title: &str, options: GameOptions, width: u32, height: u32) -> Application<R> {
         Application {
             context: None,
             runnable: None,
@@ -205,6 +207,7 @@ where
             is_minimized: false,
             timer: Timer::new(),
             title: title.to_string(),
+            options,
             width,
             height,
         }
@@ -232,7 +235,7 @@ where
     R: Run + 'static,
 {
     fn default() -> Self {
-        Self::new("Default", 800, 600)
+        Self::new("Default", GameOptions::default(), 800, 600)
     }
 }
 
