@@ -53,6 +53,11 @@ impl RenderBatch {
             && let Ok(material_instance) =
                 resource_manager.get_data_mut(material_instance_handle, ())
         {
+            let bind_group = &material_instance.data.material_binding;
+            if let Some(bind_group) = bind_group {
+                bind_groups.push(bind_group.clone());
+            }
+
             let bind_group = material_instance.data.texture_binding.clone();
 
             if let Some(bind_group) = bind_group {

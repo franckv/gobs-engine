@@ -5,8 +5,8 @@ use std::{
 
 use gobs_core::logger;
 use gobs_gfx::{
-    BindingGroupPool, GfxBindingGroup, GfxBindingGroupLayout, GfxBindingGroupPool, GfxBuffer,
-    GfxDevice,
+    BindingGroup, BindingGroupPool, BindingGroupUpdates, Buffer, BufferUsage, GfxBindingGroup,
+    GfxBindingGroupLayout, GfxBindingGroupPool, GfxBuffer, GfxDevice,
 };
 use gobs_render_low::{MaterialConstantData, MaterialDataLayout, UniformData};
 use gobs_resource::{
@@ -74,12 +74,13 @@ impl ResourceLoader<MaterialInstance> for MaterialInstanceLoader {
         );
 
         let material_buffer = self.create_buffer(
+            properties.name(),
             &properties.material_data_layout,
             properties.material_data.as_ref(),
         );
 
         let (material_binding, texture_binding) =
-            self.load_material_bindings(handle, &material.properties);
+            self.load_material_bindings(handle, material_buffer.as_ref(), &material.properties);
 
         let data = MaterialInstanceData {
             material: properties.material,
@@ -121,15 +122,19 @@ impl MaterialInstanceLoader {
 
     fn create_buffer(
         &self,
+        name: &str,
         material_data_layout: &MaterialDataLayout,
         material_data: Option<&MaterialConstantData>,
-    ) -> Option<Arc<GfxBuffer>> {
-        let mut buffer = Vec::new();
+    ) -> Option<GfxBuffer> {
+        let mut data = Vec::new();
 
         if let Some(material_data) = material_data {
-            material_data_layout.copy_data(None, material_data, &mut buffer);
+            material_data_layout.copy_data(None, material_data, &mut data);
 
-            None
+            let mut buffer = GfxBuffer::new(name, data.len(), BufferUsage::Uniform, &self.device);
+            buffer.copy(&data, 0);
+
+            Some(buffer)
         } else {
             None
         }
@@ -138,6 +143,7 @@ impl MaterialInstanceLoader {
     fn load_material_bindings(
         &mut self,
         handle: &ResourceHandle<MaterialInstance>,
+        material_buffer: Option<&GfxBuffer>,
         material_properties: &MaterialProperties,
     ) -> (Option<GfxBindingGroup>, Option<GfxBindingGroup>) {
         match self.material_bindings.entry(handle.id) {
@@ -152,7 +158,7 @@ impl MaterialInstanceLoader {
                 );
 
                 let material_binding = Self::load_material(
-                    material_properties,
+                    material_buffer,
                     self.material_binding_pools.get_mut(&handle.id).unwrap(),
                 );
 
@@ -175,11 +181,17 @@ impl MaterialInstanceLoader {
     }
 
     fn load_material(
-        material_properties: &MaterialProperties,
+        material_buffer: Option<&GfxBuffer>,
         pool: &mut GfxBindingGroupPool,
     ) -> Option<GfxBindingGroup> {
-        if !material_properties.material_data_layout.is_empty() {
+        if let Some(material_buffer) = material_buffer {
+            tracing::debug!(target: logger::RESOURCES, "Bind material uniform buffer");
             let binding = pool.allocate();
+
+            binding
+                .update()
+                .bind_buffer(material_buffer, 0, material_buffer.size())
+                .end();
 
             Some(binding)
         } else {

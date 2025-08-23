@@ -4,6 +4,7 @@ use gobs::{
     core::{Color, Input, Transform, logger},
     game::{AppError, Application, GameContext, GameOptions, Run},
     render::{MaterialInstanceProperties, MaterialsConfig, Model, RenderError},
+    render_low::MaterialDataPropData,
     resource::{entity::light::Light, geometry::Shapes, resource::ResourceLifetime},
     scene::{components::NodeValue, scene::Scene},
     ui::UIRenderer,
@@ -81,7 +82,9 @@ impl App {
 
         let material = ctx.resource_manager.get_by_name("color.material").unwrap();
         let material_instance_properties =
-            MaterialInstanceProperties::new("color.material", material);
+            MaterialInstanceProperties::new("color.material", material)
+                .prop(MaterialDataPropData::DiffuseColor(Color::PURPLE.into()));
+
         let material_instance = ctx
             .resource_manager
             .add(material_instance_properties, ResourceLifetime::Static);

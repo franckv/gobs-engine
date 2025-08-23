@@ -1,5 +1,3 @@
-use std::sync::Arc;
-
 use gobs_gfx::{GfxBindingGroup, GfxBuffer};
 use gobs_render_low::{
     MaterialConstantData, MaterialDataLayout, MaterialDataProp, MaterialDataPropData, UniformData,
@@ -88,7 +86,7 @@ impl MaterialInstanceProperties {
 
 pub struct MaterialInstanceData {
     pub material: ResourceHandle<Material>,
-    pub material_buffer: Option<Arc<GfxBuffer>>,
+    pub material_buffer: Option<GfxBuffer>,
     pub material_binding: Option<GfxBindingGroup>,
     pub texture_binding: Option<GfxBindingGroup>,
     pub bound: bool,
