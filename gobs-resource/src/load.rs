@@ -46,11 +46,13 @@ pub async fn load_string(file_name: &str, ty: AssetType) -> Result<String, Loadi
 }
 
 pub fn load_string_sync(file_name: &str, ty: AssetType) -> Result<String, LoadingError> {
-    let path = get_asset_dir(file_name, ty)?;
+    let path = get_asset_dir(file_name, ty)
+        .map_err(|_| LoadingError::AssetNotFound(file_name.to_string()))?;
 
     tracing::debug!(target: logger::RESOURCES, "Loading string: {:?}", path);
 
-    let txt = std::fs::read_to_string(path)?;
+    let txt = std::fs::read_to_string(path)
+        .map_err(|_| LoadingError::AssetNotFound(file_name.to_string()))?;
 
     Ok(txt)
 }
@@ -60,7 +62,8 @@ pub async fn load_binary(file_name: &str, ty: AssetType) -> Result<Vec<u8>, Load
 
     tracing::debug!(target: logger::RESOURCES, "Loading bin: {:?}", path);
 
-    let data = std::fs::read(path)?;
+    let data =
+        std::fs::read(path).map_err(|_| LoadingError::AssetNotFound(file_name.to_string()))?;
 
     Ok(data)
 }

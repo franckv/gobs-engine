@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use gobs_core::{ImageFormat, logger};
 use gobs_resource::geometry::VertexAttribute;
-use gobs_resource::load;
+use gobs_resource::load::{self, LoadingError};
 use gobs_vulkan as vk;
 
 use crate::backend::vulkan::{
@@ -55,12 +55,15 @@ pub struct VkGraphicsPipelineBuilder {
 
 impl GraphicsPipelineBuilder<VkRenderer> for VkGraphicsPipelineBuilder {
     fn vertex_shader(mut self, filename: &str, entry: &str) -> Result<Self, GfxError> {
-        let shader_file = load::get_asset_dir(filename, load::AssetType::SHADER)?;
+        let shader_file = load::get_asset_dir(filename, load::AssetType::SHADER)
+            .map_err(|_| LoadingError::AssetNotFound(filename.to_string()))?;
+
         let shader = vk::pipelines::Shader::from_file(
             shader_file,
             self.device.device.clone(),
             vk::pipelines::ShaderType::Vertex,
-        )?;
+        )
+        .map_err(|_| LoadingError::AssetNotFound(filename.to_string()))?;
 
         self.builder = self.builder.vertex_shader(entry, shader);
 
@@ -68,12 +71,15 @@ impl GraphicsPipelineBuilder<VkRenderer> for VkGraphicsPipelineBuilder {
     }
 
     fn fragment_shader(mut self, filename: &str, entry: &str) -> Result<Self, GfxError> {
-        let shader_file = load::get_asset_dir(filename, load::AssetType::SHADER)?;
+        let shader_file = load::get_asset_dir(filename, load::AssetType::SHADER)
+            .map_err(|_| LoadingError::AssetNotFound(filename.to_string()))?;
+
         let shader = vk::pipelines::Shader::from_file(
             shader_file,
             self.device.device.clone(),
             vk::pipelines::ShaderType::Fragment,
-        )?;
+        )
+        .map_err(|_| LoadingError::AssetNotFound(filename.to_string()))?;
 
         self.builder = self.builder.fragment_shader(entry, shader);
 
