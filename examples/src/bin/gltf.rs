@@ -5,7 +5,10 @@ use gobs::{
     core::{Color, Input, logger},
     game::{AppError, Application, GameContext, GameOptions, Run},
     render::RenderError,
-    resource::{entity::light::Light, load},
+    resource::{
+        entity::{camera::Camera, light::Light},
+        load,
+    },
     scene::{graph::scenegraph::SceneGraph, scene::Scene},
     ui::UIRenderer,
 };
@@ -21,7 +24,17 @@ struct App {
 
 impl Run for App {
     async fn create(ctx: &mut GameContext) -> Result<Self, AppError> {
-        let camera = SampleApp::perspective_camera(ctx);
+        let extent = ctx.renderer.extent();
+
+        let camera = Camera::perspective(
+            extent.width as f32 / extent.height as f32,
+            60_f32.to_radians(),
+            0.1,
+            500.,
+            0.,
+            0.,
+        );
+
         let camera_position = Vec3::new(10., 5., 10.);
 
         let light = Light::new(Color::WHITE);
