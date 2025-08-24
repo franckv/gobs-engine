@@ -1,3 +1,4 @@
+use egui_extras::{Column, TableBuilder};
 use glam::Vec3;
 
 use gobs::{
@@ -134,11 +135,57 @@ impl Ui {
             .open(&mut show_batch)
             .show(ectx, |ui| {
                 ui.label(format!("Count: {}", batch.render_list.len()));
-                egui::ScrollArea::vertical().show(ui, |ui| {
-                    for object in &batch.render_list {
-                        ui.label(format!(" {:?}", object.model_id));
-                    }
-                });
+
+                TableBuilder::new(ui)
+                    .striped(true)
+                    .resizable(true)
+                    .auto_shrink(false)
+                    .columns(Column::auto(), 5)
+                    .column(Column::remainder())
+                    .header(10., |mut headers| {
+                        headers.col(|ui| {
+                            ui.heading("model id");
+                        });
+                        headers.col(|ui| {
+                            ui.heading("transparent");
+                        });
+                        headers.col(|ui| {
+                            ui.heading("pipeline");
+                        });
+                        headers.col(|ui| {
+                            ui.heading("material");
+                        });
+                        headers.col(|ui| {
+                            ui.heading("pass id");
+                        });
+                        headers.col(|ui| {
+                            ui.heading("layer");
+                        });
+                    })
+                    .body(|mut body| {
+                        for object in &batch.render_list {
+                            body.row(10., |mut row| {
+                                row.col(|ui| {
+                                    ui.label(format!("{:?}", object.model_id));
+                                });
+                                row.col(|ui| {
+                                    ui.label(format!("{:?}", object.is_transparent()));
+                                });
+                                row.col(|ui| {
+                                    ui.label(format!("{:?}", object.pipeline_id()));
+                                });
+                                row.col(|ui| {
+                                    ui.label(format!("{:?}", object.material_instance_id));
+                                });
+                                row.col(|ui| {
+                                    ui.label(format!("{:?}", object.pass_id));
+                                });
+                                row.col(|ui| {
+                                    ui.label(format!("{:?}", object.layer));
+                                });
+                            });
+                        }
+                    });
             });
 
         self.show_batch = show_batch;

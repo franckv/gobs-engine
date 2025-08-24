@@ -6,6 +6,7 @@ edition = { workspace = true }
 
 [dependencies]
 egui = { workspace = true }
+egui_extras = { workspace = true }
 futures = { workspace = true }
 glam = { workspace = true }
 gobs = { workspace = true }
