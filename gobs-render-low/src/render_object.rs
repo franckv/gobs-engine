@@ -19,6 +19,7 @@ pub struct RenderObject {
     pub pipeline: Option<Arc<GfxPipeline>>,
     pub is_transparent: bool,
     pub bind_groups: Vec<GfxBindingGroup>,
+    pub material_instance_id: Uuid,
 }
 
 impl RenderObject {

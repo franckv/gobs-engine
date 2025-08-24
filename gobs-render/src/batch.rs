@@ -8,7 +8,7 @@ use gobs_resource::{
     entity::{camera::Camera, light::Light},
     geometry::{BoundingBox, MeshBuilder, MeshGeometry, Shapes},
     manager::ResourceManager,
-    resource::{ResourceError, ResourceHandle, ResourceLifetime},
+    resource::{ResourceError, ResourceHandle, ResourceId, ResourceLifetime},
 };
 
 use crate::{MaterialInstance, model::Model};
@@ -96,6 +96,11 @@ impl RenderBatch {
         for (mesh, material_instance) in &model.meshes {
             let bind_groups = Self::get_bind_groups(material_instance.as_ref(), resource_manager);
 
+            let material_instance_id = match material_instance {
+                Some(instance) => instance.id,
+                None => ResourceId::default(),
+            };
+
             let material_handle = material_instance.as_ref().and_then(|material_instance| {
                 resource_manager
                     .get_data(material_instance, ())
@@ -149,6 +154,7 @@ impl RenderBatch {
                 index_buffer: mesh_data.index_buffer.clone(),
                 indices_offset: mesh_data.indices_offset,
                 indices_len: mesh_data.indices_len,
+                material_instance_id,
             });
         }
 
@@ -211,6 +217,7 @@ impl RenderBatch {
             (a.pass_id.cmp(&b.pass_id))
                 .then(a.is_transparent().cmp(&b.is_transparent()))
                 .then(a.pipeline_id().cmp(&b.pipeline_id()))
+                .then(a.material_instance_id.cmp(&b.material_instance_id))
                 .then(a.model_id.cmp(&b.model_id))
         });
     }

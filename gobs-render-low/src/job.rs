@@ -1,5 +1,6 @@
 use std::sync::Arc;
 
+use gobs_resource::resource::ResourceId;
 use parking_lot::RwLock;
 use thiserror::Error;
 use uuid::Uuid;
@@ -21,6 +22,7 @@ pub enum RenderJobError {
 struct RenderJobState {
     last_pipeline: PipelineId,
     last_index_buffer: BufferId,
+    last_material: ResourceId,
     last_indices_offset: usize,
     scene_data_bound: bool,
     object_data: Vec<u8>,
@@ -31,6 +33,7 @@ impl RenderJobState {
         Self {
             last_pipeline: PipelineId::nil(),
             last_index_buffer: BufferId::nil(),
+            last_material: ResourceId::nil(),
             last_indices_offset: 0,
             scene_data_bound: false,
             object_data: vec![],
@@ -108,7 +111,7 @@ impl RenderJob {
             self.bind_scene_data(frame, render_object, &mut state)?;
 
             // bind materials (ds, set 1=material, 2=textures)
-            self.bind_material_data(frame, render_object)?;
+            self.bind_material_data(frame, render_object, &mut state)?;
 
             // push constants + index buffer
             self.bind_object_data(ctx, frame, render_object, &mut state)?;
@@ -162,8 +165,11 @@ impl RenderJob {
         &self,
         frame: &mut FrameData,
         render_object: &RenderObject,
+        state: &mut RenderJobState,
     ) -> Result<(), RenderJobError> {
-        if self.fixed_pipeline.is_none() {
+        if self.fixed_pipeline.is_none()
+            && state.last_material != render_object.material_instance_id
+        {
             let pipeline = self.get_pipeline(render_object)?;
 
             tracing::debug!(target: logger::RENDER, "Bind resources");
@@ -173,6 +179,8 @@ impl RenderJob {
                 frame.command.bind_resource(bind_group, &pipeline);
                 frame.stats.bind_resource(self.pass_id);
             }
+
+            state.last_material = render_object.material_instance_id;
         }
 
         Ok(())
