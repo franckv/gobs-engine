@@ -65,6 +65,7 @@ impl UIRenderer {
         )
         .texture(TextureDataProp::Diffuse)
         .no_culling()
+        .depth_test_disable()
         .blend_mode(if transparent {
             BlendMode::Premultiplied
         } else {
@@ -375,6 +376,7 @@ impl UIRenderer {
 
         let mut model = Model::builder("ui");
 
+        let mut layer = 1;
         for primitive in &primitives {
             if let Primitive::Mesh(m) = &primitive.primitive {
                 tracing::trace!(target: logger::UI,
@@ -409,12 +411,14 @@ impl UIRenderer {
                     mesh = mesh.vertex(vertex_data);
                 }
 
-                model = model.mesh(
+                model = model.layer(layer).mesh(
                     mesh.build(),
                     Some(self.font_texture.get(&m.texture_id).cloned().unwrap()),
                     resource_manager,
                     ResourceLifetime::Transient,
                 );
+
+                layer += 1;
             } else {
                 tracing::error!(target: logger::UI, "Primitive unknown");
             }

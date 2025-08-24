@@ -81,6 +81,7 @@ impl Drop for Model {
 pub struct ModelBuilder {
     pub name: String,
     pub id: ModelId,
+    pub layer: u32,
     pub meshes: Vec<(
         ResourceHandle<Mesh>,
         Option<ResourceHandle<MaterialInstance>>,
@@ -93,6 +94,7 @@ impl ModelBuilder {
         ModelBuilder {
             name: name.to_string(),
             id: Uuid::new_v4(),
+            layer: 0,
             meshes: Vec::new(),
             bounding_box: BoundingBox::default(),
         }
@@ -100,6 +102,12 @@ impl ModelBuilder {
 
     pub fn id(mut self, model_id: ModelId) -> Self {
         self.id = model_id;
+
+        self
+    }
+
+    pub fn layer(mut self, layer: u32) -> Self {
+        self.layer = layer;
 
         self
     }
@@ -113,7 +121,8 @@ impl ModelBuilder {
     ) -> Self {
         self.bounding_box.extends_box(mesh.boundings());
 
-        let mesh_handle = resource_manager.add(MeshProperties::with_geometry(mesh), lifetime);
+        let mesh_handle =
+            resource_manager.add(MeshProperties::with_geometry(mesh, self.layer), lifetime);
 
         if let Some(material_instance) = material_instance {
             self.meshes.push((mesh_handle, Some(material_instance)));

@@ -134,6 +134,12 @@ impl MaterialProperties {
 
         self
     }
+
+    pub fn depth_test_disable(mut self) -> Self {
+        self.pipeline_properties = self.pipeline_properties.depth_test_disable();
+
+        self
+    }
 }
 
 #[derive(Clone)]

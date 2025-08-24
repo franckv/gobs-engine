@@ -20,6 +20,7 @@ pub struct RenderObject {
     pub is_transparent: bool,
     pub bind_groups: Vec<GfxBindingGroup>,
     pub material_instance_id: Uuid,
+    pub layer: u32,
 }
 
 impl RenderObject {

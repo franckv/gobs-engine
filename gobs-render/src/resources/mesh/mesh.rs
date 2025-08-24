@@ -30,6 +30,7 @@ pub enum MeshPath {
 pub struct MeshProperties {
     pub name: String,
     pub path: MeshPath,
+    pub layer: u32,
 }
 
 impl ResourceProperties for MeshProperties {
@@ -39,10 +40,11 @@ impl ResourceProperties for MeshProperties {
 }
 
 impl MeshProperties {
-    pub fn with_geometry(geometry: Arc<MeshGeometry>) -> Self {
+    pub fn with_geometry(geometry: Arc<MeshGeometry>, layer: u32) -> Self {
         Self {
             name: geometry.name.clone(),
             path: MeshPath::Mesh(geometry),
+            layer,
         }
     }
 }
