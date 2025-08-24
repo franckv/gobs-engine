@@ -172,12 +172,12 @@ impl RenderJob {
         {
             let pipeline = self.get_pipeline(render_object)?;
 
-            tracing::debug!(target: logger::RENDER, "Bind resources");
+            tracing::debug!(target: logger::RENDER, "Bind material resources: {}", render_object.bind_groups.len());
             for bind_group in &render_object.bind_groups {
                 tracing::trace!(target: logger::RENDER, "Bind resource: {:?} ({:?})", bind_group.bind_group_type, bind_group.ds.layout);
 
                 frame.command.bind_resource(bind_group, &pipeline);
-                frame.stats.bind_resource(self.pass_id);
+                frame.stats.bind_material_resource(self.pass_id);
             }
 
             state.last_material = render_object.material_instance_id;
@@ -192,8 +192,8 @@ impl RenderJob {
         render_object: &RenderObject,
         state: &mut RenderJobState,
     ) -> Result<(), RenderJobError> {
-        tracing::debug!(target: logger::RENDER, "Bind scene data");
         if !state.scene_data_bound {
+            tracing::debug!(target: logger::RENDER, "Bind scene data");
             let uniform_buffer = self.uniform_buffer.read();
 
             let pipeline = self.get_pipeline(render_object)?;
@@ -204,7 +204,7 @@ impl RenderJob {
                 BindingGroupType::SceneData,
                 &pipeline,
             );
-            frame.stats.bind_resource(self.pass_id);
+            frame.stats.bind_scene_resource(self.pass_id);
             state.scene_data_bound = true;
         }
 
@@ -237,7 +237,7 @@ impl RenderJob {
             frame
                 .command
                 .bind_index_buffer(&render_object.index_buffer, render_object.indices_offset);
-            frame.stats.bind_resource(self.pass_id);
+            frame.stats.bind_index_resource(self.pass_id);
             state.last_index_buffer = render_object.index_buffer.id();
             state.last_indices_offset = render_object.indices_offset;
         }

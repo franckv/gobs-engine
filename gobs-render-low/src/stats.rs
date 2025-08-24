@@ -9,7 +9,10 @@ pub struct PassStats {
     pub draws: u32,
     pub indices: u32,
     pub pipeline_binds: u32,
-    pub resource_binds: u32,
+    pub material_resource_binds: u32,
+    pub scene_resource_binds: u32,
+    pub index_resource_binds: u32,
+    pub attach_resource_binds: u32,
     pub cpu_draw_time: f32,
 }
 
@@ -18,7 +21,10 @@ impl PassStats {
         self.draws = 0;
         self.indices = 0;
         self.pipeline_binds = 0;
-        self.resource_binds = 0;
+        self.material_resource_binds = 0;
+        self.scene_resource_binds = 0;
+        self.index_resource_binds = 0;
+        self.attach_resource_binds = 0;
     }
 }
 
@@ -72,10 +78,28 @@ impl RenderStats {
         pass.pipeline_binds += 1;
     }
 
-    pub fn bind_resource(&mut self, id: Uuid) {
+    pub fn bind_material_resource(&mut self, id: Uuid) {
         let pass = self.pass_stats.entry(id).or_default();
 
-        pass.resource_binds += 1;
+        pass.material_resource_binds += 1;
+    }
+
+    pub fn bind_scene_resource(&mut self, id: Uuid) {
+        let pass = self.pass_stats.entry(id).or_default();
+
+        pass.scene_resource_binds += 1;
+    }
+
+    pub fn bind_index_resource(&mut self, id: Uuid) {
+        let pass = self.pass_stats.entry(id).or_default();
+
+        pass.index_resource_binds += 1;
+    }
+
+    pub fn bind_attach_resource(&mut self, id: Uuid) {
+        let pass = self.pass_stats.entry(id).or_default();
+
+        pass.attach_resource_binds += 1;
     }
 
     pub fn finish(&mut self, id: Uuid) {

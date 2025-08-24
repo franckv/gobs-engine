@@ -533,19 +533,34 @@ impl Ui {
                         ui.label(format!("Objects: {}", frame.stats.objects));
 
                         let mut pipeline_binds = 0;
-                        let mut resource_binds = 0;
+                        let mut material_resource_binds = 0;
+                        let mut scene_resource_binds = 0;
+                        let mut index_resource_binds = 0;
+                        let mut attach_resource_binds = 0;
                         let mut draws = 0;
                         let mut cpu_draw_time = 0.;
                         for pass in &graph.passes {
                             if let Some(stats) = frame.stats.pass(pass.id()) {
                                 pipeline_binds += stats.pipeline_binds;
-                                resource_binds += stats.resource_binds;
+                                material_resource_binds += stats.material_resource_binds;
+                                scene_resource_binds += stats.scene_resource_binds;
+                                index_resource_binds += stats.index_resource_binds;
+                                attach_resource_binds += stats.attach_resource_binds;
                                 draws += stats.draws;
                                 cpu_draw_time += stats.cpu_draw_time;
                             }
                         }
                         ui.label(format!("Pipeline binds: {}", pipeline_binds));
-                        ui.label(format!("Resource binds: {}", resource_binds));
+                        ui.label(format!(
+                            "Resource binds (material): {}",
+                            material_resource_binds
+                        ));
+                        ui.label(format!("Resource binds (scene): {}", scene_resource_binds));
+                        ui.label(format!("Resource binds (index): {}", index_resource_binds));
+                        ui.label(format!(
+                            "Resource binds (attach): {}",
+                            attach_resource_binds
+                        ));
                         ui.label(format!("Draws: {}", draws));
                         ui.label(format!("CPU time: {:.2} ms", 1000. * cpu_draw_time));
                     });
@@ -556,7 +571,22 @@ impl Ui {
                             .default_open(true)
                             .show(ui, |ui| {
                                 ui.label(format!("Pipeline binds: {}", stats.pipeline_binds));
-                                ui.label(format!("Resource binds: {}", stats.resource_binds));
+                                ui.label(format!(
+                                    "Resource binds (material): {}",
+                                    stats.material_resource_binds
+                                ));
+                                ui.label(format!(
+                                    "Resource binds (scene): {}",
+                                    stats.scene_resource_binds
+                                ));
+                                ui.label(format!(
+                                    "Resource binds (index): {}",
+                                    stats.index_resource_binds
+                                ));
+                                ui.label(format!(
+                                    "Resource binds (attach): {}",
+                                    stats.attach_resource_binds
+                                ));
                                 ui.label(format!("Draws: {}", stats.draws));
                                 ui.label(format!("Indices: {}", stats.indices));
                                 ui.label(format!(

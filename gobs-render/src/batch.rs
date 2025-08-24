@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use gobs_core::{ImageExtent2D, Transform, logger};
-use gobs_gfx::{BindingGroup, BindingGroupUpdates, GfxBindingGroup};
+use gobs_gfx::{BindingGroup, BindingGroupUpdates, Buffer, GfxBindingGroup};
 use gobs_render_graph::RenderPass;
 use gobs_render_low::{GfxContext, RenderObject, SceneData};
 use gobs_resource::{
@@ -218,7 +218,8 @@ impl RenderBatch {
                 .then(a.is_transparent().cmp(&b.is_transparent()))
                 .then(a.pipeline_id().cmp(&b.pipeline_id()))
                 .then(a.material_instance_id.cmp(&b.material_instance_id))
-                .then(a.model_id.cmp(&b.model_id))
+                .then(a.index_buffer.id().cmp(&b.index_buffer.id()))
+                .then(a.indices_offset.cmp(&b.indices_offset))
         });
     }
 
