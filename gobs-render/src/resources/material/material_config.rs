@@ -51,9 +51,8 @@ impl MaterialsConfig {
         let resources = load::load_string(filename, AssetType::RESOURCES)
             .await
             .unwrap();
-        let config: MaterialsConfig = ron::from_str(&resources).unwrap();
 
-        config.load_materials(ctx, resource_manager);
+        Self::load_resources_with_data(ctx, &resources, resource_manager);
     }
 
     pub fn load_resources_sync(
@@ -62,7 +61,16 @@ impl MaterialsConfig {
         resource_manager: &mut ResourceManager,
     ) {
         let resources = load::load_string_sync(filename, AssetType::RESOURCES).unwrap();
-        let config: MaterialsConfig = ron::from_str(&resources).unwrap();
+
+        Self::load_resources_with_data(ctx, &resources, resource_manager);
+    }
+
+    pub fn load_resources_with_data(
+        ctx: &GfxContext,
+        data: &str,
+        resource_manager: &mut ResourceManager,
+    ) {
+        let config: MaterialsConfig = ron::from_str(data).unwrap();
 
         config.load_materials(ctx, resource_manager);
     }

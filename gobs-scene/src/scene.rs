@@ -132,6 +132,7 @@ impl Scene {
 }
 
 impl Renderable for Scene {
+    #[tracing::instrument(target = "perf", skip_all, level = "trace")]
     fn draw(
         &self,
         resource_manager: &mut ResourceManager,

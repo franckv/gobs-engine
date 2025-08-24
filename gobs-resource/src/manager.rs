@@ -198,7 +198,7 @@ impl ResourceManager {
         handle: &ResourceHandle<R>,
         parameter: &R::ResourceParameter,
     ) -> Result<(), ResourceError> {
-        let resource = self.registry.get_mut(handle);
+        let resource = self.get_mut(handle);
 
         if !resource.is_loaded(parameter) {
             let loader = self

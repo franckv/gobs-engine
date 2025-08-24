@@ -77,6 +77,8 @@ impl Renderer {
 
         self.frame_number += 1;
 
+        tracing::debug!(target: logger::PERF, "Begin new frame {}", self.frame_number);
+
         let frame = &mut self.frames[self.frame_number % self.gfx.frames_in_flight];
 
         frame.reset(self.frame_number);
@@ -93,13 +95,19 @@ impl Renderer {
 
         self.batch.reset();
 
+        frame.stats.prepare_begin();
+
         for pass in &self.graph.passes {
+            tracing::debug!(target: logger::PERF, "Begin new pass {}", pass.name());
             draw_cmd(pass.clone(), &mut self.batch, resource_manager)?;
         }
 
+        frame.stats.prepare_draw();
+
         self.batch.finish(resource_manager);
 
-        frame.stats.prepare();
+        frame.stats.prepare_end();
+
         frame.stats.objects(self.batch.render_list.len() as u32);
 
         self.graph

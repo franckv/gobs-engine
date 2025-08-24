@@ -1,5 +1,3 @@
-use serde::Deserialize;
-
 use gobs_gfx::{
     BindingGroupType, BlendMode, CompareOp, CullMode, DescriptorStage, DescriptorType, FrontFace,
 };
@@ -23,11 +21,6 @@ impl ResourceType for Material {
     type ResourceProperties = MaterialProperties;
     type ResourceParameter = ();
     type ResourceLoader = MaterialLoader;
-}
-
-#[derive(Clone, Copy, Debug, Deserialize)]
-pub enum MaterialProperty {
-    Texture,
 }
 
 #[derive(Clone, Debug)]

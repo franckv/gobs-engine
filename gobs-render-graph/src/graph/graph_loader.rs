@@ -72,7 +72,7 @@ impl GraphConfig {
         Self::load_with_data(&data)
     }
 
-    fn load_with_data(data: &str) -> Result<Self, ResourceError> {
+    pub fn load_with_data(data: &str) -> Result<Self, ResourceError> {
         let options = ron::options::Options::default()
             .with_default_extension(ron::extensions::Extensions::IMPLICIT_SOME);
 
@@ -92,7 +92,7 @@ impl GraphConfig {
         Self::load_graph_with_data(ctx, &data, name, resource_manager)
     }
 
-    fn load_graph_with_data(
+    pub fn load_graph_with_data(
         ctx: &GfxContext,
         data: &str,
         name: &str,
@@ -104,7 +104,7 @@ impl GraphConfig {
             .iter()
             .map(|passname| {
                 Self::load_pass(ctx, &graph, passname, resource_manager)
-                    .expect(&format!("Failed to load pass {}", passname))
+                    .unwrap_or_else(|| panic!("Failed to load pass {}", passname))
             })
             .collect();
 

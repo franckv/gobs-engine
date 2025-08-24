@@ -209,7 +209,7 @@ impl Ui {
     pub fn draw_graph(&mut self, ui: &mut egui::Ui, graph: &mut SceneGraph) {
         let old_selected = self.selected_node;
         egui::CollapsingHeader::new("Graph")
-            .default_open(true)
+            .default_open(false)
             .show(ui, |ui| {
                 egui::CollapsingHeader::new("scene")
                     .default_open(true)
@@ -520,7 +520,15 @@ impl Ui {
                     .show(ui, |ui| {
                         ui.label(format!(
                             "Prepare time: {:.2} ms",
-                            1000. * frame.stats.cpu_prepare_time
+                            1000. * frame.stats.cpu_prepare_begin_time
+                        ));
+                        ui.label(format!(
+                            "Prepare time: {:.2} ms",
+                            1000. * frame.stats.cpu_prepare_draw_time
+                        ));
+                        ui.label(format!(
+                            "Prepare time: {:.2} ms",
+                            1000. * frame.stats.cpu_prepare_end_time
                         ));
                         ui.label(format!("Objects: {}", frame.stats.objects));
 

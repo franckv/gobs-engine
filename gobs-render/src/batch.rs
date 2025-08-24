@@ -237,3 +237,71 @@ impl RenderBatch {
         self.sort();
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use gobs_core::{Color, Transform, utils::timer::Timer};
+    use gobs_render_graph::GraphConfig;
+    use gobs_render_low::GfxContext;
+    use gobs_resource::{geometry::Shapes, manager::ResourceManager, resource::ResourceLifetime};
+    use tracing::Level;
+    use tracing_subscriber::{EnvFilter, FmtSubscriber, fmt::format::FmtSpan};
+
+    use crate::{Model, RenderBatch};
+
+    fn setup() {
+        let sub = FmtSubscriber::builder()
+            .with_max_level(Level::INFO)
+            .with_span_events(FmtSpan::CLOSE)
+            .with_env_filter(EnvFilter::from_default_env())
+            .finish();
+        tracing::subscriber::set_global_default(sub).unwrap_or_default();
+    }
+
+    #[test]
+    fn test_sort() {
+        setup();
+
+        let span = tracing::trace_span!(target: "perf", "sort").entered();
+
+        let ctx = GfxContext::new("test", None, false).unwrap();
+        let mut resource_manager = ResourceManager::new(ctx.frames_in_flight);
+
+        let graph_data = include_str!("../../examples/resources/graph.ron");
+        let passes =
+            GraphConfig::load_graph_with_data(&ctx, graph_data, "test", &mut resource_manager)
+                .unwrap();
+
+        let triangle = Model::builder("triangle")
+            .mesh(
+                Shapes::triangle(
+                    &[Color::RED, Color::GREEN, Color::BLUE],
+                    1.,
+                    ctx.vertex_padding,
+                ),
+                None,
+                &mut resource_manager,
+                ResourceLifetime::Static,
+            )
+            .build();
+
+        let mut batch = RenderBatch::new(&ctx);
+
+        let mut timer = Timer::new();
+
+        for _ in 0..30000 {
+            let _ = batch.add_model(
+                &mut resource_manager,
+                triangle.clone(),
+                Transform::IDENTITY,
+                passes[0].clone(),
+            );
+        }
+
+        batch.sort();
+
+        span.exit();
+
+        tracing::trace!(target: "perf", "sort: {}", 1000. * timer.delta());
+    }
+}

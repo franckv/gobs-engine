@@ -4,5 +4,6 @@ pub const INIT: &str = "init";
 pub const MEMORY: &str = "memory";
 pub const RENDER: &str = "render";
 pub const RESOURCES: &str = "resources";
+pub const PERF: &str = "perf";
 pub const SYNC: &str = "sync";
 pub const UI: &str = "ui";

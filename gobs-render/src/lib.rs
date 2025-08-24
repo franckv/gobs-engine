@@ -16,7 +16,6 @@ pub use renderable::Renderable;
 pub use renderer::{BuiltinGraphs, Renderer, RendererOptions};
 pub use resources::{
     Material, MaterialData, MaterialInstance, MaterialInstanceLoader, MaterialInstanceProperties,
-    MaterialLoader, MaterialProperties, MaterialProperty, MaterialsConfig, Mesh, MeshData,
-    MeshLoader, Texture, TextureData, TextureLoader, TexturePath, TextureProperties, TextureType,
-    TextureUpdate,
+    MaterialLoader, MaterialProperties, MaterialsConfig, Mesh, MeshData, MeshLoader, Texture,
+    TextureData, TextureLoader, TexturePath, TextureProperties, TextureType, TextureUpdate,
 };

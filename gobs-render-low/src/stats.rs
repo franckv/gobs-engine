@@ -27,7 +27,9 @@ pub struct RenderStats {
     timer: Timer,
     pass_stats: HashMap<Uuid, PassStats>,
     pub objects: u32,
-    pub cpu_prepare_time: f32,
+    pub cpu_prepare_begin_time: f32,
+    pub cpu_prepare_draw_time: f32,
+    pub cpu_prepare_end_time: f32,
 }
 
 impl RenderStats {
@@ -37,8 +39,16 @@ impl RenderStats {
         self.objects = 0;
     }
 
-    pub fn prepare(&mut self) {
-        self.cpu_prepare_time = self.timer.delta();
+    pub fn prepare_begin(&mut self) {
+        self.cpu_prepare_begin_time = self.timer.delta();
+    }
+
+    pub fn prepare_draw(&mut self) {
+        self.cpu_prepare_draw_time = self.timer.delta();
+    }
+
+    pub fn prepare_end(&mut self) {
+        self.cpu_prepare_end_time = self.timer.delta();
     }
 
     pub fn pass(&self, id: Uuid) -> Option<&PassStats> {
