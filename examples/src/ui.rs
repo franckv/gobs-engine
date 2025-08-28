@@ -1,10 +1,11 @@
+use egui::{ColorImage, TextureHandle};
 use egui_extras::{Column, TableBuilder};
 use glam::Vec3;
 
 use gobs::{
     core::Transform,
     game::context::GameContext,
-    render::{Material, MaterialInstance, Mesh, RenderBatch, Texture},
+    render::{Material, MaterialInstance, Mesh, RenderBatch, Texture, TextureLoader},
     render_graph::{FrameGraph, Pipeline},
     render_low::FrameData,
     resource::{
@@ -24,8 +25,11 @@ pub struct Ui {
     pub show_models: bool,
     pub show_resources: bool,
     pub show_batch: bool,
+    pub show_texture: bool,
     pub ui_hovered: bool,
+    pub texture_view: Option<TextureHandle>,
     pub selected_node: NodeId,
+    pub selected_texture: Option<ResourceHandle<Texture>>,
     pub selected_mesh: (
         Option<ResourceHandle<Mesh>>,
         Option<ResourceHandle<MaterialInstance>>,
@@ -40,8 +44,11 @@ impl Ui {
             show_models: true,
             show_resources: false,
             show_batch: false,
+            show_texture: false,
             ui_hovered: false,
+            texture_view: None,
             selected_node: NodeId::default(),
+            selected_texture: None,
             selected_mesh: (None, None),
         }
     }
@@ -67,6 +74,8 @@ impl Ui {
             self.show_batch(ectx, ui, &ctx.renderer.batch);
 
             self.draw_general(ui, scene, (1. / delta).round() as u32);
+
+            self.show_texture(ectx, &mut ctx.resource_manager);
 
             ui.separator();
 
@@ -271,6 +280,7 @@ impl Ui {
             graph.set_selected(old_selected, false);
             graph.set_selected(self.selected_node, true);
             self.selected_mesh = (None, None);
+            self.selected_texture = None;
         }
     }
 
@@ -461,6 +471,34 @@ impl Ui {
         }
     }
 
+    fn show_texture(&mut self, ectx: &egui::Context, resource_manager: &mut ResourceManager) {
+        let mut show_texture = self.show_texture;
+
+        egui::Window::new("Texture")
+            .open(&mut show_texture)
+            .show(ectx, |ui| {
+                if let Some(texture) = self.selected_texture {
+                    let texture_properties =
+                        resource_manager.get_data(&texture, ()).unwrap().properties;
+
+                    if self.texture_view.is_none() {
+                        let mut format = texture_properties.format.clone();
+                        let size = format.extent.into();
+                        TextureLoader::get_bytes(&texture_properties.path, &mut format, |data| {
+                            let img = ColorImage::from_rgba_unmultiplied(size, data);
+                            let texture =
+                                ectx.load_texture("texture-view", img, Default::default());
+                            self.texture_view = Some(texture);
+                        });
+                    };
+                    let texture = self.texture_view.as_ref().unwrap();
+                    ui.image((texture.id(), texture.size_vec2()));
+                }
+            });
+
+        self.show_texture = show_texture;
+    }
+
     fn draw_material(&mut self, ui: &mut egui::Ui, resource_manager: &ResourceManager) {
         let (_, material) = &self.selected_mesh;
         if let Some(material) = material {
@@ -479,7 +517,6 @@ impl Ui {
                     ui.label(format!("  Id: {}", mat_instance_props.material.id));
                     ui.separator();
                     ui.label(format!("Transparent: {}", mat_props.blending_enabled));
-
                     ui.separator();
                     if !mat_instance_props.textures.is_empty() {
                         ui.label("Textures:");
@@ -489,6 +526,11 @@ impl Ui {
 
                         ui.label(format!("  Name: {}", texture_props.name(),));
                         ui.label(format!("  Id: {}", texture.id));
+                        if ui.button("").clicked() {
+                            self.show_texture = !self.show_texture;
+                            self.selected_texture = Some(*texture);
+                            self.texture_view = None;
+                        }
                     }
                 });
         }

@@ -1,3 +1,5 @@
+use std::usize;
+
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub struct ImageExtent2D {
     pub width: u32,
@@ -29,6 +31,18 @@ impl From<ImageExtent2D> for (u32, u32) {
 impl From<ImageExtent2D> for (f32, f32) {
     fn from(val: ImageExtent2D) -> Self {
         (val.width as f32, val.height as f32)
+    }
+}
+
+impl From<ImageExtent2D> for [u32; 2] {
+    fn from(val: ImageExtent2D) -> Self {
+        [val.width, val.height]
+    }
+}
+
+impl From<ImageExtent2D> for [usize; 2] {
+    fn from(val: ImageExtent2D) -> Self {
+        [val.width as usize, val.height as usize]
     }
 }
 

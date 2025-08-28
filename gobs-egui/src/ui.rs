@@ -278,7 +278,7 @@ impl UIRenderer {
     #[tracing::instrument(target = "ui", skip_all, level = "trace")]
     fn cleanup_textures(&mut self, resource_manager: &mut ResourceManager, output: &FullOutput) {
         for id in &output.textures_delta.free {
-            tracing::warn!(target: logger::UI, "Remove texture {:?}", id);
+            tracing::debug!(target: logger::UI, "Remove texture {:?}", id);
 
             let material_handle = self.font_texture.remove(id);
             let mut to_remove = Vec::new();
@@ -411,7 +411,7 @@ impl UIRenderer {
                 );
 
                 if !self.font_texture.contains_key(&m.texture_id) {
-                    tracing::warn!(target: logger::UI, "Missing texture: {:?}", m.texture_id);
+                    tracing::debug!(target: logger::UI, "Missing texture: {:?}", m.texture_id);
                     continue;
                 }
 
