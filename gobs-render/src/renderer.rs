@@ -64,6 +64,7 @@ impl Renderer {
         self.graph.update(&self.gfx, delta);
     }
 
+    #[tracing::instrument(target = "render", skip_all, level = "trace")]
     pub fn draw(
         &mut self,
         resource_manager: &mut ResourceManager,

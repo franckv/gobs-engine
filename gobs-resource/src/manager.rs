@@ -174,6 +174,7 @@ impl ResourceManager {
         self.registry.values()
     }
 
+    #[tracing::instrument(target = "resources", skip_all, level = "trace")]
     pub fn update<R: ResourceType + 'static>(&mut self) {
         tracing::trace!(target: logger::RESOURCES, "Update registry");
 
@@ -203,6 +204,7 @@ impl ResourceManager {
         self.loader.insert(loader);
     }
 
+    #[tracing::instrument(target = "resources", skip_all, level = "trace")]
     fn load_data<R: ResourceType + 'static>(
         &mut self,
         handle: &ResourceHandle<R>,
@@ -231,6 +233,7 @@ impl ResourceManager {
         Ok(())
     }
 
+    #[tracing::instrument(target = "resources", skip_all, level = "trace")]
     pub fn get_data<R: ResourceType + 'static>(
         &'_ mut self,
         handle: &ResourceHandle<R>,

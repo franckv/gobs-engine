@@ -43,6 +43,7 @@ impl Model {
 }
 
 impl Renderable for Arc<Model> {
+    #[tracing::instrument(target = "render", skip_all, level = "trace")]
     fn draw(
         &self,
         resource_manager: &mut ResourceManager,

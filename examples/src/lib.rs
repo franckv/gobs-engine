@@ -3,10 +3,16 @@ mod controller;
 mod ui;
 
 use tracing::{Level, level_filters::LevelFilter};
-use tracing_subscriber::{EnvFilter, FmtSubscriber, fmt::format::FmtSpan};
+use tracing_subscriber::{
+    EnvFilter, FmtSubscriber, Layer, filter,
+    fmt::{self, format::FmtSpan, layer},
+    layer::SubscriberExt,
+    util::SubscriberInitExt as _,
+};
 
 pub use app::SampleApp;
 pub use controller::CameraController;
+use tracing_tracy::TracyLayer;
 
 pub const WALL_TEXTURE: &str = "wall.png";
 pub const WALL_TEXTURE_N: &str = "wall_n.png";
@@ -36,14 +42,15 @@ pub const GLTF_MODEL: &str = "structure.glb";
 pub const GLTF_MODEL2: &str = "house2.glb";
 
 pub fn init_logger() {
-    FmtSubscriber::builder()
-        .with_max_level(Level::INFO)
-        .with_span_events(FmtSpan::CLOSE)
-        .with_env_filter(
-            EnvFilter::builder()
-                .with_default_directive(LevelFilter::INFO.into())
-                .from_env_lossy(),
+    tracing_subscriber::registry()
+        .with(
+            fmt::layer().with_filter(
+                EnvFilter::builder()
+                    .with_default_directive(LevelFilter::INFO.into())
+                    .from_env_lossy(),
+            ),
         )
+        .with(TracyLayer::default().with_filter(LevelFilter::TRACE))
         .init();
 
     tracing::info!(

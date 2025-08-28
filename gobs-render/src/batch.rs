@@ -38,11 +38,13 @@ impl RenderBatch {
         }
     }
 
+    #[tracing::instrument(target = "render", skip_all, level = "trace")]
     pub fn reset(&mut self) {
         self.render_list.clear();
         self.bounding_geometry = None;
     }
 
+    #[tracing::instrument(target = "render", skip_all, level = "trace")]
     fn get_bind_groups(
         material_instance: Option<&ResourceHandle<MaterialInstance>>,
         resource_manager: &mut ResourceManager,
@@ -162,6 +164,7 @@ impl RenderBatch {
         Ok(())
     }
 
+    #[tracing::instrument(target = "render", skip_all, level = "trace")]
     pub fn add_bounds(
         &mut self,
         bounding_box: BoundingBox,
@@ -183,6 +186,7 @@ impl RenderBatch {
         Ok(())
     }
 
+    #[tracing::instrument(target = "render", skip_all, level = "trace")]
     pub fn add_camera_data(
         &mut self,
         camera: &Camera,
@@ -212,6 +216,7 @@ impl RenderBatch {
         }
     }
 
+    #[tracing::instrument(target = "render", skip_all, level = "trace")]
     fn sort(&mut self) {
         self.render_list.sort_unstable_by(|a, b| {
             // sort order: pass, transparent, material, model
@@ -225,6 +230,7 @@ impl RenderBatch {
         });
     }
 
+    #[tracing::instrument(target = "render", skip_all, level = "trace")]
     pub fn finish(&mut self, resource_manager: &mut ResourceManager) {
         let bb = self.bounding_geometry.take();
 

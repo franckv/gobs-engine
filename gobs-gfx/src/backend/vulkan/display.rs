@@ -108,6 +108,7 @@ impl Display<VkRenderer> for VkDisplay {
         Ok(())
     }
 
+    #[tracing::instrument(target = "events", skip_all, level = "trace")]
     fn resize(&mut self, device: &VkDevice) {
         if let Some(swapchain) = &self.swapchain
             && let Some(surface) = &self.surface
@@ -153,6 +154,7 @@ impl Display<VkRenderer> for VkDisplay {
 }
 
 impl VkDisplay {
+    #[tracing::instrument(target = "render", skip_all, level = "trace")]
     fn create_swapchain(
         surface: Arc<vk::surface::Surface>,
         device: Arc<vk::device::Device>,

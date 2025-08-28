@@ -18,6 +18,7 @@ serde = { workspace = true }
 slotmap = { workspace = true }
 tracing = { workspace = true }
 tracing-subscriber = { workspace = true }
+tracing-tracy = { workspace = true }
 uuid = { workspace = true }
 
 [build-dependencies]

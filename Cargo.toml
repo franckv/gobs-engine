@@ -84,7 +84,7 @@ glam = { version = "0.30", features = ["bytemuck", "serde"] }
 gltf = "1.4"
 gpu-allocator = "0.27"
 image = "0.25"
-indexmap = "2.9"
+indexmap = "2.11"
 itertools = { version = "0.14" }
 naga = { version = "26", features = ["glsl-in", "spv-out"] }
 parking_lot = "0.12"
@@ -93,7 +93,7 @@ presser = "0.3"
 rand = "0.9"
 raw-window-handle = "0.6"
 renderdoc = "0.12.1"
-ron = "0.10"
+ron = "0.11"
 serde = { version = "1.0", features = ["derive", "rc"] }
 serde_json = "1.0"
 slotmap = "1.0"
@@ -101,7 +101,8 @@ thiserror = "2.0"
 tobj = "4.0"
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
-uuid = { version = "1.17", features = ["serde", "v4"] }
+tracing-tracy = "0.11"
+uuid = { version = "1.18", features = ["serde", "v4"] }
 winit = "0.30"
 
 [profile.release-with-debug]

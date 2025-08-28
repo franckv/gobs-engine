@@ -73,7 +73,12 @@ impl Ui {
 
             self.show_batch(ectx, ui, &ctx.renderer.batch);
 
-            self.draw_general(ui, scene, (1. / delta).round() as u32);
+            self.draw_general(
+                ui,
+                scene,
+                ctx.renderer.frame_number,
+                (1. / delta).round() as u32,
+            );
 
             self.show_texture(ectx, &mut ctx.resource_manager);
 
@@ -260,10 +265,11 @@ impl Ui {
         }
     }
 
-    pub fn draw_general(&mut self, ui: &mut egui::Ui, scene: &mut Scene, fps: u32) {
+    pub fn draw_general(&mut self, ui: &mut egui::Ui, scene: &mut Scene, frame: usize, fps: u32) {
         egui::CollapsingHeader::new("Settings")
             .default_open(true)
             .show(ui, |ui| {
+                ui.label(format!("Frame: {frame}"));
                 ui.label(format!("FPS: {fps}"));
                 ui.horizontal(|ui| {
                     ui.label("Screen");

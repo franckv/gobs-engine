@@ -138,6 +138,7 @@ impl UIRenderer {
         }
     }
 
+    #[tracing::instrument(target = "render", skip_all, level = "trace")]
     fn prepare_inputs(&mut self, delta: f32) -> RawInput {
         let mut input = RawInput {
             screen_rect: Some(Rect::from_min_size(

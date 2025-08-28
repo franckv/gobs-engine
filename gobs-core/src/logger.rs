@@ -7,3 +7,4 @@ pub const RESOURCES: &str = "resources";
 pub const PERF: &str = "perf";
 pub const SYNC: &str = "sync";
 pub const UI: &str = "ui";
+pub const UPDATE: &str = "update";

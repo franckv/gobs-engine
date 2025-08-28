@@ -59,6 +59,7 @@ impl SampleApp {
         CameraController::new(3., 0.4)
     }
 
+    #[tracing::instrument(target = "render", skip_all, level = "trace")]
     pub fn update_ui(
         &mut self,
         ctx: &mut GameContext,
@@ -82,6 +83,7 @@ impl SampleApp {
         !self.freeze
     }
 
+    #[tracing::instrument(target = "render", skip_all, level = "trace")]
     pub fn render(
         &mut self,
         ctx: &mut GameContext,
@@ -117,6 +119,8 @@ impl SampleApp {
             })?;
 
         tracing::trace!(target: logger::APP, "End render");
+
+        tracing_tracy::client::frame_mark();
 
         Ok(())
     }

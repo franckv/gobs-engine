@@ -237,6 +237,7 @@ impl FrameGraph {
         self.get_pass(|pass| pass.name() == pass_name)
     }
 
+    #[tracing::instrument(target = "render", skip_all, level = "trace")]
     pub fn begin(&mut self, ctx: &mut GfxContext, frame: &FrameData) -> Result<(), RenderError> {
         let cmd = &frame.command;
 
@@ -271,6 +272,7 @@ impl FrameGraph {
         Ok(())
     }
 
+    #[tracing::instrument(target = "render", skip_all, level = "trace")]
     pub fn end(&mut self, ctx: &mut GfxContext, frame: &FrameData) -> Result<(), RenderError> {
         tracing::debug!(target: logger::RENDER, "End frame");
 
@@ -298,6 +300,7 @@ impl FrameGraph {
 
     pub fn update(&mut self, _ctx: &GfxContext, _delta: f32) {}
 
+    #[tracing::instrument(target = "render", skip_all, level = "trace")]
     pub fn render(
         &mut self,
         ctx: &mut GfxContext,
