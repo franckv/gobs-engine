@@ -473,18 +473,22 @@ impl Ui {
                 .default_open(true)
                 .show(ui, |ui| {
                     ui.label(format!("Material instance: {}", mat_instance_props.name(),));
+                    ui.label(format!("  Id: {}", material.id));
+                    ui.separator();
                     ui.label(format!("Material: {}", mat_props.name(),));
-                    ui.label(format!("Id: {}", material.id));
+                    ui.label(format!("  Id: {}", mat_instance_props.material.id));
+                    ui.separator();
                     ui.label(format!("Transparent: {}", mat_props.blending_enabled));
 
+                    ui.separator();
                     if !mat_instance_props.textures.is_empty() {
                         ui.label("Textures:");
                     }
                     for texture in &mat_instance_props.textures {
                         let texture_props = &resource_manager.get(texture).properties;
 
-                        ui.label(format!("Name: {}", texture_props.name(),));
-                        ui.label(format!("Id: {}", texture.id));
+                        ui.label(format!("  Name: {}", texture_props.name(),));
+                        ui.label(format!("  Id: {}", texture.id));
                     }
                 });
         }
@@ -571,10 +575,6 @@ impl Ui {
                         ));
                         ui.label(format!(
                             "Prepare time: {:.2} ms",
-                            1000. * frame.stats.cpu_prepare_draw_time
-                        ));
-                        ui.label(format!(
-                            "Prepare time: {:.2} ms",
                             1000. * frame.stats.cpu_prepare_end_time
                         ));
                         ui.label(format!("Objects: {}", frame.stats.objects));
@@ -586,6 +586,7 @@ impl Ui {
                         let mut attach_resource_binds = 0;
                         let mut draws = 0;
                         let mut cpu_draw_time = 0.;
+                        let mut cpu_prepare_draw_time = 0.;
                         for pass in &graph.passes {
                             if let Some(stats) = frame.stats.pass(pass.id()) {
                                 pipeline_binds += stats.pipeline_binds;
@@ -595,6 +596,7 @@ impl Ui {
                                 attach_resource_binds += stats.attach_resource_binds;
                                 draws += stats.draws;
                                 cpu_draw_time += stats.cpu_draw_time;
+                                cpu_prepare_draw_time += stats.cpu_prepare_draw_time;
                             }
                         }
                         ui.label(format!("Pipeline binds: {}", pipeline_binds));
@@ -609,6 +611,10 @@ impl Ui {
                             attach_resource_binds
                         ));
                         ui.label(format!("Draws: {}", draws));
+                        ui.label(format!(
+                            "Prepare time: {:.2} ms",
+                            1000. * cpu_prepare_draw_time
+                        ));
                         ui.label(format!("CPU time: {:.2} ms", 1000. * cpu_draw_time));
                     });
 
@@ -636,6 +642,10 @@ impl Ui {
                                 ));
                                 ui.label(format!("Draws: {}", stats.draws));
                                 ui.label(format!("Indices: {}", stats.indices));
+                                ui.label(format!(
+                                    "Prepare time: {:.2} ms",
+                                    1000. * stats.cpu_prepare_draw_time
+                                ));
                                 ui.label(format!(
                                     "CPU time: {:.2} ms",
                                     1000. * stats.cpu_draw_time

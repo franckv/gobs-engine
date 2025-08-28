@@ -100,9 +100,8 @@ impl Renderer {
         for pass in &self.graph.passes {
             tracing::debug!(target: logger::PERF, "Begin new pass {}", pass.name());
             draw_cmd(pass.clone(), &mut self.batch, resource_manager)?;
+            frame.stats.prepare_draw(pass.id());
         }
-
-        frame.stats.prepare_draw();
 
         self.batch.finish(resource_manager);
 
