@@ -1,5 +1,5 @@
 use egui::{ColorImage, TextureHandle};
-use egui_extras::{Column, TableBuilder};
+use egui_extras::{Column, TableBody, TableBuilder};
 use glam::Vec3;
 
 use gobs::{
@@ -118,15 +118,48 @@ impl Ui {
             .open(&mut show_resources)
             .show(ectx, |ui| {
                 egui::ScrollArea::vertical().show(ui, |ui| {
-                    self.show_resource::<Texture>(ui, "Textures", resource_manager);
-                    self.show_resource::<Pipeline>(ui, "Pipelines", resource_manager);
-                    self.show_resource::<Material>(ui, "Materials", resource_manager);
-                    self.show_resource::<MaterialInstance>(
-                        ui,
-                        "Material instances",
-                        resource_manager,
-                    );
-                    self.show_resource::<Mesh>(ui, "Meshes", resource_manager);
+                    TableBuilder::new(ui)
+                        .striped(true)
+                        .resizable(true)
+                        .auto_shrink(false)
+                        .columns(Column::auto(), 4)
+                        .column(Column::remainder())
+                        .header(10., |mut headers| {
+                            headers.col(|ui| {
+                                ui.heading("resource type");
+                            });
+                            headers.col(|ui| {
+                                ui.heading("resource name");
+                            });
+                            headers.col(|ui| {
+                                ui.heading("resource id");
+                            });
+                            headers.col(|ui| {
+                                ui.heading("lifetime");
+                            });
+                            headers.col(|ui| {
+                                ui.heading("life");
+                            });
+                        })
+                        .body(|mut body| {
+                            self.show_resource::<Texture>(&mut body, "Textures", resource_manager);
+                            self.show_resource::<Pipeline>(
+                                &mut body,
+                                "Pipelines",
+                                resource_manager,
+                            );
+                            self.show_resource::<Material>(
+                                &mut body,
+                                "Materials",
+                                resource_manager,
+                            );
+                            self.show_resource::<MaterialInstance>(
+                                &mut body,
+                                "Material instances",
+                                resource_manager,
+                            );
+                            self.show_resource::<Mesh>(&mut body, "Meshes", resource_manager);
+                        });
                 });
             });
 
@@ -202,17 +235,29 @@ impl Ui {
 
     fn show_resource<R: ResourceType + 'static>(
         &mut self,
-        ui: &mut egui::Ui,
+        body: &mut TableBody,
         label: &str,
         resource_manager: &ResourceManager,
     ) {
-        egui::CollapsingHeader::new(label)
-            .default_open(true)
-            .show(ui, |ui| {
-                for resource in resource_manager.values::<R>() {
-                    ui.label(format!(" {:?}", &resource.properties.name()));
-                }
+        for resource in resource_manager.values::<R>() {
+            body.row(10., |mut row| {
+                row.col(|ui| {
+                    ui.label(format!("{:?}", label));
+                });
+                row.col(|ui| {
+                    ui.label(format!("{:?}", resource.properties.name()));
+                });
+                row.col(|ui| {
+                    ui.label(format!("{:?}", resource.handle.id));
+                });
+                row.col(|ui| {
+                    ui.label(format!("{:?}", resource.lifetime));
+                });
+                row.col(|ui| {
+                    ui.label(format!("{:?}", resource.life));
+                });
             });
+        }
     }
 
     pub fn draw_general(&mut self, ui: &mut egui::Ui, scene: &mut Scene, fps: u32) {
