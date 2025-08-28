@@ -63,9 +63,11 @@ impl GameContext {
 
     pub fn update(&mut self, delta: f32) {
         self.renderer.update(delta);
-        self.resource_manager.update::<Mesh>();
         self.resource_manager.update::<Texture>();
+        self.resource_manager.update::<Mesh>();
         self.resource_manager.update::<Pipeline>();
+        self.resource_manager.update::<Material>();
+        self.resource_manager.update::<MaterialInstance>();
     }
 
     pub fn close(&mut self) {

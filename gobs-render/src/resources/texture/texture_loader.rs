@@ -4,7 +4,7 @@ use futures::future::try_join_all;
 use image::{DynamicImage, GenericImage, GenericImageView, ImageBuffer, imageops::FilterType};
 use pollster::FutureExt;
 
-use gobs_core::{Color, ImageExtent2D, logger};
+use gobs_core::{Color, ImageExtent2D, logger, memory::allocator::Allocator};
 use gobs_gfx::{
     Buffer, BufferUsage, Command, CommandQueueType, GfxBuffer, GfxCommand, GfxDevice, GfxImage,
     GfxSampler, Image, ImageLayout, ImageUsage, Sampler,
@@ -15,24 +15,29 @@ use gobs_resource::{
     resource::{Resource, ResourceError, ResourceHandle, ResourceLoader, ResourceProperties},
 };
 
-use crate::resources::{
-    Texture, TextureData, TextureFormat, TextureProperties, texture::TexturePath,
-};
+use crate::resources::{Texture, TextureData, TextureFormat, texture::TexturePath};
 
 pub struct TextureLoader {
     device: Arc<GfxDevice>,
+    pub buffer_pool: Allocator<GfxDevice, BufferUsage, GfxBuffer>,
     cmd: GfxCommand,
 }
+
+const STAGING_BUFFER_SIZE: usize = 1_048_576;
 
 impl TextureLoader {
     pub fn new(device: Arc<GfxDevice>) -> Self {
         Self {
             device: device.clone(),
+            buffer_pool: Allocator::new(),
             cmd: GfxCommand::new(&device, "Mesh loader", CommandQueueType::Transfer),
         }
     }
 
-    fn load_file(&self, filename: &str, format: &mut TextureFormat) -> TextureData {
+    fn load_file<F>(filename: &str, format: &mut TextureFormat, mut f: F)
+    where
+        F: FnMut(&[u8]),
+    {
         tracing::debug!(target: logger::RESOURCES, "Load file: {:?}", &filename);
 
         let img = load::load_image(filename, AssetType::IMAGE);
@@ -41,35 +46,15 @@ impl TextureLoader {
 
         format.extent = ImageExtent2D::new(img.width(), img.height());
 
-        self.load_data(filename, data, format)
-    }
-
-    fn load_data(&self, name: &str, data: &[u8], format: &TextureFormat) -> TextureData {
-        tracing::debug!(target: logger::RESOURCES, "Load texture data: {:?}", name);
-
-        tracing::trace!(target: logger::RESOURCES, "Texture properties: {:?}", format);
-
-        let image_format = format.ty.into();
-        let mut image = GfxImage::new(
-            name,
-            &self.device,
-            image_format,
-            ImageUsage::Texture,
-            format.extent,
-        );
-        let sampler = GfxSampler::new(&self.device, format.mag_filter, format.min_filter);
-
-        self.upload_data(&self.device, data, &mut image);
-
-        TextureData {
-            format: image_format,
-            image,
-            sampler,
-        }
+        f(data)
     }
 
     const CHECKER_SIZE: usize = 8;
-    fn load_checker(&self, color1: Color, color2: Color, format: &TextureFormat) -> TextureData {
+
+    fn load_checker<F>(color1: Color, color2: Color, mut f: F)
+    where
+        F: FnMut(&[u8]),
+    {
         let mut data: [u8; 4 * Self::CHECKER_SIZE * Self::CHECKER_SIZE] =
             [0; 4 * Self::CHECKER_SIZE * Self::CHECKER_SIZE];
 
@@ -88,30 +73,35 @@ impl TextureLoader {
             }
         }
 
-        self.load_data("checker", &data, format)
+        f(&data)
     }
 
-    fn load_color(&self, color: Color, format: &TextureFormat) -> TextureData {
+    fn load_color<F>(color: Color, mut f: F)
+    where
+        F: FnMut(&[u8]),
+    {
         let data: [u8; 4] = color.into();
 
-        self.load_data("color", &data, format)
+        f(&data)
     }
 
-    fn load_colors(&self, colors: &[Color], format: &TextureFormat) -> TextureData {
+    fn load_colors<F>(colors: &[Color], mut f: F)
+    where
+        F: FnMut(&[u8]),
+    {
         let data = &colors
             .iter()
             .flat_map(|c| Into::<[u8; 4]>::into(*c))
             .collect::<Vec<u8>>();
 
-        self.load_data("colors", data, format)
+        // self.load_data("colors", data, format)
+        f(data)
     }
 
-    fn load_atlas(
-        &self,
-        texture_files: &[String],
-        cols: u32,
-        format: &mut TextureFormat,
-    ) -> TextureData {
+    fn load_atlas<F>(texture_files: &[String], cols: u32, format: &mut TextureFormat, mut f: F)
+    where
+        F: FnMut(&[u8]),
+    {
         let n = texture_files.len();
 
         let (mut width, mut height) = (0, 0);
@@ -152,25 +142,29 @@ impl TextureLoader {
 
         format.extent = ImageExtent2D::new(img.dimensions().0, img.dimensions().1);
 
-        self.load_data("pack", data, format)
+        f(data);
     }
 
-    fn load_default(&self) -> TextureData {
-        let properties = TextureProperties::default();
-
-        self.load_color(Color::WHITE, &properties.format)
+    fn load_default<F>(f: F)
+    where
+        F: FnMut(&[u8]),
+    {
+        Self::load_color(Color::WHITE, f);
     }
 
-    fn upload_data(&self, device: &GfxDevice, data: &[u8], image: &mut GfxImage) {
-        let mut staging = GfxBuffer::new("image staging", data.len(), BufferUsage::Staging, device);
-
-        staging.copy(data, 0);
-
-        self.cmd.run_immediate_mut("Texture upload", |cmd| {
-            cmd.transition_image_layout(image, ImageLayout::TransferDst);
-            cmd.copy_buffer_to_image(&staging, image, image.extent().width, image.extent().height);
-            cmd.transition_image_layout(image, ImageLayout::Shader);
-        });
+    pub fn get_bytes<F>(path: &TexturePath, format: &mut TextureFormat, mut f: F)
+    where
+        F: FnMut(&[u8]),
+    {
+        match path {
+            TexturePath::Default => Self::load_default(f),
+            TexturePath::File(filename) => Self::load_file(filename, format, f),
+            TexturePath::Bytes(items) => f(items),
+            TexturePath::Atlas(files, cols) => Self::load_atlas(files, *cols, format, f),
+            TexturePath::Color(color) => Self::load_color(*color, f),
+            TexturePath::Colors(colors) => Self::load_colors(colors, f),
+            TexturePath::Checker(color1, color2) => Self::load_checker(*color1, *color2, f),
+        }
     }
 }
 
@@ -185,22 +179,53 @@ impl ResourceLoader<Texture> for TextureLoader {
         let properties = &mut resource.properties;
 
         tracing::debug!(target: logger::RESOURCES, "Load texture resource {}", properties.name());
+        tracing::trace!(target: logger::RESOURCES, "Texture properties: {:?}", properties.format);
 
-        let data = match &properties.path {
-            TexturePath::Default => self.load_default(),
-            TexturePath::File(filename) => self.load_file(filename, &mut properties.format),
-            TexturePath::Bytes(data) => self.load_data(&properties.name, data, &properties.format),
-            TexturePath::Atlas(files, cols) => {
-                self.load_atlas(files, *cols, &mut properties.format)
-            }
-            TexturePath::Color(color) => self.load_color(*color, &properties.format),
-            TexturePath::Colors(colors) => self.load_colors(colors, &properties.format),
-            TexturePath::Checker(color1, color2) => {
-                self.load_checker(*color1, *color2, &properties.format)
-            }
-        };
+        let staging = self.buffer_pool.allocate(
+            &self.device,
+            "image staging",
+            STAGING_BUFFER_SIZE,
+            BufferUsage::Staging,
+        )?;
+        let staging_id = staging.id();
 
-        Ok(data)
+        Self::get_bytes(&properties.path, &mut properties.format, |data| {
+            if data.len() > STAGING_BUFFER_SIZE {
+                tracing::warn!("Resize staging buffer");
+                staging.resize(data.len(), &self.device);
+            }
+            staging.copy(data, 0);
+        });
+
+        let image_format = properties.format.ty.into();
+        let mut image = GfxImage::new(
+            properties.name(),
+            &self.device,
+            image_format,
+            ImageUsage::Texture,
+            properties.format.extent,
+        );
+        let sampler = GfxSampler::new(
+            &self.device,
+            properties.format.mag_filter,
+            properties.format.min_filter,
+        );
+
+        self.cmd.run_immediate_mut("Texture upload", |cmd| {
+            let extent = image.extent();
+            cmd.transition_image_layout(&mut image, ImageLayout::TransferDst);
+            cmd.copy_buffer_to_image(staging, &mut image, extent.width, extent.height);
+            cmd.transition_image_layout(&mut image, ImageLayout::Shader);
+        });
+
+        self.buffer_pool.recycle(&staging_id);
+        assert!(self.buffer_pool.is_empty());
+
+        Ok(TextureData {
+            format: image_format,
+            image,
+            sampler,
+        })
     }
 
     fn unload(&mut self, _resource: Resource<Texture>) {

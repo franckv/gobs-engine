@@ -99,6 +99,7 @@ impl MeshLoader {
         });
 
         self.buffer_pool.recycle(&staging_id);
+        assert!(self.buffer_pool.is_empty());
 
         Ok((Arc::new(vertex_buffer), Arc::new(index_buffer)))
     }

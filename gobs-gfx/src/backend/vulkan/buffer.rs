@@ -35,6 +35,16 @@ impl Buffer<VkRenderer> for VkBuffer {
         }
     }
 
+    fn resize(&mut self, size: usize, device: &VkDevice) {
+        self.buffer = vk::buffers::Buffer::new(
+            self.buffer.label(),
+            size,
+            self.buffer.usage,
+            device.device.clone(),
+            device.allocator.clone(),
+        );
+    }
+
     fn id(&self) -> BufferId {
         self.id
     }

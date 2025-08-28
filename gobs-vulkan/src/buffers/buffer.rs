@@ -122,6 +122,14 @@ impl Buffer {
         }
     }
 
+    pub fn label(&self) -> &str {
+        &self.label
+    }
+
+    pub fn device(&self) -> Arc<Device> {
+        self.device.clone()
+    }
+
     pub fn address(&self, device: Arc<Device>) -> BufferAddress {
         let address_info = vk::BufferDeviceAddressInfo::default().buffer(self.buffer);
 

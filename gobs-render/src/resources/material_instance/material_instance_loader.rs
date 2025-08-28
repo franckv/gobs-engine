@@ -93,9 +93,7 @@ impl ResourceLoader<MaterialInstance> for MaterialInstanceLoader {
         Ok(data)
     }
 
-    fn unload(&mut self, _resource: Resource<MaterialInstance>) {
-        todo!()
-    }
+    fn unload(&mut self, _resource: Resource<MaterialInstance>) {}
 }
 
 impl MaterialInstanceLoader {
