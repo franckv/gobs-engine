@@ -63,6 +63,12 @@ impl ResourceRegistry {
         self.registry.remove::<Resource<R>>(&handle.id)
     }
 
+    pub fn schedule_removal<R: ResourceType + 'static>(&mut self, handle: &ResourceHandle<R>) {
+        let resource = self.get_mut(handle);
+        resource.life = 0;
+        resource.lifetime = ResourceLifetime::Transient;
+    }
+
     /// Clone a resource and schedule old resource for deletion
     pub fn replace<R: ResourceType + 'static>(
         &mut self,
@@ -136,6 +142,10 @@ impl ResourceManager {
         handle: &ResourceHandle<R>,
     ) -> Option<Resource<R>> {
         self.registry.remove(handle)
+    }
+
+    pub fn schedule_removal<R: ResourceType + 'static>(&mut self, handle: &ResourceHandle<R>) {
+        self.registry.schedule_removal(handle);
     }
 
     pub fn replace<R: ResourceType + 'static>(

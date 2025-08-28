@@ -1,7 +1,8 @@
 use std::{collections::HashMap, sync::Arc};
 
 use egui::{
-    Event, FullOutput, Modifiers, MouseWheelUnit, PointerButton, RawInput, Rect, TextureId,
+    ColorImage, Event, FullOutput, Modifiers, MouseWheelUnit, PointerButton, RawInput, Rect,
+    TextureId,
     epaint::{ImageDelta, Primitive},
 };
 use glam::{Vec2, Vec3};
@@ -99,7 +100,7 @@ impl UIRenderer {
     #[tracing::instrument(target = "ui", skip_all, level = "trace")]
     pub fn update(&mut self, resource_manager: &mut ResourceManager, output: FullOutput) {
         self.update_textures(resource_manager, &output);
-        self.cleanup_textures(&output);
+        self.cleanup_textures(resource_manager, &output);
 
         self.output.write().replace(output);
     }
@@ -243,14 +244,6 @@ impl UIRenderer {
 
     #[tracing::instrument(target = "ui", skip_all, level = "trace")]
     fn update_textures(&mut self, resource_manager: &mut ResourceManager, output: &FullOutput) {
-        for (id, material) in self.font_texture.iter() {
-            tracing::debug!(target: logger::UI, "Font texture id={:?}, material={}", id, material.id);
-            let material_instance = resource_manager.get(material);
-            for texture in &material_instance.properties.textures {
-                tracing::debug!(target: logger::UI, "  Using texture={:?}", texture.id);
-            }
-        }
-
         for (id, img) in &output.textures_delta.set {
             tracing::debug!(target: logger::UI, "New texture {:?}", id);
             if img.pos.is_some() {
@@ -271,6 +264,8 @@ impl UIRenderer {
                     .add::<MaterialInstance>(material_properties, ResourceLifetime::Static);
 
                 *self.font_texture.get_mut(id).unwrap() = material_instance;
+            } else if self.font_texture.contains_key(id) {
+                tracing::warn!(target: logger::UI, "Font texture already exist {:?}", id);
             } else {
                 tracing::debug!(target: logger::UI, "Allocate new texture");
                 let texture = self.decode_texture(resource_manager, img);
@@ -281,12 +276,38 @@ impl UIRenderer {
     }
 
     #[tracing::instrument(target = "ui", skip_all, level = "trace")]
-    fn cleanup_textures(&mut self, output: &FullOutput) {
+    fn cleanup_textures(&mut self, resource_manager: &mut ResourceManager, output: &FullOutput) {
         for id in &output.textures_delta.free {
-            tracing::debug!(target: logger::UI, "Remove texture {:?}", id);
+            tracing::warn!(target: logger::UI, "Remove texture {:?}", id);
 
-            self.font_texture.remove(id);
+            let material_handle = self.font_texture.remove(id);
+            let mut to_remove = Vec::new();
+
+            if let Some(material_handle) = material_handle {
+                let material = resource_manager.get_data(&material_handle, ());
+                if let Ok(material) = material {
+                    for texture in &material.properties.textures {
+                        to_remove.push(*texture);
+                    }
+                }
+                resource_manager.schedule_removal(&material_handle);
+            }
+
+            for texture in to_remove {
+                resource_manager.schedule_removal(&texture);
+            }
         }
+    }
+
+    fn import_texture(
+        &self,
+        resource_manager: &mut ResourceManager,
+        texture_handle: ResourceHandle<Texture>,
+    ) -> ResourceHandle<MaterialInstance> {
+        let material_properties =
+            MaterialInstanceProperties::new("font", self.material).textures(&[texture_handle]);
+
+        resource_manager.add::<MaterialInstance>(material_properties, ResourceLifetime::Static)
     }
 
     #[tracing::instrument(target = "ui", skip_all, level = "trace")]
@@ -297,24 +318,27 @@ impl UIRenderer {
     ) -> ResourceHandle<MaterialInstance> {
         match &img.image {
             egui::ImageData::Color(color) => {
-                let bytes: Vec<u8> = bytemuck::cast_slice(color.pixels.as_ref()).to_vec();
+                let texture_handle = self.decode_image(resource_manager, color);
 
-                let texture_properties = TextureProperties::with_data(
-                    "Font texture",
-                    bytes,
-                    ImageExtent2D::new(img.image.width() as u32, img.image.height() as u32),
-                );
-
-                let texture_handle =
-                    resource_manager.add(texture_properties, ResourceLifetime::Static);
-
-                let material_properties = MaterialInstanceProperties::new("font", self.material)
-                    .textures(&[texture_handle]);
-
-                resource_manager
-                    .add::<MaterialInstance>(material_properties, ResourceLifetime::Static)
+                self.import_texture(resource_manager, texture_handle)
             }
         }
+    }
+
+    pub fn decode_image(
+        &self,
+        resource_manager: &mut ResourceManager,
+        color: &ColorImage,
+    ) -> ResourceHandle<Texture> {
+        let bytes: Vec<u8> = bytemuck::cast_slice(color.pixels.as_ref()).to_vec();
+
+        let texture_properties = TextureProperties::with_data(
+            "Font texture",
+            bytes,
+            ImageExtent2D::new(color.width() as u32, color.height() as u32),
+        );
+
+        resource_manager.add(texture_properties, ResourceLifetime::Static)
     }
 
     #[tracing::instrument(target = "ui", skip_all, level = "trace")]
@@ -380,10 +404,16 @@ impl UIRenderer {
         for primitive in &primitives {
             if let Primitive::Mesh(m) = &primitive.primitive {
                 tracing::trace!(target: logger::UI,
-                    "Primitive: {} vertices, {} indices",
+                    "Primitive: {} vertices, {} indices, texture id: {:?}",
                     m.vertices.len(),
-                    m.indices.len()
+                    m.indices.len(),
+                    m.texture_id
                 );
+
+                if !self.font_texture.contains_key(&m.texture_id) {
+                    tracing::warn!(target: logger::UI, "Missing texture: {:?}", m.texture_id);
+                    continue;
+                }
 
                 let mut mesh = MeshGeometry::builder("egui")
                     .indices(&m.indices, false)
