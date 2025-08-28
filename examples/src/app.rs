@@ -18,6 +18,7 @@ pub struct SampleApp {
     pub draw_ui: bool,
     pub draw_bounds: bool,
     pub draw_wire: bool,
+    pub freeze: bool,
     pub ui: Ui,
 }
 
@@ -30,6 +31,7 @@ impl SampleApp {
             draw_ui: false,
             draw_bounds: false,
             draw_wire: false,
+            freeze: false,
             ui: Ui::new(),
         }
     }
@@ -64,7 +66,7 @@ impl SampleApp {
         ui: &mut UIRenderer,
         delta: f32,
     ) {
-        if self.draw_ui {
+        if !self.freeze && self.draw_ui {
             // TODO: change this
             // let app_info = ctx.app_info.clone();
 
@@ -76,12 +78,20 @@ impl SampleApp {
         }
     }
 
+    pub fn should_update(&mut self) -> bool {
+        !self.freeze
+    }
+
     pub fn render(
         &mut self,
         ctx: &mut GameContext,
         scene: Option<&mut Scene>,
         ui: Option<&mut UIRenderer>,
     ) -> Result<(), RenderError> {
+        if self.freeze {
+            return Ok(());
+        }
+
         tracing::trace!(target: logger::APP, "Render frame {}", ctx.renderer.frame_number());
 
         let resource_manager = &mut ctx.resource_manager;
@@ -155,6 +165,7 @@ impl SampleApp {
                 Key::Z => self.draw_wire = !self.draw_wire,
                 Key::B => self.draw_bounds = !self.draw_bounds,
                 Key::U => self.draw_ui = !self.draw_ui,
+                Key::F => self.freeze = !self.freeze,
                 Key::O => self.screenshot(ctx),
                 Key::Equals => scene.update_camera(|_, camera| {
                     camera.pitch = 0.;

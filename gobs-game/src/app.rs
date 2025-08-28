@@ -139,8 +139,10 @@ where
                     let delta = self.timer.delta();
 
                     if !self.close_requested {
-                        context.update(delta);
-                        runnable.update(context, delta);
+                        if runnable.should_update(context) {
+                            context.update(delta);
+                            runnable.update(context, delta);
+                        }
                         tracing::trace!(target: logger::EVENTS, "[Redraw] FPS: {}", 1. / delta);
                         if !context.renderer.gfx.display.is_minimized() {
                             if self.is_minimized {
@@ -244,6 +246,9 @@ pub trait Run: Sized {
     async fn create(context: &mut GameContext) -> Result<Self, AppError>;
     async fn start(&mut self, ctx: &mut GameContext);
     fn update(&mut self, ctx: &mut GameContext, delta: f32);
+    fn should_update(&mut self, _ctx: &mut GameContext) -> bool {
+        true
+    }
     fn render(&mut self, ctx: &mut GameContext) -> Result<(), RenderError>;
     fn input(&mut self, ctx: &mut GameContext, input: Input);
     fn resize(&mut self, ctx: &mut GameContext, width: u32, height: u32);

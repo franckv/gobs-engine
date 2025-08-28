@@ -57,6 +57,10 @@ impl Run for App {
 
     async fn start(&mut self, _ctx: &mut GameContext) {}
 
+    fn should_update(&mut self, _ctx: &mut GameContext) -> bool {
+        self.common.should_update()
+    }
+
     fn close(&mut self, _ctx: &mut GameContext) {
         tracing::info!(target: logger::APP, "Closed");
     }

@@ -67,6 +67,10 @@ impl Run for App {
         self.init(ctx).await;
     }
 
+    fn should_update(&mut self, _ctx: &mut GameContext) -> bool {
+        self.common.should_update()
+    }
+
     fn update(&mut self, ctx: &mut GameContext, delta: f32) {
         if self.common.process_updates {
             let angular_speed = 10.;

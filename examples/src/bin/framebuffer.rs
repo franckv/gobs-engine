@@ -47,6 +47,10 @@ impl Run for App {
         })
     }
 
+    fn should_update(&mut self, _ctx: &mut GameContext) -> bool {
+        self.common.should_update()
+    }
+
     fn update(&mut self, ctx: &mut GameContext, delta: f32) {
         self.scene.update_camera(|transform, camera| {
             self.camera_controller
