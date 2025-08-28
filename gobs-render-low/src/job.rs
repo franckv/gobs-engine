@@ -75,7 +75,7 @@ impl RenderJob {
         self.fixed_pipeline = Some(pipeline)
     }
 
-    #[tracing::instrument(target = "render", skip_all, level = "trace")]
+    #[tracing::instrument(target = "profile", skip_all, level = "trace")]
     pub fn update_uniform(&self, uniform_data: &[u8]) {
         self.uniform_buffer.write().update(uniform_data);
     }
@@ -93,7 +93,7 @@ impl RenderJob {
         }
     }
 
-    #[tracing::instrument(target = "render", skip_all, level = "trace")]
+    #[tracing::instrument(target = "profile", skip_all, level = "trace")]
     pub fn draw_list(
         &self,
         ctx: &GfxContext,
@@ -145,6 +145,7 @@ impl RenderJob {
         }
     }
 
+    #[tracing::instrument(target = "profile", skip_all, level = "trace")]
     fn bind_pipeline(
         &self,
         frame: &mut FrameData,
@@ -163,6 +164,7 @@ impl RenderJob {
         Ok(())
     }
 
+    #[tracing::instrument(target = "profile", skip_all, level = "trace")]
     fn bind_material_data(
         &self,
         frame: &mut FrameData,
@@ -188,6 +190,7 @@ impl RenderJob {
         Ok(())
     }
 
+    #[tracing::instrument(target = "profile", skip_all, level = "trace")]
     fn bind_scene_data(
         &self,
         frame: &mut FrameData,
@@ -213,6 +216,7 @@ impl RenderJob {
         Ok(())
     }
 
+    #[tracing::instrument(target = "profile", skip_all, level = "trace")]
     fn bind_object_data(
         &self,
         ctx: &GfxContext,

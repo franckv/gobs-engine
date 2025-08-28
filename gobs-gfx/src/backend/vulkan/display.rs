@@ -95,6 +95,7 @@ impl Display<VkRenderer> for VkDisplay {
         Ok(())
     }
 
+    #[tracing::instrument(target = "profile", skip_all, level = "trace")]
     fn present(&mut self, device: &VkDevice) -> Result<(), GfxError> {
         if let Some(swapchain) = &mut self.swapchain {
             tracing::trace!(target: logger::SYNC, "Present with render semaphore {}", self.swapchain_idx);
@@ -108,7 +109,7 @@ impl Display<VkRenderer> for VkDisplay {
         Ok(())
     }
 
-    #[tracing::instrument(target = "events", skip_all, level = "trace")]
+    #[tracing::instrument(target = "profile", skip_all, level = "trace")]
     fn resize(&mut self, device: &VkDevice) {
         if let Some(swapchain) = &self.swapchain
             && let Some(surface) = &self.surface
@@ -154,7 +155,7 @@ impl Display<VkRenderer> for VkDisplay {
 }
 
 impl VkDisplay {
-    #[tracing::instrument(target = "render", skip_all, level = "trace")]
+    #[tracing::instrument(target = "profile", skip_all, level = "trace")]
     fn create_swapchain(
         surface: Arc<vk::surface::Surface>,
         device: Arc<vk::device::Device>,

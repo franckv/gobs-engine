@@ -90,6 +90,7 @@ impl MeshBuilder {
         self
     }
 
+    #[tracing::instrument(target = "profile", skip_all, level = "trace")]
     pub fn indices(mut self, indices: &[u32], append: bool) -> Self {
         if append {
             let start = self.vertices.len();
@@ -115,6 +116,7 @@ impl MeshBuilder {
         self
     }
 
+    #[tracing::instrument(target = "profile", skip_all, level = "trace")]
     fn autoindex(mut self) -> Self {
         if !self.indices.is_empty() {
             tracing::trace!(target: logger::RESOURCES, "Skip indices");
@@ -179,6 +181,7 @@ impl MeshBuilder {
         }
     }
 
+    #[tracing::instrument(target = "profile", skip_all, level = "trace")]
     fn update_tangent(mut self) -> Self {
         tracing::trace!(target: logger::RESOURCES, "Calculating tangents for {} indices", self.indices.len());
 
@@ -213,6 +216,7 @@ impl MeshBuilder {
         self
     }
 
+    #[tracing::instrument(target = "profile", skip_all, level = "trace")]
     pub fn build(mut self) -> Arc<MeshGeometry> {
         self = self.autoindex();
 

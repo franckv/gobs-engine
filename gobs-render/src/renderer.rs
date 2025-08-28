@@ -3,6 +3,7 @@ use gobs_gfx::Device;
 use gobs_render_graph::{FrameGraph, RenderPass};
 use gobs_render_low::{FrameData, GfxContext, RenderError};
 use gobs_resource::manager::ResourceManager;
+use tracing::Level;
 
 use crate::RenderBatch;
 
@@ -64,7 +65,7 @@ impl Renderer {
         self.graph.update(&self.gfx, delta);
     }
 
-    #[tracing::instrument(target = "render", skip_all, level = "trace")]
+    #[tracing::instrument(target = "profile", skip_all, level = "trace")]
     pub fn draw(
         &mut self,
         resource_manager: &mut ResourceManager,
@@ -78,7 +79,7 @@ impl Renderer {
 
         self.frame_number += 1;
 
-        tracing::debug!(target: logger::PERF, "Begin new frame {}", self.frame_number);
+        tracing::debug!(target: logger::RENDER, "Begin new frame {}", self.frame_number);
 
         let frame = &mut self.frames[self.frame_number % self.gfx.frames_in_flight];
 
@@ -99,9 +100,12 @@ impl Renderer {
         frame.stats.prepare_begin();
 
         for pass in &self.graph.passes {
-            tracing::debug!(target: logger::PERF, "Begin new pass {}", pass.name());
+            let span =
+                tracing::span!(target: logger::PROFILE, Level::TRACE, "Pass", "{}", pass.name())
+                    .entered();
             draw_cmd(pass.clone(), &mut self.batch, resource_manager)?;
             frame.stats.prepare_draw(pass.id());
+            span.exit();
         }
 
         self.batch.finish(resource_manager);

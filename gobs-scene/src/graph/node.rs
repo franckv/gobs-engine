@@ -50,6 +50,7 @@ impl Node {
         &self.global_transform
     }
 
+    #[tracing::instrument(target = "profile", skip_all, level = "trace")]
     pub fn update_transform<F>(&mut self, mut f: F)
     where
         F: FnMut(&mut Transform) -> bool,

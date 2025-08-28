@@ -53,6 +53,7 @@ impl Ui {
         }
     }
 
+    #[tracing::instrument(target = "profile", skip_all, level = "trace")]
     pub fn draw(
         &mut self,
         ectx: &egui::Context,
@@ -73,12 +74,7 @@ impl Ui {
 
             self.show_batch(ectx, ui, &ctx.renderer.batch);
 
-            self.draw_general(
-                ui,
-                scene,
-                ctx.renderer.frame_number,
-                (1. / delta).round() as u32,
-            );
+            self.draw_general(ui, scene, ctx, delta);
 
             self.show_texture(ectx, &mut ctx.resource_manager);
 
@@ -107,7 +103,8 @@ impl Ui {
         self.ui_hovered = ectx.wants_pointer_input();
     }
 
-    pub fn show_resources(
+    #[tracing::instrument(target = "profile", skip_all, level = "trace")]
+    fn show_resources(
         &mut self,
         ectx: &egui::Context,
         ui: &mut egui::Ui,
@@ -171,7 +168,8 @@ impl Ui {
         self.show_resources = show_resources;
     }
 
-    pub fn show_batch(&mut self, ectx: &egui::Context, ui: &mut egui::Ui, batch: &RenderBatch) {
+    #[tracing::instrument(target = "profile", skip_all, level = "trace")]
+    fn show_batch(&mut self, ectx: &egui::Context, ui: &mut egui::Ui, batch: &RenderBatch) {
         if ui.button("Show batch").clicked() {
             self.show_batch = true;
         }
@@ -265,12 +263,23 @@ impl Ui {
         }
     }
 
-    pub fn draw_general(&mut self, ui: &mut egui::Ui, scene: &mut Scene, frame: usize, fps: u32) {
+    #[tracing::instrument(target = "profile", skip_all, level = "trace")]
+    fn draw_general(
+        &mut self,
+        ui: &mut egui::Ui,
+        scene: &mut Scene,
+        ctx: &GameContext,
+        delta: f32,
+    ) {
         egui::CollapsingHeader::new("Settings")
             .default_open(true)
             .show(ui, |ui| {
-                ui.label(format!("Frame: {frame}"));
-                ui.label(format!("FPS: {fps}"));
+                ui.label(format!("Frame: {}", ctx.renderer.frame_number));
+                ui.label(format!(
+                    "Frame in flight: {}",
+                    ctx.renderer.gfx.frames_in_flight
+                ));
+                ui.label(format!("FPS: {}", (1. / delta).round() as u32));
                 ui.horizontal(|ui| {
                     ui.label("Screen");
                     ui.add(egui::Button::new(format!("{}", scene.width)));
@@ -313,7 +322,8 @@ impl Ui {
             });
     }
 
-    pub fn draw_graph(&mut self, ui: &mut egui::Ui, graph: &mut SceneGraph) {
+    #[tracing::instrument(target = "profile", skip_all, level = "trace")]
+    fn draw_graph(&mut self, ui: &mut egui::Ui, graph: &mut SceneGraph) {
         let old_selected = self.selected_node;
         egui::CollapsingHeader::new("Graph")
             .default_open(false)
@@ -364,7 +374,8 @@ impl Ui {
         }
     }
 
-    pub fn draw_camera(&mut self, ui: &mut egui::Ui, scene: &Scene) {
+    #[tracing::instrument(target = "profile", skip_all, level = "trace")]
+    fn draw_camera(&mut self, ui: &mut egui::Ui, scene: &Scene) {
         let (camera_transform, camera) = scene.camera();
 
         let mut translation = camera_transform.translation();
@@ -395,6 +406,7 @@ impl Ui {
 
     const SPEED: f64 = 0.05;
 
+    #[tracing::instrument(target = "profile", skip_all, level = "trace")]
     fn draw_transform(&mut self, ui: &mut egui::Ui, transform: &mut Transform, update: bool) {
         ui.horizontal(|ui| {
             let mut translation = transform.translation();
@@ -441,6 +453,7 @@ impl Ui {
         });
     }
 
+    #[tracing::instrument(target = "profile", skip_all, level = "trace")]
     fn draw_local_properties(&mut self, ui: &mut egui::Ui, node: &mut Node) {
         egui::CollapsingHeader::new("Local")
             .default_open(true)
@@ -455,6 +468,7 @@ impl Ui {
             });
     }
 
+    #[tracing::instrument(target = "profile", skip_all, level = "trace")]
     fn draw_global_properties(&mut self, ui: &mut egui::Ui, node: &mut Node) {
         egui::CollapsingHeader::new("Global")
             .default_open(true)
@@ -466,6 +480,7 @@ impl Ui {
             });
     }
 
+    #[tracing::instrument(target = "profile", skip_all, level = "trace")]
     fn draw_aabb(&mut self, ui: &mut egui::Ui, node: &mut Node) {
         egui::CollapsingHeader::new("AABB")
             .default_open(true)
@@ -508,6 +523,7 @@ impl Ui {
             });
     }
 
+    #[tracing::instrument(target = "profile", skip_all, level = "trace")]
     fn draw_mesh(&mut self, ui: &mut egui::Ui, resource_manager: &ResourceManager) {
         let (mesh, _) = &self.selected_mesh;
 
@@ -522,6 +538,7 @@ impl Ui {
         }
     }
 
+    #[tracing::instrument(target = "profile", skip_all, level = "trace")]
     fn show_texture(&mut self, ectx: &egui::Context, resource_manager: &mut ResourceManager) {
         let mut show_texture = self.show_texture;
 
@@ -550,6 +567,7 @@ impl Ui {
         self.show_texture = show_texture;
     }
 
+    #[tracing::instrument(target = "profile", skip_all, level = "trace")]
     fn draw_material(&mut self, ui: &mut egui::Ui, resource_manager: &ResourceManager) {
         let (_, material) = &self.selected_mesh;
         if let Some(material) = material {
@@ -587,6 +605,7 @@ impl Ui {
         }
     }
 
+    #[tracing::instrument(target = "profile", skip_all, level = "trace")]
     fn draw_model(
         &mut self,
         ui: &mut egui::Ui,
@@ -619,6 +638,7 @@ impl Ui {
         }
     }
 
+    #[tracing::instrument(target = "profile", skip_all, level = "trace")]
     fn draw_properties(
         &mut self,
         ui: &mut egui::Ui,
@@ -655,6 +675,7 @@ impl Ui {
         });
     }
 
+    #[tracing::instrument(target = "profile", skip_all, level = "trace")]
     fn draw_frame(&self, ui: &mut egui::Ui, graph: &FrameGraph, frame: &FrameData) {
         egui::CollapsingHeader::new("Stats")
             .default_open(false)

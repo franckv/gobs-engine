@@ -32,7 +32,7 @@ impl<R> ApplicationHandler for Application<R>
 where
     R: Run + 'static,
 {
-    #[tracing::instrument(target = "events", skip_all, level = "trace")]
+    #[tracing::instrument(target = "profile", skip_all, level = "trace")]
     fn resumed(&mut self, event_loop: &winit::event_loop::ActiveEventLoop) {
         let window_attributes = Window::default_attributes()
             .with_inner_size(LogicalSize::new(self.width, self.height))
@@ -66,7 +66,7 @@ where
         self.timer.reset();
     }
 
-    #[tracing::instrument(target = "events", skip_all, level = "trace")]
+    #[tracing::instrument(target = "profile", skip_all, level = "trace")]
     fn window_event(
         &mut self,
         event_loop: &winit::event_loop::ActiveEventLoop,
@@ -175,7 +175,7 @@ where
         }
     }
 
-    #[tracing::instrument(target = "events", skip_all, level = "trace")]
+    #[tracing::instrument(target = "profile", skip_all, level = "trace")]
     fn device_event(
         &mut self,
         _event_loop: &winit::event_loop::ActiveEventLoop,
@@ -193,7 +193,7 @@ where
         }
     }
 
-    #[tracing::instrument(target = "events", skip_all, level = "trace")]
+    #[tracing::instrument(target = "profile", skip_all, level = "trace")]
     fn about_to_wait(&mut self, _event_loop: &winit::event_loop::ActiveEventLoop) {
         if let Some(context) = &mut self.context {
             context.renderer.gfx.request_redraw();
@@ -219,7 +219,7 @@ where
         }
     }
 
-    #[tracing::instrument(target = "init", skip_all, level = "trace")]
+    #[tracing::instrument(target = "profile", skip_all, level = "trace")]
     pub fn run(&mut self) {
         let event_loop = EventLoop::new().unwrap();
         event_loop.set_control_flow(winit::event_loop::ControlFlow::Poll);

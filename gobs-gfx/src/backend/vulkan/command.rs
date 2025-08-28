@@ -198,6 +198,7 @@ impl Command<VkRenderer> for VkCommand {
         self.command.fence.wait();
     }
 
+    #[tracing::instrument(target = "profile", skip_all, level = "trace")]
     fn submit2(&self, display: &VkDisplay, frame: usize) {
         let swapchain_idx = display.swapchain_idx;
         tracing::trace!(target: logger::SYNC, "Submit with swapchain semaphore: {}, render semaphore: {}", frame, swapchain_idx);

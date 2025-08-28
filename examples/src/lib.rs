@@ -4,10 +4,7 @@ mod ui;
 
 use tracing::{Level, level_filters::LevelFilter};
 use tracing_subscriber::{
-    EnvFilter, FmtSubscriber, Layer, filter,
-    fmt::{self, format::FmtSpan, layer},
-    layer::SubscriberExt,
-    util::SubscriberInitExt as _,
+    EnvFilter, Layer, filter::Targets, fmt, layer::SubscriberExt, util::SubscriberInitExt as _,
 };
 
 pub use app::SampleApp;
@@ -50,7 +47,10 @@ pub fn init_logger() {
                     .from_env_lossy(),
             ),
         )
-        .with(TracyLayer::default().with_filter(LevelFilter::TRACE))
+        .with(
+            TracyLayer::default()
+                .with_filter(Targets::default().with_target("profile", Level::TRACE)),
+        )
         .init();
 
     tracing::info!(

@@ -94,7 +94,7 @@ impl MaterialPass {
         self.attachments.get_mut(name).expect("insert attachment")
     }
 
-    #[tracing::instrument(target = "render", skip_all, level = "trace")]
+    #[tracing::instrument(target = "profile", skip_all, level = "trace")]
     fn begin_pass(&self, cmd: &GfxCommand, resource_manager: &GraphResourceManager) {
         tracing::debug!(target: logger::RENDER, "Begin material pass {}", &self.name);
 
@@ -139,13 +139,13 @@ impl MaterialPass {
         cmd.set_viewport(extent.width, extent.height);
     }
 
-    #[tracing::instrument(target = "render", skip_all, level = "trace")]
+    #[tracing::instrument(target = "profile", skip_all, level = "trace")]
     fn end_pass(&self, cmd: &GfxCommand) {
         cmd.end_rendering();
         cmd.end_label();
     }
 
-    #[tracing::instrument(target = "render", skip_all, level = "trace")]
+    #[tracing::instrument(target = "profile", skip_all, level = "trace")]
     fn transition_attachments(&self, cmd: &GfxCommand, resource_manager: &GraphResourceManager) {
         for (name, attachment) in &self.attachments {
             cmd.transition_image_layout(&mut resource_manager.image_write(name), attachment.layout);
@@ -170,7 +170,7 @@ impl RenderPass for MaterialPass {
         self.fixed_pipeline.as_ref().map(|p| p.vertex_attributes())
     }
 
-    #[tracing::instrument(target = "render", skip_all, level = "trace")]
+    #[tracing::instrument(target = "profile", skip_all, level = "trace")]
     fn render(
         &self,
         ctx: &mut GfxContext,

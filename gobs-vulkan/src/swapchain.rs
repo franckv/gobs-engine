@@ -150,6 +150,7 @@ impl SwapChain {
         Ok(idx as usize)
     }
 
+    #[tracing::instrument(target = "profile", skip_all, level = "trace")]
     pub fn present(
         &mut self,
         index: usize,

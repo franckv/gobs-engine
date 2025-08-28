@@ -125,6 +125,7 @@ impl BindingGroupUpdates<VkRenderer> for VkBindingGroupUpdates {
         self
     }
 
+    #[tracing::instrument(target = "profile", skip_all, level = "trace")]
     fn end(self) {
         self.update.write(&self.set);
     }

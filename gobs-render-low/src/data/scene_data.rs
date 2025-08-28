@@ -62,7 +62,7 @@ impl UniformData<SceneDataProp, SceneData<'_>> for SceneDataLayout {
         &self.uniform_layout
     }
 
-    #[tracing::instrument(target = "render", skip_all, level = "trace")]
+    #[tracing::instrument(target = "profile", skip_all, level = "trace")]
     fn copy_data(&self, _ctx: Option<&GfxContext>, scene_data: &SceneData, buffer: &mut Vec<u8>) {
         let layout = self.uniform_layout();
 

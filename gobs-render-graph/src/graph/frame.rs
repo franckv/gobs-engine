@@ -7,6 +7,7 @@ use gobs_gfx::{
 };
 use gobs_render_low::{FrameData, GfxContext, RenderError, RenderObject, SceneData};
 use gobs_resource::manager::ResourceManager;
+use tracing::Level;
 
 use crate::{
     GraphConfig, PipelinesConfig, RenderPass,
@@ -237,7 +238,7 @@ impl FrameGraph {
         self.get_pass(|pass| pass.name() == pass_name)
     }
 
-    #[tracing::instrument(target = "render", skip_all, level = "trace")]
+    #[tracing::instrument(target = "profile", skip_all, level = "trace")]
     pub fn begin(&mut self, ctx: &mut GfxContext, frame: &FrameData) -> Result<(), RenderError> {
         let cmd = &frame.command;
 
@@ -272,7 +273,7 @@ impl FrameGraph {
         Ok(())
     }
 
-    #[tracing::instrument(target = "render", skip_all, level = "trace")]
+    #[tracing::instrument(target = "profile", skip_all, level = "trace")]
     pub fn end(&mut self, ctx: &mut GfxContext, frame: &FrameData) -> Result<(), RenderError> {
         tracing::debug!(target: logger::RENDER, "End frame");
 
@@ -300,7 +301,7 @@ impl FrameGraph {
 
     pub fn update(&mut self, _ctx: &GfxContext, _delta: f32) {}
 
-    #[tracing::instrument(target = "render", skip_all, level = "trace")]
+    #[tracing::instrument(target = "profile", skip_all, level = "trace")]
     pub fn render(
         &mut self,
         ctx: &mut GfxContext,
@@ -309,6 +310,9 @@ impl FrameGraph {
         scene_data: &SceneData,
     ) -> Result<(), RenderError> {
         for pass in &mut self.passes {
+            let span =
+                tracing::span!(target: logger::PROFILE, Level::TRACE, "Pass", "{}", pass.name())
+                    .entered();
             tracing::debug!(target: logger::RENDER, "Begin rendering pass {}", pass.name());
 
             pass.render(
@@ -321,6 +325,7 @@ impl FrameGraph {
             )?;
 
             tracing::debug!(target: logger::RENDER, "End rendering pass");
+            span.exit();
         }
 
         Ok(())

@@ -43,7 +43,7 @@ impl Model {
 }
 
 impl Renderable for Arc<Model> {
-    #[tracing::instrument(target = "render", skip_all, level = "trace")]
+    #[tracing::instrument(target = "profile", skip_all, level = "trace")]
     fn draw(
         &self,
         resource_manager: &mut ResourceManager,
@@ -113,6 +113,7 @@ impl ModelBuilder {
         self
     }
 
+    #[tracing::instrument(target = "profile", skip_all, level = "trace")]
     pub fn mesh(
         mut self,
         mesh: Arc<MeshGeometry>,
@@ -134,6 +135,7 @@ impl ModelBuilder {
         self
     }
 
+    #[tracing::instrument(target = "profile", skip_all, level = "trace")]
     pub fn build(self) -> Arc<Model> {
         tracing::debug!(target: logger::RESOURCES, "Load model {} ({} meshes)", self.name, self.meshes.len());
 

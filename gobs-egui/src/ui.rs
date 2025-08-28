@@ -20,6 +20,7 @@ use gobs_resource::{
     manager::ResourceManager,
     resource::{ResourceError, ResourceHandle, ResourceLifetime},
 };
+use tracing::Level;
 
 use crate::UIError;
 
@@ -88,7 +89,7 @@ impl UIRenderer {
         })
     }
 
-    #[tracing::instrument(target = "ui", skip_all, level = "trace")]
+    #[tracing::instrument(target = "profile", skip_all, level = "trace")]
     pub fn draw_ui<F>(&mut self, delta: f32, callback: F) -> FullOutput
     where
         F: FnMut(&egui::Context),
@@ -97,7 +98,7 @@ impl UIRenderer {
         self.ectx.run(input, callback)
     }
 
-    #[tracing::instrument(target = "ui", skip_all, level = "trace")]
+    #[tracing::instrument(target = "profile", skip_all, level = "trace")]
     pub fn update(&mut self, resource_manager: &mut ResourceManager, output: FullOutput) {
         self.update_textures(resource_manager, &output);
         self.cleanup_textures(resource_manager, &output);
@@ -138,7 +139,7 @@ impl UIRenderer {
         }
     }
 
-    #[tracing::instrument(target = "render", skip_all, level = "trace")]
+    #[tracing::instrument(target = "profile", skip_all, level = "trace")]
     fn prepare_inputs(&mut self, delta: f32) -> RawInput {
         let mut input = RawInput {
             screen_rect: Some(Rect::from_min_size(
@@ -243,7 +244,7 @@ impl UIRenderer {
         self.input.push(input);
     }
 
-    #[tracing::instrument(target = "ui", skip_all, level = "trace")]
+    #[tracing::instrument(target = "profile", skip_all, level = "trace")]
     fn update_textures(&mut self, resource_manager: &mut ResourceManager, output: &FullOutput) {
         for (id, img) in &output.textures_delta.set {
             tracing::debug!(target: logger::UI, "New texture {:?}", id);
@@ -276,7 +277,7 @@ impl UIRenderer {
         }
     }
 
-    #[tracing::instrument(target = "ui", skip_all, level = "trace")]
+    #[tracing::instrument(target = "profile", skip_all, level = "trace")]
     fn cleanup_textures(&mut self, resource_manager: &mut ResourceManager, output: &FullOutput) {
         for id in &output.textures_delta.free {
             tracing::debug!(target: logger::UI, "Remove texture {:?}", id);
@@ -311,7 +312,7 @@ impl UIRenderer {
         resource_manager.add::<MaterialInstance>(material_properties, ResourceLifetime::Static)
     }
 
-    #[tracing::instrument(target = "ui", skip_all, level = "trace")]
+    #[tracing::instrument(target = "profile", skip_all, level = "trace")]
     fn decode_texture(
         &self,
         resource_manager: &mut ResourceManager,
@@ -342,7 +343,7 @@ impl UIRenderer {
         resource_manager.add(texture_properties, ResourceLifetime::Static)
     }
 
-    #[tracing::instrument(target = "ui", skip_all, level = "trace")]
+    #[tracing::instrument(target = "profile", skip_all, level = "trace")]
     fn patch_texture(
         &self,
         resource_manager: &mut ResourceManager,
@@ -383,7 +384,7 @@ impl UIRenderer {
         }
     }
 
-    #[tracing::instrument(target = "ui", skip_all, level = "trace")]
+    #[tracing::instrument(target = "profile", skip_all, level = "trace")]
     fn load_model(
         &self,
         resource_manager: &mut ResourceManager,
@@ -391,7 +392,11 @@ impl UIRenderer {
     ) -> Option<Arc<Model>> {
         tracing::debug!(target: logger::UI, "Loading model");
 
+        let span = tracing::span!(target: logger::PROFILE, Level::TRACE, "Tesselate").entered();
+
         let primitives = self.ectx.tessellate(output.shapes, PIXEL_PER_POINT);
+
+        span.exit();
 
         tracing::debug!(target: logger::UI, "Load {} primitives", primitives.len());
 
@@ -403,6 +408,10 @@ impl UIRenderer {
 
         let mut layer = 1;
         for primitive in &primitives {
+            let span =
+                tracing::span!(target: logger::PROFILE, Level::TRACE, "Primitive", "{}", layer)
+                    .entered();
+
             if let Primitive::Mesh(m) = &primitive.primitive {
                 tracing::trace!(target: logger::UI,
                     "Primitive: {} vertices, {} indices, texture id: {:?}",
@@ -416,7 +425,7 @@ impl UIRenderer {
                     continue;
                 }
 
-                let mut mesh = MeshGeometry::builder("egui")
+                let mut mesh = MeshGeometry::builder(&format!("egui#{}", layer))
                     .indices(&m.indices, false)
                     .generate_tangents(false);
 
@@ -453,6 +462,8 @@ impl UIRenderer {
             } else {
                 tracing::error!(target: logger::UI, "Primitive unknown");
             }
+
+            span.exit();
         }
 
         Some(model.build())
@@ -465,7 +476,7 @@ impl UIRenderer {
 }
 
 impl Renderable for UIRenderer {
-    #[tracing::instrument(target = "ui", skip_all, level = "trace")]
+    #[tracing::instrument(target = "profile", skip_all, level = "trace")]
     fn draw(
         &self,
         resource_manager: &mut ResourceManager,

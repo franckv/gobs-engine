@@ -26,7 +26,6 @@ struct App {
 }
 
 impl Run for App {
-    #[tracing::instrument(target = "init", skip_all, level = "trace")]
     async fn create(ctx: &mut GameContext) -> Result<Self, AppError> {
         let extent = ctx.renderer.extent();
 
@@ -72,7 +71,6 @@ impl Run for App {
         self.common.should_update()
     }
 
-    #[tracing::instrument(target = "update", skip_all, level = "trace")]
     fn update(&mut self, ctx: &mut GameContext, delta: f32) {
         if self.common.process_updates {
             let angular_speed = 10.;
@@ -106,13 +104,11 @@ impl Run for App {
             .update_ui(ctx, &mut self.scene, &mut self.ui, delta);
     }
 
-    #[tracing::instrument(target = "render", skip_all, level = "trace")]
     fn render(&mut self, ctx: &mut GameContext) -> Result<(), RenderError> {
         self.common
             .render(ctx, Some(&mut self.scene), Some(&mut self.ui))
     }
 
-    #[tracing::instrument(target = "events", skip_all, level = "trace")]
     fn input(&mut self, ctx: &mut GameContext, input: Input) {
         self.common.input(
             ctx,
@@ -123,20 +119,17 @@ impl Run for App {
         );
     }
 
-    #[tracing::instrument(target = "events", skip_all, level = "trace")]
     fn resize(&mut self, _ctx: &mut GameContext, width: u32, height: u32) {
         self.scene.resize(width, height);
         self.ui.resize(width, height);
     }
 
-    #[tracing::instrument(target = "events", skip_all, level = "trace")]
     fn close(&mut self, _ctx: &mut GameContext) {
         tracing::info!(target: logger::APP, "Closed");
     }
 }
 
 impl App {
-    #[tracing::instrument(target = "init", skip_all, level = "trace")]
     async fn init(&mut self, ctx: &mut GameContext) {
         MaterialsConfig::load_resources(
             &ctx.renderer.gfx,

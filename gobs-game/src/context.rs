@@ -61,7 +61,7 @@ impl GameContext {
         self.renderer.resize(width, height);
     }
 
-    #[tracing::instrument(target = "update", skip_all, level = "trace")]
+    #[tracing::instrument(target = "profile", skip_all, level = "trace")]
     pub fn update(&mut self, delta: f32) {
         self.renderer.update(delta);
         self.resource_manager.update::<Texture>();

@@ -188,6 +188,7 @@ impl SceneGraph {
         None
     }
 
+    #[tracing::instrument(target = "profile", skip_all, level = "trace")]
     pub fn visit<F>(&self, root: NodeId, f: &mut F) -> Result<(), ResourceError>
     where
         F: FnMut(&Node) -> Result<(), ResourceError>,

@@ -66,7 +66,7 @@ impl MeshLoader {
         })
     }
 
-    #[tracing::instrument(target = "resources", skip_all, level = "trace")]
+    #[tracing::instrument(target = "profile", skip_all, level = "trace")]
     fn upload_vertices(
         &mut self,
         vertices: &[u8],
