@@ -208,27 +208,29 @@ impl Ui {
                         });
                     })
                     .body(|mut body| {
-                        for object in &batch.render_list {
-                            body.row(10., |mut row| {
-                                row.col(|ui| {
-                                    ui.label(format!("{:?}", object.model_id));
+                        for render_list in batch.render_list.values() {
+                            for object in render_list {
+                                body.row(10., |mut row| {
+                                    row.col(|ui| {
+                                        ui.label(format!("{:?}", object.model_id));
+                                    });
+                                    row.col(|ui| {
+                                        ui.label(format!("{:?}", object.is_transparent()));
+                                    });
+                                    row.col(|ui| {
+                                        ui.label(format!("{:?}", object.pipeline_id()));
+                                    });
+                                    row.col(|ui| {
+                                        ui.label(format!("{:?}", object.material_instance_id));
+                                    });
+                                    row.col(|ui| {
+                                        ui.label(format!("{:?}", object.pass_id));
+                                    });
+                                    row.col(|ui| {
+                                        ui.label(format!("{:?}", object.layer));
+                                    });
                                 });
-                                row.col(|ui| {
-                                    ui.label(format!("{:?}", object.is_transparent()));
-                                });
-                                row.col(|ui| {
-                                    ui.label(format!("{:?}", object.pipeline_id()));
-                                });
-                                row.col(|ui| {
-                                    ui.label(format!("{:?}", object.material_instance_id));
-                                });
-                                row.col(|ui| {
-                                    ui.label(format!("{:?}", object.pass_id));
-                                });
-                                row.col(|ui| {
-                                    ui.label(format!("{:?}", object.layer));
-                                });
-                            });
+                            }
                         }
                     });
             });

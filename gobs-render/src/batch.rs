@@ -1,8 +1,11 @@
-use std::sync::Arc;
+use std::{
+    collections::{HashMap, hash_map::Entry},
+    sync::Arc,
+};
 
 use gobs_core::{ImageExtent2D, Transform, logger};
 use gobs_gfx::{BindingGroup, BindingGroupUpdates, Buffer, GfxBindingGroup};
-use gobs_render_graph::RenderPass;
+use gobs_render_graph::{PassId, RenderPass};
 use gobs_render_low::{GfxContext, RenderObject, SceneData};
 use gobs_resource::{
     entity::{camera::Camera, light::Light},
@@ -14,7 +17,7 @@ use gobs_resource::{
 use crate::{MaterialInstance, model::Model};
 
 pub struct RenderBatch {
-    pub render_list: Vec<RenderObject>,
+    pub render_list: HashMap<PassId, Vec<RenderObject>>,
     vertex_padding: bool,
     bounding_geometry: Option<MeshBuilder>,
     bounding_pass: Option<RenderPass>,
@@ -27,7 +30,7 @@ pub struct RenderBatch {
 impl RenderBatch {
     pub fn new(ctx: &GfxContext) -> Self {
         Self {
-            render_list: Vec::new(),
+            render_list: HashMap::new(),
             vertex_padding: ctx.vertex_padding,
             bounding_geometry: None,
             bounding_pass: None,
@@ -142,7 +145,7 @@ impl RenderBatch {
 
             let mesh_data = resource_manager.get_data(mesh, vertex_attributes)?;
 
-            self.render_list.push(RenderObject {
+            let render_object = RenderObject {
                 model_id: model.id,
                 transform,
                 pass_id: pass.id(),
@@ -158,7 +161,14 @@ impl RenderBatch {
                 indices_len: mesh_data.data.indices_len,
                 material_instance_id,
                 layer: mesh_data.properties.layer,
-            });
+            };
+
+            match self.render_list.entry(pass.id()) {
+                Entry::Occupied(mut e) => e.get_mut().push(render_object),
+                Entry::Vacant(e) => {
+                    e.insert(vec![render_object]);
+                }
+            }
         }
 
         Ok(())
@@ -218,16 +228,17 @@ impl RenderBatch {
 
     #[tracing::instrument(target = "profile", skip_all, level = "trace")]
     fn sort(&mut self) {
-        self.render_list.sort_unstable_by(|a, b| {
-            // sort order: pass, transparent, material, model
-            (a.pass_id.cmp(&b.pass_id))
-                .then(a.layer.cmp(&b.layer))
-                .then(a.is_transparent().cmp(&b.is_transparent()))
-                .then(a.pipeline_id().cmp(&b.pipeline_id()))
-                .then(a.material_instance_id.cmp(&b.material_instance_id))
-                .then(a.index_buffer.id().cmp(&b.index_buffer.id()))
-                .then(a.indices_offset.cmp(&b.indices_offset))
-        });
+        for render_list in self.render_list.values_mut() {
+            render_list.sort_unstable_by(|a, b| {
+                // sort order: pass, transparent, material, model
+                (a.layer.cmp(&b.layer))
+                    .then(a.is_transparent().cmp(&b.is_transparent()))
+                    .then(a.pipeline_id().cmp(&b.pipeline_id()))
+                    .then(a.material_instance_id.cmp(&b.material_instance_id))
+                    .then(a.index_buffer.id().cmp(&b.index_buffer.id()))
+                    .then(a.indices_offset.cmp(&b.indices_offset))
+            });
+        }
     }
 
     #[tracing::instrument(target = "profile", skip_all, level = "trace")]
@@ -256,12 +267,13 @@ impl RenderBatch {
 
 #[cfg(test)]
 mod tests {
-    use gobs_core::{Color, Transform, utils::timer::Timer};
+    use tracing::Level;
+    use tracing_subscriber::{EnvFilter, FmtSubscriber, fmt::format::FmtSpan};
+
+    use gobs_core::{Color, Transform, logger, utils::timer::Timer};
     use gobs_render_graph::GraphConfig;
     use gobs_render_low::GfxContext;
     use gobs_resource::{geometry::Shapes, manager::ResourceManager, resource::ResourceLifetime};
-    use tracing::Level;
-    use tracing_subscriber::{EnvFilter, FmtSubscriber, fmt::format::FmtSpan};
 
     use crate::{Model, RenderBatch};
 
@@ -278,7 +290,7 @@ mod tests {
     fn test_sort() {
         setup();
 
-        let span = tracing::trace_span!(target: "perf", "sort").entered();
+        let span = tracing::trace_span!(target: logger::PROFILE, "sort").entered();
 
         let ctx = GfxContext::new("test", None, false).unwrap();
         let mut resource_manager = ResourceManager::new(ctx.frames_in_flight);
@@ -318,6 +330,6 @@ mod tests {
 
         span.exit();
 
-        tracing::trace!(target: "perf", "sort: {}", 1000. * timer.delta());
+        tracing::trace!(target: logger::PROFILE, "sort: {}", 1000. * timer.delta());
     }
 }

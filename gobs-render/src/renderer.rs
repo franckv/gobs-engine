@@ -105,14 +105,19 @@ impl Renderer {
                     .entered();
             draw_cmd(pass.clone(), &mut self.batch, resource_manager)?;
             frame.stats.prepare_draw(pass.id());
+            frame.stats.objects(
+                self.batch
+                    .render_list
+                    .get(&pass.id())
+                    .map(|list| list.len() as u32)
+                    .unwrap_or_default(),
+            );
             span.exit();
         }
 
         self.batch.finish(resource_manager);
 
         frame.stats.prepare_end();
-
-        frame.stats.objects(self.batch.render_list.len() as u32);
 
         self.graph
             .render(

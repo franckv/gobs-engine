@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use bytemuck::Pod;
 
 use gobs_core::{ImageExtent2D, ImageFormat, logger};
@@ -306,7 +308,7 @@ impl FrameGraph {
         &mut self,
         ctx: &mut GfxContext,
         frame: &mut FrameData,
-        render_list: &[RenderObject],
+        render_list: &HashMap<PassId, Vec<RenderObject>>,
         scene_data: &SceneData,
     ) -> Result<(), RenderError> {
         for pass in &mut self.passes {
@@ -315,14 +317,25 @@ impl FrameGraph {
                     .entered();
             tracing::debug!(target: logger::RENDER, "Begin rendering pass {}", pass.name());
 
-            pass.render(
-                ctx,
-                frame,
-                &self.resource_manager,
-                render_list,
-                scene_data,
-                self.draw_extent,
-            )?;
+            if let Some(render_list) = render_list.get(&pass.id()) {
+                pass.render(
+                    ctx,
+                    frame,
+                    &self.resource_manager,
+                    render_list,
+                    scene_data,
+                    self.draw_extent,
+                )?;
+            } else {
+                pass.render(
+                    ctx,
+                    frame,
+                    &self.resource_manager,
+                    &[],
+                    scene_data,
+                    self.draw_extent,
+                )?;
+            }
 
             tracing::debug!(target: logger::RENDER, "End rendering pass");
             span.exit();
