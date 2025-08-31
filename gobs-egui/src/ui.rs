@@ -74,7 +74,7 @@ impl UIRenderer {
             BlendMode::None
         });
 
-        let material = resource_manager.add(material_properties, ResourceLifetime::Static);
+        let material = resource_manager.add(material_properties, ResourceLifetime::Static, false);
 
         Ok(UIRenderer {
             ectx,
@@ -262,8 +262,11 @@ impl UIRenderer {
                 let material_properties =
                     MaterialInstanceProperties::new("font", self.material).textures(&[texture]);
 
-                let material_instance = resource_manager
-                    .add::<MaterialInstance>(material_properties, ResourceLifetime::Static);
+                let material_instance = resource_manager.add::<MaterialInstance>(
+                    material_properties,
+                    ResourceLifetime::Static,
+                    false,
+                );
 
                 *self.font_texture.get_mut(id).unwrap() = material_instance;
             } else if self.font_texture.contains_key(id) {
@@ -309,7 +312,11 @@ impl UIRenderer {
         let material_properties =
             MaterialInstanceProperties::new("font", self.material).textures(&[texture_handle]);
 
-        resource_manager.add::<MaterialInstance>(material_properties, ResourceLifetime::Static)
+        resource_manager.add::<MaterialInstance>(
+            material_properties,
+            ResourceLifetime::Static,
+            false,
+        )
     }
 
     #[tracing::instrument(target = "profile", skip_all, level = "trace")]
@@ -340,7 +347,7 @@ impl UIRenderer {
             ImageExtent2D::new(color.width() as u32, color.height() as u32),
         );
 
-        resource_manager.add(texture_properties, ResourceLifetime::Static)
+        resource_manager.add(texture_properties, ResourceLifetime::Static, false)
     }
 
     #[tracing::instrument(target = "profile", skip_all, level = "trace")]

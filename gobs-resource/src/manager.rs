@@ -1,7 +1,9 @@
-use uuid::Uuid;
-
 use gobs_core::{
-    data::{anymap::AnyMap, objectmap::ObjectMap, registry::ObjectRegistry},
+    data::{
+        anymap::AnyMap,
+        object_arena::{Key, ObjectArena},
+        objectmap::ObjectMap,
+    },
     logger,
 };
 
@@ -10,10 +12,12 @@ use crate::resource::{
     ResourceState, ResourceType,
 };
 
+pub type ResourceId = Key;
+
 #[derive(Default)]
 pub struct ResourceRegistry {
-    registry: ObjectRegistry<Uuid>,
-    labels: ObjectMap<String, Uuid>,
+    registry: ObjectArena,
+    labels: ObjectMap<String, ResourceId>,
 }
 
 pub struct ResourceData<'res, R: ResourceType> {
@@ -31,36 +35,28 @@ impl ResourceRegistry {
         &mut self,
         properties: R::ResourceProperties,
         lifetime: ResourceLifetime,
+        tag: bool,
     ) -> ResourceHandle<R> {
-        self.add_or_replace(properties, lifetime, false)
-    }
+        let key = self.registry.insert_with_key(|key| {
+            Resource::<R>::new(ResourceHandle::new(key), properties, lifetime)
+        });
 
-    fn add_or_replace<R: ResourceType + 'static>(
-        &mut self,
-        properties: R::ResourceProperties,
-        lifetime: ResourceLifetime,
-        replace: bool,
-    ) -> ResourceHandle<R> {
-        let name = properties.name().to_string();
-        let resource = Resource::<R>::new(properties, lifetime);
+        let resource: &Resource<R> = self.registry.get(key).unwrap();
+        tracing::debug!(target: logger::RESOURCES, "New resource: {} ({}): {:?}", &resource.properties.name(), std::any::type_name::<R>(), resource.handle.id);
 
-        let handle = resource.handle;
-
-        tracing::debug!(target: logger::RESOURCES, "New resource: {} ({}): {:?}", &name, std::any::type_name::<R>(), handle.id);
-
-        self.registry.insert(handle.id, resource);
-        if !replace && self.labels.insert::<R>(name.clone(), handle.id).is_some() {
-            tracing::debug!(target: logger::RESOURCES, "Replace resource: {} ({}): {:?}", &name, std::any::type_name::<R>(), handle.id);
+        if tag {
+            self.labels
+                .insert::<R>(resource.properties.name().to_string(), key);
         }
 
-        handle
+        resource.handle
     }
 
     pub fn remove<R: ResourceType + 'static>(
         &mut self,
         handle: &ResourceHandle<R>,
     ) -> Option<Resource<R>> {
-        self.registry.remove::<Resource<R>>(&handle.id)
+        self.registry.remove::<Resource<R>>(handle.id)
     }
 
     pub fn schedule_removal<R: ResourceType + 'static>(&mut self, handle: &ResourceHandle<R>) {
@@ -82,25 +78,36 @@ impl ResourceRegistry {
         old_resource.life = 0;
         old_resource.lifetime = ResourceLifetime::Transient;
 
-        self.add_or_replace(properties, lifetime, true)
+        let key = self.registry.insert_with_key(|key| {
+            Resource::<R>::new(ResourceHandle::new(key), properties, lifetime)
+        });
+
+        let resource: &Resource<R> = self.registry.get(key).unwrap();
+        tracing::debug!(target: logger::RESOURCES, "New resource: {} ({}): {:?}", &resource.properties.name(), std::any::type_name::<R>(), resource.handle.id);
+
+        resource.handle
     }
 
     pub fn get_by_name<R: ResourceType + 'static>(&self, name: &str) -> Option<ResourceHandle<R>> {
         let id = self.labels.get::<R>(&name.to_string());
 
-        id.map(|id| ResourceHandle::with_uuid(*id))
+        if id.is_none() {
+            tracing::warn!(target: logger::RESOURCES, "Resource not found: {}", name);
+        }
+
+        id.map(|id| ResourceHandle::new(*id))
     }
 
     // TODO: return option
     pub fn get<R: ResourceType + 'static>(&self, handle: &ResourceHandle<R>) -> &Resource<R> {
-        self.registry.get::<Resource<R>>(&handle.id).unwrap()
+        self.registry.get::<Resource<R>>(handle.id).unwrap()
     }
 
     pub fn get_mut<R: ResourceType + 'static>(
         &mut self,
         handle: &ResourceHandle<R>,
     ) -> &mut Resource<R> {
-        self.registry.get_mut::<Resource<R>>(&handle.id).unwrap()
+        self.registry.get_mut::<Resource<R>>(handle.id).unwrap()
     }
 
     pub fn values<R: ResourceType + 'static>(&self) -> impl Iterator<Item = &Resource<R>> {
@@ -129,12 +136,14 @@ impl ResourceManager {
         }
     }
 
+    #[tracing::instrument(target = "profile", skip_all, level = "trace")]
     pub fn add<R: ResourceType + 'static>(
         &mut self,
         properties: R::ResourceProperties,
         lifetime: ResourceLifetime,
+        tag: bool,
     ) -> ResourceHandle<R> {
-        self.registry.add(properties, lifetime)
+        self.registry.add(properties, lifetime, tag)
     }
 
     pub fn remove<R: ResourceType + 'static>(
@@ -148,6 +157,7 @@ impl ResourceManager {
         self.registry.schedule_removal(handle);
     }
 
+    #[tracing::instrument(target = "profile", skip_all, level = "trace")]
     pub fn replace<R: ResourceType + 'static>(
         &mut self,
         handle: &ResourceHandle<R>,
@@ -155,14 +165,17 @@ impl ResourceManager {
         self.registry.replace(handle)
     }
 
+    #[tracing::instrument(target = "profile", skip_all, level = "trace")]
     pub fn get_by_name<R: ResourceType + 'static>(&self, name: &str) -> Option<ResourceHandle<R>> {
         self.registry.get_by_name(name)
     }
 
+    #[tracing::instrument(target = "profile", skip_all, level = "trace")]
     pub fn get<R: ResourceType + 'static>(&self, handle: &ResourceHandle<R>) -> &Resource<R> {
         self.registry.get(handle)
     }
 
+    #[tracing::instrument(target = "profile", skip_all, level = "trace")]
     pub fn get_mut<R: ResourceType + 'static>(
         &mut self,
         handle: &ResourceHandle<R>,
@@ -186,7 +199,7 @@ impl ResourceManager {
             if value.lifetime == ResourceLifetime::Transient {
                 value.life += 1;
                 if value.life > self.frames_in_flight {
-                    tracing::trace!(target: logger::RESOURCES, "Transient resource to be removed: {}", value.handle.id);
+                    tracing::trace!(target: logger::RESOURCES, "Transient resource to be removed: {:?}", value.handle.id);
                     to_delete.push(value.handle);
                 }
             }
@@ -273,5 +286,134 @@ impl ResourceManager {
             data,
             properties: &mut resource.properties,
         })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::collections::HashMap;
+
+    use slotmap::SlotMap;
+    use tracing::Level;
+    use tracing_subscriber::{EnvFilter, FmtSubscriber, fmt::format::FmtSpan};
+
+    use gobs_core::{logger, utils::timer::Timer};
+
+    use crate::{
+        manager::ResourceManager,
+        resource::{
+            ResourceError, ResourceLifetime, ResourceLoader, ResourceProperties, ResourceType,
+        },
+    };
+
+    #[derive(Clone, Copy, Debug, PartialEq)]
+    pub struct Dummy;
+
+    impl ResourceType for Dummy {
+        type ResourceData = DummyData;
+        type ResourceProperties = DummyProperties;
+        type ResourceParameter = ();
+        type ResourceLoader = DummyLoader;
+    }
+
+    #[derive(Clone, Debug)]
+    pub struct DummyProperties {
+        pub name: String,
+    }
+
+    impl ResourceProperties for DummyProperties {
+        fn name(&self) -> &str {
+            &self.name
+        }
+    }
+
+    #[derive(Clone)]
+    pub struct DummyData {}
+
+    pub struct DummyLoader {}
+
+    impl ResourceLoader<Dummy> for DummyLoader {
+        fn load(
+            &mut self,
+            _handle: &crate::resource::ResourceHandle<Dummy>,
+            _parameter: &<Dummy as ResourceType>::ResourceParameter,
+            _resource_registry: &mut super::ResourceRegistry,
+        ) -> Result<DummyData, ResourceError> {
+            Ok(DummyData {})
+        }
+
+        fn unload(&mut self, _resource: crate::resource::Resource<Dummy>) {}
+    }
+
+    fn setup() {
+        let sub = FmtSubscriber::builder()
+            .with_max_level(Level::INFO)
+            .with_span_events(FmtSpan::CLOSE)
+            .with_env_filter(EnvFilter::from_default_env())
+            .finish();
+        tracing::subscriber::set_global_default(sub).unwrap_or_default();
+    }
+
+    #[test]
+    fn bench_insert() {
+        setup();
+
+        let mut resource_manager = ResourceManager::new(2);
+        resource_manager.register_resource::<Dummy>(DummyLoader {});
+
+        let props = DummyProperties {
+            name: "dummy".to_string(),
+        };
+
+        let mut timer = Timer::new();
+
+        let mut keys = vec![];
+        for _ in 0..10000 {
+            keys.push(resource_manager.add::<Dummy>(
+                props.clone(),
+                ResourceLifetime::Static,
+                false,
+            ));
+        }
+        tracing::debug!(target: logger::PROFILE, "insert resource: {}", 1000. * timer.delta());
+
+        for handle in keys {
+            let _d = resource_manager.get_data(&handle, ());
+        }
+        tracing::debug!(target: logger::PROFILE, "get resource: {}", 1000. * timer.delta());
+
+        let mut h = HashMap::new();
+        for i in 0..10000 {
+            h.insert(i, i);
+        }
+        tracing::debug!(target: logger::PROFILE, "insert hashmap: {}", 1000. * timer.delta());
+
+        for i in 0..10000 {
+            let _v = h.get(&i);
+        }
+        tracing::debug!(target: logger::PROFILE, "get hashmap: {}", 1000. * timer.delta());
+
+        let mut v = Vec::new();
+        for i in 0..10000 {
+            v.push(i);
+        }
+        tracing::debug!(target: logger::PROFILE, "insert vec: {}", 1000. * timer.delta());
+
+        for key in &v {
+            let _d = v.get(*key);
+        }
+        tracing::debug!(target: logger::PROFILE, "get vec: {}", 1000. * timer.delta());
+
+        let mut keys = vec![];
+        let mut m = SlotMap::new();
+        for i in 0..10000 {
+            keys.push(m.insert(i));
+        }
+        tracing::debug!(target: logger::PROFILE, "insert slotmap: {}", 1000. * timer.delta());
+
+        for key in &keys {
+            let _d = m.get(*key);
+        }
+        tracing::debug!(target: logger::PROFILE, "get slotmap: {}", 1000. * timer.delta());
     }
 }

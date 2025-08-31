@@ -157,20 +157,22 @@ impl App {
         let properties = TextureProperties::with_file("Wall Diffuse", examples::WALL_TEXTURE);
         let diffuse_texture = ctx
             .resource_manager
-            .add(properties, ResourceLifetime::Static);
+            .add(properties, ResourceLifetime::Static, false);
 
         let mut properties = TextureProperties::with_file("Wall Normal", examples::WALL_TEXTURE_N);
         properties.format.ty = TextureType::Normal;
         let normal_texture = ctx
             .resource_manager
-            .add(properties, ResourceLifetime::Static);
+            .add(properties, ResourceLifetime::Static, false);
 
         let material = ctx.resource_manager.get_by_name("normal").unwrap();
         let material_instance_properties = MaterialInstanceProperties::new("normal", material)
             .textures(&[diffuse_texture, normal_texture]);
-        let material_instance = ctx
-            .resource_manager
-            .add(material_instance_properties, ResourceLifetime::Static);
+        let material_instance = ctx.resource_manager.add(
+            material_instance_properties,
+            ResourceLifetime::Static,
+            false,
+        );
 
         let cube = Model::builder("cube")
             .mesh(

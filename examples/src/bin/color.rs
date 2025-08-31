@@ -92,9 +92,11 @@ impl App {
                     Color::new(0., 0.1, 0., 1.).into(),
                 ));
 
-        let material_instance = ctx
-            .resource_manager
-            .add(material_instance_properties, ResourceLifetime::Static);
+        let material_instance = ctx.resource_manager.add(
+            material_instance_properties,
+            ResourceLifetime::Static,
+            false,
+        );
 
         let triangle = Model::builder("triangle")
             .mesh(

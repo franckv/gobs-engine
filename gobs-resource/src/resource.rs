@@ -2,11 +2,13 @@ use std::{collections::HashMap, fmt::Debug, hash::Hash, marker::PhantomData};
 
 use serde::Serialize;
 use thiserror::Error;
-use uuid::Uuid;
 
 use gobs_core::memory::allocator::AllocationError;
 
-use crate::{load::LoadingError, manager::ResourceRegistry};
+use crate::{
+    load::LoadingError,
+    manager::{ResourceId, ResourceRegistry},
+};
 
 pub enum ResourceState<R: ResourceType> {
     Unloaded,
@@ -20,8 +22,6 @@ pub enum ResourceLifetime {
     Transient,
 }
 
-pub type ResourceId = Uuid;
-
 #[derive(Copy, Clone, Debug, PartialEq, Serialize)]
 pub struct ResourceHandle<R: ResourceType> {
     pub id: ResourceId,
@@ -29,24 +29,11 @@ pub struct ResourceHandle<R: ResourceType> {
 }
 
 impl<R: ResourceType> ResourceHandle<R> {
-    pub fn new() -> Self {
-        Self {
-            id: Uuid::new_v4(),
-            ty: PhantomData,
-        }
-    }
-
-    pub fn with_uuid(id: Uuid) -> Self {
+    pub fn new(id: ResourceId) -> Self {
         Self {
             id,
             ty: PhantomData,
         }
-    }
-}
-
-impl<R: ResourceType> Default for ResourceHandle<R> {
-    fn default() -> Self {
-        Self::new()
     }
 }
 
@@ -68,9 +55,13 @@ pub struct Resource<R: ResourceType> {
 }
 
 impl<R: ResourceType> Resource<R> {
-    pub(crate) fn new(properties: R::ResourceProperties, lifetime: ResourceLifetime) -> Self {
+    pub(crate) fn new(
+        handle: ResourceHandle<R>,
+        properties: R::ResourceProperties,
+        lifetime: ResourceLifetime,
+    ) -> Self {
         Self {
-            handle: ResourceHandle::new(),
+            handle,
             properties,
             data: HashMap::new(),
             lifetime,
@@ -78,6 +69,7 @@ impl<R: ResourceType> Resource<R> {
         }
     }
 
+    #[tracing::instrument(target = "profile", skip_all, level = "trace")]
     pub(crate) fn is_loaded(&self, parameter: &R::ResourceParameter) -> bool {
         matches!(self.data.get(parameter), Some(ResourceState::Loaded(_)))
     }

@@ -112,13 +112,15 @@ impl App {
 
         let texture = ctx
             .resource_manager
-            .add(properties, ResourceLifetime::Static);
+            .add(properties, ResourceLifetime::Static, false);
 
         let material_instance_properties =
             MaterialInstanceProperties::new("texture", material).textures(&[texture]);
-        let material_instance = ctx
-            .resource_manager
-            .add(material_instance_properties, ResourceLifetime::Static);
+        let material_instance = ctx.resource_manager.add(
+            material_instance_properties,
+            ResourceLifetime::Static,
+            false,
+        );
 
         let rect = Model::builder("rect")
             .mesh(

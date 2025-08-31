@@ -12,6 +12,7 @@ glam = { workspace = true }
 gobs-core = { workspace = true }
 image = { workspace = true }
 serde = { workspace = true }
+slotmap = { workspace = true }
 thiserror = { workspace = true }
 tracing = { workspace = true }
 uuid = { workspace = true }

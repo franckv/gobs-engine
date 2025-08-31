@@ -102,7 +102,7 @@ impl MaterialsConfig {
                 props = props.property(*prop);
             }
 
-            resource_manager.add::<Material>(props, ResourceLifetime::Static);
+            resource_manager.add::<Material>(props, ResourceLifetime::Static, true);
         }
     }
 }

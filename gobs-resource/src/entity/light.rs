@@ -13,7 +13,7 @@ pub struct Light {
 impl Light {
     pub fn new(colour: Color) -> Self {
         Light {
-            id: Uuid::new_v4(),
+            id: LightId::new_v4(),
             colour,
         }
     }

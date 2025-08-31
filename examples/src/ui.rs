@@ -535,7 +535,7 @@ impl Ui {
                 .default_open(true)
                 .show(ui, |ui| {
                     ui.label(format!("Name: {}", mesh_props.name()));
-                    ui.label(format!("Id: {}", mesh.id));
+                    ui.label(format!("Id: {}", mesh_props.id));
                 });
         }
     }
@@ -581,11 +581,11 @@ impl Ui {
             egui::CollapsingHeader::new("Material")
                 .default_open(true)
                 .show(ui, |ui| {
-                    ui.label(format!("Material instance: {}", mat_instance_props.name(),));
-                    ui.label(format!("  Id: {}", material.id));
+                    ui.label(format!("Material instance: {}", mat_instance_props.name()));
+                    ui.label(format!("  Id: {:?}", mat_instance_props.id));
                     ui.separator();
-                    ui.label(format!("Material: {}", mat_props.name(),));
-                    ui.label(format!("  Id: {}", mat_instance_props.material.id));
+                    ui.label(format!("Material: {}", mat_props.name()));
+                    ui.label(format!("  Id: {:?}", mat_props.id));
                     ui.separator();
                     ui.label(format!("Transparent: {}", mat_props.blending_enabled));
                     ui.separator();
@@ -596,7 +596,7 @@ impl Ui {
                         let texture_props = &resource_manager.get(texture).properties;
 
                         ui.label(format!("  Name: {}", texture_props.name(),));
-                        ui.label(format!("  Id: {}", texture.id));
+                        ui.label(format!("  Id: {:?}", texture.id));
                         if ui.button("").clicked() {
                             self.show_texture = !self.show_texture;
                             self.selected_texture = Some(*texture);
@@ -625,7 +625,7 @@ impl Ui {
                         ui.selectable_value(
                             &mut self.selected_mesh,
                             (Some(*mesh), *material),
-                            mesh.id.to_string(),
+                            format!("{:?}", mesh.id),
                         );
                     }
                     ui.label("");

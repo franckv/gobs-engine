@@ -7,14 +7,13 @@ use gobs_gfx::{
     Buffer, BufferUsage, Command, CommandQueueType, Device, Display, GfxBuffer, GfxCommand,
     GfxImage, Image, ImageLayout, ImageUsage,
 };
-use gobs_render_low::{FrameData, GfxContext, RenderError, RenderObject, SceneData};
+use gobs_render_low::{FrameData, GfxContext, PassId, RenderError, RenderObject, SceneData};
 use gobs_resource::manager::ResourceManager;
-use tracing::Level;
 
 use crate::{
     GraphConfig, PipelinesConfig, RenderPass,
     graph::resource::GraphResourceManager,
-    pass::{PassId, PassType, compute::ComputePass, present::PresentPass},
+    pass::{PassType, compute::ComputePass, present::PresentPass},
 };
 
 const FRAME_WIDTH: u32 = 1920;
@@ -313,7 +312,7 @@ impl FrameGraph {
     ) -> Result<(), RenderError> {
         for pass in &mut self.passes {
             let span =
-                tracing::span!(target: logger::PROFILE, Level::TRACE, "Pass", "{}", pass.name())
+                tracing::span!(target: logger::PROFILE, tracing::Level::TRACE, "Pass", "{}", pass.name())
                     .entered();
             tracing::debug!(target: logger::RENDER, "Begin rendering pass {}", pass.name());
 

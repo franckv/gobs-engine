@@ -37,7 +37,7 @@ impl ResourceLoader<Material> for MaterialLoader {
             )
         };
 
-        let pipeline_handle = registry.add::<Pipeline>(pipeline_properties, lifetime);
+        let pipeline_handle = registry.add::<Pipeline>(pipeline_properties, lifetime, false);
 
         Ok(MaterialData {
             pipeline: pipeline_handle,

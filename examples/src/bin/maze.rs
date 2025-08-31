@@ -144,20 +144,22 @@ impl App {
             TextureProperties::with_atlas("Atlas Diffuse", examples::ATLAS, examples::ATLAS_COLS);
         let diffuse_texture = ctx
             .resource_manager
-            .add(properties, ResourceLifetime::Static);
+            .add(properties, ResourceLifetime::Static, false);
 
         let mut properties =
             TextureProperties::with_atlas("Atlas Normal", examples::ATLAS_N, examples::ATLAS_COLS);
         properties.format.ty = TextureType::Normal;
         let normal_texture = ctx
             .resource_manager
-            .add(properties, ResourceLifetime::Static);
+            .add(properties, ResourceLifetime::Static, false);
 
         let material_instance_properties = MaterialInstanceProperties::new("normal", material)
             .textures(&[diffuse_texture, normal_texture]);
-        let material_instance = ctx
-            .resource_manager
-            .add(material_instance_properties, ResourceLifetime::Static);
+        let material_instance = ctx.resource_manager.add(
+            material_instance_properties,
+            ResourceLifetime::Static,
+            false,
+        );
 
         let wall = Model::builder("wall")
             .mesh(

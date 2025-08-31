@@ -5,10 +5,16 @@ use uuid::Uuid;
 use gobs_core::Transform;
 use gobs_gfx::{GfxBindingGroup, GfxBuffer, GfxPipeline, Pipeline, PipelineId};
 
+pub type MaterialId = Uuid;
+pub type MaterialInstanceId = Uuid;
+pub type MeshId = Uuid;
+pub type PassId = Uuid;
+
 pub struct RenderObject {
     pub model_id: Uuid,
+    pub mesh_id: MeshId,
     pub transform: Transform,
-    pub pass_id: Uuid,
+    pub pass_id: PassId,
     pub vertex_buffer: Arc<GfxBuffer>,
     pub vertices_offset: u64,
     pub vertices_len: usize,
@@ -19,7 +25,7 @@ pub struct RenderObject {
     pub pipeline: Option<Arc<GfxPipeline>>,
     pub is_transparent: bool,
     pub bind_groups: Vec<GfxBindingGroup>,
-    pub material_instance_id: Uuid,
+    pub material_instance_id: MaterialInstanceId,
     pub layer: u32,
 }
 
@@ -32,7 +38,7 @@ impl RenderObject {
         if let Some(pipeline) = &self.pipeline {
             pipeline.id()
         } else {
-            PipelineId::default()
+            PipelineId::nil()
         }
     }
 }

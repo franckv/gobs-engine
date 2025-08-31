@@ -24,7 +24,7 @@ pub struct MeshGeometry {
 impl MeshGeometry {
     fn new(name: String, vertices: Vec<VertexData>, indices: Vec<u32>) -> Arc<Self> {
         Arc::new(Self {
-            id: Uuid::new_v4(),
+            id: MeshId::new_v4(),
             name,
             vertices,
             indices,

@@ -3,8 +3,8 @@ use gobs_gfx::{
 };
 use gobs_render_graph::{GraphicsPipelineProperties, Pipeline, PipelineProperties};
 use gobs_render_low::{
-    GfxContext, MaterialDataLayout, MaterialDataProp, ObjectDataLayout, TextureDataLayout,
-    TextureDataProp, UniformData,
+    GfxContext, MaterialDataLayout, MaterialDataProp, MaterialId, ObjectDataLayout,
+    TextureDataLayout, TextureDataProp, UniformData,
 };
 use gobs_resource::{
     geometry::VertexAttribute,
@@ -25,6 +25,7 @@ impl ResourceType for Material {
 
 #[derive(Clone, Debug)]
 pub struct MaterialProperties {
+    pub id: MaterialId,
     pub name: String,
     pub pipeline_properties: GraphicsPipelineProperties,
     pub blending_enabled: bool,
@@ -66,6 +67,7 @@ impl MaterialProperties {
             .depth_format(ctx.depth_format);
 
         Self {
+            id: MaterialId::new_v4(),
             name: name.to_string(),
             pipeline_properties,
             blending_enabled: false,

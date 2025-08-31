@@ -8,12 +8,10 @@ use gobs_gfx::{
     BindingGroup, BindingGroupPool, BindingGroupUpdates, Buffer, BufferUsage, GfxBindingGroup,
     GfxBindingGroupLayout, GfxBindingGroupPool, GfxBuffer, GfxDevice,
 };
-use gobs_render_low::{MaterialConstantData, MaterialDataLayout, UniformData};
+use gobs_render_low::{MaterialConstantData, MaterialDataLayout, MaterialInstanceId, UniformData};
 use gobs_resource::{
     manager::ResourceRegistry,
-    resource::{
-        Resource, ResourceError, ResourceHandle, ResourceId, ResourceLoader, ResourceProperties,
-    },
+    resource::{Resource, ResourceError, ResourceHandle, ResourceLoader, ResourceProperties},
 };
 
 use crate::{
@@ -26,9 +24,10 @@ use crate::{
 
 pub struct MaterialInstanceLoader {
     device: Arc<GfxDevice>,
-    pub material_bindings: HashMap<ResourceId, (Option<GfxBindingGroup>, Option<GfxBindingGroup>)>,
-    material_binding_pools: HashMap<ResourceId, GfxBindingGroupPool>,
-    texture_binding_pools: HashMap<ResourceId, GfxBindingGroupPool>,
+    pub material_bindings:
+        HashMap<MaterialInstanceId, (Option<GfxBindingGroup>, Option<GfxBindingGroup>)>,
+    material_binding_pools: HashMap<MaterialInstanceId, GfxBindingGroupPool>,
+    texture_binding_pools: HashMap<MaterialInstanceId, GfxBindingGroupPool>,
 }
 
 impl MaterialInstanceLoader {
@@ -59,7 +58,6 @@ impl ResourceLoader<MaterialInstance> for MaterialInstanceLoader {
             self.device.clone(),
             &mut self.material_binding_pools,
             material.properties.material_data_layout.bindings_layout(),
-            handle,
             properties,
             material,
         );
@@ -68,7 +66,6 @@ impl ResourceLoader<MaterialInstance> for MaterialInstanceLoader {
             self.device.clone(),
             &mut self.texture_binding_pools,
             material.properties.texture_data_layout.bindings_layout(),
-            handle,
             properties,
             material,
         );
@@ -80,7 +77,7 @@ impl ResourceLoader<MaterialInstance> for MaterialInstanceLoader {
         );
 
         let (material_binding, texture_binding) =
-            self.load_material_bindings(handle, material_buffer.as_ref(), &material.properties);
+            self.load_material_bindings(properties, material_buffer.as_ref(), &material.properties);
 
         let data = MaterialInstanceData {
             material: properties.material,
@@ -99,13 +96,12 @@ impl ResourceLoader<MaterialInstance> for MaterialInstanceLoader {
 impl MaterialInstanceLoader {
     fn init_material_pools(
         device: Arc<GfxDevice>,
-        pools: &mut HashMap<ResourceId, GfxBindingGroupPool>,
+        pools: &mut HashMap<MaterialInstanceId, GfxBindingGroupPool>,
         binding_layout: GfxBindingGroupLayout,
-        handle: &ResourceHandle<MaterialInstance>,
         properties: &MaterialInstanceProperties,
         material: &Resource<Material>,
     ) {
-        match pools.entry(handle.id) {
+        match pools.entry(properties.id) {
             Entry::Occupied(_pools) => {
                 tracing::warn!(target: logger::RESOURCES, "Pool already initialized for material instance {}", properties.name());
             }
@@ -140,11 +136,11 @@ impl MaterialInstanceLoader {
 
     fn load_material_bindings(
         &mut self,
-        handle: &ResourceHandle<MaterialInstance>,
+        properties: &MaterialInstanceProperties,
         material_buffer: Option<&GfxBuffer>,
         material_properties: &MaterialProperties,
     ) -> (Option<GfxBindingGroup>, Option<GfxBindingGroup>) {
-        match self.material_bindings.entry(handle.id) {
+        match self.material_bindings.entry(properties.id) {
             Entry::Occupied(e) => {
                 let (material_binding, texture_binding) = e.get().clone();
                 (material_binding, texture_binding)
@@ -152,12 +148,12 @@ impl MaterialInstanceLoader {
             Entry::Vacant(e) => {
                 let texture_binding = Self::load_textures(
                     material_properties,
-                    self.texture_binding_pools.get_mut(&handle.id).unwrap(),
+                    self.texture_binding_pools.get_mut(&properties.id).unwrap(),
                 );
 
                 let material_binding = Self::load_material(
                     material_buffer,
-                    self.material_binding_pools.get_mut(&handle.id).unwrap(),
+                    self.material_binding_pools.get_mut(&properties.id).unwrap(),
                 );
 
                 e.insert((material_binding, texture_binding)).clone()

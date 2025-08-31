@@ -122,20 +122,20 @@ impl App {
         let color_instance_properties =
             MaterialInstanceProperties::new("color instance", color_material);
 
-        let color_material_instance = ctx
-            .resource_manager
-            .add(color_instance_properties, ResourceLifetime::Static);
+        let color_material_instance =
+            ctx.resource_manager
+                .add(color_instance_properties, ResourceLifetime::Static, false);
 
         let properties = TextureProperties::with_file("Wall Diffuse", examples::WALL_TEXTURE);
         let diffuse_texture = ctx
             .resource_manager
-            .add(properties, ResourceLifetime::Static);
+            .add(properties, ResourceLifetime::Static, false);
 
         let mut properties = TextureProperties::with_file("Wall Normal", examples::WALL_TEXTURE_N);
         properties.format.ty = TextureType::Normal;
         let normal_texture = ctx
             .resource_manager
-            .add(properties, ResourceLifetime::Static);
+            .add(properties, ResourceLifetime::Static, false);
 
         let diffuse_material = ctx.resource_manager.get_by_name("normal").unwrap();
 
@@ -143,9 +143,9 @@ impl App {
             MaterialInstanceProperties::new("diffuse instance", diffuse_material)
                 .textures(&[diffuse_texture, normal_texture]);
 
-        let diffuse_material_instance = ctx
-            .resource_manager
-            .add(diffuse_instance_properties, ResourceLifetime::Static);
+        let diffuse_material_instance =
+            ctx.resource_manager
+                .add(diffuse_instance_properties, ResourceLifetime::Static, false);
 
         let model = Model::builder("multi")
             .mesh(

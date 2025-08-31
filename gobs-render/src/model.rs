@@ -94,7 +94,7 @@ impl ModelBuilder {
     pub fn new(name: &str) -> Self {
         ModelBuilder {
             name: name.to_string(),
-            id: Uuid::new_v4(),
+            id: ModelId::new_v4(),
             layer: 0,
             meshes: Vec::new(),
             bounding_box: BoundingBox::default(),
@@ -123,8 +123,11 @@ impl ModelBuilder {
     ) -> Self {
         self.bounding_box.extends_box(mesh.boundings());
 
-        let mesh_handle =
-            resource_manager.add(MeshProperties::with_geometry(mesh, self.layer), lifetime);
+        let mesh_handle = resource_manager.add(
+            MeshProperties::with_geometry(mesh, self.layer),
+            lifetime,
+            false,
+        );
 
         if let Some(material_instance) = material_instance {
             self.meshes.push((mesh_handle, Some(material_instance)));

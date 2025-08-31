@@ -17,5 +17,5 @@ pub use data::{
 pub use error::RenderError;
 pub use framedata::FrameData;
 pub use job::RenderJob;
-pub use render_object::RenderObject;
+pub use render_object::{MaterialId, MaterialInstanceId, MeshId, PassId, RenderObject};
 pub use stats::RenderStats;

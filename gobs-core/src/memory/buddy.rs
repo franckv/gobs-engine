@@ -57,6 +57,16 @@ impl BuddyAllocator {
         })
     }
 
+    pub fn max_available_size(&self) -> usize {
+        for i in 0..=self.order {
+            if self.has_free(i) {
+                return self.block_size(i);
+            }
+        }
+
+        0
+    }
+
     fn new_allocation(&self, order: usize, idx: usize) -> Allocation {
         Allocation::new(order, idx, self.block_start(order, idx))
     }

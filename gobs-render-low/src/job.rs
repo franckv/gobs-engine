@@ -1,6 +1,5 @@
 use std::sync::Arc;
 
-use gobs_resource::resource::ResourceId;
 use parking_lot::RwLock;
 use thiserror::Error;
 use uuid::Uuid;
@@ -10,7 +9,7 @@ use gobs_gfx::{BindingGroupType, Buffer, BufferId, Command, GfxPipeline, Pipelin
 
 use crate::{
     FrameData, GfxContext, ObjectDataLayout, RenderObject, UniformBuffer, UniformData,
-    UniformLayout,
+    UniformLayout, render_object::MaterialInstanceId,
 };
 
 #[derive(Debug, Error)]
@@ -22,7 +21,7 @@ pub enum RenderJobError {
 struct RenderJobState {
     last_pipeline: PipelineId,
     last_index_buffer: BufferId,
-    last_material: ResourceId,
+    last_material: MaterialInstanceId,
     last_indices_offset: usize,
     scene_data_bound: bool,
     object_data: Vec<u8>,
@@ -33,7 +32,7 @@ impl RenderJobState {
         Self {
             last_pipeline: PipelineId::nil(),
             last_index_buffer: BufferId::nil(),
-            last_material: ResourceId::nil(),
+            last_material: MaterialInstanceId::nil(),
             last_indices_offset: 0,
             scene_data_bound: false,
             object_data: vec![],
@@ -104,6 +103,7 @@ impl RenderJob {
 
         for render_object in render_list {
             if !self.should_render(render_object) {
+                tracing::trace!(target: logger::RENDER, "Skip object");
                 continue;
             }
 
@@ -118,7 +118,7 @@ impl RenderJob {
             // push constants + index buffer
             self.bind_object_data(ctx, frame, render_object, &mut state)?;
 
-            tracing::debug!(target: logger::RENDER, "Draw object");
+            tracing::trace!(target: logger::RENDER, "Draw object");
             frame.command.draw_indexed(render_object.indices_len, 1);
             frame
                 .stats
@@ -135,10 +135,10 @@ impl RenderJob {
         render_object: &RenderObject,
     ) -> Result<Arc<GfxPipeline>, RenderJobError> {
         if let Some(pipeline) = &self.fixed_pipeline {
-            tracing::debug!(target: logger::RENDER, "Use fixed pipeline");
+            tracing::trace!(target: logger::RENDER, "Use fixed pipeline: {}", pipeline.name());
             Ok(pipeline.clone())
         } else if let Some(pipeline) = &render_object.pipeline {
-            tracing::debug!(target: logger::RENDER, "Use object pipeline");
+            tracing::trace!(target: logger::RENDER, "Use object pipeline");
             Ok(pipeline.clone())
         } else {
             Err(RenderJobError::InvalidPipeline)
@@ -152,13 +152,16 @@ impl RenderJob {
         render_object: &RenderObject,
         state: &mut RenderJobState,
     ) -> Result<(), RenderJobError> {
+        tracing::trace!(target: logger::RENDER, "Bind pipeline");
         let pipeline = self.get_pipeline(render_object)?;
 
         if state.last_pipeline != pipeline.id() {
-            tracing::debug!(target: logger::RENDER, "Bind pipeline: {}", pipeline.id());
+            tracing::trace!(target: logger::RENDER, "Bind pipeline: {}", pipeline.id());
             frame.command.bind_pipeline(&pipeline);
             frame.stats.bind_pipeline(self.pass_id);
             state.last_pipeline = pipeline.id();
+        } else {
+            tracing::trace!(target: logger::RENDER, "Skip bind pipeline {}={}", state.last_pipeline, pipeline.id());
         }
 
         Ok(())
@@ -176,7 +179,7 @@ impl RenderJob {
         {
             let pipeline = self.get_pipeline(render_object)?;
 
-            tracing::debug!(target: logger::RENDER, "Bind material resources: {}", render_object.bind_groups.len());
+            tracing::trace!(target: logger::RENDER, "Bind material resources: {}", render_object.bind_groups.len());
             for bind_group in &render_object.bind_groups {
                 tracing::trace!(target: logger::RENDER, "Bind resource: {:?} ({:?})", bind_group.bind_group_type, bind_group.ds.layout);
 
@@ -198,7 +201,7 @@ impl RenderJob {
         state: &mut RenderJobState,
     ) -> Result<(), RenderJobError> {
         if !state.scene_data_bound {
-            tracing::debug!(target: logger::RENDER, "Bind scene data");
+            tracing::trace!(target: logger::RENDER, "Bind scene data");
             let uniform_buffer = self.uniform_buffer.read();
 
             let pipeline = self.get_pipeline(render_object)?;

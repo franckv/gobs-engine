@@ -141,9 +141,11 @@ impl App {
             //NormalMaterial::instanciate(material, diffuse_texture, normal_texture);
             MaterialInstanceProperties::new("depth", material);
 
-        let material_instance = ctx
-            .resource_manager
-            .add(material_instance_properties, ResourceLifetime::Static);
+        let material_instance = ctx.resource_manager.add(
+            material_instance_properties,
+            ResourceLifetime::Static,
+            false,
+        );
 
         let cube = Model::builder("cube")
             .mesh(

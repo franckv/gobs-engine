@@ -1,11 +1,10 @@
 #![allow(clippy::new_ret_no_self)]
 
 use serde::{Deserialize, Serialize};
-use uuid::Uuid;
 
 use gobs_core::{ImageExtent2D, ImageFormat};
 use gobs_gfx::{ImageLayout, ImageUsage};
-use gobs_render_low::{FrameData, GfxContext, RenderError, RenderObject, SceneData};
+use gobs_render_low::{FrameData, GfxContext, PassId, RenderError, RenderObject, SceneData};
 use gobs_resource::geometry::VertexAttribute;
 
 use crate::graph::GraphResourceManager;
@@ -34,8 +33,6 @@ pub enum RenderPassType {
     Material,
     Present,
 }
-
-pub type PassId = Uuid;
 
 #[allow(dead_code)]
 #[derive(Clone, Copy, Debug, Default, Deserialize, Serialize)]

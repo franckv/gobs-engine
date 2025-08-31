@@ -80,7 +80,7 @@ impl Camera {
         };
 
         Camera {
-            id: Uuid::new_v4(),
+            id: CameraId::new_v4(),
             mode: ProjectionMode::Perspective(projection),
             yaw,
             pitch,
@@ -97,7 +97,7 @@ impl Camera {
         };
 
         Camera {
-            id: Uuid::new_v4(),
+            id: CameraId::new_v4(),
             mode: ProjectionMode::Ortho(projection),
             yaw,
             pitch,

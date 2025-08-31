@@ -3,13 +3,13 @@ use std::{collections::HashMap, sync::Arc};
 use gobs_core::{ImageExtent2D, logger};
 use gobs_gfx::{Command, GfxCommand, GfxPipeline, Pipeline};
 use gobs_render_low::{
-    FrameData, GfxContext, ObjectDataLayout, RenderError, RenderJob, RenderObject, SceneData,
-    SceneDataLayout, UniformData,
+    FrameData, GfxContext, ObjectDataLayout, PassId, RenderError, RenderJob, RenderObject,
+    SceneData, SceneDataLayout, UniformData,
 };
 use gobs_resource::geometry::VertexAttribute;
 
 use crate::{
-    PassId, PassType,
+    PassType,
     graph::GraphResourceManager,
     pass::{Attachment, AttachmentAccess, AttachmentType, RenderPass},
 };

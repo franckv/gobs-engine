@@ -1,6 +1,7 @@
 use std::sync::Arc;
 
 use gobs_gfx::GfxBuffer;
+use gobs_render_low::MeshId;
 use gobs_resource::{
     geometry::{MeshGeometry, VertexAttribute},
     resource::{ResourceProperties, ResourceType},
@@ -28,6 +29,7 @@ pub enum MeshPath {
 
 #[derive(Clone, Debug)]
 pub struct MeshProperties {
+    pub id: MeshId,
     pub name: String,
     pub path: MeshPath,
     pub layer: u32,
@@ -42,6 +44,7 @@ impl ResourceProperties for MeshProperties {
 impl MeshProperties {
     pub fn with_geometry(geometry: Arc<MeshGeometry>, layer: u32) -> Self {
         Self {
+            id: MeshId::new_v4(),
             name: geometry.name.clone(),
             path: MeshPath::Mesh(geometry),
             layer,

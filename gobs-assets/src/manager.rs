@@ -17,8 +17,11 @@ pub struct TextureManager {
 
 impl TextureManager {
     pub fn new(resource_manager: &mut ResourceManager) -> Self {
-        let default_texture =
-            resource_manager.add(TextureProperties::default(), ResourceLifetime::Static);
+        let default_texture = resource_manager.add(
+            TextureProperties::default(),
+            ResourceLifetime::Static,
+            false,
+        );
 
         TextureManager {
             textures: vec![],
@@ -79,21 +82,24 @@ impl MaterialManager {
             MaterialInstanceProperties::new("default", texture)
                 .textures(&[texture_manager.default_texture]),
             ResourceLifetime::Static,
+            false,
         );
 
-        tracing::debug!(target: logger::RESOURCES, "Default material id: {}", default_material_instance.id);
+        tracing::debug!(target: logger::RESOURCES, "Default material id: {:?}", default_material_instance.id);
 
         let color_instance = resource_manager.add::<MaterialInstance>(
             MaterialInstanceProperties::new("color", color),
             ResourceLifetime::Static,
+            false,
         );
-        tracing::debug!(target: logger::RESOURCES, "Color material id: {}", color_instance.id);
+        tracing::debug!(target: logger::RESOURCES, "Color material id: {:?}", color_instance.id);
 
         let transparent_color_instance = resource_manager.add::<MaterialInstance>(
             MaterialInstanceProperties::new("transparent color", transparent_color),
             ResourceLifetime::Static,
+            false,
         );
-        tracing::debug!(target: logger::RESOURCES, "Color material id: {}", transparent_color_instance.id);
+        tracing::debug!(target: logger::RESOURCES, "Color material id: {:?}", transparent_color_instance.id);
 
         Ok(MaterialManager {
             texture_manager,
@@ -130,10 +136,12 @@ impl MaterialManager {
                 MaterialInstanceProperties::new(name, self.transparent_texture)
                     .textures(&[texture]),
                 ResourceLifetime::Static,
+                false,
             ),
             _ => resource_manager.add::<MaterialInstance>(
                 MaterialInstanceProperties::new(name, self.texture).textures(&[texture]),
                 ResourceLifetime::Static,
+                false,
             ),
         };
         self.instances.push(material_instance);
@@ -157,11 +165,13 @@ impl MaterialManager {
                 MaterialInstanceProperties::new(name, self.transparent_texture_normal)
                     .textures(&[diffuse, normal]),
                 ResourceLifetime::Static,
+                false,
             ),
             _ => resource_manager.add::<MaterialInstance>(
                 MaterialInstanceProperties::new(name, self.texture_normal)
                     .textures(&[diffuse, normal]),
                 ResourceLifetime::Static,
+                false,
             ),
         };
         self.instances.push(material_instance);

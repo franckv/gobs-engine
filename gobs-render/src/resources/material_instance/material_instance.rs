@@ -1,6 +1,7 @@
 use gobs_gfx::{GfxBindingGroup, GfxBuffer};
 use gobs_render_low::{
-    MaterialConstantData, MaterialDataLayout, MaterialDataProp, MaterialDataPropData, UniformData,
+    MaterialConstantData, MaterialDataLayout, MaterialDataProp, MaterialDataPropData,
+    MaterialInstanceId, UniformData,
 };
 use gobs_resource::resource::{ResourceHandle, ResourceProperties, ResourceType};
 
@@ -18,6 +19,7 @@ impl ResourceType for MaterialInstance {
 
 #[derive(Clone, Debug)]
 pub struct MaterialInstanceProperties {
+    pub id: MaterialInstanceId,
     pub name: String,
     pub material_data: Option<MaterialConstantData>,
     pub material_data_layout: MaterialDataLayout,
@@ -34,6 +36,7 @@ impl ResourceProperties for MaterialInstanceProperties {
 impl MaterialInstanceProperties {
     pub fn new(name: &str, material: ResourceHandle<Material>) -> Self {
         Self {
+            id: MaterialInstanceId::new_v4(),
             name: name.to_string(),
             material_data: None,
             material_data_layout: Default::default(),

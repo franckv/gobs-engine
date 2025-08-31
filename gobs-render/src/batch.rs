@@ -5,13 +5,13 @@ use std::{
 
 use gobs_core::{ImageExtent2D, Transform, logger};
 use gobs_gfx::{BindingGroup, BindingGroupUpdates, Buffer, GfxBindingGroup};
-use gobs_render_graph::{PassId, RenderPass};
-use gobs_render_low::{GfxContext, RenderObject, SceneData};
+use gobs_render_graph::RenderPass;
+use gobs_render_low::{GfxContext, MaterialInstanceId, PassId, RenderObject, SceneData};
 use gobs_resource::{
     entity::{camera::Camera, light::Light},
     geometry::{BoundingBox, MeshBuilder, MeshGeometry, Shapes},
     manager::ResourceManager,
-    resource::{ResourceError, ResourceHandle, ResourceId, ResourceLifetime},
+    resource::{ResourceError, ResourceHandle, ResourceLifetime},
 };
 
 use crate::{MaterialInstance, model::Model};
@@ -98,20 +98,19 @@ impl RenderBatch {
         tracing::debug!(target: logger::RENDER, "Add model: {} to pass {}", model.name(), pass.name());
 
         // TODO: add material data for forward pass only
-        for (mesh, material_instance) in &model.meshes {
-            let bind_groups = Self::get_bind_groups(material_instance.as_ref(), resource_manager);
+        for (mesh, material_instance_handle) in &model.meshes {
+            let bind_groups =
+                Self::get_bind_groups(material_instance_handle.as_ref(), resource_manager);
 
-            let material_instance_id = match material_instance {
-                Some(instance) => instance.id,
-                None => ResourceId::default(),
+            let (material_handle, material_instance_id) = match material_instance_handle {
+                Some(material_instance_handle) => {
+                    let material_instance = resource_manager.get(material_instance_handle);
+                    let material = material_instance.properties.material;
+
+                    (Some(material), material_instance.properties.id)
+                }
+                None => (None, MaterialInstanceId::nil()),
             };
-
-            let material_handle = material_instance.as_ref().and_then(|material_instance| {
-                resource_manager
-                    .get_data(material_instance, ())
-                    .ok()
-                    .map(|material_instance_data| material_instance_data.data.material)
-            });
 
             let vertex_attributes = match pass.vertex_attributes() {
                 Some(vertex_attributes) => vertex_attributes,
@@ -147,6 +146,7 @@ impl RenderBatch {
 
             let render_object = RenderObject {
                 model_id: model.id,
+                mesh_id: mesh_data.properties.id,
                 transform,
                 pass_id: pass.id(),
                 pipeline,

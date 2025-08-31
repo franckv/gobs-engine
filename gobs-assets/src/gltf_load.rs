@@ -273,7 +273,7 @@ impl GLTFLoader {
                     properties.format.mag_filter = mag_filter;
                     properties.format.min_filter = min_filter;
 
-                    let handle = resource_manager.add(properties, ResourceLifetime::Static);
+                    let handle = resource_manager.add(properties, ResourceLifetime::Static, false);
 
                     self.material_manager.add_texture(handle);
                 }
@@ -294,7 +294,7 @@ impl GLTFLoader {
                     properties.format.mag_filter = mag_filter;
                     properties.format.min_filter = min_filter;
 
-                    let handle = resource_manager.add(properties, ResourceLifetime::Static);
+                    let handle = resource_manager.add(properties, ResourceLifetime::Static, false);
 
                     self.material_manager.add_texture(handle);
                 }
@@ -315,7 +315,7 @@ impl GLTFLoader {
                     properties.format.mag_filter = mag_filter;
                     properties.format.min_filter = min_filter;
 
-                    let handle = resource_manager.add(properties, ResourceLifetime::Static);
+                    let handle = resource_manager.add(properties, ResourceLifetime::Static, false);
 
                     self.material_manager.add_texture(handle);
                 }

@@ -1,8 +1,8 @@
 use std::collections::HashMap;
 
-use uuid::Uuid;
-
 use gobs_core::utils::timer::Timer;
+
+use crate::PassId;
 
 #[derive(Clone, Debug, Default)]
 pub struct PassStats {
@@ -32,7 +32,7 @@ impl PassStats {
 #[derive(Clone, Debug, Default)]
 pub struct RenderStats {
     timer: Timer,
-    pass_stats: HashMap<Uuid, PassStats>,
+    pass_stats: HashMap<PassId, PassStats>,
     pub objects: u32,
     pub cpu_prepare_begin_time: f32,
     pub cpu_prepare_end_time: f32,
@@ -49,7 +49,7 @@ impl RenderStats {
         self.cpu_prepare_begin_time = self.timer.delta();
     }
 
-    pub fn prepare_draw(&mut self, pass_id: Uuid) {
+    pub fn prepare_draw(&mut self, pass_id: PassId) {
         let pass = self.pass_stats.entry(pass_id).or_default();
 
         pass.cpu_prepare_draw_time = self.timer.delta();
@@ -59,7 +59,7 @@ impl RenderStats {
         self.cpu_prepare_end_time = self.timer.delta();
     }
 
-    pub fn pass(&self, pass_id: Uuid) -> Option<&PassStats> {
+    pub fn pass(&self, pass_id: PassId) -> Option<&PassStats> {
         self.pass_stats.get(&pass_id)
     }
 
@@ -67,44 +67,44 @@ impl RenderStats {
         self.objects += len;
     }
 
-    pub fn draw(&mut self, pass_id: Uuid, indices: u32) {
+    pub fn draw(&mut self, pass_id: PassId, indices: u32) {
         let pass = self.pass_stats.entry(pass_id).or_default();
 
         pass.draws += 1;
         pass.indices += indices;
     }
 
-    pub fn bind_pipeline(&mut self, pass_id: Uuid) {
+    pub fn bind_pipeline(&mut self, pass_id: PassId) {
         let pass = self.pass_stats.entry(pass_id).or_default();
 
         pass.pipeline_binds += 1;
     }
 
-    pub fn bind_material_resource(&mut self, pass_id: Uuid) {
+    pub fn bind_material_resource(&mut self, pass_id: PassId) {
         let pass = self.pass_stats.entry(pass_id).or_default();
 
         pass.material_resource_binds += 1;
     }
 
-    pub fn bind_scene_resource(&mut self, pass_id: Uuid) {
+    pub fn bind_scene_resource(&mut self, pass_id: PassId) {
         let pass = self.pass_stats.entry(pass_id).or_default();
 
         pass.scene_resource_binds += 1;
     }
 
-    pub fn bind_index_resource(&mut self, pass_id: Uuid) {
+    pub fn bind_index_resource(&mut self, pass_id: PassId) {
         let pass = self.pass_stats.entry(pass_id).or_default();
 
         pass.index_resource_binds += 1;
     }
 
-    pub fn bind_attach_resource(&mut self, pass_id: Uuid) {
+    pub fn bind_attach_resource(&mut self, pass_id: PassId) {
         let pass = self.pass_stats.entry(pass_id).or_default();
 
         pass.attach_resource_binds += 1;
     }
 
-    pub fn finish(&mut self, pass_id: Uuid) {
+    pub fn finish(&mut self, pass_id: PassId) {
         let pass = self.pass_stats.entry(pass_id).or_default();
 
         pass.cpu_draw_time = self.timer.delta();

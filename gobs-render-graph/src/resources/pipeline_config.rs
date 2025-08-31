@@ -90,7 +90,7 @@ impl PipelinesConfig {
         for pipeline_name in config.pipelines.keys() {
             let pipeline = Self::load_pipeline(ctx, &config, pipeline_name);
             if let Some(pipeline) = pipeline {
-                resource_manager.add::<Pipeline>(pipeline, ResourceLifetime::Static);
+                resource_manager.add::<Pipeline>(pipeline, ResourceLifetime::Static, true);
             }
         }
 
