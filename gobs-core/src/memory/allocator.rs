@@ -100,4 +100,8 @@ impl<D, F: ResourceFamily, A: Allocable<D, F>> Allocator<D, F, A> {
             self.pool.insert(resource.family(), resource);
         }
     }
+
+    pub fn is_empty(&self) -> bool {
+        self.allocated.is_empty()
+    }
 }
