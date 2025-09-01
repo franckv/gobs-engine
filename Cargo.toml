@@ -9,6 +9,7 @@ members = [
     "gobs-render",
     "gobs-render-graph",
     "gobs-render-low",
+    "gobs-render-resources",
     "gobs-resource",
     "gobs-scene",
     "gobs-vulkan",
@@ -51,6 +52,10 @@ path = "./gobs-render-graph"
 [workspace.dependencies.gobs-render-low]
 package = "gobs-render-low"
 path = "./gobs-render-low"
+
+[workspace.dependencies.gobs-render-resources]
+package = "gobs-render-resources"
+path = "./gobs-render-resources"
 
 [workspace.dependencies.gobs-render]
 package = "gobs-render"

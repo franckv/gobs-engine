@@ -12,8 +12,8 @@ use gobs_resource::{
 };
 
 use crate::resources::pipeline::{
-    ComputePipelineProperties, GraphicsPipelineProperties, Pipeline, PipelineData,
-    PipelineProperties,
+    GraphicsPipelineProperties, Pipeline, PipelineProperties,
+    pipeline::{ComputePipelineProperties, PipelineData},
 };
 
 pub struct PipelineLoader {

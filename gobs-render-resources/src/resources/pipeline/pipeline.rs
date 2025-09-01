@@ -11,7 +11,7 @@ use gobs_resource::{
     resource::{ResourceProperties, ResourceType},
 };
 
-use crate::resources::pipeline_loader::PipelineLoader;
+use crate::resources::PipelineLoader;
 
 #[derive(Clone, Copy, Debug)]
 pub struct Pipeline;

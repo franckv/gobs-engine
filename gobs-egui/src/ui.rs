@@ -10,11 +10,14 @@ use parking_lot::RwLock;
 
 use gobs_core::{Color, ImageExtent2D, Input, Key, MouseButton, Transform, logger};
 use gobs_render::{
-    BlendMode, GfxContext, Material, MaterialInstance, MaterialInstanceProperties,
-    MaterialProperties, Model, ObjectDataLayout, ObjectDataProp, RenderBatch, Renderable, Texture,
-    TextureDataProp, TextureProperties, TextureUpdate, UniformData,
+    BlendMode, GfxContext, Model, ObjectDataLayout, ObjectDataProp, RenderBatch, Renderable,
+    TextureDataProp, UniformData,
 };
 use gobs_render_graph::{PassType, RenderPass};
+use gobs_render_resources::{
+    Material, MaterialInstance, MaterialInstanceProperties, MaterialProperties, Texture,
+    TextureProperties, TextureUpdate as _,
+};
 use gobs_resource::{
     geometry::{MeshGeometry, VertexAttribute, VertexData},
     manager::ResourceManager,

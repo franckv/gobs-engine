@@ -9,6 +9,7 @@ bytemuck = { workspace = true }
 gobs-core = { workspace = true }
 gobs-render-graph = { workspace = true }
 gobs-render = { workspace = true }
+gobs-render-resources = { workspace = true }
 gobs-resource = { workspace = true }
 egui = { workspace = true }
 glam = { workspace = true }

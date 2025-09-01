@@ -1,5 +1,5 @@
 [package]
-name = "gobs-render"
+name = "gobs-render-resources"
 version = { workspace = true }
 authors = { workspace = true }
 edition = { workspace = true }
@@ -10,9 +10,7 @@ glam = { workspace = true }
 gobs-core = { workspace = true }
 gobs-gfx = { workspace = true }
 gobs-resource = { workspace = true }
-gobs-render-graph = { workspace = true }
 gobs-render-low = { workspace = true }
-gobs-render-resources = { workspace = true }
 image = { workspace = true }
 parking_lot = { workspace = true }
 pollster = { workspace = true }
@@ -25,3 +23,6 @@ uuid = { workspace = true }
 
 [dev-dependencies]
 tracing-subscriber = { workspace = true }
+
+[features]
+ci = []

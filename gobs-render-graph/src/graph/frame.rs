@@ -8,10 +8,11 @@ use gobs_gfx::{
     GfxImage, Image, ImageLayout, ImageUsage,
 };
 use gobs_render_low::{FrameData, GfxContext, PassId, RenderError, RenderObject, SceneData};
+use gobs_render_resources::PipelinesConfig;
 use gobs_resource::manager::ResourceManager;
 
 use crate::{
-    GraphConfig, PipelinesConfig, RenderPass,
+    GraphConfig, RenderPass,
     graph::resource::GraphResourceManager,
     pass::{PassType, compute::ComputePass, present::PresentPass},
 };

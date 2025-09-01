@@ -4,7 +4,8 @@ use pollster::FutureExt;
 use gobs::{
     core::{Color, Input, Transform, logger},
     game::{AppError, GameContext, GameOptions, Run},
-    render::{BuiltinGraphs, MaterialInstanceProperties, MaterialsConfig, Model, RenderError},
+    render::{BuiltinGraphs, Model, RenderError},
+    render_resources::{MaterialInstanceProperties, MaterialsConfig},
     resource::{entity::light::Light, geometry::Shapes, resource::ResourceLifetime},
     scene::{components::NodeValue, scene::Scene},
 };

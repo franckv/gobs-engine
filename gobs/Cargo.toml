@@ -12,6 +12,7 @@ gobs-game = { workspace = true }
 gobs-gfx = { workspace = true }
 gobs-render-graph = { workspace = true }
 gobs-render-low = { workspace = true }
+gobs-render-resources = { workspace = true }
 gobs-render = { workspace = true }
 gobs-resource = { workspace = true }
 gobs-scene = { workspace = true }

@@ -1,11 +1,11 @@
 use winit::window::Window;
 
 use gobs_core::logger;
-use gobs_render::{
-    GfxContext, Material, MaterialInstance, MaterialInstanceLoader, MaterialLoader, Mesh,
-    MeshLoader, RenderError, Renderer, Texture, TextureLoader,
+use gobs_render::{GfxContext, RenderError, Renderer};
+use gobs_render_resources::{
+    Material, MaterialInstance, MaterialInstanceLoader, MaterialLoader, Mesh, MeshLoader, Pipeline,
+    PipelineLoader, Texture, TextureLoader,
 };
-use gobs_render_graph::{Pipeline, PipelineLoader};
 use gobs_resource::manager::ResourceManager;
 
 use crate::GameOptions;

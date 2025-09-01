@@ -1,5 +1,6 @@
 use std::{collections::HashMap, sync::Arc};
 
+use gobs_render_resources::Pipeline;
 use serde::{Deserialize, Serialize};
 
 use gobs_core::{ImageExtent2D, ImageFormat, logger};
@@ -14,7 +15,7 @@ use gobs_resource::{
 };
 
 use crate::{
-    PassType, Pipeline,
+    PassType,
     pass::{AttachmentAccess, AttachmentType, RenderPass, RenderPassType, material::MaterialPass},
 };
 

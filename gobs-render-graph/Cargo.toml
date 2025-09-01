@@ -11,6 +11,7 @@ glam = { workspace = true }
 gobs-core = { workspace = true }
 gobs-gfx = { workspace = true }
 gobs-render-low = { workspace = true }
+gobs-render-resources = { workspace = true }
 gobs-resource = { workspace = true }
 image = { workspace = true }
 parking_lot = { workspace = true }

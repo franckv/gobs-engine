@@ -6,5 +6,6 @@ pub use gobs_gfx as gfx;
 pub use gobs_render as render;
 pub use gobs_render_graph as render_graph;
 pub use gobs_render_low as render_low;
+pub use gobs_render_resources as render_resources;
 pub use gobs_resource as resource;
 pub use gobs_scene as scene;

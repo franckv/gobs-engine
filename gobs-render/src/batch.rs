@@ -7,6 +7,7 @@ use gobs_core::{ImageExtent2D, Transform, logger};
 use gobs_gfx::{BindingGroup, BindingGroupUpdates, Buffer, GfxBindingGroup};
 use gobs_render_graph::RenderPass;
 use gobs_render_low::{GfxContext, MaterialInstanceId, PassId, RenderObject, SceneData};
+use gobs_render_resources::MaterialInstance;
 use gobs_resource::{
     entity::{camera::Camera, light::Light},
     geometry::{BoundingBox, MeshBuilder, MeshGeometry, Shapes},
@@ -14,7 +15,7 @@ use gobs_resource::{
     resource::{ResourceError, ResourceHandle, ResourceLifetime},
 };
 
-use crate::{MaterialInstance, model::Model};
+use crate::model::Model;
 
 pub struct RenderBatch {
     pub render_list: HashMap<PassId, Vec<RenderObject>>,

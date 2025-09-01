@@ -5,9 +5,10 @@ use glam::Vec3;
 use gobs::{
     core::Transform,
     game::context::GameContext,
-    render::{Material, MaterialInstance, Mesh, RenderBatch, Texture, TextureLoader},
-    render_graph::{FrameGraph, Pipeline},
+    render::RenderBatch,
+    render_graph::FrameGraph,
     render_low::FrameData,
+    render_resources::{Material, MaterialInstance, Mesh, Pipeline, Texture, TextureLoader},
     resource::{
         manager::ResourceManager,
         resource::{ResourceHandle, ResourceProperties, ResourceType},

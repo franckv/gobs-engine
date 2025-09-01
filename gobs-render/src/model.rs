@@ -6,13 +6,14 @@ use uuid::Uuid;
 
 use gobs_core::{Transform, logger};
 use gobs_render_graph::RenderPass;
+use gobs_render_resources::{MaterialInstance, Mesh, MeshProperties};
 use gobs_resource::{
     geometry::{Bounded, BoundingBox, MeshGeometry},
     manager::ResourceManager,
     resource::{ResourceError, ResourceHandle, ResourceLifetime},
 };
 
-use crate::{MaterialInstance, Mesh, Renderable, batch::RenderBatch, resources::MeshProperties};
+use crate::{Renderable, batch::RenderBatch};
 
 pub type ModelId = Uuid;
 

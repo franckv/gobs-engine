@@ -1,7 +1,8 @@
 use gobs_core::logger;
-use gobs_render::{
-    BlendMode, GfxContext, Material, MaterialInstance, MaterialInstanceProperties, MaterialsConfig,
-    Texture, TextureProperties,
+use gobs_render::{BlendMode, GfxContext};
+use gobs_render_resources::{
+    Material, MaterialInstance, MaterialInstanceProperties, MaterialsConfig, Texture,
+    TextureProperties,
 };
 use gobs_resource::{
     manager::ResourceManager,

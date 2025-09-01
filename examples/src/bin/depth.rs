@@ -3,7 +3,8 @@ use glam::{Quat, Vec3};
 use gobs::{
     core::{Color, Input, Transform, logger},
     game::{AppError, Application, GameContext, GameOptions, Run},
-    render::{MaterialInstanceProperties, MaterialsConfig, Model, RenderError},
+    render::{Model, RenderError},
+    render_resources::{MaterialInstanceProperties, MaterialsConfig},
     resource::{
         entity::{camera::Camera, light::Light},
         geometry::Shapes,

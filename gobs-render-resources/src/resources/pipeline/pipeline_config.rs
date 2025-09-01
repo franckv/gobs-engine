@@ -172,7 +172,7 @@ mod tests {
 
     use crate::resources::{
         PipelinesConfig,
-        pipeline_config::{AttachmentFormat, DepthConfig, PipelineConfig},
+        pipeline::pipeline_config::{AttachmentFormat, DepthConfig, PipelineConfig},
     };
 
     fn setup() {
@@ -190,7 +190,7 @@ mod tests {
 
         let ctx = GfxContext::new("test", None, false).unwrap();
 
-        let data = include_str!("../../../examples/resources/pipelines.ron");
+        let data = include_str!("../../../../examples/resources/pipelines.ron");
 
         let mut resource_manager = ResourceManager::new(ctx.frames_in_flight);
 
@@ -204,7 +204,7 @@ mod tests {
 
         let ctx = GfxContext::new("test", None, false).unwrap();
 
-        let data = include_str!("../../../examples/resources/pipelines.ron");
+        let data = include_str!("../../../../examples/resources/pipelines.ron");
 
         let options = ron::options::Options::default()
             .with_default_extension(ron::extensions::Extensions::IMPLICIT_SOME);
