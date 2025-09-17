@@ -169,6 +169,7 @@ impl TextureLoader {
 }
 
 impl ResourceLoader<Texture> for TextureLoader {
+    #[tracing::instrument(target = "profile", skip_all, level = "trace")]
     fn load(
         &mut self,
         handle: &ResourceHandle<Texture>,

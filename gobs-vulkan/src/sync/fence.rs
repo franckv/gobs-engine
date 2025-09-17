@@ -32,6 +32,7 @@ impl Fence {
         Fence { device, fence }
     }
 
+    #[tracing::instrument(target = "profile", skip_all, level = "trace")]
     pub fn reset(&self) {
         let fences = [self.fence];
 
@@ -43,6 +44,7 @@ impl Fence {
         }
     }
 
+    #[tracing::instrument(target = "profile", skip_all, level = "trace")]
     pub fn wait(&self) {
         unsafe {
             self.device
@@ -52,6 +54,7 @@ impl Fence {
         }
     }
 
+    #[tracing::instrument(target = "profile", skip_all, level = "trace")]
     pub fn wait_and_reset(&self) {
         unsafe {
             self.device
@@ -65,6 +68,7 @@ impl Fence {
         }
     }
 
+    #[tracing::instrument(target = "profile", skip_all, level = "trace")]
     pub fn signaled(&self) -> bool {
         unsafe {
             self.device

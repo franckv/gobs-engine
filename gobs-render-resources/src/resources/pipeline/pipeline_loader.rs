@@ -101,6 +101,7 @@ impl PipelineLoader {
 }
 
 impl ResourceLoader<Pipeline> for PipelineLoader {
+    #[tracing::instrument(target = "profile", skip_all, level = "trace")]
     fn load(
         &mut self,
         handle: &ResourceHandle<Pipeline>,

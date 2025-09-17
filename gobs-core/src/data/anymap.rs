@@ -35,6 +35,7 @@ impl AnyMap {
         self.map.get(&TypeId::of::<T>())?.downcast_ref::<T>()
     }
 
+    #[tracing::instrument(target = "profile", skip_all, level = "trace")]
     pub fn get_mut<T: Any>(&mut self) -> Option<&mut T> {
         self.map.get_mut(&TypeId::of::<T>())?.downcast_mut::<T>()
     }

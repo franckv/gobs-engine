@@ -30,6 +30,7 @@ impl MeshLoader {
         }
     }
 
+    #[tracing::instrument(target = "profile", skip_all, level = "trace")]
     pub fn load_geometry(
         &mut self,
         geometry: &MeshGeometry,
@@ -106,6 +107,7 @@ impl MeshLoader {
 }
 
 impl ResourceLoader<Mesh> for MeshLoader {
+    #[tracing::instrument(target = "profile", skip_all, level = "trace")]
     fn load(
         &mut self,
         handle: &ResourceHandle<Mesh>,

@@ -42,6 +42,7 @@ impl MaterialInstanceLoader {
 }
 
 impl ResourceLoader<MaterialInstance> for MaterialInstanceLoader {
+    #[tracing::instrument(target = "profile", skip_all, level = "trace")]
     fn load(
         &mut self,
         handle: &ResourceHandle<MaterialInstance>,

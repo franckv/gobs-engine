@@ -154,6 +154,7 @@ impl Command<VkRenderer> for VkCommand {
         self.command.draw_indexed(index_count, instance_count);
     }
 
+    #[tracing::instrument(target = "profile", skip_all, level = "trace")]
     fn reset(&self) {
         self.command.fence.wait();
 

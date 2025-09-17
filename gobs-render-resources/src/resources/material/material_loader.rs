@@ -21,6 +21,7 @@ impl Default for MaterialLoader {
 }
 
 impl ResourceLoader<Material> for MaterialLoader {
+    #[tracing::instrument(target = "profile", skip_all, level = "trace")]
     fn load(
         &mut self,
         handle: &ResourceHandle<Material>,

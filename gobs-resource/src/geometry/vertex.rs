@@ -113,6 +113,7 @@ impl VertexData {
         vertex
     }
 
+    #[tracing::instrument(target = "profile", skip_all, level = "trace")]
     pub fn copy_data(&self, flags: &VertexAttribute, alignment: usize, data: &mut Vec<u8>) {
         if flags.contains(VertexAttribute::POSITION) {
             data.extend_from_slice(bytemuck::cast_slice(&self.position.to_array()));
