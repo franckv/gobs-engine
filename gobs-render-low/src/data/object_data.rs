@@ -72,8 +72,11 @@ impl UniformData<ObjectDataProp, RenderObject> for ObjectDataLayout {
                 }
                 ObjectDataProp::VertexBufferAddress => {
                     props.push(UniformPropData::U64(
-                        render_object.vertex_buffer.address(&ctx.unwrap().device)
-                            + render_object.vertices_offset,
+                        render_object
+                            .vertex_view
+                            .buffer
+                            .address(&ctx.unwrap().device)
+                            + render_object.vertex_view.offset,
                     ));
                 }
             }

@@ -47,7 +47,7 @@ pub trait Command<R: Renderer> {
         binding_group_type: BindingGroupType,
         pipeline: &R::Pipeline,
     );
-    fn bind_index_buffer(&self, buffer: &R::Buffer, offset: usize);
+    fn bind_index_buffer(&self, buffer: &R::Buffer, offset: u64);
     fn dispatch(&self, x: u32, y: u32, z: u32);
     fn draw_indexed(&self, index_count: usize, instance_count: usize);
     fn reset(&self);

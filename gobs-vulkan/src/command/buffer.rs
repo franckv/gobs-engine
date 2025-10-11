@@ -278,9 +278,9 @@ impl CommandBuffer {
         }
     }
 
-    pub fn bind_vertex_buffer<T: Copy>(&self, binding: usize, buffer: &Buffer) {
+    pub fn bind_vertex_buffer<T: Copy>(&self, binding: usize, buffer: &Buffer, offset: u64) {
         let bindings = [buffer.raw()];
-        let offsets = [0];
+        let offsets = [offset];
 
         unsafe {
             self.device.raw().cmd_bind_vertex_buffers(
@@ -292,8 +292,8 @@ impl CommandBuffer {
         }
     }
 
-    pub fn bind_index_buffer<T: IndexType>(&self, buffer: &Buffer, offset: usize) {
-        let index_size = T::size();
+    pub fn bind_index_buffer<T: IndexType>(&self, buffer: &Buffer, offset: u64) {
+        let index_size = T::size() as u64;
 
         unsafe {
             self.device.raw().cmd_bind_index_buffer(

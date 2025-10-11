@@ -141,7 +141,7 @@ impl Command<VkRenderer> for VkCommand {
             .push_descriptors(&self.command, &pipeline.pipeline, binding_group_type.set());
     }
 
-    fn bind_index_buffer(&self, buffer: &VkBuffer, offset: usize) {
+    fn bind_index_buffer(&self, buffer: &VkBuffer, offset: u64) {
         self.command
             .bind_index_buffer::<u32>(&buffer.buffer, offset);
     }

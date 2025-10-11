@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use gobs_gfx::GfxBuffer;
+use gobs_gfx::{BufferView, GfxBuffer};
 use gobs_render_low::MeshId;
 use gobs_resource::{
     geometry::{MeshGeometry, VertexAttribute},
@@ -60,11 +60,6 @@ pub enum MeshPrimitiveType {
 #[derive(Clone)]
 pub struct MeshData {
     pub ty: MeshPrimitiveType,
-    pub vertex_buffer: Arc<GfxBuffer>,
-    pub index_buffer: Arc<GfxBuffer>,
-    pub vertices_offset: u64,
-    pub vertices_len: usize,
-    pub vertices_count: usize,
-    pub indices_offset: usize,
-    pub indices_len: usize,
+    pub vertex_view: BufferView<GfxBuffer>,
+    pub index_view: BufferView<GfxBuffer>,
 }

@@ -1,5 +1,3 @@
-use std::usize;
-
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub struct ImageExtent2D {
     pub width: u32,

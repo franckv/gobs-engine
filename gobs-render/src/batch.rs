@@ -153,13 +153,8 @@ impl RenderBatch {
                 pipeline,
                 is_transparent,
                 bind_groups,
-                vertex_buffer: mesh_data.data.vertex_buffer.clone(),
-                vertices_offset: mesh_data.data.vertices_offset,
-                vertices_len: mesh_data.data.vertices_len,
-                vertices_count: mesh_data.data.vertices_count,
-                index_buffer: mesh_data.data.index_buffer.clone(),
-                indices_offset: mesh_data.data.indices_offset,
-                indices_len: mesh_data.data.indices_len,
+                vertex_view: mesh_data.data.vertex_view.clone(),
+                index_view: mesh_data.data.index_view.clone(),
                 material_instance_id,
                 layer: mesh_data.properties.layer,
             };
@@ -236,8 +231,8 @@ impl RenderBatch {
                     .then(a.is_transparent().cmp(&b.is_transparent()))
                     .then(a.pipeline_id().cmp(&b.pipeline_id()))
                     .then(a.material_instance_id.cmp(&b.material_instance_id))
-                    .then(a.index_buffer.id().cmp(&b.index_buffer.id()))
-                    .then(a.indices_offset.cmp(&b.indices_offset))
+                    .then(a.index_view.buffer.id().cmp(&b.index_view.buffer.id()))
+                    .then(a.index_view.offset.cmp(&b.index_view.offset))
             });
         }
     }

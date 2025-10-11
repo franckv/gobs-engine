@@ -13,7 +13,7 @@ mod renderer;
 pub use bindgroup::{
     BindingGroup, BindingGroupLayout, BindingGroupPool, BindingGroupType, BindingGroupUpdates,
 };
-pub use buffer::{Buffer, BufferId};
+pub use buffer::{Buffer, BufferId, BufferView};
 pub use command::{Command, CommandQueueType};
 pub use device::Device;
 pub use display::Display;

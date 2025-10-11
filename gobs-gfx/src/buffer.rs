@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use bytemuck::Pod;
 use uuid::Uuid;
 
@@ -15,4 +17,22 @@ pub trait Buffer<R: Renderer> {
     fn usage(&self) -> BufferUsage;
     fn address(&self, device: &R::Device) -> u64;
     fn get_bytes<T: Pod>(&self, data: &mut Vec<T>);
+}
+
+pub struct BufferView<Buffer> {
+    pub buffer: Arc<Buffer>,
+    pub offset: u64,
+    pub len: usize,
+    pub count: usize,
+}
+
+impl<Buffer> Clone for BufferView<Buffer> {
+    fn clone(&self) -> Self {
+        Self {
+            buffer: self.buffer.clone(),
+            offset: self.offset,
+            len: self.len,
+            count: self.count,
+        }
+    }
 }

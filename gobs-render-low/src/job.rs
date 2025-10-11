@@ -22,7 +22,7 @@ struct RenderJobState {
     last_pipeline: PipelineId,
     last_index_buffer: BufferId,
     last_material: MaterialInstanceId,
-    last_indices_offset: usize,
+    last_indices_offset: u64,
     scene_data_bound: bool,
     object_data: Vec<u8>,
 }
@@ -119,10 +119,10 @@ impl RenderJob {
             self.bind_object_data(ctx, frame, render_object, &mut state)?;
 
             tracing::trace!(target: logger::RENDER, "Draw object");
-            frame.command.draw_indexed(render_object.indices_len, 1);
+            frame.command.draw_indexed(render_object.index_view.len, 1);
             frame
                 .stats
-                .draw(self.pass_id, render_object.indices_len as u32);
+                .draw(self.pass_id, render_object.index_view.len as u32);
         }
 
         frame.stats.finish(self.pass_id);
@@ -240,15 +240,16 @@ impl RenderJob {
 
         frame.command.push_constants(&pipeline, &state.object_data);
 
-        if state.last_index_buffer != render_object.index_buffer.id()
-            || state.last_indices_offset != render_object.indices_offset
+        if state.last_index_buffer != render_object.index_view.buffer.id()
+            || state.last_indices_offset != render_object.index_view.offset
         {
-            frame
-                .command
-                .bind_index_buffer(&render_object.index_buffer, render_object.indices_offset);
+            frame.command.bind_index_buffer(
+                &render_object.index_view.buffer,
+                render_object.index_view.offset,
+            );
             frame.stats.bind_index_resource(self.pass_id);
-            state.last_index_buffer = render_object.index_buffer.id();
-            state.last_indices_offset = render_object.indices_offset;
+            state.last_index_buffer = render_object.index_view.buffer.id();
+            state.last_indices_offset = render_object.index_view.offset;
         }
 
         Ok(())

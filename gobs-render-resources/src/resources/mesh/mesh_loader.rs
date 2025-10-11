@@ -4,7 +4,9 @@ use gobs_core::{
     logger,
     memory::allocator::{AllocationError, Allocator},
 };
-use gobs_gfx::{Buffer, BufferUsage, Command, CommandQueueType, GfxBuffer, GfxCommand, GfxDevice};
+use gobs_gfx::{
+    Buffer, BufferUsage, BufferView, Command, CommandQueueType, GfxBuffer, GfxCommand, GfxDevice,
+};
 use gobs_resource::{
     geometry::{MeshGeometry, VertexAttribute},
     manager::ResourceRegistry,
@@ -57,13 +59,18 @@ impl MeshLoader {
 
         Ok(MeshData {
             ty: MeshPrimitiveType::Triangle,
-            vertex_buffer: vertex_buffer.clone(),
-            index_buffer: index_buffer.clone(),
-            vertices_offset: vertices_offset as u64,
-            vertices_len: vertices.len() - vertices_offset,
-            vertices_count: geometry.vertices.len(),
-            indices_offset,
-            indices_len: indices.len() - indices_offset,
+            vertex_view: BufferView {
+                buffer: vertex_buffer.clone(),
+                offset: vertices_offset as u64,
+                len: vertices.len() - vertices_offset,
+                count: geometry.vertices.len(),
+            },
+            index_view: BufferView {
+                buffer: index_buffer.clone(),
+                offset: indices_offset as u64,
+                len: indices.len() - indices_offset,
+                count: indices.len() - indices_offset,
+            },
         })
     }
 

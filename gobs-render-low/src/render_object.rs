@@ -3,7 +3,7 @@ use std::sync::Arc;
 use uuid::Uuid;
 
 use gobs_core::Transform;
-use gobs_gfx::{GfxBindingGroup, GfxBuffer, GfxPipeline, Pipeline, PipelineId};
+use gobs_gfx::{BufferView, GfxBindingGroup, GfxBuffer, GfxPipeline, Pipeline, PipelineId};
 
 pub type MaterialId = Uuid;
 pub type MaterialInstanceId = Uuid;
@@ -15,13 +15,8 @@ pub struct RenderObject {
     pub mesh_id: MeshId,
     pub transform: Transform,
     pub pass_id: PassId,
-    pub vertex_buffer: Arc<GfxBuffer>,
-    pub vertices_offset: u64,
-    pub vertices_len: usize,
-    pub vertices_count: usize,
-    pub index_buffer: Arc<GfxBuffer>,
-    pub indices_offset: usize,
-    pub indices_len: usize,
+    pub vertex_view: BufferView<GfxBuffer>,
+    pub index_view: BufferView<GfxBuffer>,
     pub pipeline: Option<Arc<GfxPipeline>>,
     pub is_transparent: bool,
     pub bind_groups: Vec<GfxBindingGroup>,
