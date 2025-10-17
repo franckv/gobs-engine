@@ -5,7 +5,7 @@ use gobs_core::{
     memory::allocator::{AllocationError, Allocator},
 };
 use gobs_gfx::{
-    Buffer, BufferUsage, BufferView, Command, CommandQueueType, GfxBuffer, GfxCommand, GfxDevice,
+    Buffer, BufferType, BufferView, Command, CommandQueueType, GfxBuffer, GfxCommand, GfxDevice,
 };
 use gobs_resource::{
     geometry::{MeshGeometry, VertexAttribute},
@@ -17,7 +17,7 @@ use crate::resources::{Mesh, MeshData, MeshPath, MeshPrimitiveType};
 
 pub struct MeshLoader {
     device: Arc<GfxDevice>,
-    pub buffer_pool: Allocator<GfxDevice, BufferUsage, GfxBuffer>,
+    pub buffer_pool: Allocator<GfxDevice, BufferType, GfxBuffer>,
     cmd: GfxCommand,
 }
 
@@ -89,14 +89,14 @@ impl MeshLoader {
             &self.device,
             "staging",
             staging_size.max(STAGING_BUFFER_SIZE),
-            BufferUsage::Staging,
+            BufferType::Staging,
         )?;
         let staging_id = staging.id();
 
         let mut vertex_buffer =
-            GfxBuffer::new("vertex", vertices_size, BufferUsage::Vertex, &self.device);
+            GfxBuffer::new("vertex", vertices_size, BufferType::Vertex, &self.device);
         let mut index_buffer =
-            GfxBuffer::new("index", indices_size, BufferUsage::Index, &self.device);
+            GfxBuffer::new("index", indices_size, BufferType::Index, &self.device);
 
         staging.copy(vertices, 0);
         staging.copy(indices, vertices_size);

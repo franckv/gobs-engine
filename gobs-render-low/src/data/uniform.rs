@@ -1,4 +1,4 @@
-use gobs_gfx::{Buffer, BufferUsage, GfxBuffer, GfxDevice};
+use gobs_gfx::{Buffer, BufferType, GfxBuffer, GfxDevice};
 
 use crate::GfxContext;
 
@@ -8,7 +8,7 @@ pub struct UniformBuffer {
 
 impl UniformBuffer {
     pub fn new(device: &GfxDevice, layout: &UniformLayout) -> Self {
-        let buffer = GfxBuffer::new("uniform", layout.size(), BufferUsage::Uniform, device);
+        let buffer = GfxBuffer::new("uniform", layout.size(), BufferType::Uniform, device);
 
         UniformBuffer { buffer }
     }

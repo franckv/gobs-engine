@@ -13,7 +13,7 @@ mod renderer;
 pub use bindgroup::{
     BindingGroup, BindingGroupLayout, BindingGroupPool, BindingGroupType, BindingGroupUpdates,
 };
-pub use buffer::{Buffer, BufferId, BufferView};
+pub use buffer::{Buffer, BufferId, BufferType, BufferView};
 pub use command::{Command, CommandQueueType};
 pub use device::Device;
 pub use display::Display;
@@ -24,7 +24,6 @@ pub use pipeline::{ComputePipelineBuilder, GraphicsPipelineBuilder, Pipeline, Pi
 pub use renderer::Renderer;
 
 pub use gobs_vulkan::{
-    buffers::BufferUsage,
     descriptor::{DescriptorStage, DescriptorType},
     images::{ImageLayout, ImageUsage},
     pipelines::{

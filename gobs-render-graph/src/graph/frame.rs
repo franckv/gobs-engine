@@ -4,7 +4,7 @@ use bytemuck::Pod;
 
 use gobs_core::{ImageExtent2D, ImageFormat, logger};
 use gobs_gfx::{
-    Buffer, BufferUsage, Command, CommandQueueType, Device, Display, GfxBuffer, GfxCommand,
+    Buffer, BufferType, Command, CommandQueueType, Device, Display, GfxBuffer, GfxCommand,
     GfxImage, Image, ImageLayout, ImageUsage,
 };
 use gobs_render_low::{FrameData, GfxContext, PassId, RenderError, RenderObject, SceneData};
@@ -202,7 +202,7 @@ impl FrameGraph {
         let mut buffer = GfxBuffer::new(
             "copy",
             dst_image.size(),
-            BufferUsage::StagingDst,
+            BufferType::StagingDst,
             &ctx.device,
         );
 

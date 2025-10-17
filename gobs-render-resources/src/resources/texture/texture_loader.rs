@@ -6,7 +6,7 @@ use pollster::FutureExt;
 
 use gobs_core::{Color, ImageExtent2D, logger, memory::allocator::Allocator};
 use gobs_gfx::{
-    Buffer, BufferUsage, Command, CommandQueueType, GfxBuffer, GfxCommand, GfxDevice, GfxImage,
+    Buffer, BufferType, Command, CommandQueueType, GfxBuffer, GfxCommand, GfxDevice, GfxImage,
     GfxSampler, Image, ImageLayout, ImageUsage, Sampler,
 };
 use gobs_resource::{
@@ -19,7 +19,7 @@ use crate::resources::{Texture, TextureData, TextureFormat, texture::TexturePath
 
 pub struct TextureLoader {
     device: Arc<GfxDevice>,
-    pub buffer_pool: Allocator<GfxDevice, BufferUsage, GfxBuffer>,
+    pub buffer_pool: Allocator<GfxDevice, BufferType, GfxBuffer>,
     cmd: GfxCommand,
 }
 
@@ -186,7 +186,7 @@ impl ResourceLoader<Texture> for TextureLoader {
             &self.device,
             "image staging",
             STAGING_BUFFER_SIZE,
-            BufferUsage::Staging,
+            BufferType::Staging,
         )?;
         let staging_id = staging.id();
 

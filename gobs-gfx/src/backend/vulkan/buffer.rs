@@ -6,25 +6,30 @@ use gobs_vulkan as vk;
 use gobs_vulkan::buffers::BufferUsage;
 
 use crate::backend::vulkan::{device::VkDevice, renderer::VkRenderer};
-use crate::{Buffer, BufferId};
+use crate::{Buffer, BufferId, BufferType};
 
 #[derive(Debug)]
 pub struct VkBuffer {
     id: BufferId,
+    ty: BufferType,
     pub(crate) buffer: vk::buffers::Buffer,
 }
 
 impl Buffer<VkRenderer> for VkBuffer {
-    fn new(
-        name: &str,
-        size: usize,
-        usage: vk::buffers::BufferUsage,
-        device: &VkDevice,
-    ) -> VkBuffer {
+    fn new(name: &str, size: usize, ty: BufferType, device: &VkDevice) -> VkBuffer {
         tracing::debug!(target: logger::RESOURCES, "Create buffer {}, size={}", name, size);
+
+        let usage = match ty {
+            BufferType::Vertex => BufferUsage::Vertex,
+            BufferType::Index => BufferUsage::Index,
+            BufferType::Staging => BufferUsage::Staging,
+            BufferType::StagingDst => BufferUsage::StagingDst,
+            BufferType::Uniform => BufferUsage::Uniform,
+        };
 
         Self {
             id: BufferId::new_v4(),
+            ty,
             buffer: vk::buffers::Buffer::new(
                 name,
                 size,
@@ -57,8 +62,8 @@ impl Buffer<VkRenderer> for VkBuffer {
         self.buffer.size
     }
 
-    fn usage(&self) -> vk::buffers::BufferUsage {
-        self.buffer.usage
+    fn ty(&self) -> BufferType {
+        self.ty
     }
 
     fn address(&self, device: &VkDevice) -> u64 {
@@ -70,8 +75,8 @@ impl Buffer<VkRenderer> for VkBuffer {
     }
 }
 
-impl Allocable<VkDevice, BufferUsage> for VkBuffer {
-    fn allocate(device: &VkDevice, name: &str, size: usize, family: BufferUsage) -> Self {
+impl Allocable<VkDevice, BufferType> for VkBuffer {
+    fn allocate(device: &VkDevice, name: &str, size: usize, family: BufferType) -> Self {
         VkBuffer::new(name, size, family, device)
     }
 
@@ -79,8 +84,8 @@ impl Allocable<VkDevice, BufferUsage> for VkBuffer {
         self.id
     }
 
-    fn family(&self) -> BufferUsage {
-        self.usage()
+    fn family(&self) -> BufferType {
+        self.ty
     }
 
     fn resource_size(&self) -> usize {

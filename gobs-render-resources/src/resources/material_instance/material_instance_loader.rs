@@ -5,7 +5,7 @@ use std::{
 
 use gobs_core::logger;
 use gobs_gfx::{
-    BindingGroup, BindingGroupPool, BindingGroupUpdates, Buffer, BufferUsage, GfxBindingGroup,
+    BindingGroup, BindingGroupPool, BindingGroupUpdates, Buffer, BufferType, GfxBindingGroup,
     GfxBindingGroupLayout, GfxBindingGroupPool, GfxBuffer, GfxDevice,
 };
 use gobs_render_low::{MaterialConstantData, MaterialDataLayout, MaterialInstanceId, UniformData};
@@ -126,7 +126,7 @@ impl MaterialInstanceLoader {
         if let Some(material_data) = material_data {
             material_data_layout.copy_data(None, material_data, &mut data);
 
-            let mut buffer = GfxBuffer::new(name, data.len(), BufferUsage::Uniform, &self.device);
+            let mut buffer = GfxBuffer::new(name, data.len(), BufferType::Uniform, &self.device);
             buffer.copy(&data, 0);
 
             Some(buffer)
