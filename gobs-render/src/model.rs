@@ -6,9 +6,10 @@ use uuid::Uuid;
 
 use gobs_core::{Transform, logger};
 use gobs_render_graph::RenderPass;
-use gobs_render_resources::{MaterialInstance, Mesh, MeshProperties};
+use gobs_render_resources::{
+    Bounded, BoundingBox, MaterialInstance, Mesh, MeshGeometry, MeshProperties,
+};
 use gobs_resource::{
-    geometry::{Bounded, BoundingBox, MeshGeometry},
     manager::ResourceManager,
     resource::{ResourceError, ResourceHandle, ResourceLifetime},
 };

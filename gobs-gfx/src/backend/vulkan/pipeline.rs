@@ -1,7 +1,6 @@
 use std::sync::Arc;
 
 use gobs_core::{ImageFormat, logger};
-use gobs_resource::geometry::VertexAttribute;
 use gobs_resource::load::{self, LoadingError};
 use gobs_vulkan as vk;
 
@@ -10,7 +9,7 @@ use crate::backend::vulkan::{
 };
 use crate::{
     BlendMode, CompareOp, ComputePipelineBuilder, CullMode, DynamicStateElem, FrontFace, GfxError,
-    GraphicsPipelineBuilder, Pipeline, PipelineId, PolygonMode, Rect2D, Viewport,
+    GraphicsPipelineBuilder, Pipeline, PipelineId, PolygonMode, Rect2D, VertexAttribute, Viewport,
 };
 
 #[derive(Debug)]

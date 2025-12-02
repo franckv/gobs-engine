@@ -5,10 +5,10 @@ use serde::{Deserialize, Serialize};
 use gobs_core::ImageFormat;
 use gobs_gfx::{
     BindingGroupType, CompareOp, CullMode, DescriptorStage, DescriptorType, FrontFace, PolygonMode,
+    VertexAttribute,
 };
 use gobs_render_low::{GfxContext, ObjectDataLayout, ObjectDataProp, UniformData};
 use gobs_resource::{
-    geometry::VertexAttribute,
     load::{self, AssetType},
     manager::ResourceManager,
     resource::{ResourceError, ResourceLifetime},
@@ -162,13 +162,13 @@ impl PipelinesConfig {
 mod tests {
     use std::collections::HashMap;
 
-    use gobs_resource::{geometry::VertexAttribute, manager::ResourceManager};
     use tracing::Level;
     use tracing_subscriber::{FmtSubscriber, fmt::format::FmtSpan};
 
     use gobs_core::ImageFormat;
-    use gobs_gfx::{CompareOp, CullMode, FrontFace, PolygonMode};
+    use gobs_gfx::{CompareOp, CullMode, FrontFace, PolygonMode, VertexAttribute};
     use gobs_render_low::GfxContext;
+    use gobs_resource::manager::ResourceManager;
 
     use crate::resources::{
         PipelinesConfig,

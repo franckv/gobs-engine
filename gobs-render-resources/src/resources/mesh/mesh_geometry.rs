@@ -8,8 +8,9 @@ use serde::Serialize;
 use uuid::Uuid;
 
 use gobs_core::{Transform, logger};
+use gobs_gfx::VertexData;
 
-use crate::geometry::{Bounded, BoundingBox, VertexData};
+use crate::resources::{Bounded, BoundingBox};
 
 pub type MeshId = Uuid;
 

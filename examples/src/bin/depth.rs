@@ -4,10 +4,9 @@ use gobs::{
     core::{Color, Input, Transform, logger},
     game::{AppError, Application, GameContext, GameOptions, Run},
     render::{Model, RenderError},
-    render_resources::{MaterialInstanceProperties, MaterialsConfig},
+    render_resources::{MaterialInstanceProperties, MaterialsConfig, Shapes},
     resource::{
         entity::{camera::Camera, light::Light},
-        geometry::Shapes,
         resource::ResourceLifetime,
     },
     scene::{components::NodeValue, scene::Scene},

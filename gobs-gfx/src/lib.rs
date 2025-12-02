@@ -9,6 +9,7 @@ mod image;
 mod instance;
 mod pipeline;
 mod renderer;
+mod vertex;
 
 pub use bindgroup::{
     BindingGroup, BindingGroupLayout, BindingGroupPool, BindingGroupType, BindingGroupUpdates,
@@ -22,6 +23,7 @@ pub use image::{Image, Sampler};
 pub use instance::Instance;
 pub use pipeline::{ComputePipelineBuilder, GraphicsPipelineBuilder, Pipeline, PipelineId};
 pub use renderer::Renderer;
+pub use vertex::{VertexAttribute, VertexData};
 
 pub use gobs_vulkan::{
     descriptor::{DescriptorStage, DescriptorType},

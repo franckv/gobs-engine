@@ -1,4 +1,4 @@
-use gobs_resource::geometry::{Bounded, BoundingBox};
+use gobs_render_resources::{Bounded, BoundingBox};
 
 use crate::{
     components::{NodeId, NodeValue},

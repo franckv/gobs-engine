@@ -6,14 +6,14 @@ use gobs_core::{
 };
 use gobs_gfx::{
     Buffer, BufferType, BufferView, Command, CommandQueueType, GfxBuffer, GfxCommand, GfxDevice,
+    VertexAttribute,
 };
 use gobs_resource::{
-    geometry::{MeshGeometry, VertexAttribute},
     manager::ResourceRegistry,
     resource::{Resource, ResourceError, ResourceHandle, ResourceLoader, ResourceProperties},
 };
 
-use crate::resources::{Mesh, MeshData, MeshPath, MeshPrimitiveType};
+use crate::resources::{Mesh, MeshData, MeshGeometry, MeshPath, MeshPrimitiveType};
 
 pub struct MeshLoader {
     device: Arc<GfxDevice>,

@@ -1,14 +1,12 @@
 use gobs_gfx::{
     BindingGroupType, BlendMode, CompareOp, CullMode, DescriptorStage, DescriptorType, FrontFace,
+    VertexAttribute,
 };
 use gobs_render_low::{
     GfxContext, MaterialDataLayout, MaterialDataProp, MaterialId, ObjectDataLayout,
     TextureDataLayout, TextureDataProp, UniformData,
 };
-use gobs_resource::{
-    geometry::VertexAttribute,
-    resource::{ResourceHandle, ResourceProperties, ResourceType},
-};
+use gobs_resource::resource::{ResourceHandle, ResourceProperties, ResourceType};
 
 use crate::resources::{GraphicsPipelineProperties, MaterialLoader, Pipeline, PipelineProperties};
 

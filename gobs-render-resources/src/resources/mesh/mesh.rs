@@ -1,13 +1,10 @@
 use std::sync::Arc;
 
-use gobs_gfx::{BufferView, GfxBuffer};
+use gobs_gfx::{BufferView, GfxBuffer, VertexAttribute};
 use gobs_render_low::MeshId;
-use gobs_resource::{
-    geometry::{MeshGeometry, VertexAttribute},
-    resource::{ResourceProperties, ResourceType},
-};
+use gobs_resource::resource::{ResourceProperties, ResourceType};
 
-use crate::resources::MeshLoader;
+use crate::resources::{MeshGeometry, MeshLoader};
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Mesh;

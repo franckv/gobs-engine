@@ -4,10 +4,9 @@ use gobs_core::{ImageExtent2D, logger};
 use gobs_gfx::{
     BindingGroup, BindingGroupLayout, BindingGroupPool, BindingGroupType, BindingGroupUpdates,
     Command, ComputePipelineBuilder, DescriptorType, GfxBindingGroup, GfxBindingGroupLayout,
-    GfxBindingGroupPool, GfxPipeline, ImageLayout, Pipeline,
+    GfxBindingGroupPool, GfxPipeline, ImageLayout, Pipeline, VertexAttribute,
 };
 use gobs_render_low::{FrameData, GfxContext, RenderError, RenderObject, RenderStats, SceneData};
-use gobs_resource::geometry::VertexAttribute;
 
 use crate::{
     graph::GraphResourceManager,

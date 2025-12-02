@@ -3,9 +3,8 @@
 use serde::{Deserialize, Serialize};
 
 use gobs_core::{ImageExtent2D, ImageFormat};
-use gobs_gfx::{ImageLayout, ImageUsage};
+use gobs_gfx::{ImageLayout, ImageUsage, VertexAttribute};
 use gobs_render_low::{FrameData, GfxContext, PassId, RenderError, RenderObject, SceneData};
-use gobs_resource::geometry::VertexAttribute;
 
 use crate::graph::GraphResourceManager;
 

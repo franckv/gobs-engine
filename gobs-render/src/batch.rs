@@ -7,10 +7,9 @@ use gobs_core::{ImageExtent2D, Transform, logger};
 use gobs_gfx::{BindingGroup, BindingGroupUpdates, Buffer, GfxBindingGroup};
 use gobs_render_graph::RenderPass;
 use gobs_render_low::{GfxContext, MaterialInstanceId, PassId, RenderObject, SceneData};
-use gobs_render_resources::MaterialInstance;
+use gobs_render_resources::{BoundingBox, MaterialInstance, MeshBuilder, MeshGeometry, Shapes};
 use gobs_resource::{
     entity::{camera::Camera, light::Light},
-    geometry::{BoundingBox, MeshBuilder, MeshGeometry, Shapes},
     manager::ResourceManager,
     resource::{ResourceError, ResourceHandle, ResourceLifetime},
 };
@@ -269,7 +268,8 @@ mod tests {
     use gobs_core::{Color, Transform, logger, utils::timer::Timer};
     use gobs_render_graph::GraphConfig;
     use gobs_render_low::GfxContext;
-    use gobs_resource::{geometry::Shapes, manager::ResourceManager, resource::ResourceLifetime};
+    use gobs_render_resources::Shapes;
+    use gobs_resource::{manager::ResourceManager, resource::ResourceLifetime};
 
     use crate::{Model, RenderBatch};
 

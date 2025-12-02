@@ -15,11 +15,10 @@ use gobs_render::{
 };
 use gobs_render_graph::{PassType, RenderPass};
 use gobs_render_resources::{
-    Material, MaterialInstance, MaterialInstanceProperties, MaterialProperties, Texture,
-    TextureProperties, TextureUpdate as _,
+    Material, MaterialInstance, MaterialInstanceProperties, MaterialProperties, MeshGeometry,
+    Texture, TextureProperties, TextureUpdate as _, VertexAttribute, VertexData,
 };
 use gobs_resource::{
-    geometry::{MeshGeometry, VertexAttribute, VertexData},
     manager::ResourceManager,
     resource::{ResourceError, ResourceHandle, ResourceLifetime},
 };

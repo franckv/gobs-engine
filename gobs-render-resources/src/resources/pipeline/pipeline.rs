@@ -4,12 +4,9 @@ use std::sync::Arc;
 use gobs_core::ImageFormat;
 use gobs_gfx::{
     BindingGroupType, BlendMode, CompareOp, CullMode, DescriptorStage, DescriptorType, FrontFace,
-    GfxPipeline, PolygonMode,
+    GfxPipeline, PolygonMode, VertexAttribute,
 };
-use gobs_resource::{
-    geometry::VertexAttribute,
-    resource::{ResourceProperties, ResourceType},
-};
+use gobs_resource::resource::{ResourceProperties, ResourceType};
 
 use crate::resources::PipelineLoader;
 

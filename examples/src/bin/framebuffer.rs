@@ -4,8 +4,8 @@ use gobs::{
     core::{Color, Input, Transform, logger},
     game::{AppError, Application, GameContext, GameOptions, Run},
     render::{Model, RenderError},
-    render_resources::{MaterialInstanceProperties, MaterialsConfig, TextureProperties},
-    resource::{entity::light::Light, geometry::Shapes, resource::ResourceLifetime},
+    render_resources::{MaterialInstanceProperties, MaterialsConfig, Shapes, TextureProperties},
+    resource::{entity::light::Light, resource::ResourceLifetime},
     scene::{components::NodeValue, scene::Scene},
     ui::UIRenderer,
 };

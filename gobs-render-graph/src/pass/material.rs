@@ -1,12 +1,11 @@
 use std::{collections::HashMap, sync::Arc};
 
 use gobs_core::{ImageExtent2D, logger};
-use gobs_gfx::{Command, GfxCommand, GfxPipeline, Pipeline};
+use gobs_gfx::{Command, GfxCommand, GfxPipeline, Pipeline, VertexAttribute};
 use gobs_render_low::{
     FrameData, GfxContext, ObjectDataLayout, PassId, RenderError, RenderJob, RenderObject,
     SceneData, SceneDataLayout, UniformData,
 };
-use gobs_resource::geometry::VertexAttribute;
 
 use crate::{
     PassType,

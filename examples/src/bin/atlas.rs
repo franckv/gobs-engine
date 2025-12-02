@@ -5,11 +5,10 @@ use gobs::{
     game::{AppError, Application, GameContext, GameOptions, Run},
     render::{Model, RenderError},
     render_resources::{
-        MaterialInstanceProperties, MaterialsConfig, TextureProperties, TextureType,
+        MaterialInstanceProperties, MaterialsConfig, Shapes, TextureProperties, TextureType,
     },
     resource::{
         entity::{camera::Camera, light::Light},
-        geometry::Shapes,
         resource::ResourceLifetime,
     },
     scene::{components::NodeValue, scene::Scene},

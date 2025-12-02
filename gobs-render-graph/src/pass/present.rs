@@ -1,9 +1,8 @@
 use std::sync::Arc;
 
 use gobs_core::{ImageExtent2D, logger};
-use gobs_gfx::{Command, Display, Image, ImageLayout};
+use gobs_gfx::{Command, Display, Image, ImageLayout, VertexAttribute};
 use gobs_render_low::{FrameData, GfxContext, RenderError, RenderObject, RenderStats, SceneData};
-use gobs_resource::geometry::VertexAttribute;
 
 use crate::{
     graph::GraphResourceManager,

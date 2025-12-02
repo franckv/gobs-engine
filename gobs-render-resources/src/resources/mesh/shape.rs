@@ -3,8 +3,9 @@ use std::sync::Arc;
 use glam::Vec2;
 
 use gobs_core::Color;
+use gobs_gfx::VertexData;
 
-use crate::geometry::{MeshGeometry, VertexData};
+use crate::resources::MeshGeometry;
 
 use super::BoundingBox;
 
@@ -299,7 +300,7 @@ mod tests {
 
     use gobs_core::{Color, logger, utils::timer::Timer};
 
-    use crate::geometry::{BoundingBox, Shapes};
+    use crate::{BoundingBox, Shapes};
 
     fn setup() {
         let sub = FmtSubscriber::builder()

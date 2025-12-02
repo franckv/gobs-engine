@@ -1,13 +1,12 @@
 use std::sync::Arc;
 
-use gobs_resource::geometry::VertexAttribute;
 use uuid::Uuid;
 
 use gobs_core::ImageFormat;
 
 use crate::{
     BlendMode, CompareOp, CullMode, DynamicStateElem, FrontFace, GfxError, PolygonMode, Rect2D,
-    Renderer, Viewport,
+    Renderer, VertexAttribute, Viewport,
 };
 
 pub type PipelineId = Uuid;

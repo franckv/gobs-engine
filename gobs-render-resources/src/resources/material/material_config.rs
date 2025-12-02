@@ -2,12 +2,11 @@ use std::collections::HashMap;
 
 use serde::Deserialize;
 
-use gobs_gfx::BlendMode;
+use gobs_gfx::{BlendMode, VertexAttribute};
 use gobs_render_low::{
     GfxContext, MaterialDataProp, ObjectDataLayout, ObjectDataProp, TextureDataProp, UniformData,
 };
 use gobs_resource::{
-    geometry::VertexAttribute,
     load::{self, AssetType},
     manager::ResourceManager,
     resource::ResourceLifetime,

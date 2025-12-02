@@ -1,8 +1,11 @@
 mod resources;
 
 pub use resources::{
-    Material, MaterialData, MaterialInstance, MaterialInstanceLoader, MaterialInstanceProperties,
-    MaterialLoader, MaterialProperties, MaterialsConfig, Mesh, MeshData, MeshLoader,
-    MeshProperties, Pipeline, PipelineLoader, PipelinesConfig, Texture, TextureData, TextureLoader,
-    TexturePath, TextureProperties, TextureType, TextureUpdate,
+    Bounded, BoundingBox, Material, MaterialData, MaterialInstance, MaterialInstanceLoader,
+    MaterialInstanceProperties, MaterialLoader, MaterialProperties, MaterialsConfig, Mesh,
+    MeshBuilder, MeshData, MeshGeometry, MeshLoader, MeshProperties, Pipeline, PipelineLoader,
+    PipelinesConfig, Shapes, Texture, TextureData, TextureLoader, TexturePath, TextureProperties,
+    TextureType, TextureUpdate,
 };
+
+pub use gobs_gfx::{VertexAttribute, VertexData};

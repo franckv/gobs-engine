@@ -14,6 +14,5 @@ gobs-resource = { workspace = true }
 egui = { workspace = true }
 glam = { workspace = true }
 parking_lot = { workspace = true }
-pollster = { workspace = true }
 thiserror = { workspace = true }
 tracing = { workspace = true }
