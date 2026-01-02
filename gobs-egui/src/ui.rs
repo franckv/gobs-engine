@@ -7,22 +7,19 @@ use egui::{
 };
 use glam::{Vec2, Vec3};
 use parking_lot::RwLock;
+use tracing::Level;
 
 use gobs_core::{Color, ImageExtent2D, Input, Key, MouseButton, Transform, logger};
 use gobs_render::{
-    BlendMode, GfxContext, Model, ObjectDataLayout, ObjectDataProp, RenderBatch, Renderable,
-    TextureDataProp, UniformData,
-};
-use gobs_render_graph::{PassType, RenderPass};
-use gobs_render_resources::{
-    Material, MaterialInstance, MaterialInstanceProperties, MaterialProperties, MeshGeometry,
-    Texture, TextureProperties, TextureUpdate as _, VertexAttribute, VertexData,
+    BlendMode, GfxContext, Material, MaterialInstance, MaterialInstanceProperties,
+    MaterialProperties, MeshGeometry, Model, ObjectDataLayout, ObjectDataProp, PassType,
+    RenderBatch, RenderPass, Renderable, Texture, TextureDataProp, TextureProperties,
+    TextureUpdate, UniformData, VertexAttribute, VertexData,
 };
 use gobs_resource::{
     manager::ResourceManager,
     resource::{ResourceError, ResourceHandle, ResourceLifetime},
 };
-use tracing::Level;
 
 use crate::UIError;
 
@@ -41,11 +38,7 @@ pub struct UIRenderer {
 }
 
 impl UIRenderer {
-    pub fn new(
-        ctx: &GfxContext,
-        resource_manager: &mut ResourceManager,
-        transparent: bool,
-    ) -> Result<Self, UIError> {
+    pub fn new(ctx: &GfxContext, resource_manager: &mut ResourceManager) -> Result<Self, UIError> {
         let ectx = egui::Context::default();
 
         let (width, height): (f32, f32) = ctx.extent().into();
@@ -70,11 +63,7 @@ impl UIRenderer {
         .texture(TextureDataProp::Diffuse)
         .no_culling()
         .depth_test_disable()
-        .blend_mode(if transparent {
-            BlendMode::Premultiplied
-        } else {
-            BlendMode::None
-        });
+        .blend_mode(BlendMode::Premultiplied);
 
         let material = resource_manager.add(material_properties, ResourceLifetime::Static, false);
 
@@ -101,9 +90,14 @@ impl UIRenderer {
     }
 
     #[tracing::instrument(target = "profile", skip_all, level = "trace")]
-    pub fn update(&mut self, resource_manager: &mut ResourceManager, output: FullOutput) {
+    pub fn update(
+        &mut self,
+        ctx: &mut GfxContext,
+        resource_manager: &mut ResourceManager,
+        output: FullOutput,
+    ) {
         self.update_textures(resource_manager, &output);
-        self.cleanup_textures(resource_manager, &output);
+        self.cleanup_textures(ctx, resource_manager, &output);
 
         self.output.write().replace(output);
     }
@@ -283,7 +277,12 @@ impl UIRenderer {
     }
 
     #[tracing::instrument(target = "profile", skip_all, level = "trace")]
-    fn cleanup_textures(&mut self, resource_manager: &mut ResourceManager, output: &FullOutput) {
+    fn cleanup_textures(
+        &mut self,
+        ctx: &mut GfxContext,
+        resource_manager: &mut ResourceManager,
+        output: &FullOutput,
+    ) {
         for id in &output.textures_delta.free {
             tracing::debug!(target: logger::UI, "Remove texture {:?}", id);
 
@@ -291,7 +290,7 @@ impl UIRenderer {
             let mut to_remove = Vec::new();
 
             if let Some(material_handle) = material_handle {
-                let material = resource_manager.get_data(&material_handle, ());
+                let material = resource_manager.get_data(&mut ctx.hal, &material_handle);
                 if let Ok(material) = material {
                     for texture in &material.properties.textures {
                         to_remove.push(*texture);
@@ -396,6 +395,7 @@ impl UIRenderer {
     #[tracing::instrument(target = "profile", skip_all, level = "trace")]
     fn load_model(
         &self,
+        ctx: &GfxContext,
         resource_manager: &mut ResourceManager,
         output: FullOutput,
     ) -> Option<Arc<Model>> {
@@ -463,6 +463,7 @@ impl UIRenderer {
                 model = model.layer(layer).mesh(
                     mesh.build(),
                     Some(self.font_texture.get(&m.texture_id).cloned().unwrap()),
+                    ctx.world_vertex_attributes,
                     resource_manager,
                     ResourceLifetime::Transient,
                 );
@@ -488,6 +489,7 @@ impl Renderable for UIRenderer {
     #[tracing::instrument(target = "profile", skip_all, level = "trace")]
     fn draw(
         &self,
+        ctx: &mut GfxContext,
         resource_manager: &mut ResourceManager,
         pass: RenderPass,
         batch: &mut RenderBatch,
@@ -501,8 +503,8 @@ impl Renderable for UIRenderer {
                 None => Transform::IDENTITY,
             };
 
-            if let Some(model) = self.load_model(resource_manager, output) {
-                batch.add_model(resource_manager, model, transform, pass.clone())?;
+            if let Some(model) = self.load_model(ctx, resource_manager, output) {
+                batch.add_model(ctx, resource_manager, model, transform, pass.clone())?;
             }
 
             batch.add_extent_data(ImageExtent2D::new(self.width as u32, self.height as u32));

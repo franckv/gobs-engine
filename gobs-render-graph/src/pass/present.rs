@@ -1,10 +1,10 @@
 use std::sync::Arc;
 
 use gobs_core::{ImageExtent2D, logger};
-use gobs_gfx::{Command, Display, Image, ImageLayout, VertexAttribute};
-use gobs_render_low::{FrameData, GfxContext, RenderError, RenderObject, RenderStats, SceneData};
+use gobs_render_hal::ImageLayout;
 
 use crate::{
+    FrameData, GfxContext, RenderError, RenderObject, RenderStats, SceneData,
     graph::GraphResourceManager,
     pass::{PassId, PassType, RenderPass},
 };
@@ -38,10 +38,6 @@ impl RenderPass for PresentPass {
         self.ty
     }
 
-    fn vertex_attributes(&self) -> Option<VertexAttribute> {
-        None
-    }
-
     fn render(
         &self,
         ctx: &mut GfxContext,
@@ -57,21 +53,24 @@ impl RenderPass for PresentPass {
 
         let cmd = &frame.command;
 
-        if let Some(render_target) = ctx.display.get_render_target() {
-            cmd.transition_image_layout(
-                &mut resource_manager.image_write("draw"),
-                ImageLayout::TransferSrc,
-            );
+        let render_target = ctx.hal.get_render_target();
+        let render_extent = ctx.hal.get_extent();
 
-            cmd.transition_image_layout(render_target, ImageLayout::TransferDst);
+        cmd.transition_image_layout(
+            ctx.hal.as_mut(),
+            resource_manager.image("draw"),
+            ImageLayout::TransferSrc,
+        );
 
-            cmd.copy_image_to_image(
-                &resource_manager.image_read("draw"),
-                draw_extent,
-                render_target,
-                render_target.extent(),
-            );
-        }
+        cmd.transition_image_layout(ctx.hal.as_mut(), render_target, ImageLayout::TransferDst);
+
+        cmd.copy_image_to_image(
+            ctx.hal.as_ref(),
+            resource_manager.image("draw"),
+            draw_extent,
+            render_target,
+            render_extent,
+        );
 
         stats.finish(self.id);
 

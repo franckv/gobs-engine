@@ -17,7 +17,7 @@ struct App {
 
 impl Run for App {
     async fn create(ctx: &mut GameContext) -> Result<Self, AppError> {
-        let ui = UIRenderer::new(&ctx.renderer.gfx, &mut ctx.resource_manager, true)?;
+        let ui = UIRenderer::new(&ctx.renderer.gfx, &mut ctx.resource_manager)?;
         let mut common = SampleApp::new();
         common.draw_ui = true;
 
@@ -33,7 +33,8 @@ impl Run for App {
             .ui
             .draw_ui(delta, |ectx| self.demo.show(ectx, &mut true));
 
-        self.ui.update(&mut ctx.resource_manager, output);
+        self.ui
+            .update(&mut ctx.renderer.gfx, &mut ctx.resource_manager, output);
     }
 
     fn render(&mut self, ctx: &mut GameContext) -> Result<(), RenderError> {
@@ -255,7 +256,7 @@ impl MiscDemoWindow {
 fn label_ui(ui: &mut egui::Ui) {
     ui.horizontal_wrapped(|ui| {
         // Trick so we don't have to add spaces in the text below:
-        let width = ui.fonts(|f|f.glyph_width(&egui::TextStyle::Body.resolve(ui.style()), ' '));
+        let width = ui.fonts_mut(|f| f.glyph_width(&egui::TextStyle::Body.resolve(ui.style()), ' '));
         ui.spacing_mut().item_spacing.x = width;
 
         ui.label(egui::RichText::new("Text can have").color(egui::Color32::from_rgb(110, 255, 110)));

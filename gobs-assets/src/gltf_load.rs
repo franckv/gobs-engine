@@ -8,8 +8,9 @@ use gltf::{
 };
 
 use gobs_core::{Color, ImageExtent2D, SamplerFilter, Transform, logger};
-use gobs_render::{BlendMode, GfxContext, Model};
-use gobs_render_resources::{MeshGeometry, TextureProperties, TextureType, VertexData};
+use gobs_render::{
+    BlendMode, GfxContext, MeshGeometry, Model, TextureProperties, TextureType, VertexData,
+};
 use gobs_resource::{manager::ResourceManager, resource::ResourceLifetime};
 use gobs_scene::{
     components::{NodeId, NodeValue},
@@ -42,6 +43,7 @@ impl GLTFLoader {
 
     pub fn load<P>(
         &mut self,
+        ctx: &GfxContext,
         resource_manager: &mut ResourceManager,
         file: P,
     ) -> Result<(), AssetError>
@@ -52,7 +54,7 @@ impl GLTFLoader {
 
         self.load_material(resource_manager, &doc, &images);
 
-        self.load_models(resource_manager, &doc, &buffers);
+        self.load_models(ctx, resource_manager, &doc, &buffers);
         self.load_scene(&doc);
 
         Ok(())
@@ -87,6 +89,7 @@ impl GLTFLoader {
 
     fn load_models(
         &mut self,
+        ctx: &GfxContext,
         resource_manager: &mut ResourceManager,
         doc: &Document,
         buffers: &[buffer::Data],
@@ -195,6 +198,7 @@ impl GLTFLoader {
                 model = model.mesh(
                     mesh_data.build(),
                     Some(material),
+                    ctx.world_vertex_attributes,
                     resource_manager,
                     ResourceLifetime::Static,
                 );

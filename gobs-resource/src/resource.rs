@@ -1,4 +1,4 @@
-use std::{collections::HashMap, fmt::Debug, hash::Hash, marker::PhantomData};
+use std::{fmt::Debug, marker::PhantomData};
 
 use serde::Serialize;
 use thiserror::Error;
@@ -22,10 +22,26 @@ pub enum ResourceLifetime {
     Transient,
 }
 
-#[derive(Copy, Clone, Debug, PartialEq, Serialize)]
+#[derive(PartialEq, Serialize)]
 pub struct ResourceHandle<R: ResourceType> {
     pub id: ResourceId,
     pub(crate) ty: PhantomData<R>,
+}
+
+impl<R: ResourceType> Clone for ResourceHandle<R> {
+    fn clone(&self) -> Self {
+        *self
+    }
+}
+
+impl<R: ResourceType> Copy for ResourceHandle<R> {}
+
+impl<R: ResourceType> Debug for ResourceHandle<R> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("ResourceHandle")
+            .field("id", &self.id)
+            .finish()
+    }
 }
 
 impl<R: ResourceType> ResourceHandle<R> {
@@ -39,8 +55,8 @@ impl<R: ResourceType> ResourceHandle<R> {
 
 pub trait ResourceType: Copy + Debug {
     type ResourceData;
+    type ResourceBackend;
     type ResourceProperties: ResourceProperties + Clone;
-    type ResourceParameter: Clone + Hash + Eq;
     type ResourceLoader: ResourceLoader<Self>
     where
         Self: Sized;
@@ -49,7 +65,7 @@ pub trait ResourceType: Copy + Debug {
 pub struct Resource<R: ResourceType> {
     pub handle: ResourceHandle<R>,
     pub properties: R::ResourceProperties,
-    pub(crate) data: HashMap<R::ResourceParameter, ResourceState<R>>,
+    pub(crate) data: ResourceState<R>,
     pub lifetime: ResourceLifetime,
     pub life: usize,
 }
@@ -63,15 +79,15 @@ impl<R: ResourceType> Resource<R> {
         Self {
             handle,
             properties,
-            data: HashMap::new(),
+            data: ResourceState::Unloaded,
             lifetime,
             life: 0,
         }
     }
 
     #[tracing::instrument(target = "profile", skip_all, level = "trace")]
-    pub(crate) fn is_loaded(&self, parameter: &R::ResourceParameter) -> bool {
-        matches!(self.data.get(parameter), Some(ResourceState::Loaded(_)))
+    pub(crate) fn is_loaded(&self) -> bool {
+        matches!(self.data, ResourceState::Loaded(_))
     }
 }
 
@@ -92,8 +108,8 @@ pub trait ResourceProperties {
 pub trait ResourceLoader<R: ResourceType> {
     fn load(
         &mut self,
+        backend: &mut R::ResourceBackend,
         handle: &ResourceHandle<R>,
-        parameter: &R::ResourceParameter,
         resource_registry: &mut ResourceRegistry,
     ) -> Result<R::ResourceData, ResourceError>;
 

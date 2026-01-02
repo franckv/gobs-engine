@@ -3,11 +3,14 @@ mod model;
 mod renderable;
 mod renderer;
 
-pub use gobs_gfx::{BlendMode, CullMode, Display, ImageUsage};
-pub use gobs_render_low::{
-    GfxContext, MaterialDataLayout, MaterialDataProp, ObjectDataLayout, ObjectDataProp,
-    RenderError, TextureDataLayout, TextureDataProp, UniformData,
+pub use gobs_render_graph::{
+    Bounded, BoundingBox, FrameData, FrameGraph, GfxContext, Material, MaterialDataPropData,
+    MaterialInstance, MaterialInstanceLoader, MaterialInstanceProperties, MaterialLoader,
+    MaterialProperties, MaterialsConfig, Mesh, MeshGeometry, MeshLoader, ObjectDataLayout,
+    ObjectDataProp, PassType, Pipeline, PipelineLoader, RenderError, RenderPass, Shapes, Texture,
+    TextureDataProp, TextureLoader, TextureProperties, TextureType, TextureUpdate, UniformData,
 };
+pub use gobs_render_hal::{BlendMode, VertexAttribute, VertexData};
 
 pub use batch::RenderBatch;
 pub use model::{Model, ModelId};

@@ -7,14 +7,16 @@ use crate::{Wrap, device::Device};
 
 #[derive(Default)]
 pub struct ComputePipelineBuilder {
+    label: String,
     device: Option<Arc<Device>>,
     pipeline_layout: Option<Arc<PipelineLayout>>,
     compute_stage: Option<ShaderStage>,
 }
 
 impl ComputePipelineBuilder {
-    pub(crate) fn new(device: Arc<Device>) -> Self {
+    pub(crate) fn new(label: &str, device: Arc<Device>) -> Self {
         ComputePipelineBuilder {
+            label: label.to_string(),
             device: Some(device),
             ..Default::default()
         }
@@ -32,7 +34,7 @@ impl ComputePipelineBuilder {
         self
     }
 
-    pub fn build(self) -> Arc<Pipeline> {
+    pub fn build(self) -> Pipeline {
         let device = self.device.unwrap();
 
         let pipeline_layout = self.pipeline_layout.unwrap();
@@ -55,11 +57,12 @@ impl ComputePipelineBuilder {
 
         let bind_point = vk::PipelineBindPoint::COMPUTE;
 
-        Arc::new(Pipeline {
+        Pipeline {
+            label: self.label,
             device,
             layout: pipeline_layout,
             pipeline,
             bind_point,
-        })
+        }
     }
 }

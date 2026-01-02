@@ -3,9 +3,10 @@ use glam::{Quat, Vec3};
 use gobs::{
     core::{Color, Input, Transform, logger},
     game::{AppError, Application, GameContext, GameOptions, Run},
-    render::{Model, RenderError},
-    render_low::MaterialDataPropData,
-    render_resources::{MaterialInstanceProperties, MaterialsConfig, Shapes},
+    render::{
+        MaterialDataPropData, MaterialInstanceProperties, MaterialsConfig, Model, RenderError,
+        Shapes,
+    },
     resource::{entity::light::Light, resource::ResourceLifetime},
     scene::{components::NodeValue, scene::Scene},
     ui::UIRenderer,
@@ -29,7 +30,7 @@ impl Run for App {
 
         let common = SampleApp::new();
 
-        let ui = UIRenderer::new(&ctx.renderer.gfx, &mut ctx.resource_manager, true)?;
+        let ui = UIRenderer::new(&ctx.renderer.gfx, &mut ctx.resource_manager)?;
         let scene = Scene::new(
             &ctx.renderer.gfx,
             camera,
@@ -103,6 +104,7 @@ impl App {
             .mesh(
                 Shapes::triangle(&[Color::WHITE], 1., ctx.renderer.gfx.vertex_padding),
                 Some(material_instance),
+                ctx.renderer.gfx.world_vertex_attributes,
                 &mut ctx.resource_manager,
                 ResourceLifetime::Static,
             )

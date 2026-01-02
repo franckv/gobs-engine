@@ -1,10 +1,9 @@
 use winit::window::Window;
 
 use gobs_core::logger;
-use gobs_render::{GfxContext, RenderError, Renderer};
-use gobs_render_resources::{
-    Material, MaterialInstance, MaterialInstanceLoader, MaterialLoader, Mesh, MeshLoader, Pipeline,
-    PipelineLoader, Texture, TextureLoader,
+use gobs_render::{
+    GfxContext, Material, MaterialInstance, MaterialInstanceLoader, MaterialLoader, Mesh,
+    MeshLoader, Pipeline, PipelineLoader, RenderError, Renderer, Texture, TextureLoader,
 };
 use gobs_resource::manager::ResourceManager;
 
@@ -28,22 +27,22 @@ impl GameContext {
         window: Option<Window>,
         validation: bool,
     ) -> Result<Self, RenderError> {
-        let gfx = GfxContext::new(name, window, validation)?;
+        let mut gfx = GfxContext::new(name, window, validation)?;
         let mut resource_manager = ResourceManager::new(gfx.frames_in_flight);
 
-        let texture_loader = TextureLoader::new(gfx.device.clone());
+        let texture_loader = TextureLoader::new(&mut gfx);
         resource_manager.register_resource::<Texture>(texture_loader);
 
-        let mesh_loader = MeshLoader::new(gfx.device.clone());
+        let mesh_loader = MeshLoader::new(&mut gfx);
         resource_manager.register_resource::<Mesh>(mesh_loader);
 
-        let pipeline_loader = PipelineLoader::new(gfx.device.clone());
+        let pipeline_loader = PipelineLoader::new();
         resource_manager.register_resource::<Pipeline>(pipeline_loader);
 
         let material_loader = MaterialLoader::new();
         resource_manager.register_resource::<Material>(material_loader);
 
-        let material_instance_loader = MaterialInstanceLoader::new(gfx.device.clone());
+        let material_instance_loader = MaterialInstanceLoader::new();
         resource_manager.register_resource::<MaterialInstance>(material_instance_loader);
 
         let renderer = Renderer::new(gfx, &options.renderer, &mut resource_manager);

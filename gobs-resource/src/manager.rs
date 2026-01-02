@@ -220,12 +220,12 @@ impl ResourceManager {
     #[tracing::instrument(target = "profile", skip_all, level = "trace")]
     fn load_data<R: ResourceType + 'static>(
         &mut self,
+        backend: &mut R::ResourceBackend,
         handle: &ResourceHandle<R>,
-        parameter: &R::ResourceParameter,
     ) -> Result<(), ResourceError> {
         let resource = self.get_mut(handle);
 
-        if !resource.is_loaded(parameter) {
+        if !resource.is_loaded() {
             let loader = self
                 .loader
                 .get_mut::<R::ResourceLoader>()
@@ -234,13 +234,11 @@ impl ResourceManager {
                 });
 
             tracing::trace!(target: logger::RESOURCES, "Loading resource {:?}", handle);
-            let data = loader.load(handle, parameter, &mut self.registry)?;
+            let data = loader.load(backend, handle, &mut self.registry)?;
 
             let resource = self.get_mut::<R>(handle);
 
-            resource
-                .data
-                .insert(parameter.clone(), ResourceState::Loaded(data));
+            resource.data = ResourceState::Loaded(data);
         }
 
         Ok(())
@@ -249,15 +247,15 @@ impl ResourceManager {
     #[tracing::instrument(target = "profile", skip_all, level = "trace")]
     pub fn get_data<R: ResourceType + 'static>(
         &'_ mut self,
+        backend: &mut R::ResourceBackend,
         handle: &ResourceHandle<R>,
-        parameter: R::ResourceParameter,
     ) -> Result<ResourceData<'_, R>, ResourceError> {
-        self.load_data::<R>(handle, &parameter)?;
+        self.load_data::<R>(backend, handle)?;
 
         let resource = self.get(handle);
 
-        let data = match resource.data.get(&parameter) {
-            Some(ResourceState::Loaded(data)) => data,
+        let data = match &resource.data {
+            ResourceState::Loaded(data) => data,
             _ => unreachable!(),
         };
 
@@ -270,15 +268,15 @@ impl ResourceManager {
     #[tracing::instrument(target = "profile", skip_all, level = "trace")]
     pub fn get_data_mut<R: ResourceType + 'static>(
         &'_ mut self,
+        backend: &mut R::ResourceBackend,
         handle: &ResourceHandle<R>,
-        parameter: R::ResourceParameter,
     ) -> Result<ResourceDataMut<'_, R>, ResourceError> {
-        self.load_data::<R>(handle, &parameter)?;
+        self.load_data::<R>(backend, handle)?;
 
         let resource = self.get_mut(handle);
 
-        let data = match resource.data.get_mut(&parameter) {
-            Some(ResourceState::Loaded(data)) => data,
+        let data = match &mut resource.data {
+            ResourceState::Loaded(data) => data,
             _ => unreachable!(),
         };
 
@@ -302,17 +300,20 @@ mod tests {
     use crate::{
         manager::ResourceManager,
         resource::{
-            ResourceError, ResourceLifetime, ResourceLoader, ResourceProperties, ResourceType,
+            ResourceError, ResourceHandle, ResourceLifetime, ResourceLoader, ResourceProperties,
+            ResourceType,
         },
     };
 
     #[derive(Clone, Copy, Debug, PartialEq)]
     pub struct Dummy;
 
+    pub struct Backend;
+
     impl ResourceType for Dummy {
         type ResourceData = DummyData;
+        type ResourceBackend = Backend;
         type ResourceProperties = DummyProperties;
-        type ResourceParameter = ();
         type ResourceLoader = DummyLoader;
     }
 
@@ -335,8 +336,8 @@ mod tests {
     impl ResourceLoader<Dummy> for DummyLoader {
         fn load(
             &mut self,
-            _handle: &crate::resource::ResourceHandle<Dummy>,
-            _parameter: &<Dummy as ResourceType>::ResourceParameter,
+            _backend: &mut Backend,
+            _handle: &ResourceHandle<Dummy>,
             _resource_registry: &mut super::ResourceRegistry,
         ) -> Result<DummyData, ResourceError> {
             Ok(DummyData {})
@@ -361,6 +362,8 @@ mod tests {
         let mut resource_manager = ResourceManager::new(2);
         resource_manager.register_resource::<Dummy>(DummyLoader {});
 
+        let mut backend = Backend;
+
         let props = DummyProperties {
             name: "dummy".to_string(),
         };
@@ -378,7 +381,7 @@ mod tests {
         tracing::debug!(target: logger::PROFILE, "insert resource: {}", 1000. * timer.delta());
 
         for handle in keys {
-            let _d = resource_manager.get_data(&handle, ());
+            let _d = resource_manager.get_data(&mut backend, &handle);
         }
         tracing::debug!(target: logger::PROFILE, "get resource: {}", 1000. * timer.delta());
 

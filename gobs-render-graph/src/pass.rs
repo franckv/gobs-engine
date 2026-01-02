@@ -3,10 +3,12 @@
 use serde::{Deserialize, Serialize};
 
 use gobs_core::{ImageExtent2D, ImageFormat};
-use gobs_gfx::{ImageLayout, ImageUsage, VertexAttribute};
-use gobs_render_low::{FrameData, GfxContext, PassId, RenderError, RenderObject, SceneData};
+use gobs_render_hal::{ImageLayout, ImageUsage};
 
-use crate::graph::GraphResourceManager;
+use crate::{
+    FrameData, GfxContext, PassId, RenderError, RenderObject, SceneData,
+    graph::GraphResourceManager,
+};
 
 pub mod compute;
 pub mod material;
@@ -118,7 +120,6 @@ pub trait RenderPass {
     fn id(&self) -> PassId;
     fn name(&self) -> &str;
     fn ty(&self) -> PassType;
-    fn vertex_attributes(&self) -> Option<VertexAttribute>;
     fn render(
         &self,
         ctx: &mut GfxContext,

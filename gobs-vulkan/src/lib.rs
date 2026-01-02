@@ -19,6 +19,20 @@ pub mod surface;
 pub mod swapchain;
 pub mod sync;
 
+pub use alloc::Allocator;
+pub use buffers::{Buffer, BufferUsage};
+pub use command::{CommandBuffer, CommandPool};
+pub use descriptor::{DescriptorStage, DescriptorType};
+pub use device::Device;
+pub use feature::Features;
+pub use images::{Image, Sampler};
+pub use instance::Instance;
+pub use pipelines::{
+    BlendMode, CompareOp, ComputePipelineBuilder, CullMode, DynamicStateElem, FrontFace,
+    GraphicsPipelineBuilder, Pipeline, PolygonMode, Rect2D, Viewport,
+};
+pub use queue::Queue;
+
 #[cfg(test)]
 mod headless;
 

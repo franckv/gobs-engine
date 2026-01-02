@@ -4,14 +4,14 @@ use std::{
 };
 
 use gobs_core::{ImageExtent2D, Transform, logger};
-use gobs_gfx::{BindingGroup, BindingGroupUpdates, Buffer, GfxBindingGroup};
-use gobs_render_graph::RenderPass;
-use gobs_render_low::{GfxContext, MaterialInstanceId, PassId, RenderObject, SceneData};
-use gobs_render_resources::{BoundingBox, MaterialInstance, MeshBuilder, MeshGeometry, Shapes};
+use gobs_render_graph::{
+    BoundingBox, GfxContext, MeshBuilder, MeshGeometry, PassId, RenderObject, RenderPass,
+    SceneData, Shapes,
+};
 use gobs_resource::{
     entity::{camera::Camera, light::Light},
     manager::ResourceManager,
-    resource::{ResourceError, ResourceHandle, ResourceLifetime},
+    resource::{ResourceError, ResourceLifetime},
 };
 
 use crate::model::Model;
@@ -48,48 +48,9 @@ impl RenderBatch {
     }
 
     #[tracing::instrument(target = "profile", skip_all, level = "trace")]
-    fn get_bind_groups(
-        material_instance: Option<&ResourceHandle<MaterialInstance>>,
-        resource_manager: &mut ResourceManager,
-    ) -> Vec<GfxBindingGroup> {
-        let mut bind_groups = Vec::new();
-
-        if let Some(material_instance_handle) = material_instance
-            && let Ok(material_instance) =
-                resource_manager.get_data_mut(material_instance_handle, ())
-        {
-            let bind_group = &material_instance.data.material_binding;
-            if let Some(bind_group) = bind_group {
-                bind_groups.push(bind_group.clone());
-            }
-
-            let bind_group = material_instance.data.texture_binding.clone();
-
-            if let Some(bind_group) = bind_group {
-                if !material_instance.data.bound {
-                    material_instance.data.bound = true;
-
-                    let textures = material_instance.properties.textures.clone();
-                    let mut updater = bind_group.update();
-                    for texture_handle in &textures {
-                        let texture = resource_manager.get_data(texture_handle, ()).unwrap().data;
-                        updater = updater
-                            .bind_sampled_image(&texture.image, gobs_gfx::ImageLayout::Shader)
-                            .bind_sampler(&texture.sampler);
-                    }
-                    updater.end();
-                }
-
-                bind_groups.push(bind_group);
-            }
-        }
-
-        bind_groups
-    }
-
-    #[tracing::instrument(target = "profile", skip_all, level = "trace")]
     pub fn add_model(
         &mut self,
+        ctx: &mut GfxContext,
         resource_manager: &mut ResourceManager,
         model: Arc<Model>,
         transform: Transform,
@@ -99,30 +60,14 @@ impl RenderBatch {
 
         // TODO: add material data for forward pass only
         for (mesh, material_instance_handle) in &model.meshes {
-            let bind_groups =
-                Self::get_bind_groups(material_instance_handle.as_ref(), resource_manager);
-
-            let (material_handle, material_instance_id) = match material_instance_handle {
+            let material_handle = match material_instance_handle {
                 Some(material_instance_handle) => {
                     let material_instance = resource_manager.get(material_instance_handle);
                     let material = material_instance.properties.material;
 
-                    (Some(material), material_instance.properties.id)
+                    Some(material)
                 }
-                None => (None, MaterialInstanceId::nil()),
-            };
-
-            let vertex_attributes = match pass.vertex_attributes() {
-                Some(vertex_attributes) => vertex_attributes,
-                None => {
-                    if let Some(material_handle) = material_handle {
-                        let material = resource_manager.get(&material_handle);
-
-                        material.properties.pipeline_properties.vertex_attributes
-                    } else {
-                        return Err(ResourceError::InvalidData);
-                    }
-                }
+                None => None,
             };
 
             let (pipeline, is_transparent) = if let Some(material_handle) = material_handle {
@@ -130,32 +75,33 @@ impl RenderBatch {
                 let blending_enabled = material.properties.blending_enabled;
 
                 let pipeline_handle = resource_manager
-                    .get_data(&material_handle, ())?
+                    .get_data(&mut ctx.hal, &material_handle)?
                     .data
                     .pipeline;
 
-                let pipeline_data = resource_manager.get_data(&pipeline_handle, ())?.data;
+                let pipeline_data = resource_manager
+                    .get_data(&mut ctx.hal, &pipeline_handle)?
+                    .data;
 
-                (Some(pipeline_data.pipeline.clone()), blending_enabled)
+                (Some(pipeline_data.pipeline), blending_enabled)
             } else {
                 tracing::debug!("No material for model {}", model.name());
                 (None, false)
             };
 
-            let mesh_data = resource_manager.get_data(mesh, vertex_attributes)?;
+            let mesh_data = resource_manager.get_data(&mut ctx.hal, mesh)?;
 
             let render_object = RenderObject {
-                model_id: model.id,
-                mesh_id: mesh_data.properties.id,
                 transform,
                 pass_id: pass.id(),
                 pipeline,
                 is_transparent,
-                bind_groups,
-                vertex_view: mesh_data.data.vertex_view.clone(),
-                index_view: mesh_data.data.index_view.clone(),
-                material_instance_id,
+                vertex_buffer: mesh_data.data.vertex_view,
+                index_buffer: mesh_data.data.index_view,
+                index_len: mesh_data.data.index_len,
                 layer: mesh_data.properties.layer,
+                material_data: None,
+                material_textures: None,
             };
 
             match self.render_list.entry(pass.id()) {
@@ -224,20 +170,12 @@ impl RenderBatch {
     #[tracing::instrument(target = "profile", skip_all, level = "trace")]
     fn sort(&mut self) {
         for render_list in self.render_list.values_mut() {
-            render_list.sort_unstable_by(|a, b| {
-                // sort order: pass, transparent, material, model
-                (a.layer.cmp(&b.layer))
-                    .then(a.is_transparent().cmp(&b.is_transparent()))
-                    .then(a.pipeline_id().cmp(&b.pipeline_id()))
-                    .then(a.material_instance_id.cmp(&b.material_instance_id))
-                    .then(a.index_view.buffer.id().cmp(&b.index_view.buffer.id()))
-                    .then(a.index_view.offset.cmp(&b.index_view.offset))
-            });
+            render_list.sort_unstable();
         }
     }
 
     #[tracing::instrument(target = "profile", skip_all, level = "trace")]
-    pub fn finish(&mut self, resource_manager: &mut ResourceManager) {
+    pub fn finish(&mut self, ctx: &mut GfxContext, resource_manager: &mut ResourceManager) {
         let bb = self.bounding_geometry.take();
 
         if let Some(bb) = bb {
@@ -245,6 +183,7 @@ impl RenderBatch {
                 .mesh(
                     bb.build(),
                     None,
+                    ctx.world_vertex_attributes,
                     resource_manager,
                     ResourceLifetime::Transient,
                 )
@@ -252,7 +191,7 @@ impl RenderBatch {
 
             let pass = self.bounding_pass.take().unwrap();
 
-            self.add_model(resource_manager, model, Transform::IDENTITY, pass)
+            self.add_model(ctx, resource_manager, model, Transform::IDENTITY, pass)
                 .expect("Add bounding box");
         }
 
@@ -266,9 +205,7 @@ mod tests {
     use tracing_subscriber::{EnvFilter, FmtSubscriber, fmt::format::FmtSpan};
 
     use gobs_core::{Color, Transform, logger, utils::timer::Timer};
-    use gobs_render_graph::GraphConfig;
-    use gobs_render_low::GfxContext;
-    use gobs_render_resources::Shapes;
+    use gobs_render_graph::{GfxContext, GraphConfig, Mesh, MeshLoader, Shapes};
     use gobs_resource::{manager::ResourceManager, resource::ResourceLifetime};
 
     use crate::{Model, RenderBatch};
@@ -288,12 +225,15 @@ mod tests {
 
         let span = tracing::trace_span!(target: logger::PROFILE, "sort").entered();
 
-        let ctx = GfxContext::new("test", None, false).unwrap();
+        let mut ctx = GfxContext::new("test", None, false).unwrap();
         let mut resource_manager = ResourceManager::new(ctx.frames_in_flight);
+
+        let mesh_loader = MeshLoader::new(&mut ctx);
+        resource_manager.register_resource::<Mesh>(mesh_loader);
 
         let graph_data = include_str!("../../examples/resources/graph.ron");
         let passes =
-            GraphConfig::load_graph_with_data(&ctx, graph_data, "test", &mut resource_manager)
+            GraphConfig::load_graph_with_data(&mut ctx, graph_data, "test", &mut resource_manager)
                 .unwrap();
 
         let triangle = Model::builder("triangle")
@@ -304,6 +244,7 @@ mod tests {
                     ctx.vertex_padding,
                 ),
                 None,
+                ctx.world_vertex_attributes,
                 &mut resource_manager,
                 ResourceLifetime::Static,
             )
@@ -315,6 +256,7 @@ mod tests {
 
         for _ in 0..30000 {
             let _ = batch.add_model(
+                &mut ctx,
                 &mut resource_manager,
                 triangle.clone(),
                 Transform::IDENTITY,

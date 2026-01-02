@@ -1,5 +1,5 @@
 use crate::{
-    Buffer, Command, Device, Display, Image, Instance, Pipeline, Sampler,
+    Command, Device, Display, Image, Instance, Pipeline, Sampler,
     bindgroup::{BindingGroup, BindingGroupLayout, BindingGroupUpdates},
     pipeline::{ComputePipelineBuilder, GraphicsPipelineBuilder},
 };
@@ -8,7 +8,7 @@ pub trait Renderer: Sized {
     type BindingGroup: BindingGroup<Self>;
     type BindingGroupLayout: BindingGroupLayout<Self>;
     type BindingGroupUpdates: BindingGroupUpdates<Self>;
-    type Buffer: Buffer<Self>;
+    // type Buffer: Buffer<Self>;
     type Command: Command<Self>;
     type Device: Device<Self>;
     type Display: Display<Self>;

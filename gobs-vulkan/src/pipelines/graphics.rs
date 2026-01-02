@@ -136,17 +136,12 @@ impl InputAssemblyState {
     }
 }
 
-#[derive(Clone, Copy, Debug, Serialize, Deserialize)]
+#[derive(Clone, Copy, Debug, Serialize, Deserialize, Default)]
 pub enum PolygonMode {
+    #[default]
     Fill,
     Line,
     Point,
-}
-
-impl Default for PolygonMode {
-    fn default() -> Self {
-        Self::Fill
-    }
 }
 
 impl From<PolygonMode> for vk::PolygonMode {
@@ -439,6 +434,7 @@ impl RenderingState {
 
 #[derive(Default)]
 pub struct GraphicsPipelineBuilder {
+    label: String,
     device: Option<Arc<Device>>,
     vertex_stage: Option<ShaderStage>,
     fragment_stage: Option<ShaderStage>,
@@ -457,8 +453,9 @@ pub struct GraphicsPipelineBuilder {
 }
 
 impl GraphicsPipelineBuilder {
-    pub(crate) fn new(device: Arc<Device>) -> Self {
+    pub(crate) fn new(label: &str, device: Arc<Device>) -> Self {
         GraphicsPipelineBuilder {
+            label: label.to_string(),
             device: Some(device),
             ..Default::default()
         }
@@ -562,7 +559,7 @@ impl GraphicsPipelineBuilder {
         self
     }
 
-    pub fn build(mut self) -> Arc<Pipeline> {
+    pub fn build(mut self) -> Pipeline {
         let device = self.device.unwrap();
 
         let rendering_state = self.rendering_state.unwrap();
@@ -644,11 +641,12 @@ impl GraphicsPipelineBuilder {
                 .unwrap()[0]
         };
 
-        Arc::new(Pipeline {
+        Pipeline {
+            label: self.label,
             device,
             layout: pipeline_layout,
             pipeline,
             bind_point,
-        })
+        }
     }
 }

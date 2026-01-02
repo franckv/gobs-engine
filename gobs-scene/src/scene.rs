@@ -1,8 +1,7 @@
 use glam::{Vec3, Vec4};
 
 use gobs_core::Transform;
-use gobs_render::{GfxContext, RenderBatch, Renderable};
-use gobs_render_graph::{PassType, RenderPass};
+use gobs_render::{GfxContext, PassType, RenderBatch, RenderPass, Renderable};
 use gobs_resource::{
     entity::{camera::Camera, light::Light},
     manager::ResourceManager,
@@ -135,6 +134,7 @@ impl Renderable for Scene {
     #[tracing::instrument(target = "profile", skip_all, level = "trace")]
     fn draw(
         &self,
+        ctx: &mut GfxContext,
         resource_manager: &mut ResourceManager,
         pass: RenderPass,
         batch: &mut RenderBatch,
@@ -150,6 +150,7 @@ impl Renderable for Scene {
                 PassType::Depth | PassType::Forward | PassType::Wire => {
                     if let NodeValue::Model(model) = &node.base.value {
                         model.draw(
+                            ctx,
                             resource_manager,
                             pass.clone(),
                             batch,
@@ -162,6 +163,7 @@ impl Renderable for Scene {
                         && let NodeValue::Model(model) = &node.base.value
                     {
                         model.draw(
+                            ctx,
                             resource_manager,
                             pass.clone(),
                             batch,

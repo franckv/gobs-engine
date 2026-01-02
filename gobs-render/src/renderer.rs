@@ -1,7 +1,5 @@
 use gobs_core::{ImageExtent2D, logger};
-use gobs_gfx::Device;
-use gobs_render_graph::{FrameGraph, RenderPass};
-use gobs_render_low::{FrameData, GfxContext, RenderError};
+use gobs_render_graph::{FrameData, FrameGraph, GfxContext, RenderError, RenderPass};
 use gobs_resource::manager::ResourceManager;
 use tracing::Level;
 
@@ -30,18 +28,20 @@ pub struct Renderer {
 
 impl Renderer {
     pub fn new(
-        gfx: GfxContext,
+        mut gfx: GfxContext,
         options: &RendererOptions,
         resource_manager: &mut ResourceManager,
     ) -> Self {
         let graph = match options.graph {
-            BuiltinGraphs::Scene => FrameGraph::default(&gfx, resource_manager).unwrap(),
-            BuiltinGraphs::Headless => FrameGraph::headless(&gfx, resource_manager).unwrap(),
-            BuiltinGraphs::Ui => FrameGraph::ui(&gfx, resource_manager).unwrap(),
+            BuiltinGraphs::Scene => FrameGraph::default(&mut gfx, resource_manager).unwrap(),
+            BuiltinGraphs::Headless => FrameGraph::headless(&mut gfx, resource_manager).unwrap(),
+            BuiltinGraphs::Ui => FrameGraph::ui(&mut gfx, resource_manager).unwrap(),
         };
 
-        let frames = (0..gfx.frames_in_flight)
-            .map(|id| FrameData::new(&gfx, id, gfx.frames_in_flight))
+        let frames_in_flight = gfx.frames_in_flight;
+
+        let frames = (0..frames_in_flight)
+            .map(|id| FrameData::new(&mut gfx, id, frames_in_flight))
             .collect();
 
         Self {
@@ -70,6 +70,7 @@ impl Renderer {
         &mut self,
         resource_manager: &mut ResourceManager,
         draw_cmd: &mut dyn FnMut(
+            &mut GfxContext,
             RenderPass,
             &mut RenderBatch,
             &mut ResourceManager,
@@ -103,7 +104,12 @@ impl Renderer {
             let span =
                 tracing::span!(target: logger::PROFILE, Level::TRACE, "Pass", "{}", pass.name())
                     .entered();
-            draw_cmd(pass.clone(), &mut self.batch, resource_manager)?;
+            draw_cmd(
+                &mut self.gfx,
+                pass.clone(),
+                &mut self.batch,
+                resource_manager,
+            )?;
             frame.stats.prepare_draw(pass.id());
             frame.stats.objects(
                 self.batch
@@ -115,7 +121,7 @@ impl Renderer {
             span.exit();
         }
 
-        self.batch.finish(resource_manager);
+        self.batch.finish(&mut self.gfx, resource_manager);
 
         frame.stats.prepare_end();
 
@@ -141,7 +147,7 @@ impl Renderer {
         self.frame_number
     }
 
-    pub fn wait(&self) {
-        self.gfx.device.wait();
+    pub fn wait(&mut self) {
+        self.gfx.hal.wait();
     }
 }

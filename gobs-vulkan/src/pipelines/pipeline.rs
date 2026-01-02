@@ -94,6 +94,7 @@ impl ShaderStage {
 
 #[derive(Debug)]
 pub struct Pipeline {
+    pub label: String,
     pub(crate) device: Arc<Device>,
     pub layout: Arc<PipelineLayout>,
     pub(crate) pipeline: vk::Pipeline,
@@ -101,12 +102,12 @@ pub struct Pipeline {
 }
 
 impl Pipeline {
-    pub fn graphics_builder(device: Arc<Device>) -> GraphicsPipelineBuilder {
-        GraphicsPipelineBuilder::new(device)
+    pub fn graphics_builder(label: &str, device: Arc<Device>) -> GraphicsPipelineBuilder {
+        GraphicsPipelineBuilder::new(label, device)
     }
 
-    pub fn compute_builder(device: Arc<Device>) -> ComputePipelineBuilder {
-        ComputePipelineBuilder::new(device)
+    pub fn compute_builder(label: &str, device: Arc<Device>) -> ComputePipelineBuilder {
+        ComputePipelineBuilder::new(label, device)
     }
 }
 

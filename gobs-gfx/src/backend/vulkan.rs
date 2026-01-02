@@ -1,5 +1,5 @@
 mod bindgroup;
-mod buffer;
+// mod buffer;
 mod command;
 mod device;
 mod display;
@@ -9,7 +9,7 @@ mod pipeline;
 mod renderer;
 
 use bindgroup::{VkBindingGroup, VkBindingGroupLayout, VkBindingGroupPool};
-use buffer::VkBuffer;
+// use buffer::VkBuffer;
 use command::VkCommand;
 use device::VkDevice;
 use display::VkDisplay;
@@ -23,7 +23,7 @@ pub type GfxDisplay = VkDisplay;
 pub type GfxDevice = VkDevice;
 pub type GfxImage = VkImage;
 pub type GfxSampler = VkSampler;
-pub type GfxBuffer = VkBuffer;
+// pub type GfxBuffer = VkBuffer;
 pub type GfxCommand = VkCommand;
 pub type GfxGraphicsPipelineBuilder = VkGraphicsPipelineBuilder;
 pub type GfxComputePipelineBuilder = VkComputePipelineBuilder;

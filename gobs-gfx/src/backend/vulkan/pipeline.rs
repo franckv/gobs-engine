@@ -1,5 +1,3 @@
-use std::sync::Arc;
-
 use gobs_core::{ImageFormat, logger};
 use gobs_resource::load::{self, LoadingError};
 use gobs_vulkan as vk;

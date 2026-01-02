@@ -1,13 +1,13 @@
 use std::collections::HashMap;
 
-use gobs_render_low::GfxContext;
-use parking_lot::{RwLock, RwLockReadGuard, RwLockWriteGuard};
+use gobs_render_hal::{Handle, ImageUsage, RenderHAL};
 
 use gobs_core::{ImageExtent2D, ImageFormat};
-use gobs_gfx::{GfxImage, Image, ImageUsage};
+
+use crate::GfxContext;
 
 pub struct GraphResourceManager {
-    pub resources: HashMap<String, RwLock<GfxImage>>,
+    pub resources: HashMap<String, Handle>,
 }
 
 impl GraphResourceManager {
@@ -19,39 +19,30 @@ impl GraphResourceManager {
 
     pub fn register_image(
         &mut self,
-        ctx: &GfxContext,
+        ctx: &mut GfxContext,
         label: &str,
         format: ImageFormat,
         usage: ImageUsage,
         extent: ImageExtent2D,
     ) {
-        let image = GfxImage::new(label, &ctx.device, format, usage, extent);
+        let image = ctx.hal.create_image(label, format, usage, extent);
 
-        self.resources.insert(label.to_string(), RwLock::new(image));
+        self.resources.insert(label.to_string(), image);
     }
 
-    pub fn invalidate(&self) {
+    pub fn invalidate(&self, hal: &mut dyn RenderHAL) {
         for image in self.resources.values() {
-            image.write().invalidate();
+            hal.invalidate_image(*image);
         }
     }
 
-    pub fn image_read(&self, label: &str) -> RwLockReadGuard<'_, GfxImage> {
+    pub fn image(&self, label: &str) -> Handle {
         assert!(
             self.resources.contains_key(label),
             "Missing resource {label}",
         );
 
-        self.resources[label].read()
-    }
-
-    pub fn image_write(&self, label: &str) -> RwLockWriteGuard<'_, GfxImage> {
-        assert!(
-            self.resources.contains_key(label),
-            "Missing resource {label}",
-        );
-
-        self.resources[label].write()
+        self.resources[label]
     }
 }
 

@@ -2,8 +2,7 @@ use std::sync::Arc;
 
 use slotmap::{DefaultKey, Key};
 
-use gobs_render::Model;
-use gobs_render_resources::{Bounded, BoundingBox};
+use gobs_render::{Bounded, BoundingBox, Model};
 use gobs_resource::entity::{camera::Camera, light::Light};
 
 #[derive(Clone, Debug)]

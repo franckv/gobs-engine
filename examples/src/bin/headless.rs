@@ -4,8 +4,9 @@ use pollster::FutureExt;
 use gobs::{
     core::{Color, Input, Transform, logger},
     game::{AppError, GameContext, GameOptions, Run},
-    render::{BuiltinGraphs, Model, RenderError},
-    render_resources::{MaterialInstanceProperties, MaterialsConfig, Shapes},
+    render::{
+        BuiltinGraphs, MaterialInstanceProperties, MaterialsConfig, Model, RenderError, Shapes,
+    },
     resource::{entity::light::Light, resource::ResourceLifetime},
     scene::{components::NodeValue, scene::Scene},
 };
@@ -90,6 +91,7 @@ impl App {
                     ctx.renderer.gfx.vertex_padding,
                 ),
                 Some(material_instance),
+                ctx.renderer.gfx.world_vertex_attributes,
                 &mut ctx.resource_manager,
                 ResourceLifetime::Static,
             )
@@ -131,5 +133,5 @@ fn main() {
 
     app.close(&mut ctx);
 
-    app.common.screenshot(&mut ctx);
+    // app.common.screenshot(&mut ctx);
 }

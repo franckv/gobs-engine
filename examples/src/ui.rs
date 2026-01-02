@@ -5,10 +5,10 @@ use glam::Vec3;
 use gobs::{
     core::Transform,
     game::context::GameContext,
-    render::RenderBatch,
-    render_graph::FrameGraph,
-    render_low::FrameData,
-    render_resources::{Material, MaterialInstance, Mesh, Pipeline, Texture, TextureLoader},
+    render::{
+        FrameData, FrameGraph, GfxContext, Material, MaterialInstance, Mesh, Pipeline, RenderBatch,
+        Texture, TextureLoader,
+    },
     resource::{
         manager::ResourceManager,
         resource::{ResourceHandle, ResourceProperties, ResourceType},
@@ -77,7 +77,7 @@ impl Ui {
 
             self.draw_general(ui, scene, ctx, delta);
 
-            self.show_texture(ectx, &mut ctx.resource_manager);
+            self.show_texture(&mut ctx.renderer.gfx, ectx, &mut ctx.resource_manager);
 
             ui.separator();
 
@@ -190,16 +190,7 @@ impl Ui {
                     .column(Column::remainder())
                     .header(10., |mut headers| {
                         headers.col(|ui| {
-                            ui.heading("model id");
-                        });
-                        headers.col(|ui| {
                             ui.heading("transparent");
-                        });
-                        headers.col(|ui| {
-                            ui.heading("pipeline");
-                        });
-                        headers.col(|ui| {
-                            ui.heading("material");
                         });
                         headers.col(|ui| {
                             ui.heading("pass id");
@@ -213,16 +204,7 @@ impl Ui {
                             for object in render_list {
                                 body.row(10., |mut row| {
                                     row.col(|ui| {
-                                        ui.label(format!("{:?}", object.model_id));
-                                    });
-                                    row.col(|ui| {
                                         ui.label(format!("{:?}", object.is_transparent()));
-                                    });
-                                    row.col(|ui| {
-                                        ui.label(format!("{:?}", object.pipeline_id()));
-                                    });
-                                    row.col(|ui| {
-                                        ui.label(format!("{:?}", object.material_instance_id));
                                     });
                                     row.col(|ui| {
                                         ui.label(format!("{:?}", object.pass_id));
@@ -536,21 +518,27 @@ impl Ui {
                 .default_open(true)
                 .show(ui, |ui| {
                     ui.label(format!("Name: {}", mesh_props.name()));
-                    ui.label(format!("Id: {}", mesh_props.id));
                 });
         }
     }
 
     #[tracing::instrument(target = "profile", skip_all, level = "trace")]
-    fn show_texture(&mut self, ectx: &egui::Context, resource_manager: &mut ResourceManager) {
+    fn show_texture(
+        &mut self,
+        ctx: &mut GfxContext,
+        ectx: &egui::Context,
+        resource_manager: &mut ResourceManager,
+    ) {
         let mut show_texture = self.show_texture;
 
         egui::Window::new("Texture")
             .open(&mut show_texture)
             .show(ectx, |ui| {
                 if let Some(texture) = self.selected_texture {
-                    let texture_properties =
-                        resource_manager.get_data(&texture, ()).unwrap().properties;
+                    let texture_properties = resource_manager
+                        .get_data(&mut ctx.hal, &texture)
+                        .unwrap()
+                        .properties;
 
                     if self.texture_view.is_none() {
                         let mut format = texture_properties.format.clone();
@@ -583,10 +571,8 @@ impl Ui {
                 .default_open(true)
                 .show(ui, |ui| {
                     ui.label(format!("Material instance: {}", mat_instance_props.name()));
-                    ui.label(format!("  Id: {:?}", mat_instance_props.id));
                     ui.separator();
                     ui.label(format!("Material: {}", mat_props.name()));
-                    ui.label(format!("  Id: {:?}", mat_props.id));
                     ui.separator();
                     ui.label(format!("Transparent: {}", mat_props.blending_enabled));
                     ui.separator();

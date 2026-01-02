@@ -5,11 +5,9 @@ members = [
     "gobs-core",
     "gobs-egui",
     "gobs-game",
-    "gobs-gfx",
     "gobs-render",
     "gobs-render-graph",
-    "gobs-render-low",
-    "gobs-render-resources",
+    "gobs-render-hal",
     "gobs-resource",
     "gobs-scene",
     "gobs-vulkan",
@@ -41,21 +39,13 @@ path = "./gobs-egui"
 package = "gobs-game"
 path = "./gobs-game"
 
-[workspace.dependencies.gobs-gfx]
-package = "gobs-gfx"
-path = "./gobs-gfx"
-
 [workspace.dependencies.gobs-render-graph]
 package = "gobs-render-graph"
 path = "./gobs-render-graph"
 
-[workspace.dependencies.gobs-render-low]
-package = "gobs-render-low"
-path = "./gobs-render-low"
-
-[workspace.dependencies.gobs-render-resources]
-package = "gobs-render-resources"
-path = "./gobs-render-resources"
+[workspace.dependencies.gobs-render-hal]
+package = "gobs-render-hal"
+path = "./gobs-render-hal"
 
 [workspace.dependencies.gobs-render]
 package = "gobs-render"
@@ -78,27 +68,27 @@ path = "./gobs-vulkan"
 ash = { version = "0.38", features = ["linked", "debug"] }
 ash-window = "0.13"
 anyhow = "1.0"
-bitflags = { version="2.9", features=["serde"] }
-bytemuck = { version = "1.23", features = ["derive"] }
-egui = { version = "0.32", features = ["bytemuck", "serde"] }
-egui_extras = { version = "0.32" }
+bitflags = { version="2.10", features=["serde"] }
+bytemuck = { version = "1.24", features = ["derive"] }
+egui = { version = "0.33", features = ["bytemuck", "serde"] }
+egui_extras = { version = "0.33" }
 env_logger = "0.11"
 futures = "0.3"
 fs_extra = "1.3"
 glam = { version = "0.30", features = ["bytemuck", "serde"] }
 gltf = "1.4"
-gpu-allocator = "0.27"
+gpu-allocator = "0.28"
 image = "0.25"
-indexmap = "2.11"
+indexmap = "2.12"
 itertools = { version = "0.14" }
-naga = { version = "26", features = ["glsl-in", "spv-out"] }
+naga = { version = "28", features = ["glsl-in", "spv-out"] }
 parking_lot = "0.12"
 pollster = "0.4"
 presser = "0.3"
 rand = "0.9"
 raw-window-handle = "0.6"
 renderdoc = "0.12.1"
-ron = "0.11"
+ron = "0.12"
 serde = { version = "1.0", features = ["derive", "rc"] }
 serde_json = "1.0"
 slotmap = { version="1.0", features=["serde"] }
@@ -107,7 +97,7 @@ tobj = "4.0"
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 tracing-tracy = "0.11"
-uuid = { version = "1.18", features = ["serde", "v4"] }
+uuid = { version = "1.19", features = ["serde", "v4"] }
 winit = "0.30"
 
 [profile.release-with-debug]

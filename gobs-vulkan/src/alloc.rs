@@ -14,18 +14,17 @@ pub struct Allocator {
 
 impl Allocator {
     pub fn new(device: Arc<Device>) -> Arc<Self> {
+        let mut debug_settings = AllocatorDebugSettings::default();
+        debug_settings.log_memory_information = true;
+        debug_settings.log_allocations = true;
+        debug_settings.log_frees = true;
+        debug_settings.log_stack_traces = true;
+
         let allocator = vulkan::Allocator::new(&vulkan::AllocatorCreateDesc {
             instance: device.instance.cloned(),
             device: device.cloned(),
             physical_device: device.p_device.raw(),
-            debug_settings: AllocatorDebugSettings {
-                log_memory_information: true,
-                log_leaks_on_shutdown: true,
-                store_stack_traces: false,
-                log_allocations: true,
-                log_frees: true,
-                log_stack_traces: false,
-            },
+            debug_settings,
             buffer_device_address: true,
             allocation_sizes: Default::default(),
         })

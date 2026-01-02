@@ -1,13 +1,14 @@
 use std::fmt::Debug;
 use std::sync::Arc;
 
+use gobs_render_hal::VertexAttribute;
 use serde::Serialize;
 use uuid::Uuid;
 
 use gobs_core::{Transform, logger};
-use gobs_render_graph::RenderPass;
-use gobs_render_resources::{
-    Bounded, BoundingBox, MaterialInstance, Mesh, MeshGeometry, MeshProperties,
+use gobs_render_graph::{
+    Bounded, BoundingBox, GfxContext, MaterialInstance, Mesh, MeshGeometry, MeshProperties,
+    RenderPass,
 };
 use gobs_resource::{
     manager::ResourceManager,
@@ -48,13 +49,14 @@ impl Renderable for Arc<Model> {
     #[tracing::instrument(target = "profile", skip_all, level = "trace")]
     fn draw(
         &self,
+        ctx: &mut GfxContext,
         resource_manager: &mut ResourceManager,
         pass: RenderPass,
         batch: &mut RenderBatch,
         transform: Option<Transform>,
     ) -> Result<(), ResourceError> {
         if let Some(transform) = transform {
-            batch.add_model(resource_manager, self.clone(), transform, pass.clone())?;
+            batch.add_model(ctx, resource_manager, self.clone(), transform, pass.clone())?;
         } else {
             tracing::warn!("No transform");
         }
@@ -120,13 +122,14 @@ impl ModelBuilder {
         mut self,
         mesh: Arc<MeshGeometry>,
         material_instance: Option<ResourceHandle<MaterialInstance>>,
+        vertex_attributes: VertexAttribute,
         resource_manager: &mut ResourceManager,
         lifetime: ResourceLifetime,
     ) -> Self {
         self.bounding_box.extends_box(mesh.boundings());
 
         let mesh_handle = resource_manager.add(
-            MeshProperties::with_geometry(mesh, self.layer),
+            MeshProperties::with_geometry(mesh, vertex_attributes, self.layer),
             lifetime,
             false,
         );

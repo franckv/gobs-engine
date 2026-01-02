@@ -402,10 +402,17 @@ impl CommandBuffer {
         }
     }
 
-    pub fn copy_buffer(&self, src: &Buffer, dst: &Buffer, size: usize, offset: usize) {
+    pub fn copy_buffer(
+        &self,
+        src: &Buffer,
+        dst: &Buffer,
+        size: usize,
+        src_offset: u64,
+        dst_offset: u64,
+    ) {
         let copy_info = vk::BufferCopy::default()
-            .src_offset(offset as u64)
-            .dst_offset(0)
+            .src_offset(src_offset)
+            .dst_offset(dst_offset)
             .size(size as u64);
 
         unsafe {
@@ -418,9 +425,9 @@ impl CommandBuffer {
         }
     }
 
-    pub fn copy_image_to_buffer(&self, src: &Image, dst: &Buffer) {
+    pub fn copy_image_to_buffer(&self, src: &Image, dst: &Buffer, offset: u64) {
         let copy_info = vk::BufferImageCopy::default()
-            .buffer_offset(0)
+            .buffer_offset(offset)
             .buffer_image_height(src.extent.height)
             .buffer_row_length(src.extent.width)
             .image_offset(Offset3D { x: 0, y: 0, z: 0 })
@@ -546,12 +553,20 @@ impl CommandBuffer {
         }
     }
 
-    pub fn copy_buffer_to_image(&self, src: &Buffer, dst: &Image, width: u32, height: u32) {
+    pub fn copy_buffer_to_image(
+        &self,
+        src: &Buffer,
+        dst: &Image,
+        offset: u64,
+        width: u32,
+        height: u32,
+    ) {
         let image_subresource = vk::ImageSubresourceLayers::default()
             .aspect_mask(vk::ImageAspectFlags::COLOR)
             .layer_count(1);
 
         let copy_info = vk::BufferImageCopy::default()
+            .buffer_offset(offset)
             .image_subresource(image_subresource)
             .image_extent(vk::Extent3D {
                 width,

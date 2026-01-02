@@ -19,30 +19,30 @@ pub enum AllocationError {
 pub trait ResourceFamily: Hash + Eq + Debug {}
 impl<U: Hash + Eq + Debug> ResourceFamily for U {}
 
-pub trait Allocable<D, F: ResourceFamily> {
+pub trait Allocable<B, F: ResourceFamily> {
     fn resource_id(&self) -> Uuid;
     fn family(&self) -> F;
     fn resource_size(&self) -> usize;
-    fn allocate(device: &D, name: &str, size: usize, family: F) -> Self;
+    fn allocate(backend: &B, name: &str, size: usize, family: F) -> Self;
 }
 
-pub struct AllocableBlock<D, F, A>
+pub struct AllocableBlock<B, F, A>
 where
     F: ResourceFamily,
-    A: Allocable<D, F>,
+    A: Allocable<B, F>,
 {
     allocable: A,
     block_allocator: BuddyAllocator,
-    device: PhantomData<D>,
+    backend: PhantomData<B>,
     family: PhantomData<F>,
 }
 
-impl<D, F: ResourceFamily, A: Allocable<D, F>> AllocableBlock<D, F, A> {
-    pub fn new(device: &D, name: &str, size: usize, family: F) -> Self {
+impl<B, F: ResourceFamily, A: Allocable<B, F>> AllocableBlock<B, F, A> {
+    pub fn new(backend: &B, name: &str, size: usize, family: F) -> Self {
         Self {
-            allocable: A::allocate(device, name, size, family),
+            allocable: A::allocate(backend, name, size, family),
             block_allocator: BuddyAllocator::new(size, 5).unwrap(),
-            device: std::marker::PhantomData,
+            backend: std::marker::PhantomData,
             family: std::marker::PhantomData,
         }
     }
@@ -52,35 +52,35 @@ impl<D, F: ResourceFamily, A: Allocable<D, F>> AllocableBlock<D, F, A> {
     }
 }
 
-pub struct Allocator<D, F, A>
+pub struct Allocator<B, F, A>
 where
     F: ResourceFamily,
-    A: Allocable<D, F>,
+    A: Allocable<B, F>,
 {
-    pub pool: ObjectPool<F, AllocableBlock<D, F, A>>,
-    pub allocated: HashMap<Uuid, AllocableBlock<D, F, A>>,
-    device: PhantomData<D>,
+    pub pool: ObjectPool<F, AllocableBlock<B, F, A>>,
+    pub allocated: HashMap<Uuid, AllocableBlock<B, F, A>>,
+    backend: PhantomData<B>,
 }
 
-impl<D, F: ResourceFamily, A: Allocable<D, F>> Default for Allocator<D, F, A> {
+impl<B, F: ResourceFamily, A: Allocable<B, F>> Default for Allocator<B, F, A> {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl<D, F: ResourceFamily, A: Allocable<D, F>> Allocator<D, F, A> {
+impl<B, F: ResourceFamily, A: Allocable<B, F>> Allocator<B, F, A> {
     pub fn new() -> Self {
         Self {
             pool: ObjectPool::new(),
             allocated: HashMap::new(),
-            device: PhantomData,
+            backend: PhantomData,
         }
     }
 
     #[tracing::instrument(target = "profile", skip_all, level = "trace")]
     pub fn allocate(
         &mut self,
-        device: &D,
+        backend: &B,
         name: &str,
         size: usize,
         family: F,
@@ -111,7 +111,7 @@ impl<D, F: ResourceFamily, A: Allocable<D, F>> Allocator<D, F, A> {
         }
 
         tracing::debug!(target: logger::MEMORY, "Allocate new resource {:?}, {}", family, size);
-        let resource: AllocableBlock<D, F, A> = AllocableBlock::new(device, name, size, family);
+        let resource: AllocableBlock<B, F, A> = AllocableBlock::new(backend, name, size, family);
         let id = resource.allocable.resource_id();
 
         self.allocated

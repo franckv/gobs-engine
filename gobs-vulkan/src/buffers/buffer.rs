@@ -130,14 +130,14 @@ impl Buffer {
         self.device.clone()
     }
 
-    pub fn address(&self, device: Arc<Device>) -> BufferAddress {
+    pub fn address(&self) -> BufferAddress {
         let address_info = vk::BufferDeviceAddressInfo::default().buffer(self.buffer);
 
-        unsafe { device.raw().get_buffer_device_address(&address_info) }
+        unsafe { self.device.raw().get_buffer_device_address(&address_info) }
     }
 
-    pub fn copy<T: Copy>(&mut self, entries: &[T], offset: usize) {
-        self.memory.upload(entries, offset);
+    pub fn copy<T: Copy>(&mut self, entries: &[T], offset: u64) {
+        self.memory.upload(entries, offset as usize);
     }
 
     pub fn get_bytes<T: Pod>(&self, vec: &mut Vec<T>) {

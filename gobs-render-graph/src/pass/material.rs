@@ -1,14 +1,11 @@
-use std::{collections::HashMap, sync::Arc};
+use std::collections::HashMap;
 
 use gobs_core::{ImageExtent2D, logger};
-use gobs_gfx::{Command, GfxCommand, GfxPipeline, Pipeline, VertexAttribute};
-use gobs_render_low::{
-    FrameData, GfxContext, ObjectDataLayout, PassId, RenderError, RenderJob, RenderObject,
-    SceneData, SceneDataLayout, UniformData,
-};
+use gobs_render_hal::{CommandBuffer, Handle, RenderHAL};
 
 use crate::{
-    PassType,
+    FrameData, GfxContext, ObjectDataLayout, PassId, PassType, RenderError, RenderJob,
+    RenderObject, SceneData, SceneDataLayout, UniformData,
     graph::GraphResourceManager,
     pass::{Attachment, AttachmentAccess, AttachmentType, RenderPass},
 };
@@ -23,12 +20,12 @@ pub struct MaterialPass {
     depth_attachments: Vec<String>,
     scene_layout: SceneDataLayout,
     render_jobs: Vec<RenderJob>,
-    fixed_pipeline: Option<Arc<GfxPipeline>>,
+    fixed_pipeline: Option<Handle>,
 }
 
 impl MaterialPass {
     pub fn new(
-        ctx: &GfxContext,
+        ctx: &mut GfxContext,
         name: &str,
         ty: PassType,
         object_layout: ObjectDataLayout,
@@ -65,10 +62,10 @@ impl MaterialPass {
         }
     }
 
-    pub fn set_fixed_pipeline(&mut self, pipeline: Arc<GfxPipeline>) {
-        self.fixed_pipeline = Some(pipeline.clone());
+    pub fn set_fixed_pipeline(&mut self, pipeline: Handle) {
+        self.fixed_pipeline = Some(pipeline);
         for job in &mut self.render_jobs {
-            job.set_pipeline(pipeline.clone());
+            job.set_pipeline(pipeline);
         }
     }
 
@@ -94,7 +91,12 @@ impl MaterialPass {
     }
 
     #[tracing::instrument(target = "profile", skip_all, level = "trace")]
-    fn begin_pass(&self, cmd: &GfxCommand, resource_manager: &GraphResourceManager) {
+    fn begin_pass(
+        &self,
+        hal: &dyn RenderHAL,
+        cmd: &dyn CommandBuffer,
+        resource_manager: &GraphResourceManager,
+    ) {
         tracing::debug!(target: logger::RENDER, "Begin material pass {}", &self.name);
 
         cmd.begin_label(&format!("Draw {}", &self.name));
@@ -103,7 +105,7 @@ impl MaterialPass {
             Some(color) => {
                 let color_attach = &self.attachments[color];
                 (
-                    Some(resource_manager.image_read(color)),
+                    Some(resource_manager.image(color)),
                     color_attach.clear,
                     Some(color_attach.scaled_extent()),
                 )
@@ -115,7 +117,7 @@ impl MaterialPass {
             Some(depth) => {
                 let depth_attach = &self.attachments[depth];
                 (
-                    Some(resource_manager.image_read(depth)),
+                    Some(resource_manager.image(depth)),
                     depth_attach.clear,
                     Some(depth_attach.scaled_extent()),
                 )
@@ -126,9 +128,10 @@ impl MaterialPass {
         let extent = color_extent.unwrap_or_else(|| depth_extent.unwrap());
 
         cmd.begin_rendering(
-            color_img.as_deref(),
+            hal,
+            color_img,
             extent,
-            depth_img.as_deref(),
+            depth_img,
             color_clear,
             depth_clear,
             [0.; 4],
@@ -139,15 +142,20 @@ impl MaterialPass {
     }
 
     #[tracing::instrument(target = "profile", skip_all, level = "trace")]
-    fn end_pass(&self, cmd: &GfxCommand) {
+    fn end_pass(&self, cmd: &dyn CommandBuffer) {
         cmd.end_rendering();
         cmd.end_label();
     }
 
     #[tracing::instrument(target = "profile", skip_all, level = "trace")]
-    fn transition_attachments(&self, cmd: &GfxCommand, resource_manager: &GraphResourceManager) {
+    fn transition_attachments(
+        &self,
+        hal: &mut dyn RenderHAL,
+        cmd: &dyn CommandBuffer,
+        resource_manager: &GraphResourceManager,
+    ) {
         for (name, attachment) in &self.attachments {
-            cmd.transition_image_layout(&mut resource_manager.image_write(name), attachment.layout);
+            cmd.transition_image_layout(hal, resource_manager.image(name), attachment.layout);
         }
     }
 }
@@ -165,10 +173,6 @@ impl RenderPass for MaterialPass {
         self.ty
     }
 
-    fn vertex_attributes(&self) -> Option<VertexAttribute> {
-        self.fixed_pipeline.as_ref().map(|p| p.vertex_attributes())
-    }
-
     #[tracing::instrument(target = "profile", skip_all, level = "trace")]
     fn render(
         &self,
@@ -181,9 +185,9 @@ impl RenderPass for MaterialPass {
     ) -> Result<(), RenderError> {
         tracing::debug!(target: logger::RENDER, "Draw {}", &self.name());
 
-        self.transition_attachments(&frame.command, resource_manager);
+        self.transition_attachments(ctx.hal.as_mut(), frame.command.as_ref(), resource_manager);
 
-        self.begin_pass(&frame.command, resource_manager);
+        self.begin_pass(ctx.hal.as_ref(), frame.command.as_ref(), resource_manager);
 
         tracing::debug!(target: logger::RENDER, "Start render job");
         let render_job = &self.render_jobs[frame.id];
@@ -194,14 +198,14 @@ impl RenderPass for MaterialPass {
             .copy_data(Some(ctx), scene_data, &mut scene_data_bytes);
 
         tracing::debug!(target: logger::RENDER, "Update Uniform (scene data, push)");
-        render_job.update_uniform(&scene_data_bytes);
+        render_job.update_uniform(ctx, &scene_data_bytes);
 
         tracing::debug!(target: logger::RENDER, "Render object list");
         render_job.draw_list(ctx, frame, render_list)?;
 
         tracing::debug!(target: logger::RENDER, "Stop render job");
 
-        self.end_pass(&frame.command);
+        self.end_pass(frame.command.as_ref());
 
         Ok(())
     }

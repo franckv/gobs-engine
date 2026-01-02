@@ -9,7 +9,7 @@ use winit::{
 };
 
 use gobs_core::{Input, logger, utils::timer::Timer};
-use gobs_render::{Display, RenderError};
+use gobs_render::RenderError;
 
 use crate::{AppError, context::GameContext, options::GameOptions};
 
@@ -146,14 +146,10 @@ where
                             runnable.update(context, delta);
                         }
                         tracing::trace!(target: logger::EVENTS, "[Redraw] FPS: {}", 1. / delta);
-                        if !context.renderer.gfx.display.is_minimized() {
+                        if !context.renderer.gfx.is_minimized() {
                             if self.is_minimized {
                                 self.is_minimized = false;
-                                context
-                                    .renderer
-                                    .gfx
-                                    .display
-                                    .resize(&context.renderer.gfx.device);
+                                context.renderer.gfx.resize();
                             }
                             match runnable.render(context) {
                                 Ok(_) => {}

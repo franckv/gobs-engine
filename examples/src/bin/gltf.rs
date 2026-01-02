@@ -44,7 +44,7 @@ impl Run for App {
 
         let camera_controller = SampleApp::controller();
 
-        let ui = UIRenderer::new(&ctx.renderer.gfx, &mut ctx.resource_manager, true)?;
+        let ui = UIRenderer::new(&ctx.renderer.gfx, &mut ctx.resource_manager)?;
         let scene = Scene::new(
             &ctx.renderer.gfx,
             camera,
@@ -137,7 +137,7 @@ impl App {
             gltf_load::GLTFLoader::new(&mut ctx.renderer.gfx, &mut ctx.resource_manager).unwrap();
 
         gltf_loader
-            .load(&mut ctx.resource_manager, file_name)
+            .load(&ctx.renderer.gfx, &mut ctx.resource_manager, file_name)
             .expect("Load gltf");
 
         gltf_loader.scene

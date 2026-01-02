@@ -1,18 +1,12 @@
 use std::collections::HashMap;
 
-use bytemuck::Pod;
-
-use gobs_core::{ImageExtent2D, ImageFormat, logger};
-use gobs_gfx::{
-    Buffer, BufferType, Command, CommandQueueType, Device, Display, GfxBuffer, GfxCommand,
-    GfxImage, Image, ImageLayout, ImageUsage,
-};
-use gobs_render_low::{FrameData, GfxContext, PassId, RenderError, RenderObject, SceneData};
-use gobs_render_resources::PipelinesConfig;
+use gobs_core::{ImageExtent2D, logger};
+use gobs_render_hal::{ImageLayout, ImageUsage};
 use gobs_resource::manager::ResourceManager;
 
 use crate::{
-    GraphConfig, RenderPass,
+    FrameData, GfxContext, GraphConfig, PassId, PipelinesConfig, RenderError, RenderObject,
+    RenderPass, SceneData,
     graph::resource::GraphResourceManager,
     pass::{PassType, compute::ComputePass, present::PresentPass},
 };
@@ -40,7 +34,7 @@ impl FrameGraph {
     }
 
     pub fn default(
-        ctx: &GfxContext,
+        ctx: &mut GfxContext,
         resource_manager: &mut ResourceManager,
     ) -> Result<Self, RenderError> {
         let mut graph = Self::new(ctx);
@@ -81,7 +75,7 @@ impl FrameGraph {
     }
 
     pub fn headless(
-        ctx: &GfxContext,
+        ctx: &mut GfxContext,
         resource_manager: &mut ResourceManager,
     ) -> Result<Self, RenderError> {
         let mut graph = Self::new(ctx);
@@ -119,7 +113,7 @@ impl FrameGraph {
     }
 
     pub fn ui(
-        ctx: &GfxContext,
+        ctx: &mut GfxContext,
         resource_manager: &mut ResourceManager,
     ) -> Result<Self, RenderError> {
         let mut graph = Self::new(ctx);
@@ -174,6 +168,7 @@ impl FrameGraph {
         Err(RenderError::PassNotFound)
     }
 
+    /*
     pub fn get_image_data<T: Pod>(
         &self,
         ctx: &GfxContext,
@@ -181,45 +176,36 @@ impl FrameGraph {
         data: &mut Vec<T>,
         format: ImageFormat,
     ) -> ImageExtent2D {
-        ctx.device.wait();
+        ctx.hal.wait();
 
-        let mut src_image = self.resource_manager.image_write(label);
-        let mut mid_image = GfxImage::new(
-            "mid",
-            &ctx.device,
-            format,
-            ImageUsage::Color,
-            src_image.extent(),
-        );
-        let mut dst_image = GfxImage::new(
-            "dst",
-            &ctx.device,
-            format,
-            ImageUsage::File,
-            src_image.extent(),
-        );
+        let mut src_image = self.resource_manager.image(label);
+        let mut mid_image =
+            ctx.hal
+                .create_image("mid", format, ImageUsage::Color, src_image.extent());
+        let mut dst_image =
+            ctx.hal
+                .create_image("dst", format, ImageUsage::File, src_image.extent());
 
-        let mut buffer = GfxBuffer::new(
-            "copy",
-            dst_image.size(),
-            BufferType::StagingDst,
-            &ctx.device,
-        );
+        let mut buffer = ctx
+            .hal
+            .create_buffer("copy", dst_image.size(), BufferType::StagingDst);
 
-        let cmd = GfxCommand::new(&ctx.device, "Copy command", CommandQueueType::Graphics);
+        let cmd = ctx
+            .hal
+            .create_command_buffer("Copy command", CommandQueueType::Graphics);
 
-        cmd.run_immediate_mut(label, |cmd| {
-            cmd.transition_image_layout(&mut src_image, ImageLayout::TransferSrc);
-            cmd.transition_image_layout(&mut mid_image, ImageLayout::TransferDst);
+        cmd.run_immediate_mut(label, &|cmd| {
+            cmd.transition_image_layout(src_image, ImageLayout::TransferSrc);
+            cmd.transition_image_layout(mid_image, ImageLayout::TransferDst);
             let dst_extent = mid_image.extent();
             cmd.copy_image_to_image(&src_image, src_image.extent(), &mut mid_image, dst_extent);
 
-            cmd.transition_image_layout(&mut mid_image, ImageLayout::TransferSrc);
-            cmd.transition_image_layout(&mut dst_image, ImageLayout::TransferDst);
+            cmd.transition_image_layout(mid_image, ImageLayout::TransferSrc);
+            cmd.transition_image_layout(dst_image, ImageLayout::TransferDst);
             let dst_extent = dst_image.extent();
             cmd.copy_image_to_image(&mid_image, mid_image.extent(), &mut dst_image, dst_extent);
 
-            cmd.transition_image_layout(&mut dst_image, ImageLayout::TransferSrc);
+            cmd.transition_image_layout(dst_image, ImageLayout::TransferSrc);
             cmd.copy_image_to_buffer(&dst_image, &mut buffer);
         });
 
@@ -227,6 +213,7 @@ impl FrameGraph {
 
         dst_image.extent()
     }
+    */
 
     pub fn pass_by_id(&self, pass_id: PassId) -> Result<RenderPass, RenderError> {
         self.get_pass(|pass| pass.id() == pass_id)
@@ -244,11 +231,14 @@ impl FrameGraph {
     pub fn begin(&mut self, ctx: &mut GfxContext, frame: &FrameData) -> Result<(), RenderError> {
         let cmd = &frame.command;
 
-        let draw_image_extent = self.resource_manager.image_read("draw").extent();
+        let draw_image_extent = ctx
+            .hal
+            .get_image_extent(self.resource_manager.image("draw"));
         if self.resource_manager.resources.contains_key("depth") {
             debug_assert_eq!(
                 draw_image_extent,
-                self.resource_manager.image_read("depth").extent()
+                ctx.hal
+                    .get_image_extent(self.resource_manager.image("depth"))
             );
         }
 
@@ -259,11 +249,11 @@ impl FrameGraph {
 
         tracing::trace!(target: logger::RENDER, "Draw extent {:?}", self.draw_extent);
 
-        if ctx.display.acquire(frame.id).is_err() {
+        if ctx.hal.acquire(frame.id).is_err() {
             return Err(RenderError::Outdated);
         }
 
-        self.resource_manager.invalidate();
+        self.resource_manager.invalidate(ctx.hal.as_mut());
 
         cmd.begin();
 
@@ -284,17 +274,16 @@ impl FrameGraph {
 
         //TODO: cmd.write_timestamp(&frame.query_pool, PipelineStage::BottomOfPipe, 1);
 
-        if let Some(render_target) = ctx.display.get_render_target() {
-            cmd.transition_image_layout(render_target, ImageLayout::Present);
-        }
+        let render_target = ctx.hal.get_render_target();
+        cmd.transition_image_layout(ctx.hal.as_mut(), render_target, ImageLayout::Present);
 
         cmd.end_label();
 
         cmd.end();
 
-        cmd.submit2(&ctx.display, frame_id);
+        cmd.submit2(ctx.hal.as_ref(), frame_id);
 
-        let Ok(_) = ctx.display.present(&ctx.device) else {
+        let Ok(_) = ctx.hal.present() else {
             return Err(RenderError::Outdated);
         };
 
@@ -349,8 +338,8 @@ impl FrameGraph {
     }
 
     fn resize_swapchain(&mut self, ctx: &mut GfxContext) {
-        ctx.device.wait();
+        ctx.hal.wait();
 
-        ctx.display.resize(&ctx.device);
+        ctx.hal.resize();
     }
 }

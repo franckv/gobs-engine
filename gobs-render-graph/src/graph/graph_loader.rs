@@ -1,13 +1,9 @@
 use std::{collections::HashMap, sync::Arc};
 
-use gobs_render_resources::Pipeline;
+use gobs_render_hal::{ImageLayout, ImageUsage};
 use serde::{Deserialize, Serialize};
 
 use gobs_core::{ImageExtent2D, ImageFormat, logger};
-use gobs_gfx::{ImageLayout, ImageUsage};
-use gobs_render_low::{
-    GfxContext, ObjectDataLayout, ObjectDataProp, SceneDataLayout, SceneDataProp, UniformData,
-};
 use gobs_resource::{
     load::{self, AssetType},
     manager::ResourceManager,
@@ -15,7 +11,8 @@ use gobs_resource::{
 };
 
 use crate::{
-    PassType,
+    GfxContext, ObjectDataLayout, ObjectDataProp, PassType, Pipeline, SceneDataLayout,
+    SceneDataProp, UniformData,
     pass::{AttachmentAccess, AttachmentType, RenderPass, RenderPassType, material::MaterialPass},
 };
 
@@ -83,7 +80,7 @@ impl GraphConfig {
     }
 
     pub fn load_graph(
-        ctx: &GfxContext,
+        ctx: &mut GfxContext,
         filename: &str,
         name: &str,
         resource_manager: &mut ResourceManager,
@@ -94,7 +91,7 @@ impl GraphConfig {
     }
 
     pub fn load_graph_with_data(
-        ctx: &GfxContext,
+        ctx: &mut GfxContext,
         data: &str,
         name: &str,
         resource_manager: &mut ResourceManager,
@@ -113,7 +110,7 @@ impl GraphConfig {
     }
 
     pub fn load_pass(
-        ctx: &GfxContext,
+        ctx: &mut GfxContext,
         graph: &GraphConfig,
         passname: &str,
         resource_manager: &mut ResourceManager,
@@ -150,9 +147,11 @@ impl GraphConfig {
 
         if let Some(pipeline) = &pass.pipeline {
             let pipeline_handle = resource_manager.get_by_name::<Pipeline>(pipeline)?;
-            let pipeline = resource_manager.get_data(&pipeline_handle, ()).ok()?;
+            let pipeline = resource_manager
+                .get_data(&mut ctx.hal, &pipeline_handle)
+                .ok()?;
 
-            material_pass.set_fixed_pipeline(pipeline.data.pipeline.clone());
+            material_pass.set_fixed_pipeline(pipeline.data.pipeline);
         }
 
         for (attach_name, attach_config) in &pass.attachments {
@@ -193,10 +192,8 @@ mod tests {
     use tracing::Level;
     use tracing_subscriber::{FmtSubscriber, fmt::format::FmtSpan};
 
-    use gobs_render_low::GfxContext;
-
     use crate::{
-        GraphConfig, PassType,
+        GfxContext, GraphConfig, PassType,
         graph::graph_loader::{AttachmentInfo, RenderPassConfig},
         pass::{AttachmentAccess, RenderPassType},
     };
@@ -214,7 +211,7 @@ mod tests {
     fn test_load() {
         setup();
 
-        let ctx = GfxContext::new("test", None, false).unwrap();
+        let mut ctx = GfxContext::new("test", None, false).unwrap();
 
         let mut resource_manager = ResourceManager::new(ctx.frames_in_flight);
 
@@ -224,7 +221,7 @@ mod tests {
         tracing::info!("Graph: {:?}", graph.graphes["scene"]);
 
         let passes =
-            GraphConfig::load_graph_with_data(&ctx, data, "ui", &mut resource_manager).unwrap();
+            GraphConfig::load_graph_with_data(&mut ctx, data, "ui", &mut resource_manager).unwrap();
 
         for pass in passes {
             tracing::info!("Load pass: {}", pass.name());
@@ -236,7 +233,7 @@ mod tests {
     fn test_load_pass() {
         setup();
 
-        let ctx = GfxContext::new("test", None, false).unwrap();
+        let mut ctx = GfxContext::new("test", None, false).unwrap();
 
         let mut resource_manager = ResourceManager::new(ctx.frames_in_flight);
 
@@ -245,7 +242,8 @@ mod tests {
         let graph_config = GraphConfig::load_with_data(data).unwrap();
 
         let _pass =
-            GraphConfig::load_pass(&ctx, &graph_config, "forward", &mut resource_manager).unwrap();
+            GraphConfig::load_pass(&mut ctx, &graph_config, "forward", &mut resource_manager)
+                .unwrap();
     }
 
     #[test]

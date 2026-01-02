@@ -1,11 +1,9 @@
-use image::{ImageBuffer, Rgba};
 use renderdoc::{RenderDoc, V141};
 
 use gobs::{
-    core::{ImageFormat, Input, Key, logger},
+    core::{Input, Key, logger},
     game::context::GameContext,
-    render::{RenderError, Renderable},
-    render_graph::PassType,
+    render::{PassType, RenderError, Renderable},
     resource::entity::camera::Camera,
     scene::scene::Scene,
     ui::UIRenderer,
@@ -75,7 +73,7 @@ impl SampleApp {
                 self.ui.draw(ectx, ctx, scene, delta);
             });
 
-            ui.update(&mut ctx.resource_manager, output);
+            ui.update(&mut ctx.renderer.gfx, &mut ctx.resource_manager, output);
         }
     }
 
@@ -98,25 +96,27 @@ impl SampleApp {
 
         let resource_manager = &mut ctx.resource_manager;
 
-        ctx.renderer
-            .draw(resource_manager, &mut |pass, batch, resource_manager| {
+        ctx.renderer.draw(
+            resource_manager,
+            &mut |gfx, pass, batch, resource_manager| {
                 if let Some(scene) = &scene
                     && (self.draw_bounds || !(pass.ty() == PassType::Bounds))
                     && (self.draw_wire || !(pass.ty() == PassType::Wire))
                 {
                     scene
-                        .draw(resource_manager, pass.clone(), batch, None)
+                        .draw(gfx, resource_manager, pass.clone(), batch, None)
                         .map_err(|_| RenderError::InvalidData)?;
                 }
                 if let Some(ui) = &ui
                     && self.draw_ui
                 {
-                    ui.draw(resource_manager, pass, batch, None)
+                    ui.draw(gfx, resource_manager, pass, batch, None)
                         .map_err(|_| RenderError::InvalidData)?;
                 }
 
                 Ok(())
-            })?;
+            },
+        )?;
 
         tracing::trace!(target: logger::APP, "End render");
 
@@ -163,14 +163,14 @@ impl SampleApp {
                     }
                 }
                 Key::L => {
-                    tracing::info!(target: logger::APP, "{:?}", ctx.renderer.gfx.device.allocator.allocator.lock().unwrap())
+                    // tracing::info!(target: logger::APP, "{:?}", ctx.renderer.gfx.device.allocator.allocator.lock().unwrap())
                 }
                 Key::P => self.process_updates = !self.process_updates,
                 Key::Z => self.draw_wire = !self.draw_wire,
                 Key::B => self.draw_bounds = !self.draw_bounds,
                 Key::U => self.draw_ui = !self.draw_ui,
                 Key::F => self.freeze = !self.freeze,
-                Key::O => self.screenshot(ctx),
+                // Key::O => self.screenshot(ctx),
                 Key::Equals => scene.update_camera(|_, camera| {
                     camera.pitch = 0.;
                     camera.yaw = 0.;
@@ -182,6 +182,7 @@ impl SampleApp {
         }
     }
 
+    /*
     pub fn screenshot(&self, ctx: &mut GameContext) {
         let filename = "draw_image.png";
         let mut data = vec![];
@@ -200,6 +201,7 @@ impl SampleApp {
         img.save_with_format(filename, image::ImageFormat::Png)
             .unwrap();
     }
+    */
 }
 
 impl Default for SampleApp {

@@ -106,8 +106,8 @@ impl SwapChain {
         }
     }
 
-    pub fn create_images(&self, device: &Device) -> Vec<Image> {
-        let extent = self.surface.get_extent(device);
+    pub fn create_images(&self) -> Vec<Image> {
+        let extent = self.surface.get_extent(&self.device);
 
         unsafe {
             let vk_images = self.loader.get_swapchain_images(self.swapchain).unwrap();

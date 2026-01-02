@@ -1,6 +1,6 @@
 pub mod backend;
 mod bindgroup;
-mod buffer;
+// mod buffer;
 mod command;
 mod device;
 mod display;
@@ -14,7 +14,7 @@ mod vertex;
 pub use bindgroup::{
     BindingGroup, BindingGroupLayout, BindingGroupPool, BindingGroupType, BindingGroupUpdates,
 };
-pub use buffer::{Buffer, BufferId, BufferType, BufferView};
+// pub use buffer::{Buffer, BufferId, BufferType, BufferView};
 pub use command::{Command, CommandQueueType};
 pub use device::Device;
 pub use display::Display;
