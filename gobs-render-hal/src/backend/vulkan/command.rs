@@ -3,7 +3,7 @@ use gobs_vulkan as vk;
 
 use crate::{
     BindResource, BindingGroupLayout, Handle, ImageLayout, RenderHAL,
-    backend::{VulkanHAL, vulkan::pipeline},
+    backend::{VulkanHAL, VulkanHALExt, vulkan::pipeline},
     command::CommandBuffer,
 };
 
@@ -39,7 +39,7 @@ impl CommandBuffer for VkCommandBuffer {
         clear_color: [f32; 4],
         depth_clear_color: f32,
     ) {
-        let hal = hal.as_any().downcast_ref::<VulkanHAL>().unwrap();
+        let hal = hal.get();
 
         self.command.begin_rendering(
             color.and_then(|image| hal.registry.images.get(image)),
@@ -65,7 +65,7 @@ impl CommandBuffer for VkCommandBuffer {
         src_offset: u64,
         dst_offset: u64,
     ) {
-        let hal = hal.as_any().downcast_ref::<VulkanHAL>().unwrap();
+        let hal = hal.get();
         let src = hal.registry.buffers.get(src).unwrap();
         let dst = hal.registry.buffers.get(dst).unwrap();
 
@@ -86,7 +86,7 @@ impl CommandBuffer for VkCommandBuffer {
         offset: u64,
         dst_size: ImageExtent2D,
     ) {
-        let hal = hal.as_any().downcast_ref::<VulkanHAL>().unwrap();
+        let hal = hal.get();
 
         let src = hal.registry.buffers.get(src).unwrap();
         let dst = hal.registry.images.get(dst).unwrap();
@@ -101,7 +101,7 @@ impl CommandBuffer for VkCommandBuffer {
     }
 
     fn copy_image_to_buffer(&self, hal: &dyn RenderHAL, src: Handle, dst: Handle, offset: u64) {
-        let hal = hal.as_any().downcast_ref::<VulkanHAL>().unwrap();
+        let hal = hal.get();
 
         let src = hal.registry.images.get(src).unwrap();
         let dst = &hal.registry.buffers.get(dst).unwrap();
@@ -117,7 +117,7 @@ impl CommandBuffer for VkCommandBuffer {
         dst: Handle,
         dst_size: ImageExtent2D,
     ) {
-        let hal = hal.as_any().downcast_ref::<VulkanHAL>().unwrap();
+        let hal = hal.get();
 
         let src = hal.registry.images.get(src).unwrap();
         let dst = hal.registry.images.get(dst).unwrap();
@@ -149,7 +149,7 @@ impl CommandBuffer for VkCommandBuffer {
     }
 
     fn bind_pipeline(&self, hal: &dyn RenderHAL, pipeline: Handle) {
-        let hal = hal.as_any().downcast_ref::<VulkanHAL>().unwrap();
+        let hal = hal.get();
 
         let pipeline = hal.registry.pipelines.get(pipeline).unwrap();
 
@@ -158,7 +158,7 @@ impl CommandBuffer for VkCommandBuffer {
     }
 
     fn bind_index_buffer(&self, hal: &dyn RenderHAL, buffer: Handle) {
-        let hal = hal.as_any().downcast_ref::<VulkanHAL>().unwrap();
+        let hal = hal.get();
 
         let index_view = &hal.registry.buffers.get(buffer).unwrap();
         self.command
@@ -166,7 +166,7 @@ impl CommandBuffer for VkCommandBuffer {
     }
 
     fn bind_resource(&self, hal: &mut dyn RenderHAL, pipeline: Handle, resource: &BindResource) {
-        let mut hal = hal.as_any_mut().downcast_mut::<VulkanHAL>().unwrap();
+        let mut hal = hal.get_mut();
 
         let BindResource {
             layout:
@@ -238,7 +238,7 @@ impl CommandBuffer for VkCommandBuffer {
     }
 
     fn submit2(&self, hal: &dyn RenderHAL, frame: usize) {
-        let hal = hal.as_any().downcast_ref::<VulkanHAL>().unwrap();
+        let hal = hal.get();
 
         let swapchain_idx = hal.display.swapchain_idx;
         tracing::trace!(target: logger::SYNC, "Submit with swapchain semaphore: {}, render semaphore: {}", frame, swapchain_idx);
@@ -255,7 +255,7 @@ impl CommandBuffer for VkCommandBuffer {
     }
 
     fn transition_image_layout(&self, hal: &mut dyn RenderHAL, image: Handle, layout: ImageLayout) {
-        let mut hal = hal.as_any_mut().downcast_mut::<VulkanHAL>().unwrap();
+        let mut hal = hal.get_mut();
 
         let image = hal.registry.images.get_mut(image).unwrap();
 

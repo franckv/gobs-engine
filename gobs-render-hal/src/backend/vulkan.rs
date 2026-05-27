@@ -27,6 +27,21 @@ use command::VkCommandBuffer;
 use display::Display;
 use registry::Registry;
 
+pub trait VulkanHALExt {
+    fn get(&self) -> &VulkanHAL;
+    fn get_mut(&mut self) -> &mut VulkanHAL;
+}
+
+impl VulkanHALExt for dyn RenderHAL + '_ {
+    fn get(&self) -> &VulkanHAL {
+        self.as_any().downcast_ref::<VulkanHAL>().unwrap()
+    }
+
+    fn get_mut(&mut self) -> &mut VulkanHAL {
+        self.as_any_mut().downcast_mut::<VulkanHAL>().unwrap()
+    }
+}
+
 pub struct VulkanHAL {
     pub instance: Arc<vk::Instance>,
     pub display: Display,

@@ -7,7 +7,7 @@ use gobs_vulkan as vk;
 
 use crate::{
     Handle, RenderHAL, VertexAttribute,
-    backend::VulkanHAL,
+    backend::{VulkanHAL, VulkanHALExt},
     bindings::BindingGroupLayout,
     pipeline::{ComputePipelineBuilder, GraphicsPipelineBuilder},
 };
@@ -58,7 +58,7 @@ impl ComputePipelineBuilder for VkComputePipelineBuilder {
 
         let pipeline = self.builder.layout(pipeline_layout).build();
 
-        let hal = hal.as_any_mut().downcast_mut::<VulkanHAL>().unwrap();
+        let hal = hal.get_mut();
 
         hal.registry.pipelines.insert(pipeline)
     }
@@ -247,7 +247,7 @@ impl GraphicsPipelineBuilder for VkGraphicsPipelineBuilder {
 
         let pipeline = self.builder.layout(pipeline_layout).build();
 
-        let hal = hal.as_any_mut().downcast_mut::<VulkanHAL>().unwrap();
+        let hal = hal.get_mut();
 
         hal.registry.pipelines.insert(pipeline)
     }

@@ -1,3 +1,3 @@
 mod vulkan;
 
-pub use vulkan::VulkanHAL;
+pub use vulkan::{VulkanHAL, VulkanHALExt};
