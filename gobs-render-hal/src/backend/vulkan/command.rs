@@ -1,5 +1,5 @@
 use gobs_core::{ImageExtent2D, logger};
-use gobs_vulkan as vk;
+use gobs_vulkan::{self as vk, descriptor::DescriptorSetUpdates};
 
 use crate::{
     BindResource, BindingGroupLayout, Handle, ImageLayout, RenderHAL,
@@ -168,31 +168,44 @@ impl CommandBuffer for VkCommandBuffer {
     fn bind_resource(&self, hal: &mut dyn RenderHAL, pipeline: Handle, resource: &BindResource) {
         let mut hal = hal.get_mut();
 
-        let BindResource {
-            layout:
-                BindingGroupLayout {
-                    binding_group_type,
-                    bindings,
-                },
-            resources,
-        } = resource;
+        let pipeline = hal.registry.pipelines.get(pipeline).unwrap();
 
-        debug_assert_eq!(resources.len(), bindings.len());
+        let binding_type = resource.layout.binding_group_type;
 
-        for ((ty, stage), handle) in bindings.iter().zip(resources) {
-            match ty {
-                vk::DescriptorType::Uniform => todo!(),
-                vk::DescriptorType::UniformDynamic => todo!(),
-                vk::DescriptorType::ImageSampler => todo!(),
-                vk::DescriptorType::StorageImage => todo!(),
-                vk::DescriptorType::Sampler => todo!(),
-                vk::DescriptorType::SampledImage => todo!(),
-            }
+        tracing::debug!(target: logger::RENDER, "Bind resource to pipeline {}", pipeline.label);
+        tracing::debug!(target: logger::RENDER, "Bind descriptors layout {:?}", resource.layout);
+        tracing::debug!(target: logger::RENDER, "Bind descriptors set {:?}", binding_type);
+
+        debug_assert!(
+            binding_type.set() + resource.layout.bindings.len() as u32
+                <= pipeline.layout.descriptor_layouts.len() as u32
+        );
+
+        if resource.layout.binding_group_type.is_push() {
+            hal.bindings.push_descriptor(
+                hal.device.clone(),
+                &hal.registry,
+                resource,
+                pipeline,
+                &self.command,
+            );
+        } else {
+            let ds = hal
+                .bindings
+                .allocate_ds(hal.device.clone(), &hal.registry, resource);
+
+            let set = binding_type.set();
+            self.command.bind_descriptor_set(&ds, set, pipeline);
         }
     }
 
     fn push_constants(&self, hal: &dyn RenderHAL, pipeline: Handle, constants: &[u8]) {
-        todo!()
+        let mut hal = hal.get();
+
+        let pipeline = hal.registry.pipelines.get(pipeline).unwrap();
+
+        self.command
+            .push_constants(pipeline.layout.clone(), constants);
     }
 
     fn reset(&self) {

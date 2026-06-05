@@ -121,7 +121,7 @@ impl PhysicalDevice {
             return false;
         }
 
-        tracing::debug!(target: logger::INIT, "Accepted");
+        tracing::debug!(target: logger::INIT, "Device accepted: {}", self.name);
 
         true
     }

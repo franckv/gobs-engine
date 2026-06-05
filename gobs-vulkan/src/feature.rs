@@ -47,7 +47,7 @@ impl Features {
         let features10 = features.features;
 
         tracing::debug!(target: logger::RENDER,
-            "Features: {:?},{:?},{:?},{:?}",
+            "Device features: {:#?},{:#?},{:#?},{:#?}",
             features10,
             features11,
             features12,

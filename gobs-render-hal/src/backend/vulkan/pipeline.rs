@@ -7,7 +7,7 @@ use gobs_vulkan as vk;
 
 use crate::{
     Handle, RenderHAL, VertexAttribute,
-    backend::{VulkanHAL, VulkanHALExt},
+    backend::{VulkanHAL, VulkanHALExt, vulkan::bindings::vk_layout},
     bindings::BindingGroupLayout,
     pipeline::{ComputePipelineBuilder, GraphicsPipelineBuilder},
 };
@@ -263,18 +263,4 @@ impl VkGraphicsPipelineBuilder {
             vertex_attributes: VertexAttribute::empty(),
         }
     }
-}
-
-fn vk_layout(
-    device: Arc<vk::Device>,
-    layout: &BindingGroupLayout,
-) -> Arc<vk::descriptor::DescriptorSetLayout> {
-    let mut ds_layout =
-        vk::descriptor::DescriptorSetLayout::builder(layout.binding_group_type.set());
-
-    for (ty, stage) in &layout.bindings {
-        ds_layout = ds_layout.binding(*ty, *stage);
-    }
-
-    ds_layout.build(device.clone(), layout.binding_group_type.is_push())
 }

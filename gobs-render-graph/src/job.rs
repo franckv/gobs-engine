@@ -21,6 +21,7 @@ struct RenderJobState {
     last_pipeline: Option<Handle>,
     last_index_buffer: Option<Handle>,
     last_material_data: Option<BindResource>,
+    last_material_textures: Option<BindResource>,
     scene_data_bound: bool,
     object_data: Vec<u8>,
 }
@@ -31,6 +32,7 @@ impl RenderJobState {
             last_pipeline: None,
             last_index_buffer: None,
             last_material_data: None,
+            last_material_textures: None,
             scene_data_bound: false,
             object_data: vec![],
         }
@@ -173,20 +175,34 @@ impl RenderJob {
         render_object: &RenderObject,
         state: &mut RenderJobState,
     ) -> Result<(), RenderJobError> {
-        if self.fixed_pipeline.is_none()
-            && let Some(material_data) = &render_object.material_data
-            && state.last_material_data != render_object.material_data
-        {
+        if self.fixed_pipeline.is_none() {
             let pipeline = self.get_pipeline(render_object)?;
 
-            tracing::trace!(target: logger::RENDER, "Bind material data resources");
+            if let Some(material_data) = &render_object.material_data
+                && state.last_material_data != render_object.material_data
+            {
+                tracing::trace!(target: logger::RENDER, "Bind material data resources");
 
-            frame
-                .command
-                .bind_resource(ctx.hal.as_mut(), pipeline, material_data);
-            frame.stats.bind_material_resource(self.pass_id);
+                frame
+                    .command
+                    .bind_resource(ctx.hal.as_mut(), pipeline, material_data);
+                frame.stats.bind_material_resource(self.pass_id);
 
-            state.last_material_data = render_object.material_data.clone();
+                state.last_material_data = render_object.material_data.clone();
+            }
+
+            if let Some(material_textures) = &render_object.material_textures
+                && state.last_material_textures != render_object.material_textures
+            {
+                tracing::trace!(target: logger::RENDER, "Bind material texture resources");
+
+                frame
+                    .command
+                    .bind_resource(ctx.hal.as_mut(), pipeline, material_textures);
+                frame.stats.bind_material_resource(self.pass_id);
+
+                state.last_material_textures = render_object.material_textures.clone();
+            }
         }
 
         Ok(())

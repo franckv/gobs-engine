@@ -8,6 +8,7 @@ use gobs_render_graph::{
     BoundingBox, GfxContext, MeshBuilder, MeshGeometry, PassId, RenderObject, RenderPass,
     SceneData, Shapes,
 };
+use gobs_render_hal::BindResource;
 use gobs_resource::{
     entity::{camera::Camera, light::Light},
     manager::ResourceManager,
@@ -89,19 +90,77 @@ impl RenderBatch {
                 (None, false)
             };
 
-            let mesh_data = resource_manager.get_data(&mut ctx.hal, mesh)?;
+            let (vertex_buffer, index_buffer, index_len, layer) = {
+                let mesh_data = resource_manager.get_data(&mut ctx.hal, mesh)?;
+
+                (
+                    mesh_data.data.vertex_view,
+                    mesh_data.data.index_view,
+                    mesh_data.data.index_len,
+                    mesh_data.properties.layer,
+                )
+            };
+
+            let (material_data, material_textures) =
+                if let Some(material_instance_handle) = material_instance_handle {
+                    let (material_buffer, material, textures) = {
+                        let resource_data =
+                            resource_manager.get_data(&mut ctx.hal, material_instance_handle)?;
+
+                        (
+                            resource_data.data.material_buffer,
+                            resource_data.properties.material,
+                            resource_data.properties.textures.clone(),
+                        )
+                    };
+
+                    let material_properties = &resource_manager.get(&material).properties;
+
+                    let material_data_layout =
+                        material_properties.material_data_layout.bindings_layout();
+
+                    let texture_data_layout =
+                        &material_properties.texture_data_layout.bindings_layout();
+
+                    let material_data = material_buffer.map(|material_buffer| {
+                        BindResource::new(material_data_layout.clone(), vec![material_buffer])
+                    });
+
+                    let material_textures = {
+                        if textures.is_empty() {
+                            None
+                        } else {
+                            let mut texture_handles = vec![];
+
+                            for texture in textures {
+                                let tex_data = resource_manager.get_data(&mut ctx.hal, &texture)?;
+                                texture_handles.push(tex_data.data.image);
+                                texture_handles.push(tex_data.data.sampler);
+                            }
+
+                            Some(BindResource::new(
+                                texture_data_layout.clone(),
+                                texture_handles,
+                            ))
+                        }
+                    };
+
+                    (material_data, material_textures)
+                } else {
+                    (None, None)
+                };
 
             let render_object = RenderObject {
                 transform,
                 pass_id: pass.id(),
                 pipeline,
                 is_transparent,
-                vertex_buffer: mesh_data.data.vertex_view,
-                index_buffer: mesh_data.data.index_view,
-                index_len: mesh_data.data.index_len,
-                layer: mesh_data.properties.layer,
-                material_data: None,
-                material_textures: None,
+                vertex_buffer,
+                index_buffer,
+                index_len,
+                layer,
+                material_data,
+                material_textures,
             };
 
             match self.render_list.entry(pass.id()) {

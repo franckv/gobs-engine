@@ -8,7 +8,8 @@ use gobs_core::logger;
 
 use crate::device::Device;
 
-#[derive(Copy, Clone, Debug, Serialize, Deserialize, Eq, PartialEq)]
+// TODO: rename to BindingType
+#[derive(Copy, Clone, Debug, Serialize, Deserialize, Eq, PartialEq, Hash)]
 pub enum DescriptorType {
     Uniform,
     UniformDynamic,
@@ -31,7 +32,8 @@ impl From<DescriptorType> for vk::DescriptorType {
     }
 }
 
-#[derive(Copy, Clone, Debug, Serialize, Deserialize, Eq, PartialEq)]
+// TODO: rename to BindingStage
+#[derive(Copy, Clone, Debug, Serialize, Deserialize, Eq, PartialEq, Hash)]
 pub enum DescriptorStage {
     Compute,
     Vertex,

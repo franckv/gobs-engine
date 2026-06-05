@@ -42,6 +42,7 @@ impl Debug for BindingGroupType {
 }
 
 impl BindingGroupType {
+    // TODO: should be in vulkan backend
     #[allow(clippy::match_like_matches_macro)]
     pub fn is_push(&self) -> bool {
         match self {
@@ -50,6 +51,7 @@ impl BindingGroupType {
         }
     }
 
+    // TODO: should be in vulkan backend
     pub fn set(&self) -> u32 {
         match self {
             BindingGroupType::None => panic!("Invalid binding group"),
@@ -61,7 +63,7 @@ impl BindingGroupType {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, Hash)]
 pub struct BindingGroupLayout {
     pub binding_group_type: BindingGroupType,
     pub bindings: Vec<(DescriptorType, DescriptorStage)>,

@@ -15,7 +15,7 @@ use gobs_vulkan::{
 
 use crate::{
     Handle, RenderHAL,
-    backend::{VulkanHAL, vulkan::Registry},
+    backend::{VulkanHAL, vulkan::ResourcesRegistry},
 };
 
 pub struct Display {
@@ -42,7 +42,12 @@ impl Display {
         }
     }
 
-    pub fn init(&mut self, registry: &mut Registry, device: Arc<Device>, frames_in_flight: usize) {
+    pub fn init(
+        &mut self,
+        registry: &mut ResourcesRegistry,
+        device: Arc<Device>,
+        frames_in_flight: usize,
+    ) {
         if let Some(surface) = &self.surface {
             let swapchain = Self::create_swapchain(surface.clone(), device.clone());
             self.swapchain_images = swapchain
@@ -64,7 +69,7 @@ impl Display {
         }
     }
 
-    pub fn resize(&mut self, registry: &mut Registry, device: Arc<Device>) {
+    pub fn resize(&mut self, registry: &mut ResourcesRegistry, device: Arc<Device>) {
         if let Some(swapchain) = &self.swapchain
             && let Some(surface) = &self.surface
         {
@@ -96,7 +101,11 @@ impl Display {
         }
     }
 
-    pub(crate) fn acquire(&mut self, registry: &mut Registry, frame: usize) -> Result<(), ()> {
+    pub(crate) fn acquire(
+        &mut self,
+        registry: &mut ResourcesRegistry,
+        frame: usize,
+    ) -> Result<(), ()> {
         if let Some(swapchain) = &mut self.swapchain {
             tracing::trace!(target: logger::SYNC, "Acquire with swapchain semaphore {}", frame);
             let semaphore = &self.swapchain_semaphores[frame];

@@ -2,7 +2,7 @@ use gobs_render_hal::{Handle, RenderHAL};
 use gobs_resource::resource::{ResourceHandle, ResourceProperties, ResourceType};
 
 use crate::{
-    MaterialConstantData, MaterialDataLayout, MaterialDataProp, MaterialDataPropData, UniformData,
+    MaterialConstantData, MaterialDataPropData,
     resources::{Material, MaterialInstanceLoader, Texture},
 };
 
@@ -20,7 +20,6 @@ impl ResourceType for MaterialInstance {
 pub struct MaterialInstanceProperties {
     pub name: String,
     pub material_data: Option<MaterialConstantData>,
-    pub material_data_layout: MaterialDataLayout,
     pub material: ResourceHandle<Material>,
     pub textures: Vec<ResourceHandle<Texture>>,
 }
@@ -36,7 +35,6 @@ impl MaterialInstanceProperties {
         Self {
             name: name.to_string(),
             material_data: None,
-            material_data_layout: Default::default(),
             material,
             textures: Vec::new(),
         }
@@ -54,27 +52,15 @@ impl MaterialInstanceProperties {
         match prop {
             MaterialDataPropData::DiffuseColor(color) => {
                 material_data.diffuse_color = color;
-                self.material_data_layout = self
-                    .material_data_layout
-                    .prop(MaterialDataProp::DiffuseColor);
             }
             MaterialDataPropData::EmissionColor(color) => {
                 material_data.emission_color = color;
-                self.material_data_layout = self
-                    .material_data_layout
-                    .prop(MaterialDataProp::EmissionColor);
             }
             MaterialDataPropData::SpecularColor(color) => {
                 material_data.specular_color = color;
-                self.material_data_layout = self
-                    .material_data_layout
-                    .prop(MaterialDataProp::SpecularColor);
             }
             MaterialDataPropData::SpecularPower(power) => {
                 material_data.specular_power = power;
-                self.material_data_layout = self
-                    .material_data_layout
-                    .prop(MaterialDataProp::SpecularPower);
             }
         }
 

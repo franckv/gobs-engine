@@ -25,7 +25,7 @@ use crate::{
 use bindings::BindingRegistry;
 use command::VkCommandBuffer;
 use display::Display;
-use registry::Registry;
+use registry::ResourcesRegistry;
 
 pub trait VulkanHALExt {
     fn get(&self) -> &VulkanHAL;
@@ -49,7 +49,7 @@ pub struct VulkanHAL {
     pub graphics_queue: Arc<vk::Queue>,
     pub transfer_queue: Arc<vk::Queue>,
     pub allocator: Arc<vk::Allocator>,
-    registry: Registry,
+    registry: ResourcesRegistry,
     bindings: BindingRegistry,
 }
 
@@ -239,7 +239,7 @@ impl VulkanHAL {
 
         let allocator = vk::Allocator::new(device.clone());
 
-        let mut registry = Registry::default();
+        let mut registry = ResourcesRegistry::default();
         let bindings = BindingRegistry::default();
 
         display.init(&mut registry, device.clone(), frames_in_flight);
@@ -265,7 +265,7 @@ impl VulkanHAL {
             .dynamic_rendering()
             .synchronization2();
 
-        tracing::info!(target: logger::INIT, "Features: {:?}", expected_features);
+        tracing::info!(target: logger::INIT, "Requested features: {:?}", expected_features);
 
         let p_device = instance
             .find_adapter(&expected_features, display.surface.as_deref())

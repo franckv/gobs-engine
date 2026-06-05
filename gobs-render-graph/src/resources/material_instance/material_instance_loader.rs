@@ -33,11 +33,13 @@ impl ResourceLoader<MaterialInstance> for MaterialInstanceLoader {
     ) -> Result<MaterialInstanceData, ResourceError> {
         let resource = registry.get(handle);
         let properties = &resource.properties;
+        let material_handle = properties.material;
+        let material_resource = registry.get(&material_handle);
 
         let material_buffer = self.create_buffer(
             hal.as_mut(),
             properties.name(),
-            &properties.material_data_layout,
+            &material_resource.properties.material_data_layout,
             properties.material_data.as_ref(),
         );
 

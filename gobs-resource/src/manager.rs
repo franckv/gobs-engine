@@ -136,7 +136,6 @@ impl ResourceManager {
         }
     }
 
-    #[tracing::instrument(target = "profile", skip_all, level = "trace")]
     pub fn add<R: ResourceType + 'static>(
         &mut self,
         properties: R::ResourceProperties,
@@ -157,7 +156,6 @@ impl ResourceManager {
         self.registry.schedule_removal(handle);
     }
 
-    #[tracing::instrument(target = "profile", skip_all, level = "trace")]
     pub fn replace<R: ResourceType + 'static>(
         &mut self,
         handle: &ResourceHandle<R>,
@@ -165,17 +163,14 @@ impl ResourceManager {
         self.registry.replace(handle)
     }
 
-    #[tracing::instrument(target = "profile", skip_all, level = "trace")]
     pub fn get_by_name<R: ResourceType + 'static>(&self, name: &str) -> Option<ResourceHandle<R>> {
         self.registry.get_by_name(name)
     }
 
-    #[tracing::instrument(target = "profile", skip_all, level = "trace")]
     pub fn get<R: ResourceType + 'static>(&self, handle: &ResourceHandle<R>) -> &Resource<R> {
         self.registry.get(handle)
     }
 
-    #[tracing::instrument(target = "profile", skip_all, level = "trace")]
     pub fn get_mut<R: ResourceType + 'static>(
         &mut self,
         handle: &ResourceHandle<R>,
@@ -217,7 +212,6 @@ impl ResourceManager {
         self.loader.insert(loader);
     }
 
-    #[tracing::instrument(target = "profile", skip_all, level = "trace")]
     fn load_data<R: ResourceType + 'static>(
         &mut self,
         backend: &mut R::ResourceBackend,
@@ -244,7 +238,6 @@ impl ResourceManager {
         Ok(())
     }
 
-    #[tracing::instrument(target = "profile", skip_all, level = "trace")]
     pub fn get_data<R: ResourceType + 'static>(
         &'_ mut self,
         backend: &mut R::ResourceBackend,
@@ -265,7 +258,6 @@ impl ResourceManager {
         })
     }
 
-    #[tracing::instrument(target = "profile", skip_all, level = "trace")]
     pub fn get_data_mut<R: ResourceType + 'static>(
         &'_ mut self,
         backend: &mut R::ResourceBackend,
