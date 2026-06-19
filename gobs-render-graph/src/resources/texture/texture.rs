@@ -1,6 +1,6 @@
 use gobs_core::{Color, ImageExtent2D, ImageFormat, SamplerFilter, logger};
 use gobs_render_hal::{Handle, RenderHAL};
-use gobs_resource::resource::{Resource, ResourceHandle, ResourceProperties, ResourceType};
+use gobs_resource::{Resource, ResourceHandle, ResourceProperties, ResourceType};
 
 use crate::resources::TextureLoader;
 

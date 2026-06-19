@@ -1,6 +1,6 @@
 use gobs_core::Transform;
 use gobs_render_graph::{GfxContext, RenderPass};
-use gobs_resource::{manager::ResourceManager, resource::ResourceError};
+use gobs_resource::{ResourceError, ResourceManager};
 
 use crate::RenderBatch;
 

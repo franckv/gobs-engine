@@ -1,8 +1,7 @@
 use gobs_core::logger;
 use gobs_render_hal::{BufferType, CommandBuffer, CommandQueueType, RenderHAL, VertexAttribute};
 use gobs_resource::{
-    manager::ResourceRegistry,
-    resource::{Resource, ResourceError, ResourceHandle, ResourceLoader, ResourceProperties},
+    ResourceRegistry, {Resource, ResourceError, ResourceHandle, ResourceLoader, ResourceProperties},
 };
 
 use crate::{
@@ -43,7 +42,7 @@ impl MeshLoader {
         let indices = &geometry.indices;
 
         let vertices_size = vertices.len();
-        let indices_size = std::mem::size_of_val(indices);
+        let indices_size = indices.len() * std::mem::size_of::<u32>();
         let staging_size = indices_size + vertices_size;
 
         let staging = hal.create_buffer(

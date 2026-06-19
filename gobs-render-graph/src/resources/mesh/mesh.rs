@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use gobs_render_hal::{Handle, RenderHAL, VertexAttribute};
-use gobs_resource::resource::{ResourceProperties, ResourceType};
+use gobs_resource::{ResourceProperties, ResourceType};
 
 use crate::resources::{MeshGeometry, MeshLoader};
 

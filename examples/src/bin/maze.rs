@@ -8,9 +8,8 @@ use gobs::{
         TextureType,
     },
     resource::{
-        entity::{camera::Camera, light::Light},
-        load,
-        resource::ResourceLifetime,
+        ResourceLifetime, load,
+        {camera::Camera, light::Light},
     },
     scene::{components::NodeValue, scene::Scene},
     ui::UIRenderer,

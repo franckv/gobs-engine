@@ -5,7 +5,7 @@ use gobs_render_hal::{
     BindingGroupType, BlendMode, CompareOp, CullMode, DescriptorStage, DescriptorType, FrontFace,
     Handle, PolygonMode, RenderHAL, VertexAttribute,
 };
-use gobs_resource::resource::{ResourceProperties, ResourceType};
+use gobs_resource::{ResourceProperties, ResourceType};
 
 use crate::resources::PipelineLoader;
 

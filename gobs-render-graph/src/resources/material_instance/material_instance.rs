@@ -1,5 +1,5 @@
 use gobs_render_hal::{Handle, RenderHAL};
-use gobs_resource::resource::{ResourceHandle, ResourceProperties, ResourceType};
+use gobs_resource::{ResourceHandle, ResourceProperties, ResourceType};
 
 use crate::{
     MaterialConstantData, MaterialDataPropData,

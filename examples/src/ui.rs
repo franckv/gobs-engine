@@ -10,8 +10,7 @@ use gobs::{
         Texture, TextureLoader,
     },
     resource::{
-        manager::ResourceManager,
-        resource::{ResourceHandle, ResourceProperties, ResourceType},
+        ResourceManager, {ResourceHandle, ResourceProperties, ResourceType},
     },
     scene::{
         components::{NodeId, NodeValue},

@@ -11,7 +11,7 @@ use gobs_core::{Color, ImageExtent2D, SamplerFilter, Transform, logger};
 use gobs_render::{
     BlendMode, GfxContext, MeshGeometry, Model, TextureProperties, TextureType, VertexData,
 };
-use gobs_resource::{manager::ResourceManager, resource::ResourceLifetime};
+use gobs_resource::{ResourceLifetime, ResourceManager};
 use gobs_scene::{
     components::{NodeId, NodeValue},
     graph::scenegraph::SceneGraph,

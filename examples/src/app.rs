@@ -4,7 +4,7 @@ use gobs::{
     core::{Input, Key, logger},
     game::context::GameContext,
     render::{PassType, RenderError, Renderable},
-    resource::entity::camera::Camera,
+    resource::camera::Camera,
     scene::scene::Scene,
     ui::UIRenderer,
 };

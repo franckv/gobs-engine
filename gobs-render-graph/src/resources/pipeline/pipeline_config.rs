@@ -8,9 +8,9 @@ use gobs_render_hal::{
     VertexAttribute,
 };
 use gobs_resource::{
+    ResourceManager,
     load::{self, AssetType},
-    manager::ResourceManager,
-    resource::{ResourceError, ResourceLifetime},
+    {ResourceError, ResourceLifetime},
 };
 
 use crate::{
@@ -169,7 +169,7 @@ mod tests {
 
     use gobs_core::ImageFormat;
     use gobs_render_hal::{CompareOp, CullMode, FrontFace, PolygonMode, VertexAttribute};
-    use gobs_resource::manager::ResourceManager;
+    use gobs_resource::ResourceManager;
 
     use crate::{
         GfxContext,

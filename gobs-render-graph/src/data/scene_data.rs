@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 
 use gobs_core::{ImageExtent2D, Transform};
-use gobs_resource::entity::{camera::Camera, light::Light};
+use gobs_resource::{camera::Camera, light::Light};
 
 use crate::{
     GfxContext, UniformData,

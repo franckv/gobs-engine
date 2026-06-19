@@ -5,9 +5,8 @@ use serde::{Deserialize, Serialize};
 
 use gobs_core::{ImageExtent2D, ImageFormat, logger};
 use gobs_resource::{
+    ResourceError, ResourceManager,
     load::{self, AssetType},
-    manager::ResourceManager,
-    resource::ResourceError,
 };
 
 use crate::{
@@ -188,7 +187,7 @@ impl GraphConfig {
 mod tests {
     use std::collections::HashMap;
 
-    use gobs_resource::manager::ResourceManager;
+    use gobs_resource::ResourceManager;
     use tracing::Level;
     use tracing_subscriber::{FmtSubscriber, fmt::format::FmtSpan};
 

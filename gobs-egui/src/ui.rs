@@ -17,8 +17,7 @@ use gobs_render::{
     TextureUpdate, UniformData, VertexAttribute, VertexData,
 };
 use gobs_resource::{
-    manager::ResourceManager,
-    resource::{ResourceError, ResourceHandle, ResourceLifetime},
+    ResourceManager, {ResourceError, ResourceHandle, ResourceLifetime},
 };
 
 use crate::UIError;

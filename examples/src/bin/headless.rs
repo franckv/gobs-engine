@@ -7,7 +7,7 @@ use gobs::{
     render::{
         BuiltinGraphs, MaterialInstanceProperties, MaterialsConfig, Model, RenderError, Shapes,
     },
-    resource::{entity::light::Light, resource::ResourceLifetime},
+    resource::{ResourceLifetime, light::Light},
     scene::{components::NodeValue, scene::Scene},
 };
 

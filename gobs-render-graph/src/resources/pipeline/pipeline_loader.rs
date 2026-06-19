@@ -4,8 +4,7 @@ use gobs_render_hal::{
     Viewport,
 };
 use gobs_resource::{
-    manager::ResourceRegistry,
-    resource::{Resource, ResourceError, ResourceHandle, ResourceLoader, ResourceProperties},
+    ResourceRegistry, {Resource, ResourceError, ResourceHandle, ResourceLoader, ResourceProperties},
 };
 
 use crate::resources::pipeline::{

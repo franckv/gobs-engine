@@ -5,7 +5,7 @@ use gobs_render::{
     GfxContext, Material, MaterialInstance, MaterialInstanceLoader, MaterialLoader, Mesh,
     MeshLoader, Pipeline, PipelineLoader, RenderError, Renderer, Texture, TextureLoader,
 };
-use gobs_resource::manager::ResourceManager;
+use gobs_resource::ResourceManager;
 
 use crate::GameOptions;
 

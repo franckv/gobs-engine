@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use gobs_core::{ImageExtent2D, logger};
 use gobs_render_hal::{ImageLayout, ImageUsage};
-use gobs_resource::manager::ResourceManager;
+use gobs_resource::ResourceManager;
 
 use crate::{
     FrameData, GfxContext, GraphConfig, PassId, PipelinesConfig, RenderError, RenderObject,

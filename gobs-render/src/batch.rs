@@ -10,9 +10,8 @@ use gobs_render_graph::{
 };
 use gobs_render_hal::BindResource;
 use gobs_resource::{
-    entity::{camera::Camera, light::Light},
-    manager::ResourceManager,
-    resource::{ResourceError, ResourceLifetime},
+    ResourceManager, {ResourceError, ResourceLifetime},
+    {camera::Camera, light::Light},
 };
 
 use crate::model::Model;
@@ -265,7 +264,7 @@ mod tests {
 
     use gobs_core::{Color, Transform, logger, utils::timer::Timer};
     use gobs_render_graph::{GfxContext, GraphConfig, Mesh, MeshLoader, Shapes};
-    use gobs_resource::{manager::ResourceManager, resource::ResourceLifetime};
+    use gobs_resource::{ResourceLifetime, ResourceManager};
 
     use crate::{Model, RenderBatch};
 

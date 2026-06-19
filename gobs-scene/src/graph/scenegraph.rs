@@ -4,7 +4,7 @@ use slotmap::SlotMap;
 
 use gobs_core::Transform;
 use gobs_render::ModelId;
-use gobs_resource::resource::ResourceError;
+use gobs_resource::ResourceError;
 
 use crate::{
     components::{BoundingComponent, NodeId, NodeValue},

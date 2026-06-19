@@ -1,6 +1,6 @@
 use gobs_core::{ImageExtent2D, logger};
 use gobs_render_graph::{FrameData, FrameGraph, GfxContext, RenderError, RenderPass};
-use gobs_resource::manager::ResourceManager;
+use gobs_resource::ResourceManager;
 use tracing::Level;
 
 use crate::RenderBatch;
@@ -134,7 +134,7 @@ impl Renderer {
             )
             .unwrap();
 
-        self.graph.end(&mut self.gfx, frame).unwrap();
+        if let Err(RenderError::Outdated) = self.graph.end(&mut self.gfx, frame) {}
 
         Ok(())
     }

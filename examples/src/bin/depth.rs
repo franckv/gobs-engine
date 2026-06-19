@@ -5,8 +5,8 @@ use gobs::{
     game::{AppError, Application, GameContext, GameOptions, Run},
     render::{MaterialInstanceProperties, MaterialsConfig, Model, RenderError, Shapes},
     resource::{
-        entity::{camera::Camera, light::Light},
-        resource::ResourceLifetime,
+        ResourceLifetime,
+        {camera::Camera, light::Light},
     },
     scene::{components::NodeValue, scene::Scene},
     ui::UIRenderer,

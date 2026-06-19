@@ -1,7 +1,6 @@
 use gobs_render_hal::{BufferType, Handle, RenderHAL};
 use gobs_resource::{
-    manager::ResourceRegistry,
-    resource::{Resource, ResourceError, ResourceHandle, ResourceLoader, ResourceProperties},
+    ResourceRegistry, {Resource, ResourceError, ResourceHandle, ResourceLoader, ResourceProperties},
 };
 
 use crate::{

@@ -3,7 +3,8 @@ use std::{
     ops::{Add, Mul},
 };
 
-pub enum HexDirection {
+#[allow(unused)]
+enum HexDirection {
     N,
     NE,
     SE,
@@ -64,10 +65,12 @@ impl Mul<HexPos> for i32 {
     }
 }
 
-pub struct HexMap<T> {
+#[allow(unused)]
+struct HexMap<T> {
     tiles: HashMap<HexPos, T>,
 }
 
+#[allow(unused)]
 impl<T> HexMap<T> {
     pub fn get(&self, pos: HexPos) -> Option<&T> {
         self.tiles.get(&pos)

@@ -3,9 +3,8 @@ use glam::{Vec3, Vec4};
 use gobs_core::Transform;
 use gobs_render::{GfxContext, PassType, RenderBatch, RenderPass, Renderable};
 use gobs_resource::{
-    entity::{camera::Camera, light::Light},
-    manager::ResourceManager,
-    resource::ResourceError,
+    ResourceError, ResourceManager,
+    {camera::Camera, light::Light},
 };
 
 use crate::components::{NodeId, NodeValue};

@@ -7,9 +7,9 @@ use pollster::FutureExt;
 
 use gobs_core::{Color, ImageExtent2D, logger};
 use gobs_resource::{
+    ResourceRegistry,
     load::{self, AssetType},
-    manager::ResourceRegistry,
-    resource::{Resource, ResourceError, ResourceHandle, ResourceLoader, ResourceProperties},
+    {Resource, ResourceError, ResourceHandle, ResourceLoader, ResourceProperties},
 };
 
 use crate::{

@@ -2,12 +2,12 @@ use gobs_render_hal::{
     BindingGroupType, BlendMode, CompareOp, CullMode, DescriptorStage, DescriptorType, FrontFace,
     RenderHAL, VertexAttribute,
 };
-use gobs_resource::resource::{ResourceHandle, ResourceProperties, ResourceType};
+use gobs_resource::{ResourceHandle, ResourceProperties, ResourceType};
 
 use crate::{
-    GfxContext, MaterialDataLayout, MaterialDataProp, ObjectDataLayout, TextureDataLayout,
-    TextureDataProp, UniformData,
-    resources::{GraphicsPipelineProperties, MaterialLoader, Pipeline, PipelineProperties},
+    GfxContext, MaterialDataLayout, MaterialDataProp, MaterialLoader, ObjectDataLayout, Pipeline,
+    TextureDataLayout, TextureDataProp, UniformData,
+    resources::{GraphicsPipelineProperties, PipelineProperties},
 };
 
 #[derive(Clone, Copy, Debug)]

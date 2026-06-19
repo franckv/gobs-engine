@@ -6,8 +6,8 @@ use gobs::{
     game::{AppError, Application, GameContext, GameOptions, Run},
     render::RenderError,
     resource::{
-        entity::{camera::Camera, light::Light},
         load,
+        {camera::Camera, light::Light},
     },
     scene::{graph::scenegraph::SceneGraph, scene::Scene},
     ui::UIRenderer,

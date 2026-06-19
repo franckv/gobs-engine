@@ -10,6 +10,7 @@ use crate::{
     manager::{ResourceId, ResourceRegistry},
 };
 
+#[allow(unused)]
 pub enum ResourceState<R: ResourceType> {
     Unloaded,
     Loading,

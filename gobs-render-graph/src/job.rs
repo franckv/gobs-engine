@@ -120,7 +120,7 @@ impl RenderJob {
             // push constants + index buffer
             self.bind_object_data(ctx, frame, render_object, &mut state)?;
 
-            tracing::trace!(target: logger::RENDER, "Draw object");
+            tracing::trace!(target: logger::RENDER, "Draw object ({})", render_object.index_len);
             frame.command.draw_indexed(render_object.index_len, 1);
             frame
                 .stats

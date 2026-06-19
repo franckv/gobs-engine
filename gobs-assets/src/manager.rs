@@ -4,8 +4,7 @@ use gobs_render::{
     Texture, TextureProperties,
 };
 use gobs_resource::{
-    manager::ResourceManager,
-    resource::{ResourceHandle, ResourceLifetime},
+    ResourceManager, {ResourceHandle, ResourceLifetime},
 };
 
 use crate::AssetError;

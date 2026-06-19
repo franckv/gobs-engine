@@ -160,7 +160,7 @@ impl CommandBuffer for VkCommandBuffer {
     fn bind_index_buffer(&self, hal: &dyn RenderHAL, buffer: Handle) {
         let hal = hal.get();
 
-        let index_view = &hal.registry.buffers.get(buffer).unwrap();
+        let index_view = hal.registry.buffers.get(buffer).unwrap();
         self.command
             .bind_index_buffer::<u32>(&index_view.buffer, index_view.offset);
     }
@@ -175,11 +175,9 @@ impl CommandBuffer for VkCommandBuffer {
         tracing::debug!(target: logger::RENDER, "Bind resource to pipeline {}", pipeline.label);
         tracing::debug!(target: logger::RENDER, "Bind descriptors layout {:?}", resource.layout);
         tracing::debug!(target: logger::RENDER, "Bind descriptors set {:?}", binding_type);
+        tracing::debug!(target: logger::RENDER, "Pipeline descriptors set {:?}", pipeline.layout.descriptor_layouts.len());
 
-        debug_assert!(
-            binding_type.set() + resource.layout.bindings.len() as u32
-                <= pipeline.layout.descriptor_layouts.len() as u32
-        );
+        debug_assert!(binding_type.set() < pipeline.layout.descriptor_layouts.len() as u32);
 
         if resource.layout.binding_group_type.is_push() {
             hal.bindings.push_descriptor(

@@ -1,7 +1,7 @@
 use std::f32::consts::FRAC_PI_2;
 
 use gobs::core::{Input, Key, MouseButton, Transform};
-use gobs::resource::entity::camera::{Camera, ProjectionMode};
+use gobs::resource::camera::{Camera, ProjectionMode};
 
 const SAFE_FRAC_PI_2: f32 = FRAC_PI_2 - 0.0001;
 
@@ -64,11 +64,7 @@ impl CameraController {
                     self.mouse_scroll(delta)
                 }
             }
-            Input::MouseMotion(dx, dy) => {
-                if !ui_hovered {
-                    self.mouse_drag(dx, dy)
-                }
-            }
+            Input::MouseMotion(dx, dy) if !ui_hovered => self.mouse_drag(dx, dy),
             _ => (),
         }
     }

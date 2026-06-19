@@ -8,8 +8,8 @@ use gobs::{
         TextureType,
     },
     resource::{
-        entity::{camera::Camera, light::Light},
-        resource::ResourceLifetime,
+        ResourceLifetime,
+        {camera::Camera, light::Light},
     },
     scene::{
         components::{NodeId, NodeValue},

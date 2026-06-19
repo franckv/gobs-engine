@@ -4,9 +4,8 @@ use serde::Deserialize;
 
 use gobs_render_hal::{BlendMode, CullMode, VertexAttribute};
 use gobs_resource::{
+    ResourceLifetime, ResourceManager,
     load::{self, AssetType},
-    manager::ResourceManager,
-    resource::ResourceLifetime,
 };
 
 use crate::{
@@ -33,6 +32,7 @@ struct MaterialConfig {
     vertex_entry: String,
     fragment_shader: String,
     fragment_entry: String,
+    vertex_attributes: Option<VertexAttribute>,
     #[serde(default)]
     blend_mode: BlendMode,
     #[serde(default)]
@@ -83,6 +83,11 @@ impl MaterialsConfig {
         }
 
         for (name, material) in &self.materials {
+            let vertex_attributes = match material.vertex_attributes {
+                Some(vertex_attributes) => vertex_attributes,
+                None => self.default.vertex_attributes,
+            };
+
             let mut props = MaterialProperties::new(
                 ctx,
                 name,
@@ -90,7 +95,7 @@ impl MaterialsConfig {
                 &material.vertex_entry,
                 &material.fragment_shader,
                 &material.fragment_entry,
-                self.default.vertex_attributes,
+                vertex_attributes,
                 &object_layout,
             )
             .cull_mode(material.cull_mode)

@@ -4,12 +4,12 @@ use gobs::{
     core::{Color, Input, Transform, logger},
     game::{AppError, Application, GameContext, GameOptions, Run},
     render::{
-        MaterialInstanceProperties, MaterialsConfig, Model, RenderError, Shapes, TextureProperties,
-        TextureType,
+        Material, MaterialInstanceProperties, MaterialsConfig, Model, RenderError, Shapes,
+        TextureProperties, TextureType,
     },
     resource::{
-        entity::{camera::Camera, light::Light},
-        resource::ResourceLifetime,
+        ResourceLifetime,
+        {camera::Camera, light::Light},
     },
     scene::{components::NodeValue, scene::Scene},
     ui::UIRenderer,
@@ -138,6 +138,8 @@ impl App {
         .await;
 
         let material = ctx.resource_manager.get_by_name("normal").unwrap();
+        let material_properties = &ctx.resource_manager.get::<Material>(&material).properties;
+        let vertex_attributes = material_properties.pipeline_properties.vertex_attributes;
 
         let properties = TextureProperties::with_file("Wall Diffuse", examples::WALL_TEXTURE);
         let diffuse_texture = ctx
@@ -163,7 +165,8 @@ impl App {
             .mesh(
                 Shapes::cubemap(1, 1, &[1], 1., ctx.renderer.gfx.vertex_padding),
                 Some(material_instance),
-                ctx.renderer.gfx.world_vertex_attributes,
+                vertex_attributes,
+                // ctx.renderer.gfx.world_vertex_attributes,
                 &mut ctx.resource_manager,
                 ResourceLifetime::Static,
             )

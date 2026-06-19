@@ -11,8 +11,7 @@ use gobs_render_graph::{
     RenderPass,
 };
 use gobs_resource::{
-    manager::ResourceManager,
-    resource::{ResourceError, ResourceHandle, ResourceLifetime},
+    ResourceManager, {ResourceError, ResourceHandle, ResourceLifetime},
 };
 
 use crate::{Renderable, batch::RenderBatch};
