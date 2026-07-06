@@ -14,10 +14,15 @@ use crate::{
 const FRAME_WIDTH: u32 = 1920;
 const FRAME_HEIGHT: u32 = 1080;
 
+pub struct FrameGraphPass {
+    pub pass: RenderPass,
+    pub enabled: bool,
+}
+
 pub struct FrameGraph {
     pub draw_extent: ImageExtent2D,
     pub render_scaling: f32,
-    pub passes: Vec<RenderPass>,
+    pub passes: Vec<FrameGraphPass>,
     resource_manager: GraphResourceManager,
 }
 
@@ -152,6 +157,11 @@ impl FrameGraph {
     }
 
     pub fn register_pass(&mut self, pass: RenderPass) {
+        let pass = FrameGraphPass {
+            pass,
+            enabled: true,
+        };
+
         self.passes.push(pass);
     }
 
@@ -160,8 +170,8 @@ impl FrameGraph {
         F: Fn(&RenderPass) -> bool,
     {
         for pass in &self.passes {
-            if cmp(pass) {
-                return Ok(pass.clone());
+            if cmp(&pass.pass) {
+                return Ok(pass.pass.clone());
             }
         }
 
@@ -301,6 +311,11 @@ impl FrameGraph {
         scene_data: &SceneData,
     ) -> Result<(), RenderError> {
         for pass in &mut self.passes {
+            if !pass.enabled {
+                continue;
+            }
+
+            let pass = &pass.pass;
             let span =
                 tracing::span!(target: logger::PROFILE, tracing::Level::TRACE, "Pass", "{}", pass.name())
                     .entered();
@@ -341,5 +356,13 @@ impl FrameGraph {
         ctx.hal.wait();
 
         ctx.hal.resize();
+    }
+
+    pub fn enable_pass(&mut self, pass_type: PassType, enabled: bool) {
+        for pass in &mut self.passes {
+            if pass.pass.ty() == pass_type {
+                pass.enabled = enabled;
+            }
+        }
     }
 }

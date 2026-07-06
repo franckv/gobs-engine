@@ -1,5 +1,5 @@
 use gobs_core::{ImageExtent2D, logger};
-use gobs_render_graph::{FrameData, FrameGraph, GfxContext, RenderError, RenderPass};
+use gobs_render_graph::{FrameData, FrameGraph, GfxContext, PassType, RenderError, RenderPass};
 use gobs_resource::ResourceManager;
 use tracing::Level;
 
@@ -63,6 +63,10 @@ impl Renderer {
         self.graph.update(&self.gfx, delta);
     }
 
+    pub fn enable_pass(&mut self, pass: PassType, enabled: bool) {
+        self.graph.enable_pass(pass, enabled);
+    }
+
     #[tracing::instrument(target = "profile", skip_all, level = "trace")]
     pub fn prepare(
         &mut self,
@@ -79,6 +83,11 @@ impl Renderer {
         let mut batch = RenderBatch::new(&self.gfx);
 
         for pass in &self.graph.passes {
+            if !pass.enabled {
+                continue;
+            }
+            let pass = &pass.pass;
+
             let span =
                 tracing::span!(target: logger::PROFILE, Level::TRACE, "Pass", "{}", pass.name())
                     .entered();

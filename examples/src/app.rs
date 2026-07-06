@@ -96,20 +96,19 @@ impl SampleApp {
 
         let resource_manager = &mut ctx.resource_manager;
 
+        ctx.renderer.enable_pass(PassType::Bounds, self.draw_bounds);
+        ctx.renderer.enable_pass(PassType::Wire, self.draw_wire);
+        ctx.renderer.enable_pass(PassType::Ui, self.draw_ui);
+
         let mut batch = ctx.renderer.prepare(
             resource_manager,
             &mut |gfx, pass, batch, resource_manager| {
-                if let Some(scene) = &scene
-                    && (self.draw_bounds || !(pass.ty() == PassType::Bounds))
-                    && (self.draw_wire || !(pass.ty() == PassType::Wire))
-                {
+                if let Some(scene) = &scene {
                     scene
                         .draw(gfx, resource_manager, pass.clone(), batch, None)
                         .map_err(|_| RenderError::InvalidData)?;
                 }
-                if let Some(ui) = &ui
-                    && self.draw_ui
-                {
+                if let Some(ui) = &ui {
                     ui.draw(gfx, resource_manager, pass, batch, None)
                         .map_err(|_| RenderError::InvalidData)?;
                 }
