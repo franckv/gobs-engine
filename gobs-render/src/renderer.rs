@@ -20,7 +20,6 @@ pub struct RendererOptions {
 
 pub struct Renderer {
     pub graph: FrameGraph,
-    pub batch: RenderBatch,
     pub gfx: GfxContext,
     pub frames: Vec<FrameData>,
     pub frame_number: usize,
@@ -46,7 +45,6 @@ impl Renderer {
 
         Self {
             graph,
-            batch: RenderBatch::new(&gfx),
             gfx,
             frames,
             frame_number: 0,
@@ -66,7 +64,7 @@ impl Renderer {
     }
 
     #[tracing::instrument(target = "profile", skip_all, level = "trace")]
-    pub fn draw(
+    pub fn prepare(
         &mut self,
         resource_manager: &mut ResourceManager,
         draw_cmd: &mut dyn FnMut(
@@ -75,7 +73,26 @@ impl Renderer {
             &mut RenderBatch,
             &mut ResourceManager,
         ) -> Result<(), RenderError>,
-    ) -> Result<(), RenderError> {
+    ) -> Result<RenderBatch, RenderError> {
+        tracing::debug!(target: logger::RENDER, "Prepare render batch");
+
+        let mut batch = RenderBatch::new(&self.gfx);
+
+        for pass in &self.graph.passes {
+            let span =
+                tracing::span!(target: logger::PROFILE, Level::TRACE, "Pass", "{}", pass.name())
+                    .entered();
+            draw_cmd(&mut self.gfx, pass.clone(), &mut batch, resource_manager)?;
+            span.exit();
+        }
+
+        batch.finish(&mut self.gfx, resource_manager);
+
+        Ok(batch)
+    }
+
+    #[tracing::instrument(target = "profile", skip_all, level = "trace")]
+    pub fn draw(&mut self, batch: &mut RenderBatch) -> Result<(), RenderError> {
         tracing::debug!(target: logger::RENDER, "Begin render batch");
 
         self.frame_number += 1;
@@ -86,51 +103,14 @@ impl Renderer {
 
         frame.reset(self.frame_number);
 
-        {
-            //TODO: let mut buf = [0 as u64; 2];
-            //frame.query_pool.get_query_pool_results(0, &mut buf);
-
-            //self.batch.render_stats.gpu_draw_time =
-            //    ((buf[1] - buf[0]) as f32 * frame.query_pool.period) / 1_000_000_000.;
-        }
-
         self.graph.begin(&mut self.gfx, frame).unwrap();
-
-        self.batch.reset();
-
-        frame.stats.prepare_begin();
-
-        for pass in &self.graph.passes {
-            let span =
-                tracing::span!(target: logger::PROFILE, Level::TRACE, "Pass", "{}", pass.name())
-                    .entered();
-            draw_cmd(
-                &mut self.gfx,
-                pass.clone(),
-                &mut self.batch,
-                resource_manager,
-            )?;
-            frame.stats.prepare_draw(pass.id());
-            frame.stats.objects(
-                self.batch
-                    .render_list
-                    .get(&pass.id())
-                    .map(|list| list.len() as u32)
-                    .unwrap_or_default(),
-            );
-            span.exit();
-        }
-
-        self.batch.finish(&mut self.gfx, resource_manager);
-
-        frame.stats.prepare_end();
 
         self.graph
             .render(
                 &mut self.gfx,
                 frame,
-                &self.batch.render_list,
-                &self.batch.scene_data(),
+                &batch.render_list,
+                &batch.scene_data(),
             )
             .unwrap();
 

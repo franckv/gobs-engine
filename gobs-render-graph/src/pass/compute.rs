@@ -7,7 +7,7 @@ use gobs_render_hal::{
 };
 
 use crate::{
-    FrameData, GfxContext, RenderError, RenderObject, RenderStats, SceneData,
+    FrameData, GfxContext, RenderError, RenderObject, SceneData,
     graph::GraphResourceManager,
     pass::{PassId, PassType, RenderPass},
 };
@@ -68,8 +68,6 @@ impl RenderPass for ComputePass {
     ) -> Result<(), RenderError> {
         tracing::debug!(target: logger::RENDER, "Draw compute");
 
-        let mut stats = RenderStats::default();
-
         let cmd = &frame.command;
 
         cmd.begin_label("Draw compute");
@@ -91,19 +89,13 @@ impl RenderPass for ComputePass {
         );
 
         cmd.bind_pipeline(ctx.hal.as_ref(), self.pipeline);
-        stats.bind_pipeline(self.id);
 
         let bind_resource = BindResource::new(self.binding_layout.clone(), vec![draw_image]);
         cmd.bind_resource(ctx.hal.as_mut(), self.pipeline, &bind_resource);
 
-        stats.bind_attach_resource(self.id);
-
         cmd.dispatch(draw_extent.width / 16 + 1, draw_extent.height / 16 + 1, 1);
-        stats.draw(self.id, 0);
 
         cmd.end_label();
-
-        stats.finish(self.id);
 
         Ok(())
     }

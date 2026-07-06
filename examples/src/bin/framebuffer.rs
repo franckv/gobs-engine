@@ -2,7 +2,7 @@ use glam::{Quat, Vec3};
 
 use gobs::{
     core::{Color, Input, Transform, logger},
-    game::{AppError, Application, GameContext, GameOptions, Run},
+    game::{AppError, Application, GameContext, GameOptions, GobsGame},
     render::{
         MaterialInstanceProperties, MaterialsConfig, Model, RenderError, Shapes, TextureProperties,
     },
@@ -20,7 +20,7 @@ struct App {
     scene: Scene,
 }
 
-impl Run for App {
+impl GobsGame for App {
     async fn create(ctx: &mut GameContext) -> Result<Self, AppError> {
         let camera = SampleApp::ortho_camera(ctx);
         let camera_position = Vec3::new(0., 0., 1.);

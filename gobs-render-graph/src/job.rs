@@ -122,12 +122,7 @@ impl RenderJob {
 
             tracing::trace!(target: logger::RENDER, "Draw object ({})", render_object.index_len);
             frame.command.draw_indexed(render_object.index_len, 1);
-            frame
-                .stats
-                .draw(self.pass_id, render_object.index_len as u32);
         }
-
-        frame.stats.finish(self.pass_id);
 
         Ok(())
     }
@@ -158,7 +153,6 @@ impl RenderJob {
         if state.last_pipeline != Some(pipeline) {
             tracing::trace!(target: logger::RENDER, "Bind pipeline: {:?}", pipeline);
             frame.command.bind_pipeline(ctx.hal.as_ref(), pipeline);
-            frame.stats.bind_pipeline(self.pass_id);
             state.last_pipeline = Some(pipeline);
         } else {
             tracing::trace!(target: logger::RENDER, "Skip bind pipeline {:?}={:?}", state.last_pipeline, pipeline);
@@ -186,7 +180,6 @@ impl RenderJob {
                 frame
                     .command
                     .bind_resource(ctx.hal.as_mut(), pipeline, material_data);
-                frame.stats.bind_material_resource(self.pass_id);
 
                 state.last_material_data = render_object.material_data.clone();
             }
@@ -199,7 +192,6 @@ impl RenderJob {
                 frame
                     .command
                     .bind_resource(ctx.hal.as_mut(), pipeline, material_textures);
-                frame.stats.bind_material_resource(self.pass_id);
 
                 state.last_material_textures = render_object.material_textures.clone();
             }
@@ -225,7 +217,6 @@ impl RenderJob {
             frame
                 .command
                 .bind_resource(ctx.hal.as_mut(), pipeline, &self.uniform_buffer.buffer);
-            frame.stats.bind_scene_resource(self.pass_id);
             state.scene_data_bound = true;
         }
 
@@ -259,7 +250,6 @@ impl RenderJob {
             frame
                 .command
                 .bind_index_buffer(ctx.hal.as_ref(), render_object.index_buffer);
-            frame.stats.bind_index_resource(self.pass_id);
             state.last_index_buffer = Some(render_object.index_buffer);
         }
 

@@ -2,7 +2,7 @@ use renderdoc::{RenderDoc, V141};
 
 use gobs::{
     core::{Input, Key, logger},
-    game::{AppError, Application, GameContext, GameOptions, Run},
+    game::{AppError, Application, GameContext, GameOptions, GobsGame},
     render::{BuiltinGraphs, RenderError},
     ui::UIRenderer,
 };
@@ -15,7 +15,7 @@ struct App {
     demo: MiscDemoWindow,
 }
 
-impl Run for App {
+impl GobsGame for App {
     async fn create(ctx: &mut GameContext) -> Result<Self, AppError> {
         let ui = UIRenderer::new(&ctx.renderer.gfx, &mut ctx.resource_manager)?;
         let mut common = SampleApp::new();

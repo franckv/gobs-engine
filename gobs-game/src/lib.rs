@@ -7,7 +7,7 @@ use thiserror::Error;
 use gobs_egui::UIError;
 use gobs_render::RenderError;
 
-pub use app::{Application, Run};
+pub use app::{Application, GobsGame};
 pub use context::{AppInfo, GameContext};
 pub use options::GameOptions;
 

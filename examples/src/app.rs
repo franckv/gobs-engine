@@ -96,7 +96,7 @@ impl SampleApp {
 
         let resource_manager = &mut ctx.resource_manager;
 
-        ctx.renderer.draw(
+        let mut batch = ctx.renderer.prepare(
             resource_manager,
             &mut |gfx, pass, batch, resource_manager| {
                 if let Some(scene) = &scene
@@ -117,6 +117,8 @@ impl SampleApp {
                 Ok(())
             },
         )?;
+
+        ctx.renderer.draw(&mut batch)?;
 
         tracing::trace!(target: logger::APP, "End render");
 

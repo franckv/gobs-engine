@@ -3,7 +3,7 @@ use glam::{Quat, Vec3};
 use gobs::{
     assets::gltf_load,
     core::{Color, Input, logger},
-    game::{AppError, Application, GameContext, GameOptions, Run},
+    game::{AppError, Application, GameContext, GameOptions, GobsGame},
     render::RenderError,
     resource::{
         load,
@@ -22,7 +22,7 @@ struct App {
     scene: Scene,
 }
 
-impl Run for App {
+impl GobsGame for App {
     async fn create(ctx: &mut GameContext) -> Result<Self, AppError> {
         let extent = ctx.renderer.extent();
 

@@ -4,7 +4,7 @@ use gobs_core::{ImageExtent2D, logger};
 use gobs_render_hal::ImageLayout;
 
 use crate::{
-    FrameData, GfxContext, RenderError, RenderObject, RenderStats, SceneData,
+    FrameData, GfxContext, RenderError, RenderObject, SceneData,
     graph::GraphResourceManager,
     pass::{PassId, PassType, RenderPass},
 };
@@ -49,8 +49,6 @@ impl RenderPass for PresentPass {
     ) -> Result<(), RenderError> {
         tracing::debug!(target: logger::RENDER, "Present");
 
-        let mut stats = RenderStats::default();
-
         let cmd = &frame.command;
 
         let render_target = ctx.hal.get_render_target();
@@ -71,8 +69,6 @@ impl RenderPass for PresentPass {
             render_target,
             render_extent,
         );
-
-        stats.finish(self.id);
 
         Ok(())
     }

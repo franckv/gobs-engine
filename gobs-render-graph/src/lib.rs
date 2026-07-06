@@ -7,7 +7,6 @@ mod job;
 mod pass;
 mod render_object;
 mod resources;
-mod stats;
 
 use std::sync::Arc;
 
@@ -30,6 +29,5 @@ pub use resources::{
     PipelinesConfig, Shapes, Texture, TextureData, TextureLoader, TexturePath, TextureProperties,
     TextureType, TextureUpdate,
 };
-pub use stats::RenderStats;
 
 pub type RenderPass = Arc<dyn pass::RenderPass>;

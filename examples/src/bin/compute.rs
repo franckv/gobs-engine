@@ -1,6 +1,6 @@
 use gobs::{
     core::{Input, logger},
-    game::{AppError, Application, GameContext, GameOptions, Run},
+    game::{AppError, Application, GameContext, GameOptions, GobsGame},
     render::RenderError,
 };
 
@@ -10,7 +10,7 @@ struct App {
     common: SampleApp,
 }
 
-impl Run for App {
+impl GobsGame for App {
     async fn create(_ctx: &mut GameContext) -> Result<Self, AppError> {
         let common = SampleApp::new();
 

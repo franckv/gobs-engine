@@ -15,7 +15,7 @@ use crate::{AppError, context::GameContext, options::GameOptions};
 
 pub struct Application<R>
 where
-    R: Run + 'static,
+    R: GobsGame + 'static,
 {
     pub runnable: Option<R>,
     pub context: Option<GameContext>,
@@ -30,7 +30,7 @@ where
 
 impl<R> ApplicationHandler for Application<R>
 where
-    R: Run + 'static,
+    R: GobsGame + 'static,
 {
     #[tracing::instrument(target = "profile", skip_all, level = "trace")]
     fn resumed(&mut self, event_loop: &winit::event_loop::ActiveEventLoop) {
@@ -199,7 +199,7 @@ where
 
 impl<R> Application<R>
 where
-    R: Run + 'static,
+    R: GobsGame + 'static,
 {
     pub fn new(title: &str, options: GameOptions, width: u32, height: u32) -> Application<R> {
         Application {
@@ -235,7 +235,7 @@ where
 
 impl<R> Default for Application<R>
 where
-    R: Run + 'static,
+    R: GobsGame + 'static,
 {
     fn default() -> Self {
         Self::new("Default", GameOptions::default(), 800, 600)
@@ -243,8 +243,8 @@ where
 }
 
 #[allow(async_fn_in_trait)]
-pub trait Run: Sized {
-    async fn create(context: &mut GameContext) -> Result<Self, AppError>;
+pub trait GobsGame: Sized {
+    async fn create(ctx: &mut GameContext) -> Result<Self, AppError>;
     async fn start(&mut self, ctx: &mut GameContext);
     fn update(&mut self, ctx: &mut GameContext, delta: f32);
     fn should_update(&mut self, _ctx: &mut GameContext) -> bool {

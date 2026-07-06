@@ -3,7 +3,7 @@ use pollster::FutureExt;
 
 use gobs::{
     core::{Color, Input, Transform, logger},
-    game::{AppError, GameContext, GameOptions, Run},
+    game::{AppError, GameContext, GameOptions, GobsGame},
     render::{
         BuiltinGraphs, MaterialInstanceProperties, MaterialsConfig, Model, RenderError, Shapes,
     },
@@ -18,7 +18,7 @@ struct App {
     scene: Scene,
 }
 
-impl Run for App {
+impl GobsGame for App {
     async fn create(ctx: &mut GameContext) -> Result<Self, AppError> {
         let camera = SampleApp::ortho_camera(ctx);
         let camera_position = Vec3::new(0., 0., 1.);

@@ -5,10 +5,7 @@ use glam::Vec3;
 use gobs::{
     core::Transform,
     game::context::GameContext,
-    render::{
-        FrameData, FrameGraph, GfxContext, Material, MaterialInstance, Mesh, Pipeline, RenderBatch,
-        Texture, TextureLoader,
-    },
+    render::{GfxContext, Material, MaterialInstance, Mesh, Pipeline, Texture, TextureLoader},
     resource::{
         ResourceManager, {ResourceHandle, ResourceProperties, ResourceType},
     },
@@ -72,15 +69,9 @@ impl Ui {
 
             self.show_resources(ectx, ui, &ctx.resource_manager);
 
-            self.show_batch(ectx, ui, &ctx.renderer.batch);
-
             self.draw_general(ui, scene, ctx, delta);
 
             self.show_texture(&mut ctx.renderer.gfx, ectx, &mut ctx.resource_manager);
-
-            ui.separator();
-
-            self.draw_frame(ui, &ctx.renderer.graph, ctx.renderer.frame());
 
             ui.separator();
 
@@ -166,58 +157,6 @@ impl Ui {
             });
 
         self.show_resources = show_resources;
-    }
-
-    #[tracing::instrument(target = "profile", skip_all, level = "trace")]
-    fn show_batch(&mut self, ectx: &egui::Context, ui: &mut egui::Ui, batch: &RenderBatch) {
-        if ui.button("Show batch").clicked() {
-            self.show_batch = true;
-        }
-
-        let mut show_batch = self.show_batch;
-
-        egui::Window::new("Batch")
-            .open(&mut show_batch)
-            .show(ectx, |ui| {
-                ui.label(format!("Count: {}", batch.render_list.len()));
-
-                TableBuilder::new(ui)
-                    .striped(true)
-                    .resizable(true)
-                    .auto_shrink(false)
-                    .columns(Column::auto(), 5)
-                    .column(Column::remainder())
-                    .header(10., |mut headers| {
-                        headers.col(|ui| {
-                            ui.heading("transparent");
-                        });
-                        headers.col(|ui| {
-                            ui.heading("pass id");
-                        });
-                        headers.col(|ui| {
-                            ui.heading("layer");
-                        });
-                    })
-                    .body(|mut body| {
-                        for render_list in batch.render_list.values() {
-                            for object in render_list {
-                                body.row(10., |mut row| {
-                                    row.col(|ui| {
-                                        ui.label(format!("{:?}", object.is_transparent()));
-                                    });
-                                    row.col(|ui| {
-                                        ui.label(format!("{:?}", object.pass_id));
-                                    });
-                                    row.col(|ui| {
-                                        ui.label(format!("{:?}", object.layer));
-                                    });
-                                });
-                            }
-                        }
-                    });
-            });
-
-        self.show_batch = show_batch;
     }
 
     fn show_resource<R: ResourceType + 'static>(
@@ -661,101 +600,6 @@ impl Ui {
 
             true
         });
-    }
-
-    #[tracing::instrument(target = "profile", skip_all, level = "trace")]
-    fn draw_frame(&self, ui: &mut egui::Ui, graph: &FrameGraph, frame: &FrameData) {
-        egui::CollapsingHeader::new("Stats")
-            .default_open(false)
-            .show(ui, |ui| {
-                egui::CollapsingHeader::new("Global")
-                    .default_open(true)
-                    .show(ui, |ui| {
-                        ui.label(format!(
-                            "Prepare time: {:.2} ms",
-                            1000. * frame.stats.cpu_prepare_begin_time
-                        ));
-                        ui.label(format!(
-                            "Prepare time: {:.2} ms",
-                            1000. * frame.stats.cpu_prepare_end_time
-                        ));
-                        ui.label(format!("Objects: {}", frame.stats.objects));
-
-                        let mut pipeline_binds = 0;
-                        let mut material_resource_binds = 0;
-                        let mut scene_resource_binds = 0;
-                        let mut index_resource_binds = 0;
-                        let mut attach_resource_binds = 0;
-                        let mut draws = 0;
-                        let mut cpu_draw_time = 0.;
-                        let mut cpu_prepare_draw_time = 0.;
-                        for pass in &graph.passes {
-                            if let Some(stats) = frame.stats.pass(pass.id()) {
-                                pipeline_binds += stats.pipeline_binds;
-                                material_resource_binds += stats.material_resource_binds;
-                                scene_resource_binds += stats.scene_resource_binds;
-                                index_resource_binds += stats.index_resource_binds;
-                                attach_resource_binds += stats.attach_resource_binds;
-                                draws += stats.draws;
-                                cpu_draw_time += stats.cpu_draw_time;
-                                cpu_prepare_draw_time += stats.cpu_prepare_draw_time;
-                            }
-                        }
-                        ui.label(format!("Pipeline binds: {}", pipeline_binds));
-                        ui.label(format!(
-                            "Resource binds (material): {}",
-                            material_resource_binds
-                        ));
-                        ui.label(format!("Resource binds (scene): {}", scene_resource_binds));
-                        ui.label(format!("Resource binds (index): {}", index_resource_binds));
-                        ui.label(format!(
-                            "Resource binds (attach): {}",
-                            attach_resource_binds
-                        ));
-                        ui.label(format!("Draws: {}", draws));
-                        ui.label(format!(
-                            "Prepare time: {:.2} ms",
-                            1000. * cpu_prepare_draw_time
-                        ));
-                        ui.label(format!("CPU time: {:.2} ms", 1000. * cpu_draw_time));
-                    });
-
-                for pass in &graph.passes {
-                    if let Some(stats) = frame.stats.pass(pass.id()) {
-                        egui::CollapsingHeader::new(format!("Pass: {}", pass.name()))
-                            .default_open(true)
-                            .show(ui, |ui| {
-                                ui.label(format!("Pipeline binds: {}", stats.pipeline_binds));
-                                ui.label(format!(
-                                    "Resource binds (material): {}",
-                                    stats.material_resource_binds
-                                ));
-                                ui.label(format!(
-                                    "Resource binds (scene): {}",
-                                    stats.scene_resource_binds
-                                ));
-                                ui.label(format!(
-                                    "Resource binds (index): {}",
-                                    stats.index_resource_binds
-                                ));
-                                ui.label(format!(
-                                    "Resource binds (attach): {}",
-                                    stats.attach_resource_binds
-                                ));
-                                ui.label(format!("Draws: {}", stats.draws));
-                                ui.label(format!("Indices: {}", stats.indices));
-                                ui.label(format!(
-                                    "Prepare time: {:.2} ms",
-                                    1000. * stats.cpu_prepare_draw_time
-                                ));
-                                ui.label(format!(
-                                    "CPU time: {:.2} ms",
-                                    1000. * stats.cpu_draw_time
-                                ));
-                            });
-                    }
-                }
-            });
     }
 }
 
