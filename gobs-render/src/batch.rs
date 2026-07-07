@@ -5,13 +5,12 @@ use std::{
 
 use gobs_core::{ImageExtent2D, Transform, logger};
 use gobs_render_graph::{
-    BoundingBox, GfxContext, MeshBuilder, MeshGeometry, PassId, RenderObject, RenderPass,
-    SceneData, Shapes,
+    BoundingBox, GfxContext, MaterialInstance, MeshBuilder, MeshGeometry, PassId, RenderObject,
+    RenderPass, SceneData, Shapes,
 };
-use gobs_render_hal::BindResource;
+use gobs_render_hal::{BindResource, Handle};
 use gobs_resource::{
-    ResourceManager, {ResourceError, ResourceLifetime},
-    {camera::Camera, light::Light},
+    ResourceError, ResourceHandle, ResourceLifetime, ResourceManager, camera::Camera, light::Light,
 };
 
 use crate::model::Model;
@@ -60,34 +59,12 @@ impl RenderBatch {
 
         // TODO: add material data for forward pass only
         for (mesh, material_instance_handle) in &model.meshes {
-            let material_handle = match material_instance_handle {
-                Some(material_instance_handle) => {
-                    let material_instance = resource_manager.get(material_instance_handle);
-                    let material = material_instance.properties.material;
+            let (pipeline, is_transparent) =
+                Self::get_pipeline(ctx, resource_manager, material_instance_handle)?;
 
-                    Some(material)
-                }
-                None => None,
-            };
-
-            let (pipeline, is_transparent) = if let Some(material_handle) = material_handle {
-                let material = resource_manager.get(&material_handle);
-                let blending_enabled = material.properties.blending_enabled;
-
-                let pipeline_handle = resource_manager
-                    .get_data(&mut ctx.hal, &material_handle)?
-                    .data
-                    .pipeline;
-
-                let pipeline_data = resource_manager
-                    .get_data(&mut ctx.hal, &pipeline_handle)?
-                    .data;
-
-                (Some(pipeline_data.pipeline), blending_enabled)
-            } else {
+            if pipeline.is_none() {
                 tracing::debug!("No material for model {}", model.name());
-                (None, false)
-            };
+            }
 
             let (vertex_buffer, index_buffer, index_len, layer) = {
                 let mesh_data = resource_manager.get_data(&mut ctx.hal, mesh)?;
@@ -101,53 +78,7 @@ impl RenderBatch {
             };
 
             let (material_data, material_textures) =
-                if let Some(material_instance_handle) = material_instance_handle {
-                    let (material_buffer, material, textures) = {
-                        let resource_data =
-                            resource_manager.get_data(&mut ctx.hal, material_instance_handle)?;
-
-                        (
-                            resource_data.data.material_buffer,
-                            resource_data.properties.material,
-                            resource_data.properties.textures.clone(),
-                        )
-                    };
-
-                    let material_properties = &resource_manager.get(&material).properties;
-
-                    let material_data_layout =
-                        material_properties.material_data_layout.bindings_layout();
-
-                    let texture_data_layout =
-                        &material_properties.texture_data_layout.bindings_layout();
-
-                    let material_data = material_buffer.map(|material_buffer| {
-                        BindResource::new(material_data_layout.clone(), vec![material_buffer])
-                    });
-
-                    let material_textures = {
-                        if textures.is_empty() {
-                            None
-                        } else {
-                            let mut texture_handles = vec![];
-
-                            for texture in textures {
-                                let tex_data = resource_manager.get_data(&mut ctx.hal, &texture)?;
-                                texture_handles.push(tex_data.data.image);
-                                texture_handles.push(tex_data.data.sampler);
-                            }
-
-                            Some(BindResource::new(
-                                texture_data_layout.clone(),
-                                texture_handles,
-                            ))
-                        }
-                    };
-
-                    (material_data, material_textures)
-                } else {
-                    (None, None)
-                };
+                Self::get_material_data(ctx, resource_manager, material_instance_handle)?;
 
             let render_object = RenderObject {
                 transform,
@@ -171,6 +102,92 @@ impl RenderBatch {
         }
 
         Ok(())
+    }
+
+    fn get_material_data(
+        ctx: &mut GfxContext,
+        resource_manager: &mut ResourceManager,
+        material_instance_handle: &Option<ResourceHandle<MaterialInstance>>,
+    ) -> Result<(Option<BindResource>, Option<BindResource>), ResourceError> {
+        if let Some(material_instance_handle) = material_instance_handle {
+            let (material_buffer, material, textures) = {
+                let resource_data =
+                    resource_manager.get_data(&mut ctx.hal, material_instance_handle)?;
+
+                (
+                    resource_data.data.material_buffer,
+                    resource_data.properties.material,
+                    resource_data.properties.textures.clone(),
+                )
+            };
+
+            let material_properties = &resource_manager.get(&material).properties;
+
+            let material_data_layout = material_properties.material_data_layout.bindings_layout();
+
+            let texture_data_layout = &material_properties.texture_data_layout.bindings_layout();
+
+            let material_data = material_buffer.map(|material_buffer| {
+                BindResource::new(material_data_layout.clone(), vec![material_buffer])
+            });
+
+            let material_textures = {
+                if textures.is_empty() {
+                    None
+                } else {
+                    let mut texture_handles = vec![];
+
+                    for texture in textures {
+                        let tex_data = resource_manager.get_data(&mut ctx.hal, &texture)?;
+                        texture_handles.push(tex_data.data.image);
+                        texture_handles.push(tex_data.data.sampler);
+                    }
+
+                    Some(BindResource::new(
+                        texture_data_layout.clone(),
+                        texture_handles,
+                    ))
+                }
+            };
+
+            Ok((material_data, material_textures))
+        } else {
+            Ok((None, None))
+        }
+    }
+
+    fn get_pipeline(
+        ctx: &mut GfxContext,
+        resource_manager: &mut ResourceManager,
+        material_instance_handle: &Option<ResourceHandle<MaterialInstance>>,
+    ) -> Result<(Option<Handle>, bool), ResourceError> {
+        let material_handle = match material_instance_handle {
+            Some(material_instance_handle) => {
+                let material_instance = resource_manager.get(material_instance_handle);
+                let material = material_instance.properties.material;
+
+                Some(material)
+            }
+            None => None,
+        };
+
+        if let Some(material_handle) = material_handle {
+            let material = resource_manager.get(&material_handle);
+            let blending_enabled = material.properties.blending_enabled;
+
+            let pipeline_handle = resource_manager
+                .get_data(&mut ctx.hal, &material_handle)?
+                .data
+                .pipeline;
+
+            let pipeline_data = resource_manager
+                .get_data(&mut ctx.hal, &pipeline_handle)?
+                .data;
+
+            Ok((Some(pipeline_data.pipeline), blending_enabled))
+        } else {
+            Ok((None, false))
+        }
     }
 
     #[tracing::instrument(target = "profile", skip_all, level = "trace")]
