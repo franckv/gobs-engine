@@ -8,6 +8,14 @@ ConstantBuffer<SceneData> scene_data;
 struct Vertex {
     float3 position;
     float pad;
+    float4 color;
+    float2 uv;
+    float2 pad2;
+    float3 normal;
+    float pad3;
+    float3 tangent;
+    float pad4;
+    float3 bitangent;
 }
 
 struct PushConstants {

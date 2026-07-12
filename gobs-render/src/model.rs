@@ -8,7 +8,7 @@ use uuid::Uuid;
 use gobs_core::{Transform, logger};
 use gobs_render_graph::{
     Bounded, BoundingBox, GfxContext, MaterialInstance, Mesh, MeshGeometry, MeshProperties,
-    RenderPass,
+    RenderFlags,
 };
 use gobs_resource::{
     ResourceManager, {ResourceError, ResourceHandle, ResourceLifetime},
@@ -50,12 +50,12 @@ impl Renderable for Arc<Model> {
         &self,
         ctx: &mut GfxContext,
         resource_manager: &mut ResourceManager,
-        pass: RenderPass,
         batch: &mut RenderBatch,
         transform: Option<Transform>,
+        render_flags: RenderFlags,
     ) -> Result<(), ResourceError> {
         if let Some(transform) = transform {
-            batch.add_model(ctx, resource_manager, self.clone(), transform, pass.clone())?;
+            batch.add_model(ctx, resource_manager, self.clone(), transform, render_flags)?;
         } else {
             tracing::warn!("No transform");
         }

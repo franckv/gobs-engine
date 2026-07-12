@@ -35,6 +35,7 @@ impl MeshLoader {
 
         // TODO: hot path
         let alignment = vertex_attributes.alignment();
+
         for vertice in &geometry.vertices {
             vertice.copy_data(vertex_attributes, alignment, &mut vertices);
         }

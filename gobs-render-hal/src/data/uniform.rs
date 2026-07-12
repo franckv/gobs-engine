@@ -1,6 +1,4 @@
-use gobs_render_hal::{BindResource, BindingGroupLayout, BufferType, RenderHAL};
-
-use crate::GfxContext;
+use crate::{BindResource, BindingGroupLayout, BufferType, RenderHAL};
 
 pub struct UniformBuffer {
     pub buffer: BindResource,
@@ -24,14 +22,16 @@ impl UniformBuffer {
     }
 }
 
-pub trait UniformData<DataProp, Data> {
+pub trait UniformData<DataProp> {
     fn prop(self, prop: DataProp) -> Self
     where
         Self: Sized;
 
     fn uniform_layout(&self) -> &UniformLayout;
 
-    fn copy_data(&self, ctx: Option<&GfxContext>, data: &Data, buffer: &mut Vec<u8>);
+    fn copy_data<F>(&self, buffer: &mut Vec<u8>, get_data: F)
+    where
+        F: Fn(&DataProp) -> UniformPropData;
 
     fn is_empty(&self) -> bool;
 }

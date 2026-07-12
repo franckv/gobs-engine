@@ -3,7 +3,7 @@ use renderdoc::{RenderDoc, V141};
 use gobs::{
     core::{Input, Key, logger},
     game::{AppError, Application, GameContext, GameOptions, GobsGame},
-    render::{BuiltinGraphs, RenderError},
+    render::{RenderError, RenderMode},
     ui::UIRenderer,
 };
 
@@ -699,7 +699,7 @@ fn main() {
     tracing::info!(target: logger::APP, "Engine start");
 
     let mut options = GameOptions::default();
-    options.renderer.graph = BuiltinGraphs::Ui;
+    options.renderer.mode = RenderMode::Ui;
 
     Application::<App>::new("Egui", options, examples::WIDTH, examples::HEIGHT).run();
 }

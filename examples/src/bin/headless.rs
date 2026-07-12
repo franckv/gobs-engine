@@ -4,9 +4,7 @@ use pollster::FutureExt;
 use gobs::{
     core::{Color, Input, Transform, logger},
     game::{AppError, GameContext, GameOptions, GobsGame},
-    render::{
-        BuiltinGraphs, MaterialInstanceProperties, MaterialsConfig, Model, RenderError, Shapes,
-    },
+    render::{MaterialInstanceProperties, MaterialsConfig, Model, RenderError, RenderMode, Shapes},
     resource::{ResourceLifetime, light::Light},
     scene::{components::NodeValue, scene::Scene},
 };
@@ -112,7 +110,7 @@ fn main() {
     tracing::info!(target: logger::APP, "Engine start");
 
     let mut options = GameOptions::default();
-    options.renderer.graph = BuiltinGraphs::Headless;
+    options.renderer.mode = RenderMode::Headless;
 
     let mut ctx = GameContext::new("Triangle", &options, None, true).unwrap();
 

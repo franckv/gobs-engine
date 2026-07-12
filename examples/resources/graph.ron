@@ -1,5 +1,9 @@
 GraphConfig(
     graphes: {
+        "debug": [
+            "depth",
+            "forward",
+        ],
         "scene": [
             "depth",
             "forward",
@@ -31,15 +35,10 @@ GraphConfig(
                     clear: false,
                 )
             },
-            render_transparent: true,
-            render_opaque: true,
-            object_layout: [
-                WorldMatrix,
-                VertexBufferAddress,
-            ],
             scene_layout: [
                 CameraViewProj,
             ],
+            flags: "BOUNDS"
         ),
         "select": (
             ty: Material,
@@ -51,16 +50,10 @@ GraphConfig(
                     clear: false,
                 )
             },
-            render_transparent: true,
-            render_opaque: true,
-            object_layout: [
-                WorldMatrix,
-                VertexBufferAddress,
-            ],
             scene_layout: [
                 CameraViewProj,
             ],
-
+            flags: "SELECTED"
         ),
         "wire": (
             ty: Material,
@@ -72,15 +65,10 @@ GraphConfig(
                     clear: false,
                 )
             },
-            render_transparent: true,
-            render_opaque: true,
-            object_layout: [
-                WorldMatrix,
-                VertexBufferAddress,
-            ],
             scene_layout: [
                 CameraViewProj,
             ],
+            flags: "WIRE"
         ),
         "depth": (
             ty: Material,
@@ -92,15 +80,10 @@ GraphConfig(
                     clear: true,
                 )
             },
-            render_transparent: false,
-            render_opaque: true,
-            object_layout: [
-                WorldMatrix,
-                VertexBufferAddress,
-            ],
             scene_layout: [
                 CameraViewProj,
             ],
+            flags: "ENTITY"
         ),
         "forward": (
             ty: Material,
@@ -115,13 +98,6 @@ GraphConfig(
                     clear: false,
                 )
             },
-            render_transparent: true,
-            render_opaque: true,
-            object_layout: [
-                WorldMatrix,
-                NormalMatrix,
-                VertexBufferAddress,
-            ],
             scene_layout: [
                 CameraPosition,
                 CameraViewProj,
@@ -129,6 +105,8 @@ GraphConfig(
                 LightColor,
                 LightAmbientColor,
             ],
+            flags: "ENTITY"
+ 
         ),
         "ui": (
             ty: Material,
@@ -139,14 +117,13 @@ GraphConfig(
                     clear: false,
                 )
             },
-            render_transparent: true,
-            render_opaque: true,
             object_layout: [
                 VertexBufferAddress,
             ],
             scene_layout: [
                 CameraViewPort,
             ],
+            flags: "UI"
         ),
         "present": (
             ty: Present,

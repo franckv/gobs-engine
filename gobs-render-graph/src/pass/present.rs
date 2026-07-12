@@ -1,10 +1,10 @@
 use std::sync::Arc;
 
 use gobs_core::{ImageExtent2D, logger};
-use gobs_render_hal::ImageLayout;
+use gobs_render_hal::{ImageLayout, SceneData};
 
 use crate::{
-    FrameData, GfxContext, RenderError, RenderObject, SceneData,
+    FrameData, GfxContext, RenderError, RenderObject,
     graph::GraphResourceManager,
     pass::{PassId, PassType, RenderPass},
 };

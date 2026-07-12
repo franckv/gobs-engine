@@ -2,16 +2,16 @@ use std::collections::HashMap;
 
 use serde::Deserialize;
 
-use gobs_render_hal::{BlendMode, CullMode, VertexAttribute};
+use gobs_render_hal::{
+    BlendMode, CullMode, MaterialDataProp, ObjectDataLayout, ObjectDataProp, TextureDataProp,
+    UniformData as _, VertexAttribute,
+};
 use gobs_resource::{
     ResourceLifetime, ResourceManager,
     load::{self, AssetType},
 };
 
-use crate::{
-    GfxContext, Material, MaterialDataProp, MaterialProperties, ObjectDataLayout, ObjectDataProp,
-    TextureDataProp, UniformData,
-};
+use crate::{GfxContext, Material, MaterialProperties};
 
 #[derive(Debug, Deserialize)]
 pub struct MaterialsConfig {
@@ -96,7 +96,7 @@ impl MaterialsConfig {
                 &material.fragment_shader,
                 &material.fragment_entry,
                 vertex_attributes,
-                &object_layout,
+                object_layout.clone(),
             )
             .cull_mode(material.cull_mode)
             .blend_mode(material.blend_mode);

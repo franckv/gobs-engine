@@ -3,7 +3,7 @@ use std::fmt::Debug;
 use gobs_core::ImageFormat;
 use gobs_render_hal::{
     BindingGroupType, BlendMode, CompareOp, CullMode, DescriptorStage, DescriptorType, FrontFace,
-    Handle, PolygonMode, RenderHAL, VertexAttribute,
+    Handle, ObjectDataLayout, PolygonMode, RenderHAL, VertexAttribute,
 };
 use gobs_resource::{ResourceProperties, ResourceType};
 
@@ -59,7 +59,7 @@ pub struct GraphicsPipelineProperties {
     pub(crate) binding_groups: Vec<(DescriptorStage, BindingGroupType, Vec<DescriptorType>)>,
     pub last_binding_group: BindingGroupType,
     pub ds_pool_size: usize,
-    pub(crate) push_constants: usize,
+    pub object_data_layout: ObjectDataLayout,
     pub vertex_attributes: VertexAttribute,
     pub(crate) color_format: Option<ImageFormat>,
     pub(crate) depth_format: Option<ImageFormat>,
@@ -83,7 +83,7 @@ impl GraphicsPipelineProperties {
             binding_groups: Vec::new(),
             last_binding_group: BindingGroupType::None,
             ds_pool_size: 10,
-            push_constants: 0,
+            object_data_layout: ObjectDataLayout::default(),
             vertex_attributes: VertexAttribute::empty(),
             color_format: None,
             depth_format: None,
@@ -192,8 +192,8 @@ impl GraphicsPipelineProperties {
         self
     }
 
-    pub fn push_constants(mut self, size: usize) -> Self {
-        self.push_constants = size;
+    pub fn object_data_layout(mut self, layout: ObjectDataLayout) -> Self {
+        self.object_data_layout = layout;
 
         self
     }

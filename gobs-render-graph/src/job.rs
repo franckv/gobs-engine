@@ -1,15 +1,12 @@
-use thiserror::Error;
-use uuid::Uuid;
-
+use glam::Mat3;
 use gobs_core::logger;
 use gobs_render_hal::{
     BindResource, BindingGroupLayout, BindingGroupType, DescriptorStage, DescriptorType, Handle,
+    ObjectDataProp, UniformBuffer, UniformData as _, UniformLayout, UniformPropData,
 };
+use thiserror::Error;
 
-use crate::{
-    FrameData, GfxContext, ObjectDataLayout, RenderObject, UniformBuffer, UniformData,
-    UniformLayout,
-};
+use crate::{FrameData, GfxContext, RenderFlags, RenderObject};
 
 #[derive(Debug, Error)]
 pub enum RenderJobError {
@@ -40,22 +37,18 @@ impl RenderJobState {
 }
 
 pub struct RenderJob {
-    pass_id: Uuid,
+    pass_name: String,
     fixed_pipeline: Option<Handle>,
     uniform_buffer: UniformBuffer,
-    object_layout: ObjectDataLayout,
-    render_transparent: bool,
-    render_opaque: bool,
+    render_flags: RenderFlags,
 }
 
 impl RenderJob {
     pub fn new(
         ctx: &mut GfxContext,
-        pass_id: Uuid,
-        object_layout: ObjectDataLayout,
+        pass_name: String,
         scene_data_layout: &UniformLayout,
-        render_transparent: bool,
-        render_opaque: bool,
+        render_flags: RenderFlags,
     ) -> Self {
         let uniform_bindgroup = BindingGroupLayout::new(BindingGroupType::SceneData)
             .add_binding(DescriptorType::Uniform, DescriptorStage::All);
@@ -63,17 +56,15 @@ impl RenderJob {
             UniformBuffer::new(ctx.hal.as_mut(), uniform_bindgroup, scene_data_layout);
 
         Self {
-            pass_id,
+            pass_name,
             fixed_pipeline: None,
             uniform_buffer,
-            object_layout,
-            render_transparent,
-            render_opaque,
+            render_flags,
         }
     }
 
     pub fn set_pipeline(&mut self, pipeline: Handle) {
-        self.fixed_pipeline = Some(pipeline)
+        self.fixed_pipeline = Some(pipeline);
     }
 
     #[tracing::instrument(target = "profile", skip_all, level = "trace")]
@@ -82,14 +73,11 @@ impl RenderJob {
     }
 
     pub fn should_render(&self, render_object: &RenderObject) -> bool {
-        tracing::trace!(target: logger::RENDER, "Object render pass {}", render_object.pass_id);
-        if render_object.pass_id != self.pass_id
-            || (render_object.is_transparent() && !self.render_transparent)
-            || (!render_object.is_transparent() && !self.render_opaque)
-        {
-            tracing::trace!(target: logger::RENDER, "Skip object");
+        if !render_object.render_flags.intersects(self.render_flags) {
+            tracing::info!(target: logger::RENDER, "[{}] Skip object {}, object flags: {:?}, pass flags: {:?}", &self.pass_name, &render_object.model, render_object.render_flags, self.render_flags);
             false
         } else {
+            tracing::info!(target: logger::RENDER, "[{}] Draw object {}, object flags: {:?}, pass flags: {:?}", &self.pass_name, &render_object.model, render_object.render_flags, self.render_flags);
             true
         }
     }
@@ -108,6 +96,8 @@ impl RenderJob {
                 tracing::trace!(target: logger::RENDER, "Skip object");
                 continue;
             }
+
+            tracing::debug!(target: logger::RENDER, "Render model:  {}", &render_object.model);
 
             self.bind_pipeline(ctx, frame, render_object, &mut state)?;
 
@@ -154,6 +144,7 @@ impl RenderJob {
             tracing::trace!(target: logger::RENDER, "Bind pipeline: {:?}", pipeline);
             frame.command.bind_pipeline(ctx.hal.as_ref(), pipeline);
             state.last_pipeline = Some(pipeline);
+            state.scene_data_bound = false;
         } else {
             tracing::trace!(target: logger::RENDER, "Skip bind pipeline {:?}={:?}", state.last_pipeline, pipeline);
         }
@@ -236,12 +227,24 @@ impl RenderJob {
         state.object_data.clear();
 
         let pipeline = self.get_pipeline(render_object)?;
+        let object_layout = ctx.hal.get_pipeline_object_layout(pipeline);
 
-        tracing::trace!(target: logger::RENDER, "Copy object data: {}", self.object_layout.uniform_layout().size());
+        tracing::trace!(target: logger::RENDER, "Copy object data: {} (layout: {:?})", object_layout.uniform_layout().size(), object_layout);
 
-        self.object_layout
-            .copy_data(Some(ctx), render_object, &mut state.object_data);
+        object_layout.copy_data(&mut state.object_data, |prop| match prop {
+            ObjectDataProp::WorldMatrix => {
+                UniformPropData::Mat4F(render_object.transform.matrix().to_cols_array_2d())
+            }
+            ObjectDataProp::NormalMatrix => UniformPropData::Mat3F(
+                Mat3::from_quat(render_object.transform.rotation()).to_cols_array_2d(),
+            ),
+            ObjectDataProp::VertexBufferAddress => {
+                let vertex_buffer_address = ctx.hal.get_buffer_address(render_object.vertex_buffer);
+                UniformPropData::U64(vertex_buffer_address)
+            }
+        });
 
+        // TODO: check pipeline object layout compatibility
         frame
             .command
             .push_constants(ctx.hal.as_ref(), pipeline, &state.object_data);

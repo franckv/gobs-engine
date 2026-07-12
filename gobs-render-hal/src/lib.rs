@@ -2,6 +2,7 @@
 mod backend;
 mod bindings;
 mod command;
+mod data;
 mod hal;
 mod pipeline;
 mod vertex;
@@ -16,5 +17,10 @@ pub use gobs_vulkan::{
 
 pub use bindings::{BindResource, BindingGroupLayout, BindingGroupType};
 pub use command::{CommandBuffer, CommandQueueType};
+pub use data::{
+    MaterialConstantData, MaterialDataLayout, MaterialDataProp, MaterialDataPropData,
+    ObjectDataLayout, ObjectDataProp, SceneData, SceneDataLayout, SceneDataProp, TextureDataLayout,
+    TextureDataProp, UniformBuffer, UniformData, UniformLayout, UniformPropData,
+};
 pub use hal::{BufferType, Handle, RenderHAL, create_hal};
 pub use vertex::{VertexAttribute, VertexData};

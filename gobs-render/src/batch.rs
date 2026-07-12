@@ -1,14 +1,11 @@
-use std::{
-    collections::{HashMap, hash_map::Entry},
-    sync::Arc,
-};
+use std::sync::Arc;
 
 use gobs_core::{ImageExtent2D, Transform, logger};
 use gobs_render_graph::{
-    BoundingBox, GfxContext, MaterialInstance, MeshBuilder, MeshGeometry, PassId, RenderObject,
-    RenderPass, SceneData, Shapes,
+    BoundingBox, GfxContext, MaterialInstance, MeshBuilder, MeshGeometry, PipelineProperties,
+    RenderFlags, RenderObject, RenderPass, Shapes,
 };
-use gobs_render_hal::{BindResource, Handle};
+use gobs_render_hal::{BindResource, Handle, SceneData};
 use gobs_resource::{
     ResourceError, ResourceHandle, ResourceLifetime, ResourceManager, camera::Camera, light::Light,
 };
@@ -16,7 +13,7 @@ use gobs_resource::{
 use crate::model::Model;
 
 pub struct RenderBatch {
-    pub render_list: HashMap<PassId, Vec<RenderObject>>,
+    pub render_list: Vec<RenderObject>,
     vertex_padding: bool,
     bounding_geometry: Option<MeshBuilder>,
     bounding_pass: Option<RenderPass>,
@@ -29,7 +26,7 @@ pub struct RenderBatch {
 impl RenderBatch {
     pub fn new(ctx: &GfxContext) -> Self {
         Self {
-            render_list: HashMap::new(),
+            render_list: Vec::new(),
             vertex_padding: ctx.vertex_padding,
             bounding_geometry: None,
             bounding_pass: None,
@@ -53,14 +50,20 @@ impl RenderBatch {
         resource_manager: &mut ResourceManager,
         model: Arc<Model>,
         transform: Transform,
-        pass: RenderPass,
+        flags: RenderFlags,
     ) -> Result<(), ResourceError> {
-        tracing::debug!(target: logger::RENDER, "Add model: {} to pass {}", model.name(), pass.name());
+        tracing::debug!(target: logger::RENDER, "Add model: {} to render list", model.name());
 
         // TODO: add material data for forward pass only
         for (mesh, material_instance_handle) in &model.meshes {
-            let (pipeline, is_transparent) =
-                Self::get_pipeline(ctx, resource_manager, material_instance_handle)?;
+            let mut render_flags = flags;
+
+            let pipeline = Self::get_pipeline(
+                ctx,
+                resource_manager,
+                material_instance_handle,
+                &mut render_flags,
+            )?;
 
             if pipeline.is_none() {
                 tracing::debug!("No material for model {}", model.name());
@@ -81,24 +84,19 @@ impl RenderBatch {
                 Self::get_material_data(ctx, resource_manager, material_instance_handle)?;
 
             let render_object = RenderObject {
+                model: model.name().to_string(),
                 transform,
-                pass_id: pass.id(),
                 pipeline,
-                is_transparent,
                 vertex_buffer,
                 index_buffer,
                 index_len,
                 layer,
                 material_data,
                 material_textures,
+                render_flags,
             };
 
-            match self.render_list.entry(pass.id()) {
-                Entry::Occupied(mut e) => e.get_mut().push(render_object),
-                Entry::Vacant(e) => {
-                    e.insert(vec![render_object]);
-                }
-            }
+            self.render_list.push(render_object);
         }
 
         Ok(())
@@ -160,7 +158,8 @@ impl RenderBatch {
         ctx: &mut GfxContext,
         resource_manager: &mut ResourceManager,
         material_instance_handle: &Option<ResourceHandle<MaterialInstance>>,
-    ) -> Result<(Option<Handle>, bool), ResourceError> {
+        render_flags: &mut RenderFlags,
+    ) -> Result<Option<Handle>, ResourceError> {
         let material_handle = match material_instance_handle {
             Some(material_instance_handle) => {
                 let material_instance = resource_manager.get(material_instance_handle);
@@ -173,20 +172,26 @@ impl RenderBatch {
 
         if let Some(material_handle) = material_handle {
             let material = resource_manager.get(&material_handle);
-            let blending_enabled = material.properties.blending_enabled;
+            if material.properties.blending_enabled {
+                *render_flags |= RenderFlags::TRANSPARENT;
+            }
 
-            let pipeline_handle = resource_manager
-                .get_data(&mut ctx.hal, &material_handle)?
-                .data
-                .pipeline;
+            let material_data = resource_manager.get_data(&mut ctx.hal, &material_handle)?;
 
-            let pipeline_data = resource_manager
-                .get_data(&mut ctx.hal, &pipeline_handle)?
-                .data;
+            let pipeline_handle = material_data.data.pipeline;
 
-            Ok((Some(pipeline_data.pipeline), blending_enabled))
+            let pipeline_data = resource_manager.get_data(&mut ctx.hal, &pipeline_handle)?;
+
+            {
+                let pipeline_properties = pipeline_data.properties;
+
+                if let PipelineProperties::Graphics(properties) = pipeline_properties {
+                    tracing::trace!("Using pipeline {:?}", properties);
+                }
+            }
+            Ok(Some(pipeline_data.data.pipeline))
         } else {
-            Ok((None, false))
+            Ok(None)
         }
     }
 
@@ -244,9 +249,7 @@ impl RenderBatch {
 
     #[tracing::instrument(target = "profile", skip_all, level = "trace")]
     fn sort(&mut self) {
-        for render_list in self.render_list.values_mut() {
-            render_list.sort_unstable();
-        }
+        self.render_list.sort_unstable();
     }
 
     #[tracing::instrument(target = "profile", skip_all, level = "trace")]
@@ -264,10 +267,14 @@ impl RenderBatch {
                 )
                 .build();
 
-            let pass = self.bounding_pass.take().unwrap();
-
-            self.add_model(ctx, resource_manager, model, Transform::IDENTITY, pass)
-                .expect("Add bounding box");
+            self.add_model(
+                ctx,
+                resource_manager,
+                model,
+                Transform::IDENTITY,
+                RenderFlags::empty(),
+            )
+            .expect("Add bounding box");
         }
 
         self.sort();
@@ -280,7 +287,7 @@ mod tests {
     use tracing_subscriber::{EnvFilter, FmtSubscriber, fmt::format::FmtSpan};
 
     use gobs_core::{Color, Transform, logger, utils::timer::Timer};
-    use gobs_render_graph::{GfxContext, GraphConfig, Mesh, MeshLoader, Shapes};
+    use gobs_render_graph::{GfxContext, Mesh, MeshLoader, RenderFlags, Shapes};
     use gobs_resource::{ResourceLifetime, ResourceManager};
 
     use crate::{Model, RenderBatch};
@@ -306,11 +313,6 @@ mod tests {
         let mesh_loader = MeshLoader::new(&mut ctx);
         resource_manager.register_resource::<Mesh>(mesh_loader);
 
-        let graph_data = include_str!("../../examples/resources/graph.ron");
-        let passes =
-            GraphConfig::load_graph_with_data(&mut ctx, graph_data, "test", &mut resource_manager)
-                .unwrap();
-
         let triangle = Model::builder("triangle")
             .mesh(
                 Shapes::triangle(
@@ -335,7 +337,7 @@ mod tests {
                 &mut resource_manager,
                 triangle.clone(),
                 Transform::IDENTITY,
-                passes[0].clone(),
+                RenderFlags::empty(),
             );
         }
 

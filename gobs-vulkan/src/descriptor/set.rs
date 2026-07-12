@@ -2,8 +2,6 @@ use std::sync::Arc;
 
 use ash::vk;
 
-use gobs_core::logger;
-
 use crate::{
     Wrap,
     buffers::Buffer,
@@ -216,7 +214,6 @@ impl DescriptorSetUpdates {
         let updates = Self::build_updates(&self.updates, None);
         let writes = Self::generate_writes(&updates);
 
-        tracing::debug!(target: logger::RENDER, "push descriptor {:?}, set {}, updates: {}", pipeline.layout.descriptor_layouts, set, updates.len());
         unsafe {
             self.device.push_descriptor_device.cmd_push_descriptor_set(
                 cmd.raw(),

@@ -14,6 +14,7 @@ bitflags! {
         const DynamicRendering = 1 << 3;
         const Synchronization2 = 1 << 4;
         const ShaderDrawParameters = 1 << 5;
+        const DeviceFault = 1 << 6;
     }
 }
 
@@ -33,10 +34,12 @@ impl Features {
         let mut features11 = vk::PhysicalDeviceVulkan11Features::default();
         let mut features12 = vk::PhysicalDeviceVulkan12Features::default();
         let mut features13 = vk::PhysicalDeviceVulkan13Features::default();
+        let mut fault_features = vk::PhysicalDeviceFaultFeaturesEXT::default();
         let mut features = vk::PhysicalDeviceFeatures2::default()
             .push_next(&mut features11)
             .push_next(&mut features12)
-            .push_next(&mut features13);
+            .push_next(&mut features13)
+            .push_next(&mut fault_features);
 
         unsafe {
             instance
@@ -46,12 +49,13 @@ impl Features {
 
         let features10 = features.features;
 
-        tracing::debug!(target: logger::RENDER,
-            "Device features: {:#?},{:#?},{:#?},{:#?}",
+        tracing::debug!(target: logger::INIT,
+            "Device features: {:#?},{:#?},{:#?},{:#?},{:#?}",
             features10,
             features11,
             features12,
-            features13
+            features13,
+            fault_features,
         );
 
         let mut enabled_features = Feature::empty();
@@ -73,6 +77,7 @@ impl Features {
         );
         enabled_features.set(Feature::DynamicRendering, features13.dynamic_rendering == 1);
         enabled_features.set(Feature::Synchronization2, features13.synchronization2 == 1);
+        enabled_features.set(Feature::DeviceFault, fault_features.device_fault == 1);
 
         Self { enabled_features }
     }
@@ -103,6 +108,11 @@ impl Features {
         vk::PhysicalDeviceVulkan13Features::default()
             .dynamic_rendering(self.enabled_features.contains(Feature::DynamicRendering))
             .synchronization2(self.enabled_features.contains(Feature::Synchronization2))
+    }
+
+    pub fn fault_features(&'_ self) -> vk::PhysicalDeviceFaultFeaturesEXT<'_> {
+        vk::PhysicalDeviceFaultFeaturesEXT::default()
+            .device_fault(self.enabled_features.contains(Feature::DeviceFault))
     }
 
     pub fn fill_mode_non_solid(mut self) -> Self {
@@ -139,6 +149,12 @@ impl Features {
 
     pub fn synchronization2(mut self) -> Self {
         self.enabled_features.set(Feature::Synchronization2, true);
+
+        self
+    }
+
+    pub fn device_fault(mut self) -> Self {
+        self.enabled_features.set(Feature::DeviceFault, true);
 
         self
     }

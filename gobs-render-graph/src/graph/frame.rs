@@ -1,12 +1,10 @@
-use std::collections::HashMap;
-
 use gobs_core::{ImageExtent2D, logger};
-use gobs_render_hal::{ImageLayout, ImageUsage};
+use gobs_render_hal::{ImageLayout, ImageUsage, SceneData};
 use gobs_resource::ResourceManager;
 
 use crate::{
     FrameData, GfxContext, GraphConfig, PassId, PipelinesConfig, RenderError, RenderObject,
-    RenderPass, SceneData,
+    RenderPass,
     graph::resource::GraphResourceManager,
     pass::{PassType, compute::ComputePass, present::PresentPass},
 };
@@ -41,6 +39,7 @@ impl FrameGraph {
     pub fn default(
         ctx: &mut GfxContext,
         resource_manager: &mut ResourceManager,
+        graph_name: &str,
     ) -> Result<Self, RenderError> {
         let mut graph = Self::new(ctx);
 
@@ -67,7 +66,7 @@ impl FrameGraph {
             .expect("Load pipelines");
 
         tracing::debug!(target: logger::INIT, "Load graph: {}", "scene");
-        let passes = GraphConfig::load_graph(ctx, "graph.ron", "scene", resource_manager)
+        let passes = GraphConfig::load_graph(ctx, "graph.ron", graph_name, resource_manager)
             .map_err(|_| RenderError::InvalidData)?;
         for pass in &passes {
             tracing::debug!(target: logger::INIT, "Load pass: {}", pass.name());
@@ -307,7 +306,7 @@ impl FrameGraph {
         &mut self,
         ctx: &mut GfxContext,
         frame: &mut FrameData,
-        render_list: &HashMap<PassId, Vec<RenderObject>>,
+        render_list: &[RenderObject],
         scene_data: &SceneData,
     ) -> Result<(), RenderError> {
         for pass in &mut self.passes {
@@ -321,25 +320,14 @@ impl FrameGraph {
                     .entered();
             tracing::debug!(target: logger::RENDER, "Begin rendering pass {}", pass.name());
 
-            if let Some(render_list) = render_list.get(&pass.id()) {
-                pass.render(
-                    ctx,
-                    frame,
-                    &self.resource_manager,
-                    render_list,
-                    scene_data,
-                    self.draw_extent,
-                )?;
-            } else {
-                pass.render(
-                    ctx,
-                    frame,
-                    &self.resource_manager,
-                    &[],
-                    scene_data,
-                    self.draw_extent,
-                )?;
-            }
+            pass.render(
+                ctx,
+                frame,
+                &self.resource_manager,
+                render_list,
+                scene_data,
+                self.draw_extent,
+            )?;
 
             tracing::debug!(target: logger::RENDER, "End rendering pass");
             span.exit();

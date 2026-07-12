@@ -1,17 +1,16 @@
 use std::{collections::HashMap, sync::Arc};
 
-use gobs_render_hal::{ImageLayout, ImageUsage};
 use serde::{Deserialize, Serialize};
 
 use gobs_core::{ImageExtent2D, ImageFormat, logger};
+use gobs_render_hal::{ImageLayout, ImageUsage, SceneDataLayout, SceneDataProp, UniformData as _};
 use gobs_resource::{
     ResourceError, ResourceManager,
     load::{self, AssetType},
 };
 
 use crate::{
-    GfxContext, ObjectDataLayout, ObjectDataProp, PassType, Pipeline, SceneDataLayout,
-    SceneDataProp, UniformData,
+    GfxContext, PassType, Pipeline, RenderFlags,
     pass::{AttachmentAccess, AttachmentType, RenderPass, RenderPassType, material::MaterialPass},
 };
 
@@ -34,13 +33,9 @@ struct RenderPassConfig {
     #[serde(default)]
     attachments: HashMap<String, AttachmentInfo>,
     #[serde(default)]
-    object_layout: Vec<ObjectDataProp>,
-    #[serde(default)]
     scene_layout: Vec<SceneDataProp>,
     #[serde(default)]
-    render_transparent: bool,
-    #[serde(default)]
-    render_opaque: bool,
+    flags: RenderFlags,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -73,9 +68,10 @@ impl GraphConfig {
         let options = ron::options::Options::default()
             .with_default_extension(ron::extensions::Extensions::IMPLICIT_SOME);
 
-        options
-            .from_str(data)
-            .map_err(|_| ResourceError::InvalidData)
+        options.from_str(data).map_err(|e| {
+            tracing::error!("{}", e);
+            ResourceError::InvalidData
+        })
     }
 
     pub fn load_graph(
@@ -123,33 +119,20 @@ impl GraphConfig {
             scene_layout = scene_layout.prop(*prop);
         }
 
-        let mut object_layout = ObjectDataLayout::default();
-        for prop in &pass.object_layout {
-            object_layout = object_layout.prop(*prop);
-        }
-
         let default_extent = ctx.extent();
         let default_extent = ImageExtent2D::new(
             default_extent.width.max(FRAME_WIDTH),
             default_extent.height.max(FRAME_HEIGHT),
         );
 
-        let mut material_pass = MaterialPass::new(
-            ctx,
-            passname,
-            pass.tag,
-            object_layout,
-            scene_layout,
-            pass.render_transparent,
-            pass.render_opaque,
-        );
+        let mut material_pass =
+            MaterialPass::new(ctx, passname, pass.tag, scene_layout, pass.flags);
 
         if let Some(pipeline) = &pass.pipeline {
             let pipeline_handle = resource_manager.get_by_name::<Pipeline>(pipeline)?;
             let pipeline = resource_manager
                 .get_data(&mut ctx.hal, &pipeline_handle)
                 .ok()?;
-
             material_pass.set_fixed_pipeline(pipeline.data.pipeline);
         }
 
@@ -192,7 +175,7 @@ mod tests {
     use tracing_subscriber::{FmtSubscriber, fmt::format::FmtSpan};
 
     use crate::{
-        GfxContext, GraphConfig, PassType,
+        GfxContext, GraphConfig, PassType, RenderFlags,
         graph::graph_loader::{AttachmentInfo, RenderPassConfig},
         pass::{AttachmentAccess, RenderPassType},
     };
@@ -266,10 +249,8 @@ mod tests {
                             clear: true,
                         },
                     )]),
-                    object_layout: Vec::new(),
                     scene_layout: Vec::new(),
-                    render_transparent: true,
-                    render_opaque: true,
+                    flags: RenderFlags::ENTITY,
                 },
             )]),
             attachments: HashMap::new(),

@@ -1,21 +1,30 @@
 use gobs_core::{ImageExtent2D, logger};
-use gobs_render_graph::{FrameData, FrameGraph, GfxContext, PassType, RenderError, RenderPass};
+use gobs_render_graph::{FrameData, FrameGraph, GfxContext, PassType, RenderError};
 use gobs_resource::ResourceManager;
-use tracing::Level;
 
 use crate::RenderBatch;
 
 #[derive(Debug, Default)]
-pub enum BuiltinGraphs {
+pub enum RenderMode {
     #[default]
     Scene,
     Headless,
     Ui,
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug)]
 pub struct RendererOptions {
-    pub graph: BuiltinGraphs,
+    pub mode: RenderMode,
+    pub graph: String,
+}
+
+impl Default for RendererOptions {
+    fn default() -> Self {
+        Self {
+            mode: Default::default(),
+            graph: "debug".to_string(),
+        }
+    }
 }
 
 pub struct Renderer {
@@ -31,10 +40,12 @@ impl Renderer {
         options: &RendererOptions,
         resource_manager: &mut ResourceManager,
     ) -> Self {
-        let graph = match options.graph {
-            BuiltinGraphs::Scene => FrameGraph::default(&mut gfx, resource_manager).unwrap(),
-            BuiltinGraphs::Headless => FrameGraph::headless(&mut gfx, resource_manager).unwrap(),
-            BuiltinGraphs::Ui => FrameGraph::ui(&mut gfx, resource_manager).unwrap(),
+        let graph = match options.mode {
+            RenderMode::Scene => {
+                FrameGraph::default(&mut gfx, resource_manager, &options.graph).unwrap()
+            }
+            RenderMode::Headless => FrameGraph::headless(&mut gfx, resource_manager).unwrap(),
+            RenderMode::Ui => FrameGraph::ui(&mut gfx, resource_manager).unwrap(),
         };
 
         let frames_in_flight = gfx.frames_in_flight;
@@ -73,7 +84,6 @@ impl Renderer {
         resource_manager: &mut ResourceManager,
         draw_cmd: &mut dyn FnMut(
             &mut GfxContext,
-            RenderPass,
             &mut RenderBatch,
             &mut ResourceManager,
         ) -> Result<(), RenderError>,
@@ -82,18 +92,7 @@ impl Renderer {
 
         let mut batch = RenderBatch::new(&self.gfx);
 
-        for pass in &self.graph.passes {
-            if !pass.enabled {
-                continue;
-            }
-            let pass = &pass.pass;
-
-            let span =
-                tracing::span!(target: logger::PROFILE, Level::TRACE, "Pass", "{}", pass.name())
-                    .entered();
-            draw_cmd(&mut self.gfx, pass.clone(), &mut batch, resource_manager)?;
-            span.exit();
-        }
+        draw_cmd(&mut self.gfx, &mut batch, resource_manager)?;
 
         batch.finish(&mut self.gfx, resource_manager);
 
@@ -106,7 +105,7 @@ impl Renderer {
 
         self.frame_number += 1;
 
-        tracing::debug!(target: logger::RENDER, "Begin new frame {}", self.frame_number);
+        tracing::info!(target: logger::RENDER, "Begin new frame {}", self.frame_number);
 
         let frame = &mut self.frames[self.frame_number % self.gfx.frames_in_flight];
 

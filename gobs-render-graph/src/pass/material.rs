@@ -1,11 +1,13 @@
 use std::collections::HashMap;
 
 use gobs_core::{ImageExtent2D, logger};
-use gobs_render_hal::{CommandBuffer, Handle, RenderHAL};
+use gobs_render_hal::{
+    CommandBuffer, Handle, RenderHAL, SceneData, SceneDataLayout, SceneDataProp, UniformData as _,
+    UniformPropData,
+};
 
 use crate::{
-    FrameData, GfxContext, ObjectDataLayout, PassId, PassType, RenderError, RenderJob,
-    RenderObject, SceneData, SceneDataLayout, UniformData,
+    FrameData, GfxContext, PassId, PassType, RenderError, RenderFlags, RenderJob, RenderObject,
     graph::GraphResourceManager,
     pass::{Attachment, AttachmentAccess, AttachmentType, RenderPass},
 };
@@ -28,10 +30,8 @@ impl MaterialPass {
         ctx: &mut GfxContext,
         name: &str,
         ty: PassType,
-        object_layout: ObjectDataLayout,
         scene_layout: SceneDataLayout,
-        render_transparent: bool,
-        render_opaque: bool,
+        render_flags: RenderFlags,
     ) -> Self {
         let id = PassId::new_v4();
 
@@ -39,11 +39,9 @@ impl MaterialPass {
             .map(|_| {
                 RenderJob::new(
                     ctx,
-                    id,
-                    object_layout.clone(),
+                    name.to_string(),
                     scene_layout.uniform_layout(),
-                    render_transparent,
-                    render_opaque,
+                    render_flags,
                 )
             })
             .collect();
@@ -194,8 +192,41 @@ impl RenderPass for MaterialPass {
 
         tracing::debug!(target: logger::RENDER, "Upload scene data");
         let mut scene_data_bytes = Vec::new();
+
+        tracing::debug!(target: logger::RENDER, "Scene data layout: {:?}", self.scene_layout.uniform_layout());
+
         self.scene_layout
-            .copy_data(Some(ctx), scene_data, &mut scene_data_bytes);
+            .copy_data(&mut scene_data_bytes, |prop| match prop {
+                SceneDataProp::CameraPosition => {
+                    UniformPropData::Vec3F(scene_data.camera_transform.translation().into())
+                }
+                SceneDataProp::CameraViewProj => UniformPropData::Mat4F(
+                    scene_data
+                        .camera
+                        .view_proj(scene_data.camera_transform.translation())
+                        .to_cols_array_2d(),
+                ),
+                SceneDataProp::CameraViewPort => UniformPropData::Vec2F(scene_data.extent.into()),
+                SceneDataProp::LightDirection => UniformPropData::Vec3F(
+                    scene_data
+                        .light_transform
+                        .unwrap()
+                        .translation()
+                        .normalize()
+                        .into(),
+                ),
+                SceneDataProp::LightColor => {
+                    UniformPropData::Vec4F(scene_data.light.unwrap().colour.into())
+                }
+                SceneDataProp::LightAmbientColor => UniformPropData::Vec4F([0.1, 0.1, 0.1, 1.]),
+            });
+
+        let uniform_data = scene_data
+            .camera
+            .view_proj(scene_data.camera_transform.translation())
+            .to_cols_array_2d();
+
+        tracing::info!("Scene view proj: {:?}", uniform_data);
 
         tracing::debug!(target: logger::RENDER, "Update Uniform (scene data, push)");
         render_job.update_uniform(ctx, &scene_data_bytes);

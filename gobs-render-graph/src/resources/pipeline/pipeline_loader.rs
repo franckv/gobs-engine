@@ -57,7 +57,7 @@ impl PipelineLoader {
 
         let mut pipeline = hal
             .create_graphics_pipeline(&properties.name)
-            .push_constants(properties.push_constants)
+            .push_constants(properties.object_data_layout.clone())
             .vertex_attributes(properties.vertex_attributes)
             .viewports(vec![Viewport::new(0., 0., 0., 0.)])
             .scissors(vec![Rect2D::new(0, 0, 0, 0)])

@@ -6,17 +6,23 @@ use gobs_resource::load;
 use gobs_vulkan as vk;
 
 use crate::{
-    Handle, RenderHAL, VertexAttribute,
+    Handle, ObjectDataLayout, RenderHAL, UniformData, VertexAttribute,
     backend::{VulkanHAL, VulkanHALExt, vulkan::bindings::vk_layout},
     bindings::BindingGroupLayout,
     pipeline::{ComputePipelineBuilder, GraphicsPipelineBuilder},
 };
+
+pub struct VkPipeline {
+    pub pipeline: vk::Pipeline,
+    pub push_layout: ObjectDataLayout,
+}
 
 pub(crate) struct VkComputePipelineBuilder {
     device: Arc<vk::Device>,
     builder: vk::ComputePipelineBuilder,
     descriptor_layouts: Vec<BindingGroupLayout>,
     push_constants: usize,
+    push_layout: ObjectDataLayout,
 }
 
 impl ComputePipelineBuilder for VkComputePipelineBuilder {
@@ -60,7 +66,10 @@ impl ComputePipelineBuilder for VkComputePipelineBuilder {
 
         let hal = hal.get_mut();
 
-        hal.registry.pipelines.insert(pipeline)
+        hal.registry.pipelines.insert(VkPipeline {
+            pipeline,
+            push_layout: self.push_layout,
+        })
     }
 }
 
@@ -71,6 +80,7 @@ impl VkComputePipelineBuilder {
             builder: vk::pipelines::Pipeline::compute_builder(name, device.clone()),
             descriptor_layouts: Vec::new(),
             push_constants: 0,
+            push_layout: ObjectDataLayout::default(),
         }
     }
 }
@@ -81,6 +91,7 @@ pub(crate) struct VkGraphicsPipelineBuilder {
     descriptor_layouts: Vec<BindingGroupLayout>,
     push_constants: usize,
     vertex_attributes: VertexAttribute,
+    push_layout: ObjectDataLayout,
 }
 
 impl GraphicsPipelineBuilder for VkGraphicsPipelineBuilder {
@@ -122,8 +133,12 @@ impl GraphicsPipelineBuilder for VkGraphicsPipelineBuilder {
         self
     }
 
-    fn push_constants(mut self: Box<Self>, size: usize) -> Box<dyn GraphicsPipelineBuilder> {
-        self.push_constants = size;
+    fn push_constants(
+        mut self: Box<Self>,
+        layout: ObjectDataLayout,
+    ) -> Box<dyn GraphicsPipelineBuilder> {
+        self.push_constants = layout.uniform_layout().size();
+        self.push_layout = layout;
 
         self
     }
@@ -249,7 +264,10 @@ impl GraphicsPipelineBuilder for VkGraphicsPipelineBuilder {
 
         let hal = hal.get_mut();
 
-        hal.registry.pipelines.insert(pipeline)
+        hal.registry.pipelines.insert(VkPipeline {
+            pipeline,
+            push_layout: self.push_layout,
+        })
     }
 }
 
@@ -261,6 +279,7 @@ impl VkGraphicsPipelineBuilder {
             descriptor_layouts: Vec::new(),
             push_constants: 0,
             vertex_attributes: VertexAttribute::empty(),
+            push_layout: ObjectDataLayout::default(),
         }
     }
 }

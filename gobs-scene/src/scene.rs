@@ -1,7 +1,7 @@
 use glam::{Vec3, Vec4};
 
 use gobs_core::Transform;
-use gobs_render::{GfxContext, PassType, RenderBatch, RenderPass, Renderable};
+use gobs_render::{GfxContext, RenderBatch, RenderFlags, Renderable};
 use gobs_resource::{
     ResourceError, ResourceManager,
     {camera::Camera, light::Light},
@@ -135,42 +135,19 @@ impl Renderable for Scene {
         &self,
         ctx: &mut GfxContext,
         resource_manager: &mut ResourceManager,
-        pass: RenderPass,
         batch: &mut RenderBatch,
         _transform: Option<Transform>,
+        render_flags: RenderFlags,
     ) -> Result<(), ResourceError> {
         self.graph.visit(self.graph.root, &mut |node| {
-            match pass.ty() {
-                PassType::Bounds => {
-                    if let NodeValue::Model(_) = node.base.value {
-                        batch.add_bounds(node.bounding.bounding_box, pass.clone())?;
-                    }
-                }
-                PassType::Depth | PassType::Forward | PassType::Wire => {
-                    if let NodeValue::Model(model) = &node.base.value {
-                        model.draw(
-                            ctx,
-                            resource_manager,
-                            pass.clone(),
-                            batch,
-                            Some(*node.global_transform()),
-                        )?;
-                    }
-                }
-                PassType::Select => {
-                    if node.base.selected
-                        && let NodeValue::Model(model) = &node.base.value
-                    {
-                        model.draw(
-                            ctx,
-                            resource_manager,
-                            pass.clone(),
-                            batch,
-                            Some(*node.global_transform()),
-                        )?;
-                    }
-                }
-                _ => {}
+            if let NodeValue::Model(model) = &node.base.value {
+                model.draw(
+                    ctx,
+                    resource_manager,
+                    batch,
+                    Some(*node.global_transform()),
+                    render_flags,
+                )?;
             }
 
             Ok(())

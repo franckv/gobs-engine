@@ -151,7 +151,7 @@ impl CommandBuffer for VkCommandBuffer {
     fn bind_pipeline(&self, hal: &dyn RenderHAL, pipeline: Handle) {
         let hal = hal.get();
 
-        let pipeline = hal.registry.pipelines.get(pipeline).unwrap();
+        let pipeline = &hal.registry.pipelines.get(pipeline).unwrap().pipeline;
 
         tracing::debug!(target: logger::RENDER, "Binding pipeline {}", &pipeline.label);
         self.command.bind_pipeline(pipeline);
@@ -168,7 +168,7 @@ impl CommandBuffer for VkCommandBuffer {
     fn bind_resource(&self, hal: &mut dyn RenderHAL, pipeline: Handle, resource: &BindResource) {
         let mut hal = hal.get_mut();
 
-        let pipeline = hal.registry.pipelines.get(pipeline).unwrap();
+        let pipeline = &hal.registry.pipelines.get(pipeline).unwrap().pipeline;
 
         let binding_type = resource.layout.binding_group_type;
 
@@ -200,7 +200,7 @@ impl CommandBuffer for VkCommandBuffer {
     fn push_constants(&self, hal: &dyn RenderHAL, pipeline: Handle, constants: &[u8]) {
         let mut hal = hal.get();
 
-        let pipeline = hal.registry.pipelines.get(pipeline).unwrap();
+        let pipeline = &hal.registry.pipelines.get(pipeline).unwrap().pipeline;
 
         self.command
             .push_constants(pipeline.layout.clone(), constants);

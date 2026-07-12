@@ -12,9 +12,9 @@ use tracing::Level;
 use gobs_core::{Color, ImageExtent2D, Input, Key, MouseButton, Transform, logger};
 use gobs_render::{
     BlendMode, GfxContext, Material, MaterialInstance, MaterialInstanceProperties,
-    MaterialProperties, MeshGeometry, Model, ObjectDataLayout, ObjectDataProp, PassType,
-    RenderBatch, RenderPass, Renderable, Texture, TextureDataProp, TextureProperties,
-    TextureUpdate, UniformData, VertexAttribute, VertexData,
+    MaterialProperties, MeshGeometry, Model, ObjectDataLayout, ObjectDataProp, RenderBatch,
+    RenderFlags, Renderable, Texture, TextureDataProp, TextureProperties, TextureUpdate,
+    UniformData as _, VertexAttribute, VertexData,
 };
 use gobs_resource::{
     ResourceManager, {ResourceError, ResourceHandle, ResourceLifetime},
@@ -57,7 +57,7 @@ impl UIRenderer {
             "ui.frag.spv",
             "main",
             vertex_attributes,
-            &object_layout,
+            object_layout,
         )
         .texture(TextureDataProp::Diffuse)
         .no_culling()
@@ -490,24 +490,23 @@ impl Renderable for UIRenderer {
         &self,
         ctx: &mut GfxContext,
         resource_manager: &mut ResourceManager,
-        pass: RenderPass,
         batch: &mut RenderBatch,
         transform: Option<Transform>,
+        render_flags: RenderFlags,
     ) -> Result<(), ResourceError> {
-        if pass.ty() == PassType::Ui {
-            let output = self.output.write().take().unwrap();
-
+        if let Some(output) = self.output.write().take() {
             let transform = match transform {
                 Some(transform) => transform,
                 None => Transform::IDENTITY,
             };
 
             if let Some(model) = self.load_model(ctx, resource_manager, output) {
-                batch.add_model(ctx, resource_manager, model, transform, pass.clone())?;
+                batch.add_model(ctx, resource_manager, model, transform, render_flags)?;
             }
 
             batch.add_extent_data(ImageExtent2D::new(self.width as u32, self.height as u32));
         }
+
         Ok(())
     }
 }

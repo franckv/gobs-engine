@@ -110,15 +110,23 @@ impl Instance {
             .api_version(vk_version);
 
         let mut extensions = match window {
-            Some(window) => ash_window::enumerate_required_extensions(
-                window
-                    .display_handle()
-                    .map_err(|_| VulkanError::InstanceCreateError)?
-                    .as_raw(),
-            )?
-            .to_vec(),
+            Some(window) => {
+                tracing::info!(target: logger::INIT, "Display: {:?}", window.display_handle());
+
+                ash_window::enumerate_required_extensions(
+                    window
+                        .display_handle()
+                        .map_err(|_| VulkanError::InstanceCreateError)?
+                        .as_raw(),
+                )?
+                .to_vec()
+            }
             None => vec![ash::khr::surface::NAME.as_ptr()],
         };
+
+        unsafe {
+            tracing::debug!(target: logger::INIT, "Required extensions {:?}", extensions.iter().map(|ext| CStr::from_ptr(*ext)).collect::<Vec<&CStr>>());
+        }
 
         extensions.push(debug_utils::NAME.as_ptr());
 
@@ -130,38 +138,44 @@ impl Instance {
             vec![]
         };
 
-        let instance_info = vk::InstanceCreateInfo::default()
-            .application_info(&app_info)
-            .enabled_layer_names(&layers)
-            .enabled_extension_names(&extensions);
-
         let entry = ash::Entry::linked();
 
         unsafe {
-            tracing::debug!(
-            target: logger::INIT,
-                            "Available extensions: {:?}",
-                            entry
-                                .enumerate_instance_extension_properties(None)?
-                                .iter()
-                                .map(|ext| ext.extension_name_as_c_str().unwrap())
-                                .collect::<Vec<&CStr>>()
-                        );
+            let available_extensions = entry.enumerate_instance_extension_properties(None)?;
+
+            tracing::debug!(target: logger::INIT, "Available extensions: {:?}",
+                    available_extensions.iter().map(|ext| ext.extension_name_as_c_str().unwrap()).collect::<Vec<&CStr>>());
+
+            extensions
+                .iter()
+                .filter(|ext| {
+                    !available_extensions.iter().any(|avail_ext| {
+                        avail_ext.extension_name_as_c_str().unwrap() == CStr::from_ptr(**ext)
+                    })
+                })
+                .for_each(
+                    |e| tracing::error!(target: logger::INIT, "Missing extension: {:?}", CStr::from_ptr(*e)),
+                );
 
             tracing::debug!(
-            target: logger::INIT,
-                            "Available layers: {:?}",
-                            entry
-                                .enumerate_instance_layer_properties()?
-                                .iter()
-                                .map(|layer| layer.layer_name_as_c_str().unwrap())
-                                .collect::<Vec<&CStr>>()
-                        );
+                target: logger::INIT,
+                "Available layers: {:?}",
+                entry
+                .enumerate_instance_layer_properties()?
+                .iter()
+                .map(|layer| layer.layer_name_as_c_str().unwrap())
+                .collect::<Vec<&CStr>>()
+            );
             tracing::debug!(target: logger::INIT, "Enabled extensions {:?}", extensions.iter().map(|ext| CStr::from_ptr(*ext)).collect::<Vec<&CStr>>());
             tracing::debug!(target: logger::INIT, "Enabled layers {:?}", layers.iter().map(|ext| CStr::from_ptr(*ext)).collect::<Vec<&CStr>>());
         }
 
         tracing::info!(target: logger::INIT, "Create instance");
+        let instance_info = vk::InstanceCreateInfo::default()
+            .application_info(&app_info)
+            .enabled_layer_names(&layers)
+            .enabled_extension_names(&extensions);
+
         let instance: ash::Instance = unsafe { entry.create_instance(&instance_info, None)? };
 
         tracing::debug!(target: logger::INIT, "Create surface loader");

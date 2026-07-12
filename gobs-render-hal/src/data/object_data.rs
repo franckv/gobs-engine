@@ -1,10 +1,6 @@
-use glam::Mat3;
 use serde::{Deserialize, Serialize};
 
-use crate::{
-    GfxContext, RenderObject,
-    data::{UniformLayout, UniformProp, UniformPropData, uniform::UniformData},
-};
+use crate::data::{UniformLayout, UniformProp, UniformPropData, uniform::UniformData};
 
 #[derive(Clone, Copy, Debug, Deserialize, Serialize)]
 pub enum ObjectDataProp {
@@ -19,7 +15,7 @@ pub struct ObjectDataLayout {
     uniform_layout: UniformLayout,
 }
 
-impl UniformData<ObjectDataProp, RenderObject> for ObjectDataLayout {
+impl UniformData<ObjectDataProp> for ObjectDataLayout {
     fn prop(mut self, prop: ObjectDataProp) -> Self {
         self.layout.push(prop);
 
@@ -46,36 +42,16 @@ impl UniformData<ObjectDataProp, RenderObject> for ObjectDataLayout {
         &self.uniform_layout
     }
 
-    fn copy_data(
-        &self,
-        ctx: Option<&GfxContext>,
-        render_object: &RenderObject,
-        buffer: &mut Vec<u8>,
-    ) {
+    fn copy_data<F>(&self, buffer: &mut Vec<u8>, get_data: F)
+    where
+        F: Fn(&ObjectDataProp) -> UniformPropData,
+    {
         let layout = self.uniform_layout();
 
         let mut props = Vec::new();
 
         for prop in &self.layout {
-            match prop {
-                ObjectDataProp::WorldMatrix => {
-                    props.push(UniformPropData::Mat4F(
-                        render_object.transform.matrix().to_cols_array_2d(),
-                    ));
-                }
-                ObjectDataProp::NormalMatrix => {
-                    props.push(UniformPropData::Mat3F(
-                        Mat3::from_quat(render_object.transform.rotation()).to_cols_array_2d(),
-                    ));
-                }
-                ObjectDataProp::VertexBufferAddress => {
-                    let vertex_buffer_address = ctx
-                        .unwrap()
-                        .hal
-                        .get_buffer_address(render_object.vertex_buffer);
-                    props.push(UniformPropData::U64(vertex_buffer_address));
-                }
-            }
+            props.push(get_data(prop));
         }
 
         layout.copy_data(&props, buffer);

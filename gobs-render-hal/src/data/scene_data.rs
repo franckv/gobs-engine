@@ -4,7 +4,7 @@ use gobs_core::{ImageExtent2D, Transform};
 use gobs_resource::{camera::Camera, light::Light};
 
 use crate::{
-    GfxContext, UniformData,
+    UniformData,
     data::{UniformLayout, UniformProp, UniformPropData},
 };
 
@@ -24,7 +24,7 @@ pub struct SceneDataLayout {
     uniform_layout: UniformLayout,
 }
 
-impl UniformData<SceneDataProp, SceneData<'_>> for SceneDataLayout {
+impl UniformData<SceneDataProp> for SceneDataLayout {
     fn prop(mut self, prop: SceneDataProp) -> Self {
         self.layout.push(prop);
 
@@ -63,48 +63,16 @@ impl UniformData<SceneDataProp, SceneData<'_>> for SceneDataLayout {
     }
 
     #[tracing::instrument(target = "profile", skip_all, level = "trace")]
-    fn copy_data(&self, _ctx: Option<&GfxContext>, scene_data: &SceneData, buffer: &mut Vec<u8>) {
+    fn copy_data<F>(&self, buffer: &mut Vec<u8>, get_data: F)
+    where
+        F: Fn(&SceneDataProp) -> UniformPropData,
+    {
         let layout = self.uniform_layout();
 
         let mut props = Vec::new();
 
         for prop in &self.layout {
-            match prop {
-                SceneDataProp::CameraPosition => {
-                    props.push(UniformPropData::Vec3F(
-                        scene_data.camera_transform.translation().into(),
-                    ));
-                }
-                SceneDataProp::CameraViewProj => {
-                    props.push(UniformPropData::Mat4F(
-                        scene_data
-                            .camera
-                            .view_proj(scene_data.camera_transform.translation())
-                            .to_cols_array_2d(),
-                    ));
-                }
-                SceneDataProp::CameraViewPort => {
-                    props.push(UniformPropData::Vec2F(scene_data.extent.into()));
-                }
-                SceneDataProp::LightDirection => {
-                    props.push(UniformPropData::Vec3F(
-                        scene_data
-                            .light_transform
-                            .unwrap()
-                            .translation()
-                            .normalize()
-                            .into(),
-                    ));
-                }
-                SceneDataProp::LightColor => {
-                    props.push(UniformPropData::Vec4F(
-                        scene_data.light.unwrap().colour.into(),
-                    ));
-                }
-                SceneDataProp::LightAmbientColor => {
-                    props.push(UniformPropData::Vec4F([0.1, 0.1, 0.1, 1.]));
-                }
-            }
+            props.push(get_data(prop));
         }
 
         layout.copy_data(&props, buffer)

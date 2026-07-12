@@ -4,8 +4,8 @@ use serde::{Deserialize, Serialize};
 
 use gobs_core::ImageFormat;
 use gobs_render_hal::{
-    BindingGroupType, CompareOp, CullMode, DescriptorStage, DescriptorType, FrontFace, PolygonMode,
-    VertexAttribute,
+    BindingGroupType, CompareOp, CullMode, DescriptorStage, DescriptorType, FrontFace,
+    ObjectDataLayout, ObjectDataProp, PolygonMode, UniformData as _, VertexAttribute,
 };
 use gobs_resource::{
     ResourceManager,
@@ -14,7 +14,7 @@ use gobs_resource::{
 };
 
 use crate::{
-    GfxContext, ObjectDataLayout, ObjectDataProp, UniformData,
+    GfxContext,
     resources::{Pipeline, PipelineProperties},
 };
 
@@ -112,7 +112,7 @@ impl PipelinesConfig {
         }
 
         let mut props = PipelineProperties::graphics(name)
-            .push_constants(object_layout.uniform_layout().size())
+            .object_data_layout(object_layout)
             .pool_size(ctx.frames_in_flight)
             .vertex_attributes(pipeline.vertex_attributes)
             .polygon_mode(pipeline.polygon_mode)

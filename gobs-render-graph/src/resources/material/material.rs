@@ -1,12 +1,12 @@
 use gobs_render_hal::{
     BindingGroupType, BlendMode, CompareOp, CullMode, DescriptorStage, DescriptorType, FrontFace,
-    RenderHAL, VertexAttribute,
+    MaterialDataLayout, MaterialDataProp, ObjectDataLayout, RenderHAL, TextureDataLayout,
+    TextureDataProp, UniformData as _, VertexAttribute,
 };
 use gobs_resource::{ResourceHandle, ResourceProperties, ResourceType};
 
 use crate::{
-    GfxContext, MaterialDataLayout, MaterialDataProp, MaterialLoader, ObjectDataLayout, Pipeline,
-    TextureDataLayout, TextureDataProp, UniformData,
+    GfxContext, MaterialLoader, Pipeline,
     resources::{GraphicsPipelineProperties, PipelineProperties},
 };
 
@@ -45,7 +45,7 @@ impl MaterialProperties {
         fragment_shader: &str,
         fragment_entry: &str,
         vertex_attributes: VertexAttribute,
-        object_data_layout: &ObjectDataLayout,
+        object_data_layout: ObjectDataLayout,
     ) -> Self {
         let pipeline_properties = PipelineProperties::graphics(name)
             .vertex_shader(vertex_shader)
@@ -53,7 +53,7 @@ impl MaterialProperties {
             .fragment_shader(fragment_shader)
             .fragment_entry(fragment_entry)
             .pool_size(10)
-            .push_constants(object_data_layout.uniform_layout().size())
+            .object_data_layout(object_data_layout)
             .vertex_attributes(vertex_attributes)
             .depth_test_enable(false, CompareOp::LessEqual)
             .front_face(FrontFace::CCW)

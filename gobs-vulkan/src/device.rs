@@ -68,6 +68,7 @@ impl Device {
         let mut features11 = features.features11();
         let mut features12 = features.features12();
         let mut features13 = features.features13();
+        let mut fault_features = features.fault_features();
 
         let device_info = vk::DeviceCreateInfo::default()
             .queue_create_infos(&queues)
@@ -75,13 +76,15 @@ impl Device {
             .enabled_features(&features10)
             .push_next(&mut features11)
             .push_next(&mut features12)
-            .push_next(&mut features13);
+            .push_next(&mut features13)
+            .push_next(&mut fault_features);
 
         let device: ash::Device = unsafe {
             tracing::debug!(target: logger::INIT, "Create device");
             instance
                 .instance
-                .create_device(p_device.raw(), &device_info, None)?
+                .create_device(p_device.raw(), &device_info, None)
+                .unwrap()
         };
 
         let debug_utils_device = debug_utils::Device::new(&instance.instance, &device);
@@ -119,7 +122,9 @@ impl Device {
     }
 
     pub fn wait(&self) {
-        unsafe { self.device.device_wait_idle().expect("Wait idle") };
+        if let Err(vk::Result::ERROR_DEVICE_LOST) = unsafe { self.device.device_wait_idle() } {
+            panic!("Wait idle: device lost");
+        }
     }
 
     pub fn raw(&self) -> &ash::Device {

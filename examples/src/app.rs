@@ -3,7 +3,7 @@ use renderdoc::{RenderDoc, V141};
 use gobs::{
     core::{Input, Key, logger},
     game::context::GameContext,
-    render::{PassType, RenderError, Renderable},
+    render::{PassType, RenderError, RenderFlags, Renderable},
     resource::camera::Camera,
     scene::scene::Scene,
     ui::UIRenderer,
@@ -100,22 +100,22 @@ impl SampleApp {
         ctx.renderer.enable_pass(PassType::Wire, self.draw_wire);
         ctx.renderer.enable_pass(PassType::Ui, self.draw_ui);
 
-        let mut batch = ctx.renderer.prepare(
-            resource_manager,
-            &mut |gfx, pass, batch, resource_manager| {
-                if let Some(scene) = &scene {
-                    scene
-                        .draw(gfx, resource_manager, pass.clone(), batch, None)
-                        .map_err(|_| RenderError::InvalidData)?;
-                }
-                if let Some(ui) = &ui {
-                    ui.draw(gfx, resource_manager, pass, batch, None)
-                        .map_err(|_| RenderError::InvalidData)?;
-                }
+        let mut batch =
+            ctx.renderer
+                .prepare(resource_manager, &mut |gfx, batch, resource_manager| {
+                    if let Some(scene) = &scene {
+                        tracing::info!("Draw scene");
+                        scene
+                            .draw(gfx, resource_manager, batch, None, RenderFlags::ENTITY)
+                            .map_err(|_| RenderError::InvalidData)?;
+                    }
+                    if let Some(ui) = &ui {
+                        ui.draw(gfx, resource_manager, batch, None, RenderFlags::UI)
+                            .map_err(|_| RenderError::InvalidData)?;
+                    }
 
-                Ok(())
-            },
-        )?;
+                    Ok(())
+                })?;
 
         ctx.renderer.draw(&mut batch)?;
 

@@ -16,7 +16,11 @@ layout(location = 0) out struct VertexOutput {
 
 struct Vertex {
 	vec3 position;
-	vec4 color;
+    vec4 color;
+	vec2 uv;
+	vec3 normal;
+	vec3 tangent;
+	vec3 bitangent;
 };
 
 layout(buffer_reference, std430) readonly buffer VertexBuffer {

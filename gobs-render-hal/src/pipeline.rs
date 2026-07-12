@@ -1,8 +1,8 @@
 use gobs_core::ImageFormat;
 
 use crate::{
-    BlendMode, CompareOp, CullMode, DynamicStateElem, FrontFace, Handle, PolygonMode, Rect2D,
-    RenderHAL, VertexAttribute, Viewport, bindings::BindingGroupLayout,
+    BlendMode, CompareOp, CullMode, DynamicStateElem, FrontFace, Handle, ObjectDataLayout,
+    PolygonMode, Rect2D, RenderHAL, VertexAttribute, Viewport, bindings::BindingGroupLayout,
 };
 
 pub trait ComputePipelineBuilder {
@@ -25,7 +25,10 @@ pub trait GraphicsPipelineBuilder {
         filename: &str,
         entry: &str,
     ) -> Box<dyn GraphicsPipelineBuilder>;
-    fn push_constants(self: Box<Self>, size: usize) -> Box<dyn GraphicsPipelineBuilder>;
+    fn push_constants(
+        self: Box<Self>,
+        layout: ObjectDataLayout,
+    ) -> Box<dyn GraphicsPipelineBuilder>;
     fn vertex_attributes(
         self: Box<Self>,
         vertex_attributes: VertexAttribute,
