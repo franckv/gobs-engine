@@ -128,7 +128,7 @@ impl Renderer {
             )
             .unwrap();
 
-        self.graph.end(&mut self.gfx, frame).unwrap();
+        if let Err(RenderError::Outdated) = self.graph.end(&mut self.gfx, frame) {}
 
         Ok(())
     }
