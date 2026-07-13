@@ -74,7 +74,9 @@ unsafe extern "system" fn debug_cb(
                     message,
                 );
                 #[cfg(debug_assertions)]
-                panic!("{}", message);
+                if !std::thread::panicking() {
+                    panic!("{}", message);
+                }
             }
         }
 

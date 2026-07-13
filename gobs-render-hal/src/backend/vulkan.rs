@@ -43,14 +43,14 @@ impl VulkanHALExt for dyn RenderHAL + '_ {
 }
 
 pub struct VulkanHAL {
-    pub instance: Arc<vk::Instance>,
+    registry: ResourcesRegistry,
+    bindings: BindingRegistry,
     pub display: Display,
-    pub device: Arc<vk::Device>,
     pub graphics_queue: Arc<vk::Queue>,
     pub transfer_queue: Arc<vk::Queue>,
     pub allocator: Arc<vk::Allocator>,
-    registry: ResourcesRegistry,
-    bindings: BindingRegistry,
+    pub device: Arc<vk::Device>,
+    pub instance: Arc<vk::Instance>,
 }
 
 impl RenderHAL for VulkanHAL {
@@ -280,5 +280,11 @@ impl VulkanHAL {
         tracing::info!(target: logger::INIT, "Using adapter {}", p_device.name);
 
         vk::Device::new(instance.clone(), p_device, display.surface.as_deref()).unwrap()
+    }
+}
+
+impl Drop for VulkanHAL {
+    fn drop(&mut self) {
+        self.device.wait();
     }
 }

@@ -168,6 +168,7 @@ impl Drop for Device {
     fn drop(&mut self) {
         tracing::debug!(target: logger::MEMORY, "Drop device");
         unsafe {
+            let _ = self.device.device_wait_idle();
             self.device.destroy_device(None);
         }
     }
