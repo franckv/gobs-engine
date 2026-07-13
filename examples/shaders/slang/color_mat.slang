@@ -23,10 +23,11 @@ struct Vertex {
     float2 uv;
     float2 pad2;
     float3 normal;
-    float pad4;
+    float pad3;
     float3 tangent;
-    float pad5;
+    float pad4;
     float3 bitangent;
+    float pad5;
 }
 
 struct PushConstants {

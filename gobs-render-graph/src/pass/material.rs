@@ -199,12 +199,14 @@ impl RenderPass for MaterialPass {
                 SceneDataProp::CameraPosition => {
                     UniformPropData::Vec3F(scene_data.camera_transform.translation().into())
                 }
-                SceneDataProp::CameraViewProj => UniformPropData::Mat4F(
-                    scene_data
+                SceneDataProp::CameraViewProj => {
+                    let uniform_data = scene_data
                         .camera
                         .view_proj(scene_data.camera_transform.translation())
-                        .to_cols_array_2d(),
-                ),
+                        .to_cols_array_2d();
+
+                    UniformPropData::Mat4F(uniform_data)
+                }
                 SceneDataProp::CameraViewPort => UniformPropData::Vec2F(scene_data.extent.into()),
                 SceneDataProp::LightDirection => UniformPropData::Vec3F(
                     scene_data
@@ -219,13 +221,6 @@ impl RenderPass for MaterialPass {
                 }
                 SceneDataProp::LightAmbientColor => UniformPropData::Vec4F([0.1, 0.1, 0.1, 1.]),
             });
-
-        let uniform_data = scene_data
-            .camera
-            .view_proj(scene_data.camera_transform.translation())
-            .to_cols_array_2d();
-
-        tracing::info!("Scene view proj: {:?}", uniform_data);
 
         tracing::debug!(target: logger::RENDER, "Update Uniform (scene data, push)");
         render_job.update_uniform(ctx, &scene_data_bytes);

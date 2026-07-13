@@ -16,6 +16,7 @@ struct Vertex {
     float3 tangent;
     float pad4;
     float3 bitangent;
+    float pad5;
 }
 
 struct PushConstants {

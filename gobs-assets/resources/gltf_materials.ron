@@ -6,6 +6,7 @@ MaterialsConfig(
             NormalMatrix,
             VertexBufferAddress,
         ],
+        vertex_attributes: "POSITION | COLOR | TEXTURE | NORMAL | TANGENT | BITANGENT",
     ),
     materials: {
         "gltf.texture": (
@@ -13,7 +14,6 @@ MaterialsConfig(
             vertex_entry: "main",
             fragment_shader: "gltf.texture.frag.spv",
             fragment_entry: "main",
-            vertex_attributes: "POSITION | COLOR | TEXTURE | NORMAL | TANGENT | BITANGENT",
             texture_layout: [
                 Diffuse
             ]
@@ -23,7 +23,6 @@ MaterialsConfig(
             vertex_entry: "main",
             fragment_shader: "gltf.texture.frag.spv",
             fragment_entry: "main",
-            vertex_attributes: "POSITION | COLOR | TEXTURE | NORMAL | TANGENT | BITANGENT",
             blend_mode: Alpha,
             texture_layout: [
                 Diffuse
@@ -34,7 +33,6 @@ MaterialsConfig(
             vertex_entry: "main",
             fragment_shader: "gltf.texture_n.frag.spv",
             fragment_entry: "main",
-            vertex_attributes: "POSITION | COLOR | TEXTURE | NORMAL | TANGENT | BITANGENT",
             texture_layout: [
                 Diffuse,
                 Normal
@@ -45,7 +43,6 @@ MaterialsConfig(
             vertex_entry: "main",
             fragment_shader: "gltf.texture_n.frag.spv",
             fragment_entry: "main",
-            vertex_attributes: "POSITION | COLOR | TEXTURE | NORMAL | TANGENT | BITANGENT",
             blend_mode: Alpha,
             texture_layout: [
                 Diffuse,
@@ -57,14 +54,12 @@ MaterialsConfig(
             vertex_entry: "main",
             fragment_shader: "gltf.color_light.frag.spv",
             fragment_entry: "main",
-            vertex_attributes: "POSITION | COLOR | TEXTURE | NORMAL | TANGENT | BITANGENT",
         ),
          "gltf.color.transparent": (
             vertex_shader: "gltf.color_light.vert.spv",
             vertex_entry: "main",
             fragment_shader: "gltf.color_light.frag.spv",
             fragment_entry: "main",
-            vertex_attributes: "POSITION | COLOR | TEXTURE | NORMAL | TANGENT | BITANGENT",
             blend_mode: Alpha,
         ),
    }
