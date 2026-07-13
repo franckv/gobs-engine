@@ -1,9 +1,5 @@
 struct SceneData {
-    float3 camera_position;
 	float4x4 view_proj;
-	float3 light_direction;
-	float4 light_color;
-	float4 ambient_color;
 }
 [[vk::binding(0, 0)]]
 ConstantBuffer<SceneData> scene_data;

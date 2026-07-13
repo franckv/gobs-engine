@@ -168,11 +168,8 @@ fn main() {
 
     tracing::info!(target: logger::APP, "Engine start");
 
-    Application::<App>::new(
-        "Depth test",
-        GameOptions::default(),
-        examples::WIDTH,
-        examples::HEIGHT,
-    )
-    .run();
+    let mut options = GameOptions::default();
+    options.renderer.graph = "simple".to_string();
+
+    Application::<App>::new("Depth test", options, examples::WIDTH, examples::HEIGHT).run();
 }

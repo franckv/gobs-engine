@@ -118,11 +118,8 @@ fn main() {
 
     tracing::info!(target: logger::APP, "Engine start");
 
-    Application::<App>::new(
-        "Triangle",
-        GameOptions::default(),
-        examples::WIDTH,
-        examples::HEIGHT,
-    )
-    .run();
+    let mut options = GameOptions::default();
+    options.renderer.graph = "simple".to_string();
+
+    Application::<App>::new("Triangle", options, examples::WIDTH, examples::HEIGHT).run();
 }

@@ -6,7 +6,10 @@ use gobs_resource::{
     ResourceRegistry, {Resource, ResourceError, ResourceHandle, ResourceLoader, ResourceProperties},
 };
 
-use crate::resources::{MaterialInstance, MaterialInstanceData};
+use crate::{
+    MaterialInstanceProperties, MaterialProperties,
+    resources::{MaterialInstance, MaterialInstanceData},
+};
 
 pub struct MaterialInstanceLoader {}
 
@@ -34,11 +37,14 @@ impl ResourceLoader<MaterialInstance> for MaterialInstanceLoader {
         let properties = &resource.properties;
         let material_handle = properties.material;
         let material_resource = registry.get(&material_handle);
+        let material_properties = &material_resource.properties;
+
+        Self::validate_layout(properties, material_properties);
 
         let material_buffer = self.create_buffer(
             hal.as_mut(),
             properties.name(),
-            &material_resource.properties.material_data_layout,
+            &material_properties.material_data_layout,
             properties.material_data.as_ref(),
         );
 
@@ -55,6 +61,18 @@ impl ResourceLoader<MaterialInstance> for MaterialInstanceLoader {
 }
 
 impl MaterialInstanceLoader {
+    fn validate_layout(
+        properties: &MaterialInstanceProperties,
+        material_properties: &MaterialProperties,
+    ) {
+        if properties.material_data.is_none()
+            && !material_properties.material_data_layout.is_empty()
+        {
+            tracing::error!("Material instance does not contain material data");
+            panic!("Failed to load material instance: {}", &properties.name);
+        }
+    }
+
     fn create_buffer(
         &self,
         hal: &mut dyn RenderHAL,

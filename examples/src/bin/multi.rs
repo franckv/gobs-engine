@@ -4,13 +4,10 @@ use gobs::{
     core::{Color, Input, Transform, logger},
     game::{AppError, Application, GameContext, GameOptions, GobsGame},
     render::{
-        MaterialInstanceProperties, MaterialsConfig, Model, RenderError, Shapes, TextureProperties,
-        TextureType,
+        MaterialDataPropData, MaterialInstanceProperties, MaterialsConfig, Model, RenderError,
+        Shapes, TextureProperties, TextureType,
     },
-    resource::{
-        ResourceLifetime,
-        {camera::Camera, light::Light},
-    },
+    resource::{ResourceLifetime, camera::Camera, light::Light},
     scene::{components::NodeValue, scene::Scene},
     ui::UIRenderer,
 };
@@ -116,10 +113,14 @@ impl App {
         )
         .await;
 
-        let color_material = ctx.resource_manager.get_by_name("color").unwrap();
+        let color_material = ctx.resource_manager.get_by_name("color.material").unwrap();
 
         let color_instance_properties =
-            MaterialInstanceProperties::new("color instance", color_material);
+            MaterialInstanceProperties::new("color instance", color_material)
+                .prop(MaterialDataPropData::DiffuseColor(Color::RED.into()))
+                .prop(MaterialDataPropData::EmissionColor(
+                    Color::new(0., 0.1, 0., 1.).into(),
+                ));
 
         let color_material_instance =
             ctx.resource_manager

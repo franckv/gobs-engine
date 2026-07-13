@@ -1,5 +1,9 @@
 GraphConfig(
     graphes: {
+        "simple": [
+            "forward_nodepth",
+            "present",
+        ],
         "debug": [
             "compute",
             "depth",
@@ -94,6 +98,20 @@ GraphConfig(
                     access: ReadWrite,
                     clear: true,
                 )
+            },
+            scene_layout: [
+                CameraViewProj,
+            ],
+            flags: "ENTITY"
+        ),
+        "forward_nodepth": (
+            ty: Material,
+            tag: Forward,
+            attachments: {
+                "draw": ColorAttachment(
+                    access: ReadWrite,
+                    clear: true,
+                ),
             },
             scene_layout: [
                 CameraViewProj,
