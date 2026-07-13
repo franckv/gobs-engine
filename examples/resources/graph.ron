@@ -3,6 +3,7 @@ GraphConfig(
         "debug": [
             "depth",
             "forward",
+            "ui_overlay"
         ],
         "scene": [
             "depth",
@@ -10,7 +11,7 @@ GraphConfig(
             "wire",
             "bounds",
             "select",
-            "ui"
+            "ui_overlay"
         ],
         "headless": [
             "depth",
@@ -21,7 +22,7 @@ GraphConfig(
         ],
         "test": [
             "forward",
-            "ui"
+            "ui_overlay"
         ]
     },
     passes: {
@@ -108,13 +109,30 @@ GraphConfig(
             flags: "ENTITY"
  
         ),
-        "ui": (
+        "ui_overlay": (
             ty: Material,
             tag: Ui,
             attachments: {
                 "draw": ColorAttachment(
                     access: ReadWrite,
                     clear: false,
+                )
+            },
+            object_layout: [
+                VertexBufferAddress,
+            ],
+            scene_layout: [
+                CameraViewPort,
+            ],
+            flags: "UI"
+        ),
+        "ui": (
+            ty: Material,
+            tag: Ui,
+            attachments: {
+                "draw": ColorAttachment(
+                    access: ReadWrite,
+                    clear: true,
                 )
             },
             object_layout: [

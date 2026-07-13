@@ -105,7 +105,7 @@ impl Renderer {
 
         self.frame_number += 1;
 
-        tracing::info!(target: logger::RENDER, "Begin new frame {}", self.frame_number);
+        tracing::debug!(target: logger::RENDER, "Begin new frame {}", self.frame_number);
 
         let frame = &mut self.frames[self.frame_number % self.gfx.frames_in_flight];
 

@@ -161,6 +161,8 @@ impl CommandBuffer {
             vk::AttachmentLoadOp::LOAD
         };
 
+        tracing::debug!(target: logger::RENDER, "Clear Color Load Op: {}", color_clear);
+
         let mut color_info = vec![];
         if let Some(color) = color {
             let color_attachment = vk::RenderingAttachmentInfo::default()

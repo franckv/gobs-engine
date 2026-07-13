@@ -4,7 +4,7 @@ MaterialsConfig(
         object_layout: [
             VertexBufferAddress,
         ],
-        vertex_attributes: "POSITION | COLOR | TEXTURE",
+        vertex_attributes: "POSITION | COLOR | TEXTURE | NORMAL | TANGENT | BITANGENT",
     ),
     materials: {
       "ui": (
