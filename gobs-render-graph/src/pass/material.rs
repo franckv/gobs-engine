@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use gobs_core::{ImageExtent2D, logger};
+use gobs_core::logger;
 use gobs_render_hal::{
     CommandBuffer, Handle, RenderHAL, SceneData, SceneDataLayout, SceneDataProp, UniformData as _,
     UniformPropData,
@@ -179,7 +179,6 @@ impl RenderPass for MaterialPass {
         resource_manager: &GraphResourceManager,
         render_list: &[RenderObject],
         scene_data: &SceneData,
-        _draw_extent: ImageExtent2D,
     ) -> Result<(), RenderError> {
         tracing::debug!(target: logger::RENDER, "Draw {}", &self.name());
 

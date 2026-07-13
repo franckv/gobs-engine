@@ -78,26 +78,14 @@ impl CommandBuffer for VkCommandBuffer {
         );
     }
 
-    fn copy_buffer_to_image(
-        &self,
-        hal: &dyn RenderHAL,
-        src: Handle,
-        dst: Handle,
-        offset: u64,
-        dst_size: ImageExtent2D,
-    ) {
+    fn copy_buffer_to_image(&self, hal: &dyn RenderHAL, src: Handle, dst: Handle, offset: u64) {
         let hal = hal.get();
 
         let src = hal.registry.buffers.get(src).unwrap();
         let dst = hal.registry.images.get(dst).unwrap();
 
-        self.command.copy_buffer_to_image(
-            &src.buffer,
-            dst,
-            src.offset + offset,
-            dst_size.width,
-            dst_size.height,
-        );
+        self.command
+            .copy_buffer_to_image(&src.buffer, dst, src.offset + offset);
     }
 
     fn copy_image_to_buffer(&self, hal: &dyn RenderHAL, src: Handle, dst: Handle, offset: u64) {
@@ -109,14 +97,7 @@ impl CommandBuffer for VkCommandBuffer {
             .copy_image_to_buffer(src, &dst.buffer, dst.offset + offset);
     }
 
-    fn copy_image_to_image(
-        &self,
-        hal: &dyn RenderHAL,
-        src: Handle,
-        src_size: ImageExtent2D,
-        dst: Handle,
-        dst_size: ImageExtent2D,
-    ) {
+    fn copy_image_to_image(&self, hal: &dyn RenderHAL, src: Handle, dst: Handle) {
         let hal = hal.get();
 
         let src = hal.registry.images.get(src).unwrap();
@@ -132,8 +113,7 @@ impl CommandBuffer for VkCommandBuffer {
                 .support_blit(dst.format, dst.usage, false)
         {
             tracing::debug!(target: logger::RENDER, "Blit from {:?} to {:?}", src.format, dst.format);
-            self.command
-                .copy_image_to_image_blit(src, src_size, dst, dst_size);
+            self.command.copy_image_to_image_blit(src, dst);
         } else {
             tracing::debug!(target: logger::RENDER, "Copy from {:?} to {:?}", src.format, dst.format);
             self.command.copy_image_to_image(src, dst);

@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use gobs_core::{ImageExtent2D, logger};
+use gobs_core::logger;
 use gobs_render_hal::{
     BindResource, BindingGroupLayout, BindingGroupType, DescriptorStage, DescriptorType, Handle,
     ImageLayout, SceneData,
@@ -64,7 +64,6 @@ impl RenderPass for ComputePass {
         resource_manager: &GraphResourceManager,
         _render_list: &[RenderObject],
         _scene_data: &SceneData,
-        draw_extent: ImageExtent2D,
     ) -> Result<(), RenderError> {
         tracing::debug!(target: logger::RENDER, "Draw compute");
 
@@ -75,12 +74,7 @@ impl RenderPass for ComputePass {
         let draw_attach = &self.attachments[0];
 
         let draw_image = resource_manager.image(draw_attach);
-
-        // draw_bindings
-        //     .update()
-        //     .bind_image(&resource_manager.image(draw_attach), ImageLayout::General)
-        //     .end();
-        //
+        let draw_extent = ctx.hal.get_image_extent(draw_image);
 
         cmd.transition_image_layout(
             ctx.hal.as_mut(),

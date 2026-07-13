@@ -78,6 +78,9 @@ impl Display {
                 return;
             }
 
+            // FIXME: fence TIMEOUT on resize
+            device.wait();
+
             let swapchain = SwapChain::new(
                 device.clone(),
                 surface.clone(),

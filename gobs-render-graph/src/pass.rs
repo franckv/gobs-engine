@@ -126,6 +126,5 @@ pub trait RenderPass {
         resource_manager: &GraphResourceManager,
         render_list: &[RenderObject],
         scene_data: &SceneData,
-        draw_extent: ImageExtent2D,
     ) -> Result<(), RenderError>;
 }

@@ -493,13 +493,10 @@ impl CommandBuffer {
         }
     }
 
-    pub fn copy_image_to_image_blit(
-        &self,
-        src: &Image,
-        src_size: ImageExtent2D,
-        dst: &Image,
-        dst_size: ImageExtent2D,
-    ) {
+    pub fn copy_image_to_image_blit(&self, src: &Image, dst: &Image) {
+        let src_size = src.extent;
+        let dst_size = dst.extent;
+
         tracing::trace!(target: logger::RENDER,
             "Blitting image {}/{} to {}/{}",
             src_size.width,
@@ -553,14 +550,9 @@ impl CommandBuffer {
         }
     }
 
-    pub fn copy_buffer_to_image(
-        &self,
-        src: &Buffer,
-        dst: &Image,
-        offset: u64,
-        width: u32,
-        height: u32,
-    ) {
+    pub fn copy_buffer_to_image(&self, src: &Buffer, dst: &Image, offset: u64) {
+        let (width, height) = (dst.extent.width, dst.extent.height);
+
         let image_subresource = vk::ImageSubresourceLayers::default()
             .aspect_mask(vk::ImageAspectFlags::COLOR)
             .layer_count(1);

@@ -18,30 +18,26 @@ pub struct FrameGraphPass {
 }
 
 pub struct FrameGraph {
-    pub draw_extent: ImageExtent2D,
     pub render_scaling: f32,
     pub passes: Vec<FrameGraphPass>,
     resource_manager: GraphResourceManager,
 }
 
 impl FrameGraph {
-    pub fn new(ctx: &GfxContext) -> Self {
-        let draw_extent = ctx.extent();
-
+    pub fn new() -> Self {
         Self {
-            draw_extent,
             render_scaling: 1.,
             passes: Vec::new(),
             resource_manager: GraphResourceManager::new(),
         }
     }
 
-    pub fn default(
+    pub fn standard(
         ctx: &mut GfxContext,
         resource_manager: &mut ResourceManager,
         graph_name: &str,
     ) -> Result<Self, RenderError> {
-        let mut graph = Self::new(ctx);
+        let mut graph = Self::new();
 
         let extent = Self::get_render_target_extent(ctx);
 
@@ -82,7 +78,7 @@ impl FrameGraph {
         ctx: &mut GfxContext,
         resource_manager: &mut ResourceManager,
     ) -> Result<Self, RenderError> {
-        let mut graph = Self::new(ctx);
+        let mut graph = Self::new();
 
         let extent = Self::get_render_target_extent(ctx);
 
@@ -120,7 +116,7 @@ impl FrameGraph {
         ctx: &mut GfxContext,
         resource_manager: &mut ResourceManager,
     ) -> Result<Self, RenderError> {
-        let mut graph = Self::new(ctx);
+        let mut graph = Self::new();
 
         let extent = Self::get_render_target_extent(ctx);
 
@@ -251,13 +247,6 @@ impl FrameGraph {
             );
         }
 
-        self.draw_extent = ImageExtent2D::new(
-            (draw_image_extent.width as f32 * self.render_scaling) as u32,
-            (draw_image_extent.height as f32 * self.render_scaling) as u32,
-        );
-
-        tracing::trace!(target: logger::RENDER, "Draw extent {:?}", self.draw_extent);
-
         if ctx.hal.acquire(frame.id).is_err() {
             return Err(RenderError::Outdated);
         }
@@ -320,14 +309,7 @@ impl FrameGraph {
                     .entered();
             tracing::debug!(target: logger::RENDER, "Begin rendering pass {}", pass.name());
 
-            pass.render(
-                ctx,
-                frame,
-                &self.resource_manager,
-                render_list,
-                scene_data,
-                self.draw_extent,
-            )?;
+            pass.render(ctx, frame, &self.resource_manager, render_list, scene_data)?;
 
             tracing::debug!(target: logger::RENDER, "End rendering pass");
             span.exit();
@@ -352,5 +334,11 @@ impl FrameGraph {
                 pass.enabled = enabled;
             }
         }
+    }
+}
+
+impl Default for FrameGraph {
+    fn default() -> Self {
+        Self::new()
     }
 }

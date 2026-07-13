@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use gobs_core::{ImageExtent2D, logger};
+use gobs_core::logger;
 use gobs_render_hal::{ImageLayout, SceneData};
 
 use crate::{
@@ -45,14 +45,12 @@ impl RenderPass for PresentPass {
         resource_manager: &GraphResourceManager,
         _render_list: &[RenderObject],
         _scene_data: &SceneData,
-        draw_extent: ImageExtent2D,
     ) -> Result<(), RenderError> {
         tracing::debug!(target: logger::RENDER, "Present");
 
         let cmd = &frame.command;
 
         let render_target = ctx.hal.get_render_target();
-        let render_extent = ctx.hal.get_extent();
 
         cmd.transition_image_layout(
             ctx.hal.as_mut(),
@@ -65,9 +63,7 @@ impl RenderPass for PresentPass {
         cmd.copy_image_to_image(
             ctx.hal.as_ref(),
             resource_manager.image("draw"),
-            draw_extent,
             render_target,
-            render_extent,
         );
 
         Ok(())

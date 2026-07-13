@@ -96,7 +96,7 @@ impl GobsGame for App {
 
 impl App {
     async fn init(&mut self, ctx: &mut GameContext) {
-        let extent = ctx.renderer.graph.draw_extent;
+        let extent = ctx.renderer.extent();
         let (width, height) = (extent.width, extent.height);
 
         let framebuffer = Self::generate_framebuffer(width, height);

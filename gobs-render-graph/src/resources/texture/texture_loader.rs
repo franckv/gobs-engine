@@ -202,9 +202,8 @@ impl ResourceLoader<Texture> for TextureLoader {
             hal.create_sampler(properties.format.mag_filter, properties.format.min_filter);
 
         self.cmd.run_immediate_mut("Texture upload", &mut |cmd| {
-            let extent = properties.format.extent;
             cmd.transition_image_layout(hal.as_mut(), image, ImageLayout::TransferDst);
-            cmd.copy_buffer_to_image(hal.as_ref(), staging, image, 0, extent);
+            cmd.copy_buffer_to_image(hal.as_ref(), staging, image, 0);
             cmd.transition_image_layout(hal.as_mut(), image, ImageLayout::Shader);
         });
 

@@ -42,7 +42,7 @@ impl Renderer {
     ) -> Self {
         let graph = match options.mode {
             RenderMode::Scene => {
-                FrameGraph::default(&mut gfx, resource_manager, &options.graph).unwrap()
+                FrameGraph::standard(&mut gfx, resource_manager, &options.graph).unwrap()
             }
             RenderMode::Headless => FrameGraph::headless(&mut gfx, resource_manager).unwrap(),
             RenderMode::Ui => FrameGraph::ui(&mut gfx, resource_manager).unwrap(),

@@ -35,23 +35,9 @@ pub trait CommandBuffer {
         src_offset: u64,
         dst_offset: u64,
     );
-    fn copy_buffer_to_image(
-        &self,
-        hal: &dyn RenderHAL,
-        src: Handle,
-        dst: Handle,
-        offset: u64,
-        dst_size: ImageExtent2D,
-    );
+    fn copy_buffer_to_image(&self, hal: &dyn RenderHAL, src: Handle, dst: Handle, offset: u64);
     fn copy_image_to_buffer(&self, hal: &dyn RenderHAL, src: Handle, dst: Handle, offset: u64);
-    fn copy_image_to_image(
-        &self,
-        hal: &dyn RenderHAL,
-        src: Handle,
-        src_size: ImageExtent2D,
-        dst: Handle,
-        dst_size: ImageExtent2D,
-    );
+    fn copy_image_to_image(&self, hal: &dyn RenderHAL, src: Handle, dst: Handle);
     fn dispatch(&self, x: u32, y: u32, z: u32);
     fn draw_indexed(&self, index_count: usize, instance_count: usize);
     fn bind_pipeline(&self, hal: &dyn RenderHAL, pipeline: Handle);
