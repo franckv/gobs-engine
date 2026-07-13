@@ -111,18 +111,16 @@ impl Renderer {
 
         frame.reset(self.frame_number);
 
-        self.graph.begin(&mut self.gfx, frame).unwrap();
+        self.graph.begin(&mut self.gfx, frame)?;
 
-        self.graph
-            .render(
-                &mut self.gfx,
-                frame,
-                &batch.render_list,
-                &batch.scene_data(),
-            )
-            .unwrap();
+        self.graph.render(
+            &mut self.gfx,
+            frame,
+            &batch.render_list,
+            &batch.scene_data(),
+        )?;
 
-        if let Err(RenderError::Outdated) = self.graph.end(&mut self.gfx, frame) {}
+        self.graph.end(&mut self.gfx, frame)?;
 
         Ok(())
     }
