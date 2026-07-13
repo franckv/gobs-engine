@@ -12,7 +12,6 @@ PipelinesConfig(
                     descriptor_type: StorageImage
             ),
             ],
-
         )
     },
     graphics_pipelines: {
@@ -34,7 +33,8 @@ PipelinesConfig(
             (
                     group: SceneData,
                     stage: All,
-                    descriptor_type: Uniform),
+                    descriptor_type: Uniform
+            ),
             ],
             polygon_mode: Line,
             attachments: (
@@ -62,7 +62,7 @@ PipelinesConfig(
                     group: SceneData,
                     stage: Vertex,
                     descriptor_type: Uniform
-                ),
+            ),
             ],
             polygon_mode: Fill,
             attachments: (

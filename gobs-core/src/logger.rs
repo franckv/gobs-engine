@@ -8,3 +8,4 @@ pub const PROFILE: &str = "profile";
 pub const SYNC: &str = "sync";
 pub const UI: &str = "ui";
 pub const UPDATE: &str = "update";
+pub const DEBUG: &str = "debug";

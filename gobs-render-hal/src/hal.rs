@@ -6,7 +6,7 @@ use winit::window::Window;
 use gobs_core::{ImageExtent2D, ImageFormat, SamplerFilter};
 
 use crate::{
-    CommandQueueType, ImageUsage, ObjectDataLayout,
+    BindingGroupLayout, CommandQueueType, ImageUsage, ObjectDataLayout,
     backend::VulkanHAL,
     command::CommandBuffer,
     pipeline::{ComputePipelineBuilder, GraphicsPipelineBuilder},
@@ -60,6 +60,7 @@ pub trait RenderHAL {
     fn create_graphics_pipeline(&self, name: &str) -> Box<dyn GraphicsPipelineBuilder>;
     fn create_compute_pipeline(&self, name: &str) -> Box<dyn ComputePipelineBuilder>;
     fn get_pipeline_object_layout(&self, pipeline: Handle) -> &ObjectDataLayout;
+    fn get_descriptor_layout(&self, pipeline: Handle) -> &[BindingGroupLayout];
 
     fn acquire(&mut self, frame: usize) -> Result<(), ()>;
     fn present(&mut self) -> Result<(), ()>;

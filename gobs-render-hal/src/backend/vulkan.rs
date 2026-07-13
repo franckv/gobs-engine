@@ -13,7 +13,7 @@ use gobs_core::{ImageExtent2D, ImageFormat, SamplerFilter, logger};
 use gobs_vulkan as vk;
 
 use crate::{
-    CommandBuffer, CommandQueueType, ImageUsage, ObjectDataLayout,
+    BindingGroupLayout, CommandBuffer, CommandQueueType, ImageUsage, ObjectDataLayout,
     backend::vulkan::{
         buffer::BufferView,
         pipeline::{VkComputePipelineBuilder, VkGraphicsPipelineBuilder},
@@ -184,6 +184,12 @@ impl RenderHAL for VulkanHAL {
 
     fn create_compute_pipeline(&self, name: &str) -> Box<dyn ComputePipelineBuilder> {
         Box::new(VkComputePipelineBuilder::new(name, self.device.clone()))
+    }
+
+    fn get_descriptor_layout(&self, pipeline: Handle) -> &[BindingGroupLayout] {
+        let pipeline = self.registry.pipelines.get(pipeline).unwrap();
+
+        &pipeline.descriptor_layout
     }
 
     fn get_pipeline_object_layout(&self, pipeline: Handle) -> &ObjectDataLayout {

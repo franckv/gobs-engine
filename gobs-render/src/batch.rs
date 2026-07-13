@@ -54,7 +54,6 @@ impl RenderBatch {
     ) -> Result<(), ResourceError> {
         tracing::debug!(target: logger::RENDER, "Add model: {} to render list", model.name());
 
-        // TODO: add material data for forward pass only
         for (mesh, material_instance_handle) in &model.meshes {
             let mut render_flags = flags;
 
@@ -181,15 +180,14 @@ impl RenderBatch {
             let pipeline_handle = material_data.data.pipeline;
 
             let pipeline_data = resource_manager.get_data(&mut ctx.hal, &pipeline_handle)?;
+            let pipeline_properties = pipeline_data.properties;
 
-            {
-                let pipeline_properties = pipeline_data.properties;
-
-                if let PipelineProperties::Graphics(properties) = pipeline_properties {
-                    tracing::trace!("Using pipeline {:?}", properties);
-                }
+            if let PipelineProperties::Graphics(properties) = pipeline_properties {
+                tracing::trace!("Using pipeline {:?}", properties);
+                Ok(Some(pipeline_data.data.pipeline))
+            } else {
+                Err(ResourceError::InvalidData)
             }
-            Ok(Some(pipeline_data.data.pipeline))
         } else {
             Ok(None)
         }
@@ -253,6 +251,16 @@ impl RenderBatch {
     }
 
     #[tracing::instrument(target = "profile", skip_all, level = "trace")]
+    fn validate(&mut self, ctx: &mut GfxContext) {
+        for obj in &self.render_list {
+            if let Some(pipeline) = obj.pipeline {
+                let descriptor_layout = ctx.hal.get_descriptor_layout(pipeline);
+                tracing::trace!(target: logger::DEBUG, "Render object: {}, descriptor layout: {:#?}", &obj.model, descriptor_layout);
+            }
+        }
+    }
+
+    #[tracing::instrument(target = "profile", skip_all, level = "trace")]
     pub fn finish(&mut self, ctx: &mut GfxContext, resource_manager: &mut ResourceManager) {
         let bb = self.bounding_geometry.take();
 
@@ -276,6 +284,9 @@ impl RenderBatch {
             )
             .expect("Add bounding box");
         }
+
+        #[cfg(debug_assertions)]
+        self.validate(ctx);
 
         self.sort();
     }

@@ -15,6 +15,7 @@ use crate::{
 pub struct VkPipeline {
     pub pipeline: vk::Pipeline,
     pub push_layout: ObjectDataLayout,
+    pub descriptor_layout: Vec<BindingGroupLayout>,
 }
 
 pub(crate) struct VkComputePipelineBuilder {
@@ -69,6 +70,7 @@ impl ComputePipelineBuilder for VkComputePipelineBuilder {
         hal.registry.pipelines.insert(VkPipeline {
             pipeline,
             push_layout: self.push_layout,
+            descriptor_layout: self.descriptor_layouts,
         })
     }
 }
@@ -267,6 +269,7 @@ impl GraphicsPipelineBuilder for VkGraphicsPipelineBuilder {
         hal.registry.pipelines.insert(VkPipeline {
             pipeline,
             push_layout: self.push_layout,
+            descriptor_layout: self.descriptor_layouts,
         })
     }
 }

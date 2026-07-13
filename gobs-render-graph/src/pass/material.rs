@@ -221,10 +221,10 @@ impl RenderPass for MaterialPass {
                 SceneDataProp::LightAmbientColor => UniformPropData::Vec4F([0.1, 0.1, 0.1, 1.]),
             });
 
-        tracing::debug!(target: logger::RENDER, "Update Uniform (scene data, push)");
+        tracing::debug!(target: logger::RENDER, "Update uniform (scene data, push)");
         render_job.update_uniform(ctx, &scene_data_bytes);
 
-        tracing::debug!(target: logger::RENDER, "Render object list");
+        tracing::debug!(target: logger::RENDER, "Draw render object list");
         render_job.draw_list(ctx, frame, render_list)?;
 
         tracing::debug!(target: logger::RENDER, "Stop render job");
