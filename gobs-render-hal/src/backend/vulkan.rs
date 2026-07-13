@@ -54,6 +54,10 @@ pub struct VulkanHAL {
 }
 
 impl RenderHAL for VulkanHAL {
+    fn new_frame(&mut self, frame_number: usize) {
+        self.bindings.reset(frame_number);
+    }
+
     fn as_any(&self) -> &dyn Any {
         self
     }
@@ -168,7 +172,10 @@ impl RenderHAL for VulkanHAL {
 
         let command = vk::CommandBuffer::new(self.device.clone(), queue, command_pool, name);
 
-        Box::new(VkCommandBuffer { command })
+        Box::new(VkCommandBuffer {
+            command,
+            frame_number: 0,
+        })
     }
 
     fn create_graphics_pipeline(&self, name: &str) -> Box<dyn GraphicsPipelineBuilder> {
@@ -246,7 +253,7 @@ impl VulkanHAL {
         let allocator = vk::Allocator::new(device.clone());
 
         let mut registry = ResourcesRegistry::default();
-        let bindings = BindingRegistry::default();
+        let bindings = BindingRegistry::new(frames_in_flight);
 
         display.init(&mut registry, device.clone(), frames_in_flight);
 

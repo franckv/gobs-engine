@@ -9,7 +9,7 @@ pub enum CommandQueueType {
 }
 
 pub trait CommandBuffer {
-    fn begin(&self);
+    fn begin(&mut self, frame_number: usize);
     fn end(&self);
     fn begin_label(&self, label: &str);
     fn end_label(&self);

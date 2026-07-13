@@ -18,6 +18,10 @@ pub struct GfxContext {
 }
 
 impl GfxContext {
+    pub fn new_frame(&mut self, frame_number: usize) {
+        self.hal.new_frame(frame_number);
+    }
+
     pub fn new(name: &str, window: Option<Window>, validation: bool) -> Result<Self, RenderError> {
         let hal = create_hal(name, window, FRAMES_IN_FLIGHT, validation);
 

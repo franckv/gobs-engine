@@ -67,12 +67,13 @@ impl DescriptorSetPool {
     }
 
     fn grow(&mut self) {
-        tracing::debug!(target: logger::MEMORY, "Growing descriptor pool");
+        tracing::debug!(target: logger::MEMORY, "Growing descriptor pool ({} pools)", self.full_pools.len());
 
         self.full_pools.push(self.current_pool);
 
         self.current_pool = self.available_pools.pop().unwrap_or_else(|| {
             self.max_sets = MAX_POOL_SETS.min((self.max_sets as f32 * 1.5) as usize);
+            tracing::debug!(target: logger::MEMORY, "Max sets={}", self.max_sets);
             Self::allocate_pool(
                 self.device.clone(),
                 self.descriptor_layout.clone(),

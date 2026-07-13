@@ -233,8 +233,12 @@ impl FrameGraph {
     }
 
     #[tracing::instrument(target = "profile", skip_all, level = "trace")]
-    pub fn begin(&mut self, ctx: &mut GfxContext, frame: &FrameData) -> Result<(), RenderError> {
-        let cmd = &frame.command;
+    pub fn begin(
+        &mut self,
+        ctx: &mut GfxContext,
+        frame: &mut FrameData,
+    ) -> Result<(), RenderError> {
+        let cmd = &mut frame.command;
 
         let draw_image_extent = ctx
             .hal
@@ -253,7 +257,7 @@ impl FrameGraph {
 
         self.resource_manager.invalidate(ctx.hal.as_mut());
 
-        cmd.begin();
+        cmd.begin(frame.frame_number);
 
         cmd.begin_label(&format!("Frame {}", frame.frame_number));
 

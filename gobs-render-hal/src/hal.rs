@@ -33,6 +33,8 @@ pub enum BufferType {
 }
 
 pub trait RenderHAL {
+    fn new_frame(&mut self, frame_number: usize);
+
     fn as_any(&self) -> &dyn Any;
     fn as_any_mut(&mut self) -> &mut dyn Any;
 

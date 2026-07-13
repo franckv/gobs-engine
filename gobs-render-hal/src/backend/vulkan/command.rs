@@ -9,11 +9,13 @@ use crate::{
 
 pub struct VkCommandBuffer {
     pub(crate) command: vk::CommandBuffer,
+    pub frame_number: usize,
 }
 
 impl CommandBuffer for VkCommandBuffer {
-    fn begin(&self) {
+    fn begin(&mut self, frame_number: usize) {
         self.command.begin();
+        self.frame_number = frame_number;
     }
 
     fn end(&self) {
@@ -168,9 +170,12 @@ impl CommandBuffer for VkCommandBuffer {
                 &self.command,
             );
         } else {
-            let ds = hal
-                .bindings
-                .allocate_ds(hal.device.clone(), &hal.registry, resource);
+            let ds = hal.bindings.get_ds(
+                hal.device.clone(),
+                &hal.registry,
+                resource,
+                self.frame_number,
+            );
 
             let set = binding_type.set();
             self.command.bind_descriptor_set(&ds, set, pipeline);

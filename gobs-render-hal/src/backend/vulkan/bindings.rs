@@ -12,12 +12,77 @@ use crate::{
     BindResource, BindingGroupLayout, Handle, backend::vulkan::registry::ResourcesRegistry,
 };
 
-#[derive(Default)]
 pub(crate) struct BindingRegistry {
-    pools: HashMap<BindingGroupLayout, DescriptorSetPool>,
+    frames_in_flight: usize,
+    pools: Vec<HashMap<BindingGroupLayout, DescriptorSetPool>>,
 }
 
+const MAX_SET: usize = 10;
+
 impl BindingRegistry {
+    pub fn new(frames_in_flight: usize) -> Self {
+        Self {
+            frames_in_flight,
+            pools: (0..frames_in_flight).map(|_| HashMap::new()).collect(),
+        }
+    }
+
+    pub fn reset(&mut self, frame_number: usize) {
+        let mut map = &mut self.pools[frame_number % self.frames_in_flight];
+
+        for pool in map.values_mut() {
+            pool.reset();
+        }
+    }
+
+    pub fn push_descriptor(
+        &mut self,
+        device: Arc<vk::Device>,
+        registry: &ResourcesRegistry,
+        resource: &BindResource,
+        pipeline: &Pipeline,
+        cmd: &vk::CommandBuffer,
+    ) {
+        let update = self.generate_update(device, registry, resource);
+
+        update.push_descriptors(cmd, pipeline, resource.layout.binding_group_type.set());
+    }
+
+    fn get_pool(
+        &mut self,
+        device: Arc<vk::Device>,
+        resource: &BindResource,
+        frame_number: usize,
+    ) -> &mut DescriptorSetPool {
+        let mut map = &mut self.pools[frame_number % self.frames_in_flight];
+
+        map.entry(resource.layout.clone()).or_insert_with(|| {
+            DescriptorSetPool::new(
+                device.clone(),
+                vk_layout(device.clone(), &resource.layout),
+                MAX_SET,
+            )
+        })
+    }
+
+    pub fn get_ds(
+        &mut self,
+        device: Arc<vk::Device>,
+        registry: &ResourcesRegistry,
+        resource: &BindResource,
+        frame_number: usize,
+    ) -> DescriptorSet {
+        let ds_pool = self.get_pool(device.clone(), resource, frame_number);
+
+        let ds = ds_pool.allocate();
+
+        let update = self.generate_update(device, registry, resource);
+
+        update.write(&ds);
+
+        ds
+    }
+
     fn generate_update(
         &mut self,
         device: Arc<vk::Device>,
@@ -71,43 +136,6 @@ impl BindingRegistry {
         }
 
         update
-    }
-
-    pub fn push_descriptor(
-        &mut self,
-        device: Arc<vk::Device>,
-        registry: &ResourcesRegistry,
-        resource: &BindResource,
-        pipeline: &Pipeline,
-        cmd: &vk::CommandBuffer,
-    ) {
-        let update = self.generate_update(device, registry, resource);
-
-        update.push_descriptors(cmd, pipeline, resource.layout.binding_group_type.set());
-    }
-
-    pub fn allocate_ds(
-        &mut self,
-        device: Arc<vk::Device>,
-        registry: &ResourcesRegistry,
-        resource: &BindResource,
-    ) -> DescriptorSet {
-        let ds = match self.pools.entry(resource.layout.clone()) {
-            Entry::Occupied(mut e) => e.get_mut().allocate(),
-            Entry::Vacant(e) => e
-                .insert(DescriptorSetPool::new(
-                    device.clone(),
-                    vk_layout(device.clone(), &resource.layout),
-                    10,
-                ))
-                .allocate(),
-        };
-
-        let update = self.generate_update(device, registry, resource);
-
-        update.write(&ds);
-
-        ds
     }
 }
 

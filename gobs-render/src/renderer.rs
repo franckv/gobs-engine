@@ -110,6 +110,7 @@ impl Renderer {
         let frame = &mut self.frames[self.frame_number % self.gfx.frames_in_flight];
 
         frame.reset(self.frame_number);
+        self.gfx.new_frame(self.frame_number);
 
         self.graph.begin(&mut self.gfx, frame)?;
 
