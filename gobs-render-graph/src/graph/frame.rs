@@ -264,7 +264,7 @@ impl FrameGraph {
     }
 
     #[tracing::instrument(target = "profile", skip_all, level = "trace")]
-    pub fn end(&mut self, ctx: &mut GfxContext, frame: &FrameData) -> Result<(), RenderError> {
+    pub fn end(&mut self, ctx: &mut GfxContext, frame: &mut FrameData) -> Result<(), RenderError> {
         tracing::debug!(target: logger::RENDER, "End frame");
 
         let frame_id = frame.frame_number % ctx.frames_in_flight;
@@ -280,6 +280,7 @@ impl FrameGraph {
         cmd.end();
 
         cmd.submit2(ctx.hal.as_ref(), frame_id);
+        frame.submitted = true;
 
         let Ok(_) = ctx.hal.present() else {
             return Err(RenderError::Outdated);
@@ -294,7 +295,7 @@ impl FrameGraph {
     pub fn render(
         &mut self,
         ctx: &mut GfxContext,
-        frame: &mut FrameData,
+        frame: &FrameData,
         render_list: &[RenderObject],
         scene_data: &SceneData,
     ) -> Result<(), RenderError> {

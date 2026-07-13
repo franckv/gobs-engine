@@ -8,6 +8,7 @@ pub struct FrameData {
     pub frame_number: usize,
     pub frames_in_flight: usize,
     pub command: Box<dyn CommandBuffer>,
+    pub submitted: bool,
 }
 
 impl FrameData {
@@ -21,6 +22,7 @@ impl FrameData {
             frame_number: 0,
             frames_in_flight,
             command,
+            submitted: true,
         }
     }
 
@@ -30,6 +32,7 @@ impl FrameData {
 
         self.frame_number = frame_number;
 
-        self.command.reset();
+        self.command.reset(self.submitted);
+        self.submitted = false;
     }
 }

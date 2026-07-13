@@ -60,7 +60,7 @@ impl RenderPass for ComputePass {
     fn render(
         &self,
         ctx: &mut GfxContext,
-        frame: &mut FrameData,
+        frame: &FrameData,
         resource_manager: &GraphResourceManager,
         _render_list: &[RenderObject],
         _scene_data: &SceneData,

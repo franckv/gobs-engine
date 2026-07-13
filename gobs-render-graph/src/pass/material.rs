@@ -175,7 +175,7 @@ impl RenderPass for MaterialPass {
     fn render(
         &self,
         ctx: &mut GfxContext,
-        frame: &mut FrameData,
+        frame: &FrameData,
         resource_manager: &GraphResourceManager,
         render_list: &[RenderObject],
         scene_data: &SceneData,

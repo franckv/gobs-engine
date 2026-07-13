@@ -674,50 +674,6 @@ impl CommandBuffer {
                 .unwrap();
         }
     }
-
-    pub fn immediate<F>(&self, callback: F)
-    where
-        F: Fn(&CommandBuffer),
-    {
-        tracing::debug!(target: logger::RENDER, "Submit immediate command");
-        self.fence.reset();
-        assert!(!self.fence.signaled());
-
-        self.reset();
-
-        self.begin();
-
-        callback(self);
-
-        self.end();
-
-        self.submit2(None, None);
-
-        self.fence.wait();
-        tracing::debug!(target: logger::RENDER, "Immediate command done");
-    }
-
-    pub fn immediate_mut<F>(&self, mut callback: F)
-    where
-        F: FnMut(&CommandBuffer),
-    {
-        tracing::debug!(target: logger::RENDER, "Submit immediate command");
-        self.fence.reset();
-        assert!(!self.fence.signaled());
-
-        self.reset();
-
-        self.begin();
-
-        callback(self);
-
-        self.end();
-
-        self.submit2(None, None);
-
-        self.fence.wait();
-        tracing::debug!(target: logger::RENDER, "Immediate command done");
-    }
 }
 
 impl Wrap<vk::CommandBuffer> for CommandBuffer {
