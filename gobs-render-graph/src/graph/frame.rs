@@ -4,9 +4,7 @@ use gobs_resource::ResourceManager;
 
 use crate::{
     FrameData, GfxContext, GraphConfig, PassId, PipelinesConfig, RenderError, RenderObject,
-    RenderPass,
-    graph::resource::GraphResourceManager,
-    pass::{PassType, compute::ComputePass, present::PresentPass},
+    RenderPass, graph::resource::GraphResourceManager, pass::PassType,
 };
 
 const FRAME_WIDTH: u32 = 1920;
@@ -56,20 +54,19 @@ impl FrameGraph {
             extent,
         );
 
-        graph.register_pass(ComputePass::new(ctx, "compute")?);
-
         PipelinesConfig::load_resources(ctx, "pipelines.ron", resource_manager)
             .expect("Load pipelines");
 
         tracing::debug!(target: logger::INIT, "Load graph: {}", "scene");
         let passes = GraphConfig::load_graph(ctx, "graph.ron", graph_name, resource_manager)
-            .map_err(|_| RenderError::InvalidData)?;
+            .map_err(|e| {
+                tracing::error!(target: logger::INIT, "Load graph: {}", e);
+                RenderError::InvalidData
+            })?;
         for pass in &passes {
             tracing::debug!(target: logger::INIT, "Load pass: {}", pass.name());
             graph.register_pass(pass.clone());
         }
-
-        graph.register_pass(PresentPass::new(ctx, "present")?);
 
         Ok(graph)
     }
@@ -103,8 +100,6 @@ impl FrameGraph {
         let passes = GraphConfig::load_graph(ctx, "graph.ron", "headless", resource_manager)
             .map_err(|_| RenderError::InvalidData)?;
 
-        graph.register_pass(ComputePass::new(ctx, "compute")?);
-
         for pass in &passes {
             graph.register_pass(pass.clone());
         }
@@ -137,8 +132,6 @@ impl FrameGraph {
         for pass in &passes {
             graph.register_pass(pass.clone());
         }
-
-        graph.register_pass(PresentPass::new(ctx, "present")?);
 
         Ok(graph)
     }

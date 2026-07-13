@@ -1,9 +1,11 @@
 GraphConfig(
     graphes: {
         "debug": [
+            "compute",
             "depth",
             "forward",
-            "ui_overlay"
+            "ui_overlay",
+            "present",
         ],
         "scene": [
             "depth",
@@ -11,14 +13,16 @@ GraphConfig(
             "wire",
             "bounds",
             "select",
-            "ui_overlay"
+            "ui_overlay",
+            "present",
         ],
         "headless": [
             "depth",
             "forward"
         ],
         "ui": [
-            "ui"
+            "ui",
+            "present",
         ],
         "test": [
             "forward",
@@ -26,6 +30,16 @@ GraphConfig(
         ]
     },
     passes: {
+        "compute" : (
+            ty: Compute,
+            tag: Compute,
+            pipeline: "sky",
+            attachments: {
+                "draw": StorageImage(
+                    access: ReadWrite,
+                )
+            },
+        ),
         "bounds": (
             ty: Material,
             tag: Bounds,

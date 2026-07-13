@@ -79,8 +79,7 @@ impl MaterialPass {
             AttachmentType::Input => self.input_attachments.push(name.to_string()),
             AttachmentType::Color => self.color_attachments.push(name.to_string()),
             AttachmentType::Depth => self.depth_attachments.push(name.to_string()),
-            AttachmentType::Resolve => todo!(),
-            AttachmentType::Preserve => todo!(),
+            _ => unimplemented!(),
         }
 
         self.attachments.insert(name.to_string(), attachment);

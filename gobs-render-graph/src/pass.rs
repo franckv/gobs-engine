@@ -52,6 +52,7 @@ pub enum AttachmentType {
     Depth,
     Resolve,
     Preserve,
+    ImageStorage,
 }
 
 #[allow(dead_code)]

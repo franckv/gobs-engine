@@ -1,5 +1,21 @@
 PipelinesConfig(
-    pipelines: {
+    compute_pipelines: {
+        "sky": (
+            compute_shader: (
+                file: "sky.comp.spv",
+                entry: "main",
+            ),
+            bindings: [
+            (
+                    group: ComputeData,
+                    stage: Compute,
+                    descriptor_type: StorageImage
+            ),
+            ],
+
+        )
+    },
+    graphics_pipelines: {
         "wireframe": (
             vertex_shader: (
                 file: "wire.spv",

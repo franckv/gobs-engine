@@ -20,11 +20,19 @@ use crate::{
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct PipelinesConfig {
-    pipelines: HashMap<String, PipelineConfig>,
+    compute_pipelines: HashMap<String, ComputePipelineConfig>,
+    graphics_pipelines: HashMap<String, GraphicsPipelineConfig>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-struct PipelineConfig {
+struct ComputePipelineConfig {
+    compute_shader: Option<ShaderConfig>,
+    #[serde(default)]
+    bindings: Vec<BindingConfig>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct GraphicsPipelineConfig {
     vertex_shader: Option<ShaderConfig>,
     fragment_shader: Option<ShaderConfig>,
     #[serde(default)]
@@ -89,8 +97,15 @@ impl PipelinesConfig {
             .from_str(data)
             .map_err(|_| ResourceError::InvalidData)?;
 
-        for pipeline_name in config.pipelines.keys() {
-            let pipeline = Self::load_pipeline(ctx, &config, pipeline_name);
+        for pipeline_name in config.compute_pipelines.keys() {
+            let pipeline = Self::load_compute_pipeline(&config, pipeline_name);
+            if let Some(pipeline) = pipeline {
+                resource_manager.add::<Pipeline>(pipeline, ResourceLifetime::Static, true);
+            }
+        }
+
+        for pipeline_name in config.graphics_pipelines.keys() {
+            let pipeline = Self::load_graphics_pipeline(ctx, &config, pipeline_name);
             if let Some(pipeline) = pipeline {
                 resource_manager.add::<Pipeline>(pipeline, ResourceLifetime::Static, true);
             }
@@ -99,12 +114,35 @@ impl PipelinesConfig {
         Ok(())
     }
 
-    fn load_pipeline(
+    fn load_compute_pipeline(config: &PipelinesConfig, name: &str) -> Option<PipelineProperties> {
+        let pipeline = config.compute_pipelines.get(name)?;
+
+        let mut props = PipelineProperties::compute(name);
+
+        if let Some(shader) = &pipeline.compute_shader {
+            props = props
+                .compute_shader(&shader.file)
+                .compute_entry(&shader.entry);
+        }
+
+        let mut last_group = BindingGroupType::None;
+        for binding in &pipeline.bindings {
+            if binding.group != last_group {
+                props = props.binding_group(binding.stage, binding.group);
+                last_group = binding.group;
+            }
+            props = props.binding(binding.descriptor_type);
+        }
+
+        Some(PipelineProperties::Compute(props))
+    }
+
+    fn load_graphics_pipeline(
         ctx: &GfxContext,
         config: &PipelinesConfig,
         name: &str,
     ) -> Option<PipelineProperties> {
-        let pipeline = config.pipelines.get(name)?;
+        let pipeline = config.graphics_pipelines.get(name)?;
 
         let mut object_layout = ObjectDataLayout::default();
         for prop in &pipeline.object_layout {
@@ -175,7 +213,7 @@ mod tests {
         GfxContext,
         resources::{
             PipelinesConfig,
-            pipeline::pipeline_config::{AttachmentFormat, DepthConfig, PipelineConfig},
+            pipeline::pipeline_config::{AttachmentFormat, DepthConfig, GraphicsPipelineConfig},
         },
     };
 
@@ -216,7 +254,7 @@ mod tests {
         let pipeline_config: PipelinesConfig = options.from_str(data).unwrap();
 
         let _pipeline =
-            PipelinesConfig::load_pipeline(&ctx, &pipeline_config, "wireframe").unwrap();
+            PipelinesConfig::load_graphics_pipeline(&ctx, &pipeline_config, "wireframe").unwrap();
     }
 
     #[test]
@@ -224,9 +262,10 @@ mod tests {
         setup();
 
         let config = PipelinesConfig {
-            pipelines: HashMap::from([(
+            compute_pipelines: HashMap::new(),
+            graphics_pipelines: HashMap::from([(
                 "wireframe".to_string(),
-                PipelineConfig {
+                GraphicsPipelineConfig {
                     vertex_shader: None,
                     fragment_shader: None,
                     object_layout: Vec::new(),

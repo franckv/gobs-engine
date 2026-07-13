@@ -1,8 +1,5 @@
 use gobs_core::logger;
-use gobs_render_hal::{
-    BindingGroupLayout, BindingGroupType, DescriptorStage, DynamicStateElem, Rect2D, RenderHAL,
-    Viewport,
-};
+use gobs_render_hal::{BindingGroupLayout, DynamicStateElem, Rect2D, RenderHAL, Viewport};
 use gobs_resource::{
     ResourceRegistry, {Resource, ResourceError, ResourceHandle, ResourceLoader, ResourceProperties},
 };
@@ -30,12 +27,11 @@ impl PipelineLoader {
             pipeline = pipeline.shader(shader, &properties.compute_entry);
         }
 
-        for (_, bindings) in &properties.binding_groups {
-            let mut binding_group_layout = BindingGroupLayout::new(BindingGroupType::ComputeData);
+        for (stage, ty, bindings) in &properties.binding_groups {
+            let mut binding_group_layout = BindingGroupLayout::new(*ty);
 
             for binding in bindings {
-                binding_group_layout =
-                    binding_group_layout.add_binding(*binding, DescriptorStage::Compute);
+                binding_group_layout = binding_group_layout.add_binding(*binding, *stage);
             }
 
             pipeline = pipeline.binding_group(binding_group_layout);

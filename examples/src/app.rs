@@ -104,12 +104,13 @@ impl SampleApp {
             ctx.renderer
                 .prepare(resource_manager, &mut |gfx, batch, resource_manager| {
                     if let Some(scene) = &scene {
-                        tracing::info!("Draw scene");
+                        tracing::debug!("Draw scene");
                         scene
                             .draw(gfx, resource_manager, batch, None, RenderFlags::ENTITY)
                             .map_err(|_| RenderError::InvalidData)?;
                     }
                     if let Some(ui) = &ui {
+                        tracing::debug!("Draw ui");
                         ui.draw(gfx, resource_manager, batch, None, RenderFlags::UI)
                             .map_err(|_| RenderError::InvalidData)?;
                     }

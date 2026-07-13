@@ -214,7 +214,8 @@ pub struct ComputePipelineProperties {
     pub name: String,
     pub(crate) compute_entry: String,
     pub(crate) compute_shader: Option<String>,
-    pub(crate) binding_groups: Vec<(DescriptorStage, Vec<DescriptorType>)>,
+    pub(crate) binding_groups: Vec<(DescriptorStage, BindingGroupType, Vec<DescriptorType>)>,
+    pub last_binding_group: BindingGroupType,
 }
 
 impl ComputePipelineProperties {
@@ -224,6 +225,7 @@ impl ComputePipelineProperties {
             compute_entry: "main".to_string(),
             compute_shader: None,
             binding_groups: Vec::new(),
+            last_binding_group: BindingGroupType::None,
         }
     }
 
@@ -239,14 +241,15 @@ impl ComputePipelineProperties {
         self
     }
 
-    pub fn binding_group(mut self, stage: DescriptorStage) -> Self {
-        self.binding_groups.push((stage, Vec::new()));
+    pub fn binding_group(mut self, stage: DescriptorStage, ty: BindingGroupType) -> Self {
+        self.binding_groups.push((stage, ty, Vec::new()));
+        self.last_binding_group = ty;
 
         self
     }
 
     pub fn binding(mut self, ty: DescriptorType) -> Self {
-        if let Some((_, group)) = self.binding_groups.last_mut() {
+        if let Some((_, _, group)) = self.binding_groups.last_mut() {
             group.push(ty);
         }
 

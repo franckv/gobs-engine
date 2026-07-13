@@ -1,5 +1,3 @@
-use std::sync::Arc;
-
 use gobs_core::logger;
 use gobs_render_hal::{ImageLayout, SceneData};
 
@@ -13,15 +11,17 @@ pub struct PresentPass {
     id: PassId,
     name: String,
     ty: PassType,
+    render_target: String,
 }
 
 impl PresentPass {
-    pub fn new(_ctx: &GfxContext, name: &str) -> Result<Arc<dyn RenderPass>, RenderError> {
-        Ok(Arc::new(Self {
+    pub fn new(_ctx: &GfxContext, name: &str, render_target: &str) -> Self {
+        Self {
             id: PassId::new_v4(),
             name: name.to_string(),
             ty: PassType::Present,
-        }))
+            render_target: render_target.to_string(),
+        }
     }
 }
 
@@ -54,7 +54,7 @@ impl RenderPass for PresentPass {
 
         cmd.transition_image_layout(
             ctx.hal.as_mut(),
-            resource_manager.image("draw"),
+            resource_manager.image(&self.render_target),
             ImageLayout::TransferSrc,
         );
 
@@ -62,7 +62,7 @@ impl RenderPass for PresentPass {
 
         cmd.copy_image_to_image(
             ctx.hal.as_ref(),
-            resource_manager.image("draw"),
+            resource_manager.image(&self.render_target),
             render_target,
         );
 

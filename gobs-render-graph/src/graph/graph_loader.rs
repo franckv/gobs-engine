@@ -3,15 +3,20 @@ use std::{collections::HashMap, sync::Arc};
 use serde::{Deserialize, Serialize};
 
 use gobs_core::{ImageExtent2D, ImageFormat, logger};
-use gobs_render_hal::{ImageLayout, ImageUsage, SceneDataLayout, SceneDataProp, UniformData as _};
+use gobs_render_hal::{
+    BindingGroupLayout, ImageLayout, ImageUsage, SceneDataLayout, SceneDataProp, UniformData as _,
+};
 use gobs_resource::{
     ResourceError, ResourceManager,
     load::{self, AssetType},
 };
 
 use crate::{
-    GfxContext, PassType, Pipeline, RenderFlags,
-    pass::{AttachmentAccess, AttachmentType, RenderPass, RenderPassType, material::MaterialPass},
+    GfxContext, PassType, Pipeline, PipelineProperties, RenderFlags,
+    pass::{
+        AttachmentAccess, AttachmentType, RenderPass, RenderPassType, compute::ComputePass,
+        material::MaterialPass, present::PresentPass,
+    },
 };
 
 // TODO: store in config file
@@ -36,6 +41,7 @@ struct RenderPassConfig {
     scene_layout: Vec<SceneDataProp>,
     #[serde(default)]
     flags: RenderFlags,
+    target: Option<String>,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -47,6 +53,9 @@ enum AttachmentInfo {
     DepthAttachment {
         access: AttachmentAccess,
         clear: bool,
+    },
+    StorageImage {
+        access: AttachmentAccess,
     },
 }
 
@@ -114,6 +123,88 @@ impl GraphConfig {
 
         let pass = graph.passes.get(passname)?;
 
+        match pass.ty {
+            RenderPassType::Compute => {
+                Self::load_compute_pass(ctx, passname, pass, resource_manager)
+            }
+            RenderPassType::Material => {
+                Self::load_material_pass(ctx, passname, pass, graph, resource_manager)
+            }
+            RenderPassType::Present => Self::load_present_pass(ctx, passname, pass),
+        }
+    }
+
+    fn load_compute_pass(
+        ctx: &mut GfxContext,
+        passname: &str,
+        pass: &RenderPassConfig,
+        resource_manager: &mut ResourceManager,
+    ) -> Option<Arc<dyn RenderPass>> {
+        let pipeline_handle = resource_manager.get_by_name::<Pipeline>(pass.pipeline.as_ref()?)?;
+        let pipeline = resource_manager
+            .get_data(&mut ctx.hal, &pipeline_handle)
+            .ok()?;
+
+        // TODO: move to pipeline properties
+        let binding_group_layout = if let PipelineProperties::Compute(properties) =
+            pipeline.properties
+        {
+            // TODO: binding group should be optional
+            assert!(
+                properties.binding_groups.len() == 1,
+                "Compute shader should have only one binding group"
+            );
+
+            let binding_group = &properties.binding_groups[0];
+
+            let mut binding_group_layout = BindingGroupLayout::new(binding_group.1);
+
+            for binding in &binding_group.2 {
+                binding_group_layout = binding_group_layout.add_binding(*binding, binding_group.0);
+            }
+
+            binding_group_layout
+        } else {
+            return None;
+        };
+
+        let mut compute_pass =
+            ComputePass::new(passname, pipeline.data.pipeline, binding_group_layout);
+
+        for (attach_name, attach_config) in &pass.attachments {
+            match attach_config {
+                AttachmentInfo::StorageImage { access } => {
+                    compute_pass
+                        .add_attachment(attach_name, AttachmentType::ImageStorage, *access)
+                        .with_layout(ImageLayout::General);
+                }
+                _ => unimplemented!(),
+            }
+        }
+
+        Some(Arc::new(compute_pass))
+    }
+
+    fn load_present_pass(
+        ctx: &mut GfxContext,
+        passname: &str,
+        pass: &RenderPassConfig,
+    ) -> Option<Arc<dyn RenderPass>> {
+        if let Some(target) = &pass.target {
+            Some(Arc::new(PresentPass::new(ctx, passname, target)))
+        } else {
+            tracing::error!(target: logger::INIT, "Invalid present target");
+            None
+        }
+    }
+
+    fn load_material_pass(
+        ctx: &mut GfxContext,
+        passname: &str,
+        pass: &RenderPassConfig,
+        graph: &GraphConfig,
+        resource_manager: &mut ResourceManager,
+    ) -> Option<Arc<dyn RenderPass>> {
         let mut scene_layout = SceneDataLayout::default();
         for prop in &pass.scene_layout {
             scene_layout = scene_layout.prop(*prop);
@@ -158,6 +249,9 @@ impl GraphConfig {
                         .with_clear(*clear)
                         .with_extent(default_extent)
                         .with_layout(ImageLayout::Depth);
+                }
+                AttachmentInfo::StorageImage { access: _ } => {
+                    tracing::warn!(target: logger::INIT, "Invalid attachment for pass {}", passname)
                 }
             }
         }
@@ -251,6 +345,7 @@ mod tests {
                     )]),
                     scene_layout: Vec::new(),
                     flags: RenderFlags::ENTITY,
+                    target: None,
                 },
             )]),
             attachments: HashMap::new(),

@@ -56,7 +56,6 @@ MaterialsConfig(
             vertex_entry: "main",
             fragment_shader: "mesh_n.frag.spv",
             fragment_entry: "main",
-            vertex_attributes: Some("POSITION | COLOR | TEXTURE | NORMAL | TANGENT | BITANGENT"),
             texture_layout: [
                 Diffuse,
                 Normal

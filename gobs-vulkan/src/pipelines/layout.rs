@@ -53,7 +53,7 @@ impl PipelineLayout {
             idx += 1;
         }
 
-        tracing::debug!(target: logger::RENDER, "Create pipline layout with {} descriptor sets", set_layout.len());
+        tracing::debug!(target: logger::RENDER, "Create pipeline layout with {} descriptor sets", set_layout.len());
 
         assert_eq!(set_layout.len(), descriptor_layouts.len());
 

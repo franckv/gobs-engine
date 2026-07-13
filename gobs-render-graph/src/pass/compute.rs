@@ -1,46 +1,53 @@
-use std::sync::Arc;
+use std::collections::HashMap;
 
-use gobs_core::logger;
-use gobs_render_hal::{
-    BindResource, BindingGroupLayout, BindingGroupType, DescriptorStage, DescriptorType, Handle,
-    ImageLayout, SceneData,
-};
+use gobs_core::{ImageExtent2D, logger};
+use gobs_render_hal::{BindResource, BindingGroupLayout, Handle, SceneData};
 
 use crate::{
     FrameData, GfxContext, RenderError, RenderObject,
     graph::GraphResourceManager,
-    pass::{PassId, PassType, RenderPass},
+    pass::{Attachment, AttachmentAccess, AttachmentType, PassId, PassType, RenderPass},
 };
 
 pub struct ComputePass {
     id: PassId,
     name: String,
     ty: PassType,
-    attachments: Vec<String>,
+    attachments: HashMap<String, Attachment>,
+    image_attachments: Vec<String>,
     pub pipeline: Handle,
     binding_layout: BindingGroupLayout,
 }
 
 impl ComputePass {
-    pub fn new(ctx: &mut GfxContext, name: &str) -> Result<Arc<dyn RenderPass>, RenderError> {
-        let pipeline_builder = ctx.hal.create_compute_pipeline(name);
-
-        let binding_layout = BindingGroupLayout::new(BindingGroupType::ComputeData)
-            .add_binding(DescriptorType::StorageImage, DescriptorStage::Compute);
-
-        let pipeline = pipeline_builder
-            .shader("sky.comp.spv", "main")
-            .binding_group(binding_layout.clone())
-            .build(ctx.hal.as_mut());
-
-        Ok(Arc::new(Self {
+    pub fn new(name: &str, pipeline: Handle, binding_layout: BindingGroupLayout) -> Self {
+        Self {
             id: PassId::new_v4(),
             name: name.to_string(),
             ty: PassType::Compute,
-            attachments: vec![String::from("draw")],
+            attachments: Default::default(),
+            image_attachments: vec![],
             pipeline,
             binding_layout,
-        }))
+        }
+    }
+
+    pub fn add_attachment(
+        &mut self,
+        name: &str,
+        ty: AttachmentType,
+        access: AttachmentAccess,
+    ) -> &mut Attachment {
+        let attachment = Attachment::new(ty, access);
+
+        match ty {
+            AttachmentType::ImageStorage => self.image_attachments.push(name.to_string()),
+            _ => todo!(),
+        }
+
+        self.attachments.insert(name.to_string(), attachment);
+
+        self.attachments.get_mut(name).expect("insert attachment")
     }
 }
 
@@ -71,22 +78,31 @@ impl RenderPass for ComputePass {
 
         cmd.begin_label("Draw compute");
 
-        let draw_attach = &self.attachments[0];
+        let mut resources = vec![];
 
-        let draw_image = resource_manager.image(draw_attach);
-        let draw_extent = ctx.hal.get_image_extent(draw_image);
+        let mut draw_extent = ImageExtent2D::default();
 
-        cmd.transition_image_layout(
-            ctx.hal.as_mut(),
-            resource_manager.image(draw_attach),
-            ImageLayout::General,
-        );
+        for (name, attachment) in &self.attachments {
+            cmd.transition_image_layout(
+                ctx.hal.as_mut(),
+                resource_manager.image(name),
+                attachment.layout,
+            );
+
+            let image = resource_manager.image(name);
+            draw_extent = ctx.hal.get_image_extent(image);
+
+            resources.push(image);
+        }
 
         cmd.bind_pipeline(ctx.hal.as_ref(), self.pipeline);
 
-        let bind_resource = BindResource::new(self.binding_layout.clone(), vec![draw_image]);
-        cmd.bind_resource(ctx.hal.as_mut(), self.pipeline, &bind_resource);
+        if !resources.is_empty() {
+            let bind_resource = BindResource::new(self.binding_layout.clone(), resources);
+            cmd.bind_resource(ctx.hal.as_mut(), self.pipeline, &bind_resource);
+        }
 
+        // TODO: hardcoded
         cmd.dispatch(draw_extent.width / 16 + 1, draw_extent.height / 16 + 1, 1);
 
         cmd.end_label();
