@@ -15,6 +15,7 @@ bitflags! {
         const Synchronization2 = 1 << 4;
         const ShaderDrawParameters = 1 << 5;
         const DeviceFault = 1 << 6;
+        const ScalarBlockLayout = 1 << 7;
     }
 }
 
@@ -75,6 +76,10 @@ impl Features {
             Feature::DescriptorIndexing,
             features12.descriptor_indexing == 1,
         );
+        enabled_features.set(
+            Feature::ScalarBlockLayout,
+            features12.scalar_block_layout == 1,
+        );
         enabled_features.set(Feature::DynamicRendering, features13.dynamic_rendering == 1);
         enabled_features.set(Feature::Synchronization2, features13.synchronization2 == 1);
         enabled_features.set(Feature::DeviceFault, fault_features.device_fault == 1);
@@ -102,6 +107,7 @@ impl Features {
         vk::PhysicalDeviceVulkan12Features::default()
             .buffer_device_address(self.enabled_features.contains(Feature::BufferDeviceAddress))
             .descriptor_indexing(self.enabled_features.contains(Feature::DescriptorIndexing))
+            .scalar_block_layout(self.enabled_features.contains(Feature::ScalarBlockLayout))
     }
 
     pub fn features13(&'_ self) -> vk::PhysicalDeviceVulkan13Features<'_> {
@@ -155,6 +161,12 @@ impl Features {
 
     pub fn device_fault(mut self) -> Self {
         self.enabled_features.set(Feature::DeviceFault, true);
+
+        self
+    }
+
+    pub fn scalar_block_layout(mut self) -> Self {
+        self.enabled_features.set(Feature::ScalarBlockLayout, true);
 
         self
     }

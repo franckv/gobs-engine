@@ -282,6 +282,7 @@ impl VulkanHAL {
             .buffer_device_address()
             .descriptor_indexing()
             .dynamic_rendering()
+            .scalar_block_layout()
             .synchronization2();
 
         tracing::info!(target: logger::INIT, "Requested features: {:?}", expected_features);

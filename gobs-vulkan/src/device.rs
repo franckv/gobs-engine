@@ -123,7 +123,7 @@ impl Device {
 
     pub fn wait(&self) {
         if let Err(vk::Result::ERROR_DEVICE_LOST) = unsafe { self.device.device_wait_idle() } {
-            panic!("Wait idle: device lost");
+            tracing::error!("Wait idle: device lost");
         }
     }
 

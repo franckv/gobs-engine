@@ -30,7 +30,7 @@ impl GfxContext {
             color_format: ImageFormat::R16g16b16a16Sfloat,
             depth_format: ImageFormat::D32Sfloat,
             frames_in_flight: FRAMES_IN_FLIGHT,
-            vertex_padding: true,
+            vertex_padding: false,
             world_vertex_attributes: VertexAttribute::POSITION
                 | VertexAttribute::COLOR
                 | VertexAttribute::TEXTURE

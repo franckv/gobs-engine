@@ -2,6 +2,7 @@
 
 #extension GL_GOOGLE_include_directive: require
 #extension GL_EXT_buffer_reference: require
+#extension GL_EXT_scalar_block_layout: require
 
 #include "includes/light.glsl"
 
@@ -30,7 +31,7 @@ struct Vertex {
 	vec3 bitangent;
 };
 
-layout(buffer_reference, std430) readonly buffer VertexBuffer {
+layout(buffer_reference, scalar) readonly buffer VertexBuffer {
 	Vertex vertices[];
 };
 
