@@ -18,6 +18,7 @@ pub struct VkPipeline {
     pub pipeline: vk::Pipeline,
     pub push_layout: ObjectDataLayout,
     pub descriptor_layout: IndexMap<BindingGroupType, BindingGroupLayout>,
+    pub vertex_attribute: VertexAttribute,
 }
 
 pub(crate) struct VkComputePipelineBuilder {
@@ -74,6 +75,7 @@ impl ComputePipelineBuilder for VkComputePipelineBuilder {
             pipeline,
             push_layout: self.push_layout,
             descriptor_layout: self.descriptor_layouts,
+            vertex_attribute: VertexAttribute::empty(),
         })
     }
 }
@@ -276,6 +278,7 @@ impl GraphicsPipelineBuilder for VkGraphicsPipelineBuilder {
             pipeline,
             push_layout: self.push_layout,
             descriptor_layout: self.descriptor_layouts,
+            vertex_attribute: self.vertex_attributes,
         })
     }
 }

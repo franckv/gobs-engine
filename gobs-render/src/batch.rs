@@ -68,13 +68,14 @@ impl RenderBatch {
                 tracing::debug!("No material for model {}", model.name());
             }
 
-            let (vertex_buffer, index_buffer, index_len, layer) = {
+            let (vertex_buffer, index_buffer, index_len, vertex_attribute, layer) = {
                 let mesh_data = resource_manager.get_data(&mut ctx.hal, mesh)?;
 
                 (
                     mesh_data.data.vertex_view,
                     mesh_data.data.index_view,
                     mesh_data.data.index_len,
+                    mesh_data.properties.vertex_attributes,
                     mesh_data.properties.layer,
                 )
             };
@@ -89,6 +90,7 @@ impl RenderBatch {
                 vertex_buffer,
                 index_buffer,
                 index_len,
+                vertex_attribute,
                 layer,
                 material_data,
                 material_textures,
@@ -261,6 +263,13 @@ impl RenderBatch {
                         .get_pipeline_descriptor_layout(pipeline, &descriptor_type);
                     tracing::trace!(target: logger::RENDER, "Render object: {}, descriptor layout: {:#?}", &obj.model, descriptor_layout);
                 }
+
+                let vertex_attributes = ctx.hal.get_pipeline_vertex_attributes(pipeline);
+                debug_assert_eq!(
+                    vertex_attributes, obj.vertex_attribute,
+                    "Invalid vertex layout for {}",
+                    &obj.model
+                );
             }
         }
     }

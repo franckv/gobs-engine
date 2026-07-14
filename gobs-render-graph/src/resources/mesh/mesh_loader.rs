@@ -31,6 +31,7 @@ impl MeshLoader {
         geometry: &MeshGeometry,
         vertex_attributes: &VertexAttribute,
     ) -> MeshData {
+        tracing::debug!(target: logger::INIT, "Loading geometry for {} with layout {:?}", &geometry.name, vertex_attributes);
         let mut vertices = Vec::new();
 
         // TODO: hot path
@@ -46,6 +47,7 @@ impl MeshLoader {
         let indices_size = indices.len() * std::mem::size_of::<u32>();
         let staging_size = indices_size + vertices_size;
 
+        // TODO: drop or reuse staging buffer
         let staging = hal.create_buffer(
             "staging",
             staging_size.max(STAGING_BUFFER_SIZE),

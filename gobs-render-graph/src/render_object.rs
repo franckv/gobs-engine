@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 use gobs_core::Transform;
-use gobs_render_hal::{BindResource, Handle};
+use gobs_render_hal::{BindResource, Handle, VertexAttribute};
 
 pub type MaterialId = Uuid;
 pub type MaterialInstanceId = Uuid;
@@ -31,6 +31,7 @@ pub struct RenderObject {
     pub vertex_buffer: Handle,
     pub index_buffer: Handle,
     pub index_len: usize,
+    pub vertex_attribute: VertexAttribute,
     pub pipeline: Option<Handle>,
     pub material_data: Option<BindResource>,
     pub material_textures: Option<BindResource>,

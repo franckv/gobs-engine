@@ -1,8 +1,10 @@
+use std::io::pipe;
+
 use gobs_core::{ImageExtent2D, logger};
 use gobs_vulkan::{self as vk, descriptor::DescriptorSetUpdates};
 
 use crate::{
-    BindResource, BindingGroupLayout, Handle, ImageLayout, RenderHAL,
+    BindResource, BindingGroupLayout, Handle, ImageLayout, RenderHAL, UniformData as _,
     backend::{
         VulkanHAL, VulkanHALExt,
         vulkan::pipeline::{self, VkPipeline},
@@ -184,10 +186,12 @@ impl CommandBuffer for VkCommandBuffer {
     fn push_constants(&self, hal: &dyn RenderHAL, pipeline: Handle, constants: &[u8]) {
         let mut hal = hal.get();
 
-        let pipeline = &hal.registry.pipelines.get(pipeline).unwrap().pipeline;
+        let pipeline = &hal.registry.pipelines.get(pipeline).unwrap();
+
+        debug_assert!(constants.len() == pipeline.push_layout.uniform_layout().size());
 
         self.command
-            .push_constants(pipeline.layout.clone(), constants);
+            .push_constants(pipeline.pipeline.layout.clone(), constants);
     }
 
     fn reset(&self, submitted: bool) {

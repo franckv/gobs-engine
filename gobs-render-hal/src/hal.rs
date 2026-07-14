@@ -7,7 +7,7 @@ use gobs_core::{ImageExtent2D, ImageFormat, SamplerFilter};
 
 use crate::{
     BindingGroupLayout, BindingGroupType, CommandQueueType, ImageUsage, ObjectDataLayout,
-    RenderBackendError,
+    RenderBackendError, VertexAttribute,
     backend::VulkanHAL,
     command::CommandBuffer,
     pipeline::{ComputePipelineBuilder, GraphicsPipelineBuilder},
@@ -68,6 +68,7 @@ pub trait RenderHAL {
         pipeline: Handle,
         binding_group_type: &BindingGroupType,
     ) -> Option<&BindingGroupLayout>;
+    fn get_pipeline_vertex_attributes(&self, pipeline: Handle) -> VertexAttribute;
 
     fn acquire(&mut self, frame: usize) -> Result<(), RenderBackendError>;
     fn present(&mut self) -> Result<(), RenderBackendError>;

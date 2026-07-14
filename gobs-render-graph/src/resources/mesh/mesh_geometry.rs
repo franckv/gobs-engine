@@ -133,6 +133,7 @@ impl MeshBuilder {
             .vertices
             .into_iter()
             .filter(|v| {
+                // TODO: avoid allocation
                 let key = format!("{}:{}:{}", v.position, v.texture, v.normal);
                 if let hash_map::Entry::Vacant(e) = unique.entry(key.clone()) {
                     e.insert(idx);

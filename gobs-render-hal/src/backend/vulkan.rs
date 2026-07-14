@@ -14,7 +14,7 @@ use gobs_vulkan as vk;
 
 use crate::{
     BindingGroupLayout, BindingGroupType, CommandBuffer, CommandQueueType, ImageUsage,
-    ObjectDataLayout, RenderBackendError,
+    ObjectDataLayout, RenderBackendError, VertexAttribute,
     backend::vulkan::{
         buffer::BufferView,
         pipeline::{VkComputePipelineBuilder, VkGraphicsPipelineBuilder},
@@ -207,6 +207,12 @@ impl RenderHAL for VulkanHAL {
         let pipeline = self.registry.pipelines.get(pipeline).unwrap();
 
         &pipeline.push_layout
+    }
+
+    fn get_pipeline_vertex_attributes(&self, pipeline: Handle) -> VertexAttribute {
+        let pipeline = self.registry.pipelines.get(pipeline).unwrap();
+
+        pipeline.vertex_attribute
     }
 
     fn acquire(&mut self, frame: usize) -> Result<(), RenderBackendError> {
