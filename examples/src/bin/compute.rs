@@ -43,11 +43,8 @@ fn main() {
 
     tracing::info!(target: logger::APP, "Engine start");
 
-    Application::<App>::new(
-        "Compute",
-        GameOptions::default(),
-        examples::WIDTH,
-        examples::HEIGHT,
-    )
-    .run();
+    let mut options = GameOptions::default();
+    options.renderer.graph = "compute".to_string();
+
+    Application::<App>::new("Compute", options, examples::WIDTH, examples::HEIGHT).run();
 }

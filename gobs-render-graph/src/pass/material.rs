@@ -181,6 +181,10 @@ impl RenderPass for MaterialPass {
     ) -> Result<(), RenderError> {
         tracing::debug!(target: logger::RENDER, "Draw {}", &self.name());
 
+        if scene_data.light.is_none() || scene_data.light_transform.is_none() {
+            tracing::warn!(target: logger::RENDER, "Material pass has no lights");
+        }
+
         self.transition_attachments(ctx.hal.as_mut(), frame.command.as_ref(), resource_manager);
 
         self.begin_pass(ctx.hal.as_ref(), frame.command.as_ref(), resource_manager);
@@ -210,14 +214,14 @@ impl RenderPass for MaterialPass {
                 SceneDataProp::LightDirection => UniformPropData::Vec3F(
                     scene_data
                         .light_transform
-                        .unwrap()
+                        .expect("No lights in scene")
                         .translation()
                         .normalize()
                         .into(),
                 ),
-                SceneDataProp::LightColor => {
-                    UniformPropData::Vec4F(scene_data.light.unwrap().colour.into())
-                }
+                SceneDataProp::LightColor => UniformPropData::Vec4F(
+                    scene_data.light.expect("No lights in scene").colour.into(),
+                ),
                 SceneDataProp::LightAmbientColor => UniformPropData::Vec4F([0.1, 0.1, 0.1, 1.]),
             });
 

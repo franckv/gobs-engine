@@ -4,6 +4,15 @@ GraphConfig(
             "forward_nodepth",
             "present",
         ],
+        "compute": [
+            "compute",
+            "present",
+        ],
+        "headless": [
+            "compute",
+            "depth",
+            "forward",
+        ],
         "debug": [
             "compute",
             "depth",
@@ -12,6 +21,7 @@ GraphConfig(
             "present",
         ],
         "scene": [
+            "compute",
             "depth",
             "forward",
             "wire",
