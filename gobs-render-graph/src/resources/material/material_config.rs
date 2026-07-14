@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 
+use gobs_core::logger;
 use serde::Deserialize;
 
 use gobs_render_hal::{
@@ -100,6 +101,9 @@ impl MaterialsConfig {
             )
             .cull_mode(material.cull_mode)
             .blend_mode(material.blend_mode);
+
+            tracing::debug!(target: logger::INIT, "Loading material {} with texture bindings: {:#?}", name, &material.texture_layout);
+            tracing::debug!(target: logger::INIT, "Loading material {} with material bindings: {:#?}", name, &material.material_layout);
 
             for prop in &material.texture_layout {
                 props = props.texture(*prop);

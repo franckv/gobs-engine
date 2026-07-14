@@ -57,8 +57,8 @@ impl MaterialProperties {
             .vertex_attributes(vertex_attributes)
             .depth_test_enable(false, CompareOp::LessEqual)
             .front_face(FrontFace::CCW)
-            .binding_group(DescriptorStage::All, BindingGroupType::SceneData)
-            .binding(DescriptorType::Uniform)
+            .binding_group(BindingGroupType::SceneData)
+            .binding(DescriptorType::Uniform, DescriptorStage::All)
             .color_format(ctx.color_format)
             .depth_format(ctx.depth_format);
 
@@ -72,11 +72,16 @@ impl MaterialProperties {
     }
 
     pub fn property(mut self, prop: MaterialDataProp) -> Self {
-        if self.pipeline_properties.last_binding_group != BindingGroupType::MaterialData {
+        if self
+            .pipeline_properties
+            .binding_groups
+            .last()
+            .is_none_or(|group| group.binding_group_type != BindingGroupType::MaterialData)
+        {
             self.pipeline_properties = self
                 .pipeline_properties
-                .binding_group(DescriptorStage::Fragment, BindingGroupType::MaterialData);
-            self.pipeline_properties = self.pipeline_properties.binding(DescriptorType::Uniform);
+                .binding_group(BindingGroupType::MaterialData)
+                .binding(DescriptorType::Uniform, DescriptorStage::Fragment);
         }
 
         self.material_data_layout = self.material_data_layout.prop(prop);
@@ -85,30 +90,34 @@ impl MaterialProperties {
     }
 
     pub fn texture(mut self, prop: TextureDataProp) -> Self {
-        if self.pipeline_properties.last_binding_group != BindingGroupType::MaterialTextures {
-            self.pipeline_properties = self.pipeline_properties.binding_group(
-                DescriptorStage::Fragment,
-                BindingGroupType::MaterialTextures,
-            );
+        if self
+            .pipeline_properties
+            .binding_groups
+            .last()
+            .is_none_or(|group| group.binding_group_type != BindingGroupType::MaterialTextures)
+        {
+            self.pipeline_properties = self
+                .pipeline_properties
+                .binding_group(BindingGroupType::MaterialTextures);
         }
-
-        self.texture_data_layout = self.texture_data_layout.prop(prop);
 
         match prop {
             TextureDataProp::Diffuse => {
                 self.pipeline_properties = self
                     .pipeline_properties
-                    .binding(DescriptorType::SampledImage)
-                    .binding(DescriptorType::Sampler);
+                    .binding(DescriptorType::SampledImage, DescriptorStage::Fragment)
+                    .binding(DescriptorType::Sampler, DescriptorStage::Fragment);
             }
             TextureDataProp::Normal => {
                 self.pipeline_properties = self
                     .pipeline_properties
-                    .binding(DescriptorType::SampledImage)
-                    .binding(DescriptorType::Sampler);
+                    .binding(DescriptorType::SampledImage, DescriptorStage::Fragment)
+                    .binding(DescriptorType::Sampler, DescriptorStage::Fragment);
             }
             _ => unimplemented!(),
         }
+
+        self.texture_data_layout = self.texture_data_layout.prop(prop);
 
         self
     }

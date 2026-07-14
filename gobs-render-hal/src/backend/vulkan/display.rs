@@ -14,7 +14,7 @@ use gobs_vulkan::{
 };
 
 use crate::{
-    Handle, RenderHAL,
+    Handle, RenderBackendError, RenderHAL,
     backend::{VulkanHAL, vulkan::ResourcesRegistry},
 };
 
@@ -107,12 +107,12 @@ impl Display {
         &mut self,
         registry: &mut ResourcesRegistry,
         frame: usize,
-    ) -> Result<(), ()> {
+    ) -> Result<(), RenderBackendError> {
         if let Some(swapchain) = &mut self.swapchain {
             tracing::trace!(target: logger::SYNC, "Acquire with swapchain semaphore {}", frame);
             let semaphore = &self.swapchain_semaphores[frame];
 
-            let image_index = swapchain.acquire_image(semaphore).map_err(|_| ())?;
+            let image_index = swapchain.acquire_image(semaphore)?;
             tracing::trace!(target: logger::SYNC, "Acquire image {}", image_index);
 
             self.swapchain_idx = image_index;
@@ -125,16 +125,14 @@ impl Display {
     }
 
     #[tracing::instrument(target = "profile", skip_all, level = "trace")]
-    pub fn present(&mut self, queue: &Queue) -> Result<(), ()> {
+    pub fn present(&mut self, queue: &Queue) -> Result<(), RenderBackendError> {
         if let Some(swapchain) = &mut self.swapchain {
             tracing::trace!(target: logger::SYNC, "Present with render semaphore {}", self.swapchain_idx);
-            swapchain
-                .present(
-                    self.swapchain_idx,
-                    queue,
-                    &self.render_semaphores[self.swapchain_idx],
-                )
-                .map_err(|_| ())?;
+            swapchain.present(
+                self.swapchain_idx,
+                queue,
+                &self.render_semaphores[self.swapchain_idx],
+            )?;
         }
 
         Ok(())

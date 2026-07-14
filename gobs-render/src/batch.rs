@@ -254,8 +254,13 @@ impl RenderBatch {
     fn validate(&mut self, ctx: &mut GfxContext) {
         for obj in &self.render_list {
             if let Some(pipeline) = obj.pipeline {
-                let descriptor_layout = ctx.hal.get_descriptor_layout(pipeline);
-                tracing::trace!(target: logger::DEBUG, "Render object: {}, descriptor layout: {:#?}", &obj.model, descriptor_layout);
+                let descriptors = ctx.hal.get_pipeline_descriptor_types(pipeline);
+                for descriptor_type in descriptors {
+                    let descriptor_layout = ctx
+                        .hal
+                        .get_pipeline_descriptor_layout(pipeline, &descriptor_type);
+                    tracing::trace!(target: logger::RENDER, "Render object: {}, descriptor layout: {:#?}", &obj.model, descriptor_layout);
+                }
             }
         }
     }

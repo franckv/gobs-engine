@@ -13,7 +13,8 @@ use gobs_core::{ImageExtent2D, ImageFormat, SamplerFilter, logger};
 use gobs_vulkan as vk;
 
 use crate::{
-    BindingGroupLayout, CommandBuffer, CommandQueueType, ImageUsage, ObjectDataLayout,
+    BindingGroupLayout, BindingGroupType, CommandBuffer, CommandQueueType, ImageUsage,
+    ObjectDataLayout, RenderBackendError,
     backend::vulkan::{
         buffer::BufferView,
         pipeline::{VkComputePipelineBuilder, VkGraphicsPipelineBuilder},
@@ -186,10 +187,20 @@ impl RenderHAL for VulkanHAL {
         Box::new(VkComputePipelineBuilder::new(name, self.device.clone()))
     }
 
-    fn get_descriptor_layout(&self, pipeline: Handle) -> &[BindingGroupLayout] {
+    fn get_pipeline_descriptor_types(&self, pipeline: Handle) -> Vec<BindingGroupType> {
         let pipeline = self.registry.pipelines.get(pipeline).unwrap();
 
-        &pipeline.descriptor_layout
+        pipeline.descriptor_layout.keys().cloned().collect()
+    }
+
+    fn get_pipeline_descriptor_layout(
+        &self,
+        pipeline: Handle,
+        binding_group_type: &BindingGroupType,
+    ) -> Option<&BindingGroupLayout> {
+        let pipeline = self.registry.pipelines.get(pipeline).unwrap();
+
+        pipeline.descriptor_layout.get(binding_group_type)
     }
 
     fn get_pipeline_object_layout(&self, pipeline: Handle) -> &ObjectDataLayout {
@@ -198,11 +209,11 @@ impl RenderHAL for VulkanHAL {
         &pipeline.push_layout
     }
 
-    fn acquire(&mut self, frame: usize) -> Result<(), ()> {
+    fn acquire(&mut self, frame: usize) -> Result<(), RenderBackendError> {
         self.display.acquire(&mut self.registry, frame)
     }
 
-    fn present(&mut self) -> Result<(), ()> {
+    fn present(&mut self) -> Result<(), RenderBackendError> {
         self.display.present(&self.graphics_queue)
     }
 

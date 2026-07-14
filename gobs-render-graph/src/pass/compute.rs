@@ -16,11 +16,11 @@ pub struct ComputePass {
     attachments: HashMap<String, Attachment>,
     image_attachments: Vec<String>,
     pub pipeline: Handle,
-    binding_layout: BindingGroupLayout,
+    binding_layout: Vec<BindingGroupLayout>,
 }
 
 impl ComputePass {
-    pub fn new(name: &str, pipeline: Handle, binding_layout: BindingGroupLayout) -> Self {
+    pub fn new(name: &str, pipeline: Handle, binding_layout: Vec<BindingGroupLayout>) -> Self {
         Self {
             id: PassId::new_v4(),
             name: name.to_string(),
@@ -98,7 +98,8 @@ impl RenderPass for ComputePass {
         cmd.bind_pipeline(ctx.hal.as_ref(), self.pipeline);
 
         if !resources.is_empty() {
-            let bind_resource = BindResource::new(self.binding_layout.clone(), resources);
+            // TODO: assume one ds
+            let bind_resource = BindResource::new(self.binding_layout[0].clone(), resources);
             cmd.bind_resource(ctx.hal.as_mut(), self.pipeline, &bind_resource);
         }
 

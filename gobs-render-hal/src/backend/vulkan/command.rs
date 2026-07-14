@@ -3,7 +3,10 @@ use gobs_vulkan::{self as vk, descriptor::DescriptorSetUpdates};
 
 use crate::{
     BindResource, BindingGroupLayout, Handle, ImageLayout, RenderHAL,
-    backend::{VulkanHAL, VulkanHALExt, vulkan::pipeline},
+    backend::{
+        VulkanHAL, VulkanHALExt,
+        vulkan::pipeline::{self, VkPipeline},
+    },
     command::CommandBuffer,
 };
 
@@ -150,23 +153,18 @@ impl CommandBuffer for VkCommandBuffer {
     fn bind_resource(&self, hal: &mut dyn RenderHAL, pipeline: Handle, resource: &BindResource) {
         let mut hal = hal.get_mut();
 
-        let pipeline = &hal.registry.pipelines.get(pipeline).unwrap().pipeline;
+        let pipeline = &hal.registry.pipelines.get(pipeline).unwrap();
 
         let binding_type = resource.layout.binding_group_type;
 
-        tracing::debug!(target: logger::RENDER, "Bind resource to pipeline {}", pipeline.label);
-        tracing::debug!(target: logger::RENDER, "Bind descriptors layout {:?}", resource.layout);
-        tracing::debug!(target: logger::RENDER, "Bind descriptors set {:?}", binding_type);
-        tracing::debug!(target: logger::RENDER, "Pipeline descriptors set {:?}", pipeline.layout.descriptor_layouts.len());
-
-        debug_assert!(binding_type.set() < pipeline.layout.descriptor_layouts.len() as u32);
+        Self::validate_layout(pipeline, &resource.layout);
 
         if resource.layout.binding_group_type.is_push() {
             hal.bindings.push_descriptor(
                 hal.device.clone(),
                 &hal.registry,
                 resource,
-                pipeline,
+                &pipeline.pipeline,
                 &self.command,
             );
         } else {
@@ -178,7 +176,8 @@ impl CommandBuffer for VkCommandBuffer {
             );
 
             let set = binding_type.set();
-            self.command.bind_descriptor_set(&ds, set, pipeline);
+            self.command
+                .bind_descriptor_set(&ds, set, &pipeline.pipeline);
         }
     }
 
@@ -260,5 +259,30 @@ impl CommandBuffer for VkCommandBuffer {
         let image = hal.registry.images.get_mut(image).unwrap();
 
         self.command.transition_image_layout(image, layout);
+    }
+}
+
+impl VkCommandBuffer {
+    fn validate_layout(pipeline: &VkPipeline, resource_layout: &BindingGroupLayout) {
+        tracing::debug!(target: logger::RENDER, "Bind resource to pipeline {}", pipeline.pipeline.label);
+        tracing::debug!(target: logger::RENDER, "Bind descriptors layout {:?}", resource_layout);
+        tracing::debug!(target: logger::RENDER, "Bind descriptors set {:?}", resource_layout.binding_group_type);
+        tracing::debug!(target: logger::RENDER, "Pipeline descriptors set count {:?}", pipeline.pipeline.layout.descriptor_layouts.len());
+
+        debug_assert!(
+            resource_layout.binding_group_type.set()
+                < pipeline.pipeline.layout.descriptor_layouts.len() as u32,
+            "Pipeline descriptor layout does not have set {}",
+            resource_layout.binding_group_type.set()
+        );
+
+        debug_assert!(
+            pipeline
+                .descriptor_layout
+                .get(&resource_layout.binding_group_type)
+                .is_some_and(|layout| layout.bindings.len() == resource_layout.bindings.len()),
+            "BindResource layout is not compatible with pipeline for set {}",
+            resource_layout.binding_group_type.set()
+        );
     }
 }

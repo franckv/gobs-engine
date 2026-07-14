@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use serde::{Deserialize, Serialize};
 
-use gobs_core::ImageFormat;
+use gobs_core::{ImageFormat, logger};
 use gobs_render_hal::{
     BindingGroupType, CompareOp, CullMode, DescriptorStage, DescriptorType, FrontFace,
     ObjectDataLayout, ObjectDataProp, PolygonMode, UniformData as _, VertexAttribute,
@@ -128,10 +128,10 @@ impl PipelinesConfig {
         let mut last_group = BindingGroupType::None;
         for binding in &pipeline.bindings {
             if binding.group != last_group {
-                props = props.binding_group(binding.stage, binding.group);
+                props = props.binding_group(binding.group);
                 last_group = binding.group;
             }
-            props = props.binding(binding.descriptor_type);
+            props = props.binding(binding.descriptor_type, binding.stage);
         }
 
         Some(PipelineProperties::Compute(props))
@@ -157,13 +157,15 @@ impl PipelinesConfig {
             .cull_mode(pipeline.cull_mode)
             .front_face(pipeline.front_face);
 
+        tracing::debug!(target: logger::INIT, "Loading pipeline {} with bindings: {:#?}", name, &pipeline.bindings);
+
         let mut last_group = BindingGroupType::None;
         for binding in &pipeline.bindings {
             if binding.group != last_group {
-                props = props.binding_group(binding.stage, binding.group);
+                props = props.binding_group(binding.group);
                 last_group = binding.group;
             }
-            props = props.binding(binding.descriptor_type);
+            props = props.binding(binding.descriptor_type, binding.stage);
         }
 
         if let Some(format) = pipeline.attachments.color_format {

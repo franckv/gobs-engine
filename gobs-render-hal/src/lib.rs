@@ -3,6 +3,7 @@ mod backend;
 mod bindings;
 mod command;
 mod data;
+mod error;
 mod hal;
 mod pipeline;
 mod vertex;
@@ -22,5 +23,6 @@ pub use data::{
     ObjectDataLayout, ObjectDataProp, SceneData, SceneDataLayout, SceneDataProp, TextureDataLayout,
     TextureDataProp, UniformBuffer, UniformData, UniformLayout, UniformPropData,
 };
+pub use error::RenderBackendError;
 pub use hal::{BufferType, Handle, RenderHAL, create_hal};
 pub use vertex::{VertexAttribute, VertexData};

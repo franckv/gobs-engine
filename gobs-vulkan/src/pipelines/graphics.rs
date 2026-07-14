@@ -434,7 +434,7 @@ impl RenderingState {
 
 #[derive(Default)]
 pub struct GraphicsPipelineBuilder {
-    label: String,
+    pub label: String,
     device: Option<Arc<Device>>,
     vertex_stage: Option<ShaderStage>,
     fragment_stage: Option<ShaderStage>,

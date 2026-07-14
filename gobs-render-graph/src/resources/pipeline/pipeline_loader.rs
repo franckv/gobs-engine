@@ -1,5 +1,5 @@
 use gobs_core::logger;
-use gobs_render_hal::{BindingGroupLayout, DynamicStateElem, Rect2D, RenderHAL, Viewport};
+use gobs_render_hal::{DynamicStateElem, Rect2D, RenderHAL, Viewport};
 use gobs_resource::{
     ResourceRegistry, {Resource, ResourceError, ResourceHandle, ResourceLoader, ResourceProperties},
 };
@@ -27,14 +27,8 @@ impl PipelineLoader {
             pipeline = pipeline.shader(shader, &properties.compute_entry);
         }
 
-        for (stage, ty, bindings) in &properties.binding_groups {
-            let mut binding_group_layout = BindingGroupLayout::new(*ty);
-
-            for binding in bindings {
-                binding_group_layout = binding_group_layout.add_binding(*binding, *stage);
-            }
-
-            pipeline = pipeline.binding_group(binding_group_layout);
+        for binding_group_layout in &properties.binding_groups {
+            pipeline = pipeline.binding_group(binding_group_layout.clone());
         }
 
         let pipeline = pipeline.build(hal);
@@ -83,13 +77,8 @@ impl PipelineLoader {
             pipeline = pipeline.depth_test_disable();
         }
 
-        for (stage, ty, bindings) in &properties.binding_groups {
-            let mut binding_group_layout = BindingGroupLayout::new(*ty);
-            for binding in bindings {
-                binding_group_layout = binding_group_layout.add_binding(*binding, *stage);
-            }
-
-            pipeline = pipeline.binding_group(binding_group_layout);
+        for binding_group_layout in &properties.binding_groups {
+            pipeline = pipeline.binding_group(binding_group_layout.clone());
         }
 
         let pipeline = pipeline.build(hal);

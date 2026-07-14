@@ -133,10 +133,7 @@ pub fn compile_slang_shaders(
         {
             let output = Command::new("sh")
                 .arg("-c")
-                .arg(format!(
-                    // "slangc {file_name} -target spirv -force-glsl-scalar-layout -o {spv_out}"
-                    "slangc {file_name} -target spirv -o {spv_out}"
-                ))
+                .arg(format!("slangc {file_name} -target spirv -o {spv_out}"))
                 .output()
                 .expect("Error compiling shader");
 

@@ -13,6 +13,7 @@ gobs-core = { workspace = true }
 gobs-resource = { workspace = true }
 gobs-vulkan = { workspace = true }
 image = { workspace = true }
+indexmap = { workspace = true }
 serde = { workspace = true }
 slotmap = { workspace = true }
 thiserror = { workspace = true }

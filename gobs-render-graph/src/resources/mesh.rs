@@ -1,5 +1,5 @@
-#[allow(clippy::module_inception)]
 mod bounds;
+#[allow(clippy::module_inception)]
 mod mesh;
 mod mesh_geometry;
 mod mesh_loader;

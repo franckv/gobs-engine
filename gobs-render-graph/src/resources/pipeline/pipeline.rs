@@ -2,8 +2,8 @@ use std::fmt::Debug;
 
 use gobs_core::ImageFormat;
 use gobs_render_hal::{
-    BindingGroupType, BlendMode, CompareOp, CullMode, DescriptorStage, DescriptorType, FrontFace,
-    Handle, ObjectDataLayout, PolygonMode, RenderHAL, VertexAttribute,
+    BindingGroupLayout, BindingGroupType, BlendMode, CompareOp, CullMode, DescriptorStage,
+    DescriptorType, FrontFace, Handle, ObjectDataLayout, PolygonMode, RenderHAL, VertexAttribute,
 };
 use gobs_resource::{ResourceProperties, ResourceType};
 
@@ -56,8 +56,7 @@ pub struct GraphicsPipelineProperties {
     pub(crate) vertex_shader: Option<String>,
     pub(crate) fragment_entry: Option<String>,
     pub(crate) fragment_shader: Option<String>,
-    pub(crate) binding_groups: Vec<(DescriptorStage, BindingGroupType, Vec<DescriptorType>)>,
-    pub last_binding_group: BindingGroupType,
+    pub(crate) binding_groups: Vec<BindingGroupLayout>,
     pub ds_pool_size: usize,
     pub object_data_layout: ObjectDataLayout,
     pub vertex_attributes: VertexAttribute,
@@ -81,7 +80,6 @@ impl GraphicsPipelineProperties {
             fragment_entry: None,
             fragment_shader: None,
             binding_groups: Vec::new(),
-            last_binding_group: BindingGroupType::None,
             ds_pool_size: 10,
             object_data_layout: ObjectDataLayout::default(),
             vertex_attributes: VertexAttribute::empty(),
@@ -171,16 +169,16 @@ impl GraphicsPipelineProperties {
         self
     }
 
-    pub fn binding_group(mut self, stage: DescriptorStage, ty: BindingGroupType) -> Self {
-        self.binding_groups.push((stage, ty, Vec::new()));
-        self.last_binding_group = ty;
+    pub fn binding_group(mut self, ty: BindingGroupType) -> Self {
+        self.binding_groups.push(BindingGroupLayout::new(ty));
 
         self
     }
 
-    pub fn binding(mut self, ty: DescriptorType) -> Self {
-        if let Some((_, _, group)) = self.binding_groups.last_mut() {
-            group.push(ty);
+    pub fn binding(mut self, ty: DescriptorType, stage: DescriptorStage) -> Self {
+        if let Some(mut group) = self.binding_groups.pop() {
+            group = group.add_binding(ty, stage);
+            self.binding_groups.push(group);
         }
 
         self
@@ -214,8 +212,7 @@ pub struct ComputePipelineProperties {
     pub name: String,
     pub(crate) compute_entry: String,
     pub(crate) compute_shader: Option<String>,
-    pub(crate) binding_groups: Vec<(DescriptorStage, BindingGroupType, Vec<DescriptorType>)>,
-    pub last_binding_group: BindingGroupType,
+    pub(crate) binding_groups: Vec<BindingGroupLayout>,
 }
 
 impl ComputePipelineProperties {
@@ -225,7 +222,6 @@ impl ComputePipelineProperties {
             compute_entry: "main".to_string(),
             compute_shader: None,
             binding_groups: Vec::new(),
-            last_binding_group: BindingGroupType::None,
         }
     }
 
@@ -241,16 +237,16 @@ impl ComputePipelineProperties {
         self
     }
 
-    pub fn binding_group(mut self, stage: DescriptorStage, ty: BindingGroupType) -> Self {
-        self.binding_groups.push((stage, ty, Vec::new()));
-        self.last_binding_group = ty;
+    pub fn binding_group(mut self, ty: BindingGroupType) -> Self {
+        self.binding_groups.push(BindingGroupLayout::new(ty));
 
         self
     }
 
-    pub fn binding(mut self, ty: DescriptorType) -> Self {
-        if let Some((_, _, group)) = self.binding_groups.last_mut() {
-            group.push(ty);
+    pub fn binding(mut self, ty: DescriptorType, stage: DescriptorStage) -> Self {
+        if let Some(mut group) = self.binding_groups.pop() {
+            group = group.add_binding(ty, stage);
+            self.binding_groups.push(group);
         }
 
         self
