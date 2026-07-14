@@ -87,7 +87,7 @@ impl RenderHAL for VulkanHAL {
         );
 
         let buffer_view = BufferView {
-            buffer,
+            buffer: Arc::new(buffer),
             offset: 0,
             len: size,
         };
@@ -104,13 +104,13 @@ impl RenderHAL for VulkanHAL {
     fn resize_buffer(&mut self, handle: Handle, size: usize) {
         let buffer = self.registry.buffers.get_mut(handle).unwrap();
 
-        buffer.buffer = vk::buffers::Buffer::new(
+        buffer.buffer = Arc::new(vk::buffers::Buffer::new(
             buffer.buffer.label(),
             size,
             buffer.buffer.usage,
             self.device.clone(),
             self.allocator.clone(),
-        );
+        ));
         buffer.offset = 0;
         buffer.len = size;
     }

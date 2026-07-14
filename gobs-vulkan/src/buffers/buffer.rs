@@ -4,6 +4,7 @@ use std::sync::Arc;
 use ash::vk::{self, Handle};
 use bytemuck::Pod;
 use gpu_allocator::MemoryLocation;
+use parking_lot::RwLock;
 
 use gobs_core::logger;
 
@@ -82,7 +83,7 @@ pub struct Buffer {
     label: String,
     device: Arc<Device>,
     buffer: vk::Buffer,
-    memory: Memory,
+    memory: RwLock<Memory>,
     pub size: usize,
     pub usage: BufferUsage,
 }
@@ -116,7 +117,7 @@ impl Buffer {
             label: buffer_label,
             device,
             buffer,
-            memory,
+            memory: RwLock::new(memory),
             size,
             usage,
         }
@@ -136,12 +137,12 @@ impl Buffer {
         unsafe { self.device.raw().get_buffer_device_address(&address_info) }
     }
 
-    pub fn copy<T: Copy>(&mut self, entries: &[T], offset: u64) {
-        self.memory.upload(entries, offset as usize);
+    pub fn copy<T: Copy>(&self, entries: &[T], offset: u64) {
+        self.memory.write().upload(entries, offset as usize);
     }
 
     pub fn get_bytes<T: Pod>(&self, vec: &mut Vec<T>) {
-        self.memory.download(vec);
+        self.memory.read().download(vec);
     }
 }
 
