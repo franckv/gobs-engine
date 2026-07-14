@@ -238,7 +238,7 @@ impl RenderHAL for VulkanHAL {
         }
     }
 
-    fn get_render_target(&self) -> Handle {
+    fn get_render_target(&self) -> Option<Handle> {
         self.display.get_render_target()
     }
 

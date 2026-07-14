@@ -50,21 +50,21 @@ impl RenderPass for PresentPass {
 
         let cmd = &frame.command;
 
-        let render_target = ctx.hal.get_render_target();
+        if let Some(render_target) = ctx.hal.get_render_target() {
+            cmd.transition_image_layout(
+                ctx.hal.as_mut(),
+                resource_manager.image(&self.render_target),
+                ImageLayout::TransferSrc,
+            );
 
-        cmd.transition_image_layout(
-            ctx.hal.as_mut(),
-            resource_manager.image(&self.render_target),
-            ImageLayout::TransferSrc,
-        );
+            cmd.transition_image_layout(ctx.hal.as_mut(), render_target, ImageLayout::TransferDst);
 
-        cmd.transition_image_layout(ctx.hal.as_mut(), render_target, ImageLayout::TransferDst);
-
-        cmd.copy_image_to_image(
-            ctx.hal.as_ref(),
-            resource_manager.image(&self.render_target),
-            render_target,
-        );
+            cmd.copy_image_to_image(
+                ctx.hal.as_ref(),
+                resource_manager.image(&self.render_target),
+                render_target,
+            );
+        }
 
         Ok(())
     }

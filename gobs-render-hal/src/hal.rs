@@ -75,7 +75,7 @@ pub trait RenderHAL {
     fn request_redraw(&mut self);
     fn is_minimized(&self) -> bool;
 
-    fn get_render_target(&self) -> Handle;
+    fn get_render_target(&self) -> Option<Handle>;
     fn get_extent(&self) -> ImageExtent2D;
 
     fn wait(&mut self);

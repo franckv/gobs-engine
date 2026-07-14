@@ -71,42 +71,6 @@ impl FrameGraph {
         Ok(graph)
     }
 
-    pub fn headless(
-        ctx: &mut GfxContext,
-        resource_manager: &mut ResourceManager,
-    ) -> Result<Self, RenderError> {
-        let mut graph = Self::new();
-
-        let extent = Self::get_render_target_extent(ctx);
-
-        graph.resource_manager.register_image(
-            ctx,
-            "draw",
-            ctx.color_format,
-            ImageUsage::Color,
-            extent,
-        );
-        graph.resource_manager.register_image(
-            ctx,
-            "depth",
-            ctx.depth_format,
-            ImageUsage::Depth,
-            extent,
-        );
-
-        PipelinesConfig::load_resources(ctx, "pipelines.ron", resource_manager)
-            .expect("Load pipelines");
-
-        let passes = GraphConfig::load_graph(ctx, "graph.ron", "headless", resource_manager)
-            .map_err(|_| RenderError::InvalidData)?;
-
-        for pass in &passes {
-            graph.register_pass(pass.clone());
-        }
-
-        Ok(graph)
-    }
-
     pub fn ui(
         ctx: &mut GfxContext,
         resource_manager: &mut ResourceManager,
@@ -269,8 +233,11 @@ impl FrameGraph {
 
         //TODO: cmd.write_timestamp(&frame.query_pool, PipelineStage::BottomOfPipe, 1);
 
-        let render_target = ctx.hal.get_render_target();
-        cmd.transition_image_layout(ctx.hal.as_mut(), render_target, ImageLayout::Present);
+        if let Some(render_target) = ctx.hal.get_render_target() {
+            cmd.transition_image_layout(ctx.hal.as_mut(), render_target, ImageLayout::Present);
+        } else {
+            tracing::debug!(target: logger::RENDER, "No render target to present");
+        }
 
         cmd.end_label();
 

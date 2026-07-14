@@ -187,7 +187,12 @@ impl Display {
         )
     }
 
-    pub(crate) fn get_render_target(&self) -> Handle {
-        self.swapchain_images[self.swapchain_idx]
+    pub(crate) fn get_render_target(&self) -> Option<Handle> {
+        if self.swapchain.is_some() {
+            tracing::trace!(target: logger::SYNC, "Use render target {}", self.swapchain_idx);
+            Some(self.swapchain_images[self.swapchain_idx])
+        } else {
+            None
+        }
     }
 }
