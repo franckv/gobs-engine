@@ -1,4 +1,5 @@
 GraphConfig(
+    pipelines: "pipelines.ron",
     graphes: {
         "simple": [
             "forward_nodepth",
@@ -195,14 +196,10 @@ GraphConfig(
         "draw": (
             usage: Color,
             format: R16g16b16a16Sfloat,
-            layout: Color,
-            // default extent
         ),
         "depth": (
             usage: Depth,
             format: D32Sfloat,
-            layout: Depth,
-            // default extent
         ),
     }
 )

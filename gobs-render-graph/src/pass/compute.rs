@@ -6,7 +6,7 @@ use gobs_render_hal::{BindResource, BindingGroupLayout, Handle, SceneData};
 use crate::{
     FrameData, GfxContext, RenderError, RenderObject,
     graph::GraphResourceManager,
-    pass::{Attachment, AttachmentAccess, AttachmentType, PassId, PassType, RenderPass},
+    pass::{Attachment, AttachmentType, PassId, PassType, RenderPass},
 };
 
 pub struct ComputePass {
@@ -32,22 +32,13 @@ impl ComputePass {
         }
     }
 
-    pub fn add_attachment(
-        &mut self,
-        name: &str,
-        ty: AttachmentType,
-        access: AttachmentAccess,
-    ) -> &mut Attachment {
-        let attachment = Attachment::new(ty, access);
-
-        match ty {
+    pub fn add_attachment(&mut self, name: &str, attachment: Attachment) {
+        match attachment.ty {
             AttachmentType::ImageStorage => self.image_attachments.push(name.to_string()),
             _ => todo!(),
         }
 
         self.attachments.insert(name.to_string(), attachment);
-
-        self.attachments.get_mut(name).expect("insert attachment")
     }
 }
 

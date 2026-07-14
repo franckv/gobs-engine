@@ -7,6 +7,8 @@ MaterialsConfig(
             VertexBufferAddress,
         ],
         vertex_attributes: "POSITION | COLOR | TEXTURE | NORMAL | TANGENT | BITANGENT",
+        color_format: R16g16b16a16Sfloat,
+        depth_format: D32Sfloat,
     ),
     materials: {
         "gltf.texture": (

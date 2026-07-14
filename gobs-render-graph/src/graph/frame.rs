@@ -1,14 +1,12 @@
-use gobs_core::{ImageExtent2D, logger};
-use gobs_render_hal::{ImageLayout, ImageUsage, SceneData};
+use gobs_core::logger;
+use gobs_render_hal::{ImageLayout, SceneData};
 use gobs_resource::ResourceManager;
 
 use crate::{
-    FrameData, GfxContext, GraphConfig, PassId, PipelinesConfig, RenderError, RenderObject,
-    RenderPass, graph::resource::GraphResourceManager, pass::PassType,
+    FrameData, GfxContext, GraphConfig, PassId, RenderError, RenderObject, RenderPass,
+    graph::resource::GraphResourceManager,
+    pass::{Attachment, PassType},
 };
-
-const FRAME_WIDTH: u32 = 1920;
-const FRAME_HEIGHT: u32 = 1080;
 
 pub struct FrameGraphPass {
     pub pass: RenderPass,
@@ -18,7 +16,8 @@ pub struct FrameGraphPass {
 pub struct FrameGraph {
     pub render_scaling: f32,
     pub passes: Vec<FrameGraphPass>,
-    resource_manager: GraphResourceManager,
+    pub attachments: Vec<Attachment>,
+    pub resource_manager: GraphResourceManager,
 }
 
 impl FrameGraph {
@@ -26,86 +25,19 @@ impl FrameGraph {
         Self {
             render_scaling: 1.,
             passes: Vec::new(),
+            attachments: Vec::new(),
             resource_manager: GraphResourceManager::new(),
         }
     }
 
-    pub fn standard(
+    pub fn load(
         ctx: &mut GfxContext,
         resource_manager: &mut ResourceManager,
         graph_name: &str,
     ) -> Result<Self, RenderError> {
-        let mut graph = Self::new();
-
-        let extent = Self::get_render_target_extent(ctx);
-
-        graph.resource_manager.register_image(
-            ctx,
-            "draw",
-            ctx.color_format,
-            ImageUsage::Color,
-            extent,
-        );
-        graph.resource_manager.register_image(
-            ctx,
-            "depth",
-            ctx.depth_format,
-            ImageUsage::Depth,
-            extent,
-        );
-
-        PipelinesConfig::load_resources(ctx, "pipelines.ron", resource_manager)
-            .expect("Load pipelines");
-
-        tracing::debug!(target: logger::INIT, "Load graph: {}", "scene");
-        let passes = GraphConfig::load_graph(ctx, "graph.ron", graph_name, resource_manager)
-            .map_err(|e| {
-                tracing::error!(target: logger::INIT, "Load graph: {}", e);
-                RenderError::InvalidData
-            })?;
-        for pass in &passes {
-            tracing::debug!(target: logger::INIT, "Load pass: {}", pass.name());
-            graph.register_pass(pass.clone());
-        }
-
-        Ok(graph)
-    }
-
-    pub fn ui(
-        ctx: &mut GfxContext,
-        resource_manager: &mut ResourceManager,
-    ) -> Result<Self, RenderError> {
-        let mut graph = Self::new();
-
-        let extent = Self::get_render_target_extent(ctx);
-
-        graph.resource_manager.register_image(
-            ctx,
-            "draw",
-            ctx.color_format,
-            ImageUsage::Color,
-            extent,
-        );
-
-        PipelinesConfig::load_resources(ctx, "pipelines.ron", resource_manager)
-            .expect("Load pipelines");
-
-        let passes = GraphConfig::load_graph(ctx, "graph.ron", "ui", resource_manager)
-            .map_err(|_| RenderError::InvalidData)?;
-
-        for pass in &passes {
-            graph.register_pass(pass.clone());
-        }
-
-        Ok(graph)
-    }
-
-    fn get_render_target_extent(ctx: &GfxContext) -> ImageExtent2D {
-        let extent = ctx.extent();
-        ImageExtent2D::new(
-            extent.width.max(FRAME_WIDTH),
-            extent.height.max(FRAME_HEIGHT),
-        )
+        tracing::debug!(target: logger::INIT, "Load graph: {}", graph_name);
+        GraphConfig::load_graph(ctx, "graph.ron", graph_name, resource_manager)
+            .map_err(|_| RenderError::InvalidData)
     }
 
     pub fn register_pass(&mut self, pass: RenderPass) {
@@ -115,6 +47,21 @@ impl FrameGraph {
         };
 
         self.passes.push(pass);
+    }
+
+    pub fn register_attachment(
+        &mut self,
+        ctx: &mut GfxContext,
+        label: &str,
+        attachment: Attachment,
+    ) {
+        self.resource_manager.register_image(
+            ctx,
+            label,
+            attachment.format,
+            attachment.usage,
+            attachment.extent,
+        );
     }
 
     pub fn get_pass<F>(&self, cmp: F) -> Result<RenderPass, RenderError>
@@ -197,6 +144,7 @@ impl FrameGraph {
     ) -> Result<(), RenderError> {
         let cmd = &mut frame.command;
 
+        // FIXME: use attachments from graph
         let draw_image_extent = ctx
             .hal
             .get_image_extent(self.resource_manager.image("draw"));

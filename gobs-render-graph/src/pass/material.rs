@@ -9,7 +9,7 @@ use gobs_render_hal::{
 use crate::{
     FrameData, GfxContext, PassId, PassType, RenderError, RenderFlags, RenderJob, RenderObject,
     graph::GraphResourceManager,
-    pass::{Attachment, AttachmentAccess, AttachmentType, RenderPass},
+    pass::{Attachment, AttachmentType, RenderPass},
 };
 
 pub struct MaterialPass {
@@ -67,15 +67,8 @@ impl MaterialPass {
         }
     }
 
-    pub fn add_attachment(
-        &mut self,
-        name: &str,
-        ty: AttachmentType,
-        access: AttachmentAccess,
-    ) -> &mut Attachment {
-        let attachment = Attachment::new(ty, access);
-
-        match ty {
+    pub fn add_attachment(&mut self, name: &str, attachment: Attachment) {
+        match attachment.ty {
             AttachmentType::Input => self.input_attachments.push(name.to_string()),
             AttachmentType::Color => self.color_attachments.push(name.to_string()),
             AttachmentType::Depth => self.depth_attachments.push(name.to_string()),
@@ -83,8 +76,6 @@ impl MaterialPass {
         }
 
         self.attachments.insert(name.to_string(), attachment);
-
-        self.attachments.get_mut(name).expect("insert attachment")
     }
 
     #[tracing::instrument(target = "profile", skip_all, level = "trace")]
@@ -180,10 +171,6 @@ impl RenderPass for MaterialPass {
         scene_data: &SceneData,
     ) -> Result<(), RenderError> {
         tracing::debug!(target: logger::RENDER, "Draw {}", &self.name());
-
-        if scene_data.light.is_none() || scene_data.light_transform.is_none() {
-            tracing::warn!(target: logger::RENDER, "Material pass has no lights");
-        }
 
         self.transition_attachments(ctx.hal.as_mut(), frame.command.as_ref(), resource_manager);
 

@@ -129,12 +129,7 @@ impl App {
     async fn load_scene(&mut self, ctx: &mut GameContext) {
         tracing::info!(target: logger::APP, "Load scene");
 
-        MaterialsConfig::load_resources(
-            &ctx.renderer.gfx,
-            "materials.ron",
-            &mut ctx.resource_manager,
-        )
-        .await;
+        MaterialsConfig::load_resources("materials.ron", &mut ctx.resource_manager).await;
 
         let material = ctx.resource_manager.get_by_name("normal").unwrap();
 

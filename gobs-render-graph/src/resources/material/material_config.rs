@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use gobs_core::logger;
+use gobs_core::{ImageFormat, logger};
 use serde::Deserialize;
 
 use gobs_render_hal::{
@@ -12,7 +12,7 @@ use gobs_resource::{
     load::{self, AssetType},
 };
 
-use crate::{GfxContext, Material, MaterialProperties};
+use crate::{Material, MaterialProperties};
 
 #[derive(Debug, Deserialize)]
 pub struct MaterialsConfig {
@@ -25,6 +25,8 @@ struct DefaultMaterialConfig {
     #[serde(default)]
     object_layout: Vec<ObjectDataProp>,
     vertex_attributes: VertexAttribute,
+    color_format: ImageFormat,
+    depth_format: ImageFormat,
 }
 
 #[derive(Debug, Deserialize)]
@@ -45,39 +47,27 @@ struct MaterialConfig {
 }
 
 impl MaterialsConfig {
-    pub async fn load_resources(
-        ctx: &GfxContext,
-        filename: &str,
-        resource_manager: &mut ResourceManager,
-    ) {
+    pub async fn load_resources(filename: &str, resource_manager: &mut ResourceManager) {
         let resources = load::load_string(filename, AssetType::RESOURCES)
             .await
             .unwrap();
 
-        Self::load_resources_with_data(ctx, &resources, resource_manager);
+        Self::load_resources_with_data(&resources, resource_manager);
     }
 
-    pub fn load_resources_sync(
-        ctx: &GfxContext,
-        filename: &str,
-        resource_manager: &mut ResourceManager,
-    ) {
+    pub fn load_resources_sync(filename: &str, resource_manager: &mut ResourceManager) {
         let resources = load::load_string_sync(filename, AssetType::RESOURCES).unwrap();
 
-        Self::load_resources_with_data(ctx, &resources, resource_manager);
+        Self::load_resources_with_data(&resources, resource_manager);
     }
 
-    pub fn load_resources_with_data(
-        ctx: &GfxContext,
-        data: &str,
-        resource_manager: &mut ResourceManager,
-    ) {
+    pub fn load_resources_with_data(data: &str, resource_manager: &mut ResourceManager) {
         let config: MaterialsConfig = ron::from_str(data).unwrap();
 
-        config.load_materials(ctx, resource_manager);
+        config.load_materials(resource_manager);
     }
 
-    fn load_materials(&self, ctx: &GfxContext, resource_manager: &mut ResourceManager) {
+    fn load_materials(&self, resource_manager: &mut ResourceManager) {
         let mut object_layout = ObjectDataLayout::default();
         for prop in &self.default.object_layout {
             object_layout = object_layout.prop(*prop);
@@ -90,7 +80,6 @@ impl MaterialsConfig {
             };
 
             let mut props = MaterialProperties::new(
-                ctx,
                 name,
                 &material.vertex_shader,
                 &material.vertex_entry,
@@ -98,6 +87,8 @@ impl MaterialsConfig {
                 &material.fragment_entry,
                 vertex_attributes,
                 object_layout.clone(),
+                self.default.color_format,
+                self.default.depth_format,
             )
             .cull_mode(material.cull_mode)
             .blend_mode(material.blend_mode);

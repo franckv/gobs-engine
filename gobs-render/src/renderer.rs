@@ -4,23 +4,14 @@ use gobs_resource::ResourceManager;
 
 use crate::RenderBatch;
 
-#[derive(Debug, Default)]
-pub enum RenderMode {
-    #[default]
-    Scene,
-    Ui,
-}
-
 #[derive(Debug)]
 pub struct RendererOptions {
-    pub mode: RenderMode,
     pub graph: String,
 }
 
 impl Default for RendererOptions {
     fn default() -> Self {
         Self {
-            mode: Default::default(),
             graph: "scene".to_string(),
         }
     }
@@ -39,12 +30,7 @@ impl Renderer {
         options: &RendererOptions,
         resource_manager: &mut ResourceManager,
     ) -> Self {
-        let graph = match options.mode {
-            RenderMode::Scene => {
-                FrameGraph::standard(&mut gfx, resource_manager, &options.graph).unwrap()
-            }
-            RenderMode::Ui => FrameGraph::ui(&mut gfx, resource_manager).unwrap(),
-        };
+        let graph = FrameGraph::load(&mut gfx, resource_manager, &options.graph).unwrap();
 
         let frames_in_flight = gfx.frames_in_flight;
 

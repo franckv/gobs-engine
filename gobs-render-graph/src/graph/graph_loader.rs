@@ -10,10 +10,10 @@ use gobs_resource::{
 };
 
 use crate::{
-    GfxContext, PassType, Pipeline, PipelineProperties, RenderFlags,
+    FrameGraph, GfxContext, PassType, Pipeline, PipelineProperties, PipelinesConfig, RenderFlags,
     pass::{
-        AttachmentAccess, AttachmentType, RenderPass, RenderPassType, compute::ComputePass,
-        material::MaterialPass, present::PresentPass,
+        Attachment, AttachmentAccess, AttachmentType, RenderPass, RenderPassType,
+        compute::ComputePass, material::MaterialPass, present::PresentPass,
     },
 };
 
@@ -23,6 +23,7 @@ const FRAME_HEIGHT: u32 = 1080;
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct GraphConfig {
+    pipelines: Option<String>,
     graphes: HashMap<String, Vec<String>>,
     passes: HashMap<String, RenderPassConfig>,
     attachments: HashMap<String, ImageAttachmentInfo>,
@@ -61,17 +62,10 @@ enum AttachmentInfo {
 struct ImageAttachmentInfo {
     usage: ImageUsage,
     format: ImageFormat,
-    layout: ImageLayout,
 }
 
 impl GraphConfig {
-    pub fn load(filename: &str) -> Result<Self, ResourceError> {
-        let data = load::load_string_sync(filename, AssetType::RESOURCES)?;
-
-        Self::load_with_data(&data)
-    }
-
-    pub fn load_with_data(data: &str) -> Result<Self, ResourceError> {
+    fn load_with_data(data: &str) -> Result<Self, ResourceError> {
         let options = ron::options::Options::default()
             .with_default_extension(ron::extensions::Extensions::IMPLICIT_SOME);
 
@@ -86,10 +80,10 @@ impl GraphConfig {
         filename: &str,
         name: &str,
         resource_manager: &mut ResourceManager,
-    ) -> Result<Vec<Arc<dyn RenderPass>>, ResourceError> {
+    ) -> Result<FrameGraph, ResourceError> {
         let data = load::load_string_sync(filename, AssetType::RESOURCES)?;
 
-        Self::load_graph_with_data(ctx, &data, name, resource_manager)
+        Self::load_graph_with_data(ctx, &data, name, resource_manager, true)
     }
 
     pub fn load_graph_with_data(
@@ -97,18 +91,37 @@ impl GraphConfig {
         data: &str,
         name: &str,
         resource_manager: &mut ResourceManager,
-    ) -> Result<Vec<Arc<dyn RenderPass>>, ResourceError> {
-        let graph = Self::load_with_data(data)?;
+        load_pipelines: bool,
+    ) -> Result<FrameGraph, ResourceError> {
+        let graph_config = Self::load_with_data(data)?;
 
-        let passes = graph.graphes[name]
-            .iter()
-            .map(|passname| {
-                Self::load_pass(ctx, &graph, passname, resource_manager)
-                    .unwrap_or_else(|| panic!("Failed to load pass {}", passname))
-            })
-            .collect();
+        let mut graph = FrameGraph::new();
 
-        Ok(passes)
+        // TODO: only register attachments used by passes
+        for (attach_name, attach_config) in &graph_config.attachments {
+            let attachment =
+                Self::load_attachment(ctx, attach_config).ok_or(ResourceError::InvalidData)?;
+
+            graph.register_attachment(ctx, attach_name, attachment);
+        }
+
+        if load_pipelines && let Some(pipelines) = &graph_config.pipelines {
+            PipelinesConfig::load_resources(ctx, pipelines, resource_manager)
+                .expect("Load pipelines");
+        }
+
+        tracing::debug!(target: logger::INIT, "Load graph: {}", "scene");
+
+        for pass in &graph_config.graphes[name] {
+            tracing::debug!(target: logger::INIT, "Load pass: {}", pass);
+
+            let pass = Self::load_pass(ctx, &graph_config, pass, resource_manager)
+                .unwrap_or_else(|| panic!("Failed to load pass {}", pass));
+
+            graph.register_pass(pass.clone());
+        }
+
+        Ok(graph)
     }
 
     pub fn load_pass(
@@ -123,7 +136,7 @@ impl GraphConfig {
 
         match pass.ty {
             RenderPassType::Compute => {
-                Self::load_compute_pass(ctx, passname, pass, resource_manager)
+                Self::load_compute_pass(ctx, passname, pass, graph, resource_manager)
             }
             RenderPassType::Material => {
                 Self::load_material_pass(ctx, passname, pass, graph, resource_manager)
@@ -136,6 +149,7 @@ impl GraphConfig {
         ctx: &mut GfxContext,
         passname: &str,
         pass: &RenderPassConfig,
+        graph: &GraphConfig,
         resource_manager: &mut ResourceManager,
     ) -> Option<Arc<dyn RenderPass>> {
         let pipeline_handle = resource_manager.get_by_name::<Pipeline>(pass.pipeline.as_ref()?)?;
@@ -157,14 +171,8 @@ impl GraphConfig {
         );
 
         for (attach_name, attach_config) in &pass.attachments {
-            match attach_config {
-                AttachmentInfo::StorageImage { access } => {
-                    compute_pass
-                        .add_attachment(attach_name, AttachmentType::ImageStorage, *access)
-                        .with_layout(ImageLayout::General);
-                }
-                _ => unimplemented!(),
-            }
+            let attachment = Self::load_attachment_usage(ctx, graph, attach_name, attach_config)?;
+            compute_pass.add_attachment(attach_name, attachment);
         }
 
         Some(Arc::new(compute_pass))
@@ -195,12 +203,6 @@ impl GraphConfig {
             scene_layout = scene_layout.prop(*prop);
         }
 
-        let default_extent = ctx.extent();
-        let default_extent = ImageExtent2D::new(
-            default_extent.width.max(FRAME_WIDTH),
-            default_extent.height.max(FRAME_HEIGHT),
-        );
-
         let mut material_pass =
             MaterialPass::new(ctx, passname, pass.tag, scene_layout, pass.flags);
 
@@ -213,35 +215,74 @@ impl GraphConfig {
         }
 
         for (attach_name, attach_config) in &pass.attachments {
-            let image_info = graph.attachments.get(attach_name)?;
+            let attachment = Self::load_attachment_usage(ctx, graph, attach_name, attach_config)?;
 
-            // TODO: add image extent
-            match attach_config {
-                AttachmentInfo::ColorAttachment { access, clear } => {
-                    material_pass
-                        .add_attachment(attach_name, AttachmentType::Color, *access)
-                        .with_usage(ImageUsage::Color)
-                        .with_format(image_info.format)
-                        .with_clear(*clear)
-                        .with_extent(default_extent)
-                        .with_layout(ImageLayout::Color);
-                }
-                AttachmentInfo::DepthAttachment { access, clear } => {
-                    material_pass
-                        .add_attachment(attach_name, AttachmentType::Depth, *access)
-                        .with_usage(ImageUsage::Depth)
-                        .with_format(image_info.format)
-                        .with_clear(*clear)
-                        .with_extent(default_extent)
-                        .with_layout(ImageLayout::Depth);
-                }
-                AttachmentInfo::StorageImage { access: _ } => {
-                    tracing::warn!(target: logger::INIT, "Invalid attachment for pass {}", passname)
-                }
-            }
+            material_pass.add_attachment(attach_name, attachment);
         }
 
         Some(Arc::new(material_pass))
+    }
+
+    fn get_render_target_extent(ctx: &GfxContext) -> ImageExtent2D {
+        let extent = ctx.extent();
+        ImageExtent2D::new(
+            extent.width.max(FRAME_WIDTH),
+            extent.height.max(FRAME_HEIGHT),
+        )
+    }
+
+    fn load_attachment(ctx: &GfxContext, attach_info: &ImageAttachmentInfo) -> Option<Attachment> {
+        let default_extent = Self::get_render_target_extent(ctx);
+
+        let mut attachment = Attachment::new(AttachmentType::Color, AttachmentAccess::ReadWrite);
+        attachment
+            .with_usage(attach_info.usage)
+            .with_format(attach_info.format)
+            .with_extent(default_extent);
+
+        Some(attachment)
+    }
+
+    fn load_attachment_usage(
+        ctx: &GfxContext,
+        graph: &GraphConfig,
+        attach_name: &str,
+        attach_usage: &AttachmentInfo,
+    ) -> Option<Attachment> {
+        let image_info = graph.attachments.get(attach_name)?;
+
+        let default_extent = Self::get_render_target_extent(ctx);
+
+        match attach_usage {
+            AttachmentInfo::ColorAttachment { access, clear } => {
+                let mut attachment = Attachment::new(AttachmentType::Color, *access);
+                attachment
+                    .with_usage(ImageUsage::Color)
+                    .with_format(image_info.format)
+                    .with_clear(*clear)
+                    .with_extent(default_extent)
+                    .with_layout(ImageLayout::Color);
+
+                Some(attachment)
+            }
+            AttachmentInfo::DepthAttachment { access, clear } => {
+                let mut attachment = Attachment::new(AttachmentType::Depth, *access);
+                attachment
+                    .with_usage(ImageUsage::Depth)
+                    .with_format(image_info.format)
+                    .with_clear(*clear)
+                    .with_extent(default_extent)
+                    .with_layout(ImageLayout::Depth);
+
+                Some(attachment)
+            }
+            AttachmentInfo::StorageImage { access } => {
+                let mut attachment = Attachment::new(AttachmentType::ImageStorage, *access);
+                attachment.with_layout(ImageLayout::General);
+
+                Some(attachment)
+            }
+        }
     }
 }
 
@@ -281,11 +322,12 @@ mod tests {
         let graph = GraphConfig::load_with_data(data).unwrap();
         tracing::info!("Graph: {:?}", graph.graphes["scene"]);
 
-        let passes =
-            GraphConfig::load_graph_with_data(&mut ctx, data, "ui", &mut resource_manager).unwrap();
+        let graph =
+            GraphConfig::load_graph_with_data(&mut ctx, data, "ui", &mut resource_manager, false)
+                .unwrap();
 
-        for pass in passes {
-            tracing::info!("Load pass: {}", pass.name());
+        for pass in graph.passes {
+            tracing::info!("Load pass: {}", pass.pass.name());
         }
     }
 
@@ -314,6 +356,7 @@ mod tests {
         let pass_name = "bounds".to_string();
 
         let graph = GraphConfig {
+            pipelines: None,
             graphes: HashMap::from([("scene".to_string(), vec![pass_name.clone()])]),
             passes: HashMap::from([(
                 pass_name,

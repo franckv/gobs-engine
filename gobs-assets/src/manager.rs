@@ -1,7 +1,7 @@
 use gobs_core::logger;
 use gobs_render::{
-    BlendMode, GfxContext, Material, MaterialInstance, MaterialInstanceProperties, MaterialsConfig,
-    Texture, TextureProperties,
+    BlendMode, Material, MaterialInstance, MaterialInstanceProperties, MaterialsConfig, Texture,
+    TextureProperties,
 };
 use gobs_resource::{
     ResourceManager, {ResourceHandle, ResourceLifetime},
@@ -50,11 +50,8 @@ pub struct MaterialManager {
 }
 
 impl MaterialManager {
-    pub fn new(
-        ctx: &GfxContext,
-        resource_manager: &mut ResourceManager,
-    ) -> Result<Self, AssetError> {
-        MaterialsConfig::load_resources_sync(ctx, "gltf_materials.ron", resource_manager);
+    pub fn new(resource_manager: &mut ResourceManager) -> Result<Self, AssetError> {
+        MaterialsConfig::load_resources_sync("gltf_materials.ron", resource_manager);
 
         let texture = resource_manager
             .get_by_name("gltf.texture")

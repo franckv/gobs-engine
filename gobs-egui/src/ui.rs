@@ -11,10 +11,9 @@ use tracing::Level;
 
 use gobs_core::{Color, ImageExtent2D, Input, Key, MouseButton, Transform, logger};
 use gobs_render::{
-    BlendMode, GfxContext, Material, MaterialInstance, MaterialInstanceProperties,
-    MaterialProperties, MeshGeometry, Model, ObjectDataLayout, ObjectDataProp, RenderBatch,
-    RenderFlags, Renderable, Texture, TextureDataProp, TextureProperties, TextureUpdate,
-    UniformData as _, VertexAttribute, VertexData,
+    GfxContext, Material, MaterialInstance, MaterialInstanceProperties, MaterialsConfig,
+    MeshGeometry, Model, RenderBatch, RenderFlags, Renderable, Texture, TextureProperties,
+    TextureUpdate, VertexData,
 };
 use gobs_resource::{
     ResourceManager, {ResourceError, ResourceHandle, ResourceLifetime},
@@ -44,27 +43,9 @@ impl UIRenderer {
 
         ectx.set_pixels_per_point(PIXEL_PER_POINT);
 
-        let vertex_attributes =
-            VertexAttribute::POSITION | VertexAttribute::COLOR | VertexAttribute::TEXTURE;
+        MaterialsConfig::load_resources_sync("ui_materials.ron", resource_manager);
 
-        let object_layout = ObjectDataLayout::default().prop(ObjectDataProp::VertexBufferAddress);
-
-        let material_properties = MaterialProperties::new(
-            ctx,
-            "ui",
-            "ui.vert.spv",
-            "main",
-            "ui.frag.spv",
-            "main",
-            vertex_attributes,
-            object_layout,
-        )
-        .texture(TextureDataProp::Diffuse)
-        .no_culling()
-        .depth_test_disable()
-        .blend_mode(BlendMode::Premultiplied);
-
-        let material = resource_manager.add(material_properties, ResourceLifetime::Static, false);
+        let material = resource_manager.get_by_name("ui").unwrap();
 
         Ok(UIRenderer {
             ectx,

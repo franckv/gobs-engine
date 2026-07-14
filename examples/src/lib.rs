@@ -35,8 +35,7 @@ pub const MAP: &str = "dungeon.map";
 pub const TILE_SIZE: f32 = 1.;
 pub const WIDTH: u32 = 800;
 pub const HEIGHT: u32 = 600;
-pub const GLTF_MODEL: &str = "structure.glb";
-pub const GLTF_MODEL2: &str = "house2.glb";
+pub const GLTF_MODEL: &str = "house2.glb";
 
 pub fn init_logger() {
     tracing_subscriber::registry()

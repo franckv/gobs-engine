@@ -19,4 +19,4 @@ pub use gobs_render_hal::{
 pub use batch::RenderBatch;
 pub use model::{Model, ModelId};
 pub use renderable::Renderable;
-pub use renderer::{RenderMode, Renderer, RendererOptions};
+pub use renderer::{Renderer, RendererOptions};

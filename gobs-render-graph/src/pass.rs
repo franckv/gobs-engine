@@ -60,9 +60,9 @@ pub enum AttachmentType {
 pub struct Attachment {
     ty: AttachmentType,
     access: AttachmentAccess,
-    format: ImageFormat,
-    usage: ImageUsage,
-    extent: ImageExtent2D,
+    pub format: ImageFormat,
+    pub usage: ImageUsage,
+    pub extent: ImageExtent2D,
     layout: ImageLayout,
     clear: bool,
     scaling: f32,

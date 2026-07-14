@@ -1,3 +1,4 @@
+use gobs_core::ImageFormat;
 use gobs_render_hal::{
     BindingGroupType, BlendMode, CompareOp, CullMode, DescriptorStage, DescriptorType, FrontFace,
     MaterialDataLayout, MaterialDataProp, ObjectDataLayout, RenderHAL, TextureDataLayout,
@@ -6,7 +7,7 @@ use gobs_render_hal::{
 use gobs_resource::{ResourceHandle, ResourceProperties, ResourceType};
 
 use crate::{
-    GfxContext, MaterialLoader, Pipeline,
+    MaterialLoader, Pipeline,
     resources::{GraphicsPipelineProperties, PipelineProperties},
 };
 
@@ -38,7 +39,6 @@ impl ResourceProperties for MaterialProperties {
 impl MaterialProperties {
     #[allow(clippy::too_many_arguments)]
     pub fn new(
-        ctx: &GfxContext,
         name: &str,
         vertex_shader: &str,
         vertex_entry: &str,
@@ -46,6 +46,8 @@ impl MaterialProperties {
         fragment_entry: &str,
         vertex_attributes: VertexAttribute,
         object_data_layout: ObjectDataLayout,
+        color_format: ImageFormat,
+        depth_format: ImageFormat,
     ) -> Self {
         let pipeline_properties = PipelineProperties::graphics(name)
             .vertex_shader(vertex_shader)
@@ -59,8 +61,8 @@ impl MaterialProperties {
             .front_face(FrontFace::CCW)
             .binding_group(BindingGroupType::SceneData)
             .binding(DescriptorType::Uniform, DescriptorStage::All)
-            .color_format(ctx.color_format)
-            .depth_format(ctx.depth_format);
+            .color_format(color_format)
+            .depth_format(depth_format);
 
         Self {
             name: name.to_string(),

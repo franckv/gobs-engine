@@ -1,6 +1,7 @@
 #version 450
 
 #extension GL_EXT_buffer_reference: require
+#extension GL_EXT_scalar_block_layout: require
 
 layout(set = 0, binding = 0) uniform SceneData {
 	vec3 camera_position;
@@ -24,7 +25,7 @@ struct Vertex {
 	vec3 bitangent;
 };
 
-layout(buffer_reference, std430) readonly buffer VertexBuffer {
+layout(buffer_reference, scalar) readonly buffer VertexBuffer {
 	Vertex vertices[];
 };
 

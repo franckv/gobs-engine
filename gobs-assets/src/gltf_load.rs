@@ -31,7 +31,7 @@ impl GLTFLoader {
         ctx: &mut GfxContext,
         resource_manager: &mut ResourceManager,
     ) -> Result<Self, AssetError> {
-        let material_manager = MaterialManager::new(ctx, resource_manager)?;
+        let material_manager = MaterialManager::new(resource_manager)?;
 
         Ok(Self {
             material_manager,

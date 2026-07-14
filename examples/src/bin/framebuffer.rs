@@ -101,12 +101,7 @@ impl App {
 
         let framebuffer = Self::generate_framebuffer(width, height);
 
-        MaterialsConfig::load_resources(
-            &ctx.renderer.gfx,
-            "materials.ron",
-            &mut ctx.resource_manager,
-        )
-        .await;
+        MaterialsConfig::load_resources("materials.ron", &mut ctx.resource_manager).await;
 
         let material = ctx.resource_manager.get_by_name("texture").unwrap();
 

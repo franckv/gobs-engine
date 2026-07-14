@@ -76,12 +76,7 @@ impl GobsGame for App {
 
 impl App {
     async fn init(&mut self, ctx: &mut GameContext) {
-        MaterialsConfig::load_resources(
-            &ctx.renderer.gfx,
-            "materials.ron",
-            &mut ctx.resource_manager,
-        )
-        .await;
+        MaterialsConfig::load_resources("materials.ron", &mut ctx.resource_manager).await;
 
         let material = ctx.resource_manager.get_by_name("color").unwrap();
         let material_instance_properties = MaterialInstanceProperties::new("color", material);
