@@ -1,7 +1,9 @@
 [workspace]
 members = [
     "examples",
+    "gobs",
     "gobs-assets",
+    "gobs-build",
     "gobs-core",
     "gobs-egui",
     "gobs-game",
@@ -20,48 +22,39 @@ edition = "2024"
 version = "0.1.0"
 
 [workspace.dependencies.gobs]
-package = "gobs"
 path = "./gobs"
 
 [workspace.dependencies.gobs-assets]
-package = "gobs-assets"
 path = "./gobs-assets"
 
+[workspace.dependencies.gobs-build]
+path = "./gobs-build"
+
 [workspace.dependencies.gobs-core]
-package = "gobs-core"
 path = "./gobs-core"
 
 [workspace.dependencies.gobs-egui]
-package = "gobs-egui"
 path = "./gobs-egui"
 
 [workspace.dependencies.gobs-game]
-package = "gobs-game"
 path = "./gobs-game"
 
 [workspace.dependencies.gobs-render-graph]
-package = "gobs-render-graph"
 path = "./gobs-render-graph"
 
 [workspace.dependencies.gobs-render-hal]
-package = "gobs-render-hal"
 path = "./gobs-render-hal"
 
 [workspace.dependencies.gobs-render]
-package = "gobs-render"
 path = "./gobs-render"
 
-
 [workspace.dependencies.gobs-resource]
-package = "gobs-resource"
 path = "./gobs-resource"
 
 [workspace.dependencies.gobs-scene]
-package = "gobs-scene"
 path = "./gobs-scene"
 
 [workspace.dependencies.gobs-vulkan]
-package = "gobs-vulkan"
 path = "./gobs-vulkan"
 
 [workspace.dependencies]

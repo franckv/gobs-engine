@@ -24,3 +24,4 @@ uuid = { workspace = true }
 [build-dependencies]
 fs_extra = { workspace = true }
 tracing = { workspace = true }
+gobs-build = { workspace = true }
