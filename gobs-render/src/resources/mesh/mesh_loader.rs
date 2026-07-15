@@ -1,13 +1,11 @@
 use gobs_core::logger;
+use gobs_render_graph::GfxContext;
 use gobs_render_hal::{BufferType, CommandBuffer, CommandQueueType, RenderHAL, VertexAttribute};
 use gobs_resource::{
     ResourceRegistry, {Resource, ResourceError, ResourceHandle, ResourceLoader, ResourceProperties},
 };
 
-use crate::{
-    GfxContext,
-    resources::{Mesh, MeshData, MeshGeometry, MeshPath, MeshPrimitiveType},
-};
+use crate::resources::{Mesh, MeshData, MeshGeometry, MeshPath, MeshPrimitiveType};
 
 pub struct MeshLoader {
     cmd: Box<dyn CommandBuffer>,

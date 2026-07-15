@@ -1,7 +1,8 @@
 mod ui;
 
-use gobs_render::RenderError;
 use thiserror::Error;
+
+use gobs_render::RenderError;
 
 pub use ui::UIRenderer;
 

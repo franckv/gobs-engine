@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::{BindingGroupLayout, BindingGroupType, DescriptorStage, DescriptorType};
+use gobs_render_hal::{BindingGroupLayout, BindingGroupType, DescriptorStage, DescriptorType};
 
 // TODO: Emissive, Specular, Opacity, Glossiness, ...
 #[derive(Clone, Copy, Debug, Deserialize, Serialize)]

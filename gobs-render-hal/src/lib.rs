@@ -19,9 +19,8 @@ pub use gobs_vulkan::{
 pub use bindings::{BindResource, BindingGroupLayout, BindingGroupType};
 pub use command::{CommandBuffer, CommandQueueType};
 pub use data::{
-    MaterialConstantData, MaterialDataLayout, MaterialDataProp, MaterialDataPropData,
-    ObjectDataLayout, ObjectDataProp, SceneData, SceneDataLayout, SceneDataProp, TextureDataLayout,
-    TextureDataProp, UniformBuffer, UniformData, UniformLayout, UniformPropData,
+    ObjectDataLayout, ObjectDataProp, UniformBuffer, UniformData, UniformLayout, UniformProp,
+    UniformPropData,
 };
 pub use error::RenderBackendError;
 pub use hal::{BufferType, Handle, RenderHAL, create_hal};

@@ -1,13 +1,11 @@
-use gobs_render_hal::{
-    BufferType, Handle, MaterialConstantData, MaterialDataLayout, MaterialDataProp, RenderHAL,
-    UniformData as _, UniformPropData,
-};
+use gobs_render_hal::{BufferType, Handle, RenderHAL, UniformData as _, UniformPropData};
 use gobs_resource::{
     ResourceRegistry, {Resource, ResourceError, ResourceHandle, ResourceLoader, ResourceProperties},
 };
 
 use crate::{
     MaterialInstanceProperties, MaterialProperties,
+    data::{MaterialConstantData, MaterialDataLayout, MaterialDataProp},
     resources::{MaterialInstance, MaterialInstanceData},
 };
 

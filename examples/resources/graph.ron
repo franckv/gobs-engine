@@ -1,5 +1,4 @@
 GraphConfig(
-    pipelines: "pipelines.ron",
     graphes: {
         "simple": [
             "forward_nodepth",

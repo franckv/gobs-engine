@@ -1,16 +1,16 @@
 use std::sync::Arc;
 
 use gobs_core::{ImageExtent2D, Transform, logger};
-use gobs_render_graph::{
-    BoundingBox, GfxContext, MaterialInstance, MeshBuilder, MeshGeometry, PipelineProperties,
-    RenderFlags, RenderObject, RenderPass, Shapes,
-};
-use gobs_render_hal::{BindResource, Handle, SceneData};
+use gobs_render_graph::{GfxContext, RenderFlags, RenderObject, RenderPass, SceneData};
+use gobs_render_hal::{BindResource, Handle};
 use gobs_resource::{
     ResourceError, ResourceHandle, ResourceLifetime, ResourceManager, camera::Camera, light::Light,
 };
 
-use crate::model::Model;
+use crate::{
+    BoundingBox, MaterialInstance, MeshBuilder, MeshGeometry, PipelineProperties, Shapes,
+    model::Model,
+};
 
 pub struct RenderBatch {
     pub render_list: Vec<RenderObject>,
@@ -312,10 +312,10 @@ mod tests {
     use tracing_subscriber::{EnvFilter, FmtSubscriber, fmt::format::FmtSpan};
 
     use gobs_core::{Color, Transform, logger, utils::timer::Timer};
-    use gobs_render_graph::{GfxContext, Mesh, MeshLoader, RenderFlags, Shapes};
+    use gobs_render_graph::{GfxContext, RenderFlags};
     use gobs_resource::{ResourceLifetime, ResourceManager};
 
-    use crate::{Model, RenderBatch};
+    use crate::{Mesh, MeshLoader, Model, RenderBatch, Shapes};
 
     fn setup() {
         let sub = FmtSubscriber::builder()

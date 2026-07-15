@@ -1,4 +1,5 @@
 use futures::future::try_join_all;
+use gobs_render_graph::GfxContext;
 use gobs_render_hal::{
     BufferType, CommandBuffer, CommandQueueType, ImageLayout, ImageUsage, RenderHAL,
 };
@@ -12,10 +13,7 @@ use gobs_resource::{
     {Resource, ResourceError, ResourceHandle, ResourceLoader, ResourceProperties},
 };
 
-use crate::{
-    GfxContext,
-    resources::{Texture, TextureData, TextureFormat, texture::TexturePath},
-};
+use crate::resources::{Texture, TextureData, TextureFormat, texture::TexturePath};
 
 pub struct TextureLoader {
     cmd: Box<dyn CommandBuffer>,

@@ -1,12 +1,11 @@
-use gobs_core::logger;
-use gobs_render_hal::{ImageLayout, SceneData};
-use gobs_resource::ResourceManager;
-
 use crate::{
     FrameData, GfxContext, GraphConfig, PassId, RenderError, RenderObject, RenderPass,
+    data::SceneData,
     graph::resource::GraphResourceManager,
     pass::{Attachment, PassType},
 };
+use gobs_core::logger;
+use gobs_render_hal::{Handle, ImageLayout};
 
 pub struct FrameGraphPass {
     pub pass: RenderPass,
@@ -30,13 +29,16 @@ impl FrameGraph {
         }
     }
 
-    pub fn load(
+    pub fn load<F>(
         ctx: &mut GfxContext,
-        resource_manager: &mut ResourceManager,
         graph_name: &str,
-    ) -> Result<Self, RenderError> {
+        pipeline_resolver: F,
+    ) -> Result<Self, RenderError>
+    where
+        F: FnMut(&str, &mut GfxContext) -> Option<Handle>,
+    {
         tracing::debug!(target: logger::INIT, "Load graph: {}", graph_name);
-        GraphConfig::load_graph(ctx, "graph.ron", graph_name, resource_manager)
+        GraphConfig::load_graph(ctx, "graph.ron", graph_name, pipeline_resolver)
             .map_err(|_| RenderError::InvalidData)
     }
 

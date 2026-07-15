@@ -5,12 +5,15 @@ authors = { workspace = true }
 edition = { workspace = true }
 
 [dependencies]
+bytemuck = { workspace = true }
 futures = { workspace = true }
+glam = { workspace = true }
 gobs-core = { workspace = true }
 gobs-resource = { workspace = true }
 gobs-render-graph = { workspace = true }
 gobs-render-hal = { workspace = true }
 image = { workspace = true }
+pollster = { workspace = true }
 ron = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
@@ -20,3 +23,6 @@ uuid = { workspace = true }
 
 [dev-dependencies]
 tracing-subscriber = { workspace = true }
+
+[features]
+ci = []

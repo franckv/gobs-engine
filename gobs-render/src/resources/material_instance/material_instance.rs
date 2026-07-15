@@ -1,7 +1,10 @@
-use gobs_render_hal::{Handle, MaterialConstantData, MaterialDataPropData, RenderHAL};
+use gobs_render_hal::{Handle, RenderHAL};
 use gobs_resource::{ResourceHandle, ResourceProperties, ResourceType};
 
-use crate::resources::{Material, MaterialInstanceLoader, Texture};
+use crate::{
+    data::{MaterialConstantData, MaterialDataPropData},
+    resources::{Material, MaterialInstanceLoader, Texture},
+};
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct MaterialInstance;

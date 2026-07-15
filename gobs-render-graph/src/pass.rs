@@ -3,10 +3,11 @@
 use serde::{Deserialize, Serialize};
 
 use gobs_core::{ImageExtent2D, ImageFormat};
-use gobs_render_hal::{ImageLayout, ImageUsage, SceneData};
+use gobs_render_hal::{ImageLayout, ImageUsage};
 
 use crate::{
-    FrameData, GfxContext, PassId, RenderError, RenderObject, graph::GraphResourceManager,
+    FrameData, GfxContext, PassId, RenderError, RenderObject, data::SceneData,
+    graph::GraphResourceManager,
 };
 
 pub mod compute;

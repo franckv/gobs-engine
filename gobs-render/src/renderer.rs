@@ -2,7 +2,7 @@ use gobs_core::{ImageExtent2D, logger};
 use gobs_render_graph::{FrameData, FrameGraph, GfxContext, PassType, RenderError};
 use gobs_resource::ResourceManager;
 
-use crate::RenderBatch;
+use crate::{Pipeline, PipelinesConfig, RenderBatch};
 
 #[derive(Debug)]
 pub struct RendererOptions {
@@ -30,7 +30,20 @@ impl Renderer {
         options: &RendererOptions,
         resource_manager: &mut ResourceManager,
     ) -> Self {
-        let graph = FrameGraph::load(&mut gfx, resource_manager, &options.graph).unwrap();
+        PipelinesConfig::load_resources(&gfx, "pipelines.ron", resource_manager)
+            .expect("Load pipelines");
+
+        let graph = FrameGraph::load(&mut gfx, &options.graph, |pipeline, ctx| {
+            let pipeline_handle = resource_manager.get_by_name::<Pipeline>(pipeline)?;
+
+            let pipeline = resource_manager.get_data(&mut ctx.hal, &pipeline_handle);
+
+            pipeline.ok().map(|data| data.data.pipeline)
+        })
+        .unwrap();
+
+        /*
+         */
 
         let frames_in_flight = gfx.frames_in_flight;
 

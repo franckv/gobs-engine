@@ -1,8 +1,9 @@
 use gobs_core::logger;
-use gobs_render_hal::{ImageLayout, SceneData};
+use gobs_render_hal::ImageLayout;
 
 use crate::{
     FrameData, GfxContext, RenderError, RenderObject,
+    data::SceneData,
     graph::GraphResourceManager,
     pass::{PassId, PassType, RenderPass},
 };

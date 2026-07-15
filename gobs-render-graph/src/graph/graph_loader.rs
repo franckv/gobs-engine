@@ -3,14 +3,15 @@ use std::{collections::HashMap, sync::Arc};
 use serde::{Deserialize, Serialize};
 
 use gobs_core::{ImageExtent2D, ImageFormat, logger};
-use gobs_render_hal::{ImageLayout, ImageUsage, SceneDataLayout, SceneDataProp, UniformData as _};
+use gobs_render_hal::{Handle, ImageLayout, ImageUsage, UniformData as _};
 use gobs_resource::{
-    ResourceError, ResourceManager,
+    ResourceError,
     load::{self, AssetType},
 };
 
 use crate::{
-    FrameGraph, GfxContext, PassType, Pipeline, PipelineProperties, PipelinesConfig, RenderFlags,
+    FrameGraph, GfxContext, PassType, RenderFlags,
+    data::{SceneDataLayout, SceneDataProp},
     pass::{
         Attachment, AttachmentAccess, AttachmentType, RenderPass, RenderPassType,
         compute::ComputePass, material::MaterialPass, present::PresentPass,
@@ -23,7 +24,6 @@ const FRAME_HEIGHT: u32 = 1080;
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct GraphConfig {
-    pipelines: Option<String>,
     graphes: HashMap<String, Vec<String>>,
     passes: HashMap<String, RenderPassConfig>,
     attachments: HashMap<String, ImageAttachmentInfo>,
@@ -75,24 +75,29 @@ impl GraphConfig {
         })
     }
 
-    pub fn load_graph(
+    pub fn load_graph<F>(
         ctx: &mut GfxContext,
         filename: &str,
         name: &str,
-        resource_manager: &mut ResourceManager,
-    ) -> Result<FrameGraph, ResourceError> {
+        pipeline_resolver: F,
+    ) -> Result<FrameGraph, ResourceError>
+    where
+        F: FnMut(&str, &mut GfxContext) -> Option<Handle>,
+    {
         let data = load::load_string_sync(filename, AssetType::RESOURCES)?;
 
-        Self::load_graph_with_data(ctx, &data, name, resource_manager, true)
+        Self::load_graph_with_data(ctx, &data, name, pipeline_resolver)
     }
 
-    pub fn load_graph_with_data(
+    pub fn load_graph_with_data<F>(
         ctx: &mut GfxContext,
         data: &str,
         name: &str,
-        resource_manager: &mut ResourceManager,
-        load_pipelines: bool,
-    ) -> Result<FrameGraph, ResourceError> {
+        mut pipeline_resolver: F,
+    ) -> Result<FrameGraph, ResourceError>
+    where
+        F: FnMut(&str, &mut GfxContext) -> Option<Handle>,
+    {
         let graph_config = Self::load_with_data(data)?;
 
         let mut graph = FrameGraph::new();
@@ -105,17 +110,12 @@ impl GraphConfig {
             graph.register_attachment(ctx, attach_name, attachment);
         }
 
-        if load_pipelines && let Some(pipelines) = &graph_config.pipelines {
-            PipelinesConfig::load_resources(ctx, pipelines, resource_manager)
-                .expect("Load pipelines");
-        }
-
         tracing::debug!(target: logger::INIT, "Load graph: {}", "scene");
 
         for pass in &graph_config.graphes[name] {
             tracing::debug!(target: logger::INIT, "Load pass: {}", pass);
 
-            let pass = Self::load_pass(ctx, &graph_config, pass, resource_manager)
+            let pass = Self::load_pass(ctx, &graph_config, pass, &mut pipeline_resolver)
                 .unwrap_or_else(|| panic!("Failed to load pass {}", pass));
 
             graph.register_pass(pass.clone());
@@ -124,22 +124,29 @@ impl GraphConfig {
         Ok(graph)
     }
 
-    pub fn load_pass(
+    pub fn load_pass<F>(
         ctx: &mut GfxContext,
         graph: &GraphConfig,
         passname: &str,
-        resource_manager: &mut ResourceManager,
-    ) -> Option<Arc<dyn RenderPass>> {
+        mut pipeline_resolver: F,
+    ) -> Option<Arc<dyn RenderPass>>
+    where
+        F: FnMut(&str, &mut GfxContext) -> Option<Handle>,
+    {
         tracing::info!(target: logger::INIT, "Load pass: {}", passname);
 
         let pass = graph.passes.get(passname)?;
+        let pipeline = pass
+            .pipeline
+            .as_ref()
+            .and_then(|pipeline| pipeline_resolver(pipeline, ctx));
 
         match pass.ty {
             RenderPassType::Compute => {
-                Self::load_compute_pass(ctx, passname, pass, graph, resource_manager)
+                Self::load_compute_pass(ctx, passname, pass, graph, pipeline?)
             }
             RenderPassType::Material => {
-                Self::load_material_pass(ctx, passname, pass, graph, resource_manager)
+                Self::load_material_pass(ctx, passname, pass, graph, pipeline)
             }
             RenderPassType::Present => Self::load_present_pass(ctx, passname, pass),
         }
@@ -150,25 +157,9 @@ impl GraphConfig {
         passname: &str,
         pass: &RenderPassConfig,
         graph: &GraphConfig,
-        resource_manager: &mut ResourceManager,
+        pipeline: Handle,
     ) -> Option<Arc<dyn RenderPass>> {
-        let pipeline_handle = resource_manager.get_by_name::<Pipeline>(pass.pipeline.as_ref()?)?;
-        let pipeline = resource_manager
-            .get_data(&mut ctx.hal, &pipeline_handle)
-            .ok()?;
-
-        let binding_group_layout =
-            if let PipelineProperties::Compute(properties) = pipeline.properties {
-                &properties.binding_groups
-            } else {
-                return None;
-            };
-
-        let mut compute_pass = ComputePass::new(
-            passname,
-            pipeline.data.pipeline,
-            binding_group_layout.clone(),
-        );
+        let mut compute_pass = ComputePass::new(passname, pipeline);
 
         for (attach_name, attach_config) in &pass.attachments {
             let attachment = Self::load_attachment_usage(ctx, graph, attach_name, attach_config)?;
@@ -196,7 +187,7 @@ impl GraphConfig {
         passname: &str,
         pass: &RenderPassConfig,
         graph: &GraphConfig,
-        resource_manager: &mut ResourceManager,
+        pipeline: Option<Handle>,
     ) -> Option<Arc<dyn RenderPass>> {
         let mut scene_layout = SceneDataLayout::default();
         for prop in &pass.scene_layout {
@@ -206,12 +197,8 @@ impl GraphConfig {
         let mut material_pass =
             MaterialPass::new(ctx, passname, pass.tag, scene_layout, pass.flags);
 
-        if let Some(pipeline) = &pass.pipeline {
-            let pipeline_handle = resource_manager.get_by_name::<Pipeline>(pipeline)?;
-            let pipeline = resource_manager
-                .get_data(&mut ctx.hal, &pipeline_handle)
-                .ok()?;
-            material_pass.set_fixed_pipeline(pipeline.data.pipeline);
+        if let Some(pipeline) = pipeline {
+            material_pass.set_fixed_pipeline(pipeline);
         }
 
         for (attach_name, attach_config) in &pass.attachments {
@@ -290,7 +277,6 @@ impl GraphConfig {
 mod tests {
     use std::collections::HashMap;
 
-    use gobs_resource::ResourceManager;
     use tracing::Level;
     use tracing_subscriber::{FmtSubscriber, fmt::format::FmtSpan};
 
@@ -315,16 +301,12 @@ mod tests {
 
         let mut ctx = GfxContext::new("test", None, false).unwrap();
 
-        let mut resource_manager = ResourceManager::new(ctx.frames_in_flight);
-
         let data = include_str!("../../../examples/resources/graph.ron");
 
         let graph = GraphConfig::load_with_data(data).unwrap();
         tracing::info!("Graph: {:?}", graph.graphes["scene"]);
 
-        let graph =
-            GraphConfig::load_graph_with_data(&mut ctx, data, "ui", &mut resource_manager, false)
-                .unwrap();
+        let graph = GraphConfig::load_graph_with_data(&mut ctx, data, "ui", |_, _| None).unwrap();
 
         for pass in graph.passes {
             tracing::info!("Load pass: {}", pass.pass.name());
@@ -338,15 +320,12 @@ mod tests {
 
         let mut ctx = GfxContext::new("test", None, false).unwrap();
 
-        let mut resource_manager = ResourceManager::new(ctx.frames_in_flight);
-
         let data = include_str!("../../../examples/resources/graph.ron");
 
         let graph_config = GraphConfig::load_with_data(data).unwrap();
 
         let _pass =
-            GraphConfig::load_pass(&mut ctx, &graph_config, "forward", &mut resource_manager)
-                .unwrap();
+            GraphConfig::load_pass(&mut ctx, &graph_config, "forward", |_, _| None).unwrap();
     }
 
     #[test]
@@ -356,7 +335,6 @@ mod tests {
         let pass_name = "bounds".to_string();
 
         let graph = GraphConfig {
-            pipelines: None,
             graphes: HashMap::from([("scene".to_string(), vec![pass_name.clone()])]),
             passes: HashMap::from([(
                 pass_name,

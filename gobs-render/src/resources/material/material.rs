@@ -1,13 +1,13 @@
 use gobs_core::ImageFormat;
 use gobs_render_hal::{
     BindingGroupType, BlendMode, CompareOp, CullMode, DescriptorStage, DescriptorType, FrontFace,
-    MaterialDataLayout, MaterialDataProp, ObjectDataLayout, RenderHAL, TextureDataLayout,
-    TextureDataProp, UniformData as _, VertexAttribute,
+    ObjectDataLayout, RenderHAL, UniformData as _, VertexAttribute,
 };
 use gobs_resource::{ResourceHandle, ResourceProperties, ResourceType};
 
 use crate::{
     MaterialLoader, Pipeline,
+    data::{MaterialDataLayout, MaterialDataProp, TextureDataLayout, TextureDataProp},
     resources::{GraphicsPipelineProperties, PipelineProperties},
 };
 

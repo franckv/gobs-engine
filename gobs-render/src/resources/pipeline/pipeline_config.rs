@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 
+use gobs_render_graph::GfxContext;
 use serde::{Deserialize, Serialize};
 
 use gobs_core::{ImageFormat, logger};
@@ -13,10 +14,7 @@ use gobs_resource::{
     {ResourceError, ResourceLifetime},
 };
 
-use crate::{
-    GfxContext,
-    resources::{Pipeline, PipelineProperties},
-};
+use crate::resources::{Pipeline, PipelineProperties};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct PipelinesConfig {
@@ -204,6 +202,7 @@ impl PipelinesConfig {
 mod tests {
     use std::collections::HashMap;
 
+    use gobs_render_graph::GfxContext;
     use tracing::Level;
     use tracing_subscriber::{FmtSubscriber, fmt::format::FmtSpan};
 
@@ -211,12 +210,9 @@ mod tests {
     use gobs_render_hal::{CompareOp, CullMode, FrontFace, PolygonMode, VertexAttribute};
     use gobs_resource::ResourceManager;
 
-    use crate::{
-        GfxContext,
-        resources::{
-            PipelinesConfig,
-            pipeline::pipeline_config::{AttachmentFormat, DepthConfig, GraphicsPipelineConfig},
-        },
+    use crate::resources::{
+        PipelinesConfig,
+        pipeline::pipeline_config::{AttachmentFormat, DepthConfig, GraphicsPipelineConfig},
     };
 
     fn setup() {

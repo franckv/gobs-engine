@@ -1,10 +1,11 @@
 use std::collections::HashMap;
 
 use gobs_core::{ImageExtent2D, logger};
-use gobs_render_hal::{BindResource, BindingGroupLayout, Handle, SceneData};
+use gobs_render_hal::{BindResource, BindingGroupType, Handle};
 
 use crate::{
     FrameData, GfxContext, RenderError, RenderObject,
+    data::SceneData,
     graph::GraphResourceManager,
     pass::{Attachment, AttachmentType, PassId, PassType, RenderPass},
 };
@@ -16,11 +17,10 @@ pub struct ComputePass {
     attachments: HashMap<String, Attachment>,
     image_attachments: Vec<String>,
     pub pipeline: Handle,
-    binding_layout: Vec<BindingGroupLayout>,
 }
 
 impl ComputePass {
-    pub fn new(name: &str, pipeline: Handle, binding_layout: Vec<BindingGroupLayout>) -> Self {
+    pub fn new(name: &str, pipeline: Handle) -> Self {
         Self {
             id: PassId::new_v4(),
             name: name.to_string(),
@@ -28,7 +28,6 @@ impl ComputePass {
             attachments: Default::default(),
             image_attachments: vec![],
             pipeline,
-            binding_layout,
         }
     }
 
@@ -90,7 +89,12 @@ impl RenderPass for ComputePass {
 
         if !resources.is_empty() {
             // TODO: assume one ds
-            let bind_resource = BindResource::new(self.binding_layout[0].clone(), resources);
+            let binding_layout = ctx
+                .hal
+                .get_pipeline_descriptor_layout(self.pipeline, &BindingGroupType::ComputeData)
+                .ok_or(RenderError::InvalidData)?;
+
+            let bind_resource = BindResource::new(binding_layout.clone(), resources);
             cmd.bind_resource(ctx.hal.as_mut(), self.pipeline, &bind_resource);
         }
 

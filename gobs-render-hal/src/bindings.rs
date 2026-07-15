@@ -6,6 +6,7 @@ use crate::{DescriptorStage, DescriptorType, Handle};
 
 #[derive(Clone, Eq, PartialEq)]
 pub struct BindResource {
+    // TODO: use BindingGroupType
     pub layout: BindingGroupLayout,
     pub resources: Vec<Handle>,
 }

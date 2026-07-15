@@ -1,13 +1,11 @@
 use std::collections::HashMap;
 
 use gobs_core::logger;
-use gobs_render_hal::{
-    CommandBuffer, Handle, RenderHAL, SceneData, SceneDataLayout, SceneDataProp, UniformData as _,
-    UniformPropData,
-};
+use gobs_render_hal::{CommandBuffer, Handle, RenderHAL, UniformData as _, UniformPropData};
 
 use crate::{
     FrameData, GfxContext, PassId, PassType, RenderError, RenderFlags, RenderJob, RenderObject,
+    data::{SceneData, SceneDataLayout, SceneDataProp},
     graph::GraphResourceManager,
     pass::{Attachment, AttachmentType, RenderPass},
 };

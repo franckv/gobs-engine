@@ -1,18 +1,20 @@
 use std::collections::HashMap;
 
-use gobs_core::{ImageFormat, logger};
 use serde::Deserialize;
 
+use gobs_core::{ImageFormat, logger};
 use gobs_render_hal::{
-    BlendMode, CullMode, MaterialDataProp, ObjectDataLayout, ObjectDataProp, TextureDataProp,
-    UniformData as _, VertexAttribute,
+    BlendMode, CullMode, ObjectDataLayout, ObjectDataProp, UniformData as _, VertexAttribute,
 };
 use gobs_resource::{
     ResourceLifetime, ResourceManager,
     load::{self, AssetType},
 };
 
-use crate::{Material, MaterialProperties};
+use crate::{
+    Material, MaterialProperties,
+    data::{MaterialDataProp, TextureDataProp},
+};
 
 #[derive(Debug, Deserialize)]
 pub struct MaterialsConfig {

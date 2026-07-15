@@ -1,10 +1,11 @@
 use serde::{Deserialize, Serialize};
 
-use crate::{
-    BindingGroupLayout, BindingGroupType, DescriptorStage, DescriptorType, UniformData,
-    UniformPropData,
-    data::{UniformLayout, UniformProp},
+use gobs_render_hal::{
+    BindingGroupLayout, BindingGroupType, DescriptorStage, DescriptorType, UniformLayout,
+    UniformProp, UniformPropData,
 };
+
+use crate::UniformData;
 
 // TODO: Emissive, Specular, Opacity, Glossiness, ...
 #[derive(Clone, Copy, Debug, Deserialize, Serialize)]
