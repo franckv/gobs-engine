@@ -175,6 +175,8 @@ impl RenderBatch {
             let material = resource_manager.get(&material_handle);
             if material.properties.blending_enabled {
                 *render_flags |= RenderFlags::TRANSPARENT;
+            } else {
+                *render_flags |= RenderFlags::OPAQUE;
             }
 
             let material_data = resource_manager.get_data(&mut ctx.hal, &material_handle)?;

@@ -18,10 +18,11 @@ bitflags! {
     pub struct RenderFlags: u32 {
         const ENTITY = 1 << 0;
         const TRANSPARENT = 1 << 1;
-        const UI = 1 << 2;
-        const SELECTED = 1 << 3;
-        const BOUNDS = 1 << 4;
-        const WIRE = 1 << 5;
+        const OPAQUE = 1 << 2;
+        const UI = 1 << 3;
+        const SELECTED = 1 << 4;
+        const BOUNDS = 1 << 5;
+        const WIRE = 1 << 6;
     }
 }
 

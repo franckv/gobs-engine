@@ -112,7 +112,7 @@ GraphConfig(
             scene_layout: [
                 CameraViewProj,
             ],
-            flags: "ENTITY"
+            flags: "ENTITY | OPAQUE"
         ),
         "forward_nodepth": (
             ty: Material,
