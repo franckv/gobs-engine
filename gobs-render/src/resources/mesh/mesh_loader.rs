@@ -1,17 +1,18 @@
-use gobs_core::logger;
+use gobs_core::{logger, memory::allocator::Allocator};
 use gobs_render_graph::GfxContext;
 use gobs_render_hal::{BufferType, CommandBuffer, CommandQueueType, RenderHAL, VertexAttribute};
 use gobs_resource::{
     ResourceRegistry, {Resource, ResourceError, ResourceHandle, ResourceLoader, ResourceProperties},
 };
 
-use crate::resources::{Mesh, MeshData, MeshGeometry, MeshPath, MeshPrimitiveType};
+use crate::resources::{
+    Buffer, Mesh, MeshData, MeshGeometry, MeshPath, MeshPrimitiveType, STAGING_BUFFER_SIZE,
+};
 
 pub struct MeshLoader {
     cmd: Box<dyn CommandBuffer>,
+    buffer_pool: Allocator<Box<dyn RenderHAL>, BufferType, Buffer>,
 }
-
-const STAGING_BUFFER_SIZE: usize = 1_048_576;
 
 impl MeshLoader {
     pub fn new(ctx: &mut GfxContext) -> Self {
@@ -19,13 +20,14 @@ impl MeshLoader {
             cmd: ctx
                 .hal
                 .create_command_buffer("Mesh loader", CommandQueueType::Transfer),
+            buffer_pool: Allocator::new(),
         }
     }
 
     #[tracing::instrument(target = "profile", skip_all, level = "trace")]
     fn load_geometry(
         &mut self,
-        hal: &mut dyn RenderHAL,
+        hal: &mut Box<dyn RenderHAL>,
         geometry: &MeshGeometry,
         vertex_attributes: &VertexAttribute,
     ) -> MeshData {
@@ -45,30 +47,49 @@ impl MeshLoader {
         let indices_size = indices.len() * std::mem::size_of::<u32>();
         let staging_size = indices_size + vertices_size;
 
-        // TODO: drop or reuse staging buffer
-        let staging = hal.create_buffer(
-            "staging",
-            staging_size.max(STAGING_BUFFER_SIZE),
-            BufferType::Staging,
-        );
+        let staging = self
+            .buffer_pool
+            .allocate(
+                hal,
+                "staging",
+                staging_size.max(STAGING_BUFFER_SIZE),
+                BufferType::Staging,
+            )
+            .unwrap();
+
+        let staging_id = staging.id;
 
         let vertex_view = hal.create_buffer("vertex", vertices_size, BufferType::Vertex);
         let index_view = hal.create_buffer("index", indices_size, BufferType::Index);
 
-        hal.upload_buffer(staging, &vertices, 0);
-        hal.upload_buffer(staging, bytemuck::cast_slice(indices), vertices_size as u64);
+        hal.upload_buffer(staging.buffer, &vertices, 0);
+        hal.upload_buffer(
+            staging.buffer,
+            bytemuck::cast_slice(indices),
+            vertices_size as u64,
+        );
 
         self.cmd.run_immediate_mut("Upload buffer", &mut |cmd| {
-            cmd.copy_buffer_to_buffer(hal, staging, vertex_view, vertices_size, 0, 0);
             cmd.copy_buffer_to_buffer(
-                hal,
-                staging,
+                hal.as_ref(),
+                staging.buffer,
+                vertex_view,
+                vertices_size,
+                0,
+                0,
+            );
+            cmd.copy_buffer_to_buffer(
+                hal.as_ref(),
+                staging.buffer,
                 index_view,
                 indices_size,
                 vertices_size as u64,
                 0,
             );
         });
+
+        self.buffer_pool.recycle(&staging_id);
+        assert!(self.buffer_pool.is_empty());
 
         MeshData {
             ty: MeshPrimitiveType::Triangle,
@@ -97,7 +118,7 @@ impl ResourceLoader<Mesh> for MeshLoader {
             MeshPath::File(_) => todo!(),
             MeshPath::Bytes(_) => todo!(),
             MeshPath::Mesh(geometry) => {
-                self.load_geometry(hal.as_mut(), geometry, &properties.vertex_attributes)
+                self.load_geometry(hal, geometry, &properties.vertex_attributes)
             }
         };
 

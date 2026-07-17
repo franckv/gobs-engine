@@ -1,25 +1,26 @@
 use futures::future::try_join_all;
+use image::{DynamicImage, GenericImage, GenericImageView, ImageBuffer, imageops::FilterType};
+use pollster::FutureExt;
+
+use gobs_core::{Color, ImageExtent2D, logger, memory::allocator::Allocator};
 use gobs_render_graph::GfxContext;
 use gobs_render_hal::{
     BufferType, CommandBuffer, CommandQueueType, ImageLayout, ImageUsage, RenderHAL,
 };
-use image::{DynamicImage, GenericImage, GenericImageView, ImageBuffer, imageops::FilterType};
-use pollster::FutureExt;
-
-use gobs_core::{Color, ImageExtent2D, logger};
 use gobs_resource::{
     ResourceRegistry,
     load::{self, AssetType},
     {Resource, ResourceError, ResourceHandle, ResourceLoader, ResourceProperties},
 };
 
-use crate::resources::{Texture, TextureData, TextureFormat, texture::TexturePath};
+use crate::resources::{
+    Buffer, STAGING_BUFFER_SIZE, Texture, TextureData, TextureFormat, texture::TexturePath,
+};
 
 pub struct TextureLoader {
     cmd: Box<dyn CommandBuffer>,
+    buffer_pool: Allocator<Box<dyn RenderHAL>, BufferType, Buffer>,
 }
-
-const STAGING_BUFFER_SIZE: usize = 1_048_576;
 
 impl TextureLoader {
     pub fn new(ctx: &mut GfxContext) -> Self {
@@ -27,6 +28,7 @@ impl TextureLoader {
             cmd: ctx
                 .hal
                 .create_command_buffer("Mesh loader", CommandQueueType::Transfer),
+            buffer_pool: Allocator::new(),
         }
     }
 
@@ -178,14 +180,22 @@ impl ResourceLoader<Texture> for TextureLoader {
         tracing::debug!(target: logger::RESOURCES, "Load texture resource {}", properties.name());
         tracing::trace!(target: logger::RESOURCES, "Texture properties: {:?}", properties.format);
 
-        let staging = hal.create_buffer("image staging", STAGING_BUFFER_SIZE, BufferType::Staging);
+        let staging = self
+            .buffer_pool
+            .allocate(
+                hal,
+                "image staging",
+                STAGING_BUFFER_SIZE,
+                BufferType::Staging,
+            )
+            .unwrap();
 
         Self::get_bytes(&properties.path, &mut properties.format, |data| {
             if data.len() > STAGING_BUFFER_SIZE {
                 tracing::warn!("Resize staging buffer");
-                hal.resize_buffer(staging, data.len());
+                hal.resize_buffer(staging.buffer, data.len());
             }
-            hal.upload_buffer(staging, data, 0);
+            hal.upload_buffer(staging.buffer, data, 0);
         });
 
         let image_format = properties.format.ty.into();
@@ -201,7 +211,7 @@ impl ResourceLoader<Texture> for TextureLoader {
 
         self.cmd.run_immediate_mut("Texture upload", &mut |cmd| {
             cmd.transition_image_layout(hal.as_mut(), image, ImageLayout::TransferDst);
-            cmd.copy_buffer_to_image(hal.as_ref(), staging, image, 0);
+            cmd.copy_buffer_to_image(hal.as_ref(), staging.buffer, image, 0);
             cmd.transition_image_layout(hal.as_mut(), image, ImageLayout::Shader);
         });
 

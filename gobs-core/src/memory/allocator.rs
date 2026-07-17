@@ -23,7 +23,7 @@ pub trait Allocable<B, F: ResourceFamily> {
     fn resource_id(&self) -> Uuid;
     fn family(&self) -> F;
     fn resource_size(&self) -> usize;
-    fn allocate(backend: &B, name: &str, size: usize, family: F) -> Self;
+    fn allocate(backend: &mut B, name: &str, size: usize, family: F) -> Self;
 }
 
 pub struct AllocableBlock<B, F, A>
@@ -38,7 +38,7 @@ where
 }
 
 impl<B, F: ResourceFamily, A: Allocable<B, F>> AllocableBlock<B, F, A> {
-    pub fn new(backend: &B, name: &str, size: usize, family: F) -> Self {
+    pub fn new(backend: &mut B, name: &str, size: usize, family: F) -> Self {
         Self {
             allocable: A::allocate(backend, name, size, family),
             block_allocator: BuddyAllocator::new(size, 5).unwrap(),
@@ -80,7 +80,7 @@ impl<B, F: ResourceFamily, A: Allocable<B, F>> Allocator<B, F, A> {
     #[tracing::instrument(target = "profile", skip_all, level = "trace")]
     pub fn allocate(
         &mut self,
-        backend: &B,
+        backend: &mut B,
         name: &str,
         size: usize,
         family: F,
@@ -92,7 +92,7 @@ impl<B, F: ResourceFamily, A: Allocable<B, F>> Allocator<B, F, A> {
                 && resource.max_size() >= size
             {
                 tracing::debug!(
-                    target: logger::RENDER,
+                    target: logger::MEMORY,
                     "Reuse resource {:?}, {} ({})",
                     family,
                     size,
