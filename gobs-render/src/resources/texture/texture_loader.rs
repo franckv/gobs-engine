@@ -2,7 +2,7 @@ use futures::future::try_join_all;
 use image::{DynamicImage, GenericImage, GenericImageView, ImageBuffer, imageops::FilterType};
 use pollster::FutureExt;
 
-use gobs_core::{Color, ImageExtent2D, logger, memory::allocator::Allocator};
+use gobs_core::{Color, ImageExtent2D, logger};
 use gobs_render_graph::GfxContext;
 use gobs_render_hal::{
     BufferType, CommandBuffer, CommandQueueType, ImageLayout, ImageUsage, RenderHAL,
@@ -13,13 +13,11 @@ use gobs_resource::{
     {Resource, ResourceError, ResourceHandle, ResourceLoader, ResourceProperties},
 };
 
-use crate::resources::{
-    Buffer, STAGING_BUFFER_SIZE, Texture, TextureData, TextureFormat, texture::TexturePath,
-};
+use crate::resources::{BufferPool, Texture, TextureData, TextureFormat, texture::TexturePath};
 
 pub struct TextureLoader {
     cmd: Box<dyn CommandBuffer>,
-    buffer_pool: Allocator<Box<dyn RenderHAL>, BufferType, Buffer>,
+    buffer_pool: BufferPool,
 }
 
 impl TextureLoader {
@@ -28,7 +26,7 @@ impl TextureLoader {
             cmd: ctx
                 .hal
                 .create_command_buffer("Mesh loader", CommandQueueType::Transfer),
-            buffer_pool: Allocator::new(),
+            buffer_pool: BufferPool::new(),
         }
     }
 
@@ -180,23 +178,19 @@ impl ResourceLoader<Texture> for TextureLoader {
         tracing::debug!(target: logger::RESOURCES, "Load texture resource {}", properties.name());
         tracing::trace!(target: logger::RESOURCES, "Texture properties: {:?}", properties.format);
 
-        let staging = self
-            .buffer_pool
-            .allocate(
-                hal,
-                "image staging",
-                STAGING_BUFFER_SIZE,
-                BufferType::Staging,
-            )
-            .unwrap();
+        let mut staging_data = vec![];
 
         Self::get_bytes(&properties.path, &mut properties.format, |data| {
-            if data.len() > STAGING_BUFFER_SIZE {
-                tracing::warn!("Resize staging buffer");
-                hal.resize_buffer(staging.buffer, data.len());
-            }
-            hal.upload_buffer(staging.buffer, data, 0);
+            staging_data.extend_from_slice(data);
         });
+
+        let staging = self.buffer_pool.allocate(
+            hal,
+            "image staging",
+            staging_data.len(),
+            BufferType::Staging,
+        );
+        hal.upload_buffer(staging.buffer, &staging_data, 0);
 
         let image_format = properties.format.ty.into();
         let image = hal.create_image(

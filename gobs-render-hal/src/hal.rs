@@ -41,7 +41,6 @@ pub trait RenderHAL {
 
     fn create_buffer(&mut self, name: &str, size: usize, ty: BufferType) -> Handle;
     fn upload_buffer(&mut self, buffer: Handle, data: &[u8], offset: u64);
-    fn resize_buffer(&mut self, buffer: Handle, size: usize);
     fn get_buffer_address(&self, buffer: Handle) -> u64;
 
     fn create_image(

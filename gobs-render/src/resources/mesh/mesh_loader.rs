@@ -1,17 +1,15 @@
-use gobs_core::{logger, memory::allocator::Allocator};
+use gobs_core::logger;
 use gobs_render_graph::GfxContext;
 use gobs_render_hal::{BufferType, CommandBuffer, CommandQueueType, RenderHAL, VertexAttribute};
 use gobs_resource::{
     ResourceRegistry, {Resource, ResourceError, ResourceHandle, ResourceLoader, ResourceProperties},
 };
 
-use crate::resources::{
-    Buffer, Mesh, MeshData, MeshGeometry, MeshPath, MeshPrimitiveType, STAGING_BUFFER_SIZE,
-};
+use crate::resources::{BufferPool, Mesh, MeshData, MeshGeometry, MeshPath, MeshPrimitiveType};
 
 pub struct MeshLoader {
     cmd: Box<dyn CommandBuffer>,
-    buffer_pool: Allocator<Box<dyn RenderHAL>, BufferType, Buffer>,
+    buffer_pool: BufferPool,
 }
 
 impl MeshLoader {
@@ -20,7 +18,7 @@ impl MeshLoader {
             cmd: ctx
                 .hal
                 .create_command_buffer("Mesh loader", CommandQueueType::Transfer),
-            buffer_pool: Allocator::new(),
+            buffer_pool: BufferPool::new(),
         }
     }
 
@@ -49,13 +47,7 @@ impl MeshLoader {
 
         let staging = self
             .buffer_pool
-            .allocate(
-                hal,
-                "staging",
-                staging_size.max(STAGING_BUFFER_SIZE),
-                BufferType::Staging,
-            )
-            .unwrap();
+            .allocate(hal, "staging", staging_size, BufferType::Staging);
 
         let staging_id = staging.id;
 

@@ -101,20 +101,6 @@ impl RenderHAL for VulkanHAL {
         buffer.buffer.copy(data, buffer.offset + offset);
     }
 
-    fn resize_buffer(&mut self, handle: Handle, size: usize) {
-        let buffer = self.registry.buffers.get_mut(handle).unwrap();
-
-        buffer.buffer = Arc::new(vk::buffers::Buffer::new(
-            buffer.buffer.label(),
-            size,
-            buffer.buffer.usage,
-            self.device.clone(),
-            self.allocator.clone(),
-        ));
-        buffer.offset = 0;
-        buffer.len = size;
-    }
-
     fn get_buffer_address(&self, handle: Handle) -> u64 {
         let buffer = self.registry.buffers.get(handle).unwrap();
 
