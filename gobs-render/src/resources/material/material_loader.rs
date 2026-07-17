@@ -22,9 +22,9 @@ impl Default for MaterialLoader {
 
 impl ResourceLoader<Material> for MaterialLoader {
     #[tracing::instrument(target = "profile", skip_all, level = "trace")]
-    fn load(
+    fn load<'a>(
         &mut self,
-        _hal: &mut Box<dyn RenderHAL>,
+        _hal: &mut (dyn RenderHAL + 'a),
         handle: &ResourceHandle<Material>,
         registry: &mut ResourceRegistry,
     ) -> Result<MaterialData, ResourceError> {

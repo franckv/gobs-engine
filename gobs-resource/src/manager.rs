@@ -212,9 +212,9 @@ impl ResourceManager {
         self.loader.insert(loader);
     }
 
-    fn load_data<R: ResourceType + 'static>(
+    fn load_data<'a, R: ResourceType + 'static>(
         &mut self,
-        backend: &mut R::ResourceBackend,
+        backend: &mut R::ResourceBackend<'a>,
         handle: &ResourceHandle<R>,
     ) -> Result<(), ResourceError> {
         let resource = self.get_mut(handle);
@@ -238,9 +238,9 @@ impl ResourceManager {
         Ok(())
     }
 
-    pub fn get_data<R: ResourceType + 'static>(
+    pub fn get_data<'a, R: ResourceType + 'static>(
         &'_ mut self,
-        backend: &mut R::ResourceBackend,
+        backend: &mut R::ResourceBackend<'a>,
         handle: &ResourceHandle<R>,
     ) -> Result<ResourceData<'_, R>, ResourceError> {
         self.load_data::<R>(backend, handle)?;
@@ -258,9 +258,9 @@ impl ResourceManager {
         })
     }
 
-    pub fn get_data_mut<R: ResourceType + 'static>(
+    pub fn get_data_mut<'a, R: ResourceType + 'static>(
         &'_ mut self,
-        backend: &mut R::ResourceBackend,
+        backend: &mut R::ResourceBackend<'a>,
         handle: &ResourceHandle<R>,
     ) -> Result<ResourceDataMut<'_, R>, ResourceError> {
         self.load_data::<R>(backend, handle)?;
@@ -304,7 +304,7 @@ mod tests {
 
     impl ResourceType for Dummy {
         type ResourceData = DummyData;
-        type ResourceBackend = Backend;
+        type ResourceBackend<'a> = Backend;
         type ResourceProperties = DummyProperties;
         type ResourceLoader = DummyLoader;
     }

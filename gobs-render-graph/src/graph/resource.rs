@@ -25,7 +25,7 @@ impl GraphResourceManager {
         usage: ImageUsage,
         extent: ImageExtent2D,
     ) {
-        let image = ctx.hal.create_image(label, format, usage, extent);
+        let image = ctx.hal_mut().create_image(label, format, usage, extent);
 
         self.resources.insert(label.to_string(), image);
     }

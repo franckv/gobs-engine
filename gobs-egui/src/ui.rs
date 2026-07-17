@@ -270,7 +270,7 @@ impl UIRenderer {
             let mut to_remove = Vec::new();
 
             if let Some(material_handle) = material_handle {
-                let material = resource_manager.get_data(&mut ctx.hal, &material_handle);
+                let material = resource_manager.get_data(ctx.hal_mut(), &material_handle);
                 if let Ok(material) = material {
                     for texture in &material.properties.textures {
                         to_remove.push(*texture);

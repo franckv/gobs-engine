@@ -56,11 +56,9 @@ impl<R: ResourceType> ResourceHandle<R> {
 
 pub trait ResourceType: Copy + Debug {
     type ResourceData;
-    type ResourceBackend;
+    type ResourceBackend<'a>: ?Sized;
     type ResourceProperties: ResourceProperties + Clone;
-    type ResourceLoader: ResourceLoader<Self>
-    where
-        Self: Sized;
+    type ResourceLoader: ResourceLoader<Self>;
 }
 
 pub struct Resource<R: ResourceType> {
@@ -107,9 +105,9 @@ pub trait ResourceProperties {
 }
 
 pub trait ResourceLoader<R: ResourceType> {
-    fn load(
+    fn load<'a>(
         &mut self,
-        backend: &mut R::ResourceBackend,
+        backend: &mut R::ResourceBackend<'a>,
         handle: &ResourceHandle<R>,
         resource_registry: &mut ResourceRegistry,
     ) -> Result<R::ResourceData, ResourceError>;

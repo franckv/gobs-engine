@@ -148,21 +148,21 @@ impl FrameGraph {
 
         // FIXME: use attachments from graph
         let draw_image_extent = ctx
-            .hal
+            .hal()
             .get_image_extent(self.resource_manager.image("draw"));
         if self.resource_manager.resources.contains_key("depth") {
             debug_assert_eq!(
                 draw_image_extent,
-                ctx.hal
+                ctx.hal()
                     .get_image_extent(self.resource_manager.image("depth"))
             );
         }
 
-        if ctx.hal.acquire(frame.id).is_err() {
+        if ctx.hal_mut().acquire(frame.id).is_err() {
             return Err(RenderError::Outdated);
         }
 
-        self.resource_manager.invalidate(ctx.hal.as_mut());
+        self.resource_manager.invalidate(ctx.hal_mut());
 
         cmd.begin(frame.frame_number);
 
@@ -183,8 +183,8 @@ impl FrameGraph {
 
         //TODO: cmd.write_timestamp(&frame.query_pool, PipelineStage::BottomOfPipe, 1);
 
-        if let Some(render_target) = ctx.hal.get_render_target() {
-            cmd.transition_image_layout(ctx.hal.as_mut(), render_target, ImageLayout::Present);
+        if let Some(render_target) = ctx.hal().get_render_target() {
+            cmd.transition_image_layout(ctx.hal_mut(), render_target, ImageLayout::Present);
         } else {
             tracing::debug!(target: logger::RENDER, "No render target to present");
         }
@@ -193,10 +193,10 @@ impl FrameGraph {
 
         cmd.end();
 
-        cmd.submit2(ctx.hal.as_ref(), frame_id);
+        cmd.submit2(ctx.hal(), frame_id);
         frame.submitted = true;
 
-        let Ok(_) = ctx.hal.present() else {
+        let Ok(_) = ctx.hal_mut().present() else {
             return Err(RenderError::Outdated);
         };
 
@@ -238,9 +238,9 @@ impl FrameGraph {
     }
 
     fn resize_swapchain(&mut self, ctx: &mut GfxContext) {
-        ctx.hal.wait();
+        ctx.hal_mut().wait();
 
-        ctx.hal.resize();
+        ctx.hal_mut().resize();
     }
 
     pub fn enable_pass(&mut self, pass_type: PassType, enabled: bool) {

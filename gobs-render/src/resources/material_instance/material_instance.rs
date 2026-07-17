@@ -11,7 +11,7 @@ pub struct MaterialInstance;
 
 impl ResourceType for MaterialInstance {
     type ResourceData = MaterialInstanceData;
-    type ResourceBackend = Box<dyn RenderHAL>;
+    type ResourceBackend<'a> = dyn RenderHAL + 'a;
     type ResourceProperties = MaterialInstanceProperties;
     type ResourceLoader = MaterialInstanceLoader;
 }

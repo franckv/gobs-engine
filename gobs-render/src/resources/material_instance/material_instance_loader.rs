@@ -25,9 +25,9 @@ impl Default for MaterialInstanceLoader {
 
 impl ResourceLoader<MaterialInstance> for MaterialInstanceLoader {
     #[tracing::instrument(target = "profile", skip_all, level = "trace")]
-    fn load(
+    fn load<'a>(
         &mut self,
-        hal: &mut Box<dyn RenderHAL>,
+        hal: &mut (dyn RenderHAL + 'a),
         handle: &ResourceHandle<MaterialInstance>,
         registry: &mut ResourceRegistry,
     ) -> Result<MaterialInstanceData, ResourceError> {
@@ -40,7 +40,7 @@ impl ResourceLoader<MaterialInstance> for MaterialInstanceLoader {
         Self::validate_layout(properties, material_properties);
 
         let material_buffer = self.create_buffer(
-            hal.as_mut(),
+            hal,
             properties.name(),
             &material_properties.material_data_layout,
             properties.material_data.as_ref(),

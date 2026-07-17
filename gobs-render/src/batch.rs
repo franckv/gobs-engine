@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use gobs_core::{ImageExtent2D, Transform, logger};
 use gobs_render_graph::{GfxContext, RenderFlags, RenderObject, RenderPass, SceneData};
-use gobs_render_hal::{BindResource, Handle};
+use gobs_render_hal::{BindResource, Handle, RenderHAL};
 use gobs_resource::{
     ResourceError, ResourceHandle, ResourceLifetime, ResourceManager, camera::Camera, light::Light,
 };
@@ -58,7 +58,7 @@ impl RenderBatch {
             let mut render_flags = flags;
 
             let pipeline = Self::get_pipeline(
-                ctx,
+                ctx.hal_mut(),
                 resource_manager,
                 material_instance_handle,
                 &mut render_flags,
@@ -69,7 +69,7 @@ impl RenderBatch {
             }
 
             let (vertex_buffer, index_buffer, index_len, vertex_attribute, layer) = {
-                let mesh_data = resource_manager.get_data(&mut ctx.hal, mesh)?;
+                let mesh_data = resource_manager.get_data(ctx.hal_mut(), mesh)?;
 
                 (
                     mesh_data.data.vertex_view,
@@ -81,7 +81,7 @@ impl RenderBatch {
             };
 
             let (material_data, material_textures) =
-                Self::get_material_data(ctx, resource_manager, material_instance_handle)?;
+                Self::get_material_data(ctx.hal_mut(), resource_manager, material_instance_handle)?;
 
             let render_object = RenderObject {
                 model: model.name().to_string(),
@@ -104,14 +104,13 @@ impl RenderBatch {
     }
 
     fn get_material_data(
-        ctx: &mut GfxContext,
+        hal: &mut dyn RenderHAL,
         resource_manager: &mut ResourceManager,
         material_instance_handle: &Option<ResourceHandle<MaterialInstance>>,
     ) -> Result<(Option<BindResource>, Option<BindResource>), ResourceError> {
         if let Some(material_instance_handle) = material_instance_handle {
             let (material_buffer, material, textures) = {
-                let resource_data =
-                    resource_manager.get_data(&mut ctx.hal, material_instance_handle)?;
+                let resource_data = resource_manager.get_data(hal, material_instance_handle)?;
 
                 (
                     resource_data.data.material_buffer,
@@ -137,7 +136,7 @@ impl RenderBatch {
                     let mut texture_handles = vec![];
 
                     for texture in textures {
-                        let tex_data = resource_manager.get_data(&mut ctx.hal, &texture)?;
+                        let tex_data = resource_manager.get_data(hal, &texture)?;
                         texture_handles.push(tex_data.data.image);
                         texture_handles.push(tex_data.data.sampler);
                     }
@@ -156,7 +155,7 @@ impl RenderBatch {
     }
 
     fn get_pipeline(
-        ctx: &mut GfxContext,
+        hal: &mut dyn RenderHAL,
         resource_manager: &mut ResourceManager,
         material_instance_handle: &Option<ResourceHandle<MaterialInstance>>,
         render_flags: &mut RenderFlags,
@@ -179,11 +178,11 @@ impl RenderBatch {
                 *render_flags |= RenderFlags::OPAQUE;
             }
 
-            let material_data = resource_manager.get_data(&mut ctx.hal, &material_handle)?;
+            let material_data = resource_manager.get_data(hal, &material_handle)?;
 
             let pipeline_handle = material_data.data.pipeline;
 
-            let pipeline_data = resource_manager.get_data(&mut ctx.hal, &pipeline_handle)?;
+            let pipeline_data = resource_manager.get_data(hal, &pipeline_handle)?;
             let pipeline_properties = pipeline_data.properties;
 
             if let PipelineProperties::Graphics(properties) = pipeline_properties {
@@ -258,15 +257,15 @@ impl RenderBatch {
     fn validate(&mut self, ctx: &mut GfxContext) {
         for obj in &self.render_list {
             if let Some(pipeline) = obj.pipeline {
-                let descriptors = ctx.hal.get_pipeline_descriptor_types(pipeline);
+                let descriptors = ctx.hal().get_pipeline_descriptor_types(pipeline);
                 for descriptor_type in descriptors {
                     let descriptor_layout = ctx
-                        .hal
+                        .hal()
                         .get_pipeline_descriptor_layout(pipeline, &descriptor_type);
                     tracing::trace!(target: logger::RENDER, "Render object: {}, descriptor layout: {:#?}", &obj.model, descriptor_layout);
                 }
 
-                let vertex_attributes = ctx.hal.get_pipeline_vertex_attributes(pipeline);
+                let vertex_attributes = ctx.hal().get_pipeline_vertex_attributes(pipeline);
                 debug_assert_eq!(
                     vertex_attributes, obj.vertex_attribute,
                     "Invalid vertex layout for {}",

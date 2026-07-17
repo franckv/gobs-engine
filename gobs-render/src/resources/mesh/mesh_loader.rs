@@ -16,7 +16,7 @@ impl MeshLoader {
     pub fn new(ctx: &mut GfxContext) -> Self {
         Self {
             cmd: ctx
-                .hal
+                .hal_mut()
                 .create_command_buffer("Mesh loader", CommandQueueType::Transfer),
             buffer_pool: BufferPool::new(),
         }
@@ -25,7 +25,7 @@ impl MeshLoader {
     #[tracing::instrument(target = "profile", skip_all, level = "trace")]
     fn load_geometry(
         &mut self,
-        hal: &mut Box<dyn RenderHAL>,
+        hal: &mut dyn RenderHAL,
         geometry: &MeshGeometry,
         vertex_attributes: &VertexAttribute,
     ) -> MeshData {
@@ -62,16 +62,9 @@ impl MeshLoader {
         );
 
         self.cmd.run_immediate_mut("Upload buffer", &mut |cmd| {
+            cmd.copy_buffer_to_buffer(hal, staging.buffer, vertex_view, vertices_size, 0, 0);
             cmd.copy_buffer_to_buffer(
-                hal.as_ref(),
-                staging.buffer,
-                vertex_view,
-                vertices_size,
-                0,
-                0,
-            );
-            cmd.copy_buffer_to_buffer(
-                hal.as_ref(),
+                hal,
                 staging.buffer,
                 index_view,
                 indices_size,
@@ -94,9 +87,9 @@ impl MeshLoader {
 
 impl ResourceLoader<Mesh> for MeshLoader {
     #[tracing::instrument(target = "profile", skip_all, level = "trace")]
-    fn load(
+    fn load<'a>(
         &mut self,
-        hal: &mut Box<dyn RenderHAL>,
+        hal: &mut (dyn RenderHAL + 'a),
         handle: &ResourceHandle<Mesh>,
         registry: &mut ResourceRegistry,
     ) -> Result<MeshData, ResourceError> {

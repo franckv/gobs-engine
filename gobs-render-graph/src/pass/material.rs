@@ -170,9 +170,9 @@ impl RenderPass for MaterialPass {
     ) -> Result<(), RenderError> {
         tracing::debug!(target: logger::RENDER, "Draw {}", &self.name());
 
-        self.transition_attachments(ctx.hal.as_mut(), frame.command.as_ref(), resource_manager);
+        self.transition_attachments(ctx.hal_mut(), frame.command.as_ref(), resource_manager);
 
-        self.begin_pass(ctx.hal.as_ref(), frame.command.as_ref(), resource_manager);
+        self.begin_pass(ctx.hal(), frame.command.as_ref(), resource_manager);
 
         tracing::debug!(target: logger::RENDER, "Start render job");
         let render_job = &self.render_jobs[frame.id];

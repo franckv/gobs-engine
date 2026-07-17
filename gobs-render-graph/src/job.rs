@@ -53,7 +53,7 @@ impl RenderJob {
         let uniform_bindgroup = BindingGroupLayout::new(BindingGroupType::SceneData)
             .add_binding(DescriptorType::Uniform, DescriptorStage::All);
         let uniform_buffer =
-            UniformBuffer::new(ctx.hal.as_mut(), uniform_bindgroup, scene_data_layout);
+            UniformBuffer::new(ctx.hal_mut(), uniform_bindgroup, scene_data_layout);
 
         Self {
             pass_name,
@@ -69,7 +69,7 @@ impl RenderJob {
 
     #[tracing::instrument(target = "profile", skip_all, level = "trace")]
     pub fn update_uniform(&self, ctx: &mut GfxContext, uniform_data: &[u8]) {
-        self.uniform_buffer.update(ctx.hal.as_mut(), uniform_data);
+        self.uniform_buffer.update(ctx.hal_mut(), uniform_data);
     }
 
     pub fn should_render(&self, render_object: &RenderObject) -> bool {
@@ -142,7 +142,7 @@ impl RenderJob {
 
         if state.last_pipeline != Some(pipeline) {
             tracing::trace!(target: logger::RENDER, "Bind pipeline: {:?}", pipeline);
-            frame.command.bind_pipeline(ctx.hal.as_ref(), pipeline);
+            frame.command.bind_pipeline(ctx.hal(), pipeline);
             state.last_pipeline = Some(pipeline);
             state.scene_data_bound = false;
         } else {
@@ -170,7 +170,7 @@ impl RenderJob {
 
                 frame
                     .command
-                    .bind_resource(ctx.hal.as_mut(), pipeline, material_data);
+                    .bind_resource(ctx.hal_mut(), pipeline, material_data);
 
                 state.last_material_data = render_object.material_data.clone();
             }
@@ -182,7 +182,7 @@ impl RenderJob {
 
                 frame
                     .command
-                    .bind_resource(ctx.hal.as_mut(), pipeline, material_textures);
+                    .bind_resource(ctx.hal_mut(), pipeline, material_textures);
 
                 state.last_material_textures = render_object.material_textures.clone();
             }
@@ -207,7 +207,7 @@ impl RenderJob {
             // bind scene data (push, set 0)
             frame
                 .command
-                .bind_resource(ctx.hal.as_mut(), pipeline, &self.uniform_buffer.buffer);
+                .bind_resource(ctx.hal_mut(), pipeline, &self.uniform_buffer.buffer);
             state.scene_data_bound = true;
         }
 
@@ -227,7 +227,7 @@ impl RenderJob {
         state.object_data.clear();
 
         let pipeline = self.get_pipeline(render_object)?;
-        let object_layout = ctx.hal.get_pipeline_object_layout(pipeline);
+        let object_layout = ctx.hal().get_pipeline_object_layout(pipeline);
 
         tracing::trace!(target: logger::RENDER, "Copy object data: {} (layout: {:?})", object_layout.uniform_layout().size(), object_layout);
 
@@ -239,7 +239,8 @@ impl RenderJob {
                 Mat3::from_quat(render_object.transform.rotation()).to_cols_array_2d(),
             ),
             ObjectDataProp::VertexBufferAddress => {
-                let vertex_buffer_address = ctx.hal.get_buffer_address(render_object.vertex_buffer);
+                let vertex_buffer_address =
+                    ctx.hal().get_buffer_address(render_object.vertex_buffer);
                 UniformPropData::U64(vertex_buffer_address)
             }
         });
@@ -247,12 +248,12 @@ impl RenderJob {
         // TODO: check pipeline object layout compatibility
         frame
             .command
-            .push_constants(ctx.hal.as_ref(), pipeline, &state.object_data);
+            .push_constants(ctx.hal(), pipeline, &state.object_data);
 
         if state.last_index_buffer != Some(render_object.index_buffer) {
             frame
                 .command
-                .bind_index_buffer(ctx.hal.as_ref(), render_object.index_buffer);
+                .bind_index_buffer(ctx.hal(), render_object.index_buffer);
             state.last_index_buffer = Some(render_object.index_buffer);
         }
 

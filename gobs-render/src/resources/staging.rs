@@ -1,6 +1,6 @@
 use uuid::Uuid;
 
-use gobs_core::memory::allocator::{Allocable, Allocator};
+use gobs_core::memory::allocator::{Allocable, AllocableInfo, Allocator};
 use gobs_render_hal::{BufferType, Handle, RenderHAL};
 
 pub const STAGING_BUFFER_SIZE: usize = 1_048_576;
@@ -12,7 +12,7 @@ pub struct Buffer {
     size: usize,
 }
 
-impl Allocable<Box<dyn RenderHAL>, BufferType> for Buffer {
+impl AllocableInfo<BufferType> for Buffer {
     fn resource_id(&self) -> uuid::Uuid {
         self.id
     }
@@ -24,8 +24,10 @@ impl Allocable<Box<dyn RenderHAL>, BufferType> for Buffer {
     fn resource_size(&self) -> usize {
         self.size
     }
+}
 
-    fn allocate(hal: &mut Box<dyn RenderHAL>, name: &str, size: usize, family: BufferType) -> Self {
+impl<B: RenderHAL + ?Sized> Allocable<B, BufferType> for Buffer {
+    fn allocate(hal: &mut B, name: &str, size: usize, family: BufferType) -> Self {
         let buffer = hal.create_buffer(name, size, family);
 
         Buffer {
@@ -38,7 +40,7 @@ impl Allocable<Box<dyn RenderHAL>, BufferType> for Buffer {
 }
 
 pub struct BufferPool {
-    buffer_pool: Allocator<Box<dyn RenderHAL>, BufferType, Buffer>,
+    buffer_pool: Allocator<BufferType, Buffer>,
 }
 
 impl BufferPool {
@@ -54,7 +56,7 @@ impl BufferPool {
 
     pub fn allocate(
         &mut self,
-        hal: &mut Box<dyn RenderHAL>,
+        hal: &mut dyn RenderHAL,
         name: &str,
         size: usize,
         family: BufferType,

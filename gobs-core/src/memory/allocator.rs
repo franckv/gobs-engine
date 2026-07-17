@@ -19,30 +19,33 @@ pub enum AllocationError {
 pub trait ResourceFamily: Hash + Eq + Debug {}
 impl<U: Hash + Eq + Debug> ResourceFamily for U {}
 
-pub trait Allocable<B, F: ResourceFamily> {
+pub trait AllocableInfo<F: ResourceFamily> {
     fn resource_id(&self) -> Uuid;
     fn family(&self) -> F;
     fn resource_size(&self) -> usize;
+}
+
+pub trait Allocable<B: ?Sized, F: ResourceFamily>: AllocableInfo<F> {
     fn allocate(backend: &mut B, name: &str, size: usize, family: F) -> Self;
 }
 
-pub struct AllocableBlock<B, F, A>
+pub struct AllocableBlock<F, A>
 where
     F: ResourceFamily,
-    A: Allocable<B, F>,
 {
     allocable: A,
     block_allocator: BuddyAllocator,
-    backend: PhantomData<B>,
     family: PhantomData<F>,
 }
 
-impl<B, F: ResourceFamily, A: Allocable<B, F>> AllocableBlock<B, F, A> {
-    pub fn new(backend: &mut B, name: &str, size: usize, family: F) -> Self {
+impl<F: ResourceFamily, A> AllocableBlock<F, A> {
+    pub fn new<B: ?Sized>(backend: &mut B, name: &str, size: usize, family: F) -> Self
+    where
+        A: Allocable<B, F>,
+    {
         Self {
             allocable: A::allocate(backend, name, size, family),
             block_allocator: BuddyAllocator::new(size, 5).unwrap(),
-            backend: std::marker::PhantomData,
             family: std::marker::PhantomData,
         }
     }
@@ -52,39 +55,39 @@ impl<B, F: ResourceFamily, A: Allocable<B, F>> AllocableBlock<B, F, A> {
     }
 }
 
-pub struct Allocator<B, F, A>
+pub struct Allocator<F, A>
 where
     F: ResourceFamily,
-    A: Allocable<B, F>,
 {
-    pub pool: ObjectPool<F, AllocableBlock<B, F, A>>,
-    pub allocated: HashMap<Uuid, AllocableBlock<B, F, A>>,
-    backend: PhantomData<B>,
+    pub pool: ObjectPool<F, AllocableBlock<F, A>>,
+    pub allocated: HashMap<Uuid, AllocableBlock<F, A>>,
 }
 
-impl<B, F: ResourceFamily, A: Allocable<B, F>> Default for Allocator<B, F, A> {
+impl<F: ResourceFamily, A: AllocableInfo<F>> Default for Allocator<F, A> {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl<B, F: ResourceFamily, A: Allocable<B, F>> Allocator<B, F, A> {
+impl<F: ResourceFamily, A: AllocableInfo<F>> Allocator<F, A> {
     pub fn new() -> Self {
         Self {
             pool: ObjectPool::new(),
             allocated: HashMap::new(),
-            backend: PhantomData,
         }
     }
 
     #[tracing::instrument(target = "profile", skip_all, level = "trace")]
-    pub fn allocate(
+    pub fn allocate<B: ?Sized>(
         &mut self,
         backend: &mut B,
         name: &str,
         size: usize,
         family: F,
-    ) -> Result<&mut A, AllocationError> {
+    ) -> Result<&mut A, AllocationError>
+    where
+        A: Allocable<B, F>,
+    {
         while self.pool.contains(&family) {
             let resource = self.pool.pop(&family);
 
@@ -111,7 +114,7 @@ impl<B, F: ResourceFamily, A: Allocable<B, F>> Allocator<B, F, A> {
         }
 
         tracing::debug!(target: logger::MEMORY, "Allocate new resource {:?}, {}", family, size);
-        let resource: AllocableBlock<B, F, A> = AllocableBlock::new(backend, name, size, family);
+        let resource: AllocableBlock<F, A> = AllocableBlock::new(backend, name, size, family);
         let id = resource.allocable.resource_id();
 
         self.allocated

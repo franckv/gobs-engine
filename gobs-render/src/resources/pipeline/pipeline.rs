@@ -14,7 +14,7 @@ pub struct Pipeline;
 
 impl ResourceType for Pipeline {
     type ResourceData = PipelineData;
-    type ResourceBackend = Box<dyn RenderHAL>;
+    type ResourceBackend<'a> = dyn RenderHAL + 'a;
     type ResourceProperties = PipelineProperties;
     type ResourceLoader = PipelineLoader;
 }

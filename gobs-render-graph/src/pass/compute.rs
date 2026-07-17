@@ -74,28 +74,28 @@ impl RenderPass for ComputePass {
 
         for (name, attachment) in &self.attachments {
             cmd.transition_image_layout(
-                ctx.hal.as_mut(),
+                ctx.hal_mut(),
                 resource_manager.image(name),
                 attachment.layout,
             );
 
             let image = resource_manager.image(name);
-            draw_extent = ctx.hal.get_image_extent(image);
+            draw_extent = ctx.hal().get_image_extent(image);
 
             resources.push(image);
         }
 
-        cmd.bind_pipeline(ctx.hal.as_ref(), self.pipeline);
+        cmd.bind_pipeline(ctx.hal(), self.pipeline);
 
         if !resources.is_empty() {
             // TODO: assume one ds
             let binding_layout = ctx
-                .hal
+                .hal()
                 .get_pipeline_descriptor_layout(self.pipeline, &BindingGroupType::ComputeData)
                 .ok_or(RenderError::InvalidData)?;
 
             let bind_resource = BindResource::new(binding_layout.clone(), resources);
-            cmd.bind_resource(ctx.hal.as_mut(), self.pipeline, &bind_resource);
+            cmd.bind_resource(ctx.hal_mut(), self.pipeline, &bind_resource);
         }
 
         // TODO: hardcoded

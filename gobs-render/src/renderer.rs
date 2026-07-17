@@ -36,7 +36,7 @@ impl Renderer {
         let graph = FrameGraph::load(&mut gfx, &options.graph, |pipeline, ctx| {
             let pipeline_handle = resource_manager.get_by_name::<Pipeline>(pipeline)?;
 
-            let pipeline = resource_manager.get_data(&mut ctx.hal, &pipeline_handle);
+            let pipeline = resource_manager.get_data(ctx.hal_mut(), &pipeline_handle);
 
             pipeline.ok().map(|data| data.data.pipeline)
         })
@@ -132,6 +132,6 @@ impl Renderer {
     }
 
     pub fn wait(&mut self) {
-        self.gfx.hal.wait();
+        self.gfx.hal_mut().wait();
     }
 }

@@ -10,7 +10,7 @@ pub struct Mesh;
 
 impl ResourceType for Mesh {
     type ResourceData = MeshData;
-    type ResourceBackend = Box<dyn RenderHAL>;
+    type ResourceBackend<'a> = dyn RenderHAL + 'a;
     type ResourceProperties = MeshProperties;
     type ResourceLoader = MeshLoader;
 }

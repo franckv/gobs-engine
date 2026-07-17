@@ -14,7 +14,7 @@ pub struct FrameData {
 impl FrameData {
     pub fn new(ctx: &mut GfxContext, id: usize, frames_in_flight: usize) -> Self {
         let command = ctx
-            .hal
+            .hal_mut()
             .create_command_buffer("Frame", CommandQueueType::Graphics);
 
         FrameData {

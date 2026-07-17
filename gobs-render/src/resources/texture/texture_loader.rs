@@ -24,7 +24,7 @@ impl TextureLoader {
     pub fn new(ctx: &mut GfxContext) -> Self {
         Self {
             cmd: ctx
-                .hal
+                .hal_mut()
                 .create_command_buffer("Mesh loader", CommandQueueType::Transfer),
             buffer_pool: BufferPool::new(),
         }
@@ -166,9 +166,9 @@ impl TextureLoader {
 
 impl ResourceLoader<Texture> for TextureLoader {
     #[tracing::instrument(target = "profile", skip_all, level = "trace")]
-    fn load(
+    fn load<'a>(
         &mut self,
-        hal: &mut Box<dyn RenderHAL>,
+        hal: &mut (dyn RenderHAL + 'a),
         handle: &ResourceHandle<Texture>,
         registry: &mut ResourceRegistry,
     ) -> Result<TextureData, ResourceError> {
@@ -204,9 +204,9 @@ impl ResourceLoader<Texture> for TextureLoader {
             hal.create_sampler(properties.format.mag_filter, properties.format.min_filter);
 
         self.cmd.run_immediate_mut("Texture upload", &mut |cmd| {
-            cmd.transition_image_layout(hal.as_mut(), image, ImageLayout::TransferDst);
-            cmd.copy_buffer_to_image(hal.as_ref(), staging.buffer, image, 0);
-            cmd.transition_image_layout(hal.as_mut(), image, ImageLayout::Shader);
+            cmd.transition_image_layout(hal, image, ImageLayout::TransferDst);
+            cmd.copy_buffer_to_image(hal, staging.buffer, image, 0);
+            cmd.transition_image_layout(hal, image, ImageLayout::Shader);
         });
 
         Ok(TextureData {

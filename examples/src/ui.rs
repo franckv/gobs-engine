@@ -474,7 +474,7 @@ impl Ui {
             .show(ectx, |ui| {
                 if let Some(texture) = self.selected_texture {
                     let texture_properties = resource_manager
-                        .get_data(&mut ctx.hal, &texture)
+                        .get_data(ctx.hal_mut(), &texture)
                         .unwrap()
                         .properties;
 

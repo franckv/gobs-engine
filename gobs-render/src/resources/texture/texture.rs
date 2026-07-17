@@ -9,7 +9,7 @@ pub struct Texture;
 
 impl ResourceType for Texture {
     type ResourceData = TextureData;
-    type ResourceBackend = Box<dyn RenderHAL>;
+    type ResourceBackend<'a> = dyn RenderHAL + 'a;
     type ResourceProperties = TextureProperties;
     type ResourceLoader = TextureLoader;
 }

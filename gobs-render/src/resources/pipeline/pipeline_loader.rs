@@ -97,9 +97,9 @@ impl Default for PipelineLoader {
 
 impl ResourceLoader<Pipeline> for PipelineLoader {
     #[tracing::instrument(target = "profile", skip_all, level = "trace")]
-    fn load(
+    fn load<'a>(
         &mut self,
-        hal: &mut Box<dyn RenderHAL>,
+        hal: &mut (dyn RenderHAL + 'a),
         handle: &ResourceHandle<Pipeline>,
         registry: &mut ResourceRegistry,
     ) -> Result<PipelineData, ResourceError> {
@@ -109,10 +109,8 @@ impl ResourceLoader<Pipeline> for PipelineLoader {
         tracing::debug!(target: logger::RESOURCES, "Load pipeline resource {}", properties.name());
 
         let data = match &properties {
-            PipelineProperties::Compute(properties) => self.load_compute(hal.as_mut(), properties),
-            PipelineProperties::Graphics(properties) => {
-                self.load_graphics(hal.as_mut(), properties)
-            }
+            PipelineProperties::Compute(properties) => self.load_compute(hal, properties),
+            PipelineProperties::Graphics(properties) => self.load_graphics(hal, properties),
         };
 
         Ok(data)
