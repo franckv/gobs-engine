@@ -5,6 +5,7 @@ authors = { workspace = true }
 edition = { workspace = true }
 
 [dependencies]
+bytemuck = { workspace = true }
 egui = { workspace = true }
 egui_extras = { workspace = true }
 futures = { workspace = true }

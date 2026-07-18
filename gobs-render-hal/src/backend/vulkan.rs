@@ -46,6 +46,7 @@ impl VulkanHALExt for dyn RenderHAL + '_ {
 pub struct VulkanHAL {
     registry: ResourcesRegistry,
     bindings: BindingRegistry,
+    frames_in_flight: usize,
     pub display: Display,
     pub graphics_queue: Arc<vk::Queue>,
     pub transfer_queue: Arc<vk::Queue>,
@@ -57,6 +58,10 @@ pub struct VulkanHAL {
 impl RenderHAL for VulkanHAL {
     fn new_frame(&mut self, frame_number: usize) {
         self.bindings.reset(frame_number);
+    }
+
+    fn frame_id(&self, frame_number: usize) -> usize {
+        frame_number % self.frames_in_flight
     }
 
     fn as_any(&self) -> &dyn Any {
@@ -105,6 +110,10 @@ impl RenderHAL for VulkanHAL {
         let buffer = self.registry.buffers.get(handle).unwrap();
 
         buffer.buffer.address() + buffer.offset
+    }
+
+    fn destroy_buffer(&mut self, buffer: Handle) {
+        let _ = self.registry.buffers.remove(buffer);
     }
 
     fn create_image(
@@ -267,14 +276,15 @@ impl VulkanHAL {
         display.init(&mut registry, device.clone(), frames_in_flight);
 
         Self {
-            instance,
+            registry,
+            bindings,
+            frames_in_flight,
             display,
-            device,
             graphics_queue,
             transfer_queue,
             allocator,
-            registry,
-            bindings,
+            device,
+            instance,
         }
     }
 

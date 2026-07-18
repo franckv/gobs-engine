@@ -35,6 +35,7 @@ pub enum BufferType {
 
 pub trait RenderHAL {
     fn new_frame(&mut self, frame_number: usize);
+    fn frame_id(&self, frame_number: usize) -> usize;
 
     fn as_any(&self) -> &dyn Any;
     fn as_any_mut(&mut self) -> &mut dyn Any;
@@ -42,6 +43,7 @@ pub trait RenderHAL {
     fn create_buffer(&mut self, name: &str, size: usize, ty: BufferType) -> Handle;
     fn upload_buffer(&mut self, buffer: Handle, data: &[u8], offset: u64);
     fn get_buffer_address(&self, buffer: Handle) -> u64;
+    fn destroy_buffer(&mut self, buffer: Handle);
 
     fn create_image(
         &mut self,

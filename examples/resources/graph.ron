@@ -1,5 +1,6 @@
 GraphConfig(
     graphes: {
+        "none": [],
         "simple": [
             "forward_nodepth",
             "present",

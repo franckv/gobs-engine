@@ -7,8 +7,9 @@ mod resources;
 
 pub use gobs_render_graph::{GfxContext, PassType, RenderError, RenderFlags};
 pub use gobs_render_hal::{
-    BlendMode, ObjectDataLayout, ObjectDataProp, UniformData, UniformLayout, VertexAttribute,
-    VertexData,
+    BlendMode, BufferType, CommandBuffer, CommandQueueType, CullMode, DynamicStateElem, FrontFace,
+    Handle, ImageLayout, ObjectDataLayout, ObjectDataProp, Rect2D, RenderHAL, UniformData,
+    UniformLayout, UniformPropData, VertexAttribute, VertexData, Viewport,
 };
 
 pub use batch::RenderBatch;

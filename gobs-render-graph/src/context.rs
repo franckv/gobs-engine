@@ -5,8 +5,6 @@ use gobs_render_hal::{RenderHAL, VertexAttribute, create_hal};
 
 use crate::RenderError;
 
-const FRAMES_IN_FLIGHT: usize = 2;
-
 pub struct GfxContext {
     hal: Box<dyn RenderHAL>,
     pub frames_in_flight: usize,
@@ -28,12 +26,21 @@ impl GfxContext {
         self.hal.new_frame(frame_number);
     }
 
-    pub fn new(name: &str, window: Option<Window>, validation: bool) -> Result<Self, RenderError> {
-        let hal = create_hal(name, window, FRAMES_IN_FLIGHT, validation);
+    pub fn frame_id(&self, frame_number: usize) -> usize {
+        self.hal.frame_id(frame_number)
+    }
+
+    pub fn new(
+        name: &str,
+        window: Option<Window>,
+        frames_in_flight: usize,
+        validation: bool,
+    ) -> Result<Self, RenderError> {
+        let hal = create_hal(name, window, frames_in_flight, validation);
 
         Ok(Self {
             hal,
-            frames_in_flight: FRAMES_IN_FLIGHT,
+            frames_in_flight,
             vertex_padding: false,
             world_vertex_attributes: VertexAttribute::POSITION
                 | VertexAttribute::COLOR

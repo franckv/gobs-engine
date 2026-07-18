@@ -7,12 +7,14 @@ use crate::{Pipeline, PipelinesConfig, RenderBatch};
 #[derive(Debug)]
 pub struct RendererOptions {
     pub graph: String,
+    pub frames_in_flight: usize,
 }
 
 impl Default for RendererOptions {
     fn default() -> Self {
         Self {
             graph: "scene".to_string(),
+            frames_in_flight: 2,
         }
     }
 }
@@ -104,9 +106,11 @@ impl Renderer {
 
         tracing::debug!(target: logger::RENDER, "Begin new frame {}", self.frame_number);
 
-        let frame = &mut self.frames[self.frame_number % self.gfx.frames_in_flight];
+        let frame_id = self.gfx.frame_id(self.frame_number);
 
+        let frame = &mut self.frames[frame_id];
         frame.reset(self.frame_number);
+
         self.gfx.new_frame(self.frame_number);
 
         self.graph.begin(&mut self.gfx, frame)?;

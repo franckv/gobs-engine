@@ -198,7 +198,7 @@ impl CommandBuffer for VkCommandBuffer {
         if submitted {
             self.command.fence.wait();
         } else {
-            tracing::warn!(target: logger::SYNC, "Command not submitted, skip fence wait");
+            tracing::debug!(target: logger::SYNC, "Command not submitted, skip fence wait");
         }
 
         if self.command.fence.signaled() {
