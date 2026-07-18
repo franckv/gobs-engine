@@ -168,9 +168,7 @@ impl App {
         hal.create_graphics_pipeline("color")
             .vertex_shader("color_direct.spv", "vertex_main")
             .fragment_shader("color_direct.spv", "fragment_main")
-            .push_constants(
-                ObjectDataLayout::default().prop(gobs::render::ObjectDataProp::VertexBufferAddress),
-            )
+            .push_constants(ObjectDataLayout::default().prop(ObjectDataProp::VertexBufferAddress))
             .attachments(Some(ImageFormat::B8g8r8a8Unorm), None)
             .depth_test_disable()
             .viewports(vec![Viewport::new(0., 0., 0., 0.)])
