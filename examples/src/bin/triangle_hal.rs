@@ -188,6 +188,7 @@ fn main() {
     let mut options = GameOptions::default();
     options.renderer.graph = "none".to_string();
     options.renderer.frames_in_flight = 1;
+    options.renderer.load_graph = false;
 
     Application::<App>::new("Triangle", options, examples::WIDTH, examples::HEIGHT).run();
 }

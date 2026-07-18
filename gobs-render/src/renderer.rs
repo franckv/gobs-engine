@@ -6,15 +6,21 @@ use crate::{Pipeline, PipelinesConfig, RenderBatch};
 
 #[derive(Debug)]
 pub struct RendererOptions {
+    pub graph_filename: String,
     pub graph: String,
+    pub pipeline_filename: String,
     pub frames_in_flight: usize,
+    pub load_graph: bool,
 }
 
 impl Default for RendererOptions {
     fn default() -> Self {
         Self {
+            graph_filename: "graph.ron".to_string(),
             graph: "scene".to_string(),
+            pipeline_filename: "pipelines.ron".to_string(),
             frames_in_flight: 2,
+            load_graph: true,
         }
     }
 }
@@ -32,20 +38,26 @@ impl Renderer {
         options: &RendererOptions,
         resource_manager: &mut ResourceManager,
     ) -> Self {
-        PipelinesConfig::load_resources(&gfx, "pipelines.ron", resource_manager)
-            .expect("Load pipelines");
+        let graph = if options.load_graph {
+            PipelinesConfig::load_resources(&gfx, &options.pipeline_filename, resource_manager)
+                .expect("Load pipelines");
 
-        let graph = FrameGraph::load(&mut gfx, &options.graph, |pipeline, ctx| {
-            let pipeline_handle = resource_manager.get_by_name::<Pipeline>(pipeline)?;
+            FrameGraph::load(
+                &mut gfx,
+                &options.graph_filename,
+                &options.graph,
+                |pipeline, ctx| {
+                    let pipeline_handle = resource_manager.get_by_name::<Pipeline>(pipeline)?;
 
-            let pipeline = resource_manager.get_data(ctx.hal_mut(), &pipeline_handle);
+                    let pipeline = resource_manager.get_data(ctx.hal_mut(), &pipeline_handle);
 
-            pipeline.ok().map(|data| data.data.pipeline)
-        })
-        .unwrap();
-
-        /*
-         */
+                    pipeline.ok().map(|data| data.data.pipeline)
+                },
+            )
+            .unwrap()
+        } else {
+            FrameGraph::default()
+        };
 
         let frames_in_flight = gfx.frames_in_flight;
 

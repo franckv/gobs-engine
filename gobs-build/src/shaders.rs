@@ -77,7 +77,7 @@ pub fn compile_slang_shaders(
     path_out: &str,
     asm_out: &str,
 ) -> Result<(), io::Error> {
-    for f in fs::read_dir(path_in).unwrap() {
+    for f in fs::read_dir(path_in).unwrap_or_else(|_| panic!("File not found {}", path_in)) {
         let f = f?;
         if !f.file_type()?.is_file() {
             continue;

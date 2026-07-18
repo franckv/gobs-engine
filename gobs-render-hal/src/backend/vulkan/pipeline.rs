@@ -114,7 +114,7 @@ impl GraphicsPipelineBuilder for VkGraphicsPipelineBuilder {
             self.device.clone(),
             vk::pipelines::ShaderType::Vertex,
         )
-        .unwrap();
+        .unwrap_or_else(|e| panic!("Failed to load shader {}: {}", filename, e));
 
         self.builder = self.builder.vertex_shader(entry, shader);
 

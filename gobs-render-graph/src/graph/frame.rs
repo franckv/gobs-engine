@@ -31,6 +31,7 @@ impl FrameGraph {
 
     pub fn load<F>(
         ctx: &mut GfxContext,
+        graph_filename: &str,
         graph_name: &str,
         pipeline_resolver: F,
     ) -> Result<Self, RenderError>
@@ -38,7 +39,7 @@ impl FrameGraph {
         F: FnMut(&str, &mut GfxContext) -> Option<Handle>,
     {
         tracing::debug!(target: logger::INIT, "Load graph: {}", graph_name);
-        GraphConfig::load_graph(ctx, "graph.ron", graph_name, pipeline_resolver)
+        GraphConfig::load_graph(ctx, graph_filename, graph_name, pipeline_resolver)
             .map_err(|_| RenderError::InvalidData)
     }
 
