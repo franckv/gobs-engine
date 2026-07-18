@@ -1,4 +1,4 @@
-use rand::Rng;
+use rand::RngExt;
 
 pub struct RngPool {
     index: usize,

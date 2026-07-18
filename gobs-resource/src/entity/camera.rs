@@ -1,6 +1,12 @@
 use core::fmt;
 
-use glam::{Mat4, Vec3, Vec4};
+use glam::{
+    Mat4, Vec3, Vec4,
+    camera::rh::{
+        proj::vulkan::{orthographic, perspective},
+        view::look_to_mat4,
+    },
+};
 use uuid::Uuid;
 
 use gobs_core::Transform;
@@ -124,12 +130,12 @@ impl Camera {
     }
 
     pub fn view_matrix(&self, position: Vec3) -> Mat4 {
-        Mat4::look_to_rh(position, self.dir(), self.up())
+        look_to_mat4(position, self.dir(), self.up())
     }
 
     pub fn proj_matrix(&self) -> Mat4 {
-        let mut proj = match &self.mode {
-            ProjectionMode::Ortho(projection) => Mat4::orthographic_rh(
+        match &self.mode {
+            ProjectionMode::Ortho(projection) => orthographic(
                 -projection.width / 2.,
                 projection.width / 2.,
                 -projection.height / 2.,
@@ -137,17 +143,13 @@ impl Camera {
                 projection.near,
                 projection.far,
             ),
-            ProjectionMode::Perspective(projection) => Mat4::perspective_rh(
+            ProjectionMode::Perspective(projection) => perspective(
                 projection.fovy,
                 projection.aspect,
                 projection.near,
                 projection.far,
             ),
-        };
-
-        proj.y_axis.y *= -1.;
-
-        proj
+        }
     }
 
     pub fn resize(&mut self, width: u32, height: u32) {

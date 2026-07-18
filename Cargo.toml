@@ -63,22 +63,21 @@ ash-window = "0.13"
 anyhow = "1.0"
 bitflags = { version="2.10", features=["serde"] }
 bytemuck = { version = "1.24", features = ["derive"] }
-egui = { version = "0.33", features = ["bytemuck", "serde"] }
-egui_extras = { version = "0.33" }
+egui = { version = "0.35", features = ["bytemuck", "serde"] }
+egui_extras = { version = "0.35" }
 env_logger = "0.11"
 futures = "0.3"
 fs_extra = "1.3"
-glam = { version = "0.30", features = ["bytemuck", "serde"] }
+glam = { version = "0.33", features = ["bytemuck", "serde"] }
 gltf = "1.4"
 gpu-allocator = "0.28"
 image = "0.25"
 indexmap = "2.12"
-itertools = { version = "0.14" }
-naga = { version = "28", features = ["glsl-in", "spv-out"] }
+itertools = { version = "0.15" }
 parking_lot = "0.12"
-pollster = "0.4"
+pollster = "1.0"
 presser = "0.3"
-rand = "0.9"
+rand = "0.10"
 raw-window-handle = "0.6"
 renderdoc = "0.12.1"
 ron = "0.12"

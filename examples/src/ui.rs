@@ -53,25 +53,24 @@ impl Ui {
     #[tracing::instrument(target = "profile", skip_all, level = "trace")]
     pub fn draw(
         &mut self,
-        ectx: &egui::Context,
+        ui: &mut egui::Ui,
         ctx: &mut GameContext,
         scene: &mut Scene,
         delta: f32,
     ) {
-        ectx.style_mut(|s| {
-            for (_, id) in s.text_styles.iter_mut() {
-                id.size = 14.;
-            }
-        });
+        let s = ui.style_mut();
+        for (_, id) in s.text_styles.iter_mut() {
+            id.size = 14.;
+        }
 
-        egui::SidePanel::left("left").show(ectx, |ui| {
+        egui::Panel::left("left").show(ui, |ui| {
             ui.heading(&ctx.app_info.name);
 
-            self.show_resources(ectx, ui, &ctx.resource_manager);
+            self.show_resources(ui, &ctx.resource_manager);
 
             self.draw_general(ui, scene, ctx, delta);
 
-            self.show_texture(&mut ctx.renderer.gfx, ectx, &mut ctx.resource_manager);
+            self.show_texture(&mut ctx.renderer.gfx, ui, &mut ctx.resource_manager);
 
             ui.separator();
 
@@ -85,22 +84,17 @@ impl Ui {
         });
 
         if self.selected_node != NodeId::default() {
-            egui::SidePanel::right("right").show(ectx, |ui| {
+            egui::Panel::right("right").show(ui, |ui| {
                 self.draw_properties(ui, &mut scene.graph, &ctx.resource_manager);
                 ui.separator();
             });
         }
 
-        self.ui_hovered = ectx.wants_pointer_input();
+        self.ui_hovered = ui.egui_wants_pointer_input();
     }
 
     #[tracing::instrument(target = "profile", skip_all, level = "trace")]
-    fn show_resources(
-        &mut self,
-        ectx: &egui::Context,
-        ui: &mut egui::Ui,
-        resource_manager: &ResourceManager,
-    ) {
+    fn show_resources(&mut self, ui: &mut egui::Ui, resource_manager: &ResourceManager) {
         if ui.button("Show resources").clicked() {
             self.show_resources = true;
         }
@@ -109,7 +103,7 @@ impl Ui {
 
         egui::Window::new("Resources")
             .open(&mut show_resources)
-            .show(ectx, |ui| {
+            .show(ui, |ui| {
                 egui::ScrollArea::vertical().show(ui, |ui| {
                     TableBuilder::new(ui)
                         .striped(true)
@@ -464,14 +458,14 @@ impl Ui {
     fn show_texture(
         &mut self,
         ctx: &mut GfxContext,
-        ectx: &egui::Context,
+        ui: &egui::Ui,
         resource_manager: &mut ResourceManager,
     ) {
         let mut show_texture = self.show_texture;
 
         egui::Window::new("Texture")
             .open(&mut show_texture)
-            .show(ectx, |ui| {
+            .show(ui, |ui| {
                 if let Some(texture) = self.selected_texture {
                     let texture_properties = resource_manager
                         .get_data(ctx.hal_mut(), &texture)
@@ -483,8 +477,7 @@ impl Ui {
                         let size = format.extent.into();
                         TextureLoader::get_bytes(&texture_properties.path, &mut format, |data| {
                             let img = ColorImage::from_rgba_unmultiplied(size, data);
-                            let texture =
-                                ectx.load_texture("texture-view", img, Default::default());
+                            let texture = ui.load_texture("texture-view", img, Default::default());
                             self.texture_view = Some(texture);
                         });
                     };

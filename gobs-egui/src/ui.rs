@@ -2,7 +2,7 @@ use std::{collections::HashMap, sync::Arc};
 
 use egui::{
     ColorImage, Event, FullOutput, Modifiers, MouseWheelUnit, PointerButton, RawInput, Rect,
-    TextureId,
+    TextureId, TouchPhase,
     epaint::{ImageDelta, Primitive},
 };
 use glam::{Vec2, Vec3};
@@ -63,10 +63,10 @@ impl UIRenderer {
     #[tracing::instrument(target = "profile", skip_all, level = "trace")]
     pub fn draw_ui<F>(&mut self, delta: f32, callback: F) -> FullOutput
     where
-        F: FnMut(&egui::Context),
+        F: FnMut(&mut egui::Ui),
     {
         let input = self.prepare_inputs(delta);
-        self.ectx.run(input, callback)
+        self.ectx.run_ui(input, callback)
     }
 
     #[tracing::instrument(target = "profile", skip_all, level = "trace")]
@@ -202,6 +202,7 @@ impl UIRenderer {
             Input::MouseWheel(delta) => input.events.push(Event::MouseWheel {
                 unit: MouseWheelUnit::Point,
                 delta: (0., delta).into(),
+                phase: TouchPhase::Move,
                 modifiers: Modifiers::NONE,
             }),
             Input::CursorMoved(x, y) => {

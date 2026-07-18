@@ -69,8 +69,8 @@ impl SampleApp {
             // TODO: change this
             // let app_info = ctx.app_info.clone();
 
-            let output = ui.draw_ui(delta, |ectx| {
-                self.ui.draw(ectx, ctx, scene, delta);
+            let output = ui.draw_ui(delta, |ui| {
+                self.ui.draw(ui, ctx, scene, delta);
             });
 
             ui.update(&mut ctx.renderer.gfx, &mut ctx.resource_manager, output);
