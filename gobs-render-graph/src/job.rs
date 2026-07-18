@@ -86,7 +86,7 @@ impl RenderJob {
     pub fn draw_list(
         &self,
         ctx: &mut GfxContext,
-        frame: &FrameData,
+        frame: &mut FrameData,
         render_list: &[RenderObject],
     ) -> Result<(), RenderJobError> {
         let mut state = RenderJobState::new();
@@ -133,7 +133,7 @@ impl RenderJob {
     fn bind_pipeline(
         &self,
         ctx: &GfxContext,
-        frame: &FrameData,
+        frame: &mut FrameData,
         render_object: &RenderObject,
         state: &mut RenderJobState,
     ) -> Result<(), RenderJobError> {
@@ -156,7 +156,7 @@ impl RenderJob {
     fn bind_material_data(
         &self,
         ctx: &mut GfxContext,
-        frame: &FrameData,
+        frame: &mut FrameData,
         render_object: &RenderObject,
         state: &mut RenderJobState,
     ) -> Result<(), RenderJobError> {
@@ -195,7 +195,7 @@ impl RenderJob {
     fn bind_scene_data(
         &self,
         ctx: &mut GfxContext,
-        frame: &FrameData,
+        frame: &mut FrameData,
         render_object: &RenderObject,
         state: &mut RenderJobState,
     ) -> Result<(), RenderJobError> {
@@ -218,7 +218,7 @@ impl RenderJob {
     fn bind_object_data(
         &self,
         ctx: &GfxContext,
-        frame: &FrameData,
+        frame: &mut FrameData,
         render_object: &RenderObject,
         state: &mut RenderJobState,
     ) -> Result<(), RenderJobError> {

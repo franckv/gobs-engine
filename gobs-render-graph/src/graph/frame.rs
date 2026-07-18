@@ -180,7 +180,7 @@ impl FrameGraph {
         tracing::debug!(target: logger::RENDER, "End frame");
 
         let frame_id = frame.frame_number % ctx.frames_in_flight;
-        let cmd = &frame.command;
+        let cmd = &mut frame.command;
 
         //TODO: cmd.write_timestamp(&frame.query_pool, PipelineStage::BottomOfPipe, 1);
 
@@ -210,7 +210,7 @@ impl FrameGraph {
     pub fn render(
         &mut self,
         ctx: &mut GfxContext,
-        frame: &FrameData,
+        frame: &mut FrameData,
         render_list: &[RenderObject],
         scene_data: &SceneData,
     ) -> Result<(), RenderError> {

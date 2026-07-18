@@ -73,7 +73,7 @@ impl CommandBuffer {
         }
     }
 
-    pub fn reset(&self) {
+    pub fn reset(&mut self) {
         unsafe {
             self.device
                 .raw()
@@ -82,7 +82,7 @@ impl CommandBuffer {
         };
     }
 
-    pub fn begin(&self) {
+    pub fn begin(&mut self) {
         let begin_info = vk::CommandBufferBeginInfo::default()
             .flags(vk::CommandBufferUsageFlags::ONE_TIME_SUBMIT);
 
@@ -94,7 +94,7 @@ impl CommandBuffer {
         }
     }
 
-    pub fn begin_label(&self, label: &str) {
+    pub fn begin_label(&mut self, label: &str) {
         let label = CString::new(label).unwrap();
         let label_info = vk::DebugUtilsLabelEXT::default().label_name(&label);
 
@@ -105,7 +105,7 @@ impl CommandBuffer {
         }
     }
 
-    pub fn end_label(&self) {
+    pub fn end_label(&mut self) {
         unsafe {
             self.device
                 .debug_utils_device
@@ -113,7 +113,7 @@ impl CommandBuffer {
         }
     }
 
-    pub fn insert_label(&self, label: &str) {
+    pub fn insert_label(&mut self, label: &str) {
         let label = CString::new(label).unwrap();
         let label_info = vk::DebugUtilsLabelEXT::default().label_name(&label);
 
@@ -124,7 +124,7 @@ impl CommandBuffer {
         }
     }
 
-    pub fn clear_color(&self, image: &Image, color: [f32; 4]) {
+    pub fn clear_color(&mut self, image: &Image, color: [f32; 4]) {
         let color_value = vk::ClearColorValue { float32: color };
 
         unsafe {
@@ -146,7 +146,7 @@ impl CommandBuffer {
 
     #[allow(clippy::too_many_arguments)]
     pub fn begin_rendering(
-        &self,
+        &mut self,
         color: Option<&Image>,
         extent: ImageExtent2D,
         depth: Option<&Image>,
@@ -226,13 +226,13 @@ impl CommandBuffer {
         }
     }
 
-    pub fn end_rendering(&self) {
+    pub fn end_rendering(&mut self) {
         unsafe {
             self.device.raw().cmd_end_rendering(self.command_buffer);
         }
     }
 
-    pub fn start_render_pass(&self, framebuffer: &Framebuffer) {
+    pub fn start_render_pass(&mut self, framebuffer: &Framebuffer) {
         let clear_values = [
             vk::ClearValue {
                 color: vk::ClearColorValue {
@@ -270,7 +270,7 @@ impl CommandBuffer {
         }
     }
 
-    pub fn bind_pipeline(&self, pipeline: &Pipeline) {
+    pub fn bind_pipeline(&mut self, pipeline: &Pipeline) {
         unsafe {
             self.device.raw().cmd_bind_pipeline(
                 self.command_buffer,
@@ -280,7 +280,7 @@ impl CommandBuffer {
         }
     }
 
-    pub fn bind_vertex_buffer<T: Copy>(&self, binding: usize, buffer: &Buffer, offset: u64) {
+    pub fn bind_vertex_buffer<T: Copy>(&mut self, binding: usize, buffer: &Buffer, offset: u64) {
         let bindings = [buffer.raw()];
         let offsets = [offset];
 
@@ -294,7 +294,7 @@ impl CommandBuffer {
         }
     }
 
-    pub fn bind_index_buffer<T: IndexType>(&self, buffer: &Buffer, offset: u64) {
+    pub fn bind_index_buffer<T: IndexType>(&mut self, buffer: &Buffer, offset: u64) {
         let index_size = T::size() as u64;
 
         unsafe {
@@ -307,7 +307,12 @@ impl CommandBuffer {
         }
     }
 
-    pub fn bind_descriptor_set(&self, set: &DescriptorSet, first_set: u32, pipeline: &Pipeline) {
+    pub fn bind_descriptor_set(
+        &mut self,
+        set: &DescriptorSet,
+        first_set: u32,
+        pipeline: &Pipeline,
+    ) {
         unsafe {
             self.device.raw().cmd_bind_descriptor_sets(
                 self.command_buffer,
@@ -320,11 +325,11 @@ impl CommandBuffer {
         }
     }
 
-    pub fn dispatch(&self, x: u32, y: u32, z: u32) {
+    pub fn dispatch(&mut self, x: u32, y: u32, z: u32) {
         unsafe { self.device.raw().cmd_dispatch(self.command_buffer, x, y, z) }
     }
 
-    pub fn draw(&self, vertex_count: usize) {
+    pub fn draw(&mut self, vertex_count: usize) {
         unsafe {
             self.device
                 .raw()
@@ -332,7 +337,7 @@ impl CommandBuffer {
         }
     }
 
-    pub fn draw_indexed(&self, index_count: usize, instance_count: usize) {
+    pub fn draw_indexed(&mut self, index_count: usize, instance_count: usize) {
         unsafe {
             self.device.raw().cmd_draw_indexed(
                 self.command_buffer,
@@ -345,7 +350,7 @@ impl CommandBuffer {
         }
     }
 
-    pub fn push_constants<T: Pod>(&self, layout: Arc<PipelineLayout>, constants: &[T]) {
+    pub fn push_constants<T: Pod>(&mut self, layout: Arc<PipelineLayout>, constants: &[T]) {
         unsafe {
             self.device.raw().cmd_push_constants(
                 self.command_buffer,
@@ -357,7 +362,7 @@ impl CommandBuffer {
         }
     }
 
-    pub fn reset_query_pool(&self, pool: &QueryPool, first_query: u32, query_count: u32) {
+    pub fn reset_query_pool(&mut self, pool: &QueryPool, first_query: u32, query_count: u32) {
         unsafe {
             self.device.raw().cmd_reset_query_pool(
                 self.command_buffer,
@@ -368,7 +373,7 @@ impl CommandBuffer {
         }
     }
 
-    pub fn write_timestamp(&self, pool: &QueryPool, stage: PipelineStage, query: u32) {
+    pub fn write_timestamp(&mut self, pool: &QueryPool, stage: PipelineStage, query: u32) {
         unsafe {
             self.device.raw().cmd_write_timestamp(
                 self.command_buffer,
@@ -379,7 +384,7 @@ impl CommandBuffer {
         }
     }
 
-    pub fn set_viewport(&self, width: u32, height: u32) {
+    pub fn set_viewport(&mut self, width: u32, height: u32) {
         let viewports = vk::Viewport {
             x: 0.,
             y: 0.,
@@ -405,7 +410,7 @@ impl CommandBuffer {
     }
 
     pub fn copy_buffer(
-        &self,
+        &mut self,
         src: &Buffer,
         dst: &Buffer,
         size: usize,
@@ -427,7 +432,7 @@ impl CommandBuffer {
         }
     }
 
-    pub fn copy_image_to_buffer(&self, src: &Image, dst: &Buffer, offset: u64) {
+    pub fn copy_image_to_buffer(&mut self, src: &Image, dst: &Buffer, offset: u64) {
         let copy_info = vk::BufferImageCopy::default()
             .buffer_offset(offset)
             .buffer_image_height(src.extent.height)
@@ -457,7 +462,7 @@ impl CommandBuffer {
         }
     }
 
-    pub fn copy_image_to_image(&self, src: &Image, dst: &Image) {
+    pub fn copy_image_to_image(&mut self, src: &Image, dst: &Image) {
         assert!(src.format.pixel_size() == dst.format.pixel_size());
 
         let copy_region = vk::ImageCopy2::default()
@@ -495,7 +500,7 @@ impl CommandBuffer {
         }
     }
 
-    pub fn copy_image_to_image_blit(&self, src: &Image, dst: &Image) {
+    pub fn copy_image_to_image_blit(&mut self, src: &Image, dst: &Image) {
         let src_size = src.extent;
         let dst_size = dst.extent;
 
@@ -552,7 +557,7 @@ impl CommandBuffer {
         }
     }
 
-    pub fn copy_buffer_to_image(&self, src: &Buffer, dst: &Image, offset: u64) {
+    pub fn copy_buffer_to_image(&mut self, src: &Buffer, dst: &Image, offset: u64) {
         let (width, height) = (dst.extent.width, dst.extent.height);
 
         let image_subresource = vk::ImageSubresourceLayers::default()
@@ -579,7 +584,7 @@ impl CommandBuffer {
         }
     }
 
-    pub fn transition_image_layout(&self, image: &mut Image, dst_layout: ImageLayout) {
+    pub fn transition_image_layout(&mut self, image: &mut Image, dst_layout: ImageLayout) {
         tracing::trace!(target: logger::RENDER,
             "Transition [{}] from {:?} to {:?}",
             &image.label,
@@ -616,13 +621,13 @@ impl CommandBuffer {
         image.layout = dst_layout
     }
 
-    pub fn end_render_pass(&self) {
+    pub fn end_render_pass(&mut self) {
         unsafe {
             self.device.raw().cmd_end_render_pass(self.command_buffer);
         }
     }
 
-    pub fn end(&self) {
+    pub fn end(&mut self) {
         unsafe {
             self.device
                 .raw()

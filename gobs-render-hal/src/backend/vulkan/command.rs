@@ -23,20 +23,20 @@ impl CommandBuffer for VkCommandBuffer {
         self.frame_number = frame_number;
     }
 
-    fn end(&self) {
+    fn end(&mut self) {
         self.command.end();
     }
 
-    fn begin_label(&self, label: &str) {
+    fn begin_label(&mut self, label: &str) {
         self.command.begin_label(label);
     }
 
-    fn end_label(&self) {
+    fn end_label(&mut self) {
         self.command.end_label();
     }
 
     fn begin_rendering(
-        &self,
+        &mut self,
         hal: &dyn RenderHAL,
         color: Option<Handle>,
         extent: ImageExtent2D,
@@ -59,12 +59,12 @@ impl CommandBuffer for VkCommandBuffer {
         );
     }
 
-    fn end_rendering(&self) {
+    fn end_rendering(&mut self) {
         self.command.end_rendering();
     }
 
     fn copy_buffer_to_buffer(
-        &self,
+        &mut self,
         hal: &dyn RenderHAL,
         src: Handle,
         dst: Handle,
@@ -85,7 +85,7 @@ impl CommandBuffer for VkCommandBuffer {
         );
     }
 
-    fn copy_buffer_to_image(&self, hal: &dyn RenderHAL, src: Handle, dst: Handle, offset: u64) {
+    fn copy_buffer_to_image(&mut self, hal: &dyn RenderHAL, src: Handle, dst: Handle, offset: u64) {
         let hal = hal.get();
 
         let src = hal.registry.buffers.get(src).unwrap();
@@ -95,7 +95,7 @@ impl CommandBuffer for VkCommandBuffer {
             .copy_buffer_to_image(&src.buffer, dst, src.offset + offset);
     }
 
-    fn copy_image_to_buffer(&self, hal: &dyn RenderHAL, src: Handle, dst: Handle, offset: u64) {
+    fn copy_image_to_buffer(&mut self, hal: &dyn RenderHAL, src: Handle, dst: Handle, offset: u64) {
         let hal = hal.get();
 
         let src = hal.registry.images.get(src).unwrap();
@@ -104,7 +104,7 @@ impl CommandBuffer for VkCommandBuffer {
             .copy_image_to_buffer(src, &dst.buffer, dst.offset + offset);
     }
 
-    fn copy_image_to_image(&self, hal: &dyn RenderHAL, src: Handle, dst: Handle) {
+    fn copy_image_to_image(&mut self, hal: &dyn RenderHAL, src: Handle, dst: Handle) {
         let hal = hal.get();
 
         let src = hal.registry.images.get(src).unwrap();
@@ -127,15 +127,15 @@ impl CommandBuffer for VkCommandBuffer {
         }
     }
 
-    fn dispatch(&self, x: u32, y: u32, z: u32) {
+    fn dispatch(&mut self, x: u32, y: u32, z: u32) {
         self.command.dispatch(x, y, z);
     }
 
-    fn draw_indexed(&self, index_count: usize, instance_count: usize) {
+    fn draw_indexed(&mut self, index_count: usize, instance_count: usize) {
         self.command.draw_indexed(index_count, instance_count);
     }
 
-    fn bind_pipeline(&self, hal: &dyn RenderHAL, pipeline: Handle) {
+    fn bind_pipeline(&mut self, hal: &dyn RenderHAL, pipeline: Handle) {
         let hal = hal.get();
 
         let pipeline = &hal.registry.pipelines.get(pipeline).unwrap().pipeline;
@@ -144,7 +144,7 @@ impl CommandBuffer for VkCommandBuffer {
         self.command.bind_pipeline(pipeline);
     }
 
-    fn bind_index_buffer(&self, hal: &dyn RenderHAL, buffer: Handle) {
+    fn bind_index_buffer(&mut self, hal: &dyn RenderHAL, buffer: Handle) {
         let hal = hal.get();
 
         let index_view = hal.registry.buffers.get(buffer).unwrap();
@@ -152,7 +152,12 @@ impl CommandBuffer for VkCommandBuffer {
             .bind_index_buffer::<u32>(&index_view.buffer, index_view.offset);
     }
 
-    fn bind_resource(&self, hal: &mut dyn RenderHAL, pipeline: Handle, resource: &BindResource) {
+    fn bind_resource(
+        &mut self,
+        hal: &mut dyn RenderHAL,
+        pipeline: Handle,
+        resource: &BindResource,
+    ) {
         let mut hal = hal.get_mut();
 
         let pipeline = &hal.registry.pipelines.get(pipeline).unwrap();
@@ -183,7 +188,7 @@ impl CommandBuffer for VkCommandBuffer {
         }
     }
 
-    fn push_constants(&self, hal: &dyn RenderHAL, pipeline: Handle, constants: &[u8]) {
+    fn push_constants(&mut self, hal: &dyn RenderHAL, pipeline: Handle, constants: &[u8]) {
         let mut hal = hal.get();
 
         let pipeline = &hal.registry.pipelines.get(pipeline).unwrap();
@@ -194,7 +199,7 @@ impl CommandBuffer for VkCommandBuffer {
             .push_constants(pipeline.pipeline.layout.clone(), constants);
     }
 
-    fn reset(&self, submitted: bool) {
+    fn reset(&mut self, submitted: bool) {
         if submitted {
             self.command.fence.wait();
         } else {
@@ -210,7 +215,7 @@ impl CommandBuffer for VkCommandBuffer {
         self.command.reset();
     }
 
-    fn run_immediate(&self, label: &str, callback: &dyn Fn(&dyn CommandBuffer)) {
+    fn run_immediate(&mut self, label: &str, callback: &dyn Fn(&dyn CommandBuffer)) {
         self.reset(true);
 
         self.command.begin();
@@ -223,7 +228,7 @@ impl CommandBuffer for VkCommandBuffer {
         self.command.fence.wait();
     }
 
-    fn run_immediate_mut(&self, label: &str, callback: &mut dyn FnMut(&dyn CommandBuffer)) {
+    fn run_immediate_mut(&mut self, label: &str, callback: &mut dyn FnMut(&mut dyn CommandBuffer)) {
         self.reset(true);
 
         self.command.begin();
@@ -236,7 +241,7 @@ impl CommandBuffer for VkCommandBuffer {
         self.command.fence.wait();
     }
 
-    fn set_viewport(&self, width: u32, height: u32) {
+    fn set_viewport(&mut self, width: u32, height: u32) {
         self.command.set_viewport(width, height);
     }
 
@@ -257,7 +262,12 @@ impl CommandBuffer for VkCommandBuffer {
         self.command.submit2(wait, signal);
     }
 
-    fn transition_image_layout(&self, hal: &mut dyn RenderHAL, image: Handle, layout: ImageLayout) {
+    fn transition_image_layout(
+        &mut self,
+        hal: &mut dyn RenderHAL,
+        image: Handle,
+        layout: ImageLayout,
+    ) {
         let mut hal = hal.get_mut();
 
         let image = hal.registry.images.get_mut(image).unwrap();

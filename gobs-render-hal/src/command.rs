@@ -10,12 +10,12 @@ pub enum CommandQueueType {
 
 pub trait CommandBuffer {
     fn begin(&mut self, frame_number: usize);
-    fn end(&self);
-    fn begin_label(&self, label: &str);
-    fn end_label(&self);
+    fn end(&mut self);
+    fn begin_label(&mut self, label: &str);
+    fn end_label(&mut self);
     #[allow(clippy::too_many_arguments)]
     fn begin_rendering(
-        &self,
+        &mut self,
         hal: &dyn RenderHAL,
         color: Option<Handle>,
         extent: ImageExtent2D,
@@ -25,9 +25,9 @@ pub trait CommandBuffer {
         clear_color: [f32; 4],
         depth_clear_color: f32,
     );
-    fn end_rendering(&self);
+    fn end_rendering(&mut self);
     fn copy_buffer_to_buffer(
-        &self,
+        &mut self,
         hal: &dyn RenderHAL,
         src: Handle,
         dst: Handle,
@@ -35,19 +35,24 @@ pub trait CommandBuffer {
         src_offset: u64,
         dst_offset: u64,
     );
-    fn copy_buffer_to_image(&self, hal: &dyn RenderHAL, src: Handle, dst: Handle, offset: u64);
-    fn copy_image_to_buffer(&self, hal: &dyn RenderHAL, src: Handle, dst: Handle, offset: u64);
-    fn copy_image_to_image(&self, hal: &dyn RenderHAL, src: Handle, dst: Handle);
-    fn dispatch(&self, x: u32, y: u32, z: u32);
-    fn draw_indexed(&self, index_count: usize, instance_count: usize);
-    fn bind_pipeline(&self, hal: &dyn RenderHAL, pipeline: Handle);
-    fn bind_index_buffer(&self, hal: &dyn RenderHAL, buffer: Handle);
-    fn bind_resource(&self, hal: &mut dyn RenderHAL, pipeline: Handle, resource: &BindResource);
-    fn push_constants(&self, hal: &dyn RenderHAL, pipeline: Handle, constants: &[u8]);
-    fn reset(&self, submitted: bool);
-    fn run_immediate(&self, label: &str, callback: &dyn Fn(&dyn CommandBuffer));
-    fn run_immediate_mut(&self, label: &str, callback: &mut dyn FnMut(&dyn CommandBuffer));
-    fn set_viewport(&self, width: u32, height: u32);
+    fn copy_buffer_to_image(&mut self, hal: &dyn RenderHAL, src: Handle, dst: Handle, offset: u64);
+    fn copy_image_to_buffer(&mut self, hal: &dyn RenderHAL, src: Handle, dst: Handle, offset: u64);
+    fn copy_image_to_image(&mut self, hal: &dyn RenderHAL, src: Handle, dst: Handle);
+    fn dispatch(&mut self, x: u32, y: u32, z: u32);
+    fn draw_indexed(&mut self, index_count: usize, instance_count: usize);
+    fn bind_pipeline(&mut self, hal: &dyn RenderHAL, pipeline: Handle);
+    fn bind_index_buffer(&mut self, hal: &dyn RenderHAL, buffer: Handle);
+    fn bind_resource(&mut self, hal: &mut dyn RenderHAL, pipeline: Handle, resource: &BindResource);
+    fn push_constants(&mut self, hal: &dyn RenderHAL, pipeline: Handle, constants: &[u8]);
+    fn reset(&mut self, submitted: bool);
+    fn run_immediate(&mut self, label: &str, callback: &dyn Fn(&dyn CommandBuffer));
+    fn run_immediate_mut(&mut self, label: &str, callback: &mut dyn FnMut(&mut dyn CommandBuffer));
+    fn set_viewport(&mut self, width: u32, height: u32);
     fn submit2(&self, hal: &dyn RenderHAL, frame: usize);
-    fn transition_image_layout(&self, hal: &mut dyn RenderHAL, image: Handle, layout: ImageLayout);
+    fn transition_image_layout(
+        &mut self,
+        hal: &mut dyn RenderHAL,
+        image: Handle,
+        layout: ImageLayout,
+    );
 }

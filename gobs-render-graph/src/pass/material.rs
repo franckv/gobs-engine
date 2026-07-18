@@ -80,7 +80,7 @@ impl MaterialPass {
     fn begin_pass(
         &self,
         hal: &dyn RenderHAL,
-        cmd: &dyn CommandBuffer,
+        cmd: &mut dyn CommandBuffer,
         resource_manager: &GraphResourceManager,
     ) {
         tracing::debug!(target: logger::RENDER, "Begin material pass {}", &self.name);
@@ -128,7 +128,7 @@ impl MaterialPass {
     }
 
     #[tracing::instrument(target = "profile", skip_all, level = "trace")]
-    fn end_pass(&self, cmd: &dyn CommandBuffer) {
+    fn end_pass(&self, cmd: &mut dyn CommandBuffer) {
         cmd.end_rendering();
         cmd.end_label();
     }
@@ -137,7 +137,7 @@ impl MaterialPass {
     fn transition_attachments(
         &self,
         hal: &mut dyn RenderHAL,
-        cmd: &dyn CommandBuffer,
+        cmd: &mut dyn CommandBuffer,
         resource_manager: &GraphResourceManager,
     ) {
         for (name, attachment) in &self.attachments {
@@ -163,16 +163,16 @@ impl RenderPass for MaterialPass {
     fn render(
         &self,
         ctx: &mut GfxContext,
-        frame: &FrameData,
+        frame: &mut FrameData,
         resource_manager: &GraphResourceManager,
         render_list: &[RenderObject],
         scene_data: &SceneData,
     ) -> Result<(), RenderError> {
         tracing::debug!(target: logger::RENDER, "Draw {}", &self.name());
 
-        self.transition_attachments(ctx.hal_mut(), frame.command.as_ref(), resource_manager);
+        self.transition_attachments(ctx.hal_mut(), frame.command.as_mut(), resource_manager);
 
-        self.begin_pass(ctx.hal(), frame.command.as_ref(), resource_manager);
+        self.begin_pass(ctx.hal(), frame.command.as_mut(), resource_manager);
 
         tracing::debug!(target: logger::RENDER, "Start render job");
         let render_job = &self.render_jobs[frame.id];
@@ -218,7 +218,7 @@ impl RenderPass for MaterialPass {
 
         tracing::debug!(target: logger::RENDER, "Stop render job");
 
-        self.end_pass(frame.command.as_ref());
+        self.end_pass(frame.command.as_mut());
 
         Ok(())
     }

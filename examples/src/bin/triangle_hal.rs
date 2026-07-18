@@ -21,9 +21,9 @@ struct App {
 impl GobsGame for App {
     async fn create(ctx: &mut GameContext) -> Result<Self, AppError> {
         let hal = ctx.renderer.gfx.hal_mut();
-        let cmd = hal.create_command_buffer("cmd", CommandQueueType::Graphics);
+        let mut cmd = hal.create_command_buffer("cmd", CommandQueueType::Graphics);
 
-        let (vertex_buffer, index_buffer) = Self::load_mesh(hal, cmd.as_ref());
+        let (vertex_buffer, index_buffer) = Self::load_mesh(hal, cmd.as_mut());
 
         let pipeline = Self::create_pipeline(hal);
 
@@ -123,7 +123,7 @@ impl GobsGame for App {
 }
 
 impl App {
-    fn load_mesh(hal: &mut dyn RenderHAL, cmd: &dyn CommandBuffer) -> (Handle, Handle) {
+    fn load_mesh(hal: &mut dyn RenderHAL, cmd: &mut dyn CommandBuffer) -> (Handle, Handle) {
         let mesh = Shapes::triangle(&[Color::RED, Color::GREEN, Color::BLUE], 0.5, false);
         let vertex_attributes = VertexAttribute::POSITION | VertexAttribute::COLOR;
 

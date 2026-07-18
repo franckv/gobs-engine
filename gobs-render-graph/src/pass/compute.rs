@@ -57,14 +57,14 @@ impl RenderPass for ComputePass {
     fn render(
         &self,
         ctx: &mut GfxContext,
-        frame: &FrameData,
+        frame: &mut FrameData,
         resource_manager: &GraphResourceManager,
         _render_list: &[RenderObject],
         _scene_data: &SceneData,
     ) -> Result<(), RenderError> {
         tracing::debug!(target: logger::RENDER, "Draw compute");
 
-        let cmd = &frame.command;
+        let cmd = &mut frame.command;
 
         cmd.begin_label("Draw compute");
 

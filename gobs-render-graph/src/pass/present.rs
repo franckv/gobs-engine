@@ -42,14 +42,14 @@ impl RenderPass for PresentPass {
     fn render(
         &self,
         ctx: &mut GfxContext,
-        frame: &FrameData,
+        frame: &mut FrameData,
         resource_manager: &GraphResourceManager,
         _render_list: &[RenderObject],
         _scene_data: &SceneData,
     ) -> Result<(), RenderError> {
         tracing::debug!(target: logger::RENDER, "Present");
 
-        let cmd = &frame.command;
+        let cmd = &mut frame.command;
 
         if let Some(render_target) = ctx.hal().get_render_target() {
             cmd.transition_image_layout(
