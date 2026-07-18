@@ -163,6 +163,8 @@ impl FrameGraph {
             return Err(RenderError::Outdated);
         }
 
+        cmd.reset();
+
         self.resource_manager.invalidate(ctx.hal_mut());
 
         cmd.begin(frame.frame_number);
@@ -177,8 +179,6 @@ impl FrameGraph {
 
     #[tracing::instrument(target = "profile", skip_all, level = "trace")]
     pub fn end(&mut self, ctx: &mut GfxContext, frame: &mut FrameData) -> Result<(), RenderError> {
-        tracing::debug!(target: logger::RENDER, "End frame");
-
         let frame_id = frame.frame_number % ctx.frames_in_flight;
         let cmd = &mut frame.command;
 
@@ -195,11 +195,13 @@ impl FrameGraph {
         cmd.end();
 
         cmd.submit2(ctx.hal(), frame_id);
-        frame.submitted = true;
 
         let Ok(_) = ctx.hal_mut().present() else {
+            tracing::debug!(target: logger::SYNC, "Exit frame: outdated");
             return Err(RenderError::Outdated);
         };
+
+        tracing::debug!(target: logger::SYNC, "End frame");
 
         Ok(())
     }
@@ -220,6 +222,9 @@ impl FrameGraph {
             }
 
             let pass = &pass.pass;
+
+            tracing::debug!(target: logger::SYNC, "Begin render pass {}", pass.name());
+
             let span =
                 tracing::span!(target: logger::PROFILE, tracing::Level::TRACE, "Pass", "{}", pass.name())
                     .entered();
@@ -229,6 +234,8 @@ impl FrameGraph {
 
             tracing::debug!(target: logger::RENDER, "End rendering pass");
             span.exit();
+
+            tracing::debug!(target: logger::SYNC, "End render pass {}", pass.name());
         }
 
         Ok(())

@@ -199,13 +199,11 @@ impl CommandBuffer for VkCommandBuffer {
             .push_constants(pipeline.pipeline.layout.clone(), constants);
     }
 
-    fn reset(&mut self, submitted: bool) {
-        if submitted {
-            self.command.fence.wait();
-        } else {
-            tracing::debug!(target: logger::SYNC, "Command not submitted, skip fence wait");
-        }
+    fn wait(&self) {
+        self.command.fence.wait();
+    }
 
+    fn reset(&mut self) {
         if self.command.fence.signaled() {
             self.command.fence.reset();
             debug_assert!(!self.command.fence.signaled());
@@ -216,7 +214,7 @@ impl CommandBuffer for VkCommandBuffer {
     }
 
     fn run_immediate(&mut self, label: &str, callback: &dyn Fn(&dyn CommandBuffer)) {
-        self.reset(true);
+        self.reset();
 
         self.command.begin();
         self.command.begin_label(label);
@@ -229,7 +227,7 @@ impl CommandBuffer for VkCommandBuffer {
     }
 
     fn run_immediate_mut(&mut self, label: &str, callback: &mut dyn FnMut(&mut dyn CommandBuffer)) {
-        self.reset(true);
+        self.reset();
 
         self.command.begin();
         self.command.begin_label(label);

@@ -116,12 +116,12 @@ impl Renderer {
 
         self.frame_number += 1;
 
-        tracing::debug!(target: logger::RENDER, "Begin new frame {}", self.frame_number);
+        tracing::debug!(target: logger::SYNC, "Begin new frame {}", self.frame_number);
 
         let frame_id = self.gfx.frame_id(self.frame_number);
 
         let frame = &mut self.frames[frame_id];
-        frame.reset(self.frame_number);
+        frame.wait(self.frame_number);
 
         self.gfx.new_frame(self.frame_number);
 

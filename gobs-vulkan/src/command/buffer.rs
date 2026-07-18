@@ -585,7 +585,7 @@ impl CommandBuffer {
     }
 
     pub fn transition_image_layout(&mut self, image: &mut Image, dst_layout: ImageLayout) {
-        tracing::trace!(target: logger::RENDER,
+        tracing::trace!(target: logger::SYNC,
             "Transition [{}] from {:?} to {:?}",
             &image.label,
             image.layout,

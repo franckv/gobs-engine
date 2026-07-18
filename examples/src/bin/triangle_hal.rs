@@ -11,7 +11,6 @@ use gobs::{
 struct App {
     frame_number: usize,
     cmd: Box<dyn CommandBuffer>,
-    submitted: bool,
     pipeline: Handle,
     vertex_buffer: Handle,
     index_buffer: Handle,
@@ -30,7 +29,6 @@ impl GobsGame for App {
         Ok(App {
             frame_number: 0,
             cmd,
-            submitted: false,
             pipeline,
             vertex_buffer,
             index_buffer,
@@ -46,16 +44,18 @@ impl GobsGame for App {
 
         let frame_id = hal.frame_id(self.frame_number);
 
-        self.cmd.reset(self.submitted);
+        self.cmd.wait();
 
         if hal.acquire(frame_id).is_err() {
             return Err(RenderError::Outdated);
         }
 
+        self.cmd.reset();
+
         let color = hal.get_render_target();
         let extent = hal.get_extent();
 
-        self.cmd.begin(1);
+        self.cmd.begin(self.frame_number);
         self.cmd
             .begin_label(&format!("Begin frame {}", self.frame_number));
 
@@ -98,7 +98,6 @@ impl GobsGame for App {
         self.cmd.end();
 
         self.cmd.submit2(hal, frame_id);
-        self.submitted = true;
 
         let Ok(_) = hal.present() else {
             return Err(RenderError::Outdated);

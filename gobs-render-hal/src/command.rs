@@ -44,7 +44,8 @@ pub trait CommandBuffer {
     fn bind_index_buffer(&mut self, hal: &dyn RenderHAL, buffer: Handle);
     fn bind_resource(&mut self, hal: &mut dyn RenderHAL, pipeline: Handle, resource: &BindResource);
     fn push_constants(&mut self, hal: &dyn RenderHAL, pipeline: Handle, constants: &[u8]);
-    fn reset(&mut self, submitted: bool);
+    fn wait(&self);
+    fn reset(&mut self);
     fn run_immediate(&mut self, label: &str, callback: &dyn Fn(&dyn CommandBuffer));
     fn run_immediate_mut(&mut self, label: &str, callback: &mut dyn FnMut(&mut dyn CommandBuffer));
     fn set_viewport(&mut self, width: u32, height: u32);
