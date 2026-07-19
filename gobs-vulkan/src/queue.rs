@@ -15,6 +15,7 @@ pub struct QueueFamily {
     pub graphics_bit: bool,
     pub compute_bits: bool,
     pub transfer_bits: bool,
+    pub present_bits: bool,
 }
 
 impl Debug for QueueFamily {
@@ -29,6 +30,9 @@ impl Debug for QueueFamily {
         }
         if self.transfer_bits {
             flags.push("Transfer");
+        }
+        if self.present_bits {
+            flags.push("Present");
         }
 
         f.debug_struct("QueueFamily")

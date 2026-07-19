@@ -214,9 +214,9 @@ impl Instance {
     pub fn find_adapter(
         &self,
         expected_features: &Features,
-        _surface: Option<&Surface>,
+        surface: Option<&Surface>,
     ) -> Option<PhysicalDevice> {
-        let mut p_devices = PhysicalDevice::enumerate(self);
+        let mut p_devices = PhysicalDevice::enumerate(self, surface);
         let mut candidates = vec![];
 
         tracing::debug!(target: logger::INIT, "{} physical devices found", p_devices.len());

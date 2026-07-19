@@ -30,7 +30,11 @@ pub struct PhysicalDevice {
 }
 
 impl PhysicalDevice {
-    pub(crate) fn new(instance: &Instance, p_device: vk::PhysicalDevice) -> Self {
+    pub(crate) fn new(
+        instance: &Instance,
+        p_device: vk::PhysicalDevice,
+        surface: Option<&Surface>,
+    ) -> Self {
         let props = unsafe { instance.instance.get_physical_device_properties(p_device) };
         let mem_props = unsafe {
             instance
@@ -52,19 +56,19 @@ impl PhysicalDevice {
         PhysicalDevice {
             name: String::from(name),
             gpu_type,
-            queue_families: Self::get_queue_families(&p_device, instance),
+            queue_families: Self::get_queue_families(&p_device, name, instance, surface),
             p_device,
             props,
             mem_props,
         }
     }
 
-    pub fn enumerate(instance: &Instance) -> Vec<PhysicalDevice> {
+    pub fn enumerate(instance: &Instance, surface: Option<&Surface>) -> Vec<PhysicalDevice> {
         let mut result = Vec::new();
 
         if let Ok(devices) = unsafe { instance.instance.enumerate_physical_devices() } {
             for device in devices {
-                result.push(PhysicalDevice::new(instance, device));
+                result.push(PhysicalDevice::new(instance, device, surface));
             }
         }
 
@@ -126,7 +130,12 @@ impl PhysicalDevice {
         true
     }
 
-    fn get_queue_families(p_device: &vk::PhysicalDevice, instance: &Instance) -> Vec<QueueFamily> {
+    fn get_queue_families(
+        p_device: &vk::PhysicalDevice,
+        p_device_name: &str,
+        instance: &Instance,
+        surface: Option<&Surface>,
+    ) -> Vec<QueueFamily> {
         let family_properties = unsafe {
             instance
                 .instance
@@ -136,6 +145,13 @@ impl PhysicalDevice {
         let mut results = Vec::new();
 
         for (idx, family_property) in family_properties.iter().enumerate() {
+            let present_bits = surface.is_some_and(|s| unsafe {
+                instance
+                    .surface_loader
+                    .get_physical_device_surface_support(*p_device, idx as u32, s.raw())
+                    .is_ok_and(|b| b)
+            });
+
             let family = QueueFamily {
                 index: idx as u32,
                 size: family_property.queue_count,
@@ -148,9 +164,10 @@ impl PhysicalDevice {
                 transfer_bits: family_property
                     .queue_flags
                     .contains(vk::QueueFlags::TRANSFER),
+                present_bits,
             };
 
-            tracing::debug!(target: logger::INIT, "Queue family: {:?}", &family);
+            tracing::debug!(target: logger::INIT, "Queue family: {:?} [{}]", &family, p_device_name);
 
             results.push(family);
         }

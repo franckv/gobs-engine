@@ -223,7 +223,7 @@ impl CommandBuffer for VkCommandBuffer {
         self.command.end();
         self.command.submit2(None, None);
 
-        self.command.fence.wait();
+        self.wait();
     }
 
     fn run_immediate_mut(&mut self, label: &str, callback: &mut dyn FnMut(&mut dyn CommandBuffer)) {
@@ -236,7 +236,7 @@ impl CommandBuffer for VkCommandBuffer {
         self.command.end();
         self.command.submit2(None, None);
 
-        self.command.fence.wait();
+        self.wait();
     }
 
     fn set_viewport(&mut self, width: u32, height: u32) {

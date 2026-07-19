@@ -19,6 +19,7 @@ pub enum ImageLayout {
     TransferDst,
     Shader,
     Depth,
+    DepthRead,
     Color,
     Present,
 }
@@ -32,6 +33,7 @@ impl From<ImageLayout> for vk::ImageLayout {
             ImageLayout::TransferDst => vk::ImageLayout::TRANSFER_DST_OPTIMAL,
             ImageLayout::Shader => vk::ImageLayout::SHADER_READ_ONLY_OPTIMAL,
             ImageLayout::Depth => vk::ImageLayout::DEPTH_ATTACHMENT_OPTIMAL,
+            ImageLayout::DepthRead => vk::ImageLayout::DEPTH_READ_ONLY_OPTIMAL,
             ImageLayout::Color => vk::ImageLayout::COLOR_ATTACHMENT_OPTIMAL,
             ImageLayout::Present => vk::ImageLayout::PRESENT_SRC_KHR,
         }

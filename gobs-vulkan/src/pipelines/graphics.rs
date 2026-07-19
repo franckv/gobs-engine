@@ -61,6 +61,7 @@ impl ViewportState {
         }
     }
 
+    // TODO: use .viewports_count() for dynamic states
     fn info(&'_ self) -> vk::PipelineViewportStateCreateInfo<'_> {
         vk::PipelineViewportStateCreateInfo::default()
             .scissors(&self.scissors)
