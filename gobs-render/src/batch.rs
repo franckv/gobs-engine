@@ -215,13 +215,15 @@ impl RenderBatch {
 
     #[tracing::instrument(target = "profile", skip_all, level = "trace")]
     fn add_bounds(&mut self, bounding_box: BoundingBox) {
-        tracing::debug!(target: logger::RENDER, "Add bounding box");
+        tracing::debug!(target: logger::RENDER, "Add bounding box with padding={}", self.vertex_padding);
 
         let mesh = Shapes::bounding_box(bounding_box, self.vertex_padding);
 
+        tracing::trace!(target: logger::RENDER, "Bounding box mesh={:?}", &mesh.vertices);
+
         let builder = match self.bounding_geometry.take() {
             Some(builder) => builder,
-            None => MeshGeometry::builder("bounding"),
+            None => MeshGeometry::builder("bounding").generate_tangents(false),
         };
 
         self.bounding_geometry = Some(builder.extend(mesh));
@@ -289,9 +291,11 @@ impl RenderBatch {
         let bb = self.bounding_geometry.take();
 
         if let Some(bb) = bb {
+            let bb = bb.build();
+
             let model = Model::builder("box")
                 .mesh(
-                    bb.build(),
+                    bb,
                     None,
                     ctx.world_vertex_attributes,
                     resource_manager,
