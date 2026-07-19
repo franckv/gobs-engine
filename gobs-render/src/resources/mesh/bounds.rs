@@ -114,7 +114,7 @@ impl BoundingBox {
 
     pub fn transform(&self, transform: Transform) -> Self {
         // empty bb, skip transform
-        if self.x_min <= self.x_max || self.y_min <= self.y_max || self.z_min <= self.z_max {
+        if self.x_min > self.x_max || self.y_min > self.y_max || self.z_min > self.z_max {
             return *self;
         }
 
