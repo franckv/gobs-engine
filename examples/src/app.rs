@@ -3,7 +3,7 @@ use renderdoc::{RenderDoc, V141};
 use gobs::{
     core::{Input, Key, logger},
     game::context::GameContext,
-    render::{PassType, RenderError, RenderFlags, Renderable},
+    render::{RenderError, RenderFlags, Renderable},
     resource::camera::Camera,
     scene::scene::Scene,
     ui::UIRenderer,
@@ -96,10 +96,6 @@ impl SampleApp {
 
         let resource_manager = &mut ctx.resource_manager;
 
-        ctx.renderer.enable_pass(PassType::Bounds, self.draw_bounds);
-        ctx.renderer.enable_pass(PassType::Wire, self.draw_wire);
-        ctx.renderer.enable_pass(PassType::Ui, self.draw_ui);
-
         let mut batch = ctx.renderer.get_batch();
         batch.generate_bounds(self.draw_bounds);
 
@@ -181,9 +177,18 @@ impl SampleApp {
                     // tracing::info!(target: logger::APP, "{:?}", ctx.renderer.gfx.device.allocator.allocator.lock().unwrap())
                 }
                 Key::P => self.process_updates = !self.process_updates,
-                Key::Z => self.draw_wire = !self.draw_wire,
-                Key::B => self.draw_bounds = !self.draw_bounds,
-                Key::U => self.draw_ui = !self.draw_ui,
+                Key::Z => {
+                    self.draw_wire = !self.draw_wire;
+                    ctx.renderer.enable_pass("wire", self.draw_wire);
+                }
+                Key::B => {
+                    self.draw_bounds = !self.draw_bounds;
+                    ctx.renderer.enable_pass("bounds", self.draw_bounds);
+                }
+                Key::U => {
+                    self.draw_ui = !self.draw_ui;
+                    ctx.renderer.enable_pass("ui_overlay", self.draw_ui);
+                }
                 Key::F => self.freeze = !self.freeze,
                 // Key::O => self.screenshot(ctx),
                 Key::Equals => scene.update_camera(|_, camera| {

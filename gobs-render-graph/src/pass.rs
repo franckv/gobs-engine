@@ -15,20 +15,6 @@ pub mod material;
 pub mod present;
 
 #[derive(Clone, Copy, Debug, Deserialize, Serialize, PartialEq)]
-pub enum PassType {
-    Bounds,
-    Compute,
-    Depth,
-    Dummy,
-    Forward,
-    Material,
-    Present,
-    Select,
-    Wire,
-    Ui,
-}
-
-#[derive(Clone, Copy, Debug, Deserialize, Serialize, PartialEq)]
 pub enum RenderPassType {
     Compute,
     Material,
@@ -120,7 +106,6 @@ impl Attachment {
 pub trait RenderPass {
     fn id(&self) -> PassId;
     fn name(&self) -> &str;
-    fn ty(&self) -> PassType;
     fn render(
         &self,
         ctx: &mut GfxContext,

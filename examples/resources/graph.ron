@@ -47,7 +47,6 @@ GraphConfig(
     passes: {
         "compute" : (
             ty: Compute,
-            tag: Compute,
             pipeline: "sky",
             attachments: {
                 "draw": StorageImage(
@@ -57,7 +56,6 @@ GraphConfig(
         ),
         "bounds": (
             ty: Material,
-            tag: Bounds,
             pipeline: "wireframe",
             attachments: {
                 "draw": ColorAttachment(
@@ -68,11 +66,11 @@ GraphConfig(
             scene_layout: [
                 CameraViewProj,
             ],
+            enabled: false,
             flags: "BOUNDS"
         ),
         "select": (
             ty: Material,
-            tag: Select,
             pipeline: "wireframe",
             attachments: {
                 "draw": ColorAttachment(
@@ -87,7 +85,6 @@ GraphConfig(
         ),
         "wire": (
             ty: Material,
-            tag: Wire,
             pipeline: "wireframe",
             attachments: {
                 "draw": ColorAttachment(
@@ -98,11 +95,11 @@ GraphConfig(
             scene_layout: [
                 CameraViewProj,
             ],
+            enabled: false,
             flags: "ENTITY"
         ),
         "depth": (
             ty: Material,
-            tag: Depth,
             pipeline: "depth",
             attachments: {
                 "depth": DepthAttachment(
@@ -117,7 +114,6 @@ GraphConfig(
         ),
         "forward_nodepth": (
             ty: Material,
-            tag: Forward,
             attachments: {
                 "draw": ColorAttachment(
                     access: ReadWrite,
@@ -131,7 +127,6 @@ GraphConfig(
         ),
         "forward": (
             ty: Material,
-            tag: Forward,
             attachments: {
                 "draw": ColorAttachment(
                     access: ReadWrite,
@@ -154,7 +149,6 @@ GraphConfig(
         ),
         "ui_overlay": (
             ty: Material,
-            tag: Ui,
             attachments: {
                 "draw": ColorAttachment(
                     access: ReadWrite,
@@ -171,7 +165,6 @@ GraphConfig(
         ),
         "ui": (
             ty: Material,
-            tag: Ui,
             attachments: {
                 "draw": ColorAttachment(
                     access: ReadWrite,
@@ -188,7 +181,6 @@ GraphConfig(
         ),
         "present": (
             ty: Present,
-            tag: Present,
             target: "draw",
         )
     },

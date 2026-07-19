@@ -5,13 +5,12 @@ use crate::{
     FrameData, GfxContext, RenderError, RenderObject,
     data::SceneData,
     graph::GraphResourceManager,
-    pass::{PassId, PassType, RenderPass},
+    pass::{PassId, RenderPass},
 };
 
 pub struct PresentPass {
     id: PassId,
     name: String,
-    ty: PassType,
     render_target: String,
 }
 
@@ -20,7 +19,6 @@ impl PresentPass {
         Self {
             id: PassId::new_v4(),
             name: name.to_string(),
-            ty: PassType::Present,
             render_target: render_target.to_string(),
         }
     }
@@ -33,10 +31,6 @@ impl RenderPass for PresentPass {
 
     fn name(&self) -> &str {
         &self.name
-    }
-
-    fn ty(&self) -> PassType {
-        self.ty
     }
 
     fn render(

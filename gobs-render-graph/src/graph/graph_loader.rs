@@ -10,7 +10,7 @@ use gobs_resource::{
 };
 
 use crate::{
-    FrameGraph, GfxContext, PassType, RenderFlags,
+    FrameGraph, GfxContext, RenderFlags,
     data::{SceneDataLayout, SceneDataProp},
     pass::{
         Attachment, AttachmentAccess, AttachmentType, RenderPass, RenderPassType,
@@ -29,15 +29,20 @@ pub struct GraphConfig {
     attachments: HashMap<String, ImageAttachmentInfo>,
 }
 
+fn default_true() -> bool {
+    true
+}
+
 #[derive(Debug, Deserialize, Serialize)]
 struct RenderPassConfig {
     ty: RenderPassType,
-    tag: PassType,
     pipeline: Option<String>,
     #[serde(default)]
     attachments: HashMap<String, AttachmentInfo>,
     #[serde(default)]
     scene_layout: Vec<SceneDataProp>,
+    #[serde(default = "default_true")]
+    enabled: bool,
     #[serde(default)]
     flags: RenderFlags,
     target: Option<String>,
@@ -112,13 +117,15 @@ impl GraphConfig {
 
         tracing::debug!(target: logger::INIT, "Load graph: {}", "scene");
 
-        for pass in &graph_config.graphes[name] {
-            tracing::debug!(target: logger::INIT, "Load pass: {}", pass);
+        for passname in &graph_config.graphes[name] {
+            tracing::debug!(target: logger::INIT, "Load pass: {}", passname);
 
-            let pass = Self::load_pass(ctx, &graph_config, pass, &mut pipeline_resolver)
-                .unwrap_or_else(|| panic!("Failed to load pass {}", pass));
+            let pass = Self::load_pass(ctx, &graph_config, passname, &mut pipeline_resolver)
+                .unwrap_or_else(|| panic!("Failed to load pass {}", passname));
 
-            graph.register_pass(pass.clone());
+            let enabled = graph_config.passes.get(passname).is_some_and(|p| p.enabled);
+
+            graph.register_pass(pass.clone(), enabled);
         }
 
         Ok(graph)
@@ -194,8 +201,7 @@ impl GraphConfig {
             scene_layout = scene_layout.prop(*prop);
         }
 
-        let mut material_pass =
-            MaterialPass::new(ctx, passname, pass.tag, scene_layout, pass.flags);
+        let mut material_pass = MaterialPass::new(ctx, passname, scene_layout, pass.flags);
 
         if let Some(pipeline) = pipeline {
             material_pass.set_fixed_pipeline(pipeline);
@@ -281,7 +287,7 @@ mod tests {
     use tracing_subscriber::{FmtSubscriber, fmt::format::FmtSpan};
 
     use crate::{
-        GfxContext, GraphConfig, PassType, RenderFlags,
+        GfxContext, GraphConfig, RenderFlags,
         graph::graph_loader::{AttachmentInfo, RenderPassConfig},
         pass::{AttachmentAccess, RenderPassType},
     };
@@ -340,7 +346,6 @@ mod tests {
                 pass_name,
                 RenderPassConfig {
                     ty: RenderPassType::Material,
-                    tag: PassType::Bounds,
                     pipeline: None,
                     attachments: HashMap::from([(
                         "draw".to_string(),
@@ -350,6 +355,7 @@ mod tests {
                         },
                     )]),
                     scene_layout: Vec::new(),
+                    enabled: true,
                     flags: RenderFlags::ENTITY,
                     target: None,
                 },

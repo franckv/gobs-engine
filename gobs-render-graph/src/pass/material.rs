@@ -4,7 +4,7 @@ use gobs_core::logger;
 use gobs_render_hal::{CommandBuffer, Handle, RenderHAL, UniformData as _, UniformPropData};
 
 use crate::{
-    FrameData, GfxContext, PassId, PassType, RenderError, RenderFlags, RenderJob, RenderObject,
+    FrameData, GfxContext, PassId, RenderError, RenderFlags, RenderJob, RenderObject,
     data::{SceneData, SceneDataLayout, SceneDataProp},
     graph::GraphResourceManager,
     pass::{Attachment, AttachmentType, RenderPass},
@@ -13,7 +13,6 @@ use crate::{
 pub struct MaterialPass {
     id: PassId,
     name: String,
-    ty: PassType,
     attachments: HashMap<String, Attachment>,
     input_attachments: Vec<String>,
     color_attachments: Vec<String>,
@@ -27,7 +26,6 @@ impl MaterialPass {
     pub fn new(
         ctx: &mut GfxContext,
         name: &str,
-        ty: PassType,
         scene_layout: SceneDataLayout,
         render_flags: RenderFlags,
     ) -> Self {
@@ -47,7 +45,6 @@ impl MaterialPass {
         Self {
             id,
             name: name.to_string(),
-            ty,
             attachments: Default::default(),
             input_attachments: vec![],
             color_attachments: vec![],
@@ -153,10 +150,6 @@ impl RenderPass for MaterialPass {
 
     fn name(&self) -> &str {
         &self.name
-    }
-
-    fn ty(&self) -> PassType {
-        self.ty
     }
 
     #[tracing::instrument(target = "profile", skip_all, level = "trace")]

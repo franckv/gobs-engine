@@ -5,7 +5,7 @@ mod renderable;
 mod renderer;
 mod resources;
 
-pub use gobs_render_graph::{GfxContext, PassType, RenderError, RenderFlags};
+pub use gobs_render_graph::{GfxContext, RenderError, RenderFlags};
 pub use gobs_render_hal::{
     BlendMode, BufferType, CommandBuffer, CommandQueueType, CullMode, DynamicStateElem, FrontFace,
     Handle, ImageLayout, ObjectDataLayout, ObjectDataProp, Rect2D, RenderHAL, UniformData,

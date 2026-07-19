@@ -7,13 +7,12 @@ use crate::{
     FrameData, GfxContext, RenderError, RenderObject,
     data::SceneData,
     graph::GraphResourceManager,
-    pass::{Attachment, AttachmentType, PassId, PassType, RenderPass},
+    pass::{Attachment, AttachmentType, PassId, RenderPass},
 };
 
 pub struct ComputePass {
     id: PassId,
     name: String,
-    ty: PassType,
     attachments: HashMap<String, Attachment>,
     image_attachments: Vec<String>,
     pub pipeline: Handle,
@@ -24,7 +23,6 @@ impl ComputePass {
         Self {
             id: PassId::new_v4(),
             name: name.to_string(),
-            ty: PassType::Compute,
             attachments: Default::default(),
             image_attachments: vec![],
             pipeline,
@@ -48,10 +46,6 @@ impl RenderPass for ComputePass {
 
     fn name(&self) -> &str {
         &self.name
-    }
-
-    fn ty(&self) -> PassType {
-        self.ty
     }
 
     fn render(

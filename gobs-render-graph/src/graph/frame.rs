@@ -1,8 +1,6 @@
 use crate::{
-    FrameData, GfxContext, GraphConfig, PassId, RenderError, RenderObject, RenderPass,
-    data::SceneData,
-    graph::resource::GraphResourceManager,
-    pass::{Attachment, PassType},
+    FrameData, GfxContext, GraphConfig, RenderError, RenderObject, RenderPass, data::SceneData,
+    graph::resource::GraphResourceManager, pass::Attachment,
 };
 use gobs_core::logger;
 use gobs_render_hal::{Handle, ImageLayout};
@@ -43,11 +41,8 @@ impl FrameGraph {
             .map_err(|_| RenderError::InvalidData)
     }
 
-    pub fn register_pass(&mut self, pass: RenderPass) {
-        let pass = FrameGraphPass {
-            pass,
-            enabled: true,
-        };
+    pub fn register_pass(&mut self, pass: RenderPass, enabled: bool) {
+        let pass = FrameGraphPass { pass, enabled };
 
         self.passes.push(pass);
     }
@@ -126,14 +121,6 @@ impl FrameGraph {
         dst_image.extent()
     }
     */
-
-    pub fn pass_by_id(&self, pass_id: PassId) -> Result<RenderPass, RenderError> {
-        self.get_pass(|pass| pass.id() == pass_id)
-    }
-
-    pub fn pass_by_type(&self, pass_type: PassType) -> Result<RenderPass, RenderError> {
-        self.get_pass(|pass| pass.ty() == pass_type)
-    }
 
     pub fn pass_by_name(&self, pass_name: &str) -> Result<RenderPass, RenderError> {
         self.get_pass(|pass| pass.name() == pass_name)
@@ -218,6 +205,8 @@ impl FrameGraph {
     ) -> Result<(), RenderError> {
         for pass in &mut self.passes {
             if !pass.enabled {
+                tracing::debug!(target: logger::RENDER,
+                    "Skip pass: {}", pass.pass.name());
                 continue;
             }
 
@@ -252,9 +241,9 @@ impl FrameGraph {
         ctx.hal_mut().resize();
     }
 
-    pub fn enable_pass(&mut self, pass_type: PassType, enabled: bool) {
+    pub fn enable_pass(&mut self, name: &str, enabled: bool) {
         for pass in &mut self.passes {
-            if pass.pass.ty() == pass_type {
+            if pass.pass.name() == name {
                 pass.enabled = enabled;
             }
         }

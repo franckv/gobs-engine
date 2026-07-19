@@ -1,5 +1,5 @@
 use gobs_core::{ImageExtent2D, logger};
-use gobs_render_graph::{FrameData, FrameGraph, GfxContext, PassType, RenderError};
+use gobs_render_graph::{FrameData, FrameGraph, GfxContext, RenderError};
 use gobs_resource::ResourceManager;
 
 use crate::{Pipeline, PipelinesConfig, RenderBatch};
@@ -85,8 +85,8 @@ impl Renderer {
         self.graph.update(&self.gfx, delta);
     }
 
-    pub fn enable_pass(&mut self, pass: PassType, enabled: bool) {
-        self.graph.enable_pass(pass, enabled);
+    pub fn enable_pass(&mut self, name: &str, enabled: bool) {
+        self.graph.enable_pass(name, enabled);
     }
 
     pub fn get_batch(&self) -> RenderBatch {
