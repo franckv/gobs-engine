@@ -164,15 +164,7 @@ impl RenderHAL for VulkanHAL {
             _ => unimplemented!(),
         };
 
-        let command_pool = vk::CommandPool::new(self.device.clone(), &queue.family);
-
-        let command = vk::CommandBuffer::new(self.device.clone(), queue, command_pool, name);
-
-        Box::new(VkCommandBuffer {
-            command,
-            frame_number: 0,
-            fence: vk::sync::Fence::new(self.device.clone(), true, "Command buffer"),
-        })
+        Box::new(VkCommandBuffer::new(self.device.clone(), name, queue))
     }
 
     fn create_graphics_pipeline(&self, name: &str) -> Box<dyn GraphicsPipelineBuilder> {

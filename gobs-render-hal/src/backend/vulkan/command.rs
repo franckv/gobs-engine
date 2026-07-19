@@ -1,10 +1,11 @@
-use std::io::pipe;
+use std::{io::pipe, sync::Arc};
 
 use gobs_core::{ImageExtent2D, logger};
 use gobs_vulkan::{self as vk, descriptor::DescriptorSetUpdates};
 
 use crate::{
-    BindResource, BindingGroupLayout, Handle, ImageLayout, RenderHAL, UniformData as _,
+    BindResource, BindingGroupLayout, CommandQueueType, Handle, ImageLayout, RenderHAL,
+    UniformData as _,
     backend::{
         VulkanHAL, VulkanHALExt,
         vulkan::pipeline::{self, VkPipeline},
@@ -16,6 +17,20 @@ pub struct VkCommandBuffer {
     pub(crate) command: vk::CommandBuffer,
     pub frame_number: usize,
     pub fence: vk::sync::Fence,
+}
+
+impl VkCommandBuffer {
+    pub fn new(device: Arc<vk::Device>, name: &str, queue: Arc<vk::Queue>) -> Self {
+        let command_pool = vk::CommandPool::new(device.clone(), &queue.family);
+
+        let command = vk::CommandBuffer::new(device.clone(), queue, command_pool, name);
+
+        VkCommandBuffer {
+            command,
+            frame_number: 0,
+            fence: vk::sync::Fence::new(device.clone(), true, "Command buffer"),
+        }
+    }
 }
 
 impl CommandBuffer for VkCommandBuffer {
