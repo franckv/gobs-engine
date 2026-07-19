@@ -22,7 +22,6 @@ bitflags! {
         const UI = 1 << 3;
         const SELECTED = 1 << 4;
         const BOUNDS = 1 << 5;
-        const WIRE = 1 << 6;
     }
 }
 

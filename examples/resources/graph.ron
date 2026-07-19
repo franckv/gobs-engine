@@ -98,7 +98,7 @@ GraphConfig(
             scene_layout: [
                 CameraViewProj,
             ],
-            flags: "WIRE"
+            flags: "ENTITY"
         ),
         "depth": (
             ty: Material,
