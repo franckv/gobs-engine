@@ -7,7 +7,7 @@ use crate::RenderError;
 
 pub struct GfxContext {
     hal: Box<dyn RenderHAL>,
-    pub frames_in_flight: usize,
+    frames_in_flight: usize,
     pub vertex_padding: bool,
     pub world_vertex_attributes: VertexAttribute,
     pub stats_refresh: usize,
@@ -20,6 +20,10 @@ impl GfxContext {
 
     pub fn hal_mut(&mut self) -> &mut dyn RenderHAL {
         self.hal.as_mut()
+    }
+
+    pub fn frames_in_flight(&self) -> usize {
+        self.frames_in_flight
     }
 
     pub fn new_frame(&mut self, frame_number: usize) {

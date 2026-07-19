@@ -11,9 +11,9 @@ use tracing::Level;
 
 use gobs_core::{Color, ImageExtent2D, Input, Key, MouseButton, Transform, logger};
 use gobs_render::{
-    GfxContext, Material, MaterialInstance, MaterialInstanceProperties, MaterialsConfig,
-    MeshGeometry, Model, RenderBatch, RenderFlags, Renderable, Texture, TextureProperties,
-    TextureUpdate, VertexData,
+    BoundingBox, GfxContext, Material, MaterialInstance, MaterialInstanceProperties,
+    MaterialsConfig, MeshGeometry, Model, RenderBatch, RenderFlags, Renderable, Texture,
+    TextureProperties, TextureUpdate, VertexData,
 };
 use gobs_resource::{
     ResourceManager, {ResourceError, ResourceHandle, ResourceLifetime},
@@ -474,6 +474,7 @@ impl Renderable for UIRenderer {
         resource_manager: &mut ResourceManager,
         batch: &mut RenderBatch,
         transform: Option<Transform>,
+        bounding_box: Option<BoundingBox>,
         render_flags: RenderFlags,
     ) -> Result<(), ResourceError> {
         if let Some(output) = self.output.write().take() {
@@ -483,7 +484,14 @@ impl Renderable for UIRenderer {
             };
 
             if let Some(model) = self.load_model(ctx, resource_manager, output) {
-                batch.add_model(ctx, resource_manager, model, transform, render_flags)?;
+                batch.add_model(
+                    ctx,
+                    resource_manager,
+                    model,
+                    transform,
+                    bounding_box,
+                    render_flags,
+                )?;
             }
 
             batch.add_extent_data(ImageExtent2D::new(self.width as u32, self.height as u32));

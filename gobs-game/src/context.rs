@@ -28,7 +28,7 @@ impl GameContext {
         validation: bool,
     ) -> Result<Self, RenderError> {
         let mut gfx = GfxContext::new(name, window, options.renderer.frames_in_flight, validation)?;
-        let mut resource_manager = ResourceManager::new(gfx.frames_in_flight);
+        let mut resource_manager = ResourceManager::new(gfx.frames_in_flight());
 
         let texture_loader = TextureLoader::new(&mut gfx);
         resource_manager.register_resource::<Texture>(texture_loader);

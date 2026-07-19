@@ -34,7 +34,7 @@ impl PipelineLayout {
                 tracing::error!("Wrong order for descriptor sets layouts");
                 panic!("Wrong order for descriptor sets layouts");
             } else {
-                tracing::info!(target: logger::RENDER, "Gap in pipeline descriptors layout: {}", idx);
+                tracing::info!(target: logger::INIT, "Gap in pipeline descriptors layout: {}", idx);
 
                 let mut gaps = set - idx;
 
@@ -53,7 +53,7 @@ impl PipelineLayout {
             idx += 1;
         }
 
-        tracing::debug!(target: logger::RENDER, "Create pipeline layout with {} descriptor sets", set_layout.len());
+        tracing::debug!(target: logger::INIT, "Create pipeline layout with {} descriptor sets", set_layout.len());
 
         assert_eq!(set_layout.len(), descriptor_layouts.len());
 

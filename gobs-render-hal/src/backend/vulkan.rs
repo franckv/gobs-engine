@@ -57,7 +57,8 @@ pub struct VulkanHAL {
 
 impl RenderHAL for VulkanHAL {
     fn new_frame(&mut self, frame_number: usize) {
-        self.bindings.reset(frame_number);
+        let frame_id = self.frame_id(frame_number);
+        self.bindings.reset(frame_id);
     }
 
     fn frame_id(&self, frame_number: usize) -> usize {

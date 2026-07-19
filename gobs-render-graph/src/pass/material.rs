@@ -33,7 +33,7 @@ impl MaterialPass {
     ) -> Self {
         let id = PassId::new_v4();
 
-        let render_jobs = (0..ctx.frames_in_flight)
+        let render_jobs = (0..ctx.frames_in_flight())
             .map(|_| {
                 RenderJob::new(
                     ctx,

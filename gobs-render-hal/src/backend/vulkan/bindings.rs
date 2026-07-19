@@ -27,8 +27,8 @@ impl BindingRegistry {
         }
     }
 
-    pub fn reset(&mut self, frame_number: usize) {
-        let mut map = &mut self.pools[frame_number % self.frames_in_flight];
+    pub fn reset(&mut self, frame_id: usize) {
+        let mut map = &mut self.pools[frame_id];
 
         for pool in map.values_mut() {
             pool.reset();
@@ -52,9 +52,9 @@ impl BindingRegistry {
         &mut self,
         device: Arc<vk::Device>,
         resource: &BindResource,
-        frame_number: usize,
+        frame_id: usize,
     ) -> &mut DescriptorSetPool {
-        let mut map = &mut self.pools[frame_number % self.frames_in_flight];
+        let mut map = &mut self.pools[frame_id];
 
         map.entry(resource.layout.clone()).or_insert_with(|| {
             DescriptorSetPool::new(
@@ -70,9 +70,9 @@ impl BindingRegistry {
         device: Arc<vk::Device>,
         registry: &ResourcesRegistry,
         resource: &BindResource,
-        frame_number: usize,
+        frame_id: usize,
     ) -> DescriptorSet {
-        let ds_pool = self.get_pool(device.clone(), resource, frame_number);
+        let ds_pool = self.get_pool(device.clone(), resource, frame_id);
 
         let ds = ds_pool.allocate();
 

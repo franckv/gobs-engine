@@ -149,7 +149,7 @@ impl PipelinesConfig {
 
         let mut props = PipelineProperties::graphics(name)
             .object_data_layout(object_layout)
-            .pool_size(ctx.frames_in_flight)
+            .pool_size(ctx.frames_in_flight())
             .vertex_attributes(pipeline.vertex_attributes)
             .polygon_mode(pipeline.polygon_mode)
             .cull_mode(pipeline.cull_mode)
@@ -232,7 +232,7 @@ mod tests {
 
         let data = include_str!("../../../../examples/resources/pipelines.ron");
 
-        let mut resource_manager = ResourceManager::new(ctx.frames_in_flight);
+        let mut resource_manager = ResourceManager::new(ctx.frames_in_flight());
 
         PipelinesConfig::load_resources_with_data(&ctx, data, &mut resource_manager).unwrap();
     }

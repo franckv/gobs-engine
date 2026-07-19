@@ -3,7 +3,7 @@ use serde::Serialize;
 
 use gobs_core::Transform;
 
-#[derive(Clone, Copy, Debug, Default, Serialize)]
+#[derive(Clone, Copy, Debug, Serialize)]
 pub struct BoundingBox {
     pub x_min: f32,
     pub x_max: f32,
@@ -11,6 +11,19 @@ pub struct BoundingBox {
     pub y_max: f32,
     pub z_min: f32,
     pub z_max: f32,
+}
+
+impl Default for BoundingBox {
+    fn default() -> Self {
+        Self {
+            x_min: f32::MAX,
+            x_max: f32::MIN,
+            y_min: f32::MAX,
+            y_max: f32::MIN,
+            z_min: f32::MAX,
+            z_max: f32::MIN,
+        }
+    }
 }
 
 impl BoundingBox {
@@ -100,6 +113,11 @@ impl BoundingBox {
     }
 
     pub fn transform(&self, transform: Transform) -> Self {
+        // empty bb, skip transform
+        if self.x_min <= self.x_max || self.y_min <= self.y_max || self.z_min <= self.z_max {
+            return *self;
+        }
+
         let c1 = Vec4::new(self.x_min, self.y_min, self.z_min, 1.);
         let c2 = Vec4::new(self.x_min, self.y_min, self.z_max, 1.);
         let c3 = Vec4::new(self.x_min, self.y_max, self.z_min, 1.);

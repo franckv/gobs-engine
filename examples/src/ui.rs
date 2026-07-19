@@ -194,7 +194,7 @@ impl Ui {
                 ui.label(format!("Frame: {}", ctx.renderer.frame_number));
                 ui.label(format!(
                     "Frame in flight: {}",
-                    ctx.renderer.gfx.frames_in_flight
+                    ctx.renderer.gfx.frames_in_flight()
                 ));
                 ui.label(format!("FPS: {}", (1. / delta).round() as u32));
                 ui.horizontal(|ui| {

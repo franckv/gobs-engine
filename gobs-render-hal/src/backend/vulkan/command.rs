@@ -191,12 +191,10 @@ impl CommandBuffer for VkCommandBuffer {
                 &self.command,
             );
         } else {
-            let ds = hal.bindings.get_ds(
-                hal.device.clone(),
-                &hal.registry,
-                resource,
-                self.frame_number,
-            );
+            let frame_id = hal.frame_id(self.frame_number);
+            let ds = hal
+                .bindings
+                .get_ds(hal.device.clone(), &hal.registry, resource, frame_id);
 
             let set = binding_type.set();
             self.command

@@ -26,7 +26,7 @@ impl FrameData {
 
     #[tracing::instrument(target = "profile", skip_all, level = "trace")]
     pub fn wait(&mut self, frame_number: usize) {
-        tracing::debug!(target: logger::RENDER, "Begin new frame: {} ({}/{})", frame_number, self.id, self.frames_in_flight);
+        tracing::debug!(target: logger::RENDER, "Wait for frame in flight: {} / {}", self.id + 1, self.frames_in_flight);
 
         self.frame_number = frame_number;
 

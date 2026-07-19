@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use gobs_core::{ImageExtent2D, Transform, logger};
-use gobs_render_graph::{GfxContext, RenderFlags, RenderObject, RenderPass, SceneData};
+use gobs_render_graph::{GfxContext, RenderFlags, RenderObject, SceneData};
 use gobs_render_hal::{BindResource, Handle, RenderHAL};
 use gobs_resource::{
     ResourceError, ResourceHandle, ResourceLifetime, ResourceManager, camera::Camera, light::Light,
@@ -14,26 +14,30 @@ use crate::{
 
 pub struct RenderBatch {
     pub render_list: Vec<RenderObject>,
-    vertex_padding: bool,
-    bounding_geometry: Option<MeshBuilder>,
-    bounding_pass: Option<RenderPass>,
+    pub(crate) recording: bool,
     pub(crate) camera: Camera,
     pub(crate) camera_transform: Transform,
     pub(crate) lights: Vec<(Light, Transform)>,
     pub(crate) extent: ImageExtent2D,
+    generate_bounds: bool,
+    vertex_padding: bool,
+    bounding_geometry: Option<MeshBuilder>,
 }
 
 impl RenderBatch {
     pub fn new(ctx: &GfxContext) -> Self {
+        tracing::debug!(target: logger::RENDER, ">>> Prepare render batch");
+
         Self {
             render_list: Vec::new(),
-            vertex_padding: ctx.vertex_padding,
-            bounding_geometry: None,
-            bounding_pass: None,
+            recording: true,
             camera: Camera::default(),
             camera_transform: Transform::default(),
             lights: vec![],
             extent: ImageExtent2D::default(),
+            generate_bounds: false,
+            vertex_padding: ctx.vertex_padding,
+            bounding_geometry: None,
         }
     }
 
@@ -43,6 +47,10 @@ impl RenderBatch {
         self.bounding_geometry = None;
     }
 
+    pub fn generate_bounds(&mut self, generate_bounds: bool) {
+        self.generate_bounds = generate_bounds;
+    }
+
     #[tracing::instrument(target = "profile", skip_all, level = "trace")]
     pub fn add_model(
         &mut self,
@@ -50,9 +58,16 @@ impl RenderBatch {
         resource_manager: &mut ResourceManager,
         model: Arc<Model>,
         transform: Transform,
+        bounding_box: Option<BoundingBox>,
         flags: RenderFlags,
     ) -> Result<(), ResourceError> {
         tracing::debug!(target: logger::RENDER, "Add model: {} to render list", model.name());
+
+        if let Some(bounding_box) = bounding_box
+            && self.generate_bounds
+        {
+            self.add_bounds(bounding_box);
+        }
 
         for (mesh, material_instance_handle) in &model.meshes {
             let mut render_flags = flags;
@@ -63,6 +78,8 @@ impl RenderBatch {
                 material_instance_handle,
                 &mut render_flags,
             )?;
+
+            tracing::debug!(target: logger::RENDER, "Add mesh: {} to render list [{:?}]", model.name(), render_flags);
 
             if pipeline.is_none() {
                 tracing::debug!("No material for model {}", model.name());
@@ -197,25 +214,17 @@ impl RenderBatch {
     }
 
     #[tracing::instrument(target = "profile", skip_all, level = "trace")]
-    pub fn add_bounds(
-        &mut self,
-        bounding_box: BoundingBox,
-        pass: RenderPass,
-    ) -> Result<(), ResourceError> {
+    fn add_bounds(&mut self, bounding_box: BoundingBox) {
+        tracing::debug!(target: logger::RENDER, "Add bounding box");
+
         let mesh = Shapes::bounding_box(bounding_box, self.vertex_padding);
 
-        if self.bounding_geometry.is_none() {
-            self.bounding_geometry = Some(MeshGeometry::builder("bounding"));
-        }
+        let builder = match self.bounding_geometry.take() {
+            Some(builder) => builder,
+            None => MeshGeometry::builder("bounding"),
+        };
 
-        let builder = self.bounding_geometry.take();
-
-        if let Some(builder) = builder {
-            self.bounding_geometry = Some(builder.extend(mesh));
-            self.bounding_pass = Some(pass);
-        }
-
-        Ok(())
+        self.bounding_geometry = Some(builder.extend(mesh));
     }
 
     #[tracing::instrument(target = "profile", skip_all, level = "trace")]
@@ -295,15 +304,22 @@ impl RenderBatch {
                 resource_manager,
                 model,
                 Transform::IDENTITY,
-                RenderFlags::empty(),
+                None,
+                RenderFlags::BOUNDS,
             )
             .expect("Add bounding box");
+        } else {
+            tracing::debug!(target: logger::RENDER, "No bounding box");
         }
 
         #[cfg(debug_assertions)]
         self.validate(ctx);
 
         self.sort();
+
+        self.recording = false;
+
+        tracing::debug!(target: logger::RENDER, "<<< Finish render batch");
     }
 }
 
@@ -334,7 +350,7 @@ mod tests {
         let span = tracing::trace_span!(target: logger::PROFILE, "sort").entered();
 
         let mut ctx = GfxContext::new("test", None, 1, false).unwrap();
-        let mut resource_manager = ResourceManager::new(ctx.frames_in_flight);
+        let mut resource_manager = ResourceManager::new(ctx.frames_in_flight());
 
         let mesh_loader = MeshLoader::new(&mut ctx);
         resource_manager.register_resource::<Mesh>(mesh_loader);
@@ -363,6 +379,7 @@ mod tests {
                 &mut resource_manager,
                 triangle.clone(),
                 Transform::IDENTITY,
+                None,
                 RenderFlags::empty(),
             );
         }

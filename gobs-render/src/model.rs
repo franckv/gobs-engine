@@ -52,10 +52,18 @@ impl Renderable for Arc<Model> {
         resource_manager: &mut ResourceManager,
         batch: &mut RenderBatch,
         transform: Option<Transform>,
+        bounding_box: Option<BoundingBox>,
         render_flags: RenderFlags,
     ) -> Result<(), ResourceError> {
         if let Some(transform) = transform {
-            batch.add_model(ctx, resource_manager, self.clone(), transform, render_flags)?;
+            batch.add_model(
+                ctx,
+                resource_manager,
+                self.clone(),
+                transform,
+                bounding_box,
+                render_flags,
+            )?;
         } else {
             tracing::warn!("No transform");
         }

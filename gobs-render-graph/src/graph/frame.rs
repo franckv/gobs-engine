@@ -179,7 +179,7 @@ impl FrameGraph {
 
     #[tracing::instrument(target = "profile", skip_all, level = "trace")]
     pub fn end(&mut self, ctx: &mut GfxContext, frame: &mut FrameData) -> Result<(), RenderError> {
-        let frame_id = frame.frame_number % ctx.frames_in_flight;
+        let frame_id = ctx.frame_id(frame.frame_number);
         let cmd = &mut frame.command;
 
         //TODO: cmd.write_timestamp(&frame.query_pool, PipelineStage::BottomOfPipe, 1);
@@ -228,11 +228,12 @@ impl FrameGraph {
             let span =
                 tracing::span!(target: logger::PROFILE, tracing::Level::TRACE, "Pass", "{}", pass.name())
                     .entered();
-            tracing::debug!(target: logger::RENDER, "Begin rendering pass {}", pass.name());
+
+            tracing::debug!(target: logger::RENDER, ">>> Begin rendering pass {}", pass.name());
 
             pass.render(ctx, frame, &self.resource_manager, render_list, scene_data)?;
 
-            tracing::debug!(target: logger::RENDER, "End rendering pass");
+            tracing::debug!(target: logger::RENDER, "<<< End rendering pass {}", pass.name());
             span.exit();
 
             tracing::debug!(target: logger::SYNC, "End render pass {}", pass.name());

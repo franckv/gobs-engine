@@ -1,7 +1,7 @@
 use glam::{Vec3, Vec4};
 
 use gobs_core::Transform;
-use gobs_render::{GfxContext, RenderBatch, RenderFlags, Renderable};
+use gobs_render::{BoundingBox, GfxContext, RenderBatch, RenderFlags, Renderable};
 use gobs_resource::{
     ResourceError, ResourceManager,
     {camera::Camera, light::Light},
@@ -137,6 +137,7 @@ impl Renderable for Scene {
         resource_manager: &mut ResourceManager,
         batch: &mut RenderBatch,
         _transform: Option<Transform>,
+        _bounding_box: Option<BoundingBox>,
         render_flags: RenderFlags,
     ) -> Result<(), ResourceError> {
         self.graph.visit(self.graph.root, &mut |node| {
@@ -146,6 +147,7 @@ impl Renderable for Scene {
                     resource_manager,
                     batch,
                     Some(*node.global_transform()),
+                    Some(node.bounding.bounding_box),
                     render_flags,
                 )?;
             }

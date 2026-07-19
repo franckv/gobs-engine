@@ -59,7 +59,7 @@ impl Renderer {
             FrameGraph::default()
         };
 
-        let frames_in_flight = gfx.frames_in_flight;
+        let frames_in_flight = gfx.frames_in_flight();
 
         let frames = (0..frames_in_flight)
             .map(|id| FrameData::new(&mut gfx, id, frames_in_flight))
@@ -89,6 +89,10 @@ impl Renderer {
         self.graph.enable_pass(pass, enabled);
     }
 
+    pub fn get_batch(&self) -> RenderBatch {
+        RenderBatch::new(&self.gfx)
+    }
+
     #[tracing::instrument(target = "profile", skip_all, level = "trace")]
     pub fn prepare(
         &mut self,
@@ -111,12 +115,13 @@ impl Renderer {
     }
 
     #[tracing::instrument(target = "profile", skip_all, level = "trace")]
-    pub fn draw(&mut self, batch: &mut RenderBatch) -> Result<(), RenderError> {
-        tracing::debug!(target: logger::RENDER, "Begin render batch");
+    pub fn submit(&mut self, batch: &mut RenderBatch) -> Result<(), RenderError> {
+        assert!(!batch.recording, "Batch recording not finished");
 
-        self.frame_number += 1;
+        tracing::debug!(target: logger::RENDER, "Submit render batch");
 
         tracing::debug!(target: logger::SYNC, "Begin new frame {}", self.frame_number);
+        tracing::debug!(target: logger::RENDER, "Begin new frame {}", self.frame_number);
 
         let frame_id = self.gfx.frame_id(self.frame_number);
 
@@ -136,11 +141,17 @@ impl Renderer {
 
         self.graph.end(&mut self.gfx, frame)?;
 
+        tracing::debug!(target: logger::SYNC, "End frame {}", self.frame_number);
+        tracing::debug!(target: logger::RENDER, "End frame {}", self.frame_number);
+
+        self.frame_number += 1;
+
         Ok(())
     }
 
     pub fn frame(&self) -> &FrameData {
-        &self.frames[self.frame_number % self.gfx.frames_in_flight]
+        let frame_id = self.gfx.frame_id(self.frame_number);
+        &self.frames[frame_id]
     }
 
     pub fn frame_number(&self) -> usize {

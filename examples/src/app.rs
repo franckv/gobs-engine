@@ -100,25 +100,38 @@ impl SampleApp {
         ctx.renderer.enable_pass(PassType::Wire, self.draw_wire);
         ctx.renderer.enable_pass(PassType::Ui, self.draw_ui);
 
-        let mut batch =
-            ctx.renderer
-                .prepare(resource_manager, &mut |gfx, batch, resource_manager| {
-                    if let Some(scene) = &scene {
-                        tracing::debug!("Draw scene");
-                        scene
-                            .draw(gfx, resource_manager, batch, None, RenderFlags::ENTITY)
-                            .map_err(|_| RenderError::InvalidData)?;
-                    }
-                    if let Some(ui) = &ui {
-                        tracing::debug!("Draw ui");
-                        ui.draw(gfx, resource_manager, batch, None, RenderFlags::UI)
-                            .map_err(|_| RenderError::InvalidData)?;
-                    }
+        let mut batch = ctx.renderer.get_batch();
+        batch.generate_bounds(self.draw_bounds);
 
-                    Ok(())
-                })?;
+        if let Some(scene) = &scene {
+            tracing::debug!("Draw scene");
+            scene
+                .draw(
+                    &mut ctx.renderer.gfx,
+                    resource_manager,
+                    &mut batch,
+                    None,
+                    None,
+                    RenderFlags::ENTITY,
+                )
+                .map_err(|_| RenderError::InvalidData)?;
+        }
+        if let Some(ui) = &ui {
+            tracing::debug!("Draw ui");
+            ui.draw(
+                &mut ctx.renderer.gfx,
+                resource_manager,
+                &mut batch,
+                None,
+                None,
+                RenderFlags::UI,
+            )
+            .map_err(|_| RenderError::InvalidData)?;
+        }
 
-        ctx.renderer.draw(&mut batch)?;
+        batch.finish(&mut ctx.renderer.gfx, resource_manager);
+
+        ctx.renderer.submit(&mut batch)?;
 
         tracing::trace!(target: logger::APP, "End render");
 
