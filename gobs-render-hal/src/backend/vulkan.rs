@@ -171,6 +171,7 @@ impl RenderHAL for VulkanHAL {
         Box::new(VkCommandBuffer {
             command,
             frame_number: 0,
+            fence: vk::sync::Fence::new(self.device.clone(), true, "Command buffer"),
         })
     }
 

@@ -15,6 +15,7 @@ use crate::{
 pub struct VkCommandBuffer {
     pub(crate) command: vk::CommandBuffer,
     pub frame_number: usize,
+    pub fence: vk::sync::Fence,
 }
 
 impl CommandBuffer for VkCommandBuffer {
@@ -200,13 +201,13 @@ impl CommandBuffer for VkCommandBuffer {
     }
 
     fn wait(&self) {
-        self.command.fence.wait();
+        self.fence.wait();
     }
 
     fn reset(&mut self) {
-        if self.command.fence.signaled() {
-            self.command.fence.reset();
-            debug_assert!(!self.command.fence.signaled());
+        if self.fence.signaled() {
+            self.fence.reset();
+            debug_assert!(!self.fence.signaled());
         } else {
             tracing::warn!(target: logger::SYNC, "Fence unsignaled");
         }
@@ -221,7 +222,7 @@ impl CommandBuffer for VkCommandBuffer {
         callback(self);
         self.command.end_label();
         self.command.end();
-        self.command.submit2(None, None);
+        self.command.submit2(None, None, &self.fence);
 
         self.wait();
     }
@@ -234,7 +235,7 @@ impl CommandBuffer for VkCommandBuffer {
         callback(self);
         self.command.end_label();
         self.command.end();
-        self.command.submit2(None, None);
+        self.command.submit2(None, None, &self.fence);
 
         self.wait();
     }
@@ -257,7 +258,7 @@ impl CommandBuffer for VkCommandBuffer {
             (None, None)
         };
 
-        self.command.submit2(wait, signal);
+        self.command.submit2(wait, signal, &self.fence);
     }
 
     fn transition_image_layout(

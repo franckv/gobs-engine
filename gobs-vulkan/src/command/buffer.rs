@@ -38,7 +38,6 @@ pub struct CommandBuffer {
     queue: Arc<Queue>,
     pool: Arc<CommandPool>,
     command_buffer: vk::CommandBuffer,
-    pub fence: Fence,
 }
 
 impl CommandBuffer {
@@ -69,7 +68,6 @@ impl CommandBuffer {
             queue,
             pool,
             command_buffer,
-            fence: Fence::new(device, true, "Command buffer"),
         }
     }
 
@@ -636,7 +634,7 @@ impl CommandBuffer {
         }
     }
 
-    pub fn submit2(&self, wait: Option<&Semaphore>, signal: Option<&Semaphore>) {
+    pub fn submit2(&self, wait: Option<&Semaphore>, signal: Option<&Semaphore>, fence: &Fence) {
         let command_info = vk::CommandBufferSubmitInfo::default()
             .command_buffer(self.command_buffer)
             .device_mask(0);
@@ -676,7 +674,7 @@ impl CommandBuffer {
                 .queue_submit2(
                     self.queue.queue,
                     std::slice::from_ref(&submit_info),
-                    self.fence.raw(),
+                    fence.raw(),
                 )
                 .unwrap();
         }
