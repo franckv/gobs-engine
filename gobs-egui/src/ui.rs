@@ -32,7 +32,6 @@ pub struct UIRenderer {
     input: Vec<Input>,
     mouse_position: (f32, f32),
     output: RwLock<Option<FullOutput>>,
-    vertex_padding: bool,
 }
 
 impl UIRenderer {
@@ -56,7 +55,6 @@ impl UIRenderer {
             input: Vec::new(),
             mouse_position: (0., 0.),
             output: RwLock::new(None),
-            vertex_padding: ctx.vertex_padding,
         })
     }
 
@@ -435,7 +433,6 @@ impl UIRenderer {
                         .color(color)
                         .texture(Vec2::new(vertex.uv.x, vertex.uv.y))
                         .normal(Vec3::new(0., 0., 1.))
-                        .padding(self.vertex_padding)
                         .build();
 
                     mesh = mesh.vertex(vertex_data);

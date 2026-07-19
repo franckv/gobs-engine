@@ -90,7 +90,7 @@ impl Renderer {
     }
 
     pub fn get_batch(&self) -> RenderBatch {
-        RenderBatch::new(&self.gfx)
+        RenderBatch::new()
     }
 
     #[tracing::instrument(target = "profile", skip_all, level = "trace")]
@@ -105,7 +105,7 @@ impl Renderer {
     ) -> Result<RenderBatch, RenderError> {
         tracing::debug!(target: logger::RENDER, "Prepare render batch");
 
-        let mut batch = RenderBatch::new(&self.gfx);
+        let mut batch = RenderBatch::new();
 
         draw_cmd(&mut self.gfx, &mut batch, resource_manager)?;
 

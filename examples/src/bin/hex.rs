@@ -88,18 +88,15 @@ impl App {
 
         let hex = Model::builder("hex")
             .mesh(
-                Shapes::hexagon(
-                    &[
-                        Color::WHITE,
-                        Color::RED,
-                        Color::GREEN,
-                        Color::BLUE,
-                        Color::RED,
-                        Color::GREEN,
-                        Color::BLUE,
-                    ],
-                    ctx.renderer.gfx.vertex_padding,
-                ),
+                Shapes::hexagon(&[
+                    Color::WHITE,
+                    Color::RED,
+                    Color::GREEN,
+                    Color::BLUE,
+                    Color::RED,
+                    Color::GREEN,
+                    Color::BLUE,
+                ]),
                 Some(material_instance),
                 ctx.renderer.gfx.world_vertex_attributes,
                 &mut ctx.resource_manager,

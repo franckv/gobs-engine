@@ -97,7 +97,7 @@ impl App {
 
         let triangle = Model::builder("triangle")
             .mesh(
-                Shapes::triangle(&[Color::WHITE], 1., ctx.renderer.gfx.vertex_padding),
+                Shapes::triangle(&[Color::WHITE], 1.),
                 Some(material_instance),
                 ctx.renderer.gfx.world_vertex_attributes,
                 &mut ctx.resource_manager,

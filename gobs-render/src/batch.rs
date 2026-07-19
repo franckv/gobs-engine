@@ -20,12 +20,11 @@ pub struct RenderBatch {
     pub(crate) lights: Vec<(Light, Transform)>,
     pub(crate) extent: ImageExtent2D,
     generate_bounds: bool,
-    vertex_padding: bool,
     bounding_geometry: Option<MeshBuilder>,
 }
 
 impl RenderBatch {
-    pub fn new(ctx: &GfxContext) -> Self {
+    pub fn new() -> Self {
         tracing::debug!(target: logger::RENDER, ">>> Prepare render batch");
 
         Self {
@@ -36,7 +35,6 @@ impl RenderBatch {
             lights: vec![],
             extent: ImageExtent2D::default(),
             generate_bounds: false,
-            vertex_padding: ctx.vertex_padding,
             bounding_geometry: None,
         }
     }
@@ -215,9 +213,9 @@ impl RenderBatch {
 
     #[tracing::instrument(target = "profile", skip_all, level = "trace")]
     fn add_bounds(&mut self, bounding_box: BoundingBox) {
-        tracing::debug!(target: logger::RENDER, "Add bounding box with padding={}", self.vertex_padding);
+        tracing::debug!(target: logger::RENDER, "Add bounding box");
 
-        let mesh = Shapes::bounding_box(bounding_box, self.vertex_padding);
+        let mesh = Shapes::bounding_box(bounding_box);
 
         tracing::trace!(target: logger::RENDER, "Bounding box mesh={:?}", &mesh.vertices);
 
@@ -327,6 +325,12 @@ impl RenderBatch {
     }
 }
 
+impl Default for RenderBatch {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use tracing::Level;
@@ -361,11 +365,7 @@ mod tests {
 
         let triangle = Model::builder("triangle")
             .mesh(
-                Shapes::triangle(
-                    &[Color::RED, Color::GREEN, Color::BLUE],
-                    1.,
-                    ctx.vertex_padding,
-                ),
+                Shapes::triangle(&[Color::RED, Color::GREEN, Color::BLUE], 1.),
                 None,
                 ctx.world_vertex_attributes,
                 &mut resource_manager,
@@ -373,7 +373,7 @@ mod tests {
             )
             .build();
 
-        let mut batch = RenderBatch::new(&ctx);
+        let mut batch = RenderBatch::new();
 
         let mut timer = Timer::new();
 

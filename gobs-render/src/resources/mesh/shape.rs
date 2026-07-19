@@ -14,7 +14,7 @@ const T_MAX: f32 = 1. - T_MIN;
 pub struct Shapes;
 
 impl Shapes {
-    pub fn triangle(colors: &[Color], size: f32, padding: bool) -> Arc<MeshGeometry> {
+    pub fn triangle(colors: &[Color], size: f32) -> Arc<MeshGeometry> {
         let mut builder = MeshGeometry::builder("triangle");
 
         let (top, bottom, left, right) = (size / 2., -size / 2., -size / 2., size / 2.);
@@ -43,7 +43,6 @@ impl Shapes {
                 .color(colors[(vi[i] - 1) % colors.len()])
                 .normal(n[ni[i] - 1].into())
                 .texture(t[vi[i] - 1].into())
-                .padding(padding)
                 .build();
 
             builder = builder.vertex(vertex_data)
@@ -58,7 +57,6 @@ impl Shapes {
         bottom: f32,
         left: f32,
         right: f32,
-        padding: bool,
     ) -> Arc<MeshGeometry> {
         let mut builder = MeshGeometry::builder("rect");
 
@@ -88,7 +86,6 @@ impl Shapes {
                 .color(colors[(vi[i] - 1) % colors.len()])
                 .texture(t[vi[i] - 1].into())
                 .normal(n[ni[i] - 1].into())
-                .padding(padding)
                 .build();
 
             builder = builder.vertex(vertex_data);
@@ -97,11 +94,11 @@ impl Shapes {
         builder.build()
     }
 
-    pub fn quad(colors: &[Color], padding: bool) -> Arc<MeshGeometry> {
-        Self::rect(colors, 0.5, -0.5, -0.5, 0.5, padding)
+    pub fn quad(colors: &[Color]) -> Arc<MeshGeometry> {
+        Self::rect(colors, 0.5, -0.5, -0.5, 0.5)
     }
 
-    pub fn hexagon(colors: &[Color], padding: bool) -> Arc<MeshGeometry> {
+    pub fn hexagon(colors: &[Color]) -> Arc<MeshGeometry> {
         let mut builder = MeshGeometry::builder("hexagon");
 
         let width = 1.;
@@ -139,7 +136,6 @@ impl Shapes {
                 .color(colors[(vi[i] - 1) % colors.len()])
                 .texture(t[vi[i] - 1].into())
                 .normal(n[ni[i] - 1].into())
-                .padding(padding)
                 .build();
 
             builder = builder.vertex(vertex_data);
@@ -148,13 +144,7 @@ impl Shapes {
         builder.build()
     }
 
-    pub fn cubemap(
-        cols: u32,
-        rows: u32,
-        index: &[u32],
-        size: f32,
-        padding: bool,
-    ) -> Arc<MeshGeometry> {
+    pub fn cubemap(cols: u32, rows: u32, index: &[u32], size: f32) -> Arc<MeshGeometry> {
         let mut builder = MeshGeometry::builder("cube");
 
         let (top, bottom, left, right, front, back) = (
@@ -231,7 +221,6 @@ impl Shapes {
                     index[(i / index.len()) % index.len()],
                 ))
                 .normal(n[ni[i] - 1].into())
-                .padding(padding)
                 .build();
 
             builder = builder.vertex(vertex_data);
@@ -240,7 +229,7 @@ impl Shapes {
         builder.build()
     }
 
-    pub fn bounding_box(bounding_box: BoundingBox, padding: bool) -> Arc<MeshGeometry> {
+    pub fn bounding_box(bounding_box: BoundingBox) -> Arc<MeshGeometry> {
         let (left, bottom, back) = bounding_box.bottom_left().into();
         let (right, top, front) = bounding_box.top_right().into();
 
@@ -267,10 +256,7 @@ impl Shapes {
         let mut builder = MeshGeometry::builder("bounds");
 
         for vertex in v {
-            let vertex_data = VertexData::builder()
-                .position(vertex.into())
-                .padding(padding)
-                .build();
+            let vertex_data = VertexData::builder().position(vertex.into()).build();
 
             builder = builder.vertex(vertex_data);
         }
@@ -316,18 +302,18 @@ mod tests {
         let n = 1000;
 
         for _ in 0..n {
-            let _ = Shapes::triangle(&[Color::RED, Color::BLUE, Color::GREEN], 1., false);
+            let _ = Shapes::triangle(&[Color::RED, Color::BLUE, Color::GREEN], 1.);
         }
         tracing::info!(target: logger::RENDER, "Build {} triangles: {}", n, 1000. * timer.delta());
 
         for _ in 0..n {
-            let _ = Shapes::rect(&[Color::RED], 1., 0., 0., 1., false);
+            let _ = Shapes::rect(&[Color::RED], 1., 0., 0., 1.);
         }
         tracing::info!(target: logger::RENDER, "Build {} rects: {}", n, 1000. * timer.delta());
 
         let bounding_box = BoundingBox::default();
         for _ in 0..n {
-            let _ = Shapes::bounding_box(bounding_box, false);
+            let _ = Shapes::bounding_box(bounding_box);
         }
         tracing::info!(target: logger::RENDER, "Build {} boxes: {}", n, 1000. * timer.delta());
     }

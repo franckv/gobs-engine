@@ -123,14 +123,13 @@ impl GobsGame for App {
 
 impl App {
     fn load_mesh(hal: &mut dyn RenderHAL, cmd: &mut dyn CommandBuffer) -> (Handle, Handle) {
-        let mesh = Shapes::triangle(&[Color::RED, Color::GREEN, Color::BLUE], 0.5, false);
+        let mesh = Shapes::triangle(&[Color::RED, Color::GREEN, Color::BLUE], 0.5);
         let vertex_attributes = VertexAttribute::POSITION | VertexAttribute::COLOR;
 
         let mut vertices = vec![];
 
-        let alignment = vertex_attributes.alignment();
         for vertex in &mesh.vertices {
-            vertex.copy_data(&vertex_attributes, alignment, &mut vertices);
+            vertex.copy_data(vertex_attributes, &mut vertices);
         }
 
         let indices = &mesh.indices;

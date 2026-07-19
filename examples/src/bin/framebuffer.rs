@@ -121,7 +121,7 @@ impl App {
 
         let rect = Model::builder("rect")
             .mesh(
-                Shapes::quad(&[Color::WHITE], ctx.renderer.gfx.vertex_padding),
+                Shapes::quad(&[Color::WHITE]),
                 Some(material_instance),
                 ctx.renderer.gfx.world_vertex_attributes,
                 &mut ctx.resource_manager,

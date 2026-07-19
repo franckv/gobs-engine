@@ -27,16 +27,14 @@ impl MeshLoader {
         &mut self,
         hal: &mut dyn RenderHAL,
         geometry: &MeshGeometry,
-        vertex_attributes: &VertexAttribute,
+        vertex_attributes: VertexAttribute,
     ) -> MeshData {
         tracing::debug!(target: logger::INIT, "Loading geometry for {} with layout {:?}", &geometry.name, vertex_attributes);
         let mut vertices = Vec::new();
 
         // TODO: hot path
-        let alignment = vertex_attributes.alignment();
-
         for vertice in &geometry.vertices {
-            vertice.copy_data(vertex_attributes, alignment, &mut vertices);
+            vertice.copy_data(vertex_attributes, &mut vertices);
         }
 
         let indices = &geometry.indices;
@@ -103,7 +101,7 @@ impl ResourceLoader<Mesh> for MeshLoader {
             MeshPath::File(_) => todo!(),
             MeshPath::Bytes(_) => todo!(),
             MeshPath::Mesh(geometry) => {
-                self.load_geometry(hal, geometry, &properties.vertex_attributes)
+                self.load_geometry(hal, geometry, properties.vertex_attributes)
             }
         };
 

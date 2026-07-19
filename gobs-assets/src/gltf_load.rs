@@ -23,21 +23,16 @@ pub struct GLTFLoader {
     material_manager: MaterialManager,
     pub models: Vec<Arc<Model>>,
     pub scene: SceneGraph,
-    pub vertex_padding: bool,
 }
 
 impl GLTFLoader {
-    pub fn new(
-        ctx: &mut GfxContext,
-        resource_manager: &mut ResourceManager,
-    ) -> Result<Self, AssetError> {
+    pub fn new(resource_manager: &mut ResourceManager) -> Result<Self, AssetError> {
         let material_manager = MaterialManager::new(resource_manager)?;
 
         Ok(Self {
             material_manager,
             models: vec![],
             scene: SceneGraph::new(),
-            vertex_padding: ctx.vertex_padding,
         })
     }
 
@@ -143,12 +138,8 @@ impl GLTFLoader {
 
                 if let Some(iter) = reader.read_positions() {
                     for pos in iter {
-                        mesh_data = mesh_data.vertex(
-                            VertexData::builder()
-                                .position(pos.into())
-                                .padding(self.vertex_padding)
-                                .build(),
-                        );
+                        mesh_data =
+                            mesh_data.vertex(VertexData::builder().position(pos.into()).build());
                     }
                 }
 

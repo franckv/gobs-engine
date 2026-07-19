@@ -8,7 +8,6 @@ use crate::RenderError;
 pub struct GfxContext {
     hal: Box<dyn RenderHAL>,
     frames_in_flight: usize,
-    pub vertex_padding: bool,
     pub world_vertex_attributes: VertexAttribute,
     pub stats_refresh: usize,
 }
@@ -45,7 +44,6 @@ impl GfxContext {
         Ok(Self {
             hal,
             frames_in_flight,
-            vertex_padding: false,
             world_vertex_attributes: VertexAttribute::POSITION
                 | VertexAttribute::COLOR
                 | VertexAttribute::TEXTURE

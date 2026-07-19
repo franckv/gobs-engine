@@ -4,27 +4,10 @@ use bitflags::bitflags;
 use glam::{Vec2, Vec3};
 use serde::{Deserialize, Serialize};
 
-use gobs_core::{Color, Transform};
+use gobs_core::{Color, Transform, logger};
 use gobs_vulkan::pipelines::VertexAttributeFormat;
 
-const POS_SIZE: usize = 12;
-const COLOR_SIZE: usize = 16;
-const TEX_SIZE: usize = 8;
-const NORMAL_SIZE: usize = 12;
-const NORMAL_TEX_SIZE: usize = 8;
-const TANGENT_SIZE: usize = 12;
-const BITANGENT_SIZE: usize = 12;
-
-struct VertexInfo {
-    size: usize,
-    align: usize,
-}
-
-impl VertexInfo {
-    fn new(size: usize, align: usize) -> Self {
-        Self { size, align }
-    }
-}
+use crate::data::{AlignMode, Attribute};
 
 bitflags! {
     #[derive(Debug, Clone, Copy, Default, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -41,59 +24,37 @@ bitflags! {
 }
 
 impl VertexAttribute {
-    fn info(attr: VertexAttribute) -> VertexInfo {
-        match attr {
-            VertexAttribute::POSITION => VertexInfo::new(12, 16),
-            VertexAttribute::COLOR => VertexInfo::new(16, 16),
-            VertexAttribute::TEXTURE => VertexInfo::new(8, 8),
-            VertexAttribute::NORMAL => VertexInfo::new(12, 16),
-            VertexAttribute::NORMAL_TEXTURE => VertexInfo::new(8, 8),
-            VertexAttribute::TANGENT => VertexInfo::new(12, 16),
-            VertexAttribute::BITANGENT => VertexInfo::new(12, 16),
+    fn attribute_type(self) -> Attribute {
+        match self {
+            VertexAttribute::POSITION => Attribute::Vec3F,
+            VertexAttribute::COLOR => Attribute::Vec4F,
+            VertexAttribute::TEXTURE => Attribute::Vec2F,
+            VertexAttribute::NORMAL => Attribute::Vec3F,
+            VertexAttribute::NORMAL_TEXTURE => Attribute::Vec2F,
+            VertexAttribute::TANGENT => Attribute::Vec3F,
+            VertexAttribute::BITANGENT => Attribute::Vec3F,
             _ => unimplemented!(),
         }
     }
 
-    pub fn alignment(&self) -> usize {
-        let mut align = 0;
-        for bit in self.iter() {
-            let bit_align = Self::info(bit).align;
+    fn attributes(self) -> Vec<Attribute> {
+        self.iter().map(|v| v.attribute_type()).collect()
+    }
 
-            if bit_align > align {
-                align = bit_align;
-            }
-        }
+    fn attribute_offsets(self, mode: AlignMode) -> Vec<(VertexAttribute, usize)> {
+        let offsets = Attribute::offsets(&self.attributes(), mode);
 
-        align
+        self.iter().zip(offsets).collect()
+    }
+
+    pub fn offset_of(self, attr: VertexAttribute, mode: AlignMode) -> usize {
+        let offsets = VertexAttribute::attribute_offsets(self, mode);
+
+        offsets.iter().find(|(a, _)| *a == attr).unwrap().1
     }
 
     pub fn size(&self) -> usize {
-        let mut size = 0;
-        for bit in self.iter() {
-            let bit_size = Self::info(bit).size;
-
-            size += bit_size;
-        }
-
-        size
-    }
-
-    pub fn offset_of(&self, bit: VertexAttribute) -> usize {
-        if !self.contains(bit) {
-            panic!("offset_of: {:?} is not in {:?}", bit, self);
-        }
-
-        let mut offset = 0;
-        for other in self.iter() {
-            if bit == other {
-                break;
-            }
-            let bit_size = Self::info(other).size;
-
-            offset += bit_size;
-        }
-
-        offset
+        Attribute::stride(&self.attributes(), AlignMode::Compact)
     }
 }
 
@@ -114,7 +75,7 @@ impl From<VertexAttribute> for VertexAttributeFormat {
 
 #[derive(Clone, Copy, Debug, Serialize)]
 pub struct VertexData {
-    pub padding: bool, // false = compact (scalar), true = aligned ()
+    pub layout: AlignMode,
     pub position: Vec3,
     pub color: Color,
     pub texture: Vec2,
@@ -129,14 +90,6 @@ impl VertexData {
         VertexDataBuilder::new()
     }
 
-    pub fn raw(&self, flags: &VertexAttribute, alignment: usize) -> Vec<u8> {
-        let mut data: Vec<u8> = Vec::new();
-
-        self.copy_data(flags, alignment, &mut data);
-
-        data
-    }
-
     pub fn transform(&self, transform: Transform) -> VertexData {
         let mut vertex = *self;
 
@@ -145,71 +98,51 @@ impl VertexData {
         vertex
     }
 
-    pub fn copy_data(&self, flags: &VertexAttribute, alignment: usize, data: &mut Vec<u8>) {
-        if flags.contains(VertexAttribute::POSITION) {
-            data.extend_from_slice(bytemuck::cast_slice(&self.position.to_array()));
-            Self::pad(data, self.padding, alignment - POS_SIZE);
-        };
-
-        if flags.contains(VertexAttribute::COLOR) {
-            data.extend_from_slice(bytemuck::cast_slice(&Into::<[f32; 4]>::into(self.color)));
-            Self::pad(data, self.padding, alignment - COLOR_SIZE);
-        };
-
-        if flags.contains(VertexAttribute::TEXTURE) {
-            data.extend_from_slice(bytemuck::cast_slice(&self.texture.to_array()));
-            Self::pad(data, self.padding, alignment - TEX_SIZE);
-        };
-
-        if flags.contains(VertexAttribute::NORMAL) {
-            data.extend_from_slice(bytemuck::cast_slice(&self.normal.to_array()));
-            Self::pad(data, self.padding, alignment - NORMAL_SIZE);
-        };
-
-        if flags.contains(VertexAttribute::NORMAL_TEXTURE) {
-            data.extend_from_slice(bytemuck::cast_slice(&self.normal_texture.to_array()));
-            Self::pad(data, self.padding, alignment - NORMAL_TEX_SIZE);
-        };
-
-        if flags.contains(VertexAttribute::TANGENT) {
-            data.extend_from_slice(bytemuck::cast_slice(&self.tangent.to_array()));
-            Self::pad(data, self.padding, alignment - TANGENT_SIZE);
-        };
-
-        if flags.contains(VertexAttribute::BITANGENT) {
-            data.extend_from_slice(bytemuck::cast_slice(&self.bitangent.to_array()));
-            Self::pad(data, self.padding, alignment - BITANGENT_SIZE);
-        };
-    }
-
-    fn pad(data: &mut Vec<u8>, padding: bool, len: usize) {
-        if padding {
-            for _ in 0..len {
-                data.push(0_u8);
+    fn get_bytes(&self, flag: VertexAttribute, data: &mut Vec<u8>) {
+        match flag {
+            VertexAttribute::POSITION => {
+                data.extend_from_slice(bytemuck::cast_slice(&self.position.to_array()))
             }
+            VertexAttribute::COLOR => {
+                data.extend_from_slice(bytemuck::cast_slice(&Into::<[f32; 4]>::into(self.color)))
+            }
+            VertexAttribute::TEXTURE => {
+                data.extend_from_slice(bytemuck::cast_slice(&self.texture.to_array()))
+            }
+            VertexAttribute::NORMAL => {
+                data.extend_from_slice(bytemuck::cast_slice(&self.normal.to_array()))
+            }
+            VertexAttribute::NORMAL_TEXTURE => {
+                data.extend_from_slice(bytemuck::cast_slice(&self.normal_texture.to_array()))
+            }
+            VertexAttribute::TANGENT => {
+                data.extend_from_slice(bytemuck::cast_slice(&self.tangent.to_array()))
+            }
+            VertexAttribute::BITANGENT => {
+                data.extend_from_slice(bytemuck::cast_slice(&self.bitangent.to_array()))
+            }
+            _ => unimplemented!(),
         }
     }
 
-    pub fn size(flags: VertexAttribute, padding: bool) -> usize {
-        flags
-            .iter()
-            .map(|bit| match bit {
-                VertexAttribute::POSITION
-                | VertexAttribute::COLOR
-                | VertexAttribute::TEXTURE
-                | VertexAttribute::NORMAL
-                | VertexAttribute::NORMAL_TEXTURE
-                | VertexAttribute::TANGENT
-                | VertexAttribute::BITANGENT => {
-                    if padding {
-                        flags.alignment()
-                    } else {
-                        bit.size()
-                    }
-                }
-                _ => unimplemented!(),
-            })
-            .sum()
+    pub fn copy_data(&self, flags: VertexAttribute, data: &mut Vec<u8>) {
+        let data_start = data.len();
+
+        let offsets = flags.attribute_offsets(AlignMode::Compact);
+
+        for (flag, offset) in &offsets {
+            let delta = data.len() - data_start;
+            tracing::debug!(target: logger::INIT, "attr={:?}, offset={}, len={}", flag, offset, delta);
+            Self::pad(data, offset - delta);
+
+            self.get_bytes(*flag, data);
+        }
+    }
+
+    fn pad(data: &mut Vec<u8>, len: usize) {
+        for _ in 0..len {
+            data.push(0_u8);
+        }
     }
 }
 
@@ -218,7 +151,7 @@ impl Add<VertexData> for VertexData {
 
     fn add(self, rhs: VertexData) -> Self::Output {
         VertexData {
-            padding: self.padding,
+            layout: self.layout,
             position: self.position + rhs.position,
             color: self.color + rhs.color,
             texture: self.texture + rhs.texture,
@@ -235,7 +168,7 @@ impl Mul<f32> for VertexData {
 
     fn mul(self, rhs: f32) -> Self::Output {
         VertexData {
-            padding: self.padding,
+            layout: self.layout,
             position: self.position * rhs,
             color: self.color * rhs,
             texture: self.texture * rhs,
@@ -248,7 +181,7 @@ impl Mul<f32> for VertexData {
 }
 
 pub struct VertexDataBuilder {
-    pub padding: Option<bool>,
+    pub layout: AlignMode,
     pub position: Option<Vec3>,
     pub color: Option<Color>,
     pub texture: Option<Vec2>,
@@ -261,7 +194,7 @@ pub struct VertexDataBuilder {
 impl VertexDataBuilder {
     fn new() -> Self {
         VertexDataBuilder {
-            padding: None,
+            layout: AlignMode::Compact,
             position: None,
             color: None,
             texture: None,
@@ -272,8 +205,8 @@ impl VertexDataBuilder {
         }
     }
 
-    pub fn padding(mut self, padding: bool) -> Self {
-        self.padding = Some(padding);
+    pub fn layout(mut self, layout: AlignMode) -> Self {
+        self.layout = layout;
 
         self
     }
@@ -322,7 +255,7 @@ impl VertexDataBuilder {
 
     pub fn build(self) -> VertexData {
         VertexData {
-            padding: self.padding.expect("Missing padding"),
+            layout: self.layout,
             position: self.position.unwrap_or(Vec3::splat(0.)),
             color: self.color.unwrap_or(Color::WHITE),
             texture: self.texture.unwrap_or(Vec2::splat(0.)),
@@ -342,12 +275,13 @@ impl Default for VertexDataBuilder {
 
 #[cfg(test)]
 mod tests {
-    use std::panic::{self, AssertUnwindSafe};
-
     use tracing::Level;
     use tracing_subscriber::{FmtSubscriber, fmt::format::FmtSpan};
 
-    use crate::VertexAttribute;
+    use crate::{
+        VertexAttribute,
+        data::{AlignMode, Attribute},
+    };
 
     fn setup() {
         let sub = FmtSubscriber::builder()
@@ -362,19 +296,15 @@ mod tests {
         setup();
 
         let vertex_attributes = VertexAttribute::POSITION;
+        let offsets = Attribute::offsets(&vertex_attributes.attributes(), AlignMode::Compact);
         assert_eq!(vertex_attributes.size(), 12);
-        assert_eq!(vertex_attributes.alignment(), 16);
-        assert_eq!(vertex_attributes.offset_of(VertexAttribute::POSITION), 0);
-        let result = panic::catch_unwind(AssertUnwindSafe(|| {
-            vertex_attributes.offset_of(VertexAttribute::COLOR);
-        }));
-        assert!(result.is_err());
+        assert_eq!(offsets[0], 0);
 
         let vertex_attributes = VertexAttribute::POSITION | VertexAttribute::COLOR;
+        let offsets = Attribute::offsets(&vertex_attributes.attributes(), AlignMode::Compact);
         assert_eq!(vertex_attributes.size(), 28);
-        assert_eq!(vertex_attributes.alignment(), 16);
-        assert_eq!(vertex_attributes.offset_of(VertexAttribute::POSITION), 0);
-        assert_eq!(vertex_attributes.offset_of(VertexAttribute::COLOR), 12);
+        assert_eq!(offsets[0], 0);
+        assert_eq!(offsets[1], 12);
 
         let vertex_attributes = VertexAttribute::POSITION
             | VertexAttribute::COLOR
@@ -382,16 +312,16 @@ mod tests {
             | VertexAttribute::NORMAL
             | VertexAttribute::TANGENT
             | VertexAttribute::BITANGENT;
+        let _offsets = Attribute::offsets(&vertex_attributes.attributes(), AlignMode::Compact);
         assert_eq!(vertex_attributes.size(), 72);
-        assert_eq!(vertex_attributes.alignment(), 16);
 
         let vertex_attributes = VertexAttribute::TEXTURE | VertexAttribute::NORMAL_TEXTURE;
+        let _offsets = Attribute::offsets(&vertex_attributes.attributes(), AlignMode::Compact);
         assert_eq!(vertex_attributes.size(), 16);
-        assert_eq!(vertex_attributes.alignment(), 8);
 
         let vertex_attributes =
             VertexAttribute::NORMAL | VertexAttribute::TANGENT | VertexAttribute::BITANGENT;
+        let _offsets = Attribute::offsets(&vertex_attributes.attributes(), AlignMode::Compact);
         assert_eq!(vertex_attributes.size(), 36);
-        assert_eq!(vertex_attributes.alignment(), 16);
     }
 }

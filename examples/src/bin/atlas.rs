@@ -161,7 +161,6 @@ impl App {
                     examples::ATLAS_ROWS,
                     &[3, 3, 3, 3, 4, 1],
                     1.,
-                    ctx.renderer.gfx.vertex_padding,
                 ),
                 Some(material_instance),
                 ctx.renderer.gfx.world_vertex_attributes,

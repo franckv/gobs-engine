@@ -158,7 +158,7 @@ impl App {
 
         let cube = Model::builder("cube")
             .mesh(
-                Shapes::cubemap(1, 1, &[1], 1., ctx.renderer.gfx.vertex_padding),
+                Shapes::cubemap(1, 1, &[1], 1.),
                 Some(material_instance),
                 vertex_attributes,
                 // ctx.renderer.gfx.world_vertex_attributes,

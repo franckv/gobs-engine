@@ -156,13 +156,7 @@ impl App {
 
         let wall = Model::builder("wall")
             .mesh(
-                Shapes::cubemap(
-                    examples::ATLAS_COLS,
-                    examples::ATLAS_ROWS,
-                    &[2],
-                    1.,
-                    ctx.renderer.gfx.vertex_padding,
-                ),
+                Shapes::cubemap(examples::ATLAS_COLS, examples::ATLAS_ROWS, &[2], 1.),
                 Some(material_instance),
                 ctx.renderer.gfx.world_vertex_attributes,
                 &mut ctx.resource_manager,
@@ -177,7 +171,6 @@ impl App {
                     examples::ATLAS_ROWS,
                     &[3, 3, 3, 3, 4, 1],
                     1.,
-                    ctx.renderer.gfx.vertex_padding,
                 ),
                 Some(material_instance),
                 ctx.renderer.gfx.world_vertex_attributes,

@@ -1,12 +1,14 @@
 use std::any::Any;
 use std::sync::Arc;
 
+use indexmap::IndexMap;
+
 use gobs_core::{ImageFormat, logger};
 use gobs_resource::load;
 use gobs_vulkan as vk;
-use indexmap::IndexMap;
 
 use crate::BindingGroupType;
+use crate::data::AlignMode;
 use crate::{
     Handle, ObjectDataLayout, RenderHAL, UniformData, VertexAttribute,
     backend::{VulkanHAL, VulkanHALExt, vulkan::bindings::vk_layout},
@@ -170,8 +172,10 @@ impl GraphicsPipelineBuilder for VkGraphicsPipelineBuilder {
         );
 
         for bit in self.vertex_attributes {
-            vertex_layout =
-                vertex_layout.attribute(bit.into(), self.vertex_attributes.offset_of(bit));
+            vertex_layout = vertex_layout.attribute(
+                bit.into(),
+                self.vertex_attributes.offset_of(bit, AlignMode::Compact),
+            );
         }
 
         self.builder = self.builder.vertex_layout(&vertex_layout.build());
