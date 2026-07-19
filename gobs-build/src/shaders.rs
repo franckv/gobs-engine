@@ -74,6 +74,7 @@ pub fn compile_glsl_shaders(path_in: &str, path_out: &str, asm_out: &str) -> Res
 
 pub fn compile_slang_shaders(
     path_in: &str,
+    include_dir: &str,
     path_out: &str,
     asm_out: &str,
 ) -> Result<(), io::Error> {
@@ -107,48 +108,53 @@ pub fn compile_slang_shaders(
 
         #[cfg(target_os = "windows")]
         {
+            let cmd =
+                &format!("slangc.exe {file_name} -I {include_dir} -target spirv -o {spv_out}");
             let output = Command::new("cmd")
                 .arg("/C")
-                .arg(format!("slangc.exe {file_name} -target spirv -o {spv_out}"))
+                .arg(cmd)
                 .output()
                 .expect("Error compiling shader");
 
             if !output.status.success() {
-                panic!("Compile status={output:?}");
+                panic!("Compile status={output:?}, cmd={cmd}");
             }
 
+            let cmd =
+                &format!("slangc.exe {file_name} -I {include_dir} -target spirv-asm -o {asm_out}");
             let output = Command::new("cmd")
                 .arg("/C")
-                .arg(format!(
-                    "slangc.exe {file_name} -target spirv-asm -o {asm_out}"
-                ))
+                .arg(cmd)
                 .output()
                 .expect("Error disassembling shader");
 
             if !output.status.success() {
-                panic!("Disassemble status={output:?}");
+                panic!("Disassemble status={output:?}, cmd={cmd}");
             }
         }
         #[cfg(target_os = "linux")]
         {
+            let cmd = &format!("slangc {file_name} -I {include_dir} -target spirv -o {spv_out}");
             let output = Command::new("sh")
                 .arg("-c")
-                .arg(format!("slangc {file_name} -target spirv -o {spv_out}"))
+                .arg(cmd)
                 .output()
                 .expect("Error compiling shader");
 
             if !output.status.success() {
-                panic!("Compile status={output:?}");
+                panic!("Compile status={output:?}, cmd={cmd}");
             }
 
+            let cmd =
+                &format!("slangc {file_name} -I {include_dir} -target spirv-asm -o {asm_out}");
             let output = Command::new("sh")
                 .arg("-c")
-                .arg(format!("slangc {file_name} -target spirv-asm -o {asm_out}"))
+                .arg(cmd)
                 .output()
                 .expect("Error disassembling shader");
 
             if !output.status.success() {
-                panic!("Disassemble status={output:?}");
+                panic!("Disassemble status={output:?}, cmd={cmd}");
             }
         }
     }

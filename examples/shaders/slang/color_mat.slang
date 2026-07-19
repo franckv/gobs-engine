@@ -1,3 +1,5 @@
+import vertex_layout;
+
 struct SceneData {
     float3 camera_position;
 	float4x4 view_proj;
@@ -14,16 +16,6 @@ struct Material {
 }
 [[vk::binding(0, 1)]]
 ConstantBuffer<Material> material;
-
-// alignment 16
-struct Vertex {
-    float3 position;
-    float4 color;
-    float2 uv;
-    float3 normal;
-    float3 tangent;
-    float3 bitangent;
-}
 
 struct PushConstants {
     float4x4 world_matrix;
