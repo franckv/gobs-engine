@@ -33,6 +33,10 @@ pub trait GraphicsPipelineBuilder {
         self: Box<Self>,
         vertex_attributes: VertexAttribute,
     ) -> Box<dyn GraphicsPipelineBuilder>;
+    fn vertex_binding(
+        self: Box<Self>,
+        vertex_attributes: VertexAttribute,
+    ) -> Box<dyn GraphicsPipelineBuilder>;
     fn binding_group(
         self: Box<Self>,
         binding_group_layout: BindingGroupLayout,

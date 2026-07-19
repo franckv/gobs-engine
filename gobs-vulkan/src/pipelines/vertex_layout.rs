@@ -122,12 +122,12 @@ impl VertexLayoutBuilder {
         }
     }
 
-    pub fn binding<T>(mut self, ty: VertexLayoutBindingType) -> Self {
+    pub fn binding(mut self, ty: VertexLayoutBindingType, stride: usize) -> Self {
         self.bindings.push(VertexLayoutBinding {
             ty,
             binding: self.index,
             attributes: Vec::new(),
-            stride: mem::size_of::<T>(),
+            stride,
         });
 
         self.index += 1;

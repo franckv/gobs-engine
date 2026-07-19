@@ -278,7 +278,7 @@ impl CommandBuffer {
         }
     }
 
-    pub fn bind_vertex_buffer<T: Copy>(&mut self, binding: usize, buffer: &Buffer, offset: u64) {
+    pub fn bind_vertex_buffer(&mut self, binding: usize, buffer: &Buffer, offset: u64) {
         let bindings = [buffer.raw()];
         let offsets = [offset];
 

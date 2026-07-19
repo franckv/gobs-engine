@@ -2,9 +2,10 @@ use std::ops::{Add, Mul};
 
 use bitflags::bitflags;
 use glam::{Vec2, Vec3};
+use serde::{Deserialize, Serialize};
 
 use gobs_core::{Color, Transform};
-use serde::{Deserialize, Serialize};
+use gobs_vulkan::pipelines::VertexAttributeFormat;
 
 const POS_SIZE: usize = 12;
 const COLOR_SIZE: usize = 16;
@@ -14,16 +15,19 @@ const NORMAL_TEX_SIZE: usize = 8;
 const TANGENT_SIZE: usize = 12;
 const BITANGENT_SIZE: usize = 12;
 
-const POS_ALIGN: usize = 16;
-const COLOR_ALIGN: usize = 16;
-const TEX_ALIGN: usize = 8;
-const NORMAL_ALIGN: usize = 16;
-const NORMAL_TEX_ALIGN: usize = 8;
-const TANGENT_ALIGN: usize = 16;
-const BITANGENT_ALIGN: usize = 16;
+struct VertexInfo {
+    size: usize,
+    align: usize,
+}
+
+impl VertexInfo {
+    fn new(size: usize, align: usize) -> Self {
+        Self { size, align }
+    }
+}
 
 bitflags! {
-    #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash)]
+    #[derive(Debug, Clone, Copy, Default, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash)]
     #[serde(transparent)]
     pub struct VertexAttribute: u32 {
         const POSITION = 1;
@@ -37,19 +41,23 @@ bitflags! {
 }
 
 impl VertexAttribute {
+    fn info(attr: VertexAttribute) -> VertexInfo {
+        match attr {
+            VertexAttribute::POSITION => VertexInfo::new(12, 16),
+            VertexAttribute::COLOR => VertexInfo::new(16, 16),
+            VertexAttribute::TEXTURE => VertexInfo::new(8, 8),
+            VertexAttribute::NORMAL => VertexInfo::new(12, 16),
+            VertexAttribute::NORMAL_TEXTURE => VertexInfo::new(8, 8),
+            VertexAttribute::TANGENT => VertexInfo::new(12, 16),
+            VertexAttribute::BITANGENT => VertexInfo::new(12, 16),
+            _ => unimplemented!(),
+        }
+    }
+
     pub fn alignment(&self) -> usize {
         let mut align = 0;
         for bit in self.iter() {
-            let bit_align = match bit {
-                VertexAttribute::POSITION => POS_ALIGN,
-                VertexAttribute::COLOR => COLOR_ALIGN,
-                VertexAttribute::TEXTURE => TEX_ALIGN,
-                VertexAttribute::NORMAL => NORMAL_ALIGN,
-                VertexAttribute::NORMAL_TEXTURE => NORMAL_TEX_ALIGN,
-                VertexAttribute::TANGENT => TANGENT_ALIGN,
-                VertexAttribute::BITANGENT => BITANGENT_ALIGN,
-                _ => 0,
-            };
+            let bit_align = Self::info(bit).align;
 
             if bit_align > align {
                 align = bit_align;
@@ -62,27 +70,51 @@ impl VertexAttribute {
     pub fn size(&self) -> usize {
         let mut size = 0;
         for bit in self.iter() {
-            let bit_align = match bit {
-                VertexAttribute::POSITION => POS_SIZE,
-                VertexAttribute::COLOR => COLOR_SIZE,
-                VertexAttribute::TEXTURE => TEX_SIZE,
-                VertexAttribute::NORMAL => NORMAL_SIZE,
-                VertexAttribute::NORMAL_TEXTURE => NORMAL_TEX_SIZE,
-                VertexAttribute::TANGENT => TANGENT_SIZE,
-                VertexAttribute::BITANGENT => BITANGENT_SIZE,
-                _ => 0,
-            };
+            let bit_size = Self::info(bit).size;
 
-            size += bit_align;
+            size += bit_size;
         }
 
         size
+    }
+
+    pub fn offset_of(&self, bit: VertexAttribute) -> usize {
+        if !self.contains(bit) {
+            panic!("offset_of: {:?} is not in {:?}", bit, self);
+        }
+
+        let mut offset = 0;
+        for other in self.iter() {
+            if bit == other {
+                break;
+            }
+            let bit_size = Self::info(other).size;
+
+            offset += bit_size;
+        }
+
+        offset
+    }
+}
+
+impl From<VertexAttribute> for VertexAttributeFormat {
+    fn from(value: VertexAttribute) -> Self {
+        match value {
+            VertexAttribute::POSITION => VertexAttributeFormat::Vec3,
+            VertexAttribute::COLOR => VertexAttributeFormat::Vec4,
+            VertexAttribute::TEXTURE => VertexAttributeFormat::Vec2,
+            VertexAttribute::NORMAL => VertexAttributeFormat::Vec3,
+            VertexAttribute::NORMAL_TEXTURE => VertexAttributeFormat::Vec2,
+            VertexAttribute::TANGENT => VertexAttributeFormat::Vec3,
+            VertexAttribute::BITANGENT => VertexAttributeFormat::Vec3,
+            _ => unimplemented!(),
+        }
     }
 }
 
 #[derive(Clone, Copy, Debug, Serialize)]
 pub struct VertexData {
-    pub padding: bool, // false for vertex buffer, true for storage buffer
+    pub padding: bool, // false = compact (scalar), true = aligned ()
     pub position: Vec3,
     pub color: Color,
     pub texture: Vec2,
@@ -305,5 +337,61 @@ impl VertexDataBuilder {
 impl Default for VertexDataBuilder {
     fn default() -> Self {
         Self::new()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::panic::{self, AssertUnwindSafe};
+
+    use tracing::Level;
+    use tracing_subscriber::{FmtSubscriber, fmt::format::FmtSpan};
+
+    use crate::VertexAttribute;
+
+    fn setup() {
+        let sub = FmtSubscriber::builder()
+            .with_max_level(Level::INFO)
+            .with_span_events(FmtSpan::CLOSE)
+            .finish();
+        tracing::subscriber::set_global_default(sub).unwrap_or_default();
+    }
+
+    #[test]
+    fn test_vertex_align() {
+        setup();
+
+        let vertex_attributes = VertexAttribute::POSITION;
+        assert_eq!(vertex_attributes.size(), 12);
+        assert_eq!(vertex_attributes.alignment(), 16);
+        assert_eq!(vertex_attributes.offset_of(VertexAttribute::POSITION), 0);
+        let result = panic::catch_unwind(AssertUnwindSafe(|| {
+            vertex_attributes.offset_of(VertexAttribute::COLOR);
+        }));
+        assert!(result.is_err());
+
+        let vertex_attributes = VertexAttribute::POSITION | VertexAttribute::COLOR;
+        assert_eq!(vertex_attributes.size(), 28);
+        assert_eq!(vertex_attributes.alignment(), 16);
+        assert_eq!(vertex_attributes.offset_of(VertexAttribute::POSITION), 0);
+        assert_eq!(vertex_attributes.offset_of(VertexAttribute::COLOR), 12);
+
+        let vertex_attributes = VertexAttribute::POSITION
+            | VertexAttribute::COLOR
+            | VertexAttribute::TEXTURE
+            | VertexAttribute::NORMAL
+            | VertexAttribute::TANGENT
+            | VertexAttribute::BITANGENT;
+        assert_eq!(vertex_attributes.size(), 72);
+        assert_eq!(vertex_attributes.alignment(), 16);
+
+        let vertex_attributes = VertexAttribute::TEXTURE | VertexAttribute::NORMAL_TEXTURE;
+        assert_eq!(vertex_attributes.size(), 16);
+        assert_eq!(vertex_attributes.alignment(), 8);
+
+        let vertex_attributes =
+            VertexAttribute::NORMAL | VertexAttribute::TANGENT | VertexAttribute::BITANGENT;
+        assert_eq!(vertex_attributes.size(), 36);
+        assert_eq!(vertex_attributes.alignment(), 16);
     }
 }

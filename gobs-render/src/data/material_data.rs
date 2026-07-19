@@ -73,8 +73,6 @@ impl UniformData<MaterialDataProp> for MaterialDataLayout {
 
         for prop in &self.layout {
             props.push(get_data(prop));
-            /*
-             */
         }
 
         layout.copy_data(&props, buffer)

@@ -159,6 +159,26 @@ impl GraphicsPipelineBuilder for VkGraphicsPipelineBuilder {
         self
     }
 
+    fn vertex_binding(
+        mut self: Box<Self>,
+        vertex_attributes: VertexAttribute,
+    ) -> Box<dyn GraphicsPipelineBuilder> {
+        let mut vertex_layout = vk::pipelines::VertexLayout::builder();
+        vertex_layout = vertex_layout.binding(
+            vk::pipelines::VertexLayoutBindingType::Vertex,
+            vertex_attributes.size(),
+        );
+
+        for bit in self.vertex_attributes {
+            vertex_layout =
+                vertex_layout.attribute(bit.into(), self.vertex_attributes.offset_of(bit));
+        }
+
+        self.builder = self.builder.vertex_layout(&vertex_layout.build());
+
+        self
+    }
+
     fn binding_group(
         mut self: Box<Self>,
         layout: BindingGroupLayout,

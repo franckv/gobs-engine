@@ -17,6 +17,7 @@ pub struct VkCommandBuffer {
     pub(crate) command: vk::CommandBuffer,
     pub frame_number: usize,
     pub fence: vk::sync::Fence,
+    vertex_buffer_slot: usize,
 }
 
 impl VkCommandBuffer {
@@ -29,6 +30,7 @@ impl VkCommandBuffer {
             command,
             frame_number: 0,
             fence: vk::sync::Fence::new(device.clone(), true, "Command buffer"),
+            vertex_buffer_slot: 0,
         }
     }
 }
@@ -160,6 +162,19 @@ impl CommandBuffer for VkCommandBuffer {
         self.command.bind_pipeline(pipeline);
     }
 
+    fn bind_vertex_buffer(&mut self, hal: &dyn RenderHAL, buffer: Handle) {
+        let hal = hal.get();
+
+        let vertex_view = hal.registry.buffers.get(buffer).unwrap();
+        self.command.bind_vertex_buffer(
+            self.vertex_buffer_slot,
+            &vertex_view.buffer,
+            vertex_view.offset,
+        );
+
+        self.vertex_buffer_slot += 1;
+    }
+
     fn bind_index_buffer(&mut self, hal: &dyn RenderHAL, buffer: Handle) {
         let hal = hal.get();
 
@@ -225,6 +240,7 @@ impl CommandBuffer for VkCommandBuffer {
             tracing::warn!(target: logger::SYNC, "Fence unsignaled");
         }
         self.command.reset();
+        self.vertex_buffer_slot = 0;
     }
 
     fn run_immediate(&mut self, label: &str, callback: &dyn Fn(&dyn CommandBuffer)) {

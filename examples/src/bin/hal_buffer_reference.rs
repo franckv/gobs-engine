@@ -4,7 +4,7 @@ use gobs::{
     render::{
         BufferType, CommandBuffer, CommandQueueType, CullMode, DynamicStateElem, FrontFace, Handle,
         ImageLayout, ObjectDataLayout, ObjectDataProp, Rect2D, RenderError, RenderHAL, Shapes,
-        UniformData, VertexAttribute, Viewport,
+        UniformData, UniformPropData, VertexAttribute, Viewport,
     },
 };
 
@@ -69,8 +69,19 @@ impl GobsGame for App {
 
         self.cmd.set_viewport(extent.width, extent.height);
         self.cmd.bind_pipeline(hal, self.pipeline);
-        self.cmd.bind_vertex_buffer(hal, self.vertex_buffer);
         self.cmd.bind_index_buffer(hal, self.index_buffer);
+
+        let mut constants = vec![];
+        let object_layout = hal.get_pipeline_object_layout(self.pipeline);
+        object_layout.copy_data(&mut constants, |p| match p {
+            ObjectDataProp::VertexBufferAddress => {
+                let vertex_buffer_address = hal.get_buffer_address(self.vertex_buffer);
+                UniformPropData::U64(vertex_buffer_address)
+            }
+            _ => unreachable!(),
+        });
+
+        self.cmd.push_constants(hal, self.pipeline, &constants);
 
         self.cmd.draw_indexed(3, 1);
 
@@ -154,8 +165,8 @@ impl App {
 
     fn create_pipeline(hal: &mut dyn RenderHAL) -> Handle {
         hal.create_graphics_pipeline("color")
-            .vertex_shader("color_direct.spv", "vertex_main")
-            .fragment_shader("color_direct.spv", "fragment_main")
+            .vertex_shader("color_buffer_reference.spv", "vertex_main")
+            .fragment_shader("color_buffer_reference.spv", "fragment_main")
             .push_constants(ObjectDataLayout::default().prop(ObjectDataProp::VertexBufferAddress))
             .attachments(Some(ImageFormat::B8g8r8a8Unorm), None)
             .depth_test_disable()
@@ -164,8 +175,6 @@ impl App {
             .dynamic_states(&[DynamicStateElem::Viewport, DynamicStateElem::Scissor])
             .front_face(FrontFace::CCW)
             .cull_mode(CullMode::Back)
-            .vertex_attributes(VertexAttribute::POSITION | VertexAttribute::COLOR)
-            .vertex_binding(VertexAttribute::POSITION | VertexAttribute::COLOR)
             .build(hal)
     }
 }
