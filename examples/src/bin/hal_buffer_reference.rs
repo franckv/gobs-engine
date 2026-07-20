@@ -4,7 +4,7 @@ use gobs::{
     render::{
         BufferType, CommandBuffer, CommandQueueType, CullMode, DynamicStateElem, FrontFace, Handle,
         ImageLayout, ObjectDataLayout, ObjectDataProp, Rect2D, RenderError, RenderHAL, Shapes,
-        UniformData, UniformPropData, VertexAttribute, Viewport,
+        UniformData, UniformPropData, VertexAttribute, VertexData, Viewport,
     },
 };
 
@@ -128,9 +128,7 @@ impl App {
 
         let mut vertices = vec![];
 
-        for vertex in &mesh.vertices {
-            vertex.copy_data(vertex_attributes, &mut vertices);
-        }
+        VertexData::copy_data(&mesh.vertices, vertex_attributes, &mut vertices);
 
         let indices = &mesh.indices;
 

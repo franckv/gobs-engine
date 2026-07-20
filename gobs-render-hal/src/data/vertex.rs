@@ -4,7 +4,7 @@ use bitflags::bitflags;
 use glam::{Vec2, Vec3};
 use serde::{Deserialize, Serialize};
 
-use gobs_core::{Color, Transform, logger};
+use gobs_core::{Color, Transform};
 use gobs_vulkan::pipelines::VertexAttributeFormat;
 
 use crate::data::{AlignMode, Attribute};
@@ -125,17 +125,17 @@ impl VertexData {
         }
     }
 
-    pub fn copy_data(&self, flags: VertexAttribute, data: &mut Vec<u8>) {
-        let data_start = data.len();
-
+    pub fn copy_data(vertices: &[VertexData], flags: VertexAttribute, data: &mut Vec<u8>) {
         let offsets = flags.attribute_offsets(AlignMode::Compact);
 
-        for (flag, offset) in &offsets {
-            let delta = data.len() - data_start;
-            tracing::debug!(target: logger::INIT, "attr={:?}, offset={}, len={}", flag, offset, delta);
-            Self::pad(data, offset - delta);
+        for vertex in vertices {
+            let data_start = data.len();
+            for (flag, offset) in &offsets {
+                let delta = data.len() - data_start;
+                Self::pad(data, offset - delta);
 
-            self.get_bytes(*flag, data);
+                vertex.get_bytes(*flag, data);
+            }
         }
     }
 

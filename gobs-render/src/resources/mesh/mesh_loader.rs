@@ -1,6 +1,8 @@
 use gobs_core::logger;
 use gobs_render_graph::GfxContext;
-use gobs_render_hal::{BufferType, CommandBuffer, CommandQueueType, RenderHAL, VertexAttribute};
+use gobs_render_hal::{
+    BufferType, CommandBuffer, CommandQueueType, RenderHAL, VertexAttribute, VertexData,
+};
 use gobs_resource::{
     ResourceRegistry, {Resource, ResourceError, ResourceHandle, ResourceLoader, ResourceProperties},
 };
@@ -32,10 +34,7 @@ impl MeshLoader {
         tracing::debug!(target: logger::INIT, "Loading geometry for {} with layout {:?}", &geometry.name, vertex_attributes);
         let mut vertices = Vec::new();
 
-        // TODO: hot path
-        for vertice in &geometry.vertices {
-            vertice.copy_data(vertex_attributes, &mut vertices);
-        }
+        VertexData::copy_data(&geometry.vertices, vertex_attributes, &mut vertices);
 
         let indices = &geometry.indices;
 
