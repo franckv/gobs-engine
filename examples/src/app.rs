@@ -127,7 +127,7 @@ impl SampleApp {
 
         batch.finish(&mut ctx.renderer.gfx, resource_manager);
 
-        ctx.renderer.submit(&mut batch)?;
+        ctx.renderer.submit(&mut batch, resource_manager)?;
 
         tracing::trace!(target: logger::APP, "End render");
 

@@ -219,4 +219,8 @@ impl ResourceLoader<Texture> for TextureLoader {
     fn unload(&mut self, _resource: Resource<Texture>) {
         // drop resource
     }
+
+    fn flush(&mut self) {
+        self.buffer_pool.recycle_all();
+    }
 }

@@ -43,6 +43,7 @@ pub struct BufferPool {
     buffer_pool: Allocator<BufferType, Buffer>,
 }
 
+#[allow(unused)]
 impl BufferPool {
     pub fn new() -> Self {
         Self {
@@ -68,5 +69,9 @@ impl BufferPool {
 
     pub fn recycle(&mut self, id: &Uuid) {
         self.buffer_pool.recycle(id);
+    }
+
+    pub fn recycle_all(&mut self) {
+        self.buffer_pool.recycle_all();
     }
 }

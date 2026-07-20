@@ -184,7 +184,7 @@ impl ResourceManager {
 
     #[tracing::instrument(target = "profile", skip_all, level = "trace")]
     pub fn update<R: ResourceType + 'static>(&mut self) {
-        tracing::trace!(target: logger::RESOURCES, "Update registry");
+        tracing::trace!(target: logger::RESOURCES, "Update registry for {:?}", std::any::type_name::<R>());
 
         let mut to_delete = vec![];
 
@@ -206,6 +206,18 @@ impl ResourceManager {
                 loader.unload(resource);
             }
         }
+    }
+
+    #[tracing::instrument(target = "profile", skip_all, level = "trace")]
+    pub fn flush<R: ResourceType + 'static>(&mut self) {
+        tracing::trace!(target: logger::RESOURCES, "Flush loader {:?}", std::any::type_name::<R>());
+
+        let loader = self
+            .loader
+            .get_mut::<R::ResourceLoader>()
+            .unwrap_or_else(|| panic!("Loader not registered: {:?}", std::any::type_name::<R>()));
+
+        loader.flush();
     }
 
     pub fn register_resource<R: ResourceType + 'static>(&mut self, loader: R::ResourceLoader) {
@@ -336,6 +348,8 @@ mod tests {
         }
 
         fn unload(&mut self, _resource: crate::resource::Resource<Dummy>) {}
+
+        fn flush(&mut self) {}
     }
 
     fn setup() {

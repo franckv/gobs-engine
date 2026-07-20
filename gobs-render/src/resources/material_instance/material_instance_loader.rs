@@ -56,6 +56,8 @@ impl ResourceLoader<MaterialInstance> for MaterialInstanceLoader {
     }
 
     fn unload(&mut self, _resource: Resource<MaterialInstance>) {}
+
+    fn flush(&mut self) {}
 }
 
 impl MaterialInstanceLoader {

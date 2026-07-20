@@ -46,8 +46,6 @@ impl MeshLoader {
             .buffer_pool
             .allocate(hal, "staging", staging_size, BufferType::Staging);
 
-        let staging_id = staging.id;
-
         let vertex_view = hal.create_buffer("vertex", vertices_size, BufferType::Vertex);
         let index_view = hal.create_buffer("index", indices_size, BufferType::Index);
 
@@ -69,9 +67,6 @@ impl MeshLoader {
                 0,
             );
         });
-
-        self.buffer_pool.recycle(&staging_id);
-        assert!(self.buffer_pool.is_empty());
 
         MeshData {
             ty: MeshPrimitiveType::Triangle,
@@ -109,5 +104,9 @@ impl ResourceLoader<Mesh> for MeshLoader {
 
     fn unload(&mut self, _resource: Resource<Mesh>) {
         // drop resource
+    }
+
+    fn flush(&mut self) {
+        self.buffer_pool.recycle_all();
     }
 }

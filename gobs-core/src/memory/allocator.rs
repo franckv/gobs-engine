@@ -126,12 +126,17 @@ impl<F: ResourceFamily, A: AllocableInfo<F>> Allocator<F, A> {
             .ok_or(AllocationError::AllocationFailure)
     }
 
-    #[tracing::instrument(target = "profile", skip_all, level = "trace")]
     pub fn recycle(&mut self, id: &Uuid) {
         let resource = self.allocated.remove(id);
         if let Some(resource) = resource {
             self.pool.insert(resource.allocable.family(), resource);
         }
+    }
+
+    pub fn recycle_all(&mut self) {
+        self.allocated.drain().for_each(|(_, resource)| {
+            self.pool.insert(resource.allocable.family(), resource);
+        });
     }
 
     pub fn is_empty(&self) -> bool {

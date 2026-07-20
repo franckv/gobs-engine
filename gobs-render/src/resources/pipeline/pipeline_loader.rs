@@ -117,4 +117,6 @@ impl ResourceLoader<Pipeline> for PipelineLoader {
     }
 
     fn unload(&mut self, _resource: Resource<Pipeline>) {}
+
+    fn flush(&mut self) {}
 }
