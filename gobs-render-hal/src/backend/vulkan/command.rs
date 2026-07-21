@@ -273,7 +273,11 @@ impl CommandBuffer for VkCommandBuffer {
         self.command.set_viewport(width, height);
     }
 
-    fn submit2(&self, hal: &dyn RenderHAL, frame: usize) {
+    fn submit_transfer(&mut self) {
+        self.command.submit2(None, None, &self.fence);
+    }
+
+    fn submit_graphics(&self, hal: &dyn RenderHAL, frame: usize) {
         let hal = hal.get();
 
         let swapchain_idx = hal.display.swapchain_idx;

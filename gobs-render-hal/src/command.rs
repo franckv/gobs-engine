@@ -50,7 +50,8 @@ pub trait CommandBuffer {
     fn run_immediate(&mut self, label: &str, callback: &dyn Fn(&dyn CommandBuffer));
     fn run_immediate_mut(&mut self, label: &str, callback: &mut dyn FnMut(&mut dyn CommandBuffer));
     fn set_viewport(&mut self, width: u32, height: u32);
-    fn submit2(&self, hal: &dyn RenderHAL, frame: usize);
+    fn submit_transfer(&mut self);
+    fn submit_graphics(&self, hal: &dyn RenderHAL, frame: usize);
     fn transition_image_layout(
         &mut self,
         hal: &mut dyn RenderHAL,

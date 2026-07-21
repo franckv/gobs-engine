@@ -2,7 +2,7 @@ use gobs_core::{ImageExtent2D, logger};
 use gobs_render_graph::{FrameData, FrameGraph, GfxContext, RenderError};
 use gobs_resource::ResourceManager;
 
-use crate::{Material, MaterialInstance, Mesh, Pipeline, PipelinesConfig, RenderBatch, Texture};
+use crate::{Pipeline, PipelinesConfig, RenderBatch};
 
 #[derive(Debug)]
 pub struct RendererOptions {
@@ -94,41 +94,8 @@ impl Renderer {
     }
 
     #[tracing::instrument(target = "profile", skip_all, level = "trace")]
-    pub fn prepare(
-        &mut self,
-        resource_manager: &mut ResourceManager,
-        draw_cmd: &mut dyn FnMut(
-            &mut GfxContext,
-            &mut RenderBatch,
-            &mut ResourceManager,
-        ) -> Result<(), RenderError>,
-    ) -> Result<RenderBatch, RenderError> {
-        tracing::debug!(target: logger::RENDER, "Prepare render batch");
-
-        let mut batch = RenderBatch::new();
-
-        draw_cmd(&mut self.gfx, &mut batch, resource_manager)?;
-
-        batch.finish(&mut self.gfx, resource_manager);
-
-        Ok(batch)
-    }
-
-    #[tracing::instrument(target = "profile", skip_all, level = "trace")]
-    pub fn submit(
-        &mut self,
-        batch: &mut RenderBatch,
-        resource_manager: &mut ResourceManager,
-    ) -> Result<(), RenderError> {
+    pub fn submit(&mut self, batch: &mut RenderBatch) -> Result<(), RenderError> {
         assert!(!batch.recording, "Batch recording not finished");
-
-        tracing::debug!(target: logger::RENDER, "Flush resource loaders");
-
-        resource_manager.update::<Texture>();
-        resource_manager.update::<Mesh>();
-        resource_manager.update::<Pipeline>();
-        resource_manager.update::<Material>();
-        resource_manager.update::<MaterialInstance>();
 
         tracing::debug!(target: logger::RENDER, "Submit render batch");
 

@@ -86,7 +86,7 @@ impl GobsGame for App {
         self.cmd.end_label();
         self.cmd.end();
 
-        self.cmd.submit2(hal, frame_id);
+        self.cmd.submit_graphics(hal, frame_id);
 
         let Ok(_) = hal.present() else {
             return Err(RenderError::Outdated);

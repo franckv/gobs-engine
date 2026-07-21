@@ -12,6 +12,7 @@ use crate::resources::{BufferPool, Mesh, MeshData, MeshGeometry, MeshPath, MeshP
 pub struct MeshLoader {
     cmd: Box<dyn CommandBuffer>,
     buffer_pool: BufferPool,
+    recording: bool,
 }
 
 impl MeshLoader {
@@ -21,7 +22,18 @@ impl MeshLoader {
                 .hal_mut()
                 .create_command_buffer("Mesh loader", CommandQueueType::Transfer),
             buffer_pool: BufferPool::new(),
+            recording: false,
         }
+    }
+
+    fn start_recording(&mut self) {
+        tracing::debug!(target: logger::RENDER, "Record mesh loading command");
+        self.recording = true;
+
+        self.cmd.reset();
+
+        self.cmd.begin(0);
+        self.cmd.begin_label("Upload buffer");
     }
 
     #[tracing::instrument(target = "profile", skip_all, level = "trace")]
@@ -42,6 +54,10 @@ impl MeshLoader {
         let indices_size = indices.len() * std::mem::size_of::<u32>();
         let staging_size = indices_size + vertices_size;
 
+        if !self.recording {
+            self.start_recording();
+        }
+
         let staging = self
             .buffer_pool
             .allocate(hal, "staging", staging_size, BufferType::Staging);
@@ -56,17 +72,16 @@ impl MeshLoader {
             vertices_size as u64,
         );
 
-        self.cmd.run_immediate_mut("Upload buffer", &mut |cmd| {
-            cmd.copy_buffer_to_buffer(hal, staging.buffer, vertex_view, vertices_size, 0, 0);
-            cmd.copy_buffer_to_buffer(
-                hal,
-                staging.buffer,
-                index_view,
-                indices_size,
-                vertices_size as u64,
-                0,
-            );
-        });
+        self.cmd
+            .copy_buffer_to_buffer(hal, staging.buffer, vertex_view, vertices_size, 0, 0);
+        self.cmd.copy_buffer_to_buffer(
+            hal,
+            staging.buffer,
+            index_view,
+            indices_size,
+            vertices_size as u64,
+            0,
+        );
 
         MeshData {
             ty: MeshPrimitiveType::Triangle,
@@ -107,6 +122,17 @@ impl ResourceLoader<Mesh> for MeshLoader {
     }
 
     fn flush(&mut self) {
-        self.buffer_pool.recycle_all();
+        if self.recording {
+            tracing::debug!(target: logger::RENDER, "Submit mesh loading command");
+            self.cmd.end_label();
+            self.cmd.end();
+            self.cmd.submit_transfer();
+
+            self.cmd.wait();
+
+            self.buffer_pool.recycle_all();
+
+            self.recording = false;
+        }
     }
 }

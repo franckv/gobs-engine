@@ -8,8 +8,8 @@ use gobs_resource::{
 };
 
 use crate::{
-    BoundingBox, MaterialInstance, MeshBuilder, MeshGeometry, PipelineProperties, Shapes,
-    model::Model,
+    BoundingBox, Material, MaterialInstance, Mesh, MeshBuilder, MeshGeometry, Pipeline,
+    PipelineProperties, Shapes, Texture, model::Model,
 };
 
 pub struct RenderBatch {
@@ -320,6 +320,13 @@ impl RenderBatch {
         self.sort();
 
         self.recording = false;
+
+        tracing::debug!(target: logger::RENDER, "Flush resource loaders");
+        resource_manager.flush::<Texture>();
+        resource_manager.flush::<Mesh>();
+        resource_manager.flush::<Pipeline>();
+        resource_manager.flush::<Material>();
+        resource_manager.flush::<MaterialInstance>();
 
         tracing::debug!(target: logger::RENDER, "<<< Finish render batch");
     }

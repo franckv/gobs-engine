@@ -181,7 +181,7 @@ impl FrameGraph {
 
         cmd.end();
 
-        cmd.submit2(ctx.hal(), frame_id);
+        cmd.submit_graphics(ctx.hal(), frame_id);
 
         let Ok(_) = ctx.hal_mut().present() else {
             tracing::debug!(target: logger::SYNC, "Exit frame: outdated");
