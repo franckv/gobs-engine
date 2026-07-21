@@ -2,8 +2,9 @@ use std::fmt::Debug;
 
 use gobs_core::ImageFormat;
 use gobs_render_hal::{
-    BindingGroupLayout, BindingGroupType, BlendMode, CompareOp, CullMode, DescriptorStage,
-    DescriptorType, FrontFace, Handle, ObjectDataLayout, PolygonMode, RenderHAL, VertexAttribute,
+    AlignMode, BindingGroupLayout, BindingGroupType, BlendMode, CompareOp, CullMode,
+    DescriptorStage, DescriptorType, FrontFace, Handle, ObjectDataLayout, PolygonMode, RenderHAL,
+    VertexAttribute,
 };
 use gobs_resource::{ResourceProperties, ResourceType};
 
@@ -81,7 +82,7 @@ impl GraphicsPipelineProperties {
             fragment_shader: None,
             binding_groups: Vec::new(),
             ds_pool_size: 10,
-            object_data_layout: ObjectDataLayout::default(),
+            object_data_layout: ObjectDataLayout::new(AlignMode::Std140),
             vertex_attributes: VertexAttribute::empty(),
             color_format: None,
             depth_format: None,

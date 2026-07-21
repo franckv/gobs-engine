@@ -1,10 +1,11 @@
 use glam::Mat3;
+use thiserror::Error;
+
 use gobs_core::logger;
 use gobs_render_hal::{
-    BindResource, BindingGroupLayout, BindingGroupType, DescriptorStage, DescriptorType, Handle,
-    ObjectDataProp, UniformBuffer, UniformData as _, UniformLayout, UniformPropData,
+    AttributeData, BindResource, BindingGroupLayout, BindingGroupType, DescriptorStage,
+    DescriptorType, Handle, ObjectDataProp, UniformBuffer, UniformData as _, UniformLayout,
 };
-use thiserror::Error;
 
 use crate::{FrameData, GfxContext, RenderFlags, RenderObject};
 
@@ -233,15 +234,15 @@ impl RenderJob {
 
         object_layout.copy_data(&mut state.object_data, |prop| match prop {
             ObjectDataProp::WorldMatrix => {
-                UniformPropData::Mat4F(render_object.transform.matrix().to_cols_array_2d())
+                AttributeData::Mat4F(render_object.transform.matrix().to_cols_array_2d())
             }
-            ObjectDataProp::NormalMatrix => UniformPropData::Mat3F(
+            ObjectDataProp::NormalMatrix => AttributeData::Mat3F(
                 Mat3::from_quat(render_object.transform.rotation()).to_cols_array_2d(),
             ),
             ObjectDataProp::VertexBufferAddress => {
                 let vertex_buffer_address =
                     ctx.hal().get_buffer_address(render_object.vertex_buffer);
-                UniformPropData::U64(vertex_buffer_address)
+                AttributeData::U64(vertex_buffer_address)
             }
         });
 

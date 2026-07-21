@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 
 use gobs_core::{ImageExtent2D, Transform};
-use gobs_render_hal::{UniformData, UniformLayout, UniformProp, UniformPropData};
+use gobs_render_hal::{AlignMode, Attribute, AttributeData, UniformData, UniformLayout};
 use gobs_resource::{camera::Camera, light::Light};
 
 #[derive(Clone, Copy, Debug, Deserialize, Serialize)]
@@ -14,42 +14,43 @@ pub enum SceneDataProp {
     LightAmbientColor,
 }
 
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug)]
 pub struct SceneDataLayout {
     layout: Vec<SceneDataProp>,
     uniform_layout: UniformLayout,
+}
+
+impl SceneDataLayout {
+    pub fn new(mode: AlignMode) -> Self {
+        Self {
+            layout: Vec::new(),
+            uniform_layout: UniformLayout::new(mode),
+        }
+    }
 }
 
 impl UniformData<SceneDataProp> for SceneDataLayout {
     fn prop(mut self, prop: SceneDataProp) -> Self {
         self.layout.push(prop);
 
-        match prop {
-            SceneDataProp::CameraPosition => {
-                self.uniform_layout = self
-                    .uniform_layout
-                    .prop("camera_position", UniformProp::Vec3F)
-            }
+        self.uniform_layout = match prop {
+            SceneDataProp::CameraPosition => self
+                .uniform_layout
+                .prop("camera_position", Attribute::Vec3F),
             SceneDataProp::CameraViewProj => {
-                self.uniform_layout = self.uniform_layout.prop("view_proj", UniformProp::Mat4F)
+                self.uniform_layout.prop("view_proj", Attribute::Mat4F)
             }
             SceneDataProp::CameraViewPort => {
-                self.uniform_layout = self.uniform_layout.prop("screen_size", UniformProp::Vec2F)
+                self.uniform_layout.prop("screen_size", Attribute::Vec2F)
             }
-            SceneDataProp::LightDirection => {
-                self.uniform_layout = self
-                    .uniform_layout
-                    .prop("light_direction", UniformProp::Vec3F)
-            }
-            SceneDataProp::LightColor => {
-                self.uniform_layout = self.uniform_layout.prop("light_color", UniformProp::Vec4F)
-            }
+            SceneDataProp::LightDirection => self
+                .uniform_layout
+                .prop("light_direction", Attribute::Vec3F),
+            SceneDataProp::LightColor => self.uniform_layout.prop("light_color", Attribute::Vec4F),
             SceneDataProp::LightAmbientColor => {
-                self.uniform_layout = self
-                    .uniform_layout
-                    .prop("ambient_color", UniformProp::Vec4F)
+                self.uniform_layout.prop("ambient_color", Attribute::Vec4F)
             }
-        }
+        };
 
         self
     }
@@ -58,10 +59,9 @@ impl UniformData<SceneDataProp> for SceneDataLayout {
         &self.uniform_layout
     }
 
-    #[tracing::instrument(target = "profile", skip_all, level = "trace")]
     fn copy_data<F>(&self, buffer: &mut Vec<u8>, get_data: F)
     where
-        F: Fn(&SceneDataProp) -> UniformPropData,
+        F: Fn(&SceneDataProp) -> AttributeData,
     {
         let layout = self.uniform_layout();
 

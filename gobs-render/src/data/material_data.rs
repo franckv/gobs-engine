@@ -1,8 +1,8 @@
 use serde::{Deserialize, Serialize};
 
 use gobs_render_hal::{
-    BindingGroupLayout, BindingGroupType, DescriptorStage, DescriptorType, UniformLayout,
-    UniformProp, UniformPropData,
+    AlignMode, Attribute, AttributeData, BindingGroupLayout, BindingGroupType, DescriptorStage,
+    DescriptorType, UniformLayout,
 };
 
 use crate::UniformData;
@@ -25,36 +25,39 @@ pub enum MaterialDataProp {
     SpecularPower,
 }
 
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug)]
 pub struct MaterialDataLayout {
     layout: Vec<MaterialDataProp>,
     uniform_layout: UniformLayout,
+}
+
+impl MaterialDataLayout {
+    pub fn new(mode: AlignMode) -> Self {
+        Self {
+            layout: Vec::new(),
+            uniform_layout: UniformLayout::new(mode),
+        }
+    }
 }
 
 impl UniformData<MaterialDataProp> for MaterialDataLayout {
     fn prop(mut self, prop: MaterialDataProp) -> Self {
         self.layout.push(prop);
 
-        match prop {
+        self.uniform_layout = match prop {
             MaterialDataProp::DiffuseColor => {
-                self.uniform_layout = self
-                    .uniform_layout
-                    .prop("diffuse color", UniformProp::Vec4F)
+                self.uniform_layout.prop("diffuse color", Attribute::Vec4F)
             }
             MaterialDataProp::EmissionColor => {
-                self.uniform_layout = self
-                    .uniform_layout
-                    .prop("emission color", UniformProp::Vec4F)
+                self.uniform_layout.prop("emission color", Attribute::Vec4F)
             }
             MaterialDataProp::SpecularColor => {
-                self.uniform_layout = self
-                    .uniform_layout
-                    .prop("specular color", UniformProp::Vec4F)
+                self.uniform_layout.prop("specular color", Attribute::Vec4F)
             }
             MaterialDataProp::SpecularPower => {
-                self.uniform_layout = self.uniform_layout.prop("specular power", UniformProp::F32)
+                self.uniform_layout.prop("specular power", Attribute::F32)
             }
-        }
+        };
 
         self
     }
@@ -65,7 +68,7 @@ impl UniformData<MaterialDataProp> for MaterialDataLayout {
 
     fn copy_data<F>(&self, buffer: &mut Vec<u8>, get_data: F)
     where
-        F: Fn(&MaterialDataProp) -> UniformPropData,
+        F: Fn(&MaterialDataProp) -> AttributeData,
     {
         let layout = self.uniform_layout();
 

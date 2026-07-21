@@ -145,7 +145,7 @@ impl GLTFLoader {
 
                 if let Some(iter) = reader.read_normals() {
                     for (i, normal) in iter.enumerate() {
-                        mesh_data.vertices[i].normal = normal.into();
+                        mesh_data.vertices[i].set_normal(normal.into());
                     }
                 }
 
@@ -155,7 +155,7 @@ impl GLTFLoader {
                         gltf::mesh::util::ReadTexCoords::U16(_) => todo!(),
                         gltf::mesh::util::ReadTexCoords::F32(iter) => {
                             for (i, texture) in iter.enumerate() {
-                                mesh_data.vertices[i].texture = texture.into();
+                                mesh_data.vertices[i].set_texture(texture.into());
                             }
                         }
                     }
@@ -165,24 +165,24 @@ impl GLTFLoader {
                     match read_colors {
                         ReadColors::RgbaU8(iter) => {
                             for (i, color) in iter.enumerate() {
-                                mesh_data.vertices[i].color = color.into();
+                                mesh_data.vertices[i].set_color(color.into());
                             }
                         }
                         ReadColors::RgbaF32(iter) => {
                             for (i, color) in iter.enumerate() {
-                                mesh_data.vertices[i].color = color.into();
+                                mesh_data.vertices[i].set_color(color.into());
                             }
                         }
                         ReadColors::RgbaU16(iter) => {
                             for (i, color) in iter.enumerate() {
-                                mesh_data.vertices[i].color = color.into();
+                                mesh_data.vertices[i].set_color(color.into());
                             }
                         }
                         _ => todo!(),
                     }
                 } else {
                     for i in 0..mesh_data.vertices.len() {
-                        mesh_data.vertices[i].color = Color::WHITE;
+                        mesh_data.vertices[i].set_color(Color::WHITE);
                     }
                 }
 

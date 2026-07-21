@@ -42,7 +42,7 @@ impl Bounded for MeshGeometry {
         let mut bounding_box = BoundingBox::default();
 
         for vertex in &self.vertices {
-            bounding_box.extends(vertex.position);
+            bounding_box.extends(vertex.position());
         }
 
         bounding_box
@@ -73,7 +73,7 @@ impl MeshBuilder {
     }
 
     pub fn vertices(mut self, data: &[VertexData]) -> Self {
-        self.vertices.extend(data);
+        self.vertices.extend_from_slice(data);
 
         self
     }
@@ -134,7 +134,7 @@ impl MeshBuilder {
             .into_iter()
             .filter(|v| {
                 // TODO: avoid allocation
-                let key = format!("{}:{}:{}", v.position, v.texture, v.normal);
+                let key = format!("{}:{}:{}", v.position(), v.texture(), v.normal());
                 if let hash_map::Entry::Vacant(e) = unique.entry(key.clone()) {
                     e.insert(idx);
                     self.indices.push(idx);
@@ -154,13 +154,13 @@ impl MeshBuilder {
     }
 
     fn get_tangents(v0: &VertexData, v1: &VertexData, v2: &VertexData) -> (Vec3, Vec3) {
-        let pos0 = v0.position;
-        let pos1 = v1.position;
-        let pos2 = v2.position;
+        let pos0 = v0.position();
+        let pos1 = v1.position();
+        let pos2 = v2.position();
 
-        let uv0: Vec2 = v0.texture;
-        let uv1: Vec2 = v1.texture;
-        let uv2: Vec2 = v2.texture;
+        let uv0: Vec2 = v0.texture();
+        let uv1: Vec2 = v1.texture();
+        let uv2: Vec2 = v2.texture();
 
         let delta_pos1 = pos1 - pos0;
         let delta_pos2 = pos2 - pos0;
@@ -169,7 +169,7 @@ impl MeshBuilder {
 
         let d = delta_uv1.x * delta_uv2.y - delta_uv1.y * delta_uv2.x;
         if d == 0. {
-            let normal = (v0.normal + v1.normal + v2.normal).normalize();
+            let normal = (v0.normal() + v1.normal() + v2.normal()).normalize();
             let tangent = delta_pos1.normalize();
             let bitangent = normal.cross(tangent);
 
@@ -190,18 +190,31 @@ impl MeshBuilder {
         let mut triangles_included = vec![0; self.vertices.len()];
 
         for c in self.indices.chunks(3) {
-            let v0 = &mut self.vertices[c[0] as usize].clone();
-            let v1 = &mut self.vertices[c[1] as usize].clone();
-            let v2 = &mut self.vertices[c[2] as usize].clone();
+            let (tangent, bitangent) = Self::get_tangents(
+                &self.vertices[c[0] as usize],
+                &self.vertices[c[1] as usize],
+                &self.vertices[c[2] as usize],
+            );
 
-            let (tangent, bitangent) = Self::get_tangents(v0, v1, v2);
+            let (t0, b0) = (
+                self.vertices[c[0] as usize].tangent(),
+                self.vertices[c[0] as usize].bitangent(),
+            );
+            let (t1, b1) = (
+                self.vertices[c[1] as usize].tangent(),
+                self.vertices[c[1] as usize].bitangent(),
+            );
+            let (t2, b2) = (
+                self.vertices[c[2] as usize].tangent(),
+                self.vertices[c[2] as usize].bitangent(),
+            );
 
-            self.vertices[c[0] as usize].tangent += tangent;
-            self.vertices[c[1] as usize].tangent += tangent;
-            self.vertices[c[2] as usize].tangent += tangent;
-            self.vertices[c[0] as usize].bitangent += bitangent;
-            self.vertices[c[1] as usize].bitangent += bitangent;
-            self.vertices[c[2] as usize].bitangent += bitangent;
+            self.vertices[c[0] as usize].set_tangent(t0 + tangent);
+            self.vertices[c[1] as usize].set_tangent(t1 + tangent);
+            self.vertices[c[2] as usize].set_tangent(t2 + tangent);
+            self.vertices[c[0] as usize].set_bitangent(b0 + bitangent);
+            self.vertices[c[1] as usize].set_bitangent(b1 + bitangent);
+            self.vertices[c[2] as usize].set_bitangent(b2 + bitangent);
 
             triangles_included[c[0] as usize] += 1;
             triangles_included[c[1] as usize] += 1;
@@ -211,8 +224,8 @@ impl MeshBuilder {
         for (i, n) in triangles_included.into_iter().enumerate() {
             let denom = 1. / n as f32;
             let v = &mut self.vertices[i];
-            v.tangent *= denom;
-            v.bitangent *= denom;
+            v.set_tangent(v.tangent() * denom);
+            v.set_bitangent(v.bitangent() * denom);
         }
 
         self

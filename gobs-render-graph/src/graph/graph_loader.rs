@@ -3,7 +3,7 @@ use std::{collections::HashMap, sync::Arc};
 use serde::{Deserialize, Serialize};
 
 use gobs_core::{ImageExtent2D, ImageFormat, logger};
-use gobs_render_hal::{Handle, ImageLayout, ImageUsage, UniformData as _};
+use gobs_render_hal::{AlignMode, Handle, ImageLayout, ImageUsage, UniformData as _};
 use gobs_resource::{
     ResourceError,
     load::{self, AssetType},
@@ -196,7 +196,7 @@ impl GraphConfig {
         graph: &GraphConfig,
         pipeline: Option<Handle>,
     ) -> Option<Arc<dyn RenderPass>> {
-        let mut scene_layout = SceneDataLayout::default();
+        let mut scene_layout = SceneDataLayout::new(AlignMode::Std140);
         for prop in &pass.scene_layout {
             scene_layout = scene_layout.prop(*prop);
         }

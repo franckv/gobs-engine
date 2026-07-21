@@ -18,8 +18,8 @@ pub use gobs_vulkan::{
 pub use bindings::{BindResource, BindingGroupLayout, BindingGroupType};
 pub use command::{CommandBuffer, CommandQueueType};
 pub use data::{
-    ObjectDataLayout, ObjectDataProp, UniformBuffer, UniformData, UniformLayout, UniformProp,
-    UniformPropData, VertexAttribute, VertexData,
+    AlignMode, Attribute, AttributeData, ObjectDataLayout, ObjectDataProp, UniformBuffer,
+    UniformData, UniformLayout, VertexAttribute, VertexData,
 };
 pub use error::RenderBackendError;
 pub use hal::{BufferType, Handle, RenderHAL, create_hal};

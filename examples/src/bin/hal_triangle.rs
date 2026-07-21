@@ -2,9 +2,9 @@ use gobs::{
     core::{Color, ImageFormat, Input, logger},
     game::{AppError, Application, GameContext, GameOptions, GobsGame},
     render::{
-        BufferType, CommandBuffer, CommandQueueType, CullMode, DynamicStateElem, FrontFace, Handle,
-        ImageLayout, ObjectDataLayout, ObjectDataProp, Rect2D, RenderError, RenderHAL, Shapes,
-        UniformData, VertexAttribute, VertexData, Viewport,
+        AlignMode, BufferType, CommandBuffer, CommandQueueType, CullMode, DynamicStateElem,
+        FrontFace, Handle, ImageLayout, ObjectDataLayout, ObjectDataProp, Rect2D, RenderError,
+        RenderHAL, Shapes, UniformData, VertexAttribute, VertexData, Viewport,
     },
 };
 
@@ -117,7 +117,12 @@ impl App {
 
         let mut vertices = vec![];
 
-        VertexData::copy_data(&mesh.vertices, vertex_attributes, &mut vertices);
+        VertexData::copy_data(
+            &mesh.vertices,
+            vertex_attributes,
+            &mut vertices,
+            AlignMode::Scalar,
+        );
 
         let indices = &mesh.indices;
 
@@ -153,7 +158,9 @@ impl App {
         hal.create_graphics_pipeline("color")
             .vertex_shader("color_direct.spv", "vertex_main")
             .fragment_shader("color_direct.spv", "fragment_main")
-            .push_constants(ObjectDataLayout::default().prop(ObjectDataProp::VertexBufferAddress))
+            .push_constants(
+                ObjectDataLayout::new(AlignMode::Std140).prop(ObjectDataProp::VertexBufferAddress),
+            )
             .attachments(Some(ImageFormat::B8g8r8a8Unorm), None)
             .depth_test_disable()
             .viewports(vec![Viewport::new(0., 0., 0., 0.)])

@@ -1,4 +1,4 @@
-use gobs_render_hal::{BufferType, Handle, RenderHAL, UniformData as _, UniformPropData};
+use gobs_render_hal::{AttributeData, BufferType, Handle, RenderHAL, UniformData as _};
 use gobs_resource::{
     ResourceRegistry, {Resource, ResourceError, ResourceHandle, ResourceLoader, ResourceProperties},
 };
@@ -84,18 +84,14 @@ impl MaterialInstanceLoader {
 
         if let Some(material_data) = material_data {
             material_data_layout.copy_data(&mut data, |prop| match prop {
-                MaterialDataProp::DiffuseColor => {
-                    UniformPropData::Vec4F(material_data.diffuse_color)
-                }
+                MaterialDataProp::DiffuseColor => AttributeData::Vec4F(material_data.diffuse_color),
                 MaterialDataProp::EmissionColor => {
-                    UniformPropData::Vec4F(material_data.emission_color)
+                    AttributeData::Vec4F(material_data.emission_color)
                 }
                 MaterialDataProp::SpecularColor => {
-                    UniformPropData::Vec4F(material_data.specular_color)
+                    AttributeData::Vec4F(material_data.specular_color)
                 }
-                MaterialDataProp::SpecularPower => {
-                    UniformPropData::F32(material_data.specular_power)
-                }
+                MaterialDataProp::SpecularPower => AttributeData::F32(material_data.specular_power),
             });
 
             let buffer = hal.create_buffer(name, data.len(), BufferType::Uniform);

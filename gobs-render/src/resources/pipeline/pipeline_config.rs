@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 
 use gobs_core::{ImageFormat, logger};
 use gobs_render_hal::{
-    BindingGroupType, CompareOp, CullMode, DescriptorStage, DescriptorType, FrontFace,
+    AlignMode, BindingGroupType, CompareOp, CullMode, DescriptorStage, DescriptorType, FrontFace,
     ObjectDataLayout, ObjectDataProp, PolygonMode, UniformData as _, VertexAttribute,
 };
 use gobs_resource::{
@@ -142,7 +142,7 @@ impl PipelinesConfig {
     ) -> Option<PipelineProperties> {
         let pipeline = config.graphics_pipelines.get(name)?;
 
-        let mut object_layout = ObjectDataLayout::default();
+        let mut object_layout = ObjectDataLayout::new(AlignMode::Std140);
         for prop in &pipeline.object_layout {
             object_layout = object_layout.prop(*prop);
         }

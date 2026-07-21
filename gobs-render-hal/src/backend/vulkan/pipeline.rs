@@ -89,7 +89,7 @@ impl VkComputePipelineBuilder {
             builder: vk::pipelines::Pipeline::compute_builder(name, device.clone()),
             descriptor_layouts: IndexMap::new(),
             push_constants: 0,
-            push_layout: ObjectDataLayout::default(),
+            push_layout: ObjectDataLayout::new(AlignMode::Std430),
         }
     }
 }
@@ -168,13 +168,15 @@ impl GraphicsPipelineBuilder for VkGraphicsPipelineBuilder {
         let mut vertex_layout = vk::pipelines::VertexLayout::builder();
         vertex_layout = vertex_layout.binding(
             vk::pipelines::VertexLayoutBindingType::Vertex,
-            vertex_attributes.size(),
+            vertex_attributes.size(AlignMode::Scalar),
         );
 
         for bit in self.vertex_attributes {
             vertex_layout = vertex_layout.attribute(
                 bit.into(),
-                self.vertex_attributes.offset_of(bit, AlignMode::Compact),
+                self.vertex_attributes
+                    .offset_of(bit, AlignMode::Scalar)
+                    .unwrap(),
             );
         }
 
@@ -315,7 +317,7 @@ impl VkGraphicsPipelineBuilder {
             descriptor_layouts: IndexMap::new(),
             push_constants: 0,
             vertex_attributes: VertexAttribute::empty(),
-            push_layout: ObjectDataLayout::default(),
+            push_layout: ObjectDataLayout::new(AlignMode::Std430),
         }
     }
 }

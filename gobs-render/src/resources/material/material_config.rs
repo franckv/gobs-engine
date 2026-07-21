@@ -4,7 +4,8 @@ use serde::Deserialize;
 
 use gobs_core::{ImageFormat, logger};
 use gobs_render_hal::{
-    BlendMode, CullMode, ObjectDataLayout, ObjectDataProp, UniformData as _, VertexAttribute,
+    AlignMode, BlendMode, CullMode, ObjectDataLayout, ObjectDataProp, UniformData as _,
+    VertexAttribute,
 };
 use gobs_resource::{
     ResourceLifetime, ResourceManager,
@@ -70,7 +71,7 @@ impl MaterialsConfig {
     }
 
     fn load_materials(&self, resource_manager: &mut ResourceManager) {
-        let mut object_layout = ObjectDataLayout::default();
+        let mut object_layout = ObjectDataLayout::new(AlignMode::Std140);
         for prop in &self.default.object_layout {
             object_layout = object_layout.prop(*prop);
         }

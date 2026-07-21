@@ -1,6 +1,8 @@
 use serde::{Deserialize, Serialize};
 
-use crate::data::{UniformLayout, UniformProp, UniformPropData, uniform::UniformData};
+use crate::data::{
+    AlignMode, Attribute, UniformLayout, align::AttributeData, uniform::UniformData,
+};
 
 #[derive(Clone, Copy, Debug, Deserialize, Serialize)]
 pub enum ObjectDataProp {
@@ -9,10 +11,19 @@ pub enum ObjectDataProp {
     VertexBufferAddress,
 }
 
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug)]
 pub struct ObjectDataLayout {
     layout: Vec<ObjectDataProp>,
     uniform_layout: UniformLayout,
+}
+
+impl ObjectDataLayout {
+    pub fn new(mode: AlignMode) -> Self {
+        Self {
+            layout: Vec::new(),
+            uniform_layout: UniformLayout::new(mode),
+        }
+    }
 }
 
 impl UniformData<ObjectDataProp> for ObjectDataLayout {
@@ -21,17 +32,13 @@ impl UniformData<ObjectDataProp> for ObjectDataLayout {
 
         match prop {
             ObjectDataProp::WorldMatrix => {
-                self.uniform_layout = self.uniform_layout.prop("world_matrix", UniformProp::Mat4F);
+                self.uniform_layout = self.uniform_layout.prop("world_matrix", Attribute::Mat4F);
             }
             ObjectDataProp::NormalMatrix => {
-                self.uniform_layout = self
-                    .uniform_layout
-                    .prop("normal_matrix", UniformProp::Mat3F);
+                self.uniform_layout = self.uniform_layout.prop("normal_matrix", Attribute::Mat3F);
             }
             ObjectDataProp::VertexBufferAddress => {
-                self.uniform_layout = self
-                    .uniform_layout
-                    .prop("buffer_reference", UniformProp::U64);
+                self.uniform_layout = self.uniform_layout.prop("buffer_reference", Attribute::U64);
             }
         }
 
@@ -44,7 +51,7 @@ impl UniformData<ObjectDataProp> for ObjectDataLayout {
 
     fn copy_data<F>(&self, buffer: &mut Vec<u8>, get_data: F)
     where
-        F: Fn(&ObjectDataProp) -> UniformPropData,
+        F: Fn(&ObjectDataProp) -> AttributeData,
     {
         let layout = self.uniform_layout();
 

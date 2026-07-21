@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use gobs_core::logger;
-use gobs_render_hal::{CommandBuffer, Handle, RenderHAL, UniformData as _, UniformPropData};
+use gobs_render_hal::{AttributeData, CommandBuffer, Handle, RenderHAL, UniformData as _};
 
 use crate::{
     FrameData, GfxContext, PassId, RenderError, RenderFlags, RenderJob, RenderObject,
@@ -178,7 +178,7 @@ impl RenderPass for MaterialPass {
         self.scene_layout
             .copy_data(&mut scene_data_bytes, |prop| match prop {
                 SceneDataProp::CameraPosition => {
-                    UniformPropData::Vec3F(scene_data.camera_transform.translation().into())
+                    AttributeData::Vec3F(scene_data.camera_transform.translation().into())
                 }
                 SceneDataProp::CameraViewProj => {
                     let uniform_data = scene_data
@@ -186,10 +186,10 @@ impl RenderPass for MaterialPass {
                         .view_proj(scene_data.camera_transform.translation())
                         .to_cols_array_2d();
 
-                    UniformPropData::Mat4F(uniform_data)
+                    AttributeData::Mat4F(uniform_data)
                 }
-                SceneDataProp::CameraViewPort => UniformPropData::Vec2F(scene_data.extent.into()),
-                SceneDataProp::LightDirection => UniformPropData::Vec3F(
+                SceneDataProp::CameraViewPort => AttributeData::Vec2F(scene_data.extent.into()),
+                SceneDataProp::LightDirection => AttributeData::Vec3F(
                     scene_data
                         .light_transform
                         .expect("No lights in scene")
@@ -197,10 +197,10 @@ impl RenderPass for MaterialPass {
                         .normalize()
                         .into(),
                 ),
-                SceneDataProp::LightColor => UniformPropData::Vec4F(
+                SceneDataProp::LightColor => AttributeData::Vec4F(
                     scene_data.light.expect("No lights in scene").colour.into(),
                 ),
-                SceneDataProp::LightAmbientColor => UniformPropData::Vec4F([0.1, 0.1, 0.1, 1.]),
+                SceneDataProp::LightAmbientColor => AttributeData::Vec4F([0.1, 0.1, 0.1, 1.]),
             });
 
         tracing::debug!(target: logger::RENDER, "Update uniform (scene data, push)");

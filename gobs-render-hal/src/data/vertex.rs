@@ -1,5 +1,3 @@
-use std::ops::{Add, Mul};
-
 use bitflags::bitflags;
 use glam::{Vec2, Vec3};
 use serde::{Deserialize, Serialize};
@@ -7,7 +5,10 @@ use serde::{Deserialize, Serialize};
 use gobs_core::{Color, Transform};
 use gobs_vulkan::pipelines::VertexAttributeFormat;
 
-use crate::data::{AlignMode, Attribute};
+use crate::{
+    AttributeData,
+    data::{AlignMode, Attribute},
+};
 
 bitflags! {
     #[derive(Debug, Clone, Copy, Default, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -24,6 +25,10 @@ bitflags! {
 }
 
 impl VertexAttribute {
+    fn idx(self) -> usize {
+        self.bits().trailing_zeros() as usize
+    }
+
     fn attribute_type(self) -> Attribute {
         match self {
             VertexAttribute::POSITION => Attribute::Vec3F,
@@ -41,20 +46,17 @@ impl VertexAttribute {
         self.iter().map(|v| v.attribute_type()).collect()
     }
 
-    fn attribute_offsets(self, mode: AlignMode) -> Vec<(VertexAttribute, usize)> {
+    pub fn offset_of(self, attr: VertexAttribute, mode: AlignMode) -> Option<usize> {
         let offsets = Attribute::offsets(&self.attributes(), mode);
 
-        self.iter().zip(offsets).collect()
+        self.iter()
+            .zip(offsets)
+            .find(|(a, _)| *a == attr)
+            .map(|(_, offset)| offset)
     }
 
-    pub fn offset_of(self, attr: VertexAttribute, mode: AlignMode) -> usize {
-        let offsets = VertexAttribute::attribute_offsets(self, mode);
-
-        offsets.iter().find(|(a, _)| *a == attr).unwrap().1
-    }
-
-    pub fn size(&self) -> usize {
-        Attribute::stride(&self.attributes(), AlignMode::Compact)
+    pub fn size(&self, mode: AlignMode) -> usize {
+        Attribute::stride(&self.attributes(), mode)
     }
 }
 
@@ -73,16 +75,9 @@ impl From<VertexAttribute> for VertexAttributeFormat {
     }
 }
 
-#[derive(Clone, Copy, Debug, Serialize)]
+#[derive(Clone, Debug, Serialize)]
 pub struct VertexData {
-    pub layout: AlignMode,
-    pub position: Vec3,
-    pub color: Color,
-    pub texture: Vec2,
-    pub normal: Vec3,
-    pub normal_texture: Vec2,
-    pub tangent: Vec3,
-    pub bitangent: Vec3,
+    data: Vec<AttributeData>,
 }
 
 impl VertexData {
@@ -90,68 +85,121 @@ impl VertexData {
         VertexDataBuilder::new()
     }
 
-    pub fn transform(&self, transform: Transform) -> VertexData {
-        let mut vertex = *self;
+    pub fn position(&self) -> Vec3 {
+        match self.data[VertexAttribute::POSITION.idx()] {
+            AttributeData::Vec3F(v) => v.into(),
+            _ => unreachable!(),
+        }
+    }
 
-        vertex.position = transform * vertex.position;
+    pub fn set_position(&mut self, position: Vec3) {
+        self.data[VertexAttribute::POSITION.idx()] = AttributeData::Vec3F(position.into())
+    }
+
+    pub fn color(&self) -> Color {
+        match self.data[VertexAttribute::COLOR.idx()] {
+            AttributeData::Vec4F(v) => v.into(),
+            _ => unreachable!(),
+        }
+    }
+
+    pub fn set_color(&mut self, color: Color) {
+        self.data[VertexAttribute::COLOR.idx()] = AttributeData::Vec4F(color.into())
+    }
+
+    pub fn texture(&self) -> Vec2 {
+        match self.data[VertexAttribute::TEXTURE.idx()] {
+            AttributeData::Vec2F(v) => v.into(),
+            _ => unreachable!(),
+        }
+    }
+
+    pub fn set_texture(&mut self, texture: Vec2) {
+        self.data[VertexAttribute::TEXTURE.idx()] = AttributeData::Vec2F(texture.into())
+    }
+
+    pub fn normal(&self) -> Vec3 {
+        match self.data[VertexAttribute::NORMAL.idx()] {
+            AttributeData::Vec3F(v) => v.into(),
+            _ => unreachable!(),
+        }
+    }
+
+    pub fn set_normal(&mut self, normal: Vec3) {
+        self.data[VertexAttribute::NORMAL.idx()] = AttributeData::Vec3F(normal.into())
+    }
+
+    pub fn normal_texture(&self) -> Vec2 {
+        match self.data[VertexAttribute::NORMAL_TEXTURE.idx()] {
+            AttributeData::Vec2F(v) => v.into(),
+            _ => unreachable!(),
+        }
+    }
+
+    pub fn tangent(&self) -> Vec3 {
+        match self.data[VertexAttribute::TANGENT.idx()] {
+            AttributeData::Vec3F(v) => v.into(),
+            _ => unreachable!(),
+        }
+    }
+
+    pub fn set_tangent(&mut self, tangent: Vec3) {
+        self.data[VertexAttribute::TANGENT.idx()] = AttributeData::Vec3F(tangent.into())
+    }
+
+    pub fn bitangent(&self) -> Vec3 {
+        match self.data[VertexAttribute::BITANGENT.idx()] {
+            AttributeData::Vec3F(v) => v.into(),
+            _ => unreachable!(),
+        }
+    }
+
+    pub fn set_bitangent(&mut self, bitangent: Vec3) {
+        self.data[VertexAttribute::BITANGENT.idx()] = AttributeData::Vec3F(bitangent.into())
+    }
+
+    pub fn transform(&self, transform: Transform) -> VertexData {
+        let mut vertex = self.clone();
+
+        vertex.set_position(transform * vertex.position());
 
         vertex
     }
 
     fn get_bytes(&self, flag: VertexAttribute, data: &mut Vec<u8>) {
-        match flag {
-            VertexAttribute::POSITION => {
-                data.extend_from_slice(bytemuck::cast_slice(&self.position.to_array()))
-            }
-            VertexAttribute::COLOR => {
-                data.extend_from_slice(bytemuck::cast_slice(&Into::<[f32; 4]>::into(self.color)))
-            }
-            VertexAttribute::TEXTURE => {
-                data.extend_from_slice(bytemuck::cast_slice(&self.texture.to_array()))
-            }
-            VertexAttribute::NORMAL => {
-                data.extend_from_slice(bytemuck::cast_slice(&self.normal.to_array()))
-            }
-            VertexAttribute::NORMAL_TEXTURE => {
-                data.extend_from_slice(bytemuck::cast_slice(&self.normal_texture.to_array()))
-            }
-            VertexAttribute::TANGENT => {
-                data.extend_from_slice(bytemuck::cast_slice(&self.tangent.to_array()))
-            }
-            VertexAttribute::BITANGENT => {
-                data.extend_from_slice(bytemuck::cast_slice(&self.bitangent.to_array()))
-            }
-            _ => unimplemented!(),
-        }
+        self.data[flag.idx()].copy(data);
     }
 
-    pub fn copy_data(vertices: &[VertexData], flags: VertexAttribute, data: &mut Vec<u8>) {
-        let offsets = flags.attribute_offsets(AlignMode::Compact);
+    pub fn copy_data(
+        vertices: &[VertexData],
+        flags: VertexAttribute,
+        data: &mut Vec<u8>,
+        mode: AlignMode,
+    ) {
+        let attributes = flags.attributes();
+        let offsets = Attribute::offsets(&attributes, mode);
+        let size = Attribute::stride(&attributes, mode);
 
         for vertex in vertices {
             let data_start = data.len();
-            for (flag, offset) in &offsets {
+            for (flag, offset) in flags.iter().zip(&offsets) {
                 let delta = data.len() - data_start;
-                Self::pad(data, offset - delta);
+                AttributeData::pad(data, offset - delta);
 
-                vertex.get_bytes(*flag, data);
+                vertex.get_bytes(flag, data);
             }
-        }
-    }
-
-    fn pad(data: &mut Vec<u8>, len: usize) {
-        for _ in 0..len {
-            data.push(0_u8);
+            let delta = data.len() - data_start;
+            AttributeData::pad(data, size - delta);
         }
     }
 }
 
+/*
 impl Add<VertexData> for VertexData {
     type Output = Self;
 
     fn add(self, rhs: VertexData) -> Self::Output {
         VertexData {
-            layout: self.layout,
             position: self.position + rhs.position,
             color: self.color + rhs.color,
             texture: self.texture + rhs.texture,
@@ -168,7 +216,6 @@ impl Mul<f32> for VertexData {
 
     fn mul(self, rhs: f32) -> Self::Output {
         VertexData {
-            layout: self.layout,
             position: self.position * rhs,
             color: self.color * rhs,
             texture: self.texture * rhs,
@@ -179,9 +226,9 @@ impl Mul<f32> for VertexData {
         }
     }
 }
+*/
 
 pub struct VertexDataBuilder {
-    pub layout: AlignMode,
     pub position: Option<Vec3>,
     pub color: Option<Color>,
     pub texture: Option<Vec2>,
@@ -194,7 +241,6 @@ pub struct VertexDataBuilder {
 impl VertexDataBuilder {
     fn new() -> Self {
         VertexDataBuilder {
-            layout: AlignMode::Compact,
             position: None,
             color: None,
             texture: None,
@@ -203,12 +249,6 @@ impl VertexDataBuilder {
             tangent: None,
             bitangent: None,
         }
-    }
-
-    pub fn layout(mut self, layout: AlignMode) -> Self {
-        self.layout = layout;
-
-        self
     }
 
     pub fn position(mut self, position: Vec3) -> Self {
@@ -254,16 +294,19 @@ impl VertexDataBuilder {
     }
 
     pub fn build(self) -> VertexData {
-        VertexData {
-            layout: self.layout,
-            position: self.position.unwrap_or(Vec3::splat(0.)),
-            color: self.color.unwrap_or(Color::WHITE),
-            texture: self.texture.unwrap_or(Vec2::splat(0.)),
-            normal: self.normal.unwrap_or(Vec3::splat(0.)),
-            normal_texture: self.normal_texture.unwrap_or(Vec2::splat(0.)),
-            tangent: self.tangent.unwrap_or(Vec3::splat(0.)),
-            bitangent: self.bitangent.unwrap_or(Vec3::splat(0.)),
-        }
+        let data = vec![
+            AttributeData::Vec3F(self.position.unwrap_or(Vec3::splat(0.)).into()),
+            AttributeData::Vec4F(self.color.unwrap_or(Color::WHITE).into()),
+            AttributeData::Vec2F(self.texture.unwrap_or(Vec2::splat(0.)).into()),
+            AttributeData::Vec3F(self.normal.unwrap_or(Vec3::splat(0.)).into()),
+            AttributeData::Vec2F(self.normal_texture.unwrap_or(Vec2::splat(0.)).into()),
+            AttributeData::Vec3F(self.tangent.unwrap_or(Vec3::splat(0.)).into()),
+            AttributeData::Vec3F(self.bitangent.unwrap_or(Vec3::splat(0.)).into()),
+        ];
+
+        debug_assert_eq!(data.len(), VertexAttribute::all().iter().count());
+
+        VertexData { data }
     }
 }
 
@@ -295,14 +338,16 @@ mod tests {
     fn test_vertex_align() {
         setup();
 
+        let mode = AlignMode::Scalar;
+
         let vertex_attributes = VertexAttribute::POSITION;
-        let offsets = Attribute::offsets(&vertex_attributes.attributes(), AlignMode::Compact);
-        assert_eq!(vertex_attributes.size(), 12);
+        let offsets = Attribute::offsets(&vertex_attributes.attributes(), mode);
+        assert_eq!(vertex_attributes.size(mode), 12);
         assert_eq!(offsets[0], 0);
 
         let vertex_attributes = VertexAttribute::POSITION | VertexAttribute::COLOR;
-        let offsets = Attribute::offsets(&vertex_attributes.attributes(), AlignMode::Compact);
-        assert_eq!(vertex_attributes.size(), 28);
+        let offsets = Attribute::offsets(&vertex_attributes.attributes(), mode);
+        assert_eq!(vertex_attributes.size(mode), 28);
         assert_eq!(offsets[0], 0);
         assert_eq!(offsets[1], 12);
 
@@ -312,16 +357,16 @@ mod tests {
             | VertexAttribute::NORMAL
             | VertexAttribute::TANGENT
             | VertexAttribute::BITANGENT;
-        let _offsets = Attribute::offsets(&vertex_attributes.attributes(), AlignMode::Compact);
-        assert_eq!(vertex_attributes.size(), 72);
+        let _offsets = Attribute::offsets(&vertex_attributes.attributes(), mode);
+        assert_eq!(vertex_attributes.size(mode), 72);
 
         let vertex_attributes = VertexAttribute::TEXTURE | VertexAttribute::NORMAL_TEXTURE;
-        let _offsets = Attribute::offsets(&vertex_attributes.attributes(), AlignMode::Compact);
-        assert_eq!(vertex_attributes.size(), 16);
+        let _offsets = Attribute::offsets(&vertex_attributes.attributes(), mode);
+        assert_eq!(vertex_attributes.size(mode), 16);
 
         let vertex_attributes =
             VertexAttribute::NORMAL | VertexAttribute::TANGENT | VertexAttribute::BITANGENT;
-        let _offsets = Attribute::offsets(&vertex_attributes.attributes(), AlignMode::Compact);
-        assert_eq!(vertex_attributes.size(), 36);
+        let _offsets = Attribute::offsets(&vertex_attributes.attributes(), mode);
+        assert_eq!(vertex_attributes.size(mode), 36);
     }
 }
