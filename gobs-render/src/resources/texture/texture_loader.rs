@@ -18,6 +18,7 @@ use crate::resources::{BufferPool, Texture, TextureData, TextureFormat, texture:
 pub struct TextureLoader {
     cmd: Box<dyn CommandBuffer>,
     buffer_pool: BufferPool,
+    recording: bool,
 }
 
 impl TextureLoader {
@@ -27,7 +28,31 @@ impl TextureLoader {
                 .hal_mut()
                 .create_command_buffer("Mesh loader", CommandQueueType::Transfer),
             buffer_pool: BufferPool::new(),
+            recording: false,
         }
+    }
+
+    fn start_recording(&mut self) {
+        tracing::debug!(target: logger::RENDER, "Record texture loading command");
+        self.recording = true;
+
+        self.cmd.reset();
+
+        self.cmd.begin(0);
+        self.cmd.begin_label("Texture upload");
+    }
+
+    fn stop_recording(&mut self) {
+        tracing::debug!(target: logger::RENDER, "Submit texture loading command");
+        self.cmd.end_label();
+        self.cmd.end();
+        self.cmd.submit_transfer();
+
+        self.cmd.wait();
+
+        self.buffer_pool.recycle_all();
+
+        self.recording = false;
     }
 
     fn load_file<F>(filename: &str, format: &mut TextureFormat, mut f: F)
@@ -184,6 +209,10 @@ impl ResourceLoader<Texture> for TextureLoader {
             staging_data.extend_from_slice(data);
         });
 
+        if !self.recording {
+            self.start_recording();
+        }
+
         let staging = self.buffer_pool.allocate(
             hal,
             "image staging",
@@ -203,11 +232,11 @@ impl ResourceLoader<Texture> for TextureLoader {
         let sampler =
             hal.create_sampler(properties.format.mag_filter, properties.format.min_filter);
 
-        self.cmd.run_immediate_mut("Texture upload", &mut |cmd| {
-            cmd.transition_image_layout(hal, image, ImageLayout::TransferDst);
-            cmd.copy_buffer_to_image(hal, staging.buffer, image, 0);
-            cmd.transition_image_layout(hal, image, ImageLayout::Shader);
-        });
+        self.cmd
+            .transition_image_layout(hal, image, ImageLayout::TransferDst);
+        self.cmd.copy_buffer_to_image(hal, staging.buffer, image, 0);
+        self.cmd
+            .transition_image_layout(hal, image, ImageLayout::Shader);
 
         Ok(TextureData {
             format: image_format,
@@ -221,6 +250,8 @@ impl ResourceLoader<Texture> for TextureLoader {
     }
 
     fn flush(&mut self) {
-        self.buffer_pool.recycle_all();
+        if self.recording {
+            self.stop_recording();
+        }
     }
 }

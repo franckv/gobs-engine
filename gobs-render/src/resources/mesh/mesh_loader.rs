@@ -36,6 +36,19 @@ impl MeshLoader {
         self.cmd.begin_label("Upload buffer");
     }
 
+    fn stop_recording(&mut self) {
+        tracing::debug!(target: logger::RENDER, "Submit mesh loading command");
+        self.cmd.end_label();
+        self.cmd.end();
+        self.cmd.submit_transfer();
+
+        self.cmd.wait();
+
+        self.buffer_pool.recycle_all();
+
+        self.recording = false;
+    }
+
     #[tracing::instrument(target = "profile", skip_all, level = "trace")]
     fn load_geometry(
         &mut self,
@@ -123,16 +136,7 @@ impl ResourceLoader<Mesh> for MeshLoader {
 
     fn flush(&mut self) {
         if self.recording {
-            tracing::debug!(target: logger::RENDER, "Submit mesh loading command");
-            self.cmd.end_label();
-            self.cmd.end();
-            self.cmd.submit_transfer();
-
-            self.cmd.wait();
-
-            self.buffer_pool.recycle_all();
-
-            self.recording = false;
+            self.stop_recording();
         }
     }
 }
