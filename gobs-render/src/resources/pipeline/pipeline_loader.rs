@@ -1,7 +1,7 @@
 use gobs_core::logger;
 use gobs_render_hal::{DynamicStateElem, Rect2D, RenderHAL, Viewport};
 use gobs_resource::{
-    ResourceRegistry, {Resource, ResourceError, ResourceHandle, ResourceLoader, ResourceProperties},
+    ResourceRegistry, {ResourceError, ResourceHandle, ResourceLoader, ResourceProperties},
 };
 
 use crate::resources::pipeline::{
@@ -116,7 +116,9 @@ impl ResourceLoader<Pipeline> for PipelineLoader {
         Ok(data)
     }
 
-    fn unload(&mut self, _resource: Resource<Pipeline>) {}
+    fn unload<'a>(&mut self, hal: &mut (dyn RenderHAL + 'a), data: PipelineData) {
+        hal.destroy_pipeline(data.pipeline);
+    }
 
     fn flush(&mut self) {}
 }

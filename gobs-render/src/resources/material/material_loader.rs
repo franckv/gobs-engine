@@ -1,7 +1,7 @@
 use gobs_core::logger;
 use gobs_render_hal::RenderHAL;
 use gobs_resource::{
-    ResourceRegistry, {Resource, ResourceError, ResourceHandle, ResourceLoader, ResourceProperties},
+    ResourceRegistry, {ResourceError, ResourceHandle, ResourceLoader, ResourceProperties},
 };
 
 use crate::resources::{MaterialData, Pipeline, PipelineProperties, material::Material};
@@ -44,7 +44,9 @@ impl ResourceLoader<Material> for MaterialLoader {
         })
     }
 
-    fn unload(&mut self, _resource: Resource<Material>) {}
+    fn unload<'a>(&mut self, _hal: &mut (dyn RenderHAL + 'a), _data: MaterialData) {
+        todo!()
+    }
 
     fn flush(&mut self) {}
 }

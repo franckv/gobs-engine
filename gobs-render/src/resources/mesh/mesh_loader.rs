@@ -4,7 +4,7 @@ use gobs_render_hal::{
     AlignMode, BufferType, CommandBuffer, CommandQueueType, RenderHAL, VertexAttribute, VertexData,
 };
 use gobs_resource::{
-    ResourceRegistry, {Resource, ResourceError, ResourceHandle, ResourceLoader, ResourceProperties},
+    ResourceRegistry, {ResourceError, ResourceHandle, ResourceLoader, ResourceProperties},
 };
 
 use crate::resources::{BufferPool, Mesh, MeshData, MeshGeometry, MeshPath, MeshPrimitiveType};
@@ -135,8 +135,9 @@ impl ResourceLoader<Mesh> for MeshLoader {
         Ok(data)
     }
 
-    fn unload(&mut self, _resource: Resource<Mesh>) {
-        // drop resource
+    fn unload<'a>(&mut self, hal: &mut (dyn RenderHAL + 'a), data: MeshData) {
+        hal.destroy_buffer(data.vertex_view);
+        hal.destroy_buffer(data.index_view);
     }
 
     fn flush(&mut self) {

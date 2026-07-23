@@ -1,6 +1,6 @@
 use gobs_render_hal::{AttributeData, BufferType, Handle, RenderHAL, UniformData as _};
 use gobs_resource::{
-    ResourceRegistry, {Resource, ResourceError, ResourceHandle, ResourceLoader, ResourceProperties},
+    ResourceRegistry, {ResourceError, ResourceHandle, ResourceLoader, ResourceProperties},
 };
 
 use crate::{
@@ -55,7 +55,11 @@ impl ResourceLoader<MaterialInstance> for MaterialInstanceLoader {
         Ok(data)
     }
 
-    fn unload(&mut self, _resource: Resource<MaterialInstance>) {}
+    fn unload<'a>(&mut self, hal: &mut (dyn RenderHAL + 'a), data: MaterialInstanceData) {
+        if let Some(buffer) = data.material_buffer {
+            hal.destroy_buffer(buffer);
+        }
+    }
 
     fn flush(&mut self) {}
 }

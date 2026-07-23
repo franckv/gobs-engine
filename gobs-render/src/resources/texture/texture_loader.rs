@@ -10,7 +10,7 @@ use gobs_render_hal::{
 use gobs_resource::{
     ResourceRegistry,
     load::{self, AssetType},
-    {Resource, ResourceError, ResourceHandle, ResourceLoader, ResourceProperties},
+    {ResourceError, ResourceHandle, ResourceLoader, ResourceProperties},
 };
 
 use crate::resources::{BufferPool, Texture, TextureData, TextureFormat, texture::TexturePath};
@@ -245,8 +245,9 @@ impl ResourceLoader<Texture> for TextureLoader {
         })
     }
 
-    fn unload(&mut self, _resource: Resource<Texture>) {
-        // drop resource
+    fn unload<'a>(&mut self, hal: &mut (dyn RenderHAL + 'a), data: TextureData) {
+        hal.destroy_image(data.image);
+        hal.destroy_sampler(data.sampler);
     }
 
     fn flush(&mut self) {

@@ -190,6 +190,9 @@ impl SampleApp {
                     ctx.renderer.enable_pass("ui_overlay", self.draw_ui);
                 }
                 Key::F => self.freeze = !self.freeze,
+                Key::I => {
+                    ctx.renderer.gfx.hal().info();
+                }
                 // Key::O => self.screenshot(ctx),
                 Key::Equals => scene.update_camera(|_, camera| {
                     camera.pitch = 0.;

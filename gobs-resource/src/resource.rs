@@ -112,7 +112,7 @@ pub trait ResourceLoader<R: ResourceType> {
         resource_registry: &mut ResourceRegistry,
     ) -> Result<R::ResourceData, ResourceError>;
 
-    fn unload(&mut self, resource: Resource<R>);
+    fn unload<'a>(&mut self, backend: &mut R::ResourceBackend<'a>, data: R::ResourceData);
 
     fn flush(&mut self);
 }

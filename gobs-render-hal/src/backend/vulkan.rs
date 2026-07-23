@@ -136,12 +136,6 @@ impl RenderHAL for VulkanHAL {
         self.registry.images.insert(image)
     }
 
-    fn create_sampler(&mut self, mag_filter: SamplerFilter, min_filter: SamplerFilter) -> Handle {
-        let sampler = vk::images::Sampler::new(self.device.clone(), mag_filter, min_filter);
-
-        self.registry.samplers.insert(sampler)
-    }
-
     fn invalidate_image(&mut self, image: Handle) {
         let image = self.registry.images.get_mut(image).unwrap();
 
@@ -152,6 +146,20 @@ impl RenderHAL for VulkanHAL {
         let image = self.registry.images.get(image).unwrap();
 
         image.extent
+    }
+
+    fn destroy_image(&mut self, image: Handle) {
+        let _ = self.registry.images.remove(image);
+    }
+
+    fn create_sampler(&mut self, mag_filter: SamplerFilter, min_filter: SamplerFilter) -> Handle {
+        let sampler = vk::images::Sampler::new(self.device.clone(), mag_filter, min_filter);
+
+        self.registry.samplers.insert(sampler)
+    }
+
+    fn destroy_sampler(&mut self, sampler: Handle) {
+        let _ = self.registry.samplers.remove(sampler);
     }
 
     fn create_command_buffer(
@@ -174,6 +182,10 @@ impl RenderHAL for VulkanHAL {
 
     fn create_compute_pipeline(&self, name: &str) -> Box<dyn ComputePipelineBuilder> {
         Box::new(VkComputePipelineBuilder::new(name, self.device.clone()))
+    }
+
+    fn destroy_pipeline(&mut self, pipeline: Handle) {
+        let _ = self.registry.pipelines.remove(pipeline);
     }
 
     fn get_pipeline_descriptor_types(&self, pipeline: Handle) -> Vec<BindingGroupType> {
@@ -243,6 +255,11 @@ impl RenderHAL for VulkanHAL {
 
     fn wait(&mut self) {
         self.device.wait();
+    }
+
+    fn info(&self) {
+        tracing::info!(target: logger::MEMORY, "Stats: buffers={}, images={}, samplers={}, pipelines={}",
+            self.registry.buffers.len(), self.registry.images.len(), self.registry.samplers.len(), self.registry.pipelines.len());
     }
 }
 

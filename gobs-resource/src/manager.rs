@@ -183,10 +183,10 @@ impl ResourceManager {
     }
 
     #[tracing::instrument(target = "profile", skip_all, level = "trace")]
-    pub fn update<R: ResourceType + 'static>(&mut self) {
+    pub fn update<'a, R: ResourceType + 'static>(&mut self, backend: &mut R::ResourceBackend<'a>) {
         tracing::trace!(target: logger::RESOURCES, "Update registry for {:?}", std::any::type_name::<R>());
 
-        let mut to_delete = vec![];
+        let mut to_delete: Vec<ResourceHandle<R>> = vec![];
 
         for value in self.registry.values_mut() {
             tracing::trace!(target: logger::RESOURCES, "Registry Type={:?}, key={:?}, life={}, lifetime={:?}", std::any::type_name::<R>(), value.handle.id, value.life, value.lifetime);
@@ -202,8 +202,10 @@ impl ResourceManager {
 
         let loader = self.loader.get_mut::<R::ResourceLoader>().unwrap();
         for handle in to_delete {
-            if let Some(resource) = self.registry.remove(&handle) {
-                loader.unload(resource);
+            if let Some(resource) = self.registry.remove(&handle)
+                && let ResourceState::Loaded(data) = resource.data
+            {
+                loader.unload(backend, data);
             }
         }
     }
@@ -347,7 +349,7 @@ mod tests {
             Ok(DummyData {})
         }
 
-        fn unload(&mut self, _resource: crate::resource::Resource<Dummy>) {}
+        fn unload(&mut self, _backend: &mut Backend, _data: DummyData) {}
 
         fn flush(&mut self) {}
     }

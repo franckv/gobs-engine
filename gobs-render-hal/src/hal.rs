@@ -52,15 +52,19 @@ pub trait RenderHAL {
         usage: ImageUsage,
         extent: ImageExtent2D,
     ) -> Handle;
-    fn create_sampler(&mut self, mag_filter: SamplerFilter, min_filter: SamplerFilter) -> Handle;
     fn invalidate_image(&mut self, image: Handle);
     fn get_image_extent(&self, image: Handle) -> ImageExtent2D;
+    fn destroy_image(&mut self, image: Handle);
+
+    fn create_sampler(&mut self, mag_filter: SamplerFilter, min_filter: SamplerFilter) -> Handle;
+    fn destroy_sampler(&mut self, sampler: Handle);
 
     fn create_command_buffer(&mut self, name: &str, ty: CommandQueueType)
     -> Box<dyn CommandBuffer>;
 
     fn create_graphics_pipeline(&self, name: &str) -> Box<dyn GraphicsPipelineBuilder>;
     fn create_compute_pipeline(&self, name: &str) -> Box<dyn ComputePipelineBuilder>;
+    fn destroy_pipeline(&mut self, pipeline: Handle);
 
     fn get_pipeline_object_layout(&self, pipeline: Handle) -> &ObjectDataLayout;
     fn get_pipeline_descriptor_types(&self, pipeline: Handle) -> Vec<BindingGroupType>;
@@ -81,4 +85,6 @@ pub trait RenderHAL {
     fn get_extent(&self) -> ImageExtent2D;
 
     fn wait(&mut self);
+
+    fn info(&self);
 }
