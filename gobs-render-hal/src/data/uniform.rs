@@ -9,11 +9,12 @@ pub struct UniformBuffer {
 
 impl UniformBuffer {
     pub fn new(
+        label: &str,
         hal: &mut dyn RenderHAL,
         bind_layout: BindingGroupLayout,
         data_layout: &UniformLayout,
     ) -> Self {
-        let buffer = hal.create_buffer("uniform", data_layout.size(), BufferType::Uniform);
+        let buffer = hal.create_buffer(label, data_layout.size(), BufferType::Uniform);
 
         UniformBuffer {
             buffer: BindResource::new(bind_layout, vec![buffer]),

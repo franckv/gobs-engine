@@ -260,6 +260,14 @@ impl RenderHAL for VulkanHAL {
     fn info(&self) {
         tracing::info!(target: logger::MEMORY, "Stats: buffers={}, images={}, samplers={}, pipelines={}",
             self.registry.buffers.len(), self.registry.images.len(), self.registry.samplers.len(), self.registry.pipelines.len());
+
+        for buffer in self.registry.buffers.values() {
+            tracing::info!(target: logger::MEMORY, "{}", buffer.buffer.label());
+        }
+
+        for image in self.registry.images.values() {
+            tracing::info!(target: logger::MEMORY, "{}", &image.label);
+        }
     }
 }
 

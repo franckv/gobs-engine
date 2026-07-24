@@ -51,10 +51,11 @@ impl RenderJob {
         scene_data_layout: &UniformLayout,
         render_flags: RenderFlags,
     ) -> Self {
+        let label = format!("Scene data {}", pass_name);
         let uniform_bindgroup = BindingGroupLayout::new(BindingGroupType::SceneData)
             .add_binding(DescriptorType::Uniform, DescriptorStage::All);
         let uniform_buffer =
-            UniformBuffer::new(ctx.hal_mut(), uniform_bindgroup, scene_data_layout);
+            UniformBuffer::new(&label, ctx.hal_mut(), uniform_bindgroup, scene_data_layout);
 
         Self {
             pass_name,
