@@ -105,7 +105,12 @@ impl App {
 
         let material = ctx.resource_manager.get_by_name("texture").unwrap();
 
-        let properties = TextureProperties::with_colors("Framebuffer", framebuffer, extent);
+        let properties = TextureProperties::with_colors(
+            "Framebuffer",
+            examples::DIFFUSE_FORMAT,
+            framebuffer,
+            extent,
+        );
 
         let texture = ctx
             .resource_manager

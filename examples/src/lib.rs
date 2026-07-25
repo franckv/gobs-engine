@@ -6,10 +6,12 @@ use tracing::{Level, level_filters::LevelFilter};
 use tracing_subscriber::{
     EnvFilter, Layer, filter::Targets, fmt, layer::SubscriberExt, util::SubscriberInitExt as _,
 };
+use tracing_tracy::TracyLayer;
+
+use gobs::core::ImageFormat;
 
 pub use app::SampleApp;
 pub use controller::CameraController;
-use tracing_tracy::TracyLayer;
 
 pub const WALL_TEXTURE: &str = "wall.png";
 pub const WALL_TEXTURE_N: &str = "wall_n.png";
@@ -36,6 +38,8 @@ pub const TILE_SIZE: f32 = 1.;
 pub const WIDTH: u32 = 800;
 pub const HEIGHT: u32 = 600;
 pub const GLTF_MODEL: &str = "house2.glb";
+pub const DIFFUSE_FORMAT: ImageFormat = ImageFormat::R8g8b8a8Srgb;
+pub const NORMAL_FORMAT: ImageFormat = ImageFormat::R8g8b8a8Unorm;
 
 pub fn init_logger() {
     tracing_subscriber::registry()

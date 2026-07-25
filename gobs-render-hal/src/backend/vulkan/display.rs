@@ -49,7 +49,12 @@ impl Display {
         frames_in_flight: usize,
     ) {
         if let Some(surface) = &self.surface {
-            let swapchain = Self::create_swapchain(surface.clone(), device.clone());
+            // TODO: hardcoded
+            let swapchain = Self::create_swapchain(
+                surface.clone(),
+                device.clone(),
+                &[ImageFormat::B8g8r8a8Unorm],
+            );
             self.swapchain_images = swapchain
                 .create_images()
                 .into_iter()
@@ -145,7 +150,11 @@ impl Display {
         }
     }
 
-    fn create_swapchain(surface: Arc<Surface>, device: Arc<Device>) -> SwapChain {
+    fn create_swapchain(
+        surface: Arc<Surface>,
+        device: Arc<Device>,
+        allowed_formats: &[ImageFormat],
+    ) -> SwapChain {
         let presents = surface.get_available_presentation_modes(device.clone());
 
         let present = *presents
@@ -171,7 +180,7 @@ impl Display {
         let format = *formats
             .iter()
             .find(|f| {
-                f.format == ImageFormat::B8g8r8a8Unorm && f.color_space == ColorSpace::SrgbNonlinear
+                allowed_formats.contains(&f.format) && f.color_space == ColorSpace::SrgbNonlinear
             })
             .unwrap();
 

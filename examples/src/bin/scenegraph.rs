@@ -7,10 +7,7 @@ use gobs::{
         MaterialInstanceProperties, MaterialsConfig, Model, RenderError, Shapes, TextureProperties,
         TextureType,
     },
-    resource::{
-        ResourceLifetime,
-        {camera::Camera, light::Light},
-    },
+    resource::{ResourceLifetime, camera::Camera, light::Light},
     scene::{
         components::{NodeId, NodeValue},
         graph::scenegraph::SceneGraph,
@@ -148,12 +145,20 @@ impl App {
     async fn init(&mut self, ctx: &mut GameContext) {
         MaterialsConfig::load_resources("materials.ron", &mut ctx.resource_manager).await;
 
-        let properties = TextureProperties::with_file("Wall Diffuse", examples::WALL_TEXTURE);
+        let properties = TextureProperties::with_file(
+            "Wall Diffuse",
+            examples::DIFFUSE_FORMAT,
+            examples::WALL_TEXTURE,
+        );
         let diffuse_texture = ctx
             .resource_manager
             .add(properties, ResourceLifetime::Static, false);
 
-        let mut properties = TextureProperties::with_file("Wall Normal", examples::WALL_TEXTURE_N);
+        let mut properties = TextureProperties::with_file(
+            "Wall Normal",
+            examples::NORMAL_FORMAT,
+            examples::WALL_TEXTURE_N,
+        );
         properties.format.ty = TextureType::Normal;
         let normal_texture = ctx
             .resource_manager

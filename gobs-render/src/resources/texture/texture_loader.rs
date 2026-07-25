@@ -221,7 +221,7 @@ impl ResourceLoader<Texture> for TextureLoader {
         );
         hal.upload_buffer(staging.buffer, &staging_data, 0);
 
-        let image_format = properties.format.ty.into();
+        let image_format = properties.format.format;
         let image = hal.create_image(
             properties.name(),
             image_format,

@@ -7,10 +7,7 @@ use gobs::{
         Material, MaterialInstanceProperties, MaterialsConfig, Model, RenderError, Shapes,
         TextureProperties, TextureType,
     },
-    resource::{
-        ResourceLifetime,
-        {camera::Camera, light::Light},
-    },
+    resource::{ResourceLifetime, camera::Camera, light::Light},
     scene::{components::NodeValue, scene::Scene},
     ui::UIRenderer,
 };
@@ -136,12 +133,20 @@ impl App {
         let material_properties = &ctx.resource_manager.get::<Material>(&material).properties;
         let vertex_attributes = material_properties.pipeline_properties.vertex_attributes;
 
-        let properties = TextureProperties::with_file("Wall Diffuse", examples::WALL_TEXTURE);
+        let properties = TextureProperties::with_file(
+            "Wall Diffuse",
+            examples::DIFFUSE_FORMAT,
+            examples::WALL_TEXTURE,
+        );
         let diffuse_texture = ctx
             .resource_manager
             .add(properties, ResourceLifetime::Static, false);
 
-        let mut properties = TextureProperties::with_file("Wall Normal", examples::WALL_TEXTURE_N);
+        let mut properties = TextureProperties::with_file(
+            "Wall Normal",
+            examples::NORMAL_FORMAT,
+            examples::WALL_TEXTURE_N,
+        );
         properties.format.ty = TextureType::Normal;
         let normal_texture = ctx
             .resource_manager

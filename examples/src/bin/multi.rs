@@ -121,12 +121,20 @@ impl App {
             ctx.resource_manager
                 .add(color_instance_properties, ResourceLifetime::Static, false);
 
-        let properties = TextureProperties::with_file("Wall Diffuse", examples::WALL_TEXTURE);
+        let properties = TextureProperties::with_file(
+            "Wall Diffuse",
+            examples::DIFFUSE_FORMAT,
+            examples::WALL_TEXTURE,
+        );
         let diffuse_texture = ctx
             .resource_manager
             .add(properties, ResourceLifetime::Static, false);
 
-        let mut properties = TextureProperties::with_file("Wall Normal", examples::WALL_TEXTURE_N);
+        let mut properties = TextureProperties::with_file(
+            "Wall Normal",
+            examples::NORMAL_FORMAT,
+            examples::WALL_TEXTURE_N,
+        );
         properties.format.ty = TextureType::Normal;
         let normal_texture = ctx
             .resource_manager

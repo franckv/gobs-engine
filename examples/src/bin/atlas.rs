@@ -7,10 +7,7 @@ use gobs::{
         MaterialInstanceProperties, MaterialsConfig, Model, RenderError, Shapes, TextureProperties,
         TextureType,
     },
-    resource::{
-        ResourceLifetime,
-        {camera::Camera, light::Light},
-    },
+    resource::{ResourceLifetime, camera::Camera, light::Light},
     scene::{components::NodeValue, scene::Scene},
     ui::UIRenderer,
 };
@@ -132,14 +129,22 @@ impl App {
 
         let material = ctx.resource_manager.get_by_name("normal").unwrap();
 
-        let properties =
-            TextureProperties::with_atlas("Atlas Diffuse", examples::ATLAS, examples::ATLAS_COLS);
+        let properties = TextureProperties::with_atlas(
+            "Atlas Diffuse",
+            examples::DIFFUSE_FORMAT,
+            examples::ATLAS,
+            examples::ATLAS_COLS,
+        );
         let diffuse_texture = ctx
             .resource_manager
             .add(properties, ResourceLifetime::Static, false);
 
-        let mut properties =
-            TextureProperties::with_atlas("Atlas Normal", examples::ATLAS_N, examples::ATLAS_COLS);
+        let mut properties = TextureProperties::with_atlas(
+            "Atlas Normal",
+            examples::NORMAL_FORMAT,
+            examples::ATLAS_N,
+            examples::ATLAS_COLS,
+        );
         properties.format.ty = TextureType::Normal;
         let normal_texture = ctx
             .resource_manager

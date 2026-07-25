@@ -7,7 +7,7 @@ use gltf::{
     mesh::util::{ReadColors, ReadIndices},
 };
 
-use gobs_core::{Color, ImageExtent2D, SamplerFilter, Transform, logger};
+use gobs_core::{Color, ImageExtent2D, ImageFormat, SamplerFilter, Transform, logger};
 use gobs_render::{
     BlendMode, GfxContext, MeshGeometry, Model, TextureProperties, TextureType, VertexData,
 };
@@ -255,10 +255,13 @@ impl GLTFLoader {
                 ty
             );
 
+            // TODO: move to config
+            let texture_format = ImageFormat::R8g8b8a8Srgb;
             match data.format {
                 image::Format::R8G8B8A8 => {
                     let mut properties = TextureProperties::with_data(
                         &name,
+                        texture_format,
                         data.pixels.clone(),
                         ImageExtent2D::new(data.width, data.height),
                     );
@@ -280,6 +283,7 @@ impl GLTFLoader {
 
                     let mut properties = TextureProperties::with_data(
                         &name,
+                        texture_format,
                         pixels,
                         ImageExtent2D::new(data.width, data.height),
                     );
@@ -301,6 +305,7 @@ impl GLTFLoader {
 
                     let mut properties = TextureProperties::with_data(
                         &name,
+                        texture_format,
                         pixels,
                         ImageExtent2D::new(data.width, data.height),
                     );

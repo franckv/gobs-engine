@@ -28,6 +28,7 @@ pub enum TexturePath {
 #[derive(Clone, Debug)]
 pub struct TextureFormat {
     pub ty: TextureType,
+    pub format: ImageFormat,
     pub extent: ImageExtent2D,
     pub mag_filter: SamplerFilter,
     pub min_filter: SamplerFilter,
@@ -47,12 +48,18 @@ impl ResourceProperties for TextureProperties {
 }
 
 impl TextureProperties {
-    pub fn with_data(name: &str, data: Vec<u8>, extent: ImageExtent2D) -> Self {
+    pub fn with_data(
+        name: &str,
+        format: ImageFormat,
+        data: Vec<u8>,
+        extent: ImageExtent2D,
+    ) -> Self {
         Self {
             name: name.to_string(),
             path: TexturePath::Bytes(data),
             format: TextureFormat {
                 ty: TextureType::Diffuse,
+                format,
                 extent,
                 mag_filter: SamplerFilter::FilterLinear,
                 min_filter: SamplerFilter::FilterLinear,
@@ -60,12 +67,13 @@ impl TextureProperties {
         }
     }
 
-    pub fn with_file(name: &str, filename: &str) -> Self {
+    pub fn with_file(name: &str, format: ImageFormat, filename: &str) -> Self {
         Self {
             name: name.to_string(),
             path: TexturePath::File(filename.to_string()),
             format: TextureFormat {
                 ty: TextureType::Diffuse,
+                format,
                 extent: ImageExtent2D::new(0, 0),
                 mag_filter: SamplerFilter::FilterLinear,
                 min_filter: SamplerFilter::FilterLinear,
@@ -73,12 +81,13 @@ impl TextureProperties {
         }
     }
 
-    pub fn with_atlas(name: &str, filenames: &[&str], cols: u32) -> Self {
+    pub fn with_atlas(name: &str, format: ImageFormat, filenames: &[&str], cols: u32) -> Self {
         Self {
             name: name.to_string(),
             path: TexturePath::Atlas(filenames.iter().map(|&f| f.to_string()).collect(), cols),
             format: TextureFormat {
                 ty: TextureType::Diffuse,
+                format,
                 extent: ImageExtent2D::new(1, 1),
                 mag_filter: SamplerFilter::FilterLinear,
                 min_filter: SamplerFilter::FilterLinear,
@@ -86,12 +95,13 @@ impl TextureProperties {
         }
     }
 
-    pub fn with_color(name: &str, color: Color) -> Self {
+    pub fn with_color(name: &str, format: ImageFormat, color: Color) -> Self {
         Self {
             name: name.to_string(),
             path: TexturePath::Color(color),
             format: TextureFormat {
                 ty: TextureType::Diffuse,
+                format,
                 extent: ImageExtent2D::new(1, 1),
                 mag_filter: SamplerFilter::FilterLinear,
                 min_filter: SamplerFilter::FilterLinear,
@@ -99,12 +109,18 @@ impl TextureProperties {
         }
     }
 
-    pub fn with_colors(name: &str, colors: Vec<Color>, extent: ImageExtent2D) -> Self {
+    pub fn with_colors(
+        name: &str,
+        format: ImageFormat,
+        colors: Vec<Color>,
+        extent: ImageExtent2D,
+    ) -> Self {
         Self {
             name: name.to_string(),
             path: TexturePath::Colors(colors),
             format: TextureFormat {
                 ty: TextureType::Diffuse,
+                format,
                 extent,
                 mag_filter: SamplerFilter::FilterLinear,
                 min_filter: SamplerFilter::FilterLinear,
@@ -120,6 +136,7 @@ impl Default for TextureProperties {
             path: TexturePath::Default,
             format: TextureFormat {
                 ty: TextureType::Diffuse,
+                format: ImageFormat::R8g8b8a8Srgb,
                 extent: ImageExtent2D::new(1, 1),
                 mag_filter: SamplerFilter::FilterLinear,
                 min_filter: SamplerFilter::FilterLinear,
@@ -187,13 +204,4 @@ pub enum TextureType {
     Diffuse,
     Normal,
     // TODO: Emissive, Specular, Opacity, Glossiness, ...
-}
-
-impl From<TextureType> for ImageFormat {
-    fn from(val: TextureType) -> Self {
-        match val {
-            TextureType::Diffuse => ImageFormat::R8g8b8a8Srgb,
-            TextureType::Normal => ImageFormat::R8g8b8a8Unorm,
-        }
-    }
 }

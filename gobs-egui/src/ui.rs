@@ -9,7 +9,7 @@ use glam::{Vec2, Vec3};
 use parking_lot::RwLock;
 use tracing::Level;
 
-use gobs_core::{Color, ImageExtent2D, Input, Key, MouseButton, Transform, logger};
+use gobs_core::{Color, ImageExtent2D, ImageFormat, Input, Key, MouseButton, Transform, logger};
 use gobs_render::{
     BoundingBox, GfxContext, Material, MaterialInstance, MaterialInstanceProperties,
     MaterialsConfig, MeshGeometry, Model, RenderBatch, RenderFlags, Renderable, Texture,
@@ -323,6 +323,7 @@ impl UIRenderer {
 
         let texture_properties = TextureProperties::with_data(
             "Font texture",
+            ImageFormat::R8g8b8a8Srgb,
             bytes,
             ImageExtent2D::new(color.width() as u32, color.height() as u32),
         );
