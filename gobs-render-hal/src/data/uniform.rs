@@ -44,6 +44,8 @@ pub trait UniformData<DataProp> {
 pub struct UniformLayout {
     layout: Vec<Attribute>,
     mode: AlignMode,
+    offsets: Vec<usize>,
+    size: usize,
 }
 
 impl UniformLayout {
@@ -51,11 +53,15 @@ impl UniformLayout {
         Self {
             layout: Vec::new(),
             mode,
+            offsets: Vec::new(),
+            size: 0,
         }
     }
 
     pub fn prop(mut self, _label: &str, prop: Attribute) -> Self {
         self.layout.push(prop);
+        self.offsets = Attribute::offsets(&self.layout, self.mode);
+        self.size = Attribute::stride(&self.layout, self.mode);
 
         self
     }
@@ -69,7 +75,7 @@ impl UniformLayout {
     }
 
     pub fn size(&self) -> usize {
-        Attribute::stride(&self.layout, self.mode)
+        self.size
     }
 
     pub fn data(&self, props: &[AttributeData]) -> Vec<u8> {
@@ -82,16 +88,10 @@ impl UniformLayout {
 
     pub fn copy_data(&self, props: &[AttributeData], data: &mut Vec<u8>) {
         debug_assert_eq!(self.len(), props.len(), "Invalid uniform layout");
-        debug_assert!(
-            self.layout
-                .iter()
-                .zip(props)
-                .all(|(attr, data)| data.ty() == *attr)
-        );
-        let offsets = AttributeData::offsets(props, self.mode);
+        // debug_assert!(self.layout.iter().zip(props).all(|(attr, data)| data.ty() == *attr));
 
         let data_start = data.len();
-        for (prop, offset) in props.iter().zip(offsets) {
+        for (prop, offset) in props.iter().zip(&self.offsets) {
             let position = data.len() - data_start;
             AttributeData::pad(data, offset - position);
             prop.copy(data);
