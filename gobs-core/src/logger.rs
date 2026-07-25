@@ -1,4 +1,5 @@
 pub const APP: &str = "app";
+pub const CONFIG: &str = "config";
 pub const EVENTS: &str = "events";
 pub const INIT: &str = "init";
 pub const MEMORY: &str = "memory";

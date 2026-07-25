@@ -8,10 +8,10 @@ use winit::{
     window::Window,
 };
 
-use gobs_core::{Input, logger, utils::timer::Timer};
-use gobs_render::RenderError;
+use gobs_core::{Config, Input, logger, utils::timer::Timer};
+use gobs_render::{RenderConfig, RenderError};
 
-use crate::{AppError, context::GameContext, options::GameOptions};
+use crate::{AppError, context::GameContext};
 
 pub struct Application<R>
 where
@@ -23,7 +23,7 @@ where
     close_requested: bool,
     is_minimized: bool,
     title: String,
-    options: GameOptions,
+    config: Config,
     width: u32,
     height: u32,
 }
@@ -48,8 +48,13 @@ where
 
         tracing::info!("Running with validation layers: {}", validation_enabled);
 
-        let mut context =
-            GameContext::new(&self.title, &self.options, Some(window), validation_enabled).unwrap();
+        let mut context = GameContext::new(
+            &self.title,
+            self.config.clone(),
+            Some(window),
+            validation_enabled,
+        )
+        .unwrap();
         tracing::info!(target: logger::EVENTS, "Start main loop");
 
         let future = async {
@@ -201,7 +206,10 @@ impl<R> Application<R>
 where
     R: GobsGame + 'static,
 {
-    pub fn new(title: &str, options: GameOptions, width: u32, height: u32) -> Application<R> {
+    pub fn new(title: &str, width: u32, height: u32) -> Application<R> {
+        let mut config = Config::default();
+        config.register::<RenderConfig>();
+
         Application {
             context: None,
             runnable: None,
@@ -209,10 +217,19 @@ where
             is_minimized: false,
             timer: Timer::new(),
             title: title.to_string(),
-            options,
+            config,
             width,
             height,
         }
+    }
+
+    pub fn with_config<F>(&mut self, mut f: F) -> &mut Self
+    where
+        F: FnMut(&mut Config),
+    {
+        f(&mut self.config);
+
+        self
     }
 
     #[tracing::instrument(target = "profile", skip_all, level = "trace")]
@@ -230,15 +247,6 @@ where
             runnable.close(context);
             context.close();
         }
-    }
-}
-
-impl<R> Default for Application<R>
-where
-    R: GobsGame + 'static,
-{
-    fn default() -> Self {
-        Self::new("Default", GameOptions::default(), 800, 600)
     }
 }
 

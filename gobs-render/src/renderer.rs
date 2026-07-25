@@ -1,29 +1,8 @@
-use gobs_core::{ImageExtent2D, logger};
+use gobs_core::{Config, ImageExtent2D, logger};
 use gobs_render_graph::{FrameData, FrameGraph, GfxContext, RenderError};
 use gobs_resource::ResourceManager;
 
-use crate::{Pipeline, PipelinesConfig, RenderBatch};
-
-#[derive(Debug)]
-pub struct RendererOptions {
-    pub graph_filename: String,
-    pub graph: String,
-    pub pipeline_filename: String,
-    pub frames_in_flight: usize,
-    pub load_graph: bool,
-}
-
-impl Default for RendererOptions {
-    fn default() -> Self {
-        Self {
-            graph_filename: "graph.ron".to_string(),
-            graph: "scene".to_string(),
-            pipeline_filename: "pipelines.ron".to_string(),
-            frames_in_flight: 2,
-            load_graph: true,
-        }
-    }
-}
+use crate::{Pipeline, PipelinesConfig, RenderBatch, RenderConfig};
 
 pub struct Renderer {
     pub graph: FrameGraph,
@@ -35,17 +14,21 @@ pub struct Renderer {
 impl Renderer {
     pub fn new(
         mut gfx: GfxContext,
-        options: &RendererOptions,
+        config: &Config,
         resource_manager: &mut ResourceManager,
     ) -> Self {
-        let graph = if options.load_graph {
-            PipelinesConfig::load_resources(&gfx, &options.pipeline_filename, resource_manager)
-                .expect("Load pipelines");
+        let graph = if config.get_bool(RenderConfig::LoadGraph) {
+            PipelinesConfig::load_resources(
+                &gfx,
+                config.get_string(RenderConfig::PipelineFileName),
+                resource_manager,
+            )
+            .expect("Load pipelines");
 
             FrameGraph::load(
                 &mut gfx,
-                &options.graph_filename,
-                &options.graph,
+                config.get_string(RenderConfig::GraphFileName),
+                config.get_string(RenderConfig::GraphName),
                 |pipeline, ctx| {
                     let pipeline_handle = resource_manager.get_by_name::<Pipeline>(pipeline)?;
 

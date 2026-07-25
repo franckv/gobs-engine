@@ -2,7 +2,7 @@ use glam::{Quat, Vec3};
 
 use gobs::{
     core::{Color, Input, Transform, logger},
-    game::{AppError, Application, GameContext, GameOptions, GobsGame},
+    game::{AppError, Application, GameContext, GobsGame},
     render::{
         MaterialInstanceProperties, MaterialsConfig, Model, RenderError, Shapes, TextureProperties,
         TextureType,
@@ -186,11 +186,5 @@ fn main() {
 
     tracing::info!(target: logger::APP, "Engine start");
 
-    Application::<App>::new(
-        "Atlas",
-        GameOptions::default(),
-        examples::WIDTH,
-        examples::HEIGHT,
-    )
-    .run();
+    Application::<App>::new("Atlas", examples::WIDTH, examples::HEIGHT).run();
 }

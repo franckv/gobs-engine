@@ -1,4 +1,5 @@
 mod batch;
+mod config;
 mod data;
 mod model;
 mod renderable;
@@ -13,10 +14,11 @@ pub use gobs_render_hal::{
 };
 
 pub use batch::RenderBatch;
+pub use config::RenderConfig;
 pub use data::MaterialDataPropData;
 pub use model::{Model, ModelId};
 pub use renderable::Renderable;
-pub use renderer::{Renderer, RendererOptions};
+pub use renderer::Renderer;
 
 pub use resources::{
     Bounded, BoundingBox, GraphicsPipelineProperties, Material, MaterialData, MaterialInstance,

@@ -7,7 +7,7 @@ use gltf::{
     mesh::util::{ReadColors, ReadIndices},
 };
 
-use gobs_core::{Color, ImageExtent2D, ImageFormat, SamplerFilter, Transform, logger};
+use gobs_core::{Color, Config, ImageExtent2D, SamplerFilter, Transform, logger};
 use gobs_render::{
     BlendMode, GfxContext, MeshGeometry, Model, TextureProperties, TextureType, VertexData,
 };
@@ -17,7 +17,7 @@ use gobs_scene::{
     graph::scenegraph::SceneGraph,
 };
 
-use crate::{AssetError, manager::MaterialManager};
+use crate::{AssetError, config::GltfConfig, manager::MaterialManager};
 
 pub struct GLTFLoader {
     material_manager: MaterialManager,
@@ -39,6 +39,7 @@ impl GLTFLoader {
     pub fn load<P>(
         &mut self,
         ctx: &GfxContext,
+        config: &Config,
         resource_manager: &mut ResourceManager,
         file: P,
     ) -> Result<(), AssetError>
@@ -47,7 +48,7 @@ impl GLTFLoader {
     {
         let (doc, buffers, images) = gltf::import(&file)?;
 
-        self.load_material(resource_manager, &doc, &images);
+        self.load_material(config, resource_manager, &doc, &images);
 
         self.load_models(ctx, resource_manager, &doc, &buffers);
         self.load_scene(&doc);
@@ -204,6 +205,7 @@ impl GLTFLoader {
 
     fn load_textures(
         &mut self,
+        config: &Config,
         resource_manager: &mut ResourceManager,
         doc: &Document,
         images: &[image::Data],
@@ -256,7 +258,7 @@ impl GLTFLoader {
             );
 
             // TODO: move to config
-            let texture_format = ImageFormat::R8g8b8a8Srgb;
+            let texture_format = config.get_image_format(GltfConfig::TextureFormat);
             match data.format {
                 image::Format::R8G8B8A8 => {
                     let mut properties = TextureProperties::with_data(
@@ -338,11 +340,12 @@ impl GLTFLoader {
 
     fn load_material(
         &mut self,
+        config: &Config,
         resource_manager: &mut ResourceManager,
         doc: &Document,
         images: &[image::Data],
     ) {
-        self.load_textures(resource_manager, doc, images);
+        self.load_textures(config, resource_manager, doc, images);
 
         for mat in doc.materials() {
             let name = mat.name().unwrap_or_default();

@@ -3,7 +3,7 @@ use glam::{Quat, Vec3};
 use gobs::{
     assets::gltf_load,
     core::{Color, Input, logger},
-    game::{AppError, Application, GameContext, GameOptions, GobsGame},
+    game::{AppError, Application, GameContext, GobsGame},
     render::RenderError,
     resource::{
         load,
@@ -136,7 +136,12 @@ impl App {
         let mut gltf_loader = gltf_load::GLTFLoader::new(&mut ctx.resource_manager).unwrap();
 
         gltf_loader
-            .load(&ctx.renderer.gfx, &mut ctx.resource_manager, file_name)
+            .load(
+                &ctx.renderer.gfx,
+                &ctx.config,
+                &mut ctx.resource_manager,
+                file_name,
+            )
             .expect("Load gltf");
 
         gltf_loader.scene
@@ -148,11 +153,5 @@ fn main() {
 
     tracing::info!(target: logger::APP, "Engine start");
 
-    Application::<App>::new(
-        "glTF",
-        GameOptions::default(),
-        examples::WIDTH,
-        examples::HEIGHT,
-    )
-    .run();
+    Application::<App>::new("glTF", examples::WIDTH, examples::HEIGHT).run();
 }

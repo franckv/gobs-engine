@@ -1,13 +1,12 @@
 use winit::window::Window;
 
-use gobs_core::logger;
+use gobs_core::{Config, logger};
 use gobs_render::{
     GfxContext, Material, MaterialInstance, MaterialInstanceLoader, MaterialLoader, Mesh,
-    MeshLoader, Pipeline, PipelineLoader, RenderError, Renderer, Texture, TextureLoader,
+    MeshLoader, Pipeline, PipelineLoader, RenderConfig, RenderError, Renderer, Texture,
+    TextureLoader,
 };
 use gobs_resource::ResourceManager;
-
-use crate::GameOptions;
 
 #[derive(Clone, Debug)]
 pub struct AppInfo {
@@ -16,6 +15,7 @@ pub struct AppInfo {
 
 pub struct GameContext {
     pub app_info: AppInfo,
+    pub config: Config,
     pub resource_manager: ResourceManager,
     pub renderer: Renderer,
 }
@@ -23,11 +23,14 @@ pub struct GameContext {
 impl GameContext {
     pub fn new(
         name: &str,
-        options: &GameOptions,
+        config: Config,
         window: Option<Window>,
         validation: bool,
     ) -> Result<Self, RenderError> {
-        let mut gfx = GfxContext::new(name, window, options.renderer.frames_in_flight, validation)?;
+        let frames_in_flight = config.get_int(RenderConfig::FramesInFlight) as usize;
+        tracing::error!("fif: {}", frames_in_flight);
+
+        let mut gfx = GfxContext::new(name, window, frames_in_flight, validation)?;
         let mut resource_manager = ResourceManager::new(gfx.frames_in_flight());
 
         let texture_loader = TextureLoader::new(&mut gfx);
@@ -45,12 +48,13 @@ impl GameContext {
         let material_instance_loader = MaterialInstanceLoader::new();
         resource_manager.register_resource::<MaterialInstance>(material_instance_loader);
 
-        let renderer = Renderer::new(gfx, &options.renderer, &mut resource_manager);
+        let renderer = Renderer::new(gfx, &config, &mut resource_manager);
 
         Ok(Self {
             app_info: AppInfo {
                 name: name.to_string(),
             },
+            config,
             resource_manager,
             renderer,
         })

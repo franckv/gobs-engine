@@ -2,9 +2,11 @@ use glam::{Quat, Vec3};
 use pollster::FutureExt;
 
 use gobs::{
-    core::{Color, Input, Transform, logger},
-    game::{AppError, GameContext, GameOptions, GobsGame},
-    render::{MaterialInstanceProperties, MaterialsConfig, Model, RenderError, Shapes},
+    core::{Color, Config, Input, Transform, logger},
+    game::{AppError, GameContext, GobsGame},
+    render::{
+        MaterialInstanceProperties, MaterialsConfig, Model, RenderConfig, RenderError, Shapes,
+    },
     resource::{ResourceLifetime, light::Light},
     scene::{components::NodeValue, scene::Scene},
 };
@@ -100,10 +102,10 @@ fn main() {
 
     tracing::info!(target: logger::APP, "Engine start");
 
-    let mut options = GameOptions::default();
-    options.renderer.graph = "headless".to_string();
+    let mut config = Config::default();
+    config.set_string(RenderConfig::GraphName, "headless");
 
-    let mut ctx = GameContext::new("Triangle", &options, None, true).unwrap();
+    let mut ctx = GameContext::new("Triangle", config, None, true).unwrap();
 
     let future = async {
         let mut app = App::create(&mut ctx).await.unwrap();

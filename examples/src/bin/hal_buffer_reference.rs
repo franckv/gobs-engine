@@ -1,10 +1,11 @@
 use gobs::{
     core::{Color, ImageFormat, Input, logger},
-    game::{AppError, Application, GameContext, GameOptions, GobsGame},
+    game::{AppError, Application, GameContext, GobsGame},
     render::{
         AlignMode, AttributeData, BufferType, CommandBuffer, CommandQueueType, CullMode,
         DynamicStateElem, FrontFace, Handle, ImageLayout, ObjectDataLayout, ObjectDataProp, Rect2D,
-        RenderError, RenderHAL, Shapes, UniformData, VertexAttribute, VertexData, Viewport,
+        RenderConfig, RenderError, RenderHAL, Shapes, UniformData, VertexAttribute, VertexData,
+        Viewport,
     },
 };
 
@@ -188,10 +189,11 @@ fn main() {
 
     tracing::info!(target: logger::APP, "Engine start");
 
-    let mut options = GameOptions::default();
-    options.renderer.graph = "none".to_string();
-    options.renderer.frames_in_flight = 1;
-    options.renderer.load_graph = false;
-
-    Application::<App>::new("Triangle", options, examples::WIDTH, examples::HEIGHT).run();
+    Application::<App>::new("Triangle", examples::WIDTH, examples::HEIGHT)
+        .with_config(|config| {
+            config.set_string(RenderConfig::GraphName, "none");
+            config.set_int(RenderConfig::FramesInFlight, 1);
+            config.set_bool(RenderConfig::LoadGraph, false);
+        })
+        .run();
 }

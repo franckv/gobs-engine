@@ -1,4 +1,5 @@
 mod color;
+mod config;
 pub mod data;
 mod extent;
 mod format;
@@ -10,6 +11,7 @@ mod transform;
 pub mod utils;
 
 pub use color::Color;
+pub use config::{Config, ConfigDefault, ConfigValue};
 pub use extent::ImageExtent2D;
 pub use format::ImageFormat;
 pub use input::{Input, Key, MouseButton};

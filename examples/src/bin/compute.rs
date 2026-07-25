@@ -1,7 +1,7 @@
 use gobs::{
     core::{Input, logger},
-    game::{AppError, Application, GameContext, GameOptions, GobsGame},
-    render::RenderError,
+    game::{AppError, Application, GameContext, GobsGame},
+    render::{RenderConfig, RenderError},
 };
 
 use examples::SampleApp;
@@ -43,8 +43,7 @@ fn main() {
 
     tracing::info!(target: logger::APP, "Engine start");
 
-    let mut options = GameOptions::default();
-    options.renderer.graph = "compute".to_string();
-
-    Application::<App>::new("Compute", options, examples::WIDTH, examples::HEIGHT).run();
+    Application::<App>::new("Compute", examples::WIDTH, examples::HEIGHT)
+        .with_config(|config| config.set_string(RenderConfig::GraphName, "compute"))
+        .run();
 }

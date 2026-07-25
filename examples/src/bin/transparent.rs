@@ -2,8 +2,10 @@ use glam::{Quat, Vec3};
 
 use gobs::{
     core::{Color, Input, Transform, logger},
-    game::{AppError, Application, GameContext, GameOptions, GobsGame},
-    render::{MaterialInstanceProperties, MaterialsConfig, Model, RenderError, Shapes},
+    game::{AppError, Application, GameContext, GobsGame},
+    render::{
+        MaterialInstanceProperties, MaterialsConfig, Model, RenderConfig, RenderError, Shapes,
+    },
     resource::{ResourceLifetime, light::Light},
     scene::{components::NodeValue, scene::Scene},
     ui::UIRenderer,
@@ -159,8 +161,7 @@ fn main() {
 
     tracing::info!(target: logger::APP, "Engine start");
 
-    let mut options = GameOptions::default();
-    options.renderer.graph = "simple".to_string();
-
-    Application::<App>::new("Transparent", options, examples::WIDTH, examples::HEIGHT).run();
+    Application::<App>::new("Transparent", examples::WIDTH, examples::HEIGHT)
+        .with_config(|config| config.set_string(RenderConfig::GraphName, "simple"))
+        .run();
 }
