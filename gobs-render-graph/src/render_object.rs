@@ -52,6 +52,18 @@ impl Ord for RenderObject {
             .cmp(&other.layer)
             .then(self.is_transparent().cmp(&other.is_transparent()))
             .then(self.pipeline.cmp(&other.pipeline))
+            .then(
+                self.material_data
+                    .as_ref()
+                    .map(|bind| bind.id)
+                    .cmp(&other.material_data.as_ref().map(|bind| bind.id)),
+            )
+            .then(
+                self.material_textures
+                    .as_ref()
+                    .map(|bind| bind.id)
+                    .cmp(&other.material_textures.as_ref().map(|bind| bind.id)),
+            )
             .then(self.index_buffer.cmp(&other.index_buffer))
     }
 }
