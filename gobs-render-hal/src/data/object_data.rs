@@ -54,14 +54,12 @@ impl UniformData<ObjectDataProp> for ObjectDataLayout {
         F: Fn(&ObjectDataProp) -> AttributeData,
     {
         let layout = self.uniform_layout();
+        let data_start = buffer.len();
 
-        let mut props = Vec::new();
-
-        for prop in &self.layout {
-            props.push(get_data(prop));
+        for (pos, prop) in self.layout.iter().enumerate() {
+            let value = get_data(prop);
+            layout.copy_data(value, pos, data_start, buffer);
         }
-
-        layout.copy_data(&props, buffer);
     }
 
     fn is_empty(&self) -> bool {

@@ -81,23 +81,32 @@ impl UniformLayout {
     pub fn data(&self, props: &[AttributeData]) -> Vec<u8> {
         let mut data = Vec::new();
 
-        self.copy_data(props, &mut data);
+        for (pos, prop) in props.iter().enumerate() {
+            self.copy_data(*prop, pos, 0, &mut data);
+        }
 
         data
     }
 
-    pub fn copy_data(&self, props: &[AttributeData], data: &mut Vec<u8>) {
-        debug_assert_eq!(self.len(), props.len(), "Invalid uniform layout");
-        // debug_assert!(self.layout.iter().zip(props).all(|(attr, data)| data.ty() == *attr));
+    pub fn copy_data(
+        &self,
+        prop: AttributeData,
+        pos: usize,
+        data_start: usize,
+        data: &mut Vec<u8>,
+    ) {
+        debug_assert_eq!(prop.ty(), self.layout[pos]);
 
-        let data_start = data.len();
-        for (prop, offset) in props.iter().zip(&self.offsets) {
-            let position = data.len() - data_start;
-            AttributeData::pad(data, offset - position);
-            prop.copy(data);
-        }
+        let offset = self.offsets[pos];
+
         let position = data.len() - data_start;
-        AttributeData::pad(data, self.size() - position);
+        AttributeData::pad(data, offset - position);
+        prop.copy(data);
+
+        if pos == self.layout.len() - 1 {
+            let position = data.len() - data_start;
+            AttributeData::pad(data, self.size() - position);
+        }
     }
 }
 
