@@ -121,7 +121,12 @@ impl Mul for Transform {
         let matrix = self.matrix * rhs.matrix;
         let (scale, rotation, translation) = matrix.to_scale_rotation_translation();
 
-        Self::new(translation, rotation, scale)
+        Transform {
+            translation,
+            rotation,
+            scale,
+            matrix,
+        }
     }
 }
 

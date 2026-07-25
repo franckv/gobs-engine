@@ -1,5 +1,6 @@
 use std::{
     any::TypeId,
+    borrow::Borrow,
     collections::{HashMap, hash_map::Entry},
     fmt::Debug,
     hash::Hash,
@@ -34,7 +35,11 @@ impl<Key: Hash + Eq + Debug, Value> ObjectMap<Key, Value> {
         }
     }
 
-    pub fn get<T: 'static>(&self, key: &Key) -> Option<&Value> {
+    pub fn get<T: 'static, K>(&self, key: &K) -> Option<&Value>
+    where
+        Key: Borrow<K>,
+        K: Hash + Eq + ?Sized,
+    {
         self.map.get(&TypeId::of::<T>())?.get(key)
     }
 

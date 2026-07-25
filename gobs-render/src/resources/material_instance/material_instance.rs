@@ -6,7 +6,7 @@ use crate::{
     resources::{Material, MaterialInstanceLoader, Texture},
 };
 
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, Hash, Eq, PartialEq)]
 pub struct MaterialInstance;
 
 impl ResourceType for MaterialInstance {

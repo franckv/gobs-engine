@@ -5,6 +5,7 @@ authors = { workspace = true }
 edition = { workspace = true }
 
 [dependencies]
+ahash = { workspace = true }
 bytemuck = { workspace = true }
 futures = { workspace = true }
 glam = { workspace = true }

@@ -1,4 +1,6 @@
-use std::sync::Arc;
+use std::{collections::hash_map::Entry, sync::Arc};
+
+use ahash::HashMap;
 
 use gobs_core::{ImageExtent2D, Transform, logger};
 use gobs_render_graph::{GfxContext, RenderFlags, RenderObject, SceneData};
@@ -12,6 +14,14 @@ use crate::{
     PipelineProperties, Shapes, Texture, model::Model,
 };
 
+#[derive(Clone)]
+struct MaterialData {
+    render_flags: RenderFlags,
+    pipeline: Option<Handle>,
+    material_data: Option<BindResource>,
+    material_textures: Option<BindResource>,
+}
+
 pub struct RenderBatch {
     pub render_list: Vec<RenderObject>,
     pub(crate) recording: bool,
@@ -21,6 +31,7 @@ pub struct RenderBatch {
     pub(crate) extent: ImageExtent2D,
     generate_bounds: bool,
     bounding_geometry: Option<MeshBuilder>,
+    material_cache: HashMap<ResourceHandle<MaterialInstance>, MaterialData>,
 }
 
 impl RenderBatch {
@@ -36,6 +47,7 @@ impl RenderBatch {
             extent: ImageExtent2D::default(),
             generate_bounds: false,
             bounding_geometry: None,
+            material_cache: HashMap::default(),
         }
     }
 
@@ -43,13 +55,57 @@ impl RenderBatch {
     pub fn reset(&mut self) {
         self.render_list.clear();
         self.bounding_geometry = None;
+        self.material_cache.clear();
     }
 
     pub fn generate_bounds(&mut self, generate_bounds: bool) {
         self.generate_bounds = generate_bounds;
     }
 
-    #[tracing::instrument(target = "profile", skip_all, level = "trace")]
+    fn get_material(
+        &mut self,
+        ctx: &mut GfxContext,
+        resource_manager: &mut ResourceManager,
+        material_instance_handle: &Option<ResourceHandle<MaterialInstance>>,
+    ) -> Result<MaterialData, ResourceError> {
+        let mut render_flags = RenderFlags::default();
+
+        if let Some(material_instance_handle) = material_instance_handle {
+            match self.material_cache.entry(*material_instance_handle) {
+                Entry::Occupied(e) => Ok(e.get().clone()),
+                Entry::Vacant(e) => {
+                    let pipeline = Self::get_pipeline(
+                        ctx.hal_mut(),
+                        resource_manager,
+                        *material_instance_handle,
+                        &mut render_flags,
+                    )?;
+
+                    let (material_data, material_textures) = Self::get_material_data(
+                        ctx.hal_mut(),
+                        resource_manager,
+                        *material_instance_handle,
+                    )?;
+
+                    let material = MaterialData {
+                        render_flags,
+                        pipeline: Some(pipeline),
+                        material_data,
+                        material_textures,
+                    };
+                    Ok(e.insert(material).clone())
+                }
+            }
+        } else {
+            Ok(MaterialData {
+                render_flags,
+                pipeline: None,
+                material_data: None,
+                material_textures: None,
+            })
+        }
+    }
+
     pub fn add_model(
         &mut self,
         ctx: &mut GfxContext,
@@ -68,20 +124,15 @@ impl RenderBatch {
         }
 
         for (mesh, material_instance_handle) in &model.meshes {
-            let mut render_flags = flags;
+            let material = self.get_material(ctx, resource_manager, material_instance_handle)?;
 
-            let pipeline = Self::get_pipeline(
-                ctx.hal_mut(),
-                resource_manager,
-                material_instance_handle,
-                &mut render_flags,
-            )?;
+            let render_flags = flags.union(material.render_flags);
 
-            tracing::debug!(target: logger::RENDER, "Add mesh: {} to render list [{:?}]", model.name(), render_flags);
-
-            if pipeline.is_none() {
+            if material.pipeline.is_none() {
                 tracing::debug!("No material for model {}", model.name());
             }
+
+            tracing::debug!(target: logger::RENDER, "Add mesh: {} to render list [{:?}]", model.name(), render_flags);
 
             let (vertex_buffer, index_buffer, index_len, vertex_attribute, layer) = {
                 let mesh_data = resource_manager.get_data(ctx.hal_mut(), mesh)?;
@@ -95,20 +146,17 @@ impl RenderBatch {
                 )
             };
 
-            let (material_data, material_textures) =
-                Self::get_material_data(ctx.hal_mut(), resource_manager, material_instance_handle)?;
-
             let render_object = RenderObject {
-                model: model.name().to_string(),
+                model: model.name.clone(),
                 transform,
-                pipeline,
+                pipeline: material.pipeline,
                 vertex_buffer,
                 index_buffer,
                 index_len,
                 vertex_attribute,
                 layer,
-                material_data,
-                material_textures,
+                material_data: material.material_data,
+                material_textures: material.material_textures,
                 render_flags,
             };
 
@@ -121,93 +169,78 @@ impl RenderBatch {
     fn get_material_data(
         hal: &mut dyn RenderHAL,
         resource_manager: &mut ResourceManager,
-        material_instance_handle: &Option<ResourceHandle<MaterialInstance>>,
+        material_instance_handle: ResourceHandle<MaterialInstance>,
     ) -> Result<(Option<BindResource>, Option<BindResource>), ResourceError> {
-        if let Some(material_instance_handle) = material_instance_handle {
-            let (material_buffer, material, textures) = {
-                let resource_data = resource_manager.get_data(hal, material_instance_handle)?;
+        let (material_buffer, material, textures) = {
+            let resource_data = resource_manager.get_data(hal, &material_instance_handle)?;
 
-                (
-                    resource_data.data.material_buffer,
-                    resource_data.properties.material,
-                    resource_data.properties.textures.clone(),
-                )
-            };
+            (
+                resource_data.data.material_buffer,
+                resource_data.properties.material,
+                resource_data.properties.textures.clone(),
+            )
+        };
 
-            let material_properties = &resource_manager.get(&material).properties;
+        let material_properties = &resource_manager.get(&material).properties;
 
-            let material_data_layout = material_properties.material_data_layout.bindings_layout();
+        let material_data_layout = material_properties.material_data_layout.bindings_layout();
 
-            let texture_data_layout = &material_properties.texture_data_layout.bindings_layout();
+        let texture_data_layout = &material_properties.texture_data_layout.bindings_layout();
 
-            let material_data = material_buffer.map(|material_buffer| {
-                BindResource::new(material_data_layout.clone(), vec![material_buffer])
-            });
+        let material_data = material_buffer.map(|material_buffer| {
+            BindResource::new(material_data_layout.clone(), vec![material_buffer])
+        });
 
-            let material_textures = {
-                if textures.is_empty() {
-                    None
-                } else {
-                    let mut texture_handles = vec![];
+        let material_textures = {
+            if textures.is_empty() {
+                None
+            } else {
+                let mut texture_handles = vec![];
 
-                    for texture in textures {
-                        let tex_data = resource_manager.get_data(hal, &texture)?;
-                        texture_handles.push(tex_data.data.image);
-                        texture_handles.push(tex_data.data.sampler);
-                    }
-
-                    Some(BindResource::new(
-                        texture_data_layout.clone(),
-                        texture_handles,
-                    ))
+                for texture in textures {
+                    let tex_data = resource_manager.get_data(hal, &texture)?;
+                    texture_handles.push(tex_data.data.image);
+                    texture_handles.push(tex_data.data.sampler);
                 }
-            };
 
-            Ok((material_data, material_textures))
-        } else {
-            Ok((None, None))
-        }
+                Some(BindResource::new(
+                    texture_data_layout.clone(),
+                    texture_handles,
+                ))
+            }
+        };
+
+        Ok((material_data, material_textures))
     }
 
     fn get_pipeline(
         hal: &mut dyn RenderHAL,
         resource_manager: &mut ResourceManager,
-        material_instance_handle: &Option<ResourceHandle<MaterialInstance>>,
+        material_instance_handle: ResourceHandle<MaterialInstance>,
         render_flags: &mut RenderFlags,
-    ) -> Result<Option<Handle>, ResourceError> {
-        let material_handle = match material_instance_handle {
-            Some(material_instance_handle) => {
-                let material_instance = resource_manager.get(material_instance_handle);
-                let material = material_instance.properties.material;
+    ) -> Result<Handle, ResourceError> {
+        let material_instance = resource_manager.get(&material_instance_handle);
+        let material_handle = material_instance.properties.material;
+        let material = resource_manager.get(&material_handle);
 
-                Some(material)
-            }
-            None => None,
-        };
-
-        if let Some(material_handle) = material_handle {
-            let material = resource_manager.get(&material_handle);
-            if material.properties.blending_enabled {
-                *render_flags |= RenderFlags::TRANSPARENT;
-            } else {
-                *render_flags |= RenderFlags::OPAQUE;
-            }
-
-            let material_data = resource_manager.get_data(hal, &material_handle)?;
-
-            let pipeline_handle = material_data.data.pipeline;
-
-            let pipeline_data = resource_manager.get_data(hal, &pipeline_handle)?;
-            let pipeline_properties = pipeline_data.properties;
-
-            if let PipelineProperties::Graphics(properties) = pipeline_properties {
-                tracing::trace!("Using pipeline {:?}", properties);
-                Ok(Some(pipeline_data.data.pipeline))
-            } else {
-                Err(ResourceError::InvalidData)
-            }
+        if material.properties.blending_enabled {
+            *render_flags |= RenderFlags::TRANSPARENT;
         } else {
-            Ok(None)
+            *render_flags |= RenderFlags::OPAQUE;
+        }
+
+        let material_data = resource_manager.get_data(hal, &material_handle)?;
+
+        let pipeline_handle = material_data.data.pipeline;
+
+        let pipeline_data = resource_manager.get_data(hal, &pipeline_handle)?;
+        let pipeline_properties = pipeline_data.properties;
+
+        if let PipelineProperties::Graphics(properties) = pipeline_properties {
+            tracing::trace!("Using pipeline {:?}", properties);
+            Ok(pipeline_data.data.pipeline)
+        } else {
+            Err(ResourceError::InvalidData)
         }
     }
 

@@ -89,7 +89,7 @@ impl ResourceRegistry {
     }
 
     pub fn get_by_name<R: ResourceType + 'static>(&self, name: &str) -> Option<ResourceHandle<R>> {
-        let id = self.labels.get::<R>(&name.to_string());
+        let id = self.labels.get::<R, _>(name);
 
         if id.is_none() {
             tracing::warn!(target: logger::RESOURCES, "Resource not found: {}", name);

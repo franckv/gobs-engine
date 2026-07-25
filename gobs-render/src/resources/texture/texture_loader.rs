@@ -32,6 +32,7 @@ impl TextureLoader {
         }
     }
 
+    #[tracing::instrument(target = "profile", skip_all, level = "trace")]
     fn start_recording(&mut self) {
         tracing::debug!(target: logger::RENDER, "Record texture loading command");
         self.recording = true;
@@ -42,6 +43,7 @@ impl TextureLoader {
         self.cmd.begin_label("Texture upload");
     }
 
+    #[tracing::instrument(target = "profile", skip_all, level = "trace")]
     fn stop_recording(&mut self) {
         tracing::debug!(target: logger::RENDER, "Submit texture loading command");
         self.cmd.end_label();

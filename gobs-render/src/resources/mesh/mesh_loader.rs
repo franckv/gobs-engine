@@ -26,6 +26,7 @@ impl MeshLoader {
         }
     }
 
+    #[tracing::instrument(target = "profile", skip_all, level = "trace")]
     fn start_recording(&mut self) {
         tracing::debug!(target: logger::RENDER, "Record mesh loading command");
         self.recording = true;
@@ -36,6 +37,7 @@ impl MeshLoader {
         self.cmd.begin_label("Upload buffer");
     }
 
+    #[tracing::instrument(target = "profile", skip_all, level = "trace")]
     fn stop_recording(&mut self) {
         tracing::debug!(target: logger::RENDER, "Submit mesh loading command");
         self.cmd.end_label();

@@ -1,4 +1,4 @@
-use std::cmp::Ordering;
+use std::{cmp::Ordering, sync::Arc};
 
 use bitflags::bitflags;
 use serde::{Deserialize, Serialize};
@@ -26,7 +26,7 @@ bitflags! {
 }
 
 pub struct RenderObject {
-    pub model: String,
+    pub model: Arc<String>,
     pub transform: Transform,
     pub vertex_buffer: Handle,
     pub index_buffer: Handle,

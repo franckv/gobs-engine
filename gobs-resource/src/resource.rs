@@ -23,7 +23,7 @@ pub enum ResourceLifetime {
     Transient,
 }
 
-#[derive(PartialEq, Serialize)]
+#[derive(Hash, Eq, PartialEq, Serialize)]
 pub struct ResourceHandle<R: ResourceType> {
     pub id: ResourceId,
     pub(crate) ty: PhantomData<R>,
@@ -84,7 +84,6 @@ impl<R: ResourceType> Resource<R> {
         }
     }
 
-    #[tracing::instrument(target = "profile", skip_all, level = "trace")]
     pub(crate) fn is_loaded(&self) -> bool {
         matches!(self.data, ResourceState::Loaded(_))
     }

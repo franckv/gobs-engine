@@ -55,6 +55,7 @@ impl Scene {
         }
     }
 
+    #[tracing::instrument(target = "profile", skip_all, level = "trace")]
     pub fn update(&mut self, _ctx: &GfxContext, _delta: f32) {
         self.graph.update_nodes();
     }

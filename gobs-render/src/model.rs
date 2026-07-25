@@ -20,7 +20,7 @@ pub type ModelId = Uuid;
 
 #[derive(Serialize)]
 pub struct Model {
-    pub name: String,
+    pub name: Arc<String>,
     pub id: ModelId,
     pub meshes: Vec<(
         ResourceHandle<Mesh>,
@@ -45,7 +45,6 @@ impl Model {
 }
 
 impl Renderable for Arc<Model> {
-    #[tracing::instrument(target = "profile", skip_all, level = "trace")]
     fn draw(
         &self,
         ctx: &mut GfxContext,
@@ -155,7 +154,7 @@ impl ModelBuilder {
         tracing::debug!(target: logger::RESOURCES, "Load model {} ({} meshes)", self.name, self.meshes.len());
 
         Arc::new(Model {
-            name: self.name,
+            name: Arc::new(self.name),
             id: self.id,
             meshes: self.meshes,
             bounding_box: self.bounding_box,

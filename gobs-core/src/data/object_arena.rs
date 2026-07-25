@@ -1,8 +1,9 @@
 use std::{
     any::{Any, TypeId},
-    collections::{HashMap, hash_map::Entry},
+    collections::hash_map::Entry,
 };
 
+use ahash::{HashMap, HashMapExt as _};
 use slotmap::{DefaultKey, SlotMap};
 
 pub type Key = DefaultKey;

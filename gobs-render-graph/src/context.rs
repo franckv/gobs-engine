@@ -58,6 +58,7 @@ impl GfxContext {
         self.hal.is_minimized()
     }
 
+    #[tracing::instrument(target = "profile", skip_all, level = "trace")]
     pub fn resize(&mut self) {
         self.hal.resize();
     }

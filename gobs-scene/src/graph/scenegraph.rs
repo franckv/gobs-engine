@@ -1,6 +1,7 @@
 use std::collections::{HashMap, hash_map::Entry};
 
 use slotmap::SlotMap;
+use smallvec::SmallVec;
 
 use gobs_core::Transform;
 use gobs_render::ModelId;
@@ -90,7 +91,7 @@ impl SceneGraph {
         parent_transform: Transform,
         parent_updated: bool,
     ) -> bool {
-        let mut children = vec![];
+        let mut children: SmallVec<[NodeId; 8]> = SmallVec::new();
         let mut transform = parent_transform;
         let mut updated = false;
 

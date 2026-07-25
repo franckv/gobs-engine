@@ -58,6 +58,7 @@ path = "./gobs-scene"
 path = "./gobs-vulkan"
 
 [workspace.dependencies]
+ahash = "0.8"
 ash = { version = "0.38", features = ["linked", "debug"] }
 ash-window = "0.13"
 anyhow = "1.0"
@@ -84,6 +85,7 @@ ron = "0.12"
 serde = { version = "1.0", features = ["derive", "rc"] }
 serde_json = "1.0"
 slotmap = { version="1.0", features=["serde"] }
+smallvec = "1.15"
 thiserror = "2.0"
 tobj = "4.0"
 tracing = "0.1"
