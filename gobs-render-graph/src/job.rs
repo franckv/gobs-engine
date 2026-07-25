@@ -3,7 +3,7 @@ use thiserror::Error;
 
 use gobs_core::logger;
 use gobs_render_hal::{
-    AttributeData, BindResource, BindingGroupLayout, BindingGroupType, DescriptorStage,
+    AttributeData, BindingGroupLayout, BindingGroupType, BindingId, DescriptorStage,
     DescriptorType, Handle, ObjectDataProp, UniformBuffer, UniformData as _, UniformLayout,
 };
 
@@ -18,8 +18,8 @@ pub enum RenderJobError {
 struct RenderJobState {
     last_pipeline: Option<Handle>,
     last_index_buffer: Option<Handle>,
-    last_material_data: Option<BindResource>,
-    last_material_textures: Option<BindResource>,
+    last_material_data: Option<BindingId>,
+    last_material_textures: Option<BindingId>,
     scene_data_bound: bool,
     object_data: Vec<u8>,
 }
@@ -161,9 +161,11 @@ impl RenderJob {
     ) -> Result<(), RenderJobError> {
         if self.fixed_pipeline.is_none() {
             let pipeline = self.get_pipeline(render_object)?;
+            let material_data_id = render_object.material_data.as_ref().map(|bind| bind.id);
+            let texture_data_id = render_object.material_textures.as_ref().map(|bind| bind.id);
 
             if let Some(material_data) = &render_object.material_data
-                && state.last_material_data != render_object.material_data
+                && state.last_material_data != material_data_id
             {
                 tracing::trace!(target: logger::RENDER, "Bind material data resources");
 
@@ -171,11 +173,11 @@ impl RenderJob {
                     .command
                     .bind_resource(ctx.hal_mut(), pipeline, material_data);
 
-                state.last_material_data = render_object.material_data.clone();
+                state.last_material_data = material_data_id
             }
 
             if let Some(material_textures) = &render_object.material_textures
-                && state.last_material_textures != render_object.material_textures
+                && state.last_material_textures != texture_data_id
             {
                 tracing::trace!(target: logger::RENDER, "Bind material texture resources");
 
@@ -183,7 +185,7 @@ impl RenderJob {
                     .command
                     .bind_resource(ctx.hal_mut(), pipeline, material_textures);
 
-                state.last_material_textures = render_object.material_textures.clone();
+                state.last_material_textures = texture_data_id;
             }
         }
 

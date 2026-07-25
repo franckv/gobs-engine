@@ -15,7 +15,7 @@ pub use gobs_vulkan::{
     },
 };
 
-pub use bindings::{BindResource, BindingGroupLayout, BindingGroupType};
+pub use bindings::{BindResource, BindingGroupLayout, BindingGroupType, BindingId};
 pub use command::{CommandBuffer, CommandQueueType};
 pub use data::{
     AlignMode, Attribute, AttributeData, ObjectDataLayout, ObjectDataProp, UniformBuffer,

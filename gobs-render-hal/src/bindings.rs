@@ -1,19 +1,29 @@
-use std::fmt::Debug;
+use std::{
+    fmt::Debug,
+    hash::{DefaultHasher, Hash, Hasher},
+};
 
 use serde::{Deserialize, Serialize};
+use uuid::Uuid;
 
 use crate::{DescriptorStage, DescriptorType, Handle};
 
-#[derive(Clone, Eq, PartialEq)]
+pub type BindingId = Uuid;
+
+#[derive(Clone)]
 pub struct BindResource {
-    // TODO: use BindingGroupType
+    pub id: BindingId,
     pub layout: BindingGroupLayout,
     pub resources: Vec<Handle>,
 }
 
 impl BindResource {
     pub fn new(layout: BindingGroupLayout, resources: Vec<Handle>) -> Self {
-        Self { layout, resources }
+        Self {
+            id: Uuid::new_v4(),
+            layout,
+            resources,
+        }
     }
 
     pub fn slot(&self, index: usize) -> Option<Handle> {
@@ -64,15 +74,21 @@ impl BindingGroupType {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq, Hash)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct BindingGroupLayout {
+    pub binding_group_id: u64,
     pub binding_group_type: BindingGroupType,
     pub bindings: Vec<(DescriptorType, DescriptorStage)>,
 }
 
 impl BindingGroupLayout {
     pub fn new(binding_group_type: BindingGroupType) -> Self {
+        let mut hasher = DefaultHasher::new();
+        binding_group_type.hash(&mut hasher);
+        let binding_group_id = hasher.finish();
+
         Self {
+            binding_group_id,
             binding_group_type,
             bindings: Vec::new(),
         }
@@ -80,6 +96,12 @@ impl BindingGroupLayout {
 
     pub fn add_binding(mut self, ty: DescriptorType, stage: DescriptorStage) -> Self {
         self.bindings.push((ty, stage));
+
+        // generate content hash for layout
+        let mut hasher = DefaultHasher::new();
+        self.binding_group_type.hash(&mut hasher);
+        self.bindings.hash(&mut hasher);
+        self.binding_group_id = hasher.finish();
 
         self
     }

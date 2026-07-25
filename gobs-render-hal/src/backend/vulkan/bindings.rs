@@ -14,7 +14,7 @@ use crate::{
 
 pub(crate) struct BindingRegistry {
     frames_in_flight: usize,
-    pools: Vec<HashMap<BindingGroupLayout, DescriptorSetPool>>,
+    pub(crate) pools: Vec<HashMap<u64, DescriptorSetPool>>,
 }
 
 const MAX_SET: usize = 10;
@@ -56,13 +56,14 @@ impl BindingRegistry {
     ) -> &mut DescriptorSetPool {
         let mut map = &mut self.pools[frame_id];
 
-        map.entry(resource.layout.clone()).or_insert_with(|| {
-            DescriptorSetPool::new(
-                device.clone(),
-                vk_layout(device.clone(), &resource.layout),
-                MAX_SET,
-            )
-        })
+        map.entry(resource.layout.binding_group_id)
+            .or_insert_with(|| {
+                DescriptorSetPool::new(
+                    device.clone(),
+                    vk_layout(device.clone(), &resource.layout),
+                    MAX_SET,
+                )
+            })
     }
 
     pub fn get_ds(
@@ -92,8 +93,10 @@ impl BindingRegistry {
         let mut update = DescriptorSetUpdates::new(device);
 
         let BindResource {
+            id,
             layout:
                 BindingGroupLayout {
+                    binding_group_id,
                     binding_group_type,
                     bindings,
                 },
