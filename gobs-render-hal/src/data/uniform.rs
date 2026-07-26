@@ -1,3 +1,5 @@
+use gobs_core::data::fixed_buffer::DataBuffer;
+
 use crate::{
     BindResource, BindingGroupLayout, BufferType, RenderHAL,
     data::{AlignMode, Attribute, align::AttributeData},
@@ -33,8 +35,9 @@ pub trait UniformData<DataProp> {
 
     fn uniform_layout(&self) -> &UniformLayout;
 
-    fn copy_data<F>(&self, buffer: &mut Vec<u8>, get_data: F)
+    fn copy_data<B, F>(&self, buffer: &mut B, get_data: F)
     where
+        B: DataBuffer,
         F: Fn(&DataProp) -> AttributeData;
 
     fn is_empty(&self) -> bool;
@@ -88,24 +91,24 @@ impl UniformLayout {
         data
     }
 
-    pub fn copy_data(
+    pub fn copy_data<B: DataBuffer>(
         &self,
         prop: AttributeData,
         pos: usize,
         data_start: usize,
-        data: &mut Vec<u8>,
+        data: &mut B,
     ) {
         debug_assert_eq!(prop.ty(), self.layout[pos]);
 
         let offset = self.offsets[pos];
 
         let position = data.len() - data_start;
-        AttributeData::pad(data, offset - position);
+        data.pad(offset - position);
         prop.copy(data);
 
         if pos == self.layout.len() - 1 {
             let position = data.len() - data_start;
-            AttributeData::pad(data, self.size() - position);
+            data.pad(self.size() - position);
         }
     }
 }

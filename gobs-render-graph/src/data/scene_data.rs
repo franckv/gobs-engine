@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use gobs_core::{ImageExtent2D, Transform};
+use gobs_core::{ImageExtent2D, Transform, data::fixed_buffer::DataBuffer};
 use gobs_render_hal::{AlignMode, Attribute, AttributeData, UniformData, UniformLayout};
 use gobs_resource::{camera::Camera, light::Light};
 
@@ -59,8 +59,9 @@ impl UniformData<SceneDataProp> for SceneDataLayout {
         &self.uniform_layout
     }
 
-    fn copy_data<F>(&self, buffer: &mut Vec<u8>, get_data: F)
+    fn copy_data<B, F>(&self, buffer: &mut B, get_data: F)
     where
+        B: DataBuffer,
         F: Fn(&SceneDataProp) -> AttributeData,
     {
         let layout = self.uniform_layout();

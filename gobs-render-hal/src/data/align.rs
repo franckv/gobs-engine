@@ -1,5 +1,7 @@
 use serde::Serialize;
 
+use gobs_core::data::fixed_buffer::DataBuffer;
+
 #[allow(unused)]
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq, Hash, Serialize)]
 pub enum AlignMode {
@@ -133,15 +135,15 @@ impl AttributeData {
         }
     }
 
-    pub fn copy(&self, data: &mut Vec<u8>) {
+    pub fn copy<B: DataBuffer>(&self, data: &mut B) {
         match self {
-            AttributeData::Bool(d) => data.extend_from_slice(bytemuck::cast_slice(&[*d])),
-            AttributeData::F32(d) => data.extend_from_slice(bytemuck::cast_slice(&[*d])),
-            AttributeData::U32(d) => data.extend_from_slice(bytemuck::cast_slice(&[*d])),
-            AttributeData::U64(d) => data.extend_from_slice(bytemuck::cast_slice(&[*d])),
-            AttributeData::Vec2F(d) => data.extend_from_slice(bytemuck::cast_slice(d)),
-            AttributeData::Vec3F(d) => data.extend_from_slice(bytemuck::cast_slice(d)),
-            AttributeData::Vec4F(d) => data.extend_from_slice(bytemuck::cast_slice(d)),
+            AttributeData::Bool(d) => data.write(bytemuck::cast_slice(&[*d])),
+            AttributeData::F32(d) => data.write(bytemuck::cast_slice(&[*d])),
+            AttributeData::U32(d) => data.write(bytemuck::cast_slice(&[*d])),
+            AttributeData::U64(d) => data.write(bytemuck::cast_slice(&[*d])),
+            AttributeData::Vec2F(d) => data.write(bytemuck::cast_slice(d)),
+            AttributeData::Vec3F(d) => data.write(bytemuck::cast_slice(d)),
+            AttributeData::Vec4F(d) => data.write(bytemuck::cast_slice(d)),
             AttributeData::Mat3F(d) => {
                 // mat3 is padded as mat3x4
                 let d2 = &[
@@ -149,14 +151,10 @@ impl AttributeData {
                     [d[1][0], d[1][1], d[1][2], 0.],
                     [d[2][0], d[2][1], d[2][2], 0.],
                 ];
-                data.extend_from_slice(bytemuck::cast_slice(d2))
+                data.write(bytemuck::cast_slice(d2))
             }
-            AttributeData::Mat4F(d) => data.extend_from_slice(bytemuck::cast_slice(d)),
+            AttributeData::Mat4F(d) => data.write(bytemuck::cast_slice(d)),
         };
-    }
-
-    pub fn pad(data: &mut Vec<u8>, len: usize) {
-        data.resize(data.len() + len, 0);
     }
 
     pub fn offsets(attributes: &[AttributeData], mode: AlignMode) -> Vec<usize> {

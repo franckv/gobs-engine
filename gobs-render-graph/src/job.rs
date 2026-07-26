@@ -1,7 +1,10 @@
 use glam::Mat3;
 use thiserror::Error;
 
-use gobs_core::logger;
+use gobs_core::{
+    data::fixed_buffer::{DataBuffer as _, FixedBuffer},
+    logger,
+};
 use gobs_render_hal::{
     AttributeData, BindingGroupLayout, BindingGroupType, BindingId, DescriptorStage,
     DescriptorType, Handle, ObjectDataProp, UniformBuffer, UniformData as _, UniformLayout,
@@ -21,7 +24,7 @@ struct RenderJobState {
     last_material_data: Option<BindingId>,
     last_material_textures: Option<BindingId>,
     scene_data_bound: bool,
-    object_data: Vec<u8>,
+    object_data: FixedBuffer<128>,
 }
 
 impl RenderJobState {
@@ -32,7 +35,7 @@ impl RenderJobState {
             last_material_data: None,
             last_material_textures: None,
             scene_data_bound: false,
-            object_data: vec![],
+            object_data: FixedBuffer::new(),
         }
     }
 }
@@ -100,16 +103,18 @@ impl RenderJob {
 
             tracing::debug!(target: logger::RENDER, "Render model:  {}", &render_object.model);
 
-            self.bind_pipeline(ctx, frame, render_object, &mut state)?;
+            let pipeline = self.get_pipeline(render_object)?;
+
+            self.bind_pipeline(ctx, frame, pipeline, &mut state)?;
 
             // bind camera and lights (push, set=0)
-            self.bind_scene_data(ctx, frame, render_object, &mut state)?;
+            self.bind_scene_data(ctx, frame, pipeline, &mut state)?;
 
             // bind materials (ds, set 1=material, 2=textures)
-            self.bind_material_data(ctx, frame, render_object, &mut state)?;
+            self.bind_material_data(ctx, frame, render_object, pipeline, &mut state)?;
 
             // push constants + index buffer
-            self.bind_object_data(ctx, frame, render_object, &mut state)?;
+            self.bind_object_data(ctx, frame, render_object, pipeline, &mut state)?;
 
             tracing::trace!(target: logger::RENDER, "Draw object ({})", render_object.index_len);
             frame.command.draw_indexed(render_object.index_len, 1);
@@ -134,11 +139,10 @@ impl RenderJob {
         &self,
         ctx: &GfxContext,
         frame: &mut FrameData,
-        render_object: &RenderObject,
+        pipeline: Handle,
         state: &mut RenderJobState,
     ) -> Result<(), RenderJobError> {
         tracing::trace!(target: logger::RENDER, "Bind pipeline");
-        let pipeline = self.get_pipeline(render_object)?;
 
         if state.last_pipeline != Some(pipeline) {
             tracing::trace!(target: logger::RENDER, "Bind pipeline: {:?}", pipeline);
@@ -157,10 +161,10 @@ impl RenderJob {
         ctx: &mut GfxContext,
         frame: &mut FrameData,
         render_object: &RenderObject,
+        pipeline: Handle,
         state: &mut RenderJobState,
     ) -> Result<(), RenderJobError> {
         if self.fixed_pipeline.is_none() {
-            let pipeline = self.get_pipeline(render_object)?;
             let material_data_id = render_object.material_data.as_ref().map(|bind| bind.id);
             let texture_data_id = render_object.material_textures.as_ref().map(|bind| bind.id);
 
@@ -196,13 +200,11 @@ impl RenderJob {
         &self,
         ctx: &mut GfxContext,
         frame: &mut FrameData,
-        render_object: &RenderObject,
+        pipeline: Handle,
         state: &mut RenderJobState,
     ) -> Result<(), RenderJobError> {
         if !state.scene_data_bound {
             tracing::trace!(target: logger::RENDER, "Bind scene data");
-
-            let pipeline = self.get_pipeline(render_object)?;
 
             // bind scene data (push, set 0)
             frame
@@ -219,13 +221,13 @@ impl RenderJob {
         ctx: &GfxContext,
         frame: &mut FrameData,
         render_object: &RenderObject,
+        pipeline: Handle,
         state: &mut RenderJobState,
     ) -> Result<(), RenderJobError> {
         tracing::trace!(target: logger::RENDER, "Bind push constants");
 
         state.object_data.clear();
 
-        let pipeline = self.get_pipeline(render_object)?;
         let object_layout = ctx.hal().get_pipeline_object_layout(pipeline);
 
         tracing::trace!(target: logger::RENDER, "Copy object data: {} (layout: {:?})", object_layout.uniform_layout().size(), object_layout);
@@ -247,7 +249,7 @@ impl RenderJob {
         // TODO: check pipeline object layout compatibility
         frame
             .command
-            .push_constants(ctx.hal(), pipeline, &state.object_data);
+            .push_constants(ctx.hal(), pipeline, state.object_data.as_slice());
 
         if state.last_index_buffer != Some(render_object.index_buffer) {
             frame

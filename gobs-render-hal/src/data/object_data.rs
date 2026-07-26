@@ -1,5 +1,7 @@
 use serde::{Deserialize, Serialize};
 
+use gobs_core::data::fixed_buffer::DataBuffer;
+
 use crate::data::{
     AlignMode, Attribute, UniformLayout, align::AttributeData, uniform::UniformData,
 };
@@ -49,8 +51,9 @@ impl UniformData<ObjectDataProp> for ObjectDataLayout {
         &self.uniform_layout
     }
 
-    fn copy_data<F>(&self, buffer: &mut Vec<u8>, get_data: F)
+    fn copy_data<B, F>(&self, buffer: &mut B, get_data: F)
     where
+        B: DataBuffer,
         F: Fn(&ObjectDataProp) -> AttributeData,
     {
         let layout = self.uniform_layout();

@@ -1,5 +1,6 @@
 use serde::{Deserialize, Serialize};
 
+use gobs_core::data::fixed_buffer::DataBuffer;
 use gobs_render_hal::{
     AlignMode, Attribute, AttributeData, BindingGroupLayout, BindingGroupType, DescriptorStage,
     DescriptorType, UniformLayout,
@@ -66,8 +67,9 @@ impl UniformData<MaterialDataProp> for MaterialDataLayout {
         &self.uniform_layout
     }
 
-    fn copy_data<F>(&self, buffer: &mut Vec<u8>, get_data: F)
+    fn copy_data<B, F>(&self, buffer: &mut B, get_data: F)
     where
+        B: DataBuffer,
         F: Fn(&MaterialDataProp) -> AttributeData,
     {
         let layout = self.uniform_layout();

@@ -2,7 +2,7 @@ use bitflags::bitflags;
 use glam::{Vec2, Vec3};
 use serde::{Deserialize, Serialize};
 
-use gobs_core::{Color, Transform};
+use gobs_core::{Color, Transform, data::fixed_buffer::DataBuffer as _};
 use gobs_vulkan::pipelines::VertexAttributeFormat;
 
 use crate::{
@@ -184,12 +184,12 @@ impl VertexData {
             let data_start = data.len();
             for (flag, offset) in flags.iter().zip(&offsets) {
                 let delta = data.len() - data_start;
-                AttributeData::pad(data, offset - delta);
+                data.pad(offset - delta);
 
                 vertex.get_bytes(flag, data);
             }
             let delta = data.len() - data_start;
-            AttributeData::pad(data, size - delta);
+            data.pad(size - delta);
         }
     }
 }
