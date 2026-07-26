@@ -76,6 +76,7 @@ impl MaterialManager {
 
         let default_material_instance = resource_manager.add::<MaterialInstance>(
             MaterialInstanceProperties::new("default", texture)
+                .prop(MaterialDataPropData::DiffuseColor(Color::WHITE.into()))
                 .textures(&[texture_manager.default_texture]),
             ResourceLifetime::Static,
             false,
