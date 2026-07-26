@@ -3,7 +3,6 @@ MaterialsConfig(
         // must match material pass layout
         object_layout: [
             WorldMatrix,
-            NormalMatrix,
             VertexBufferAddress,
         ],
         vertex_attributes: "POSITION | COLOR | TEXTURE | NORMAL | TANGENT | BITANGENT",
@@ -35,29 +34,29 @@ MaterialsConfig(
             blend_mode: Alpha,
         ),
         "texture": (
-            vertex_shader: "mesh.vert.spv",
-            vertex_entry: "main",
-            fragment_shader: "mesh.frag.spv",
-            fragment_entry: "main",
+            vertex_shader: "mesh.spv",
+            vertex_entry: "vertex_main",
+            fragment_shader: "mesh.spv",
+            fragment_entry: "fragment_main",
             texture_layout: [
                 Diffuse,
             ],
         ),
         "texture.transparent": (
-            vertex_shader: "mesh.vert.spv",
-            vertex_entry: "main",
-            fragment_shader: "mesh.frag.spv",
-            fragment_entry: "main",
+            vertex_shader: "mesh.spv",
+            vertex_entry: "vertex_main",
+            fragment_shader: "mesh.spv",
+            fragment_entry: "fragment_main",
             blend_mode: Alpha,
             texture_layout: [
                 Diffuse,
             ],
         ),
         "normal": (
-            vertex_shader: "mesh.vert.spv",
-            vertex_entry: "main",
-            fragment_shader: "mesh_n.frag.spv",
-            fragment_entry: "main",
+            vertex_shader: "mesh.spv",
+            vertex_entry: "vertex_main",
+            fragment_shader: "mesh.spv",
+            fragment_entry: "fragment_normal_main",
             texture_layout: [
                 Diffuse,
                 Normal

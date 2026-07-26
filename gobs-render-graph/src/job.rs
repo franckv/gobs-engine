@@ -1,4 +1,3 @@
-use glam::Mat3;
 use thiserror::Error;
 
 use gobs_core::{
@@ -236,9 +235,6 @@ impl RenderJob {
             ObjectDataProp::WorldMatrix => {
                 AttributeData::Mat4F(render_object.transform.matrix().to_cols_array_2d())
             }
-            ObjectDataProp::NormalMatrix => AttributeData::Mat3F(
-                Mat3::from_quat(render_object.transform.rotation()).to_cols_array_2d(),
-            ),
             ObjectDataProp::VertexBufferAddress => {
                 let vertex_buffer_address =
                     ctx.hal().get_buffer_address(render_object.vertex_buffer);

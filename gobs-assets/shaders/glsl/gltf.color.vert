@@ -31,7 +31,6 @@ layout(buffer_reference, scalar) readonly buffer VertexBuffer {
 
 layout(push_constant) uniform constants {
 	mat4 world_matrix;
-	mat3 normal_matrix;
 	VertexBuffer vertex_buffer_address;
 } push_constants;
 

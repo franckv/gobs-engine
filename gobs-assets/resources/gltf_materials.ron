@@ -3,7 +3,6 @@ MaterialsConfig(
         // must match material pass layout
         object_layout: [
             WorldMatrix,
-            NormalMatrix,
             VertexBufferAddress,
         ],
         vertex_attributes: "POSITION | COLOR | TEXTURE | NORMAL | TANGENT | BITANGENT",

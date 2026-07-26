@@ -130,9 +130,7 @@ impl App {
 
         let material = ctx.resource_manager.get_by_name("depth").unwrap();
 
-        let material_instance_properties =
-            //NormalMaterial::instanciate(material, diffuse_texture, normal_texture);
-            MaterialInstanceProperties::new("depth", material);
+        let material_instance_properties = MaterialInstanceProperties::new("depth", material);
 
         let material_instance = ctx.resource_manager.add(
             material_instance_properties,

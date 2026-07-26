@@ -19,7 +19,6 @@ ConstantBuffer<Material> material;
 
 struct PushConstants {
     float4x4 world_matrix;
-    float3x3 normal_matrix;
     Vertex* vertex_reference;
 }
 [[vk::push_constant]]

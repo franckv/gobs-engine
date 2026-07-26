@@ -37,20 +37,20 @@ layout(buffer_reference, scalar) readonly buffer VertexBuffer {
 
 layout(push_constant) uniform constants {
 	mat4 world_matrix;
-	mat3 normal_matrix;
 	VertexBuffer vertex_buffer_address;
 } push_constants;
 
 void main() {
 	Vertex v = push_constants.vertex_buffer_address.vertices[gl_VertexIndex];
 
-	mat3 tangent_matrix = tangent_matrix(push_constants.normal_matrix, v.normal, v.tangent, v.bitangent);
+    mat3 normal_matrix = transpose(inverse(mat3(push_constants.world_matrix)));
+    mat3 tangent_matrix = tangent_matrix(normal_matrix, v.normal, v.tangent, v.bitangent);
 
 	vec4 world_position = push_constants.world_matrix * vec4(v.position, 1.f);
 
 	gl_Position = scene_data.view_proj * world_position;
 	vertex_out.color = v.color;
-	vertex_out.normal = push_constants.normal_matrix * v.normal;
+	vertex_out.normal = normal_matrix * v.normal;
 
 	vertex_out.tangent_position = tangent_matrix * world_position.xyz;
 	vertex_out.tangent_view_position = tangent_matrix * scene_data.camera_position.xyz;

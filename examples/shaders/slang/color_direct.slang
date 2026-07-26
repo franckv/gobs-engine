@@ -4,12 +4,6 @@ struct Vertex {
     float4 color;
 }
 
-// struct PushConstants {
-//     Vertex* vertex_reference;
-// }
-// [[vk::push_constant]]
-// PushConstants push_constants;
-
 struct VSOutput {
     float4 position: SV_POSITION;
     float4 color;
