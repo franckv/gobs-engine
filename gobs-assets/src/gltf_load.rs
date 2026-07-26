@@ -345,14 +345,14 @@ impl GLTFLoader {
         for mat in doc.materials() {
             let name = mat.name().unwrap_or_default();
             if let Some(idx) = mat.index() {
-                tracing::trace!(target: logger::RESOURCES, "Material #{}: {}", idx, name);
+                tracing::debug!(target: logger::RESOURCES, "Material #{}: {}", idx, name);
 
                 let pbr = mat.pbr_metallic_roughness();
                 let diffuse = pbr.base_color_texture();
 
                 match diffuse {
                     Some(tex_info) => {
-                        tracing::trace!(target: logger::RESOURCES,
+                        tracing::debug!(target: logger::RESOURCES,
                             "Using texture #{}: {}",
                             tex_info.texture().index(),
                             tex_info.texture().name().unwrap_or_default()
@@ -361,6 +361,7 @@ impl GLTFLoader {
                         match mat.normal_texture() {
                             Some(normal) => {
                                 let normal_texture = normal.texture().index();
+                                tracing::debug!(target: logger::RESOURCES, "Using normal texture: {}", normal_texture);
                                 self.material_manager.add_texture_normal_instance(
                                     name,
                                     resource_manager,
@@ -369,19 +370,23 @@ impl GLTFLoader {
                                     normal_texture,
                                 )
                             }
-                            None => self.material_manager.add_texture_instance(
-                                name,
-                                resource_manager,
-                                Self::into_blend_mode(mat.alpha_mode()),
-                                texture,
-                            ),
+                            None => {
+                                let alpha = Self::into_blend_mode(mat.alpha_mode());
+                                tracing::debug!(target: logger::RESOURCES, "Using diffuse texture with alpha: {:?}", alpha);
+                                self.material_manager.add_texture_instance(
+                                    name,
+                                    resource_manager,
+                                    Self::into_blend_mode(mat.alpha_mode()),
+                                    texture,
+                                )
+                            }
                         };
                     }
                     None => {
                         let color: Color = pbr.base_color_factor().into();
-                        tracing::trace!(target: logger::RESOURCES, "Using color material: {:?}", color);
-                        self.material_manager
-                            .add_color_instance(Self::into_blend_mode(mat.alpha_mode()));
+                        let alpha = Self::into_blend_mode(mat.alpha_mode());
+                        tracing::debug!(target: logger::RESOURCES, "Using color material: {:?}, alpha={:?}", color, alpha);
+                        self.material_manager.add_color_instance(alpha, color);
                     }
                 }
             } else {

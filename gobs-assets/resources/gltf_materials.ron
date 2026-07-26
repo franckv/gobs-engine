@@ -11,39 +11,39 @@ MaterialsConfig(
     ),
     materials: {
         "gltf.texture": (
-            vertex_shader: "gltf.texture.vert.spv",
-            vertex_entry: "main",
-            fragment_shader: "gltf.texture.frag.spv",
-            fragment_entry: "main",
+            vertex_shader: "gltf.spv",
+            vertex_entry: "vertex_texture_main",
+            fragment_shader: "gltf.spv",
+            fragment_entry: "fragment_texture_main",
             texture_layout: [
                 Diffuse
             ]
         ),
         "gltf.texture.transparent": (
-            vertex_shader: "gltf.texture.vert.spv",
-            vertex_entry: "main",
-            fragment_shader: "gltf.texture.frag.spv",
-            fragment_entry: "main",
+            vertex_shader: "gltf.spv",
+            vertex_entry: "vertex_texture_main",
+            fragment_shader: "gltf.spv",
+            fragment_entry: "fragment_texture_main",
             blend_mode: Alpha,
             texture_layout: [
                 Diffuse
             ]
         ),
         "gltf.texture.normal": (
-            vertex_shader: "gltf.texture.vert.spv",
-            vertex_entry: "main",
-            fragment_shader: "gltf.texture_n.frag.spv",
-            fragment_entry: "main",
+            vertex_shader: "gltf.spv",
+            vertex_entry: "vertex_texture_main",
+            fragment_shader: "gltf.spv",
+            fragment_entry: "fragment_texture_normal_main",
             texture_layout: [
                 Diffuse,
                 Normal
             ]
         ),
         "gltf.texture.transparent.normal": (
-            vertex_shader: "gltf.texture.vert.spv",
-            vertex_entry: "main",
-            fragment_shader: "gltf.texture_n.frag.spv",
-            fragment_entry: "main",
+            vertex_shader: "gltf.spv",
+            vertex_entry: "vertex_texture_main",
+            fragment_shader: "gltf.spv",
+            fragment_entry: "fragment_texture_normal_main",
             blend_mode: Alpha,
             texture_layout: [
                 Diffuse,
@@ -51,16 +51,16 @@ MaterialsConfig(
             ]
         ),
         "gltf.color": (
-            vertex_shader: "gltf.color_light.vert.spv",
-            vertex_entry: "main",
-            fragment_shader: "gltf.color_light.frag.spv",
-            fragment_entry: "main",
+            vertex_shader: "gltf.spv",
+            vertex_entry: "vertex_color_light_main",
+            fragment_shader: "gltf.spv",
+            fragment_entry: "fragment_color_light_main",
         ),
          "gltf.color.transparent": (
-            vertex_shader: "gltf.color_light.vert.spv",
-            vertex_entry: "main",
-            fragment_shader: "gltf.color_light.frag.spv",
-            fragment_entry: "main",
+            vertex_shader: "gltf.spv",
+            vertex_entry: "vertex_color_light_main",
+            fragment_shader: "gltf.spv",
+            fragment_entry: "fragment_color_light_main",
             blend_mode: Alpha,
         ),
    }

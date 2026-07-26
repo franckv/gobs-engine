@@ -1,4 +1,4 @@
-use gobs_core::logger;
+use gobs_core::{Color, logger};
 use gobs_render::{
     BlendMode, Material, MaterialInstance, MaterialInstanceProperties, MaterialsConfig, Texture,
     TextureProperties,
@@ -175,7 +175,12 @@ impl MaterialManager {
         material_instance
     }
 
-    pub fn add_color_instance(&mut self, alpha: BlendMode) -> ResourceHandle<MaterialInstance> {
+    pub fn add_color_instance(
+        &mut self,
+        alpha: BlendMode,
+        _color: Color,
+    ) -> ResourceHandle<MaterialInstance> {
+        // TODO: use color material data
         let material_instance = match alpha {
             BlendMode::Alpha => self.transparent_color_instance,
             _ => self.color_instance,
