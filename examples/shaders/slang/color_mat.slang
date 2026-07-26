@@ -1,3 +1,4 @@
+import common;
 import vertex_layout;
 
 struct SceneData {
@@ -7,14 +8,14 @@ struct SceneData {
 	float4 light_color;
 	float4 ambient_color;
 }
-[[vk::binding(0, 0)]]
+[[vk::binding(0, SCENE_DATA_SET)]]
 ConstantBuffer<SceneData> scene_data;
 
 struct Material {
     float4 diffuse_color;
     float4 emissive_color;
 }
-[[vk::binding(0, 1)]]
+[[vk::binding(0, MATERIAL_DATA_SET)]]
 ConstantBuffer<Material> material;
 
 struct PushConstants {

@@ -1,3 +1,4 @@
+import common;
 import light;
 import matrix;
 import vertex_layout;
@@ -9,16 +10,16 @@ struct SceneData {
 	float4 light_color;
 	float4 ambient_color;
 }
-[[vk::binding(0, 0)]]
+[[vk::binding(0, SCENE_DATA_SET)]]
 ConstantBuffer<SceneData> scene_data;
 
-[[vk::binding(0, 2)]]
+[[vk::binding(0, MATERIAL_TEXTURES_SET)]]
 Texture2D diffuse_texture;
-[[vk::binding(1, 2)]]
+[[vk::binding(1, MATERIAL_TEXTURES_SET)]]
 SamplerState diffuse_sampler;
-[[vk::binding(2, 2)]]
+[[vk::binding(2, MATERIAL_TEXTURES_SET)]]
 Texture2D normal_texture;
-[[vk::binding(3, 2)]]
+[[vk::binding(3, MATERIAL_TEXTURES_SET)]]
 SamplerState normal_sampler;
 
 struct PushConstants {

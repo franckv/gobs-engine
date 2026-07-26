@@ -1,9 +1,10 @@
+import common;
 import vertex_layout;
 
 struct SceneData {
 	float4x4 view_proj;
 }
-[[vk::binding(0, 0)]]
+[[vk::binding(0, SCENE_DATA_SET)]]
 ConstantBuffer<SceneData> scene_data;
 
 struct PushConstants {
