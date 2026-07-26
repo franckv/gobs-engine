@@ -66,7 +66,9 @@ impl<const S: usize> DataBuffer for FixedBuffer<S> {
         let new_pos = self.pos + len;
         debug_assert!(new_pos <= S);
 
-        self.buffer[self.pos..new_pos].fill(0);
+        for b in &mut self.buffer[self.pos..new_pos] {
+            *b = 0;
+        }
         self.pos = new_pos
     }
 
