@@ -142,7 +142,15 @@ impl ModelBuilder {
 
                 material.properties.pipeline_properties.vertex_attributes
             }
-            None => VertexAttribute::POSITION,
+            None => {
+                // TODO: hardcoded
+                VertexAttribute::POSITION
+                    | VertexAttribute::COLOR
+                    | VertexAttribute::TEXTURE
+                    | VertexAttribute::NORMAL
+                    | VertexAttribute::TANGENT
+                    | VertexAttribute::BITANGENT
+            }
         };
 
         let mesh_handle = resource_manager.add(

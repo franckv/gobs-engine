@@ -15,8 +15,8 @@ impl BoundingComponent {
         let bounding_box = match value {
             NodeValue::None => BoundingBox::default(),
             NodeValue::Model(model) => model.boundings(),
-            NodeValue::Camera(_) => BoundingBox::default(),
-            NodeValue::Light(_) => BoundingBox::default(),
+            NodeValue::Camera(_) => BoundingBox::EMPTY,
+            NodeValue::Light(_) => BoundingBox::EMPTY,
         };
 
         Self { bounding_box }
@@ -50,8 +50,8 @@ impl BoundingComponent {
         self.bounding_box = match value {
             NodeValue::None => BoundingBox::default(),
             NodeValue::Model(model) => model.boundings(),
-            NodeValue::Camera(_) => BoundingBox::default(),
-            NodeValue::Light(_) => BoundingBox::default(),
+            NodeValue::Camera(_) => BoundingBox::EMPTY,
+            NodeValue::Light(_) => BoundingBox::EMPTY,
         };
     }
 }

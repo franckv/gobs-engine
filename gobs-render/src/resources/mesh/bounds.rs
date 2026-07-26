@@ -27,6 +27,15 @@ impl Default for BoundingBox {
 }
 
 impl BoundingBox {
+    pub const EMPTY: BoundingBox = BoundingBox {
+        x_min: 0.,
+        x_max: 0.,
+        y_min: 0.,
+        y_max: 0.,
+        z_min: 0.,
+        z_max: 0.,
+    };
+
     pub fn from_corners(corners: &[Vec3]) -> Self {
         let (mut x_min, mut y_min, mut z_min) = corners[0].into();
         let (mut x_max, mut y_max, mut z_max) = corners[0].into();
