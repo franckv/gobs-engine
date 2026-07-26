@@ -166,13 +166,16 @@ impl App {
                 Shapes::cubemap(1, 1, &[1], 1.),
                 Some(material_instance),
                 vertex_attributes,
-                // ctx.renderer.gfx.world_vertex_attributes,
                 &mut ctx.resource_manager,
                 ResourceLifetime::Static,
             )
             .build();
 
-        let transform = Transform::new([0., 0., -2.].into(), Quat::IDENTITY, Vec3::splat(1.));
+        let transform = Transform::new(
+            [0., 0., -2.].into(),
+            Quat::from_rotation_y(std::f32::consts::FRAC_PI_2),
+            Vec3::splat(1.),
+        );
         self.scene
             .graph
             .insert(self.scene.graph.root, NodeValue::Model(cube), transform);

@@ -5,10 +5,10 @@ public float3x3 tangent_matrix(float3x3 normal_matrix, float3 normal, float3 tan
     float3 world_tangent = normalize(mul(normal_matrix, tangent));
     float3 world_bitangent = normalize(mul(normal_matrix, bitangent));
 
-    return transpose(float3x3(
+    return float3x3(
         world_tangent,
         world_bitangent,
         world_normal
-    ));
+    );
 }
 
