@@ -28,7 +28,6 @@ impl GameContext {
         validation: bool,
     ) -> Result<Self, RenderError> {
         let frames_in_flight = config.get_int(RenderConfig::FramesInFlight) as usize;
-        tracing::error!("fif: {}", frames_in_flight);
 
         let mut gfx = GfxContext::new(name, window, frames_in_flight, validation)?;
         let mut resource_manager = ResourceManager::new(gfx.frames_in_flight());

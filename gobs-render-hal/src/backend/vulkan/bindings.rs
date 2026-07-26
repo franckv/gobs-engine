@@ -1,20 +1,24 @@
-use std::{
-    collections::{HashMap, hash_map::Entry},
-    sync::Arc,
+use std::{collections::hash_map::Entry, sync::Arc};
+
+use ahash::{HashMap, HashMapExt as _};
+
+use gobs_vulkan as vk;
+
+use vk::{
+    Pipeline,
+    descriptor::{DescriptorSet, DescriptorSetPool, DescriptorSetUpdates},
+    images::ImageLayout,
 };
 
-use gobs_vulkan::{self as vk, Pipeline};
-
-use vk::descriptor::{DescriptorSet, DescriptorSetPool, DescriptorSetUpdates};
-use vk::images::ImageLayout;
-
 use crate::{
-    BindResource, BindingGroupLayout, Handle, backend::vulkan::registry::ResourcesRegistry,
+    BindResource, BindingGroupLayout, BindingId, Handle,
+    backend::vulkan::registry::ResourcesRegistry,
 };
 
 pub(crate) struct BindingRegistry {
     frames_in_flight: usize,
     pub(crate) pools: Vec<HashMap<u64, DescriptorSetPool>>,
+    pub(crate) ds_cache: Vec<HashMap<BindingId, DescriptorSet>>,
 }
 
 const MAX_SET: usize = 10;
@@ -24,15 +28,19 @@ impl BindingRegistry {
         Self {
             frames_in_flight,
             pools: (0..frames_in_flight).map(|_| HashMap::new()).collect(),
+            ds_cache: (0..frames_in_flight).map(|_| HashMap::new()).collect(),
         }
     }
 
     pub fn reset(&mut self, frame_id: usize) {
-        let mut map = &mut self.pools[frame_id];
+        let mut pool_map = &mut self.pools[frame_id];
 
-        for pool in map.values_mut() {
+        for pool in pool_map.values_mut() {
             pool.reset();
         }
+
+        let mut ds_cache = &mut self.ds_cache[frame_id];
+        ds_cache.clear();
     }
 
     pub fn push_descriptor(
@@ -73,15 +81,21 @@ impl BindingRegistry {
         resource: &BindResource,
         frame_id: usize,
     ) -> DescriptorSet {
-        let ds_pool = self.get_pool(device.clone(), resource, frame_id);
+        if let Some(ds) = self.ds_cache[frame_id].get(&resource.id) {
+            ds.clone()
+        } else {
+            let ds_pool = self.get_pool(device.clone(), resource, frame_id);
 
-        let ds = ds_pool.allocate();
+            let ds = ds_pool.allocate();
 
-        let update = self.generate_update(device, registry, resource);
+            let update = self.generate_update(device, registry, resource);
 
-        update.write(&ds);
+            update.write(&ds);
 
-        ds
+            self.ds_cache[frame_id].insert(resource.id, ds.clone());
+
+            ds
+        }
     }
 
     fn generate_update(
