@@ -39,8 +39,8 @@ VSOutput vertex_main(uint vertex_index: SV_VertexID) {
 
 [shader("fragment")]
 float4 fragment_main(VSOutput input) {
-    let diffuse_color = diffuse_texture.Sample(diffuse_sampler, input.uv);
+    let diffuse_color = linear_to_gamma(diffuse_texture.Sample(diffuse_sampler, input.uv)).rgb;
 
-    return input.color * diffuse_color;
+    return float4(input.color.rgb * diffuse_color, input.color.a);
 }
 

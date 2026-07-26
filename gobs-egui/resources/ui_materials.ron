@@ -10,10 +10,10 @@ MaterialsConfig(
     ),
     materials: {
       "ui": (
-            vertex_shader: "ui.vert.spv",
-            vertex_entry: "main",
-            fragment_shader: "ui.frag.spv",
-            fragment_entry: "main",
+            vertex_shader: "ui.spv",
+            vertex_entry: "vertex_main",
+            fragment_shader: "ui.spv",
+            fragment_entry: "fragment_main",
             cull_mode: None,
             blend_mode: Premultiplied,
             texture_layout: [
