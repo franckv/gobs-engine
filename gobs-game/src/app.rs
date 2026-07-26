@@ -8,6 +8,7 @@ use winit::{
     window::Window,
 };
 
+use gobs_assets::config::GltfConfig;
 use gobs_core::{Config, Input, logger, utils::timer::Timer};
 use gobs_render::{RenderConfig, RenderError};
 
@@ -209,6 +210,7 @@ where
     pub fn new(title: &str, width: u32, height: u32) -> Application<R> {
         let mut config = Config::default();
         config.register::<RenderConfig>();
+        config.register::<GltfConfig>();
 
         Application {
             context: None,
