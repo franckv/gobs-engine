@@ -1,6 +1,5 @@
 import common;
 import light;
-import matrix;
 import vertex_layout;
 
 struct SceneData {
