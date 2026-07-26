@@ -18,6 +18,7 @@ pub struct SampleApp {
     pub draw_wire: bool,
     pub freeze: bool,
     pub ui: Ui,
+    pub fps: u32,
 }
 
 impl SampleApp {
@@ -31,6 +32,7 @@ impl SampleApp {
             draw_wire: false,
             freeze: false,
             ui: Ui::new(),
+            fps: 0,
         }
     }
 
@@ -65,6 +67,8 @@ impl SampleApp {
         ui: &mut UIRenderer,
         delta: f32,
     ) {
+        self.fps = (1. / delta).round() as u32;
+
         if !self.freeze && self.draw_ui {
             // TODO: change this
             // let app_info = ctx.app_info.clone();
@@ -190,6 +194,7 @@ impl SampleApp {
                     ctx.renderer.enable_pass("ui_overlay", self.draw_ui);
                 }
                 Key::F => self.freeze = !self.freeze,
+                Key::G => tracing::info!(target: logger::RENDER, "FPS: {}", self.fps),
                 Key::I => {
                     ctx.renderer.gfx.hal().info();
                 }
