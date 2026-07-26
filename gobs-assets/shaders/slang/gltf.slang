@@ -12,6 +12,12 @@ struct SceneData {
 [[vk::binding(0, SCENE_DATA_SET)]]
 ConstantBuffer<SceneData> scene_data;
 
+struct Material {
+    float4 diffuse_color;
+}
+[[vk::binding(0, MATERIAL_DATA_SET)]]
+ConstantBuffer<Material> material;
+
 [[vk::binding(0, MATERIAL_TEXTURES_SET)]]
 Texture2D diffuse_texture;
 [[vk::binding(1, MATERIAL_TEXTURES_SET)]]
@@ -50,7 +56,7 @@ VSOutputColor vertex_color_main(uint vertex_index: SV_VertexID) {
 
 [shader("fragment")]
 float4 fragment_color_main(VSOutputColor input) {
-    return input.color;
+    return material.diffuse_color * input.color;
 }
 
 struct VSOutputLight {
@@ -87,7 +93,7 @@ VSOutputLight vertex_color_light_main(uint vertex_index: SV_VertexID) {
 
 [shader("fragment")]
 float4 fragment_color_light_main(VSOutputLight input) {
-	float4 object_color = input.color;
+	float4 object_color = material.diffuse_color * input.color;
 
 	float3 light = phong_reflection(input.normal, input.tangent_position, input.tangent_light_dir,
             scene_data.light_color.xyz, input.tangent_view_position, scene_data.ambient_color.xyz);

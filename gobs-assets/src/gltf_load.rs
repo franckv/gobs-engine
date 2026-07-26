@@ -386,7 +386,8 @@ impl GLTFLoader {
                         let color: Color = pbr.base_color_factor().into();
                         let alpha = Self::into_blend_mode(mat.alpha_mode());
                         tracing::debug!(target: logger::RESOURCES, "Using color material: {:?}, alpha={:?}", color, alpha);
-                        self.material_manager.add_color_instance(alpha, color);
+                        self.material_manager
+                            .add_color_instance(resource_manager, alpha, color);
                     }
                 }
             } else {

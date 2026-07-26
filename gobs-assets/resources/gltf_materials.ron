@@ -55,6 +55,9 @@ MaterialsConfig(
             vertex_entry: "vertex_color_light_main",
             fragment_shader: "gltf.spv",
             fragment_entry: "fragment_color_light_main",
+            material_layout: [
+                DiffuseColor,
+            ]
         ),
          "gltf.color.transparent": (
             vertex_shader: "gltf.spv",
@@ -62,6 +65,9 @@ MaterialsConfig(
             fragment_shader: "gltf.spv",
             fragment_entry: "fragment_color_light_main",
             blend_mode: Alpha,
+            material_layout: [
+                DiffuseColor,
+            ]
         ),
    }
 )

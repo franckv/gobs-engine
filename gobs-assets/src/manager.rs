@@ -1,7 +1,7 @@
 use gobs_core::{Color, logger};
 use gobs_render::{
-    BlendMode, Material, MaterialInstance, MaterialInstanceProperties, MaterialsConfig, Texture,
-    TextureProperties,
+    BlendMode, Material, MaterialDataPropData, MaterialInstance, MaterialInstanceProperties,
+    MaterialsConfig, Texture, TextureProperties,
 };
 use gobs_resource::{
     ResourceManager, {ResourceHandle, ResourceLifetime},
@@ -45,8 +45,8 @@ pub struct MaterialManager {
     pub transparent_texture: ResourceHandle<Material>,
     pub texture_normal: ResourceHandle<Material>,
     pub transparent_texture_normal: ResourceHandle<Material>,
-    pub color_instance: ResourceHandle<MaterialInstance>,
-    pub transparent_color_instance: ResourceHandle<MaterialInstance>,
+    pub color: ResourceHandle<Material>,
+    pub transparent_color: ResourceHandle<Material>,
 }
 
 impl MaterialManager {
@@ -83,20 +83,6 @@ impl MaterialManager {
 
         tracing::debug!(target: logger::RESOURCES, "Default material id: {:?}", default_material_instance.id);
 
-        let color_instance = resource_manager.add::<MaterialInstance>(
-            MaterialInstanceProperties::new("color", color),
-            ResourceLifetime::Static,
-            false,
-        );
-        tracing::debug!(target: logger::RESOURCES, "Color material id: {:?}", color_instance.id);
-
-        let transparent_color_instance = resource_manager.add::<MaterialInstance>(
-            MaterialInstanceProperties::new("transparent color", transparent_color),
-            ResourceLifetime::Static,
-            false,
-        );
-        tracing::debug!(target: logger::RESOURCES, "Color material id: {:?}", transparent_color_instance.id);
-
         Ok(MaterialManager {
             texture_manager,
             instances: vec![],
@@ -105,8 +91,8 @@ impl MaterialManager {
             transparent_texture,
             texture_normal,
             transparent_texture_normal,
-            color_instance,
-            transparent_color_instance,
+            color,
+            transparent_color,
         })
     }
 
@@ -177,14 +163,23 @@ impl MaterialManager {
 
     pub fn add_color_instance(
         &mut self,
+        resource_manager: &mut ResourceManager,
         alpha: BlendMode,
-        _color: Color,
+        color: Color,
     ) -> ResourceHandle<MaterialInstance> {
-        // TODO: use color material data
-        let material_instance = match alpha {
-            BlendMode::Alpha => self.transparent_color_instance,
-            _ => self.color_instance,
+        let material = match alpha {
+            BlendMode::Alpha => self.transparent_color,
+            _ => self.color,
         };
+
+        let material_instance_properties = MaterialInstanceProperties::new("color", material)
+            .prop(MaterialDataPropData::DiffuseColor(color.into()));
+
+        let material_instance = resource_manager.add::<MaterialInstance>(
+            material_instance_properties,
+            ResourceLifetime::Static,
+            false,
+        );
         self.instances.push(material_instance);
 
         material_instance
