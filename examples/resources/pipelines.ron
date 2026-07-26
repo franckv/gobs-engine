@@ -2,7 +2,7 @@ PipelinesConfig(
     compute_pipelines: {
         "sky": (
             compute_shader: (
-                file: "sky.comp.spv",
+                file: "sky.spv",
                 entry: "main",
             ),
             bindings: [
