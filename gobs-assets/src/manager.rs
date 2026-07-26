@@ -109,6 +109,7 @@ impl MaterialManager {
         name: &str,
         resource_manager: &mut ResourceManager,
         alpha: BlendMode,
+        color: Color,
         texture: usize,
     ) -> ResourceHandle<MaterialInstance> {
         let texture = self.texture_manager.textures[texture];
@@ -116,12 +117,15 @@ impl MaterialManager {
         let material_instance = match alpha {
             BlendMode::Alpha => resource_manager.add::<MaterialInstance>(
                 MaterialInstanceProperties::new(name, self.transparent_texture)
+                    .prop(MaterialDataPropData::DiffuseColor(color.into()))
                     .textures(&[texture]),
                 ResourceLifetime::Static,
                 false,
             ),
             _ => resource_manager.add::<MaterialInstance>(
-                MaterialInstanceProperties::new(name, self.texture).textures(&[texture]),
+                MaterialInstanceProperties::new(name, self.texture)
+                    .prop(MaterialDataPropData::DiffuseColor(color.into()))
+                    .textures(&[texture]),
                 ResourceLifetime::Static,
                 false,
             ),
@@ -136,6 +140,7 @@ impl MaterialManager {
         name: &str,
         resource_manager: &mut ResourceManager,
         alpha: BlendMode,
+        color: Color,
         diffuse: usize,
         normal: usize,
     ) -> ResourceHandle<MaterialInstance> {
@@ -145,12 +150,14 @@ impl MaterialManager {
         let material_instance = match alpha {
             BlendMode::Alpha => resource_manager.add::<MaterialInstance>(
                 MaterialInstanceProperties::new(name, self.transparent_texture_normal)
+                    .prop(MaterialDataPropData::DiffuseColor(color.into()))
                     .textures(&[diffuse, normal]),
                 ResourceLifetime::Static,
                 false,
             ),
             _ => resource_manager.add::<MaterialInstance>(
                 MaterialInstanceProperties::new(name, self.texture_normal)
+                    .prop(MaterialDataPropData::DiffuseColor(color.into()))
                     .textures(&[diffuse, normal]),
                 ResourceLifetime::Static,
                 false,
@@ -172,11 +179,9 @@ impl MaterialManager {
             _ => self.color,
         };
 
-        let material_instance_properties = MaterialInstanceProperties::new("color", material)
-            .prop(MaterialDataPropData::DiffuseColor(color.into()));
-
         let material_instance = resource_manager.add::<MaterialInstance>(
-            material_instance_properties,
+            MaterialInstanceProperties::new("color", material)
+                .prop(MaterialDataPropData::DiffuseColor(color.into())),
             ResourceLifetime::Static,
             false,
         );

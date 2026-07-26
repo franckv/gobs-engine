@@ -348,6 +348,7 @@ impl GLTFLoader {
                 tracing::debug!(target: logger::RESOURCES, "Material #{}: {}", idx, name);
 
                 let pbr = mat.pbr_metallic_roughness();
+                let color: Color = pbr.base_color_factor().into();
                 let diffuse = pbr.base_color_texture();
 
                 match diffuse {
@@ -366,6 +367,7 @@ impl GLTFLoader {
                                     name,
                                     resource_manager,
                                     Self::into_blend_mode(mat.alpha_mode()),
+                                    color,
                                     texture,
                                     normal_texture,
                                 )
@@ -377,13 +379,13 @@ impl GLTFLoader {
                                     name,
                                     resource_manager,
                                     Self::into_blend_mode(mat.alpha_mode()),
+                                    color,
                                     texture,
                                 )
                             }
                         };
                     }
                     None => {
-                        let color: Color = pbr.base_color_factor().into();
                         let alpha = Self::into_blend_mode(mat.alpha_mode());
                         tracing::debug!(target: logger::RESOURCES, "Using color material: {:?}, alpha={:?}", color, alpha);
                         self.material_manager

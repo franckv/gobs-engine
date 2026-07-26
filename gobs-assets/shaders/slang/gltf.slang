@@ -125,7 +125,7 @@ VSOutputLight vertex_texture_main(uint vertex_index: SV_VertexID) {
 
 [shader("fragment")]
 float4 fragment_texture_main(VSOutputLight input) {
-	float4 object_color = diffuse_texture.Sample(diffuse_sampler, input.uv);
+	float4 object_color = material.diffuse_color * diffuse_texture.Sample(diffuse_sampler, input.uv);
 
 	float3 light = phong_reflection(input.normal, input.tangent_position, input.tangent_light_dir,
             scene_data.light_color.xyz, input.tangent_view_position, scene_data.ambient_color.xyz);
@@ -135,7 +135,7 @@ float4 fragment_texture_main(VSOutputLight input) {
 
 [shader("fragment")]
 float4 fragment_texture_normal_main(VSOutputLight input) {
-	float4 object_color = diffuse_texture.Sample(diffuse_sampler, input.uv);
+	float4 object_color = material.diffuse_color * diffuse_texture.Sample(diffuse_sampler, input.uv);
 	float4 object_normal = normal_texture.Sample(normal_sampler, input.uv);
 
 	float3 light = phong_reflection_normal(object_normal.xyz, input.tangent_position, input.tangent_light_dir,

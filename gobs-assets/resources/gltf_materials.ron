@@ -15,6 +15,9 @@ MaterialsConfig(
             vertex_entry: "vertex_texture_main",
             fragment_shader: "gltf.spv",
             fragment_entry: "fragment_texture_main",
+            material_layout: [
+                DiffuseColor,
+            ],
             texture_layout: [
                 Diffuse
             ]
@@ -25,6 +28,9 @@ MaterialsConfig(
             fragment_shader: "gltf.spv",
             fragment_entry: "fragment_texture_main",
             blend_mode: Alpha,
+            material_layout: [
+                DiffuseColor,
+            ],
             texture_layout: [
                 Diffuse
             ]
@@ -34,6 +40,9 @@ MaterialsConfig(
             vertex_entry: "vertex_texture_main",
             fragment_shader: "gltf.spv",
             fragment_entry: "fragment_texture_normal_main",
+            material_layout: [
+                DiffuseColor,
+            ],
             texture_layout: [
                 Diffuse,
                 Normal
@@ -45,6 +54,9 @@ MaterialsConfig(
             fragment_shader: "gltf.spv",
             fragment_entry: "fragment_texture_normal_main",
             blend_mode: Alpha,
+            material_layout: [
+                DiffuseColor,
+            ],
             texture_layout: [
                 Diffuse,
                 Normal

@@ -99,12 +99,12 @@ impl MaterialsConfig {
             tracing::debug!(target: logger::INIT, "Loading material {} with texture bindings: {:#?}", name, &material.texture_layout);
             tracing::debug!(target: logger::INIT, "Loading material {} with material bindings: {:#?}", name, &material.material_layout);
 
-            for prop in &material.texture_layout {
-                props = props.texture(*prop);
-            }
-
             for prop in &material.material_layout {
                 props = props.property(*prop);
+            }
+
+            for prop in &material.texture_layout {
+                props = props.texture(*prop);
             }
 
             resource_manager.add::<Material>(props, ResourceLifetime::Static, true);
