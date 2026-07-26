@@ -35,12 +35,25 @@ pub trait UniformData<DataProp> {
 
     fn uniform_layout(&self) -> &UniformLayout;
 
+    fn layout(&self) -> &[DataProp];
+
     fn copy_data<B, F>(&self, buffer: &mut B, get_data: F)
     where
         B: DataBuffer,
-        F: Fn(&DataProp) -> AttributeData;
+        F: Fn(&DataProp) -> AttributeData,
+    {
+        let layout = self.uniform_layout();
+        let data_start = buffer.len();
 
-    fn is_empty(&self) -> bool;
+        for (pos, prop) in self.layout().iter().enumerate() {
+            let value = get_data(prop);
+            layout.copy_data(value, pos, data_start, buffer);
+        }
+    }
+
+    fn is_empty(&self) -> bool {
+        self.layout().is_empty()
+    }
 }
 
 #[derive(Clone, Debug, Eq, PartialEq, Hash)]
