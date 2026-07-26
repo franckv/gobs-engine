@@ -122,7 +122,6 @@ impl App {
             .mesh(
                 Shapes::triangle(&[Color::RED, Color::GREEN, Color::BLUE], 1.),
                 Some(material_instance),
-                ctx.renderer.gfx.world_vertex_attributes,
                 &mut ctx.resource_manager,
                 ResourceLifetime::Static,
             )
@@ -132,7 +131,6 @@ impl App {
             .mesh(
                 Shapes::quad(&[Color::new(1., 1., 1., 0.5)]),
                 Some(transparent_material_instance),
-                ctx.renderer.gfx.world_vertex_attributes,
                 &mut ctx.resource_manager,
                 ResourceLifetime::Static,
             )

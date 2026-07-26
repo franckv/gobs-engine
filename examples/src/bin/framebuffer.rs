@@ -128,7 +128,6 @@ impl App {
             .mesh(
                 Shapes::quad(&[Color::WHITE]),
                 Some(material_instance),
-                ctx.renderer.gfx.world_vertex_attributes,
                 &mut ctx.resource_manager,
                 ResourceLifetime::Static,
             )

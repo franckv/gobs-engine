@@ -325,13 +325,7 @@ impl RenderBatch {
             let bb = bb.build();
 
             let model = Model::builder("box")
-                .mesh(
-                    bb,
-                    None,
-                    ctx.world_vertex_attributes,
-                    resource_manager,
-                    ResourceLifetime::Transient,
-                )
+                .mesh(bb, None, resource_manager, ResourceLifetime::Transient)
                 .build();
 
             self.add_model(
@@ -407,7 +401,6 @@ mod tests {
             .mesh(
                 Shapes::triangle(&[Color::RED, Color::GREEN, Color::BLUE], 1.),
                 None,
-                ctx.world_vertex_attributes,
                 &mut resource_manager,
                 ResourceLifetime::Static,
             )

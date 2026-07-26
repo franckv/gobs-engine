@@ -1,14 +1,13 @@
 use winit::window::Window;
 
 use gobs_core::ImageExtent2D;
-use gobs_render_hal::{RenderHAL, VertexAttribute, create_hal};
+use gobs_render_hal::{RenderHAL, create_hal};
 
 use crate::RenderError;
 
 pub struct GfxContext {
     hal: Box<dyn RenderHAL>,
     frames_in_flight: usize,
-    pub world_vertex_attributes: VertexAttribute,
     pub stats_refresh: usize,
 }
 
@@ -44,12 +43,6 @@ impl GfxContext {
         Ok(Self {
             hal,
             frames_in_flight,
-            world_vertex_attributes: VertexAttribute::POSITION
-                | VertexAttribute::COLOR
-                | VertexAttribute::TEXTURE
-                | VertexAttribute::NORMAL
-                | VertexAttribute::TANGENT
-                | VertexAttribute::BITANGENT,
             stats_refresh: 60,
         })
     }

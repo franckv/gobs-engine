@@ -12,8 +12,8 @@ use gobs_resource::{
 };
 
 use crate::{
-    Bounded, BoundingBox, MaterialInstance, Mesh, MeshGeometry, MeshProperties, Renderable,
-    batch::RenderBatch,
+    Bounded, BoundingBox, Material, MaterialInstance, Mesh, MeshGeometry, MeshProperties,
+    Renderable, batch::RenderBatch,
 };
 
 pub type ModelId = Uuid;
@@ -128,11 +128,22 @@ impl ModelBuilder {
         mut self,
         mesh: Arc<MeshGeometry>,
         material_instance: Option<ResourceHandle<MaterialInstance>>,
-        vertex_attributes: VertexAttribute,
         resource_manager: &mut ResourceManager,
         lifetime: ResourceLifetime,
     ) -> Self {
         self.bounding_box.extends_box(mesh.boundings());
+
+        let vertex_attributes = match material_instance {
+            Some(material_instance) => {
+                let material_instance =
+                    resource_manager.get::<MaterialInstance>(&material_instance);
+                let material =
+                    resource_manager.get::<Material>(&material_instance.properties.material);
+
+                material.properties.pipeline_properties.vertex_attributes
+            }
+            None => VertexAttribute::POSITION,
+        };
 
         let mesh_handle = resource_manager.add(
             MeshProperties::with_geometry(mesh, vertex_attributes, self.layer),

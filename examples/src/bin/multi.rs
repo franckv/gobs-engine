@@ -154,14 +154,12 @@ impl App {
             .mesh(
                 Shapes::triangle(&[Color::RED, Color::GREEN, Color::BLUE], 1.5),
                 Some(color_material_instance),
-                ctx.renderer.gfx.world_vertex_attributes,
                 &mut ctx.resource_manager,
                 ResourceLifetime::Static,
             )
             .mesh(
                 Shapes::cubemap(1, 1, &[1], 1.),
                 Some(diffuse_material_instance),
-                ctx.renderer.gfx.world_vertex_attributes,
                 &mut ctx.resource_manager,
                 ResourceLifetime::Static,
             )

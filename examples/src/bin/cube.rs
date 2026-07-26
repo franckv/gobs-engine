@@ -4,8 +4,8 @@ use gobs::{
     core::{Color, Input, Transform, logger},
     game::{AppError, Application, GameContext, GobsGame},
     render::{
-        Material, MaterialInstanceProperties, MaterialsConfig, Model, RenderError, Shapes,
-        TextureProperties, TextureType,
+        MaterialInstanceProperties, MaterialsConfig, Model, RenderError, Shapes, TextureProperties,
+        TextureType,
     },
     resource::{ResourceLifetime, camera::Camera, light::Light},
     scene::{components::NodeValue, scene::Scene},
@@ -130,8 +130,6 @@ impl App {
         MaterialsConfig::load_resources("materials.ron", &mut ctx.resource_manager).await;
 
         let material = ctx.resource_manager.get_by_name("normal").unwrap();
-        let material_properties = &ctx.resource_manager.get::<Material>(&material).properties;
-        let vertex_attributes = material_properties.pipeline_properties.vertex_attributes;
 
         let properties = TextureProperties::with_file(
             "Wall Diffuse",
@@ -165,7 +163,6 @@ impl App {
             .mesh(
                 Shapes::cubemap(1, 1, &[1], 1.),
                 Some(material_instance),
-                vertex_attributes,
                 &mut ctx.resource_manager,
                 ResourceLifetime::Static,
             )

@@ -165,6 +165,7 @@ impl App {
             .add(properties, ResourceLifetime::Static, false);
 
         let material = ctx.resource_manager.get_by_name("normal").unwrap();
+
         let material_instance_properties = MaterialInstanceProperties::new("normal", material)
             .textures(&[diffuse_texture, normal_texture]);
         let material_instance = ctx.resource_manager.add(
@@ -177,7 +178,6 @@ impl App {
             .mesh(
                 Shapes::cubemap(1, 1, &[1], 1.),
                 Some(material_instance),
-                ctx.renderer.gfx.world_vertex_attributes,
                 &mut ctx.resource_manager,
                 ResourceLifetime::Static,
             )

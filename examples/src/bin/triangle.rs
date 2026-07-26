@@ -81,6 +81,7 @@ impl App {
         MaterialsConfig::load_resources("materials.ron", &mut ctx.resource_manager).await;
 
         let material = ctx.resource_manager.get_by_name("color").unwrap();
+
         let material_instance_properties = MaterialInstanceProperties::new("color", material);
         let material_instance = ctx.resource_manager.add(
             material_instance_properties,
@@ -92,7 +93,6 @@ impl App {
             .mesh(
                 Shapes::triangle(&[Color::RED, Color::GREEN, Color::BLUE], 1.),
                 Some(material_instance),
-                ctx.renderer.gfx.world_vertex_attributes,
                 &mut ctx.resource_manager,
                 ResourceLifetime::Static,
             )

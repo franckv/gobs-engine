@@ -167,7 +167,6 @@ impl App {
             .mesh(
                 Shapes::cubemap(examples::ATLAS_COLS, examples::ATLAS_ROWS, &[2], 1.),
                 Some(material_instance),
-                ctx.renderer.gfx.world_vertex_attributes,
                 &mut ctx.resource_manager,
                 ResourceLifetime::Static,
             )
@@ -182,7 +181,6 @@ impl App {
                     1.,
                 ),
                 Some(material_instance),
-                ctx.renderer.gfx.world_vertex_attributes,
                 &mut ctx.resource_manager,
                 ResourceLifetime::Static,
             )

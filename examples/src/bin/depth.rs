@@ -131,7 +131,6 @@ impl App {
         let material = ctx.resource_manager.get_by_name("depth").unwrap();
 
         let material_instance_properties = MaterialInstanceProperties::new("depth", material);
-
         let material_instance = ctx.resource_manager.add(
             material_instance_properties,
             ResourceLifetime::Static,
@@ -142,7 +141,6 @@ impl App {
             .mesh(
                 Shapes::cubemap(1, 1, &[1], 1.),
                 Some(material_instance),
-                ctx.renderer.gfx.world_vertex_attributes,
                 &mut ctx.resource_manager,
                 ResourceLifetime::Static,
             )

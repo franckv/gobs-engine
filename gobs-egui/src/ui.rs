@@ -375,7 +375,6 @@ impl UIRenderer {
     #[tracing::instrument(target = "profile", skip_all, level = "trace")]
     fn load_model(
         &self,
-        ctx: &GfxContext,
         resource_manager: &mut ResourceManager,
         output: FullOutput,
     ) -> Option<Arc<Model>> {
@@ -442,7 +441,6 @@ impl UIRenderer {
                 model = model.layer(layer).mesh(
                     mesh.build(),
                     Some(self.font_texture.get(&m.texture_id).cloned().unwrap()),
-                    ctx.world_vertex_attributes,
                     resource_manager,
                     ResourceLifetime::Transient,
                 );
@@ -481,7 +479,7 @@ impl Renderable for UIRenderer {
                 None => Transform::IDENTITY,
             };
 
-            if let Some(model) = self.load_model(ctx, resource_manager, output) {
+            if let Some(model) = self.load_model(resource_manager, output) {
                 batch.add_model(
                     ctx,
                     resource_manager,
