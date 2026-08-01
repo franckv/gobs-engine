@@ -150,8 +150,9 @@ where
 
                     if !self.close_requested {
                         if runnable.should_update(context) {
-                            context.update(delta);
+                            context.pre_update(delta);
                             runnable.update(context, delta);
+                            context.post_update(delta);
                         }
                         tracing::trace!(target: logger::EVENTS, "[Redraw] FPS: {}", 1. / delta);
                         if !context.is_minimized() {

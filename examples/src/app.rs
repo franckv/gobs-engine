@@ -6,7 +6,6 @@ use gobs::{
     render::{RenderError, RenderFlags, Renderable},
     resource::camera::Camera,
     scene::scene::Scene,
-    ui::UIRenderer,
 };
 
 use crate::{CameraController, ui::Ui};
@@ -60,24 +59,11 @@ impl SampleApp {
     }
 
     #[tracing::instrument(target = "profile", skip_all, level = "trace")]
-    pub fn update_ui(
-        &mut self,
-        ctx: &mut GameContext,
-        scene: &mut Scene,
-        ui: &mut UIRenderer,
-        delta: f32,
-    ) {
+    pub fn update_ui(&mut self, ctx: &mut GameContext, scene: &mut Scene, delta: f32) {
         self.fps = (1. / delta).round() as u32;
 
         if !self.freeze && self.draw_ui {
-            // TODO: change this
-            // let app_info = ctx.app_info.clone();
-
-            let output = ui.draw_ui(delta, |ui| {
-                self.ui.draw(ui, ctx, scene, delta);
-            });
-
-            ui.update(&mut ctx.renderer.gfx, &mut ctx.resource_manager, output);
+            self.ui.draw(ctx, scene, delta);
         }
     }
 
@@ -90,7 +76,6 @@ impl SampleApp {
         &mut self,
         ctx: &mut GameContext,
         scene: Option<&mut Scene>,
-        ui: Option<&mut UIRenderer>,
     ) -> Result<(), RenderError> {
         if self.freeze {
             return Ok(());
@@ -116,9 +101,9 @@ impl SampleApp {
                 )
                 .map_err(|_| RenderError::InvalidData)?;
         }
-        if let Some(ui) = &ui {
-            tracing::debug!("Draw ui");
-            ui.draw(
+        tracing::debug!("Draw ui");
+        ctx.ui
+            .draw(
                 &mut ctx.renderer.gfx,
                 resource_manager,
                 &mut batch,
@@ -127,7 +112,6 @@ impl SampleApp {
                 RenderFlags::UI,
             )
             .map_err(|_| RenderError::InvalidData)?;
-        }
 
         batch.finish(&mut ctx.renderer.gfx, resource_manager);
 
@@ -145,12 +129,11 @@ impl SampleApp {
         ctx: &mut GameContext,
         input: Input,
         scene: &mut Scene,
-        ui: &mut UIRenderer,
         camera_controller: Option<&mut CameraController>,
     ) {
         tracing::trace!(target: logger::APP, "Input");
 
-        ui.input(input);
+        ctx.ui.input(input);
         if let Some(camera_controller) = camera_controller {
             camera_controller.input(input, self.ui.ui_hovered);
         }

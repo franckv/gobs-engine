@@ -20,7 +20,7 @@ impl GobsGame<GameContext> for App {
     fn update(&mut self, _ctx: &mut GameContext, _delta: f32) {}
 
     fn render(&mut self, ctx: &mut GameContext) -> Result<(), RenderError> {
-        self.common.render(ctx, None, None)
+        self.common.render(ctx, None)
     }
 
     fn input(&mut self, _ctx: &mut GameContext, _input: Input) {}

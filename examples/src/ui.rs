@@ -4,11 +4,11 @@ use glam::Vec3;
 
 use gobs::{
     core::Transform,
-    game::context::GameContext,
-    render::{GfxContext, Material, MaterialInstance, Mesh, Pipeline, Texture, TextureLoader},
-    resource::{
-        ResourceManager, {ResourceHandle, ResourceProperties, ResourceType},
+    game::{AppInfo, GameContext, context::GobsContext as _},
+    render::{
+        GfxContext, Material, MaterialInstance, Mesh, Pipeline, Renderer, Texture, TextureLoader,
     },
+    resource::{ResourceHandle, ResourceManager, ResourceProperties, ResourceType},
     scene::{
         components::{NodeId, NodeValue},
         graph::{node::Node, scenegraph::SceneGraph},
@@ -51,10 +51,19 @@ impl Ui {
     }
 
     #[tracing::instrument(target = "profile", skip_all, level = "trace")]
-    pub fn draw(
+    pub fn draw(&mut self, ctx: &mut GameContext, scene: &mut Scene, delta: f32) {
+        ctx.draw_ui(delta, |ui, app_info, resource_manager, renderer| {
+            self.draw_ui(ui, app_info, renderer, resource_manager, scene, delta);
+        });
+    }
+
+    #[tracing::instrument(target = "profile", skip_all, level = "trace")]
+    fn draw_ui(
         &mut self,
         ui: &mut egui::Ui,
-        ctx: &mut GameContext,
+        info: &AppInfo,
+        renderer: &mut Renderer,
+        resource_manager: &mut ResourceManager,
         scene: &mut Scene,
         delta: f32,
     ) {
@@ -64,13 +73,13 @@ impl Ui {
         }
 
         egui::Panel::left("left").show(ui, |ui| {
-            ui.heading(&ctx.app_info.name);
+            ui.heading(&info.name);
 
-            self.show_resources(ui, &ctx.resource_manager);
+            self.show_resources(ui, resource_manager);
 
-            self.draw_general(ui, scene, ctx, delta);
+            self.draw_general(ui, renderer, scene, delta);
 
-            self.show_texture(&mut ctx.renderer.gfx, ui, &mut ctx.resource_manager);
+            self.show_texture(&mut renderer.gfx, ui, resource_manager);
 
             ui.separator();
 
@@ -85,7 +94,7 @@ impl Ui {
 
         if self.selected_node != NodeId::default() {
             egui::Panel::right("right").show(ui, |ui| {
-                self.draw_properties(ui, &mut scene.graph, &ctx.resource_manager);
+                self.draw_properties(ui, &mut scene.graph, resource_manager);
                 ui.separator();
             });
         }
@@ -184,17 +193,17 @@ impl Ui {
     fn draw_general(
         &mut self,
         ui: &mut egui::Ui,
+        renderer: &Renderer,
         scene: &mut Scene,
-        ctx: &GameContext,
         delta: f32,
     ) {
         egui::CollapsingHeader::new("Settings")
             .default_open(true)
             .show(ui, |ui| {
-                ui.label(format!("Frame: {}", ctx.renderer.frame_number));
+                ui.label(format!("Frame: {}", renderer.frame_number));
                 ui.label(format!(
                     "Frame in flight: {}",
-                    ctx.renderer.gfx.frames_in_flight()
+                    renderer.gfx.frames_in_flight()
                 ));
                 ui.label(format!("FPS: {}", (1. / delta).round() as u32));
                 ui.horizontal(|ui| {

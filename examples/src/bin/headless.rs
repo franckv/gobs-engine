@@ -44,7 +44,7 @@ impl GobsGame<GameContext> for App {
     }
 
     fn render(&mut self, ctx: &mut GameContext) -> Result<(), RenderError> {
-        self.common.render(ctx, Some(&mut self.scene), None)
+        self.common.render(ctx, Some(&mut self.scene))
     }
 
     fn input(&mut self, _ctx: &mut GameContext, _input: Input) {}

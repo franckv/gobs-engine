@@ -19,8 +19,6 @@ use gobs_resource::{
     ResourceManager, {ResourceError, ResourceHandle, ResourceLifetime},
 };
 
-use crate::UIError;
-
 const PIXEL_PER_POINT: f32 = 1.;
 
 pub struct UIRenderer {
@@ -35,7 +33,7 @@ pub struct UIRenderer {
 }
 
 impl UIRenderer {
-    pub fn new(ctx: &GfxContext, resource_manager: &mut ResourceManager) -> Result<Self, UIError> {
+    pub fn new(ctx: &GfxContext, resource_manager: &mut ResourceManager) -> Self {
         let ectx = egui::Context::default();
 
         let (width, height): (f32, f32) = ctx.extent().into();
@@ -46,7 +44,7 @@ impl UIRenderer {
 
         let material = resource_manager.get_by_name("ui").unwrap();
 
-        Ok(UIRenderer {
+        UIRenderer {
             ectx,
             width,
             height,
@@ -55,29 +53,24 @@ impl UIRenderer {
             input: Vec::new(),
             mouse_position: (0., 0.),
             output: RwLock::new(None),
-        })
+        }
     }
 
     #[tracing::instrument(target = "profile", skip_all, level = "trace")]
-    pub fn draw_ui<F>(&mut self, delta: f32, callback: F) -> FullOutput
+    pub fn draw_ui<F>(&mut self, delta: f32, callback: F)
     where
         F: FnMut(&mut egui::Ui),
     {
         let input = self.prepare_inputs(delta);
-        self.ectx.run_ui(input, callback)
+        let output = self.ectx.run_ui(input, callback);
+
+        self.output.write().replace(output);
     }
 
     #[tracing::instrument(target = "profile", skip_all, level = "trace")]
-    pub fn update(
-        &mut self,
-        ctx: &mut GfxContext,
-        resource_manager: &mut ResourceManager,
-        output: FullOutput,
-    ) {
-        self.update_textures(resource_manager, &output);
-        self.cleanup_textures(ctx, resource_manager, &output);
-
-        self.output.write().replace(output);
+    pub fn update(&mut self, ctx: &mut GfxContext, resource_manager: &mut ResourceManager) {
+        self.update_textures(resource_manager);
+        self.cleanup_textures(ctx, resource_manager);
     }
 
     fn get_key(key: Key) -> egui::Key {
@@ -220,66 +213,65 @@ impl UIRenderer {
     }
 
     #[tracing::instrument(target = "profile", skip_all, level = "trace")]
-    fn update_textures(&mut self, resource_manager: &mut ResourceManager, output: &FullOutput) {
-        for (id, img) in &output.textures_delta.set {
-            tracing::debug!(target: logger::UI, "New texture {:?}", id);
-            if img.pos.is_some() {
-                tracing::debug!(target: logger::UI, "Patching texture");
-                let texture = self.patch_texture(
-                    resource_manager,
-                    self.font_texture
-                        .get(id)
-                        .cloned()
-                        .expect("Cannot update unallocated texture"),
-                    img,
-                );
+    fn update_textures(&mut self, resource_manager: &mut ResourceManager) {
+        if let Some(output) = self.output.write().as_ref() {
+            for (id, img) in &output.textures_delta.set {
+                tracing::debug!(target: logger::UI, "New texture {:?}", id);
+                if img.pos.is_some() {
+                    tracing::debug!(target: logger::UI, "Patching texture");
+                    let texture = self.patch_texture(
+                        resource_manager,
+                        self.font_texture
+                            .get(id)
+                            .cloned()
+                            .expect("Cannot update unallocated texture"),
+                        img,
+                    );
 
-                let material_properties =
-                    MaterialInstanceProperties::new("font", self.material).textures(&[texture]);
+                    let material_properties =
+                        MaterialInstanceProperties::new("font", self.material).textures(&[texture]);
 
-                let material_instance = resource_manager.add::<MaterialInstance>(
-                    material_properties,
-                    ResourceLifetime::Static,
-                    false,
-                );
+                    let material_instance = resource_manager.add::<MaterialInstance>(
+                        material_properties,
+                        ResourceLifetime::Static,
+                        false,
+                    );
 
-                *self.font_texture.get_mut(id).unwrap() = material_instance;
-            } else if self.font_texture.contains_key(id) {
-                tracing::warn!(target: logger::UI, "Font texture already exist {:?}", id);
-            } else {
-                tracing::debug!(target: logger::UI, "Allocate new texture");
-                let texture = self.decode_texture(resource_manager, img);
-                self.font_texture.insert(*id, texture);
-                tracing::trace!(target: logger::UI, "Texture loaded");
+                    *self.font_texture.get_mut(id).unwrap() = material_instance;
+                } else if self.font_texture.contains_key(id) {
+                    tracing::warn!(target: logger::UI, "Font texture already exist {:?}", id);
+                } else {
+                    tracing::debug!(target: logger::UI, "Allocate new texture");
+                    let texture = self.decode_texture(resource_manager, img);
+                    self.font_texture.insert(*id, texture);
+                    tracing::trace!(target: logger::UI, "Texture loaded");
+                }
             }
         }
     }
 
     #[tracing::instrument(target = "profile", skip_all, level = "trace")]
-    fn cleanup_textures(
-        &mut self,
-        ctx: &mut GfxContext,
-        resource_manager: &mut ResourceManager,
-        output: &FullOutput,
-    ) {
-        for id in &output.textures_delta.free {
-            tracing::debug!(target: logger::UI, "Remove texture {:?}", id);
+    fn cleanup_textures(&mut self, ctx: &mut GfxContext, resource_manager: &mut ResourceManager) {
+        if let Some(output) = self.output.write().as_ref() {
+            for id in &output.textures_delta.free {
+                tracing::debug!(target: logger::UI, "Remove texture {:?}", id);
 
-            let material_handle = self.font_texture.remove(id);
-            let mut to_remove = Vec::new();
+                let material_handle = self.font_texture.remove(id);
+                let mut to_remove = Vec::new();
 
-            if let Some(material_handle) = material_handle {
-                let material = resource_manager.get_data(ctx.hal_mut(), &material_handle);
-                if let Ok(material) = material {
-                    for texture in &material.properties.textures {
-                        to_remove.push(*texture);
+                if let Some(material_handle) = material_handle {
+                    let material = resource_manager.get_data(ctx.hal_mut(), &material_handle);
+                    if let Ok(material) = material {
+                        for texture in &material.properties.textures {
+                            to_remove.push(*texture);
+                        }
                     }
+                    resource_manager.schedule_removal(&material_handle);
                 }
-                resource_manager.schedule_removal(&material_handle);
-            }
 
-            for texture in to_remove {
-                resource_manager.schedule_removal(&texture);
+                for texture in to_remove {
+                    resource_manager.schedule_removal(&texture);
+                }
             }
         }
     }

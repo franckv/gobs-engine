@@ -10,7 +10,6 @@ use gobs::{
         {camera::Camera, light::Light},
     },
     scene::{graph::scenegraph::SceneGraph, scene::Scene},
-    ui::UIRenderer,
 };
 
 use examples::{CameraController, SampleApp};
@@ -18,7 +17,6 @@ use examples::{CameraController, SampleApp};
 struct App {
     common: SampleApp,
     camera_controller: CameraController,
-    ui: UIRenderer,
     scene: Scene,
 }
 
@@ -44,7 +42,6 @@ impl GobsGame<GameContext> for App {
 
         let camera_controller = SampleApp::controller();
 
-        let ui = UIRenderer::new(&ctx.renderer.gfx, &mut ctx.resource_manager)?;
         let scene = Scene::new(
             &ctx.renderer.gfx,
             camera,
@@ -56,7 +53,6 @@ impl GobsGame<GameContext> for App {
         Ok(App {
             common,
             camera_controller,
-            ui,
             scene,
         })
     }
@@ -91,13 +87,11 @@ impl GobsGame<GameContext> for App {
 
         self.scene.update(&ctx.renderer.gfx, delta);
 
-        self.common
-            .update_ui(ctx, &mut self.scene, &mut self.ui, delta);
+        self.common.update_ui(ctx, &mut self.scene, delta);
     }
 
     fn render(&mut self, ctx: &mut GameContext) -> Result<(), RenderError> {
-        self.common
-            .render(ctx, Some(&mut self.scene), Some(&mut self.ui))
+        self.common.render(ctx, Some(&mut self.scene))
     }
 
     fn input(&mut self, ctx: &mut GameContext, input: Input) {
@@ -105,14 +99,13 @@ impl GobsGame<GameContext> for App {
             ctx,
             input,
             &mut self.scene,
-            &mut self.ui,
             Some(&mut self.camera_controller),
         );
     }
 
-    fn resize(&mut self, _ctx: &mut GameContext, width: u32, height: u32) {
+    fn resize(&mut self, ctx: &mut GameContext, width: u32, height: u32) {
         self.scene.resize(width, height);
-        self.ui.resize(width, height);
+        ctx.ui.resize(width, height);
     }
 
     fn close(&mut self, _ctx: &mut GameContext) {

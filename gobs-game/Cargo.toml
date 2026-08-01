@@ -10,6 +10,7 @@ gobs-core = { workspace = true }
 gobs-render = { workspace = true }
 gobs-resource = { workspace = true }
 gobs-egui = { workspace = true }
+egui = { workspace = true }
 pollster = { workspace = true }
 thiserror = { workspace = true }
 tracing = { workspace = true }

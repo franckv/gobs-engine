@@ -4,45 +4,37 @@ use gobs::{
     core::{Input, Key, logger},
     game::{AppError, Application, GameContext, GobsGame},
     render::{RenderConfig, RenderError},
-    ui::UIRenderer,
 };
 
 use examples::SampleApp;
 
 struct App {
     common: SampleApp,
-    ui: UIRenderer,
     demo: MiscDemoWindow,
 }
 
 impl GobsGame<GameContext> for App {
-    async fn create(ctx: &mut GameContext) -> Result<Self, AppError> {
-        let ui = UIRenderer::new(&ctx.renderer.gfx, &mut ctx.resource_manager)?;
+    async fn create(_ctx: &mut GameContext) -> Result<Self, AppError> {
         let mut common = SampleApp::new();
         common.draw_ui = true;
 
         Ok(App {
             common,
-            ui,
             demo: Default::default(),
         })
     }
 
     fn update(&mut self, ctx: &mut GameContext, delta: f32) {
-        let output = self
-            .ui
+        ctx.ui
             .draw_ui(delta, |ectx| self.demo.show(ectx, &mut true));
-
-        self.ui
-            .update(&mut ctx.renderer.gfx, &mut ctx.resource_manager, output);
     }
 
     fn render(&mut self, ctx: &mut GameContext) -> Result<(), RenderError> {
-        self.common.render(ctx, None, Some(&mut self.ui))
+        self.common.render(ctx, None)
     }
 
-    fn input(&mut self, _ctx: &mut GameContext, input: Input) {
-        self.ui.input(input);
+    fn input(&mut self, ctx: &mut GameContext, input: Input) {
+        ctx.ui.input(input);
         if let Input::KeyPressed(Key::C) = input {
             let rd: Result<RenderDoc<V141>, _> = RenderDoc::new();
 
@@ -52,8 +44,8 @@ impl GobsGame<GameContext> for App {
         }
     }
 
-    fn resize(&mut self, _ctx: &mut GameContext, width: u32, height: u32) {
-        self.ui.resize(width, height);
+    fn resize(&mut self, ctx: &mut GameContext, width: u32, height: u32) {
+        ctx.ui.resize(width, height);
     }
 
     async fn start(&mut self, _ctx: &mut GameContext) {}
