@@ -75,6 +75,7 @@ impl GobsGame<GameContext> for App {
     fn render(&mut self, ctx: &mut GameContext) -> Result<(), RenderError> {
         ctx.render()?
             .draw_bounds(self.input.draw_bounds)
+            .draw_wire(self.input.draw_wire)
             .with_renderable(&self.scene, RenderType::Scene)?
             .build()
     }

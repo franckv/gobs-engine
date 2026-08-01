@@ -57,7 +57,14 @@ impl<'a> RenderBuilder<'a> {
     }
 
     pub fn draw_bounds(mut self, draw_bounds: bool) -> Self {
+        self.renderer.enable_pass("bounds", draw_bounds);
         self.batch.generate_bounds(draw_bounds);
+
+        self
+    }
+
+    pub fn draw_wire(self, draw_wire: bool) -> Self {
+        self.renderer.enable_pass("wire", draw_wire);
 
         self
     }
