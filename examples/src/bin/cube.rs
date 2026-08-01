@@ -4,8 +4,8 @@ use gobs::{
     core::{Color, Input, Transform, logger},
     game::{AppError, Application, GameContext, GobsGame},
     render::{
-        MaterialInstanceProperties, MaterialsConfig, Model, RenderError, Shapes, TextureProperties,
-        TextureType,
+        MaterialInstanceProperties, MaterialsConfig, Model, RenderError, RenderFlags,
+        Renderable as _, Shapes, TextureProperties, TextureType,
     },
     resource::{ResourceLifetime, camera::Camera, light::Light},
     scene::{components::NodeValue, scene::Scene},
@@ -15,7 +15,6 @@ use gobs::{
 use examples::{CameraController, SampleApp};
 
 struct App {
-    common: SampleApp,
     camera_controller: CameraController,
     ui: UIRenderer,
     scene: Scene,
@@ -38,8 +37,6 @@ impl GobsGame for App {
         let light = Light::new(Color::WHITE);
         let light_position = Vec3::new(-2., 2.5, 10.);
 
-        let common = SampleApp::new();
-
         let camera_controller = SampleApp::controller();
 
         let ui = UIRenderer::new(&ctx.renderer.gfx, &mut ctx.resource_manager)?;
@@ -52,7 +49,6 @@ impl GobsGame for App {
         );
 
         Ok(App {
-            common,
             camera_controller,
             ui,
             scene,
@@ -64,30 +60,28 @@ impl GobsGame for App {
     }
 
     fn should_update(&mut self, _ctx: &mut GameContext) -> bool {
-        self.common.should_update()
+        true
     }
 
     fn update(&mut self, ctx: &mut GameContext, delta: f32) {
-        if self.common.process_updates {
-            let angular_speed = 10.;
+        let angular_speed = 10.;
 
-            self.scene
-                .graph
-                .visit_update(self.scene.graph.root, &mut |node| {
-                    if let NodeValue::Model(_) = node.base.value {
-                        node.update_transform(|transform| {
-                            transform.rotate(Quat::from_axis_angle(
-                                Vec3::Y,
-                                (angular_speed * delta).to_radians(),
-                            ));
+        self.scene
+            .graph
+            .visit_update(self.scene.graph.root, &mut |node| {
+                if let NodeValue::Model(_) = node.base.value {
+                    node.update_transform(|transform| {
+                        transform.rotate(Quat::from_axis_angle(
+                            Vec3::Y,
+                            (angular_speed * delta).to_radians(),
+                        ));
 
-                            true
-                        });
-                    }
+                        true
+                    });
+                }
 
-                    false
-                });
-        }
+                false
+            });
 
         self.scene.update_camera(|transform, camera| {
             self.camera_controller
@@ -95,24 +89,57 @@ impl GobsGame for App {
         });
 
         self.scene.update(&ctx.renderer.gfx, delta);
-
-        self.common
-            .update_ui(ctx, &mut self.scene, &mut self.ui, delta);
     }
 
     fn render(&mut self, ctx: &mut GameContext) -> Result<(), RenderError> {
-        self.common
-            .render(ctx, Some(&mut self.scene), Some(&mut self.ui))
+        tracing::trace!(target: logger::APP, "Render frame {}", ctx.renderer.frame_number());
+
+        let resource_manager = &mut ctx.resource_manager;
+
+        let mut batch = ctx.renderer.get_batch();
+        batch.generate_bounds(false);
+
+        tracing::debug!("Draw scene");
+        self.scene
+            .draw(
+                &mut ctx.renderer.gfx,
+                resource_manager,
+                &mut batch,
+                None,
+                None,
+                RenderFlags::ENTITY,
+            )
+            .map_err(|_| RenderError::InvalidData)?;
+
+        tracing::debug!("Draw ui");
+        self.ui
+            .draw(
+                &mut ctx.renderer.gfx,
+                resource_manager,
+                &mut batch,
+                None,
+                None,
+                RenderFlags::UI,
+            )
+            .map_err(|_| RenderError::InvalidData)?;
+
+        batch.finish(&mut ctx.renderer.gfx, resource_manager);
+
+        ctx.renderer.submit(&mut batch)?;
+
+        tracing::trace!(target: logger::APP, "End render");
+
+        tracing_tracy::client::frame_mark();
+
+        Ok(())
     }
 
-    fn input(&mut self, ctx: &mut GameContext, input: Input) {
-        self.common.input(
-            ctx,
-            input,
-            &mut self.scene,
-            &mut self.ui,
-            Some(&mut self.camera_controller),
-        );
+    fn input(&mut self, _ctx: &mut GameContext, input: Input) {
+        tracing::trace!(target: logger::APP, "Input");
+
+        self.ui.input(input);
+
+        self.camera_controller.input(input, false);
     }
 
     fn resize(&mut self, _ctx: &mut GameContext, width: u32, height: u32) {
