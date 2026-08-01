@@ -82,7 +82,7 @@ impl MaterialPass {
     ) {
         tracing::debug!(target: logger::RENDER, "Begin material pass {}", &self.name);
 
-        cmd.begin_label(&format!("Draw {}", &self.name));
+        cmd.begin_label(&format!("Draw {}", self.name));
 
         let (color_img, color_clear, color_extent) = match self.color_attachments.first() {
             Some(color) => {

@@ -60,7 +60,7 @@ impl Renderer {
         self.gfx.extent()
     }
 
-    pub fn resize(&mut self, _width: u32, _height: u32) {
+    pub fn resize(&mut self) {
         self.graph.resize(&mut self.gfx);
     }
 

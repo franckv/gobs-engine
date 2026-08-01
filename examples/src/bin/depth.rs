@@ -20,7 +20,7 @@ struct App {
     scene: Scene,
 }
 
-impl GobsGame for App {
+impl GobsGame<GameContext> for App {
     async fn create(ctx: &mut GameContext) -> Result<Self, AppError> {
         let extent = ctx.renderer.extent();
 
@@ -158,7 +158,7 @@ fn main() {
 
     tracing::info!(target: logger::APP, "Engine start");
 
-    Application::<App>::new("Depth test", examples::WIDTH, examples::HEIGHT)
+    Application::<App, GameContext>::new("Depth test", examples::WIDTH, examples::HEIGHT)
         .with_config(|config| config.set_string(RenderConfig::GraphName, "simple"))
         .run();
 }

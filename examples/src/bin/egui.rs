@@ -15,7 +15,7 @@ struct App {
     demo: MiscDemoWindow,
 }
 
-impl GobsGame for App {
+impl GobsGame<GameContext> for App {
     async fn create(ctx: &mut GameContext) -> Result<Self, AppError> {
         let ui = UIRenderer::new(&ctx.renderer.gfx, &mut ctx.resource_manager)?;
         let mut common = SampleApp::new();
@@ -698,7 +698,7 @@ fn main() {
 
     tracing::info!(target: logger::APP, "Engine start");
 
-    Application::<App>::new("Egui", examples::WIDTH, examples::HEIGHT)
+    Application::<App, GameContext>::new("Egui", examples::WIDTH, examples::HEIGHT)
         .with_config(|config| config.set_string(RenderConfig::GraphName, "ui"))
         .run();
 }

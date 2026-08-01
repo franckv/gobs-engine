@@ -21,7 +21,7 @@ struct App {
     scene: Scene,
 }
 
-impl GobsGame for App {
+impl GobsGame<GameContext> for App {
     async fn create(ctx: &mut GameContext) -> Result<Self, AppError> {
         let extent = ctx.renderer.extent();
 
@@ -271,5 +271,5 @@ fn main() {
 
     tracing::info!(target: logger::APP, "Engine start");
 
-    Application::<App>::new("Maze", examples::WIDTH, examples::HEIGHT).run();
+    Application::<App, GameContext>::new("Maze", examples::WIDTH, examples::HEIGHT).run();
 }

@@ -108,7 +108,7 @@ impl GLTFLoader {
                     None => self.material_manager.default_material_instance,
                 };
 
-                let name = format!("{}.{}", &name, p.index());
+                let name = format!("{}.{}", name, p.index());
                 let mut mesh_data = MeshGeometry::builder(&name);
 
                 let reader = p.reader(|buffer| Some(&buffers[buffer.index()]));

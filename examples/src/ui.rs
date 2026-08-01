@@ -59,7 +59,7 @@ impl Ui {
         delta: f32,
     ) {
         let s = ui.style_mut();
-        for (_, id) in s.text_styles.iter_mut() {
+        for id in s.text_styles.values_mut() {
             id.size = 14.;
         }
 

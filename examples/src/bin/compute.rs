@@ -10,7 +10,7 @@ struct App {
     common: SampleApp,
 }
 
-impl GobsGame for App {
+impl GobsGame<GameContext> for App {
     async fn create(_ctx: &mut GameContext) -> Result<Self, AppError> {
         let common = SampleApp::new();
 
@@ -43,7 +43,7 @@ fn main() {
 
     tracing::info!(target: logger::APP, "Engine start");
 
-    Application::<App>::new("Compute", examples::WIDTH, examples::HEIGHT)
+    Application::<App, GameContext>::new("Compute", examples::WIDTH, examples::HEIGHT)
         .with_config(|config| config.set_string(RenderConfig::GraphName, "compute"))
         .run();
 }

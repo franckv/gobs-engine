@@ -3,14 +3,22 @@ use winit::window::Window;
 use gobs_core::{Config, logger};
 use gobs_render::{
     GfxContext, Material, MaterialInstance, MaterialInstanceLoader, MaterialLoader, Mesh,
-    MeshLoader, Pipeline, PipelineLoader, RenderConfig, RenderError, Renderer, Texture,
-    TextureLoader,
+    MeshLoader, Pipeline, PipelineLoader, RenderConfig, Renderer, Texture, TextureLoader,
 };
 use gobs_resource::ResourceManager;
 
 #[derive(Clone, Debug)]
 pub struct AppInfo {
     pub name: String,
+}
+
+pub trait GobsContext {
+    fn new(name: &str, config: Config, window: Option<Window>, validation: bool) -> Self;
+    fn resize(&mut self);
+    fn update(&mut self, delta: f32);
+    fn close(&mut self);
+    fn is_minimized(&self) -> bool;
+    fn request_redraw(&mut self);
 }
 
 pub struct GameContext {
@@ -20,16 +28,11 @@ pub struct GameContext {
     pub renderer: Renderer,
 }
 
-impl GameContext {
-    pub fn new(
-        name: &str,
-        config: Config,
-        window: Option<Window>,
-        validation: bool,
-    ) -> Result<Self, RenderError> {
+impl GobsContext for GameContext {
+    fn new(name: &str, config: Config, window: Option<Window>, validation: bool) -> Self {
         let frames_in_flight = config.get_int(RenderConfig::FramesInFlight) as usize;
 
-        let mut gfx = GfxContext::new(name, window, frames_in_flight, validation)?;
+        let mut gfx = GfxContext::new(name, window, frames_in_flight, validation);
         let mut resource_manager = ResourceManager::new(gfx.frames_in_flight());
 
         let texture_loader = TextureLoader::new(&mut gfx);
@@ -49,22 +52,22 @@ impl GameContext {
 
         let renderer = Renderer::new(gfx, &config, &mut resource_manager);
 
-        Ok(Self {
+        Self {
             app_info: AppInfo {
                 name: name.to_string(),
             },
             config,
             resource_manager,
             renderer,
-        })
+        }
     }
 
-    pub fn resize(&mut self, width: u32, height: u32) {
-        self.renderer.resize(width, height);
+    fn resize(&mut self) {
+        self.renderer.resize();
     }
 
     #[tracing::instrument(target = "profile", skip_all, level = "trace")]
-    pub fn update(&mut self, delta: f32) {
+    fn update(&mut self, delta: f32) {
         self.renderer.update(delta);
         self.resource_manager
             .update::<Texture>(self.renderer.gfx.hal_mut());
@@ -78,8 +81,16 @@ impl GameContext {
             .update::<MaterialInstance>(self.renderer.gfx.hal_mut());
     }
 
-    pub fn close(&mut self) {
+    fn close(&mut self) {
         self.renderer.wait();
+    }
+
+    fn is_minimized(&self) -> bool {
+        self.renderer.gfx.is_minimized()
+    }
+
+    fn request_redraw(&mut self) {
+        self.renderer.gfx.request_redraw();
     }
 }
 

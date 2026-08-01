@@ -3,7 +3,7 @@ use pollster::FutureExt;
 
 use gobs::{
     core::{Color, Config, Input, Transform, logger},
-    game::{AppError, GameContext, GobsGame},
+    game::{AppError, GameContext, GobsGame, context::GobsContext as _},
     render::{
         MaterialInstanceProperties, MaterialsConfig, Model, RenderConfig, RenderError, Shapes,
     },
@@ -18,7 +18,7 @@ struct App {
     scene: Scene,
 }
 
-impl GobsGame for App {
+impl GobsGame<GameContext> for App {
     async fn create(ctx: &mut GameContext) -> Result<Self, AppError> {
         let camera = SampleApp::ortho_camera(ctx);
         let camera_position = Vec3::new(0., 0., 1.);
@@ -106,7 +106,7 @@ fn main() {
     config.register::<RenderConfig>();
     config.set_string(RenderConfig::GraphName, "headless");
 
-    let mut ctx = GameContext::new("Triangle", config, None, true).unwrap();
+    let mut ctx = GameContext::new("Triangle", config, None, true);
 
     let future = async {
         let mut app = App::create(&mut ctx).await.unwrap();

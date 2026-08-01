@@ -18,7 +18,7 @@ struct App {
 }
 
 /// Minimalist exemple showcasing the Hardware abstraction layer (HAL)
-impl GobsGame for App {
+impl GobsGame<GameContext> for App {
     async fn create(ctx: &mut GameContext) -> Result<Self, AppError> {
         let hal = ctx.renderer.gfx.hal_mut();
         let mut cmd = hal.create_command_buffer("cmd", CommandQueueType::Graphics);
@@ -189,7 +189,7 @@ fn main() {
 
     tracing::info!(target: logger::APP, "Engine start");
 
-    Application::<App>::new("Triangle", examples::WIDTH, examples::HEIGHT)
+    Application::<App, GameContext>::new("Triangle", examples::WIDTH, examples::HEIGHT)
         .with_config(|config| {
             config.set_string(RenderConfig::GraphName, "none");
             config.set_int(RenderConfig::FramesInFlight, 1);

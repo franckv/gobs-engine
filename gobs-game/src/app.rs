@@ -12,14 +12,15 @@ use gobs_assets::config::GltfConfig;
 use gobs_core::{Config, Input, logger, utils::timer::Timer};
 use gobs_render::{RenderConfig, RenderError};
 
-use crate::{AppError, context::GameContext};
+use crate::{AppError, context::GobsContext};
 
-pub struct Application<R>
+pub struct Application<R, C>
 where
-    R: GobsGame + 'static,
+    R: GobsGame<C> + 'static,
+    C: GobsContext,
 {
     pub runnable: Option<R>,
-    pub context: Option<GameContext>,
+    pub context: Option<C>,
     pub timer: Timer,
     close_requested: bool,
     is_minimized: bool,
@@ -29,9 +30,10 @@ where
     height: u32,
 }
 
-impl<R> ApplicationHandler for Application<R>
+impl<R, C> ApplicationHandler for Application<R, C>
 where
-    R: GobsGame + 'static,
+    R: GobsGame<C> + 'static,
+    C: GobsContext,
 {
     #[tracing::instrument(target = "profile", skip_all, level = "trace")]
     fn resumed(&mut self, event_loop: &winit::event_loop::ActiveEventLoop) {
@@ -49,13 +51,13 @@ where
 
         tracing::info!("Running with validation layers: {}", validation_enabled);
 
-        let mut context = GameContext::new(
+        let mut context = C::new(
             &self.title,
             self.config.clone(),
             Some(window),
             validation_enabled,
-        )
-        .unwrap();
+        );
+
         tracing::info!(target: logger::EVENTS, "Start main loop");
 
         let future = async {
@@ -95,7 +97,7 @@ where
                         physical_size.width,
                         physical_size.height
                     );
-                    context.resize(physical_size.width, physical_size.height);
+                    context.resize();
                     runnable.resize(context, physical_size.width, physical_size.height);
                 }
                 WindowEvent::KeyboardInput {
@@ -152,10 +154,10 @@ where
                             runnable.update(context, delta);
                         }
                         tracing::trace!(target: logger::EVENTS, "[Redraw] FPS: {}", 1. / delta);
-                        if !context.renderer.gfx.is_minimized() {
+                        if !context.is_minimized() {
                             if self.is_minimized {
                                 self.is_minimized = false;
-                                context.renderer.gfx.resize();
+                                context.resize();
                             }
                             match runnable.render(context) {
                                 Ok(_) => {}
@@ -198,16 +200,17 @@ where
     #[tracing::instrument(target = "profile", skip_all, level = "trace")]
     fn about_to_wait(&mut self, _event_loop: &winit::event_loop::ActiveEventLoop) {
         if let Some(context) = &mut self.context {
-            context.renderer.gfx.request_redraw();
+            context.request_redraw();
         }
     }
 }
 
-impl<R> Application<R>
+impl<R, C> Application<R, C>
 where
-    R: GobsGame + 'static,
+    R: GobsGame<C> + 'static,
+    C: GobsContext,
 {
-    pub fn new(title: &str, width: u32, height: u32) -> Application<R> {
+    pub fn new(title: &str, width: u32, height: u32) -> Application<R, C> {
         let mut config = Config::default();
         config.register::<RenderConfig>();
         config.register::<GltfConfig>();
@@ -253,15 +256,15 @@ where
 }
 
 #[allow(async_fn_in_trait)]
-pub trait GobsGame: Sized {
-    async fn create(ctx: &mut GameContext) -> Result<Self, AppError>;
-    async fn start(&mut self, ctx: &mut GameContext);
-    fn update(&mut self, ctx: &mut GameContext, delta: f32);
-    fn should_update(&mut self, _ctx: &mut GameContext) -> bool {
+pub trait GobsGame<C>: Sized {
+    async fn create(ctx: &mut C) -> Result<Self, AppError>;
+    async fn start(&mut self, ctx: &mut C);
+    fn update(&mut self, ctx: &mut C, delta: f32);
+    fn should_update(&mut self, _ctx: &mut C) -> bool {
         true
     }
-    fn render(&mut self, ctx: &mut GameContext) -> Result<(), RenderError>;
-    fn input(&mut self, ctx: &mut GameContext, input: Input);
-    fn resize(&mut self, ctx: &mut GameContext, width: u32, height: u32);
-    fn close(&mut self, ctx: &mut GameContext);
+    fn render(&mut self, ctx: &mut C) -> Result<(), RenderError>;
+    fn input(&mut self, ctx: &mut C, input: Input);
+    fn resize(&mut self, ctx: &mut C, width: u32, height: u32);
+    fn close(&mut self, ctx: &mut C);
 }

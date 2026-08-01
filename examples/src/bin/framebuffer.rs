@@ -20,7 +20,7 @@ struct App {
     scene: Scene,
 }
 
-impl GobsGame for App {
+impl GobsGame<GameContext> for App {
     async fn create(ctx: &mut GameContext) -> Result<Self, AppError> {
         let camera = SampleApp::ortho_camera(ctx);
         let camera_position = Vec3::new(0., 0., 1.);
@@ -167,5 +167,5 @@ fn main() {
 
     tracing::info!(target: logger::APP, "Engine start");
 
-    Application::<App>::new("Framebuffer", examples::WIDTH, examples::HEIGHT).run();
+    Application::<App, GameContext>::new("Framebuffer", examples::WIDTH, examples::HEIGHT).run();
 }

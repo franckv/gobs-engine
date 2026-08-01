@@ -305,7 +305,7 @@ mod tests {
     fn test_load() {
         setup();
 
-        let mut ctx = GfxContext::new("test", None, 1, false).unwrap();
+        let mut ctx = GfxContext::new("test", None, 1, false);
 
         let data = include_str!("../../../examples/resources/graph.ron");
 
@@ -324,7 +324,7 @@ mod tests {
     fn test_load_pass() {
         setup();
 
-        let mut ctx = GfxContext::new("test", None, 1, false).unwrap();
+        let mut ctx = GfxContext::new("test", None, 1, false);
 
         let data = include_str!("../../../examples/resources/graph.ron");
 

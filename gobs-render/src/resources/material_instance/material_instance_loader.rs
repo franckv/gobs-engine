@@ -73,7 +73,7 @@ impl MaterialInstanceLoader {
             && !material_properties.material_data_layout.is_empty()
         {
             tracing::error!("Material instance does not contain material data");
-            panic!("Failed to load material instance: {}", &properties.name);
+            panic!("Failed to load material instance: {}", properties.name);
         }
     }
 

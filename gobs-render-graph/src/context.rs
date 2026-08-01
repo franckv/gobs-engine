@@ -3,8 +3,6 @@ use winit::window::Window;
 use gobs_core::ImageExtent2D;
 use gobs_render_hal::{RenderHAL, create_hal};
 
-use crate::RenderError;
-
 pub struct GfxContext {
     hal: Box<dyn RenderHAL>,
     frames_in_flight: usize,
@@ -37,14 +35,14 @@ impl GfxContext {
         window: Option<Window>,
         frames_in_flight: usize,
         validation: bool,
-    ) -> Result<Self, RenderError> {
+    ) -> Self {
         let hal = create_hal(name, window, frames_in_flight, validation);
 
-        Ok(Self {
+        Self {
             hal,
             frames_in_flight,
             stats_refresh: 60,
-        })
+        }
     }
 
     pub fn is_minimized(&self) -> bool {
