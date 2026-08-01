@@ -1,4 +1,5 @@
 mod batch;
+mod builder;
 mod config;
 mod data;
 mod model;
@@ -14,6 +15,7 @@ pub use gobs_render_hal::{
 };
 
 pub use batch::RenderBatch;
+pub use builder::{RenderBuilder, RenderType};
 pub use config::RenderConfig;
 pub use data::MaterialDataPropData;
 pub use model::{Model, ModelId};

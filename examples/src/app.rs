@@ -2,8 +2,8 @@ use renderdoc::{RenderDoc, V141};
 
 use gobs::{
     core::{Input, Key, logger},
-    game::context::GameContext,
-    render::{RenderError, RenderFlags, Renderable},
+    game::context::{GameContext, GobsContext},
+    render::{RenderError, RenderType},
     resource::camera::Camera,
     scene::scene::Scene,
 };
@@ -81,43 +81,13 @@ impl SampleApp {
             return Ok(());
         }
 
-        tracing::trace!(target: logger::APP, "Render frame {}", ctx.renderer.frame_number());
-
-        let resource_manager = &mut ctx.resource_manager;
-
-        let mut batch = ctx.renderer.get_batch();
-        batch.generate_bounds(self.draw_bounds);
-
-        if let Some(scene) = &scene {
-            tracing::debug!("Draw scene");
-            scene
-                .draw(
-                    &mut ctx.renderer.gfx,
-                    resource_manager,
-                    &mut batch,
-                    None,
-                    None,
-                    RenderFlags::ENTITY,
-                )
-                .map_err(|_| RenderError::InvalidData)?;
+        if let Some(scene) = scene {
+            ctx.render()?
+                .with_renderable(scene, RenderType::Scene)?
+                .build()?;
+        } else {
+            ctx.render()?.build()?;
         }
-        tracing::debug!("Draw ui");
-        ctx.ui
-            .draw(
-                &mut ctx.renderer.gfx,
-                resource_manager,
-                &mut batch,
-                None,
-                None,
-                RenderFlags::UI,
-            )
-            .map_err(|_| RenderError::InvalidData)?;
-
-        batch.finish(&mut ctx.renderer.gfx, resource_manager);
-
-        ctx.renderer.submit(&mut batch)?;
-
-        tracing::trace!(target: logger::APP, "End render");
 
         tracing_tracy::client::frame_mark();
 
