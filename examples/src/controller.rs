@@ -5,6 +5,64 @@ use gobs::resource::camera::{Camera, ProjectionMode};
 
 const SAFE_FRAC_PI_2: f32 = FRAC_PI_2 - 0.0001;
 
+pub struct InputManager {
+    pub controller: CameraController,
+    pub process_updates: bool,
+    pub draw_bounds: bool,
+    pub draw_ui: bool,
+    pub draw_wire: bool,
+    pub freeze: bool,
+}
+
+impl InputManager {
+    pub fn new() -> Self {
+        Self {
+            controller: CameraController::new(3., 0.4),
+            process_updates: true,
+            draw_bounds: false,
+            draw_ui: false,
+            draw_wire: false,
+            freeze: false,
+        }
+    }
+
+    pub fn input(&mut self, input: Input, ui_hovered: bool) {
+        match input {
+            Input::KeyPressed(key) => match key {
+                Key::P => self.process_updates = !self.process_updates,
+                Key::U => self.draw_ui = !self.draw_ui,
+                Key::B => self.draw_bounds = !self.draw_bounds,
+                Key::Z => self.draw_wire = !self.draw_wire,
+                _ => self.controller.key_pressed(key),
+            },
+            Input::KeyReleased(key) => self.controller.key_released(key),
+            Input::MousePressed(MouseButton::Left) => {
+                if !ui_hovered {
+                    self.controller.mouse_pressed()
+                }
+            }
+            Input::MouseReleased(MouseButton::Left) => {
+                if !ui_hovered {
+                    self.controller.mouse_released()
+                }
+            }
+            Input::MouseWheel(delta) => {
+                if !ui_hovered {
+                    self.controller.mouse_scroll(delta)
+                }
+            }
+            Input::MouseMotion(dx, dy) if !ui_hovered => self.controller.mouse_drag(dx, dy),
+            _ => (),
+        }
+    }
+}
+
+impl Default for InputManager {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 #[derive(Debug)]
 pub struct CameraController {
     amount_left: f32,
@@ -22,10 +80,11 @@ pub struct CameraController {
     sensitivity: f32,
     debug: bool,
     mouse_pressed: bool,
+    reset: bool,
 }
 
 impl CameraController {
-    pub fn new(speed: f32, sensitivity: f32) -> Self {
+    fn new(speed: f32, sensitivity: f32) -> Self {
         Self {
             amount_left: 0.,
             amount_right: 0.,
@@ -42,30 +101,7 @@ impl CameraController {
             sensitivity,
             debug: false,
             mouse_pressed: false,
-        }
-    }
-
-    pub fn input(&mut self, input: Input, ui_hovered: bool) {
-        match input {
-            Input::KeyPressed(key) => self.key_pressed(key),
-            Input::KeyReleased(key) => self.key_released(key),
-            Input::MousePressed(MouseButton::Left) => {
-                if !ui_hovered {
-                    self.mouse_pressed()
-                }
-            }
-            Input::MouseReleased(MouseButton::Left) => {
-                if !ui_hovered {
-                    self.mouse_released()
-                }
-            }
-            Input::MouseWheel(delta) => {
-                if !ui_hovered {
-                    self.mouse_scroll(delta)
-                }
-            }
-            Input::MouseMotion(dx, dy) if !ui_hovered => self.mouse_drag(dx, dy),
-            _ => (),
+            reset: false,
         }
     }
 
@@ -87,6 +123,8 @@ impl CameraController {
 
     fn key_event(&mut self, key: Key, pressed: bool) {
         let amount = if pressed { 2. } else { 0. };
+
+        self.reset = false;
 
         match key {
             Key::W | Key::Up => {
@@ -116,6 +154,9 @@ impl CameraController {
             Key::PageDown => {
                 self.fov_down = amount;
             }
+            Key::Equals => {
+                self.reset = true;
+            }
             _ => (),
         }
     }
@@ -140,6 +181,11 @@ impl CameraController {
         let forward = camera.dir().normalize();
         let right = camera.right().normalize();
         let up = camera.up().normalize();
+
+        if self.reset {
+            camera.yaw = 0.;
+            camera.pitch = 0.;
+        }
 
         camera_transform
             .translate(forward * (self.amount_forward - self.amount_backward) * self.speed * dt);

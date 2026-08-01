@@ -1,6 +1,6 @@
 use winit::window::Window;
 
-use gobs_core::{Config, logger};
+use gobs_core::{Config, Input, logger};
 use gobs_egui::UIRenderer;
 use gobs_render::{
     GfxContext, Material, MaterialInstance, MaterialInstanceLoader, MaterialLoader, Mesh,
@@ -24,6 +24,7 @@ pub trait GobsContext {
     fn is_minimized(&self) -> bool;
     fn request_redraw(&mut self);
     fn render(&mut self) -> Result<RenderBuilder<'_>, RenderError>;
+    fn input(&mut self, input: Input);
     fn new_scene(&self) -> SceneBuilder<'_>;
     fn draw_ui<F>(&mut self, delta: f32, callback: F)
     where
@@ -118,6 +119,10 @@ impl GobsContext for GameContext {
     fn render(&mut self) -> Result<RenderBuilder<'_>, RenderError> {
         RenderBuilder::new(&mut self.renderer, &mut self.resource_manager)
             .with_renderable(&self.ui, gobs_render::RenderType::Ui)
+    }
+
+    fn input(&mut self, input: Input) {
+        self.ui.input(input);
     }
 
     fn new_scene(&self) -> SceneBuilder<'_> {

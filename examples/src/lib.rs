@@ -1,4 +1,3 @@
-mod app;
 mod controller;
 mod ui;
 
@@ -10,8 +9,8 @@ use tracing_tracy::TracyLayer;
 
 use gobs::core::ImageFormat;
 
-pub use app::SampleApp;
-pub use controller::CameraController;
+pub use controller::InputManager;
+pub use ui::Ui;
 
 pub const WALL_TEXTURE: &str = "wall.png";
 pub const WALL_TEXTURE_N: &str = "wall_n.png";

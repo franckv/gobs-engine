@@ -11,11 +11,12 @@ use gobs::{
     scene::{components::NodeValue, scene::Scene},
 };
 
-use examples::{CameraController, SampleApp};
+use examples::{InputManager, Ui};
 
 struct App {
-    camera_controller: CameraController,
     scene: Scene,
+    ui: Ui,
+    input: InputManager,
 }
 
 impl GobsGame<GameContext> for App {
@@ -26,11 +27,10 @@ impl GobsGame<GameContext> for App {
             .with_light(Color::WHITE, [-2., 2.5, 10.])
             .build();
 
-        let camera_controller = SampleApp::controller();
-
         Ok(App {
-            camera_controller,
             scene,
+            ui: Ui::new(),
+            input: InputManager::new(),
         })
     }
 
@@ -39,7 +39,7 @@ impl GobsGame<GameContext> for App {
     }
 
     fn should_update(&mut self, _ctx: &mut GameContext) -> bool {
-        true
+        self.input.process_updates
     }
 
     fn update(&mut self, ctx: &mut GameContext, delta: f32) {
@@ -63,9 +63,14 @@ impl GobsGame<GameContext> for App {
             });
 
         self.scene.update_camera(|transform, camera| {
-            self.camera_controller
+            self.input
+                .controller
                 .update_camera(camera, transform, delta)
         });
+
+        if self.input.draw_ui {
+            self.ui.draw(ctx, &mut self.scene, delta);
+        }
 
         self.scene.update(&ctx.renderer.gfx, delta);
     }
@@ -76,17 +81,12 @@ impl GobsGame<GameContext> for App {
             .build()
     }
 
-    fn input(&mut self, ctx: &mut GameContext, input: Input) {
-        tracing::trace!(target: logger::APP, "Input");
-
-        ctx.ui.input(input);
-
-        self.camera_controller.input(input, false);
+    fn input(&mut self, _ctx: &mut GameContext, input: Input) {
+        self.input.input(input, false);
     }
 
-    fn resize(&mut self, ctx: &mut GameContext, width: u32, height: u32) {
+    fn resize(&mut self, _ctx: &mut GameContext, width: u32, height: u32) {
         self.scene.resize(width, height);
-        ctx.ui.resize(width, height);
     }
 
     fn close(&mut self, _ctx: &mut GameContext) {

@@ -12,10 +12,7 @@ use gobs::{
     scene::{components::NodeValue, scene::Scene},
 };
 
-use examples::SampleApp;
-
 struct App {
-    common: SampleApp,
     scene: Scene,
 }
 
@@ -27,9 +24,7 @@ impl GobsGame<GameContext> for App {
             .with_light(Color::WHITE, [0., 0., 10.])
             .build();
 
-        let common = SampleApp::new();
-
-        Ok(App { common, scene })
+        Ok(App { scene })
     }
 
     fn update(&mut self, ctx: &mut GameContext, delta: f32) {
@@ -38,7 +33,6 @@ impl GobsGame<GameContext> for App {
 
     fn render(&mut self, ctx: &mut GameContext) -> Result<(), RenderError> {
         ctx.render()?
-            .draw_bounds(self.common.draw_bounds)
             .with_renderable(&self.scene, RenderType::Scene)?
             .build()
     }
@@ -54,7 +48,7 @@ impl GobsGame<GameContext> for App {
     }
 
     fn should_update(&mut self, _ctx: &mut GameContext) -> bool {
-        self.common.should_update()
+        true
     }
 
     fn close(&mut self, _ctx: &mut GameContext) {

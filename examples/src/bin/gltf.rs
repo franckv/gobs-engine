@@ -9,12 +9,12 @@ use gobs::{
     scene::{graph::scenegraph::SceneGraph, scene::Scene},
 };
 
-use examples::{CameraController, SampleApp};
+use examples::{InputManager, Ui};
 
 struct App {
-    common: SampleApp,
-    camera_controller: CameraController,
     scene: Scene,
+    ui: Ui,
+    input: InputManager,
 }
 
 impl GobsGame<GameContext> for App {
@@ -25,14 +25,10 @@ impl GobsGame<GameContext> for App {
             .with_light(Color::WHITE, [0., 0., 10.])
             .build();
 
-        let common = SampleApp::new();
-
-        let camera_controller = SampleApp::controller();
-
         Ok(App {
-            common,
-            camera_controller,
             scene,
+            ui: Ui::new(),
+            input: InputManager::new(),
         })
     }
 
@@ -41,11 +37,11 @@ impl GobsGame<GameContext> for App {
     }
 
     fn should_update(&mut self, _ctx: &mut GameContext) -> bool {
-        self.common.should_update()
+        self.input.process_updates
     }
 
     fn update(&mut self, ctx: &mut GameContext, delta: f32) {
-        if self.common.process_updates {
+        if self.input.process_updates {
             let angular_speed = 10.;
 
             self.scene.update_light(|transform, _| {
@@ -60,34 +56,31 @@ impl GobsGame<GameContext> for App {
         }
 
         self.scene.update_camera(|transform, camera| {
-            self.camera_controller
+            self.input
+                .controller
                 .update_camera(camera, transform, delta)
         });
 
-        self.scene.update(&ctx.renderer.gfx, delta);
+        if self.input.draw_ui {
+            self.ui.draw(ctx, &mut self.scene, delta);
+        }
 
-        self.common.update_ui(ctx, &mut self.scene, delta);
+        self.scene.update(&ctx.renderer.gfx, delta);
     }
 
     fn render(&mut self, ctx: &mut GameContext) -> Result<(), RenderError> {
         ctx.render()?
-            .draw_bounds(self.common.draw_bounds)
+            .draw_bounds(self.input.draw_bounds)
             .with_renderable(&self.scene, RenderType::Scene)?
             .build()
     }
 
-    fn input(&mut self, ctx: &mut GameContext, input: Input) {
-        self.common.input(
-            ctx,
-            input,
-            &mut self.scene,
-            Some(&mut self.camera_controller),
-        );
+    fn input(&mut self, _ctx: &mut GameContext, input: Input) {
+        self.input.input(input, false);
     }
 
-    fn resize(&mut self, ctx: &mut GameContext, width: u32, height: u32) {
+    fn resize(&mut self, _ctx: &mut GameContext, width: u32, height: u32) {
         self.scene.resize(width, height);
-        ctx.ui.resize(width, height);
     }
 
     fn close(&mut self, _ctx: &mut GameContext) {

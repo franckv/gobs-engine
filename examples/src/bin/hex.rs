@@ -1,3 +1,4 @@
+use examples::{InputManager, Ui};
 use glam::Quat;
 
 use gobs::{
@@ -14,11 +15,10 @@ use gobs::{
     scene::{components::NodeValue, scene::Scene},
 };
 
-use examples::SampleApp;
-
 struct App {
-    common: SampleApp,
     scene: Scene,
+    ui: Ui,
+    input: InputManager,
 }
 
 impl GobsGame<GameContext> for App {
@@ -29,31 +29,34 @@ impl GobsGame<GameContext> for App {
             .with_light(Color::WHITE, [0., 0., 10.])
             .build();
 
-        let common = SampleApp::new();
-
-        Ok(App { common, scene })
+        Ok(App {
+            scene,
+            ui: Ui::new(),
+            input: InputManager::new(),
+        })
     }
 
     fn update(&mut self, ctx: &mut GameContext, delta: f32) {
-        self.scene.update(&ctx.renderer.gfx, delta);
+        if self.input.draw_ui {
+            self.ui.draw(ctx, &mut self.scene, delta);
+        }
 
-        self.common.update_ui(ctx, &mut self.scene, delta);
+        self.scene.update(&ctx.renderer.gfx, delta);
     }
 
     fn render(&mut self, ctx: &mut GameContext) -> Result<(), RenderError> {
         ctx.render()?
-            .draw_bounds(self.common.draw_bounds)
+            .draw_bounds(self.input.draw_bounds)
             .with_renderable(&self.scene, RenderType::Scene)?
             .build()
     }
 
-    fn input(&mut self, ctx: &mut GameContext, input: Input) {
-        self.common.input(ctx, input, &mut self.scene, None);
+    fn input(&mut self, _ctx: &mut GameContext, input: Input) {
+        self.input.input(input, false);
     }
 
-    fn resize(&mut self, ctx: &mut GameContext, width: u32, height: u32) {
+    fn resize(&mut self, _ctx: &mut GameContext, width: u32, height: u32) {
         self.scene.resize(width, height);
-        ctx.ui.resize(width, height);
     }
 
     async fn start(&mut self, ctx: &mut GameContext) {
@@ -61,7 +64,7 @@ impl GobsGame<GameContext> for App {
     }
 
     fn should_update(&mut self, _ctx: &mut GameContext) -> bool {
-        self.common.should_update()
+        self.input.process_updates
     }
 
     fn close(&mut self, _ctx: &mut GameContext) {

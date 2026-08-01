@@ -4,17 +4,11 @@ use gobs::{
     render::{RenderConfig, RenderError},
 };
 
-use examples::SampleApp;
-
-struct App {
-    common: SampleApp,
-}
+struct App {}
 
 impl GobsGame<GameContext> for App {
     async fn create(_ctx: &mut GameContext) -> Result<Self, AppError> {
-        let common = SampleApp::new();
-
-        Ok(App { common })
+        Ok(App {})
     }
 
     fn update(&mut self, _ctx: &mut GameContext, _delta: f32) {}
@@ -30,7 +24,7 @@ impl GobsGame<GameContext> for App {
     async fn start(&mut self, _ctx: &mut GameContext) {}
 
     fn should_update(&mut self, _ctx: &mut GameContext) -> bool {
-        self.common.should_update()
+        true
     }
 
     fn close(&mut self, _ctx: &mut GameContext) {

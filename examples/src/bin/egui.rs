@@ -1,57 +1,36 @@
-use renderdoc::{RenderDoc, V141};
-
 use gobs::{
-    core::{Input, Key, logger},
+    core::{Input, logger},
     game::{AppError, Application, GameContext, GobsGame, context::GobsContext as _},
     render::{RenderConfig, RenderError},
 };
 
-use examples::SampleApp;
-
 struct App {
-    common: SampleApp,
     demo: MiscDemoWindow,
 }
 
 impl GobsGame<GameContext> for App {
     async fn create(_ctx: &mut GameContext) -> Result<Self, AppError> {
-        let mut common = SampleApp::new();
-        common.draw_ui = true;
-
         Ok(App {
-            common,
             demo: Default::default(),
         })
     }
 
     fn update(&mut self, ctx: &mut GameContext, delta: f32) {
-        ctx.ui
-            .draw_ui(delta, |ectx| self.demo.show(ectx, &mut true));
+        ctx.draw_ui(delta, |ectx, _, _, _| self.demo.show(ectx, &mut true));
     }
 
     fn render(&mut self, ctx: &mut GameContext) -> Result<(), RenderError> {
         ctx.render()?.build()
     }
 
-    fn input(&mut self, ctx: &mut GameContext, input: Input) {
-        ctx.ui.input(input);
-        if let Input::KeyPressed(Key::C) = input {
-            let rd: Result<RenderDoc<V141>, _> = RenderDoc::new();
+    fn input(&mut self, _ctx: &mut GameContext, _input: Input) {}
 
-            if let Ok(mut rd) = rd {
-                rd.trigger_capture();
-            }
-        }
-    }
-
-    fn resize(&mut self, ctx: &mut GameContext, width: u32, height: u32) {
-        ctx.ui.resize(width, height);
-    }
+    fn resize(&mut self, _ctx: &mut GameContext, _width: u32, _height: u32) {}
 
     async fn start(&mut self, _ctx: &mut GameContext) {}
 
     fn should_update(&mut self, _ctx: &mut GameContext) -> bool {
-        self.common.should_update()
+        true
     }
 
     fn close(&mut self, _ctx: &mut GameContext) {

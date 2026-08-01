@@ -117,16 +117,20 @@ where
                         let key = key_code.into();
                         match state {
                             ElementState::Pressed => {
-                                runnable.input(context, Input::KeyPressed(key))
+                                Self::process_input(context, runnable, Input::KeyPressed(key))
                             }
                             ElementState::Released => {
-                                runnable.input(context, Input::KeyReleased(key))
+                                Self::process_input(context, runnable, Input::KeyReleased(key))
                             }
                         }
                     }
                 },
                 WindowEvent::CursorMoved { position, .. } => {
-                    runnable.input(context, Input::CursorMoved(position.x, position.y));
+                    Self::process_input(
+                        context,
+                        runnable,
+                        Input::CursorMoved(position.x, position.y),
+                    );
                 }
                 WindowEvent::MouseWheel { delta, .. } => {
                     let delta = match delta {
@@ -135,14 +139,14 @@ where
                             scroll as f32
                         }
                     };
-                    runnable.input(context, Input::MouseWheel(delta));
+                    Self::process_input(context, runnable, Input::MouseWheel(delta));
                 }
                 WindowEvent::MouseInput { button, state, .. } => match state {
                     ElementState::Pressed => {
-                        runnable.input(context, Input::MousePressed(button.into()))
+                        Self::process_input(context, runnable, Input::MousePressed(button.into()))
                     }
                     ElementState::Released => {
-                        runnable.input(context, Input::MouseReleased(button.into()))
+                        Self::process_input(context, runnable, Input::MouseReleased(button.into()))
                     }
                 },
                 WindowEvent::RedrawRequested => {
@@ -195,7 +199,7 @@ where
             tracing::trace!(target: logger::EVENTS, "evt={:?}", event);
 
             if let DeviceEvent::MouseMotion { delta } = event {
-                runnable.input(context, Input::MouseMotion(delta.0, delta.1))
+                Self::process_input(context, runnable, Input::MouseMotion(delta.0, delta.1))
             }
         }
     }
@@ -246,6 +250,11 @@ where
         event_loop.set_control_flow(winit::event_loop::ControlFlow::Poll);
 
         event_loop.run_app(self).unwrap();
+    }
+
+    fn process_input(context: &mut C, runnable: &mut R, input: Input) {
+        context.input(input);
+        runnable.input(context, input);
     }
 
     pub fn close(&mut self) {
