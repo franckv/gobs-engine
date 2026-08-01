@@ -143,6 +143,12 @@ impl Renderable for Scene {
     ) -> Result<(), ResourceError> {
         self.graph.visit(self.graph.root, &mut |node| {
             if let NodeValue::Model(model) = &node.base.value {
+                let mut render_flags = render_flags;
+
+                if node.base.selected {
+                    render_flags |= RenderFlags::SELECTED;
+                }
+
                 model.draw(
                     ctx,
                     resource_manager,
