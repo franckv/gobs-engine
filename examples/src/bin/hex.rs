@@ -1,4 +1,3 @@
-use examples::{InputManager, Ui};
 use glam::Quat;
 
 use gobs::{
@@ -14,6 +13,8 @@ use gobs::{
     resource::ResourceLifetime,
     scene::{components::NodeValue, scene::Scene},
 };
+
+use examples::{InputManager, Ui};
 
 struct App {
     scene: Scene,
