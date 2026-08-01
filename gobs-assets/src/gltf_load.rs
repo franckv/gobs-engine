@@ -14,6 +14,7 @@ use gobs_scene::{
     components::{NodeId, NodeValue},
     graph::scenegraph::SceneGraph,
 };
+use parking_lot::RwLock;
 
 use crate::{AssetError, config::GltfConfig, manager::MaterialManager};
 
@@ -36,7 +37,7 @@ impl GLTFLoader {
 
     pub fn load<P>(
         &mut self,
-        config: &Config,
+        config: Arc<RwLock<Config>>,
         resource_manager: &mut ResourceManager,
         file: P,
     ) -> Result<(), AssetError>
@@ -200,7 +201,7 @@ impl GLTFLoader {
 
     fn load_textures(
         &mut self,
-        config: &Config,
+        config: Arc<RwLock<Config>>,
         resource_manager: &mut ResourceManager,
         doc: &Document,
         images: &[image::Data],
@@ -253,7 +254,7 @@ impl GLTFLoader {
             );
 
             // TODO: move to config
-            let texture_format = config.get_image_format(GltfConfig::TextureFormat);
+            let texture_format = config.read().get_image_format(GltfConfig::TextureFormat);
             match data.format {
                 image::Format::R8G8B8A8 => {
                     let mut properties = TextureProperties::with_data(
@@ -335,7 +336,7 @@ impl GLTFLoader {
 
     fn load_material(
         &mut self,
-        config: &Config,
+        config: Arc<RwLock<Config>>,
         resource_manager: &mut ResourceManager,
         doc: &Document,
         images: &[image::Data],

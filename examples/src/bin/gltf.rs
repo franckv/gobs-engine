@@ -105,7 +105,7 @@ impl App {
         let mut gltf_loader = gltf_load::GLTFLoader::new(&mut ctx.resource_manager).unwrap();
 
         gltf_loader
-            .load(&ctx.config, &mut ctx.resource_manager, file_name)
+            .load(ctx.config(), &mut ctx.resource_manager, file_name)
             .expect("Load gltf");
 
         gltf_loader.scene

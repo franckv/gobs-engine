@@ -1,3 +1,6 @@
+use std::sync::Arc;
+
+use parking_lot::RwLock;
 use winit::window::Window;
 
 use gobs_core::{Config, Input, logger};
@@ -29,11 +32,12 @@ pub trait GobsContext {
     fn draw_ui<F>(&mut self, delta: f32, callback: F)
     where
         F: FnMut(&mut egui::Ui, &AppInfo, &mut ResourceManager, &mut Renderer);
+    fn config(&self) -> Arc<RwLock<Config>>;
 }
 
 pub struct GameContext {
-    pub app_info: AppInfo,
-    pub config: Config,
+    app_info: AppInfo,
+    config: Arc<RwLock<Config>>,
     pub resource_manager: ResourceManager,
     pub renderer: Renderer,
     pub ui: UIRenderer,
@@ -69,7 +73,7 @@ impl GobsContext for GameContext {
             app_info: AppInfo {
                 name: name.to_string(),
             },
-            config,
+            config: Arc::new(RwLock::new(config)),
             resource_manager,
             renderer,
             ui,
@@ -141,6 +145,10 @@ impl GobsContext for GameContext {
                 &mut self.renderer,
             )
         });
+    }
+
+    fn config(&self) -> Arc<RwLock<Config>> {
+        self.config.clone()
     }
 }
 
