@@ -165,6 +165,8 @@ where
                                 Err(RenderError::Lost | RenderError::Outdated) => {}
                                 Err(e) => tracing::error!(target: logger::EVENTS, "{:?}", e),
                             }
+
+                            tracing_tracy::client::frame_mark();
                         } else {
                             self.is_minimized = true;
                         }

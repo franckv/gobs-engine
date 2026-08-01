@@ -72,7 +72,7 @@ impl SampleApp {
     }
 
     #[tracing::instrument(target = "profile", skip_all, level = "trace")]
-    pub fn render(
+    pub fn render_old(
         &mut self,
         ctx: &mut GameContext,
         scene: Option<&mut Scene>,
@@ -83,13 +83,12 @@ impl SampleApp {
 
         if let Some(scene) = scene {
             ctx.render()?
+                .draw_bounds(self.draw_bounds)
                 .with_renderable(scene, RenderType::Scene)?
                 .build()?;
         } else {
             ctx.render()?.build()?;
         }
-
-        tracing_tracy::client::frame_mark();
 
         Ok(())
     }

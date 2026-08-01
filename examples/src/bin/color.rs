@@ -2,10 +2,10 @@ use glam::{Quat, Vec3};
 
 use gobs::{
     core::{Color, Input, Transform, logger},
-    game::{AppError, Application, GameContext, GobsGame},
+    game::{AppError, Application, GameContext, GobsGame, context::GobsContext as _},
     render::{
         MaterialDataPropData, MaterialInstanceProperties, MaterialsConfig, Model, RenderError,
-        Shapes,
+        RenderType, Shapes,
     },
     resource::{ResourceLifetime, light::Light},
     scene::{components::NodeValue, scene::Scene},
@@ -46,7 +46,10 @@ impl GobsGame<GameContext> for App {
     }
 
     fn render(&mut self, ctx: &mut GameContext) -> Result<(), RenderError> {
-        self.common.render(ctx, Some(&mut self.scene))
+        ctx.render()?
+            .draw_bounds(self.common.draw_bounds)
+            .with_renderable(&self.scene, RenderType::Scene)?
+            .build()
     }
 
     fn input(&mut self, ctx: &mut GameContext, input: Input) {

@@ -2,10 +2,10 @@ use glam::{Quat, Vec3};
 
 use gobs::{
     core::{Color, Input, Transform, logger},
-    game::{AppError, Application, GameContext, GobsGame},
+    game::{AppError, Application, GameContext, GobsGame, context::GobsContext},
     render::{
-        MaterialInstanceProperties, MaterialsConfig, Model, RenderError, RenderFlags,
-        Renderable as _, Shapes, TextureProperties, TextureType,
+        MaterialInstanceProperties, MaterialsConfig, Model, RenderError, Shapes, TextureProperties,
+        TextureType,
     },
     resource::{ResourceLifetime, camera::Camera, light::Light},
     scene::{components::NodeValue, scene::Scene},
@@ -88,46 +88,9 @@ impl GobsGame<GameContext> for App {
     }
 
     fn render(&mut self, ctx: &mut GameContext) -> Result<(), RenderError> {
-        tracing::trace!(target: logger::APP, "Render frame {}", ctx.renderer.frame_number());
-
-        let resource_manager = &mut ctx.resource_manager;
-
-        let mut batch = ctx.renderer.get_batch();
-        batch.generate_bounds(false);
-
-        tracing::debug!("Draw scene");
-        self.scene
-            .draw(
-                &mut ctx.renderer.gfx,
-                resource_manager,
-                &mut batch,
-                None,
-                None,
-                RenderFlags::ENTITY,
-            )
-            .map_err(|_| RenderError::InvalidData)?;
-
-        tracing::debug!("Draw ui");
-        ctx.ui
-            .draw(
-                &mut ctx.renderer.gfx,
-                resource_manager,
-                &mut batch,
-                None,
-                None,
-                RenderFlags::UI,
-            )
-            .map_err(|_| RenderError::InvalidData)?;
-
-        batch.finish(&mut ctx.renderer.gfx, resource_manager);
-
-        ctx.renderer.submit(&mut batch)?;
-
-        tracing::trace!(target: logger::APP, "End render");
-
-        tracing_tracy::client::frame_mark();
-
-        Ok(())
+        ctx.render()?
+            .with_renderable(&self.scene, gobs::render::RenderType::Scene)?
+            .build()
     }
 
     fn input(&mut self, ctx: &mut GameContext, input: Input) {

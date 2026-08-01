@@ -1,6 +1,6 @@
 use gobs::{
     core::{Input, logger},
-    game::{AppError, Application, GameContext, GobsGame},
+    game::{AppError, Application, GameContext, GobsGame, context::GobsContext as _},
     render::{RenderConfig, RenderError},
 };
 
@@ -20,7 +20,7 @@ impl GobsGame<GameContext> for App {
     fn update(&mut self, _ctx: &mut GameContext, _delta: f32) {}
 
     fn render(&mut self, ctx: &mut GameContext) -> Result<(), RenderError> {
-        self.common.render(ctx, None)
+        ctx.render()?.build()
     }
 
     fn input(&mut self, _ctx: &mut GameContext, _input: Input) {}

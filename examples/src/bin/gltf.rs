@@ -3,12 +3,9 @@ use glam::{Quat, Vec3};
 use gobs::{
     assets::gltf_load,
     core::{Color, Input, logger},
-    game::{AppError, Application, GameContext, GobsGame},
-    render::RenderError,
-    resource::{
-        load,
-        {camera::Camera, light::Light},
-    },
+    game::{AppError, Application, GameContext, GobsGame, context::GobsContext as _},
+    render::{RenderError, RenderType},
+    resource::{camera::Camera, light::Light, load},
     scene::{graph::scenegraph::SceneGraph, scene::Scene},
 };
 
@@ -91,7 +88,10 @@ impl GobsGame<GameContext> for App {
     }
 
     fn render(&mut self, ctx: &mut GameContext) -> Result<(), RenderError> {
-        self.common.render(ctx, Some(&mut self.scene))
+        ctx.render()?
+            .draw_bounds(self.common.draw_bounds)
+            .with_renderable(&self.scene, RenderType::Scene)?
+            .build()
     }
 
     fn input(&mut self, ctx: &mut GameContext, input: Input) {
