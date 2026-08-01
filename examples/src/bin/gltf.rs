@@ -5,7 +5,7 @@ use gobs::{
     core::{Color, Input, logger},
     game::{AppError, Application, GameContext, GobsGame, context::GobsContext as _},
     render::{RenderError, RenderType},
-    resource::{camera::Camera, light::Light, load},
+    resource::load,
     scene::{graph::scenegraph::SceneGraph, scene::Scene},
 };
 
@@ -19,33 +19,15 @@ struct App {
 
 impl GobsGame<GameContext> for App {
     async fn create(ctx: &mut GameContext) -> Result<Self, AppError> {
-        let extent = ctx.renderer.extent();
-
-        let camera = Camera::perspective(
-            extent.width as f32 / extent.height as f32,
-            60_f32.to_radians(),
-            0.1,
-            500.,
-            0.,
-            0.,
-        );
-
-        let camera_position = Vec3::new(10., 5., 10.);
-
-        let light = Light::new(Color::WHITE);
-        let light_position = Vec3::new(0., 0., 10.);
+        let scene = ctx
+            .new_scene()
+            .with_perspective_camera(0., 0., [10., 5., 10.])
+            .with_light(Color::WHITE, [0., 0., 10.])
+            .build();
 
         let common = SampleApp::new();
 
         let camera_controller = SampleApp::controller();
-
-        let scene = Scene::new(
-            &ctx.renderer.gfx,
-            camera,
-            camera_position,
-            light,
-            light_position,
-        );
 
         Ok(App {
             common,

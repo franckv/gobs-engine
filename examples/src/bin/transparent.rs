@@ -1,4 +1,4 @@
-use glam::{Quat, Vec3};
+use glam::Quat;
 
 use gobs::{
     core::{Color, Input, Transform, logger},
@@ -7,7 +7,7 @@ use gobs::{
         MaterialInstanceProperties, MaterialsConfig, Model, RenderConfig, RenderError, RenderType,
         Shapes,
     },
-    resource::{ResourceLifetime, light::Light},
+    resource::ResourceLifetime,
     scene::{components::NodeValue, scene::Scene},
 };
 
@@ -21,23 +21,15 @@ struct App {
 
 impl GobsGame<GameContext> for App {
     async fn create(ctx: &mut GameContext) -> Result<Self, AppError> {
-        let camera = SampleApp::ortho_camera(ctx);
-        let camera_position = Vec3::new(0., 0., 1.);
-
-        let light = Light::new(Color::WHITE);
-        let light_position = Vec3::new(0., 0., 10.);
+        let scene = ctx
+            .new_scene()
+            .with_ortho_camera([0., 0., 1.])
+            .with_light(Color::WHITE, [0., 0., 10.])
+            .build();
 
         let common = SampleApp::new();
 
         let camera_controller = SampleApp::controller();
-
-        let scene = Scene::new(
-            &ctx.renderer.gfx,
-            camera,
-            camera_position,
-            light,
-            light_position,
-        );
 
         Ok(App {
             common,

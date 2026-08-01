@@ -8,6 +8,7 @@ use gobs_render::{
     Texture, TextureLoader,
 };
 use gobs_resource::ResourceManager;
+use gobs_scene::SceneBuilder;
 
 #[derive(Clone, Debug)]
 pub struct AppInfo {
@@ -23,6 +24,7 @@ pub trait GobsContext {
     fn is_minimized(&self) -> bool;
     fn request_redraw(&mut self);
     fn render(&mut self) -> Result<RenderBuilder<'_>, RenderError>;
+    fn new_scene(&self) -> SceneBuilder<'_>;
     fn draw_ui<F>(&mut self, delta: f32, callback: F)
     where
         F: FnMut(&mut egui::Ui, &AppInfo, &mut ResourceManager, &mut Renderer);
@@ -116,6 +118,10 @@ impl GobsContext for GameContext {
     fn render(&mut self) -> Result<RenderBuilder<'_>, RenderError> {
         RenderBuilder::new(&mut self.renderer, &mut self.resource_manager)
             .with_renderable(&self.ui, gobs_render::RenderType::Ui)
+    }
+
+    fn new_scene(&self) -> SceneBuilder<'_> {
+        SceneBuilder::new(&self.renderer.gfx)
     }
 
     fn draw_ui<F>(&mut self, delta: f32, mut callback: F)
