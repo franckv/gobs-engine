@@ -1,6 +1,11 @@
 import common;
 import display;
-import vertex_layout;
+
+public struct Vertex {
+    public float3 position;
+    public float4 color;
+    public float2 uv;
+}
 
 struct SceneData {
 	float2 screen_size;

@@ -188,6 +188,7 @@ impl GLTFLoader {
 
                     let mesh = RenderMeshBuilder::new(resource_manager)
                         .with_geometry(mesh_data.build())
+                        .for_material(material)
                         .build();
 
                     (mesh, material)

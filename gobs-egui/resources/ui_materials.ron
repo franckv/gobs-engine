@@ -19,6 +19,7 @@ MaterialsConfig(
             texture_layout: [
                 Diffuse,
             ],
+            vertex_attributes: Some("POSITION | COLOR | TEXTURE"),
         ),
     }
 )

@@ -434,13 +434,15 @@ impl UIRenderer {
                     geometry.vertex(vertex_data);
                 }
 
+                let material = self.font_texture.get(&m.texture_id).cloned().unwrap();
                 let mesh = RenderMeshBuilder::new(resource_manager)
                     .with_geometry(geometry.build())
+                    .for_material(material)
                     .with_layer(layer)
                     .transient(true)
                     .build();
 
-                meshes.push((mesh, self.font_texture.get(&m.texture_id).cloned().unwrap()));
+                meshes.push((mesh, material));
 
                 layer += 1;
             } else {

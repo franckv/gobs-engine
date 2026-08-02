@@ -49,7 +49,7 @@ impl<'a> RenderModelBuilder<'a> {
             *material_instance = Some(material);
 
             let mesh_properties = &self.resource_manager.get(mesh).properties;
-            debug_assert!(mesh_properties.vertex_attributes == vertex_attributes);
+            debug_assert_eq!(mesh_properties.vertex_attributes, vertex_attributes);
         } else {
             panic!("Missing mesh in model");
         }
