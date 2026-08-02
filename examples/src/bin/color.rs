@@ -3,11 +3,7 @@ use glam::Quat;
 use gobs::{
     core::{Color, Input, Transform, logger},
     game::{AppError, Application, GameContext, GobsGame, context::GobsContext as _},
-    render::{
-        MaterialDataPropData, MaterialInstanceProperties, MaterialsConfig, Model, RenderError,
-        RenderType, Shapes,
-    },
-    resource::ResourceLifetime,
+    render::{MaterialDataPropData, RenderError, RenderType, Shapes},
     scene::{components::NodeValue, scene::Scene},
 };
 
@@ -73,30 +69,27 @@ impl GobsGame<GameContext> for App {
 
 impl App {
     async fn init(&mut self, ctx: &mut GameContext) {
-        MaterialsConfig::load_resources("materials.ron", &mut ctx.resource_manager).await;
+        ctx.load_material("materials.ron").await;
 
-        let material = ctx.resource_manager.get_by_name("color.material").unwrap();
+        let material = ctx
+            .new_material("color.material")
+            .from_base("color.material")
+            .with_prop(MaterialDataPropData::DiffuseColor(Color::GREY.into()))
+            .with_prop(MaterialDataPropData::EmissionColor(
+                Color::new(0., 0.1, 0., 1.).into(),
+            ))
+            .build();
 
-        let material_instance_properties =
-            MaterialInstanceProperties::new("color.material", material)
-                .prop(MaterialDataPropData::DiffuseColor(Color::GREY.into()))
-                .prop(MaterialDataPropData::EmissionColor(
-                    Color::new(0., 0.1, 0., 1.).into(),
-                ));
+        let mesh = ctx
+            .new_mesh()
+            .with_geometry(Shapes::triangle(&[Color::WHITE], 1.))
+            .for_material(material)
+            .build();
 
-        let material_instance = ctx.resource_manager.add(
-            material_instance_properties,
-            ResourceLifetime::Static,
-            false,
-        );
-
-        let triangle = Model::builder("triangle")
-            .mesh(
-                Shapes::triangle(&[Color::WHITE], 1.),
-                Some(material_instance),
-                &mut ctx.resource_manager,
-                ResourceLifetime::Static,
-            )
+        let triangle = ctx
+            .new_model("triangle")
+            .with_mesh(mesh)
+            .with_material(material)
             .build();
 
         let transform =

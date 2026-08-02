@@ -3,11 +3,7 @@ use glam::Quat;
 use gobs::{
     core::{Color, Input, Transform, logger},
     game::{AppError, Application, GameContext, GobsGame, context::GobsContext as _},
-    render::{
-        MaterialInstanceProperties, MaterialsConfig, Model, RenderConfig, RenderError, RenderType,
-        Shapes,
-    },
-    resource::ResourceLifetime,
+    render::{RenderConfig, RenderError, RenderType, Shapes},
     scene::{components::NodeValue, scene::Scene},
 };
 
@@ -79,44 +75,39 @@ impl GobsGame<GameContext> for App {
 
 impl App {
     async fn init(&mut self, ctx: &mut GameContext) {
-        MaterialsConfig::load_resources("materials.ron", &mut ctx.resource_manager).await;
+        ctx.load_material("materials.ron").await;
 
-        let material = ctx.resource_manager.get_by_name("color").unwrap();
-        let material_instance_properties = MaterialInstanceProperties::new("color", material);
-        let material_instance = ctx.resource_manager.add(
-            material_instance_properties,
-            ResourceLifetime::Static,
-            false,
-        );
-
+        let material = ctx.new_material("color").from_base("color").build();
         let transparent_material = ctx
-            .resource_manager
-            .get_by_name("color.transparent")
-            .unwrap();
-        let transparent_instance_properties =
-            MaterialInstanceProperties::new("transparent", transparent_material);
-        let transparent_material_instance = ctx.resource_manager.add(
-            transparent_instance_properties,
-            ResourceLifetime::Static,
-            false,
-        );
-
-        let triangle = Model::builder("triangle")
-            .mesh(
-                Shapes::triangle(&[Color::RED, Color::GREEN, Color::BLUE], 1.),
-                Some(material_instance),
-                &mut ctx.resource_manager,
-                ResourceLifetime::Static,
-            )
+            .new_material("color.transparent")
+            .from_base("color.transparent")
             .build();
 
-        let square = Model::builder("square")
-            .mesh(
-                Shapes::quad(&[Color::new(1., 1., 1., 0.5)]),
-                Some(transparent_material_instance),
-                &mut ctx.resource_manager,
-                ResourceLifetime::Static,
-            )
+        let triangle_mesh = ctx
+            .new_mesh()
+            .with_geometry(Shapes::triangle(
+                &[Color::RED, Color::GREEN, Color::BLUE],
+                1.,
+            ))
+            .for_material(material)
+            .build();
+
+        let square_mesh = ctx
+            .new_mesh()
+            .with_geometry(Shapes::quad(&[Color::new(1., 1., 1., 0.5)]))
+            .for_material(material)
+            .build();
+
+        let triangle = ctx
+            .new_model("triangle")
+            .with_mesh(triangle_mesh)
+            .with_material(material)
+            .build();
+
+        let square = ctx
+            .new_model("square")
+            .with_mesh(square_mesh)
+            .with_material(transparent_material)
             .build();
 
         let transform =
@@ -130,7 +121,6 @@ impl App {
             Quat::IDENTITY,
             [300., 300., 1.].into(),
         );
-
         self.scene
             .graph
             .insert(self.scene.graph.root, NodeValue::Model(square), transform);

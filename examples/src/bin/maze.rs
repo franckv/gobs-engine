@@ -3,11 +3,8 @@ use glam::{Quat, Vec3};
 use gobs::{
     core::{Color, Input, Transform, logger},
     game::{AppError, Application, GameContext, GobsGame, context::GobsContext as _},
-    render::{
-        MaterialInstanceProperties, MaterialsConfig, Model, RenderError, RenderType, Shapes,
-        TextureProperties, TextureType,
-    },
-    resource::{ResourceLifetime, load},
+    render::{RenderError, RenderType, Shapes},
+    resource::load,
     scene::{components::NodeValue, scene::Scene},
 };
 
@@ -103,60 +100,63 @@ impl App {
     async fn load_scene(&mut self, ctx: &mut GameContext) {
         tracing::info!(target: logger::APP, "Load scene");
 
-        MaterialsConfig::load_resources("materials.ron", &mut ctx.resource_manager).await;
+        ctx.load_material("materials.ron").await;
 
-        let material = ctx.resource_manager.get_by_name("normal").unwrap();
-
-        let properties = TextureProperties::with_atlas(
-            "Atlas Diffuse",
-            examples::DIFFUSE_FORMAT,
-            examples::ATLAS,
-            examples::ATLAS_COLS,
-        );
         let diffuse_texture = ctx
-            .resource_manager
-            .add(properties, ResourceLifetime::Static, false);
-
-        let mut properties = TextureProperties::with_atlas(
-            "Atlas Normal",
-            examples::NORMAL_FORMAT,
-            examples::ATLAS_N,
-            examples::ATLAS_COLS,
-        );
-        properties.format.ty = TextureType::Normal;
+            .new_texture("Atlas Diffuse")
+            .diffuse_atlas(
+                examples::ATLAS,
+                examples::DIFFUSE_FORMAT,
+                examples::ATLAS_COLS,
+            )
+            .build();
         let normal_texture = ctx
-            .resource_manager
-            .add(properties, ResourceLifetime::Static, false);
-
-        let material_instance_properties = MaterialInstanceProperties::new("normal", material)
-            .textures(&[diffuse_texture, normal_texture]);
-        let material_instance = ctx.resource_manager.add(
-            material_instance_properties,
-            ResourceLifetime::Static,
-            false,
-        );
-
-        let wall = Model::builder("wall")
-            .mesh(
-                Shapes::cubemap(examples::ATLAS_COLS, examples::ATLAS_ROWS, &[2], 1.),
-                Some(material_instance),
-                &mut ctx.resource_manager,
-                ResourceLifetime::Static,
+            .new_texture("Atlas Normal")
+            .normal_atlas(
+                examples::ATLAS_N,
+                examples::NORMAL_FORMAT,
+                examples::ATLAS_COLS,
             )
             .build();
 
-        let floor = Model::builder("floor")
-            .mesh(
-                Shapes::cubemap(
-                    examples::ATLAS_COLS,
-                    examples::ATLAS_ROWS,
-                    &[3, 3, 3, 3, 4, 1],
-                    1.,
-                ),
-                Some(material_instance),
-                &mut ctx.resource_manager,
-                ResourceLifetime::Static,
-            )
+        let material = ctx
+            .new_material("atlas")
+            .from_base("normal")
+            .with_textures(&[diffuse_texture, normal_texture])
+            .build();
+
+        let wall_mesh = ctx
+            .new_mesh()
+            .with_geometry(Shapes::cubemap(
+                examples::ATLAS_COLS,
+                examples::ATLAS_ROWS,
+                &[2],
+                1.,
+            ))
+            .for_material(material)
+            .build();
+
+        let wall = ctx
+            .new_model("wall")
+            .with_mesh(wall_mesh)
+            .with_material(material)
+            .build();
+
+        let floor_mesh = ctx
+            .new_mesh()
+            .with_geometry(Shapes::cubemap(
+                examples::ATLAS_COLS,
+                examples::ATLAS_ROWS,
+                &[3, 3, 3, 3, 4, 1],
+                1.,
+            ))
+            .for_material(material)
+            .build();
+
+        let floor = ctx
+            .new_model("wall")
+            .with_mesh(floor_mesh)
+            .with_material(material)
             .build();
 
         let offset = 16.;

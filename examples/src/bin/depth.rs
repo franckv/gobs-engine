@@ -3,11 +3,7 @@ use glam::{Quat, Vec3};
 use gobs::{
     core::{Color, Input, Transform, logger},
     game::{AppError, Application, GameContext, GobsGame, context::GobsContext as _},
-    render::{
-        MaterialInstanceProperties, MaterialsConfig, Model, RenderConfig, RenderError, RenderType,
-        Shapes,
-    },
-    resource::ResourceLifetime,
+    render::{RenderConfig, RenderError, RenderType, Shapes},
     scene::{components::NodeValue, scene::Scene},
 };
 
@@ -100,24 +96,20 @@ impl GobsGame<GameContext> for App {
 
 impl App {
     async fn init(&mut self, ctx: &mut GameContext) {
-        MaterialsConfig::load_resources("materials.ron", &mut ctx.resource_manager).await;
+        ctx.load_material("materials.ron").await;
 
-        let material = ctx.resource_manager.get_by_name("depth").unwrap();
+        let material = ctx.new_material("depth").from_base("depth").build();
 
-        let material_instance_properties = MaterialInstanceProperties::new("depth", material);
-        let material_instance = ctx.resource_manager.add(
-            material_instance_properties,
-            ResourceLifetime::Static,
-            false,
-        );
+        let mesh = ctx
+            .new_mesh()
+            .with_geometry(Shapes::cubemap(1, 1, &[1], 1.))
+            .for_material(material)
+            .build();
 
-        let cube = Model::builder("cube")
-            .mesh(
-                Shapes::cubemap(1, 1, &[1], 1.),
-                Some(material_instance),
-                &mut ctx.resource_manager,
-                ResourceLifetime::Static,
-            )
+        let cube = ctx
+            .new_model("cube")
+            .with_mesh(mesh)
+            .with_material(material)
             .build();
 
         let transform = Transform::new([0., 0., -2.].into(), Quat::IDENTITY, Vec3::splat(1.));

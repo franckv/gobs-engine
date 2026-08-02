@@ -3,11 +3,7 @@ use glam::{Quat, Vec3};
 use gobs::{
     core::{Color, Input, Transform, logger},
     game::{AppError, Application, GameContext, GobsGame, context::GobsContext as _},
-    render::{
-        MaterialDataPropData, MaterialInstanceProperties, MaterialsConfig, Model, RenderError,
-        RenderType, Shapes, TextureProperties, TextureType,
-    },
-    resource::ResourceLifetime,
+    render::{MaterialDataPropData, RenderError, RenderType, Shapes},
     scene::{components::NodeValue, scene::Scene},
 };
 
@@ -79,63 +75,53 @@ impl GobsGame<GameContext> for App {
 
 impl App {
     async fn init(&mut self, ctx: &mut GameContext) {
-        MaterialsConfig::load_resources("materials.ron", &mut ctx.resource_manager).await;
+        ctx.load_material("materials.ron").await;
 
-        let color_material = ctx.resource_manager.get_by_name("color.material").unwrap();
+        let color_material = ctx
+            .new_material("color instance")
+            .from_base("color.material")
+            .with_prop(MaterialDataPropData::DiffuseColor(Color::RED.into()))
+            .with_prop(MaterialDataPropData::EmissionColor(
+                Color::new(0., 0.1, 0., 1.).into(),
+            ))
+            .build();
 
-        let color_instance_properties =
-            MaterialInstanceProperties::new("color instance", color_material)
-                .prop(MaterialDataPropData::DiffuseColor(Color::RED.into()))
-                .prop(MaterialDataPropData::EmissionColor(
-                    Color::new(0., 0.1, 0., 1.).into(),
-                ));
-
-        let color_material_instance =
-            ctx.resource_manager
-                .add(color_instance_properties, ResourceLifetime::Static, false);
-
-        let properties = TextureProperties::with_file(
-            "Wall Diffuse",
-            examples::DIFFUSE_FORMAT,
-            examples::WALL_TEXTURE,
-        );
         let diffuse_texture = ctx
-            .resource_manager
-            .add(properties, ResourceLifetime::Static, false);
-
-        let mut properties = TextureProperties::with_file(
-            "Wall Normal",
-            examples::NORMAL_FORMAT,
-            examples::WALL_TEXTURE_N,
-        );
-        properties.format.ty = TextureType::Normal;
+            .new_texture("Wall Diffuse")
+            .diffuse(examples::WALL_TEXTURE, examples::DIFFUSE_FORMAT)
+            .build();
         let normal_texture = ctx
-            .resource_manager
-            .add(properties, ResourceLifetime::Static, false);
+            .new_texture("Wall Normal")
+            .normal(examples::WALL_TEXTURE_N, examples::NORMAL_FORMAT)
+            .build();
 
-        let diffuse_material = ctx.resource_manager.get_by_name("normal").unwrap();
+        let diffuse_material = ctx
+            .new_material("normal")
+            .from_base("normal")
+            .with_textures(&[diffuse_texture, normal_texture])
+            .build();
 
-        let diffuse_instance_properties =
-            MaterialInstanceProperties::new("diffuse instance", diffuse_material)
-                .textures(&[diffuse_texture, normal_texture]);
+        let triangle_mesh = ctx
+            .new_mesh()
+            .with_geometry(Shapes::triangle(
+                &[Color::RED, Color::GREEN, Color::BLUE],
+                1.5,
+            ))
+            .for_material(color_material)
+            .build();
 
-        let diffuse_material_instance =
-            ctx.resource_manager
-                .add(diffuse_instance_properties, ResourceLifetime::Static, false);
+        let cube_mesh = ctx
+            .new_mesh()
+            .with_geometry(Shapes::cubemap(1, 1, &[1], 1.))
+            .for_material(diffuse_material)
+            .build();
 
-        let model = Model::builder("multi")
-            .mesh(
-                Shapes::triangle(&[Color::RED, Color::GREEN, Color::BLUE], 1.5),
-                Some(color_material_instance),
-                &mut ctx.resource_manager,
-                ResourceLifetime::Static,
-            )
-            .mesh(
-                Shapes::cubemap(1, 1, &[1], 1.),
-                Some(diffuse_material_instance),
-                &mut ctx.resource_manager,
-                ResourceLifetime::Static,
-            )
+        let model = ctx
+            .new_model("cube")
+            .with_mesh(triangle_mesh)
+            .with_material(color_material)
+            .with_mesh(cube_mesh)
+            .with_material(diffuse_material)
             .build();
 
         let transform = Transform::new([0., 0., 0.].into(), Quat::IDENTITY, Vec3::ONE);

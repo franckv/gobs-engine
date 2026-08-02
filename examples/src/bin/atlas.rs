@@ -3,11 +3,7 @@ use glam::{Quat, Vec3};
 use gobs::{
     core::{Color, Input, Transform, logger},
     game::{AppError, Application, GameContext, GobsGame, context::GobsContext as _},
-    render::{
-        MaterialInstanceProperties, MaterialsConfig, Model, RenderError, RenderType, Shapes,
-        TextureProperties, TextureType,
-    },
-    resource::ResourceLifetime,
+    render::{RenderError, RenderType, Shapes},
     scene::{components::NodeValue, scene::Scene},
 };
 
@@ -98,52 +94,46 @@ impl GobsGame<GameContext> for App {
 
 impl App {
     async fn init(&mut self, ctx: &mut GameContext) {
-        MaterialsConfig::load_resources("materials.ron", &mut ctx.resource_manager).await;
+        ctx.load_material("materials.ron").await;
 
-        let material = ctx.resource_manager.get_by_name("normal").unwrap();
-
-        let properties = TextureProperties::with_atlas(
-            "Atlas Diffuse",
-            examples::DIFFUSE_FORMAT,
-            examples::ATLAS,
-            examples::ATLAS_COLS,
-        );
         let diffuse_texture = ctx
-            .resource_manager
-            .add(properties, ResourceLifetime::Static, false);
-
-        let mut properties = TextureProperties::with_atlas(
-            "Atlas Normal",
-            examples::NORMAL_FORMAT,
-            examples::ATLAS_N,
-            examples::ATLAS_COLS,
-        );
-        properties.format.ty = TextureType::Normal;
-        let normal_texture = ctx
-            .resource_manager
-            .add(properties, ResourceLifetime::Static, false);
-
-        let material_instance_properties = MaterialInstanceProperties::new("atlas", material)
-            .textures(&[diffuse_texture, normal_texture]);
-
-        let material_instance = ctx.resource_manager.add(
-            material_instance_properties,
-            ResourceLifetime::Static,
-            false,
-        );
-
-        let cube = Model::builder("cube")
-            .mesh(
-                Shapes::cubemap(
-                    examples::ATLAS_COLS,
-                    examples::ATLAS_ROWS,
-                    &[3, 3, 3, 3, 4, 1],
-                    1.,
-                ),
-                Some(material_instance),
-                &mut ctx.resource_manager,
-                ResourceLifetime::Static,
+            .new_texture("Atlas Diffuse")
+            .diffuse_atlas(
+                examples::ATLAS,
+                examples::DIFFUSE_FORMAT,
+                examples::ATLAS_COLS,
             )
+            .build();
+        let normal_texture = ctx
+            .new_texture("Atlas Normal")
+            .normal_atlas(
+                examples::ATLAS_N,
+                examples::NORMAL_FORMAT,
+                examples::ATLAS_COLS,
+            )
+            .build();
+
+        let material = ctx
+            .new_material("atlas")
+            .from_base("normal")
+            .with_textures(&[diffuse_texture, normal_texture])
+            .build();
+
+        let mesh = ctx
+            .new_mesh()
+            .with_geometry(Shapes::cubemap(
+                examples::ATLAS_COLS,
+                examples::ATLAS_ROWS,
+                &[3, 3, 3, 3, 4, 1],
+                1.,
+            ))
+            .for_material(material)
+            .build();
+
+        let cube = ctx
+            .new_model("cube")
+            .with_mesh(mesh)
+            .with_material(material)
             .build();
 
         let transform = Transform::new([0., 0., -2.].into(), Quat::IDENTITY, Vec3::splat(1.));

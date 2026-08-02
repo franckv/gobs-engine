@@ -1,12 +1,10 @@
 use glam::{Quat, Vec3};
 
 use gobs::{
-    assets::gltf_load,
     core::{Color, Input, logger},
     game::{AppError, Application, GameContext, GobsGame, context::GobsContext as _},
     render::{RenderError, RenderType},
-    resource::load,
-    scene::{graph::scenegraph::SceneGraph, scene::Scene},
+    scene::scene::Scene,
 };
 
 use examples::{InputManager, Ui};
@@ -92,23 +90,12 @@ impl GobsGame<GameContext> for App {
 impl App {
     fn init(&mut self, ctx: &mut GameContext) {
         tracing::info!(target: logger::APP, "Load scene");
-        let graph = self.load_scene(ctx);
+        let graph = ctx.load_gltf(examples::GLTF_MODEL);
+
         self.scene
             .graph
             .insert_subgraph(self.scene.graph.root, graph.root, &graph)
             .unwrap();
-    }
-
-    fn load_scene(&self, ctx: &mut GameContext) -> SceneGraph {
-        let file_name = load::get_asset_dir(examples::GLTF_MODEL, load::AssetType::MODEL).unwrap();
-
-        let mut gltf_loader = gltf_load::GLTFLoader::new(&mut ctx.resource_manager).unwrap();
-
-        gltf_loader
-            .load(ctx.config(), &mut ctx.resource_manager, file_name)
-            .expect("Load gltf");
-
-        gltf_loader.scene
     }
 }
 

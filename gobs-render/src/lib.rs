@@ -15,7 +15,10 @@ pub use gobs_render_hal::{
 };
 
 pub use batch::RenderBatch;
-pub use builder::{RenderBuilder, RenderType};
+pub use builder::{
+    RenderBuilder, RenderMaterialBuilder, RenderMeshBuilder, RenderModelBuilder,
+    RenderTextureBuilder, RenderType,
+};
 pub use config::RenderConfig;
 pub use data::MaterialDataPropData;
 pub use model::{Model, ModelId};

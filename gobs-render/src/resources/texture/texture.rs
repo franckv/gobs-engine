@@ -112,12 +112,12 @@ impl TextureProperties {
     pub fn with_colors(
         name: &str,
         format: ImageFormat,
-        colors: Vec<Color>,
+        colors: &[Color],
         extent: ImageExtent2D,
     ) -> Self {
         Self {
             name: name.to_string(),
-            path: TexturePath::Colors(colors),
+            path: TexturePath::Colors(colors.to_vec()),
             format: TextureFormat {
                 ty: TextureType::Diffuse,
                 format,

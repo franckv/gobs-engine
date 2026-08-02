@@ -3,11 +3,7 @@ use glam::Quat;
 use gobs::{
     core::{Color, Input, Transform, logger},
     game::{AppError, Application, GameContext, GobsGame, context::GobsContext as _},
-    render::{
-        MaterialInstanceProperties, MaterialsConfig, Model, RenderError, RenderType, Shapes,
-        TextureProperties,
-    },
-    resource::ResourceLifetime,
+    render::{RenderError, RenderType, Shapes},
     scene::{components::NodeValue, scene::Scene},
 };
 
@@ -78,36 +74,29 @@ impl App {
 
         let framebuffer = Self::generate_framebuffer(width, height);
 
-        MaterialsConfig::load_resources("materials.ron", &mut ctx.resource_manager).await;
+        ctx.load_material("materials.ron").await;
 
-        let material = ctx.resource_manager.get_by_name("texture").unwrap();
+        let diffuse_texture = ctx
+            .new_texture("Framebuffer")
+            .diffuse_colors(examples::DIFFUSE_FORMAT, &framebuffer, extent)
+            .build();
 
-        let properties = TextureProperties::with_colors(
-            "Framebuffer",
-            examples::DIFFUSE_FORMAT,
-            framebuffer,
-            extent,
-        );
+        let material = ctx
+            .new_material("Framebuffer")
+            .from_base("texture")
+            .with_textures(&[diffuse_texture])
+            .build();
 
-        let texture = ctx
-            .resource_manager
-            .add(properties, ResourceLifetime::Static, false);
+        let mesh = ctx
+            .new_mesh()
+            .with_geometry(Shapes::quad(&[Color::WHITE]))
+            .for_material(material)
+            .build();
 
-        let material_instance_properties =
-            MaterialInstanceProperties::new("texture", material).textures(&[texture]);
-        let material_instance = ctx.resource_manager.add(
-            material_instance_properties,
-            ResourceLifetime::Static,
-            false,
-        );
-
-        let rect = Model::builder("rect")
-            .mesh(
-                Shapes::quad(&[Color::WHITE]),
-                Some(material_instance),
-                &mut ctx.resource_manager,
-                ResourceLifetime::Static,
-            )
+        let rect = ctx
+            .new_model("rect")
+            .with_mesh(mesh)
+            .with_material(material)
             .build();
 
         let transform = Transform::new(

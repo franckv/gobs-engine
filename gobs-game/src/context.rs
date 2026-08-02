@@ -1,46 +1,61 @@
-use std::sync::Arc;
+use std::{fmt::Debug, sync::Arc};
 
 use parking_lot::RwLock;
 use winit::window::Window;
 
+use gobs_assets::gltf_load;
 use gobs_core::{Config, Input, logger};
 use gobs_egui::UIRenderer;
 use gobs_render::{
-    GfxContext, Material, MaterialInstance, MaterialInstanceLoader, MaterialLoader, Mesh,
-    MeshLoader, Pipeline, PipelineLoader, RenderBuilder, RenderConfig, RenderError, Renderer,
-    Texture, TextureLoader,
+    GfxContext, Material, MaterialInstance, MaterialInstanceLoader, MaterialLoader,
+    MaterialsConfig, Mesh, MeshLoader, Pipeline, PipelineLoader, RenderBuilder, RenderConfig,
+    RenderError, RenderMaterialBuilder, RenderMeshBuilder, RenderModelBuilder,
+    RenderTextureBuilder, Renderer, Texture, TextureLoader,
 };
-use gobs_resource::ResourceManager;
-use gobs_scene::SceneBuilder;
+use gobs_resource::{ResourceManager, load};
+use gobs_scene::{SceneBuilder, graph::scenegraph::SceneGraph};
 
 #[derive(Clone, Debug)]
 pub struct AppInfo {
     pub name: String,
 }
 
+#[allow(async_fn_in_trait)]
 pub trait GobsContext {
     fn new(name: &str, config: Config, window: Option<Window>, validation: bool) -> Self;
     fn resize(&mut self);
     fn pre_update(&mut self, delta: f32);
     fn post_update(&mut self, delta: f32);
     fn close(&mut self);
-    fn is_minimized(&self) -> bool;
-    fn request_redraw(&mut self);
     fn render(&mut self) -> Result<RenderBuilder<'_>, RenderError>;
     fn input(&mut self, input: Input);
-    fn new_scene(&self) -> SceneBuilder<'_>;
+
+    fn is_minimized(&self) -> bool;
+    fn request_redraw(&mut self);
+
     fn draw_ui<F>(&mut self, delta: f32, callback: F)
     where
         F: FnMut(&mut egui::Ui, &AppInfo, &mut ResourceManager, &mut Renderer);
+
     fn config(&self) -> Arc<RwLock<Config>>;
+
+    fn new_scene(&self) -> SceneBuilder<'_>;
+
+    fn new_model<'a>(&'a mut self, name: &'a str) -> RenderModelBuilder<'a>;
+    fn new_material<'a>(&'a mut self, name: &'a str) -> RenderMaterialBuilder<'a>;
+    fn new_mesh(&mut self) -> RenderMeshBuilder<'_>;
+    fn new_texture<'a>(&'a mut self, name: &'a str) -> RenderTextureBuilder<'a>;
+
+    async fn load_material(&mut self, filename: &str);
+    fn load_gltf(&mut self, filename: &str) -> SceneGraph;
 }
 
 pub struct GameContext {
     app_info: AppInfo,
     config: Arc<RwLock<Config>>,
-    pub resource_manager: ResourceManager,
+    resource_manager: ResourceManager,
     pub renderer: Renderer,
-    pub ui: UIRenderer,
+    ui: UIRenderer,
 }
 
 impl GobsContext for GameContext {
@@ -112,14 +127,6 @@ impl GobsContext for GameContext {
         self.renderer.wait();
     }
 
-    fn is_minimized(&self) -> bool {
-        self.renderer.gfx.is_minimized()
-    }
-
-    fn request_redraw(&mut self) {
-        self.renderer.gfx.request_redraw();
-    }
-
     fn render(&mut self) -> Result<RenderBuilder<'_>, RenderError> {
         RenderBuilder::new(&mut self.renderer, &mut self.resource_manager)
             .with_renderable(&self.ui, gobs_render::RenderType::Ui)
@@ -129,8 +136,12 @@ impl GobsContext for GameContext {
         self.ui.input(input);
     }
 
-    fn new_scene(&self) -> SceneBuilder<'_> {
-        SceneBuilder::new(&self.renderer.gfx)
+    fn is_minimized(&self) -> bool {
+        self.renderer.gfx.is_minimized()
+    }
+
+    fn request_redraw(&mut self) {
+        self.renderer.gfx.request_redraw();
     }
 
     fn draw_ui<F>(&mut self, delta: f32, mut callback: F)
@@ -149,6 +160,41 @@ impl GobsContext for GameContext {
 
     fn config(&self) -> Arc<RwLock<Config>> {
         self.config.clone()
+    }
+
+    fn new_scene(&self) -> SceneBuilder<'_> {
+        SceneBuilder::new(&self.renderer.gfx)
+    }
+
+    fn new_model<'a>(&'a mut self, name: &'a str) -> RenderModelBuilder<'a> {
+        RenderModelBuilder::new(&mut self.resource_manager, name)
+    }
+
+    fn new_material<'a>(&'a mut self, name: &'a str) -> RenderMaterialBuilder<'a> {
+        RenderMaterialBuilder::new(&mut self.resource_manager, name)
+    }
+
+    fn new_mesh(&mut self) -> RenderMeshBuilder<'_> {
+        RenderMeshBuilder::new(&mut self.resource_manager)
+    }
+
+    fn new_texture<'a>(&'a mut self, name: &'a str) -> RenderTextureBuilder<'a> {
+        RenderTextureBuilder::new(&mut self.resource_manager, name)
+    }
+
+    async fn load_material(&mut self, filename: &str) {
+        MaterialsConfig::load_resources(filename, &mut self.resource_manager).await;
+    }
+
+    fn load_gltf(&mut self, filename: &str) -> SceneGraph {
+        let filename = load::get_asset_dir(filename, load::AssetType::MODEL).unwrap();
+        let mut gltf_loader = gltf_load::GLTFLoader::new(&mut self.resource_manager).unwrap();
+
+        gltf_loader
+            .load(self.config(), &mut self.resource_manager, filename)
+            .expect("Load gltf");
+
+        gltf_loader.scene
     }
 }
 

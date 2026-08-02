@@ -3,11 +3,7 @@ use glam::{Quat, Vec3};
 use gobs::{
     core::{Color, Input, Transform, logger},
     game::{AppError, Application, GameContext, GobsGame, context::GobsContext},
-    render::{
-        MaterialInstanceProperties, MaterialsConfig, Model, RenderError, Shapes, TextureProperties,
-        TextureType,
-    },
-    resource::ResourceLifetime,
+    render::{RenderError, Shapes},
     scene::{components::NodeValue, scene::Scene},
 };
 
@@ -98,45 +94,33 @@ impl GobsGame<GameContext> for App {
 
 impl App {
     async fn init(&mut self, ctx: &mut GameContext) {
-        MaterialsConfig::load_resources("materials.ron", &mut ctx.resource_manager).await;
+        ctx.load_material("materials.ron").await;
 
-        let material = ctx.resource_manager.get_by_name("normal").unwrap();
-
-        let properties = TextureProperties::with_file(
-            "Wall Diffuse",
-            examples::DIFFUSE_FORMAT,
-            examples::WALL_TEXTURE,
-        );
         let diffuse_texture = ctx
-            .resource_manager
-            .add(properties, ResourceLifetime::Static, false);
-
-        let mut properties = TextureProperties::with_file(
-            "Wall Normal",
-            examples::NORMAL_FORMAT,
-            examples::WALL_TEXTURE_N,
-        );
-        properties.format.ty = TextureType::Normal;
+            .new_texture("Wall Diffuse")
+            .diffuse(examples::WALL_TEXTURE, examples::DIFFUSE_FORMAT)
+            .build();
         let normal_texture = ctx
-            .resource_manager
-            .add(properties, ResourceLifetime::Static, false);
+            .new_texture("Wall Normal")
+            .normal(examples::WALL_TEXTURE_N, examples::NORMAL_FORMAT)
+            .build();
 
-        let material_instance_properties = MaterialInstanceProperties::new("cube", material)
-            .textures(&[diffuse_texture, normal_texture]);
+        let material = ctx
+            .new_material("normal")
+            .from_base("normal")
+            .with_textures(&[diffuse_texture, normal_texture])
+            .build();
 
-        let material_instance = ctx.resource_manager.add(
-            material_instance_properties,
-            ResourceLifetime::Static,
-            false,
-        );
+        let mesh = ctx
+            .new_mesh()
+            .with_geometry(Shapes::cubemap(1, 1, &[1], 1.))
+            .for_material(material)
+            .build();
 
-        let cube = Model::builder("cube")
-            .mesh(
-                Shapes::cubemap(1, 1, &[1], 1.),
-                Some(material_instance),
-                &mut ctx.resource_manager,
-                ResourceLifetime::Static,
-            )
+        let cube = ctx
+            .new_model("cube")
+            .with_mesh(mesh)
+            .with_material(material)
             .build();
 
         let transform = Transform::new(
