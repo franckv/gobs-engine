@@ -1,5 +1,5 @@
-pub mod app;
-pub mod context;
+mod app;
+mod context;
 
 use thiserror::Error;
 
@@ -7,7 +7,7 @@ use gobs_egui::UIError;
 use gobs_render::RenderError;
 
 pub use app::{Application, GobsGame};
-pub use context::{AppInfo, GameContext};
+pub use context::{AppInfo, GameContext, GobsContext};
 
 #[derive(Debug, Error)]
 pub enum AppError {

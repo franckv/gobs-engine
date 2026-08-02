@@ -2,7 +2,7 @@ use std::marker::PhantomData;
 
 use gobs::{
     core::{Color, ImageFormat, Input, logger},
-    game::{AppError, Application, GameContext, GobsGame, context::GobsContext},
+    game::{AppError, Application, GameContext, GobsContext, GobsGame},
     render::{
         AlignMode, BufferType, CommandBuffer, CommandQueueType, CullMode, DynamicStateElem,
         FrontFace, Handle, ImageLayout, ObjectDataLayout, ObjectDataProp, Rect2D, RenderConfig,

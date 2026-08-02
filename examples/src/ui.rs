@@ -6,7 +6,7 @@ use glam::Vec3;
 
 use gobs::{
     core::Transform,
-    game::{AppInfo, context::GobsContext},
+    game::{AppInfo, GobsContext},
     render::{
         GfxContext, Material, MaterialInstance, Mesh, Pipeline, Renderer, Texture, TextureLoader,
     },
