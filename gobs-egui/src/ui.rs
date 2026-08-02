@@ -406,9 +406,13 @@ impl UIRenderer {
                     continue;
                 }
 
-                let mut geometry = MeshGeometry::builder(&format!("egui#{}", layer))
-                    .indices(&m.indices, false)
-                    .generate_tangents(false);
+                let mut geometry = MeshGeometry::builder_with_capacity(
+                    &format!("egui#{}", layer),
+                    m.vertices.len(),
+                    m.indices.len(),
+                )
+                .indices(&m.indices, false)
+                .generate_tangents(false);
 
                 for vertex in &m.vertices {
                     let color = Color::from_rgba8(

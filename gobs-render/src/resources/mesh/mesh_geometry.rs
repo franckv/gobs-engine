@@ -33,7 +33,11 @@ impl MeshGeometry {
     }
 
     pub fn builder(name: &str) -> MeshBuilder {
-        MeshBuilder::new(name)
+        MeshBuilder::new(name, 0, 0)
+    }
+
+    pub fn builder_with_capacity(name: &str, v_capacity: usize, i_capacity: usize) -> MeshBuilder {
+        MeshBuilder::new(name, v_capacity, i_capacity)
     }
 }
 
@@ -57,11 +61,23 @@ pub struct MeshBuilder {
 }
 
 impl MeshBuilder {
-    fn new(name: &str) -> Self {
+    fn new(name: &str, v_capacity: usize, i_capacity: usize) -> Self {
+        let vertices = if v_capacity > 0 {
+            Vec::with_capacity(v_capacity)
+        } else {
+            Vec::new()
+        };
+
+        let indices = if i_capacity > 0 {
+            Vec::with_capacity(i_capacity)
+        } else {
+            Vec::new()
+        };
+
         Self {
             name: name.to_string(),
-            vertices: Vec::new(),
-            indices: Vec::new(),
+            vertices,
+            indices,
             generate_tangents: true,
         }
     }

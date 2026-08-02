@@ -25,6 +25,8 @@ bitflags! {
 }
 
 impl VertexAttribute {
+    const SIZE: usize = Self::all().bits().count_ones() as usize;
+
     fn idx(self) -> usize {
         self.bits().trailing_zeros() as usize
     }
@@ -77,7 +79,7 @@ impl From<VertexAttribute> for VertexAttributeFormat {
 
 #[derive(Clone, Debug, Serialize)]
 pub struct VertexData {
-    data: Vec<AttributeData>,
+    data: [AttributeData; VertexAttribute::SIZE],
 }
 
 impl VertexData {
@@ -229,82 +231,80 @@ impl Mul<f32> for VertexData {
 */
 
 pub struct VertexDataBuilder {
-    pub position: Option<Vec3>,
-    pub color: Option<Color>,
-    pub texture: Option<Vec2>,
-    pub normal: Option<Vec3>,
-    pub normal_texture: Option<Vec2>,
-    pub tangent: Option<Vec3>,
-    pub bitangent: Option<Vec3>,
+    pub position: Vec3,
+    pub color: Color,
+    pub texture: Vec2,
+    pub normal: Vec3,
+    pub normal_texture: Vec2,
+    pub tangent: Vec3,
+    pub bitangent: Vec3,
 }
 
 impl VertexDataBuilder {
     fn new() -> Self {
         VertexDataBuilder {
-            position: None,
-            color: None,
-            texture: None,
-            normal: None,
-            normal_texture: None,
-            tangent: None,
-            bitangent: None,
+            position: Vec3::splat(0.),
+            color: Color::WHITE,
+            texture: Vec2::splat(0.),
+            normal: Vec3::splat(0.),
+            normal_texture: Vec2::splat(0.),
+            tangent: Vec3::splat(0.),
+            bitangent: Vec3::splat(0.),
         }
     }
 
-    pub fn position(mut self, position: Vec3) -> Self {
-        self.position = Some(position);
+    pub fn position(&mut self, position: Vec3) -> &mut Self {
+        self.position = position;
 
         self
     }
 
-    pub fn color(mut self, color: Color) -> Self {
-        self.color = Some(color);
+    pub fn color(&mut self, color: Color) -> &mut Self {
+        self.color = color;
 
         self
     }
 
-    pub fn texture(mut self, texture: Vec2) -> Self {
-        self.texture = Some(texture);
+    pub fn texture(&mut self, texture: Vec2) -> &mut Self {
+        self.texture = texture;
 
         self
     }
 
-    pub fn normal(mut self, normal: Vec3) -> Self {
-        self.normal = Some(normal);
+    pub fn normal(&mut self, normal: Vec3) -> &mut Self {
+        self.normal = normal;
 
         self
     }
 
-    pub fn normal_texture(mut self, normal_texture: Vec2) -> Self {
-        self.normal_texture = Some(normal_texture);
+    pub fn normal_texture(&mut self, normal_texture: Vec2) -> &mut Self {
+        self.normal_texture = normal_texture;
 
         self
     }
 
-    pub fn tangent(mut self, tangent: Vec3) -> Self {
-        self.tangent = Some(tangent);
+    pub fn tangent(&mut self, tangent: Vec3) -> &mut Self {
+        self.tangent = tangent;
 
         self
     }
 
-    pub fn bitangent(mut self, bitangent: Vec3) -> Self {
-        self.bitangent = Some(bitangent);
+    pub fn bitangent(&mut self, bitangent: Vec3) -> &mut Self {
+        self.bitangent = bitangent;
 
         self
     }
 
-    pub fn build(self) -> VertexData {
-        let data = vec![
-            AttributeData::Vec3F(self.position.unwrap_or(Vec3::splat(0.)).into()),
-            AttributeData::Vec4F(self.color.unwrap_or(Color::WHITE).into()),
-            AttributeData::Vec2F(self.texture.unwrap_or(Vec2::splat(0.)).into()),
-            AttributeData::Vec3F(self.normal.unwrap_or(Vec3::splat(0.)).into()),
-            AttributeData::Vec2F(self.normal_texture.unwrap_or(Vec2::splat(0.)).into()),
-            AttributeData::Vec3F(self.tangent.unwrap_or(Vec3::splat(0.)).into()),
-            AttributeData::Vec3F(self.bitangent.unwrap_or(Vec3::splat(0.)).into()),
+    pub fn build(&mut self) -> VertexData {
+        let data = [
+            AttributeData::Vec3F(self.position.into()),
+            AttributeData::Vec4F(self.color.into()),
+            AttributeData::Vec2F(self.texture.into()),
+            AttributeData::Vec3F(self.normal.into()),
+            AttributeData::Vec2F(self.normal_texture.into()),
+            AttributeData::Vec3F(self.tangent.into()),
+            AttributeData::Vec3F(self.bitangent.into()),
         ];
-
-        debug_assert_eq!(data.len(), VertexAttribute::all().iter().count());
 
         VertexData { data }
     }
