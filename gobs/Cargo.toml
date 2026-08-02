@@ -12,3 +12,4 @@ gobs-game = { workspace = true }
 gobs-render = { workspace = true }
 gobs-resource = { workspace = true }
 gobs-scene = { workspace = true }
+glam = { workspace = true }

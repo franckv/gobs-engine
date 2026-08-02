@@ -1,0 +1,20 @@
+MaterialsConfig(
+    default: (
+        // must match material pass layout
+        object_layout: [
+            WorldMatrix,
+            VertexBufferAddress,
+        ],
+        vertex_attributes: "POSITION | COLOR | TEXTURE | NORMAL | TANGENT | BITANGENT",
+        color_format: R16g16b16a16Sfloat,
+        depth_format: D32Sfloat,
+    ),
+    materials: {
+        "color": (
+            vertex_shader: "color.spv",
+            vertex_entry: "vertex_main",
+            fragment_shader: "color.spv",
+            fragment_entry: "fragment_main",
+        ),
+    }
+)

@@ -5,3 +5,5 @@ pub use gobs_game as game;
 pub use gobs_render as render;
 pub use gobs_resource as resource;
 pub use gobs_scene as scene;
+
+pub use glam;

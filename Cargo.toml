@@ -14,6 +14,7 @@ members = [
     "gobs-scene",
     "gobs-vulkan",
 ]
+exclude = ["gobs-template"]
 resolver = "2"
 
 [workspace.package]
