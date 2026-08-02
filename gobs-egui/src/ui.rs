@@ -428,7 +428,6 @@ impl UIRenderer {
                         ))
                         .color(color)
                         .texture(Vec2::new(vertex.uv.x, vertex.uv.y))
-                        .normal(Vec3::new(0., 0., 1.))
                         .build();
 
                     geometry.vertex(vertex_data);
