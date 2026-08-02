@@ -34,6 +34,8 @@ impl<'a> RenderModelBuilder<'a> {
             MeshPath::Mesh(geometry) => {
                 self.bounding_box.extends_box(geometry.boundings());
             }
+            // TODO: not needed for UI
+            MeshPath::Bytes(_) => {}
             _ => unimplemented!(),
         }
 

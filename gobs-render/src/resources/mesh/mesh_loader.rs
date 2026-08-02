@@ -52,26 +52,9 @@ impl MeshLoader {
     }
 
     #[tracing::instrument(target = "profile", skip_all, level = "trace")]
-    fn load_geometry(
-        &mut self,
-        hal: &mut dyn RenderHAL,
-        geometry: &MeshGeometry,
-        vertex_attributes: VertexAttribute,
-    ) -> MeshData {
-        tracing::debug!(target: logger::INIT, "Loading geometry for {} with layout {:?}", &geometry.name, vertex_attributes);
-        let mut vertices = Vec::new();
-
-        VertexData::copy_data(
-            &geometry.vertices,
-            vertex_attributes,
-            &mut vertices,
-            AlignMode::Scalar,
-        );
-
-        let indices = &geometry.indices;
-
+    fn load_data(&mut self, hal: &mut dyn RenderHAL, vertices: &[u8], indices: &[u32]) -> MeshData {
         let vertices_size = vertices.len();
-        let indices_size = indices.len() * std::mem::size_of::<u32>();
+        let indices_size = std::mem::size_of_val(indices);
         let staging_size = indices_size + vertices_size;
 
         if !self.recording {
@@ -85,7 +68,7 @@ impl MeshLoader {
         let vertex_view = hal.create_buffer("vertex", vertices_size, BufferType::Vertex);
         let index_view = hal.create_buffer("index", indices_size, BufferType::Index);
 
-        hal.upload_buffer(staging.buffer, &vertices, 0);
+        hal.upload_buffer(staging.buffer, vertices, 0);
         hal.upload_buffer(
             staging.buffer,
             bytemuck::cast_slice(indices),
@@ -110,6 +93,28 @@ impl MeshLoader {
             index_len: indices.len(),
         }
     }
+
+    #[tracing::instrument(target = "profile", skip_all, level = "trace")]
+    fn load_geometry(
+        &mut self,
+        hal: &mut dyn RenderHAL,
+        geometry: &MeshGeometry,
+        vertex_attributes: VertexAttribute,
+    ) -> MeshData {
+        tracing::debug!(target: logger::INIT, "Loading geometry for {} with layout {:?}", &geometry.name, vertex_attributes);
+        let mut vertices = Vec::new();
+
+        VertexData::copy_data(
+            &geometry.vertices,
+            vertex_attributes,
+            &mut vertices,
+            AlignMode::Scalar,
+        );
+
+        let indices = &geometry.indices;
+
+        self.load_data(hal, &vertices, indices)
+    }
 }
 
 impl ResourceLoader<Mesh> for MeshLoader {
@@ -128,7 +133,7 @@ impl ResourceLoader<Mesh> for MeshLoader {
         let data = match &properties.path {
             MeshPath::Default => todo!(),
             MeshPath::File(_) => todo!(),
-            MeshPath::Bytes(_) => todo!(),
+            MeshPath::Bytes((vertices, indices)) => self.load_data(hal, vertices, indices),
             MeshPath::Mesh(geometry) => {
                 self.load_geometry(hal, geometry, properties.vertex_attributes)
             }

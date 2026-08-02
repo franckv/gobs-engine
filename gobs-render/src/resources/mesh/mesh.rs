@@ -20,7 +20,7 @@ pub enum MeshPath {
     Default,
     File(String),
     Mesh(Arc<MeshGeometry>),
-    Bytes(Vec<u8>),
+    Bytes((Vec<u8>, Vec<u32>)),
 }
 
 #[derive(Clone, Debug)]
@@ -46,6 +46,21 @@ impl MeshProperties {
         Self {
             name: geometry.name.clone(),
             path: MeshPath::Mesh(geometry),
+            vertex_attributes,
+            layer,
+        }
+    }
+
+    pub fn with_bytes(
+        name: &str,
+        bytes: Vec<u8>,
+        indices: Vec<u32>,
+        vertex_attributes: VertexAttribute,
+        layer: u32,
+    ) -> Self {
+        Self {
+            name: name.to_string(),
+            path: MeshPath::Bytes((bytes, indices)),
             vertex_attributes,
             layer,
         }

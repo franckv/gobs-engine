@@ -5,21 +5,28 @@ use egui::{
     TextureId, TouchPhase,
     epaint::{ImageDelta, Primitive},
 };
-use glam::{Vec2, Vec3};
 use parking_lot::RwLock;
 use tracing::Level;
 
 use gobs_core::{Color, ImageExtent2D, ImageFormat, Input, Key, MouseButton, Transform, logger};
 use gobs_render::{
     BoundingBox, GfxContext, Material, MaterialInstance, MaterialInstanceProperties,
-    MaterialsConfig, MeshGeometry, Model, RenderBatch, RenderFlags, RenderMeshBuilder,
-    RenderModelBuilder, Renderable, Texture, TextureProperties, TextureUpdate, VertexData,
+    MaterialsConfig, Model, RenderBatch, RenderFlags, RenderMeshBuilder, RenderModelBuilder,
+    Renderable, Texture, TextureProperties, TextureUpdate,
 };
 use gobs_resource::{
     ResourceManager, {ResourceError, ResourceHandle, ResourceLifetime},
 };
 
 const PIXEL_PER_POINT: f32 = 1.;
+
+#[repr(C)]
+#[derive(Clone, Copy, bytemuck::Pod, bytemuck::Zeroable)]
+struct UIVertex {
+    position: [f32; 3],
+    color: [f32; 4],
+    uv: [f32; 2],
+}
 
 pub struct UIRenderer {
     ectx: egui::Context,
@@ -406,12 +413,7 @@ impl UIRenderer {
                     continue;
                 }
 
-                let mut geometry = MeshGeometry::builder_with_capacity(
-                    &format!("egui#{}", layer),
-                    m.vertices.len(),
-                    m.indices.len(),
-                );
-                geometry.indices(&m.indices, false).generate_tangents(false);
+                let mut vertices = Vec::with_capacity(m.vertices.len());
 
                 for vertex in &m.vertices {
                     let color = Color::from_rgba8(
@@ -420,22 +422,23 @@ impl UIRenderer {
                         vertex.color.b(),
                         vertex.color.a(),
                     );
-                    let vertex_data = VertexData::builder()
-                        .position(Vec3::new(
+
+                    vertices.push(UIVertex {
+                        position: [
                             vertex.pos.x.min(self.width),
                             (self.height - vertex.pos.y).min(self.height),
                             0.,
-                        ))
-                        .color(color)
-                        .texture(Vec2::new(vertex.uv.x, vertex.uv.y))
-                        .build();
-
-                    geometry.vertex(vertex_data);
+                        ],
+                        color: color.into(),
+                        uv: [vertex.uv.x, vertex.uv.y],
+                    });
                 }
+
+                let vertices = bytemuck::cast_slice(&vertices).to_vec();
 
                 let material = self.font_texture.get(&m.texture_id).cloned().unwrap();
                 let mesh = RenderMeshBuilder::new(resource_manager)
-                    .with_geometry(geometry.build())
+                    .with_bytes(vertices, m.indices.clone())
                     .for_material(material)
                     .with_layer(layer)
                     .transient(true)
