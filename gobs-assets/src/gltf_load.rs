@@ -121,17 +121,17 @@ impl GLTFLoader {
                         match read_indices {
                             ReadIndices::U8(iter) => {
                                 for idx in iter {
-                                    mesh_data = mesh_data.index(idx as u32);
+                                    mesh_data.index(idx as u32);
                                 }
                             }
                             ReadIndices::U16(iter) => {
                                 for idx in iter {
-                                    mesh_data = mesh_data.index(idx as u32);
+                                    mesh_data.index(idx as u32);
                                 }
                             }
                             ReadIndices::U32(iter) => {
                                 for idx in iter {
-                                    mesh_data = mesh_data.index(idx);
+                                    mesh_data.index(idx);
                                 }
                             }
                         }
@@ -139,8 +139,7 @@ impl GLTFLoader {
 
                     if let Some(iter) = reader.read_positions() {
                         for pos in iter {
-                            mesh_data = mesh_data
-                                .vertex(VertexData::builder().position(pos.into()).build());
+                            mesh_data.vertex(VertexData::builder().position(pos.into()).build());
                         }
                     }
 

@@ -45,7 +45,7 @@ impl Shapes {
                 .texture(t[vi[i] - 1].into())
                 .build();
 
-            builder = builder.vertex(vertex_data)
+            builder.vertex(vertex_data);
         }
 
         builder.build()
@@ -88,7 +88,7 @@ impl Shapes {
                 .normal(n[ni[i] - 1].into())
                 .build();
 
-            builder = builder.vertex(vertex_data);
+            builder.vertex(vertex_data);
         }
 
         builder.build()
@@ -138,7 +138,7 @@ impl Shapes {
                 .normal(n[ni[i] - 1].into())
                 .build();
 
-            builder = builder.vertex(vertex_data);
+            builder.vertex(vertex_data);
         }
 
         builder.build()
@@ -223,7 +223,7 @@ impl Shapes {
                 .normal(n[ni[i] - 1].into())
                 .build();
 
-            builder = builder.vertex(vertex_data);
+            builder.vertex(vertex_data);
         }
 
         builder.build()
@@ -258,10 +258,10 @@ impl Shapes {
         for vertex in v {
             let vertex_data = VertexData::builder().position(vertex.into()).build();
 
-            builder = builder.vertex(vertex_data);
+            builder.vertex(vertex_data);
         }
 
-        builder = builder.generate_tangents(false).indices(&vi, false);
+        builder.generate_tangents(false).indices(&vi, false);
 
         builder.build()
     }

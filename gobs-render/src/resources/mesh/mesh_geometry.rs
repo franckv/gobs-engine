@@ -82,33 +82,37 @@ impl MeshBuilder {
         }
     }
 
-    pub fn vertex(mut self, data: VertexData) -> Self {
+    pub fn vertex(&mut self, data: VertexData) -> &mut Self {
         self.vertices.push(data);
 
         self
     }
 
-    pub fn vertices(mut self, data: &[VertexData]) -> Self {
+    pub fn vertices(&mut self, data: &[VertexData]) -> &mut Self {
         self.vertices.extend_from_slice(data);
 
         self
     }
 
-    pub fn vertices_with_transform(mut self, data: &[VertexData], transform: Transform) -> Self {
+    pub fn vertices_with_transform(
+        &mut self,
+        data: &[VertexData],
+        transform: Transform,
+    ) -> &mut Self {
         self.vertices
             .extend(data.iter().map(|v| v.transform(transform)));
 
         self
     }
 
-    pub fn index(mut self, idx: u32) -> Self {
+    pub fn index(&mut self, idx: u32) -> &mut Self {
         self.indices.push(idx);
 
         self
     }
 
     #[tracing::instrument(target = "profile", skip_all, level = "trace")]
-    pub fn indices(mut self, indices: &[u32], append: bool) -> Self {
+    pub fn indices(&mut self, indices: &[u32], append: bool) -> &mut Self {
         if append {
             let start = self.vertices.len();
 
@@ -121,20 +125,20 @@ impl MeshBuilder {
         self
     }
 
-    pub fn generate_tangents(mut self, generate_tangents: bool) -> Self {
+    pub fn generate_tangents(&mut self, generate_tangents: bool) -> &mut Self {
         self.generate_tangents = generate_tangents;
 
         self
     }
 
-    pub fn extend(mut self, mesh: Arc<MeshGeometry>) -> Self {
-        self = self.indices(&mesh.indices, true).vertices(&mesh.vertices);
+    pub fn extend(&mut self, mesh: Arc<MeshGeometry>) -> &mut Self {
+        self.indices(&mesh.indices, true).vertices(&mesh.vertices);
 
         self
     }
 
     #[tracing::instrument(target = "profile", skip_all, level = "trace")]
-    fn autoindex(mut self) -> Self {
+    fn autoindex(&mut self) -> &mut Self {
         if !self.indices.is_empty() {
             tracing::trace!(target: logger::RESOURCES, "Skip indices");
             return self;
@@ -145,8 +149,7 @@ impl MeshBuilder {
         tracing::trace!(target: logger::RESOURCES, "Indexing {} vertices", self.vertices.len());
 
         let mut idx = 0;
-        let vertices = self
-            .vertices
+        let vertices = std::mem::take(&mut self.vertices)
             .into_iter()
             .filter(|v| {
                 // TODO: avoid allocation
@@ -200,7 +203,7 @@ impl MeshBuilder {
     }
 
     #[tracing::instrument(target = "profile", skip_all, level = "trace")]
-    fn update_tangent(mut self) -> Self {
+    fn update_tangent(&mut self) -> &mut Self {
         tracing::trace!(target: logger::RESOURCES, "Calculating tangents for {} indices", self.indices.len());
 
         let mut triangles_included = vec![0; self.vertices.len()];
@@ -249,12 +252,12 @@ impl MeshBuilder {
 
     #[tracing::instrument(target = "profile", skip_all, level = "trace")]
     pub fn build(mut self) -> Arc<MeshGeometry> {
-        self = self.autoindex();
+        self.autoindex();
 
         assert_eq!(self.indices.len() % 3, 0);
 
         if self.generate_tangents {
-            self = self.update_tangent();
+            self.update_tangent();
         }
 
         tracing::debug!(target: logger::RESOURCES,

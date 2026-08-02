@@ -250,12 +250,17 @@ impl RenderBatch {
 
         tracing::trace!(target: logger::RENDER, "Bounding box mesh={:?}", &mesh.vertices);
 
-        let builder = match self.bounding_geometry.take() {
+        let mut builder = match self.bounding_geometry.take() {
             Some(builder) => builder,
-            None => MeshGeometry::builder("bounding").generate_tangents(false),
+            None => {
+                let mut builder = MeshGeometry::builder("bounding");
+                builder.generate_tangents(false);
+                builder
+            }
         };
 
-        self.bounding_geometry = Some(builder.extend(mesh));
+        builder.extend(mesh);
+        self.bounding_geometry = Some(builder);
     }
 
     #[tracing::instrument(target = "profile", skip_all, level = "trace")]

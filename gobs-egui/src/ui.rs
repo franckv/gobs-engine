@@ -410,9 +410,8 @@ impl UIRenderer {
                     &format!("egui#{}", layer),
                     m.vertices.len(),
                     m.indices.len(),
-                )
-                .indices(&m.indices, false)
-                .generate_tangents(false);
+                );
+                geometry.indices(&m.indices, false).generate_tangents(false);
 
                 for vertex in &m.vertices {
                     let color = Color::from_rgba8(
@@ -432,7 +431,7 @@ impl UIRenderer {
                         .normal(Vec3::new(0., 0., 1.))
                         .build();
 
-                    geometry = geometry.vertex(vertex_data);
+                    geometry.vertex(vertex_data);
                 }
 
                 let mesh = RenderMeshBuilder::new(resource_manager)
