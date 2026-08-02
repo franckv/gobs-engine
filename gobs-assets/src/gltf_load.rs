@@ -8,8 +8,11 @@ use gltf::{
 };
 
 use gobs_core::{Color, Config, ImageExtent2D, SamplerFilter, Transform, logger};
-use gobs_render::{BlendMode, MeshGeometry, Model, TextureProperties, TextureType, VertexData};
-use gobs_resource::{ResourceLifetime, ResourceManager};
+use gobs_render::{
+    BlendMode, MaterialInstance, Mesh, MeshGeometry, Model, RenderMeshBuilder, RenderModelBuilder,
+    TextureProperties, TextureType, VertexData,
+};
+use gobs_resource::{ResourceHandle, ResourceLifetime, ResourceManager};
 use gobs_scene::{
     components::{NodeId, NodeValue},
     graph::scenegraph::SceneGraph,
@@ -96,102 +99,106 @@ impl GLTFLoader {
                 m.primitives().len(),
             );
 
-            let mut model = Model::builder(name);
+            let meshes = m
+                .primitives()
+                .map(|p| {
+                    tracing::debug!(target: logger::RESOURCES,
+                        "Primitive #{}, material {:?}",
+                        p.index(),
+                        p.material().index()
+                    );
+                    let material = match p.material().index() {
+                        Some(mat_idx) => self.material_manager.instances[mat_idx],
+                        None => self.material_manager.default_material_instance,
+                    };
 
-            for p in m.primitives() {
-                tracing::debug!(target: logger::RESOURCES,
-                    "Primitive #{}, material {:?}",
-                    p.index(),
-                    p.material().index()
-                );
-                let material = match p.material().index() {
-                    Some(mat_idx) => self.material_manager.instances[mat_idx],
-                    None => self.material_manager.default_material_instance,
-                };
+                    let name = format!("{}.{}", name, p.index());
+                    let mut mesh_data = MeshGeometry::builder(&name);
 
-                let name = format!("{}.{}", name, p.index());
-                let mut mesh_data = MeshGeometry::builder(&name);
+                    let reader = p.reader(|buffer| Some(&buffers[buffer.index()]));
 
-                let reader = p.reader(|buffer| Some(&buffers[buffer.index()]));
-
-                if let Some(read_indices) = reader.read_indices() {
-                    match read_indices {
-                        ReadIndices::U8(iter) => {
-                            for idx in iter {
-                                mesh_data = mesh_data.index(idx as u32);
+                    if let Some(read_indices) = reader.read_indices() {
+                        match read_indices {
+                            ReadIndices::U8(iter) => {
+                                for idx in iter {
+                                    mesh_data = mesh_data.index(idx as u32);
+                                }
                             }
-                        }
-                        ReadIndices::U16(iter) => {
-                            for idx in iter {
-                                mesh_data = mesh_data.index(idx as u32);
+                            ReadIndices::U16(iter) => {
+                                for idx in iter {
+                                    mesh_data = mesh_data.index(idx as u32);
+                                }
                             }
-                        }
-                        ReadIndices::U32(iter) => {
-                            for idx in iter {
-                                mesh_data = mesh_data.index(idx);
-                            }
-                        }
-                    }
-                }
-
-                if let Some(iter) = reader.read_positions() {
-                    for pos in iter {
-                        mesh_data =
-                            mesh_data.vertex(VertexData::builder().position(pos.into()).build());
-                    }
-                }
-
-                if let Some(iter) = reader.read_normals() {
-                    for (i, normal) in iter.enumerate() {
-                        mesh_data.vertices[i].set_normal(normal.into());
-                    }
-                }
-
-                if let Some(read_tex_coords) = reader.read_tex_coords(0) {
-                    match read_tex_coords {
-                        gltf::mesh::util::ReadTexCoords::U8(_) => todo!(),
-                        gltf::mesh::util::ReadTexCoords::U16(_) => todo!(),
-                        gltf::mesh::util::ReadTexCoords::F32(iter) => {
-                            for (i, texture) in iter.enumerate() {
-                                mesh_data.vertices[i].set_texture(texture.into());
+                            ReadIndices::U32(iter) => {
+                                for idx in iter {
+                                    mesh_data = mesh_data.index(idx);
+                                }
                             }
                         }
                     }
-                }
 
-                if let Some(read_colors) = reader.read_colors(0) {
-                    match read_colors {
-                        ReadColors::RgbaU8(iter) => {
-                            for (i, color) in iter.enumerate() {
-                                mesh_data.vertices[i].set_color(color.into());
-                            }
+                    if let Some(iter) = reader.read_positions() {
+                        for pos in iter {
+                            mesh_data = mesh_data
+                                .vertex(VertexData::builder().position(pos.into()).build());
                         }
-                        ReadColors::RgbaF32(iter) => {
-                            for (i, color) in iter.enumerate() {
-                                mesh_data.vertices[i].set_color(color.into());
-                            }
-                        }
-                        ReadColors::RgbaU16(iter) => {
-                            for (i, color) in iter.enumerate() {
-                                mesh_data.vertices[i].set_color(color.into());
-                            }
-                        }
-                        _ => todo!(),
                     }
-                } else {
-                    for i in 0..mesh_data.vertices.len() {
-                        mesh_data.vertices[i].set_color(Color::WHITE);
-                    }
-                }
 
-                model = model.mesh(
-                    mesh_data.build(),
-                    Some(material),
-                    resource_manager,
-                    ResourceLifetime::Static,
-                );
+                    if let Some(iter) = reader.read_normals() {
+                        for (i, normal) in iter.enumerate() {
+                            mesh_data.vertices[i].set_normal(normal.into());
+                        }
+                    }
+
+                    if let Some(read_tex_coords) = reader.read_tex_coords(0) {
+                        match read_tex_coords {
+                            gltf::mesh::util::ReadTexCoords::U8(_) => todo!(),
+                            gltf::mesh::util::ReadTexCoords::U16(_) => todo!(),
+                            gltf::mesh::util::ReadTexCoords::F32(iter) => {
+                                for (i, texture) in iter.enumerate() {
+                                    mesh_data.vertices[i].set_texture(texture.into());
+                                }
+                            }
+                        }
+                    }
+
+                    if let Some(read_colors) = reader.read_colors(0) {
+                        match read_colors {
+                            ReadColors::RgbaU8(iter) => {
+                                for (i, color) in iter.enumerate() {
+                                    mesh_data.vertices[i].set_color(color.into());
+                                }
+                            }
+                            ReadColors::RgbaF32(iter) => {
+                                for (i, color) in iter.enumerate() {
+                                    mesh_data.vertices[i].set_color(color.into());
+                                }
+                            }
+                            ReadColors::RgbaU16(iter) => {
+                                for (i, color) in iter.enumerate() {
+                                    mesh_data.vertices[i].set_color(color.into());
+                                }
+                            }
+                            _ => todo!(),
+                        }
+                    } else {
+                        for i in 0..mesh_data.vertices.len() {
+                            mesh_data.vertices[i].set_color(Color::WHITE);
+                        }
+                    }
+
+                    let mesh = RenderMeshBuilder::new(resource_manager)
+                        .with_geometry(mesh_data.build())
+                        .build();
+
+                    (mesh, material)
+                })
+                .collect::<Vec<(ResourceHandle<Mesh>, ResourceHandle<MaterialInstance>)>>();
+
+            let mut model = RenderModelBuilder::new(resource_manager, name);
+            for (mesh, material) in meshes {
+                model = model.with_mesh(mesh).with_material(material);
             }
-
             self.models.push(model.build());
         }
 

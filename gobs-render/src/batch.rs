@@ -5,13 +5,11 @@ use ahash::HashMap;
 use gobs_core::{ImageExtent2D, Transform, logger};
 use gobs_render_graph::{GfxContext, RenderFlags, RenderObject, SceneData};
 use gobs_render_hal::{BindResource, Handle, RenderHAL};
-use gobs_resource::{
-    ResourceError, ResourceHandle, ResourceLifetime, ResourceManager, camera::Camera, light::Light,
-};
+use gobs_resource::{ResourceError, ResourceHandle, ResourceManager, camera::Camera, light::Light};
 
 use crate::{
     BoundingBox, Material, MaterialInstance, Mesh, MeshBuilder, MeshGeometry, Pipeline,
-    PipelineProperties, Shapes, Texture, model::Model,
+    PipelineProperties, RenderMeshBuilder, RenderModelBuilder, Shapes, Texture, model::Model,
 };
 
 #[derive(Clone)]
@@ -324,8 +322,13 @@ impl RenderBatch {
         if let Some(bb) = bb {
             let bb = bb.build();
 
-            let model = Model::builder("box")
-                .mesh(bb, None, resource_manager, ResourceLifetime::Transient)
+            let mesh = RenderMeshBuilder::new(resource_manager)
+                .with_geometry(bb)
+                .transient(true)
+                .build();
+
+            let model = RenderModelBuilder::new(resource_manager, "box")
+                .with_mesh(mesh)
                 .build();
 
             self.add_model(
@@ -372,9 +375,9 @@ mod tests {
 
     use gobs_core::{Color, Transform, logger, utils::timer::Timer};
     use gobs_render_graph::{GfxContext, RenderFlags};
-    use gobs_resource::{ResourceLifetime, ResourceManager};
+    use gobs_resource::ResourceManager;
 
-    use crate::{Mesh, MeshLoader, Model, RenderBatch, Shapes};
+    use crate::{Mesh, MeshLoader, RenderBatch, RenderMeshBuilder, RenderModelBuilder, Shapes};
 
     fn setup() {
         let sub = FmtSubscriber::builder()
@@ -397,13 +400,14 @@ mod tests {
         let mesh_loader = MeshLoader::new(&mut ctx);
         resource_manager.register_resource::<Mesh>(mesh_loader);
 
-        let triangle = Model::builder("triangle")
-            .mesh(
-                Shapes::triangle(&[Color::RED, Color::GREEN, Color::BLUE], 1.),
-                None,
-                &mut resource_manager,
-                ResourceLifetime::Static,
-            )
+        let mesh = RenderMeshBuilder::new(&mut resource_manager)
+            .with_geometry(Shapes::triangle(
+                &[Color::RED, Color::GREEN, Color::BLUE],
+                1.,
+            ))
+            .build();
+        let triangle = RenderModelBuilder::new(&mut resource_manager, "triangle")
+            .with_mesh(mesh)
             .build();
 
         let mut batch = RenderBatch::new();

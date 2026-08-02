@@ -12,8 +12,8 @@ use tracing::Level;
 use gobs_core::{Color, ImageExtent2D, ImageFormat, Input, Key, MouseButton, Transform, logger};
 use gobs_render::{
     BoundingBox, GfxContext, Material, MaterialInstance, MaterialInstanceProperties,
-    MaterialsConfig, MeshGeometry, Model, RenderBatch, RenderFlags, Renderable, Texture,
-    TextureProperties, TextureUpdate, VertexData,
+    MaterialsConfig, MeshGeometry, Model, RenderBatch, RenderFlags, RenderMeshBuilder,
+    RenderModelBuilder, Renderable, Texture, TextureProperties, TextureUpdate, VertexData,
 };
 use gobs_resource::{
     ResourceManager, {ResourceError, ResourceHandle, ResourceLifetime},
@@ -384,9 +384,10 @@ impl UIRenderer {
             return None;
         }
 
-        let mut model = Model::builder("ui");
-
         let mut layer = 1;
+
+        let mut meshes = Vec::new();
+
         for primitive in &primitives {
             let span =
                 tracing::span!(target: logger::PROFILE, Level::TRACE, "Primitive", "{}", layer)
@@ -405,7 +406,7 @@ impl UIRenderer {
                     continue;
                 }
 
-                let mut mesh = MeshGeometry::builder(&format!("egui#{}", layer))
+                let mut geometry = MeshGeometry::builder(&format!("egui#{}", layer))
                     .indices(&m.indices, false)
                     .generate_tangents(false);
 
@@ -427,15 +428,16 @@ impl UIRenderer {
                         .normal(Vec3::new(0., 0., 1.))
                         .build();
 
-                    mesh = mesh.vertex(vertex_data);
+                    geometry = geometry.vertex(vertex_data);
                 }
 
-                model = model.layer(layer).mesh(
-                    mesh.build(),
-                    Some(self.font_texture.get(&m.texture_id).cloned().unwrap()),
-                    resource_manager,
-                    ResourceLifetime::Transient,
-                );
+                let mesh = RenderMeshBuilder::new(resource_manager)
+                    .with_geometry(geometry.build())
+                    .with_layer(layer)
+                    .transient(true)
+                    .build();
+
+                meshes.push((mesh, self.font_texture.get(&m.texture_id).cloned().unwrap()));
 
                 layer += 1;
             } else {
@@ -445,6 +447,11 @@ impl UIRenderer {
             span.exit();
         }
 
+        let mut model = RenderModelBuilder::new(resource_manager, "ui");
+
+        for (mesh, material) in meshes {
+            model = model.with_mesh(mesh).with_material(material);
+        }
         Some(model.build())
     }
 

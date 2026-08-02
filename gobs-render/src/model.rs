@@ -1,20 +1,16 @@
 use std::fmt::Debug;
 use std::sync::Arc;
 
-use gobs_render_hal::VertexAttribute;
 use serde::Serialize;
 use uuid::Uuid;
 
 use gobs_core::{Transform, logger};
 use gobs_render_graph::{GfxContext, RenderFlags};
 use gobs_resource::{
-    ResourceManager, {ResourceError, ResourceHandle, ResourceLifetime},
+    ResourceManager, {ResourceError, ResourceHandle},
 };
 
-use crate::{
-    Bounded, BoundingBox, Material, MaterialInstance, Mesh, MeshGeometry, MeshProperties,
-    Renderable, batch::RenderBatch,
-};
+use crate::{Bounded, BoundingBox, MaterialInstance, Mesh, Renderable, batch::RenderBatch};
 
 pub type ModelId = Uuid;
 
@@ -33,10 +29,6 @@ pub struct Model {
 impl Model {
     pub fn name(&self) -> &str {
         &self.name
-    }
-
-    pub fn builder(name: &str) -> ModelBuilder {
-        ModelBuilder::new(name)
     }
 
     pub fn dump(&self) -> String {
@@ -86,97 +78,5 @@ impl Bounded for Model {
 impl Drop for Model {
     fn drop(&mut self) {
         tracing::debug!(target: logger::MEMORY, "Drop Model: {}", &self.name);
-    }
-}
-
-pub struct ModelBuilder {
-    pub name: String,
-    pub id: ModelId,
-    pub layer: u32,
-    pub meshes: Vec<(
-        ResourceHandle<Mesh>,
-        Option<ResourceHandle<MaterialInstance>>,
-    )>,
-    pub bounding_box: BoundingBox,
-}
-
-impl ModelBuilder {
-    pub fn new(name: &str) -> Self {
-        ModelBuilder {
-            name: name.to_string(),
-            id: ModelId::new_v4(),
-            layer: 0,
-            meshes: Vec::new(),
-            bounding_box: BoundingBox::default(),
-        }
-    }
-
-    pub fn id(mut self, model_id: ModelId) -> Self {
-        self.id = model_id;
-
-        self
-    }
-
-    pub fn layer(mut self, layer: u32) -> Self {
-        self.layer = layer;
-
-        self
-    }
-
-    #[tracing::instrument(target = "profile", skip_all, level = "trace")]
-    pub fn mesh(
-        mut self,
-        mesh: Arc<MeshGeometry>,
-        material_instance: Option<ResourceHandle<MaterialInstance>>,
-        resource_manager: &mut ResourceManager,
-        lifetime: ResourceLifetime,
-    ) -> Self {
-        self.bounding_box.extends_box(mesh.boundings());
-
-        let vertex_attributes = match material_instance {
-            Some(material_instance) => {
-                let material_instance =
-                    resource_manager.get::<MaterialInstance>(&material_instance);
-                let material =
-                    resource_manager.get::<Material>(&material_instance.properties.material);
-
-                material.properties.pipeline_properties.vertex_attributes
-            }
-            None => {
-                // TODO: hardcoded
-                VertexAttribute::POSITION
-                    | VertexAttribute::COLOR
-                    | VertexAttribute::TEXTURE
-                    | VertexAttribute::NORMAL
-                    | VertexAttribute::TANGENT
-                    | VertexAttribute::BITANGENT
-            }
-        };
-
-        let mesh_handle = resource_manager.add(
-            MeshProperties::with_geometry(mesh, vertex_attributes, self.layer),
-            lifetime,
-            false,
-        );
-
-        if let Some(material_instance) = material_instance {
-            self.meshes.push((mesh_handle, Some(material_instance)));
-        } else {
-            self.meshes.push((mesh_handle, None))
-        }
-
-        self
-    }
-
-    #[tracing::instrument(target = "profile", skip_all, level = "trace")]
-    pub fn build(self) -> Arc<Model> {
-        tracing::debug!(target: logger::RESOURCES, "Load model {} ({} meshes)", self.name, self.meshes.len());
-
-        Arc::new(Model {
-            name: Arc::new(self.name),
-            id: self.id,
-            meshes: self.meshes,
-            bounding_box: self.bounding_box,
-        })
     }
 }
