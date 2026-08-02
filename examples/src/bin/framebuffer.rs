@@ -90,7 +90,7 @@ impl<Context: GobsContext> App<Context> {
             .build();
 
         let mesh = ctx
-            .new_mesh()
+            .new_mesh("rect")
             .with_geometry(Shapes::quad(&[Color::WHITE]))
             .for_material(material)
             .build();

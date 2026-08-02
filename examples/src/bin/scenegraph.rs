@@ -135,7 +135,7 @@ impl<Context: GobsContext> App<Context> {
             .build();
 
         let mesh = ctx
-            .new_mesh()
+            .new_mesh("cube")
             .with_geometry(Shapes::cubemap(1, 1, &[1], 1.))
             .for_material(material)
             .build();

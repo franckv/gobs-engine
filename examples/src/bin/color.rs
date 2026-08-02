@@ -86,7 +86,7 @@ impl<Context: GobsContext> App<Context> {
             .build();
 
         let mesh = ctx
-            .new_mesh()
+            .new_mesh("triangle")
             .with_geometry(Shapes::triangle(&[Color::WHITE], 1.))
             .for_material(material)
             .build();

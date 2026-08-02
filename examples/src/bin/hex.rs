@@ -79,7 +79,7 @@ impl<Context: GobsContext> App<Context> {
         let material = ctx.new_material("color").from_base("color").build();
 
         let mesh = ctx
-            .new_mesh()
+            .new_mesh("hex")
             .with_geometry(Shapes::hexagon(&[
                 Color::WHITE,
                 Color::RED,

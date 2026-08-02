@@ -8,7 +8,7 @@ use egui::{
 use parking_lot::RwLock;
 use tracing::Level;
 
-use gobs_core::{Color, ImageExtent2D, ImageFormat, Input, Key, MouseButton, Transform, logger};
+use gobs_core::{ImageExtent2D, ImageFormat, Input, Key, MouseButton, Transform, logger};
 use gobs_render::{
     BoundingBox, GfxContext, Material, MaterialInstance, MaterialInstanceProperties,
     MaterialsConfig, Model, RenderBatch, RenderFlags, RenderMeshBuilder, RenderModelBuilder,
@@ -416,20 +416,18 @@ impl UIRenderer {
                 let mut vertices = Vec::with_capacity(m.vertices.len());
 
                 for vertex in &m.vertices {
-                    let color = Color::from_rgba8(
-                        vertex.color.r(),
-                        vertex.color.g(),
-                        vertex.color.b(),
-                        vertex.color.a(),
-                    );
-
                     vertices.push(UIVertex {
                         position: [
                             vertex.pos.x.min(self.width),
                             (self.height - vertex.pos.y).min(self.height),
                             0.,
                         ],
-                        color: color.into(),
+                        color: [
+                            vertex.color.r() as f32 / 255.,
+                            vertex.color.g() as f32 / 255.,
+                            vertex.color.b() as f32 / 255.,
+                            vertex.color.a() as f32 / 255.,
+                        ],
                         uv: [vertex.uv.x, vertex.uv.y],
                     });
                 }
@@ -437,7 +435,7 @@ impl UIRenderer {
                 let vertices = bytemuck::cast_slice(&vertices).to_vec();
 
                 let material = self.font_texture.get(&m.texture_id).cloned().unwrap();
-                let mesh = RenderMeshBuilder::new(resource_manager)
+                let mesh = RenderMeshBuilder::new(resource_manager, "ui")
                     .with_bytes(vertices, m.indices.clone())
                     .for_material(material)
                     .with_layer(layer)

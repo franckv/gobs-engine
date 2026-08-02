@@ -122,7 +122,7 @@ impl<Context: GobsContext> App<Context> {
             .build();
 
         let mesh = ctx
-            .new_mesh()
+            .new_mesh("cube")
             .with_geometry(Shapes::cubemap(
                 examples::ATLAS_COLS,
                 examples::ATLAS_ROWS,

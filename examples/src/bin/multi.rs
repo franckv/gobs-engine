@@ -107,7 +107,7 @@ impl<Context: GobsContext> App<Context> {
             .build();
 
         let triangle_mesh = ctx
-            .new_mesh()
+            .new_mesh("triangle")
             .with_geometry(Shapes::triangle(
                 &[Color::RED, Color::GREEN, Color::BLUE],
                 1.5,
@@ -116,7 +116,7 @@ impl<Context: GobsContext> App<Context> {
             .build();
 
         let cube_mesh = ctx
-            .new_mesh()
+            .new_mesh("cube")
             .with_geometry(Shapes::cubemap(1, 1, &[1], 1.))
             .for_material(diffuse_material)
             .build();

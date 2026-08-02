@@ -131,7 +131,7 @@ impl<Context: GobsContext> App<Context> {
             .build();
 
         let wall_mesh = ctx
-            .new_mesh()
+            .new_mesh("wall")
             .with_geometry(Shapes::cubemap(
                 examples::ATLAS_COLS,
                 examples::ATLAS_ROWS,
@@ -148,7 +148,7 @@ impl<Context: GobsContext> App<Context> {
             .build();
 
         let floor_mesh = ctx
-            .new_mesh()
+            .new_mesh("floor")
             .with_geometry(Shapes::cubemap(
                 examples::ATLAS_COLS,
                 examples::ATLAS_ROWS,
@@ -159,7 +159,7 @@ impl<Context: GobsContext> App<Context> {
             .build();
 
         let floor = ctx
-            .new_model("wall")
+            .new_model("floor")
             .with_mesh(floor_mesh)
             .with_material(material)
             .build();

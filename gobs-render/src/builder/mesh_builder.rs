@@ -6,6 +6,7 @@ use gobs_resource::{ResourceHandle, ResourceLifetime, ResourceManager};
 use crate::{Material, MaterialInstance, Mesh, MeshGeometry, MeshProperties};
 
 pub struct RenderMeshBuilder<'a> {
+    name: &'a str,
     resource_manager: &'a mut ResourceManager,
     geometry: Option<Arc<MeshGeometry>>,
     bytes: Option<(Vec<u8>, Vec<u32>)>,
@@ -15,8 +16,9 @@ pub struct RenderMeshBuilder<'a> {
 }
 
 impl<'a> RenderMeshBuilder<'a> {
-    pub fn new(resource_manager: &'a mut ResourceManager) -> Self {
+    pub fn new(resource_manager: &'a mut ResourceManager, name: &'a str) -> Self {
         Self {
+            name,
             resource_manager,
             geometry: None,
             bytes: None,
@@ -68,15 +70,18 @@ impl<'a> RenderMeshBuilder<'a> {
     pub fn build(self) -> ResourceHandle<Mesh> {
         let properties = match (self.geometry, self.bytes) {
             (None, Some((vertices, indices))) => MeshProperties::with_bytes(
-                "mesh",
+                self.name,
                 vertices,
                 indices,
                 self.vertex_attributes,
                 self.layer,
             ),
-            (Some(geometry), None) => {
-                MeshProperties::with_geometry(geometry, self.vertex_attributes, self.layer)
-            }
+            (Some(geometry), None) => MeshProperties::with_geometry(
+                self.name,
+                geometry,
+                self.vertex_attributes,
+                self.layer,
+            ),
             _ => panic!("Invalid mesh data"),
         };
 

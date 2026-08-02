@@ -327,7 +327,7 @@ impl RenderBatch {
         if let Some(bb) = bb {
             let bb = bb.build();
 
-            let mesh = RenderMeshBuilder::new(resource_manager)
+            let mesh = RenderMeshBuilder::new(resource_manager, "box")
                 .with_geometry(bb)
                 .transient(true)
                 .build();
@@ -405,7 +405,7 @@ mod tests {
         let mesh_loader = MeshLoader::new(&mut ctx);
         resource_manager.register_resource::<Mesh>(mesh_loader);
 
-        let mesh = RenderMeshBuilder::new(&mut resource_manager)
+        let mesh = RenderMeshBuilder::new(&mut resource_manager, "triangle")
             .with_geometry(Shapes::triangle(
                 &[Color::RED, Color::GREEN, Color::BLUE],
                 1.,

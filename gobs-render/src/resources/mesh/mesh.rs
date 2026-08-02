@@ -39,12 +39,13 @@ impl ResourceProperties for MeshProperties {
 
 impl MeshProperties {
     pub fn with_geometry(
+        name: &str,
         geometry: Arc<MeshGeometry>,
         vertex_attributes: VertexAttribute,
         layer: u32,
     ) -> Self {
         Self {
-            name: geometry.name.clone(),
+            name: name.to_string(),
             path: MeshPath::Mesh(geometry),
             vertex_attributes,
             layer,

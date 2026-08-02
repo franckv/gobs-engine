@@ -46,7 +46,7 @@ pub trait GobsContext {
 
     fn new_model<'a>(&'a mut self, name: &'a str) -> RenderModelBuilder<'a>;
     fn new_material<'a>(&'a mut self, name: &'a str) -> RenderMaterialBuilder<'a>;
-    fn new_mesh(&mut self) -> RenderMeshBuilder<'_>;
+    fn new_mesh<'a>(&'a mut self, name: &'a str) -> RenderMeshBuilder<'a>;
     fn new_texture<'a>(&'a mut self, name: &'a str) -> RenderTextureBuilder<'a>;
 
     async fn load_material(&mut self, filename: &str);
@@ -189,8 +189,8 @@ impl GobsContext for GameContext {
         RenderMaterialBuilder::new(&mut self.resource_manager, name)
     }
 
-    fn new_mesh(&mut self) -> RenderMeshBuilder<'_> {
-        RenderMeshBuilder::new(&mut self.resource_manager)
+    fn new_mesh<'a>(&'a mut self, name: &'a str) -> RenderMeshBuilder<'a> {
+        RenderMeshBuilder::new(&mut self.resource_manager, name)
     }
 
     fn new_texture<'a>(&'a mut self, name: &'a str) -> RenderTextureBuilder<'a> {
