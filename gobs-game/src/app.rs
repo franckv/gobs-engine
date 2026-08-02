@@ -14,13 +14,12 @@ use gobs_render::{RenderConfig, RenderError};
 
 use crate::{AppError, context::GobsContext};
 
-pub struct Application<R, C>
+pub struct Application<R>
 where
-    R: GobsGame<C> + 'static,
-    C: GobsContext,
+    R: GobsGame + 'static,
 {
     pub runnable: Option<R>,
-    pub context: Option<C>,
+    pub context: Option<R::Context>,
     pub timer: Timer,
     close_requested: bool,
     is_minimized: bool,
@@ -30,10 +29,9 @@ where
     height: u32,
 }
 
-impl<R, C> ApplicationHandler for Application<R, C>
+impl<R> ApplicationHandler for Application<R>
 where
-    R: GobsGame<C> + 'static,
-    C: GobsContext,
+    R: GobsGame + 'static,
 {
     #[tracing::instrument(target = "profile", skip_all, level = "trace")]
     fn resumed(&mut self, event_loop: &winit::event_loop::ActiveEventLoop) {
@@ -51,7 +49,7 @@ where
 
         tracing::info!("Running with validation layers: {}", validation_enabled);
 
-        let mut context = C::new(
+        let mut context = R::Context::new(
             &self.title,
             self.config.clone(),
             Some(window),
@@ -212,12 +210,11 @@ where
     }
 }
 
-impl<R, C> Application<R, C>
+impl<R> Application<R>
 where
-    R: GobsGame<C> + 'static,
-    C: GobsContext,
+    R: GobsGame + 'static,
 {
-    pub fn new(title: &str, width: u32, height: u32) -> Application<R, C> {
+    pub fn new(title: &str, width: u32, height: u32) -> Application<R> {
         let mut config = Config::default();
         config.register::<RenderConfig>();
         config.register::<GltfConfig>();
@@ -252,7 +249,7 @@ where
         event_loop.run_app(self).unwrap();
     }
 
-    fn process_input(context: &mut C, runnable: &mut R, input: Input) {
+    fn process_input(context: &mut R::Context, runnable: &mut R, input: Input) {
         context.input(input);
         runnable.input(context, input);
     }
@@ -268,15 +265,17 @@ where
 }
 
 #[allow(async_fn_in_trait)]
-pub trait GobsGame<C>: Sized {
-    async fn create(ctx: &mut C) -> Result<Self, AppError>;
-    async fn start(&mut self, ctx: &mut C);
-    fn update(&mut self, ctx: &mut C, delta: f32);
-    fn should_update(&mut self, _ctx: &mut C) -> bool {
+pub trait GobsGame: Sized {
+    type Context: GobsContext;
+
+    async fn create(ctx: &mut Self::Context) -> Result<Self, AppError>;
+    async fn start(&mut self, ctx: &mut Self::Context);
+    fn update(&mut self, ctx: &mut Self::Context, delta: f32);
+    fn should_update(&mut self, _ctx: &mut Self::Context) -> bool {
         true
     }
-    fn render(&mut self, ctx: &mut C) -> Result<(), RenderError>;
-    fn input(&mut self, ctx: &mut C, input: Input);
-    fn resize(&mut self, ctx: &mut C, width: u32, height: u32);
-    fn close(&mut self, ctx: &mut C);
+    fn render(&mut self, ctx: &mut Self::Context) -> Result<(), RenderError>;
+    fn input(&mut self, ctx: &mut Self::Context, input: Input);
+    fn resize(&mut self, ctx: &mut Self::Context, width: u32, height: u32);
+    fn close(&mut self, ctx: &mut Self::Context);
 }

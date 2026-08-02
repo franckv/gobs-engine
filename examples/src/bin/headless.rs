@@ -1,59 +1,67 @@
+use std::marker::PhantomData;
+
 use glam::Quat;
 use pollster::FutureExt;
 
 use gobs::{
     core::{Color, Config, Input, Transform, logger},
-    game::{AppError, GameContext, GobsGame, context::GobsContext as _},
+    game::{AppError, GameContext, GobsGame, context::GobsContext},
     render::{RenderConfig, RenderError, RenderType, Shapes},
     scene::{components::NodeValue, scene::Scene},
 };
 
-struct App {
+struct App<Context: GobsContext> {
     scene: Scene,
+    context: PhantomData<Context>,
 }
 
-impl GobsGame<GameContext> for App {
-    async fn create(ctx: &mut GameContext) -> Result<Self, AppError> {
+impl<Context: GobsContext> GobsGame for App<Context> {
+    type Context = Context;
+
+    async fn create(ctx: &mut Context) -> Result<Self, AppError> {
         let scene = ctx
             .new_scene()
             .with_ortho_camera([0., 0., 1.])
             .with_light(Color::WHITE, [0., 0., 10.])
             .build();
 
-        Ok(App { scene })
+        Ok(App {
+            scene,
+            context: PhantomData,
+        })
     }
 
-    fn update(&mut self, ctx: &mut GameContext, delta: f32) {
-        self.scene.update(&ctx.renderer.gfx, delta);
+    fn update(&mut self, _ctx: &mut Context, delta: f32) {
+        self.scene.update(delta);
     }
 
-    fn render(&mut self, ctx: &mut GameContext) -> Result<(), RenderError> {
+    fn render(&mut self, ctx: &mut Context) -> Result<(), RenderError> {
         ctx.render()?
             .with_renderable(&self.scene, RenderType::Scene)?
             .build()
     }
 
-    fn input(&mut self, _ctx: &mut GameContext, _input: Input) {}
+    fn input(&mut self, _ctx: &mut Context, _input: Input) {}
 
-    fn resize(&mut self, _ctx: &mut GameContext, width: u32, height: u32) {
+    fn resize(&mut self, _ctx: &mut Context, width: u32, height: u32) {
         self.scene.resize(width, height);
     }
 
-    async fn start(&mut self, ctx: &mut GameContext) {
+    async fn start(&mut self, ctx: &mut Context) {
         self.init(ctx).await;
     }
 
-    fn should_update(&mut self, _ctx: &mut GameContext) -> bool {
+    fn should_update(&mut self, _ctx: &mut Context) -> bool {
         true
     }
 
-    fn close(&mut self, _ctx: &mut GameContext) {
+    fn close(&mut self, _ctx: &mut Context) {
         tracing::info!(target: logger::APP, "Closed");
     }
 }
 
-impl App {
-    async fn init(&mut self, ctx: &mut GameContext) {
+impl<Context: GobsContext> App<Context> {
+    async fn init(&mut self, ctx: &mut Context) {
         ctx.load_material("materials.ron").await;
 
         let material = ctx.new_material("color").from_base("color").build();

@@ -1,6 +1,8 @@
+use std::marker::PhantomData;
+
 use gobs::{
     core::{Color, ImageFormat, Input, logger},
-    game::{AppError, Application, GameContext, GobsGame},
+    game::{AppError, Application, GameContext, GobsGame, context::GobsContext},
     render::{
         AlignMode, AttributeData, BufferType, CommandBuffer, CommandQueueType, CullMode,
         DynamicStateElem, FrontFace, Handle, ImageLayout, ObjectDataLayout, ObjectDataProp, Rect2D,
@@ -9,18 +11,21 @@ use gobs::{
     },
 };
 
-struct App {
+struct App<Context: GobsContext> {
     frame_number: usize,
     cmd: Box<dyn CommandBuffer>,
     pipeline: Handle,
     vertex_buffer: Handle,
     index_buffer: Handle,
+    context: PhantomData<Context>,
 }
 
 /// Minimalist exemple showcasing the Hardware abstraction layer (HAL)
-impl GobsGame<GameContext> for App {
-    async fn create(ctx: &mut GameContext) -> Result<Self, AppError> {
-        let hal = ctx.renderer.gfx.hal_mut();
+impl<Context: GobsContext> GobsGame for App<Context> {
+    type Context = Context;
+
+    async fn create(ctx: &mut Context) -> Result<Self, AppError> {
+        let hal = ctx.hal_mut();
         let mut cmd = hal.create_command_buffer("cmd", CommandQueueType::Graphics);
 
         let (vertex_buffer, index_buffer) = Self::load_mesh(hal, cmd.as_mut());
@@ -33,13 +38,14 @@ impl GobsGame<GameContext> for App {
             pipeline,
             vertex_buffer,
             index_buffer,
+            context: PhantomData,
         })
     }
 
-    fn update(&mut self, _ctx: &mut GameContext, _delta: f32) {}
+    fn update(&mut self, _ctx: &mut Context, _delta: f32) {}
 
-    fn render(&mut self, ctx: &mut GameContext) -> Result<(), RenderError> {
-        let hal = ctx.renderer.gfx.hal_mut();
+    fn render(&mut self, ctx: &mut Context) -> Result<(), RenderError> {
+        let hal = ctx.hal_mut();
 
         self.frame_number += 1;
 
@@ -107,22 +113,22 @@ impl GobsGame<GameContext> for App {
         Ok(())
     }
 
-    fn input(&mut self, _ctx: &mut GameContext, _input: Input) {}
+    fn input(&mut self, _ctx: &mut Context, _input: Input) {}
 
-    fn resize(&mut self, _ctx: &mut GameContext, _width: u32, _height: u32) {}
+    fn resize(&mut self, _ctx: &mut Context, _width: u32, _height: u32) {}
 
-    async fn start(&mut self, _ctx: &mut GameContext) {}
+    async fn start(&mut self, _ctx: &mut Context) {}
 
-    fn should_update(&mut self, _ctx: &mut GameContext) -> bool {
+    fn should_update(&mut self, _ctx: &mut Context) -> bool {
         true
     }
 
-    fn close(&mut self, _ctx: &mut GameContext) {
+    fn close(&mut self, _ctx: &mut Context) {
         tracing::info!(target: logger::APP, "Closed");
     }
 }
 
-impl App {
+impl<Context: GobsContext> App<Context> {
     fn load_mesh(hal: &mut dyn RenderHAL, cmd: &mut dyn CommandBuffer) -> (Handle, Handle) {
         let mesh = Shapes::triangle(&[Color::RED, Color::GREEN, Color::BLUE], 0.5);
         let vertex_attributes = VertexAttribute::POSITION | VertexAttribute::COLOR;
@@ -189,7 +195,7 @@ fn main() {
 
     tracing::info!(target: logger::APP, "Engine start");
 
-    Application::<App, GameContext>::new("Triangle", examples::WIDTH, examples::HEIGHT)
+    Application::<App<GameContext>>::new("Triangle", examples::WIDTH, examples::HEIGHT)
         .with_config(|config| {
             config.set_string(RenderConfig::GraphName, "none");
             config.set_int(RenderConfig::FramesInFlight, 1);

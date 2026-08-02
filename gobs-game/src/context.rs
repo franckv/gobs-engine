@@ -4,12 +4,12 @@ use parking_lot::RwLock;
 use winit::window::Window;
 
 use gobs_assets::gltf_load;
-use gobs_core::{Config, Input, logger};
+use gobs_core::{Config, ImageExtent2D, Input, logger};
 use gobs_egui::UIRenderer;
 use gobs_render::{
     GfxContext, Material, MaterialInstance, MaterialInstanceLoader, MaterialLoader,
     MaterialsConfig, Mesh, MeshLoader, Pipeline, PipelineLoader, RenderBuilder, RenderConfig,
-    RenderError, RenderMaterialBuilder, RenderMeshBuilder, RenderModelBuilder,
+    RenderError, RenderHAL, RenderMaterialBuilder, RenderMeshBuilder, RenderModelBuilder,
     RenderTextureBuilder, Renderer, Texture, TextureLoader,
 };
 use gobs_resource::{ResourceManager, load};
@@ -32,6 +32,9 @@ pub trait GobsContext {
 
     fn is_minimized(&self) -> bool;
     fn request_redraw(&mut self);
+    fn extent(&self) -> ImageExtent2D;
+    fn hal(&self) -> &dyn RenderHAL;
+    fn hal_mut(&mut self) -> &mut dyn RenderHAL;
 
     fn draw_ui<F>(&mut self, delta: f32, callback: F)
     where
@@ -54,7 +57,7 @@ pub struct GameContext {
     app_info: AppInfo,
     config: Arc<RwLock<Config>>,
     resource_manager: ResourceManager,
-    pub renderer: Renderer,
+    renderer: Renderer,
     ui: UIRenderer,
 }
 
@@ -142,6 +145,18 @@ impl GobsContext for GameContext {
 
     fn request_redraw(&mut self) {
         self.renderer.gfx.request_redraw();
+    }
+
+    fn extent(&self) -> ImageExtent2D {
+        self.renderer.extent()
+    }
+
+    fn hal(&self) -> &dyn RenderHAL {
+        self.renderer.gfx.hal()
+    }
+
+    fn hal_mut(&mut self) -> &mut dyn RenderHAL {
+        self.renderer.gfx.hal_mut()
     }
 
     fn draw_ui<F>(&mut self, delta: f32, mut callback: F)

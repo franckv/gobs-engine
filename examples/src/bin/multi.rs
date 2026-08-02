@@ -2,21 +2,26 @@ use glam::{Quat, Vec3};
 
 use gobs::{
     core::{Color, Input, Transform, logger},
-    game::{AppError, Application, GameContext, GobsGame, context::GobsContext as _},
+    game::{AppError, Application, GameContext, GobsGame, context::GobsContext},
     render::{MaterialDataPropData, RenderError, RenderType, Shapes},
     scene::{components::NodeValue, scene::Scene},
 };
 
 use examples::{InputManager, Ui};
 
-struct App {
+struct App<Context>
+where
+    Context: GobsContext,
+{
     scene: Scene,
-    ui: Ui,
+    ui: Ui<Context>,
     input: InputManager,
 }
 
-impl GobsGame<GameContext> for App {
-    async fn create(ctx: &mut GameContext) -> Result<Self, AppError> {
+impl<Context: GobsContext> GobsGame for App<Context> {
+    type Context = Context;
+
+    async fn create(ctx: &mut Context) -> Result<Self, AppError> {
         let scene = ctx
             .new_scene()
             .with_perspective_camera(0., 0., [0., 0., 3.])
@@ -30,7 +35,7 @@ impl GobsGame<GameContext> for App {
         })
     }
 
-    fn update(&mut self, ctx: &mut GameContext, delta: f32) {
+    fn update(&mut self, ctx: &mut Context, delta: f32) {
         self.scene.update_camera(|transform, camera| {
             self.input
                 .controller
@@ -41,10 +46,10 @@ impl GobsGame<GameContext> for App {
             self.ui.draw(ctx, &mut self.scene, delta);
         }
 
-        self.scene.update(&ctx.renderer.gfx, delta);
+        self.scene.update(delta);
     }
 
-    fn render(&mut self, ctx: &mut GameContext) -> Result<(), RenderError> {
+    fn render(&mut self, ctx: &mut Context) -> Result<(), RenderError> {
         ctx.render()?
             .draw_bounds(self.input.draw_bounds)
             .draw_wire(self.input.draw_wire)
@@ -52,29 +57,29 @@ impl GobsGame<GameContext> for App {
             .build()
     }
 
-    fn input(&mut self, _ctx: &mut GameContext, input: Input) {
+    fn input(&mut self, _ctx: &mut Context, input: Input) {
         self.input.input(input, false);
     }
 
-    fn resize(&mut self, _ctx: &mut GameContext, width: u32, height: u32) {
+    fn resize(&mut self, _ctx: &mut Context, width: u32, height: u32) {
         self.scene.resize(width, height);
     }
 
-    async fn start(&mut self, ctx: &mut GameContext) {
+    async fn start(&mut self, ctx: &mut Context) {
         self.init(ctx).await;
     }
 
-    fn should_update(&mut self, _ctx: &mut GameContext) -> bool {
+    fn should_update(&mut self, _ctx: &mut Context) -> bool {
         self.input.process_updates
     }
 
-    fn close(&mut self, _ctx: &mut GameContext) {
+    fn close(&mut self, _ctx: &mut Context) {
         tracing::info!(target: logger::APP, "Closed");
     }
 }
 
-impl App {
-    async fn init(&mut self, ctx: &mut GameContext) {
+impl<Context: GobsContext> App<Context> {
+    async fn init(&mut self, ctx: &mut Context) {
         ctx.load_material("materials.ron").await;
 
         let color_material = ctx
@@ -136,5 +141,5 @@ fn main() {
 
     tracing::info!(target: logger::APP, "Engine start");
 
-    Application::<App, GameContext>::new("Multi", examples::WIDTH, examples::HEIGHT).run();
+    Application::<App<GameContext>>::new("Multi", examples::WIDTH, examples::HEIGHT).run();
 }

@@ -1,10 +1,12 @@
+use std::marker::PhantomData;
+
 use egui::{ColorImage, TextureHandle};
 use egui_extras::{Column, TableBody, TableBuilder};
 use glam::Vec3;
 
 use gobs::{
     core::Transform,
-    game::{AppInfo, GameContext, context::GobsContext as _},
+    game::{AppInfo, context::GobsContext},
     render::{
         GfxContext, Material, MaterialInstance, Mesh, Pipeline, Renderer, Texture, TextureLoader,
     },
@@ -16,7 +18,7 @@ use gobs::{
     },
 };
 
-pub struct Ui {
+pub struct Ui<C> {
     pub show_camera: bool,
     pub show_light: bool,
     pub show_models: bool,
@@ -31,9 +33,13 @@ pub struct Ui {
         Option<ResourceHandle<Mesh>>,
         Option<ResourceHandle<MaterialInstance>>,
     ),
+    context: PhantomData<C>,
 }
 
-impl Ui {
+impl<C> Ui<C>
+where
+    C: GobsContext,
+{
     pub fn new() -> Self {
         Self {
             show_camera: true,
@@ -47,11 +53,12 @@ impl Ui {
             selected_node: NodeId::default(),
             selected_texture: None,
             selected_mesh: (None, None),
+            context: PhantomData,
         }
     }
 
     #[tracing::instrument(target = "profile", skip_all, level = "trace")]
-    pub fn draw(&mut self, ctx: &mut GameContext, scene: &mut Scene, delta: f32) {
+    pub fn draw(&mut self, ctx: &mut C, scene: &mut Scene, delta: f32) {
         ctx.draw_ui(delta, |ui, app_info, resource_manager, renderer| {
             self.draw_ui(ui, app_info, renderer, resource_manager, scene, delta);
         });
@@ -605,7 +612,10 @@ impl Ui {
     }
 }
 
-impl Default for Ui {
+impl<C> Default for Ui<C>
+where
+    C: GobsContext,
+{
     fn default() -> Self {
         Self::new()
     }
