@@ -33,7 +33,11 @@ impl InputManager {
                 Key::U => self.draw_ui = !self.draw_ui,
                 Key::B => self.draw_bounds = !self.draw_bounds,
                 Key::Z => self.draw_wire = !self.draw_wire,
-                _ => self.controller.key_pressed(key),
+                _ => {
+                    if !ui_hovered {
+                        self.controller.key_pressed(key)
+                    }
+                }
             },
             Input::KeyReleased(key) => self.controller.key_released(key),
             Input::MousePressed(MouseButton::Left) => {
