@@ -340,17 +340,29 @@ where
     const SPEED: f64 = 0.05;
 
     #[tracing::instrument(target = "profile", skip_all, level = "trace")]
-    fn draw_transform(&mut self, ui: &mut egui::Ui, transform: &mut Transform, update: bool) {
+    fn draw_transform(
+        &mut self,
+        ui: &mut egui::Ui,
+        transform: &mut Transform,
+        update: bool,
+    ) -> bool {
+        let mut changed = false;
         ui.horizontal(|ui| {
             let mut translation = transform.translation();
             ui.label("Translation");
             ui.label("x: ");
-            ui.add(egui::DragValue::new(&mut translation.x).speed(Self::SPEED));
+            changed |= ui
+                .add(egui::DragValue::new(&mut translation.x).speed(Self::SPEED))
+                .changed();
             ui.label("y: ");
-            ui.add(egui::DragValue::new(&mut translation.y).speed(Self::SPEED));
+            changed |= ui
+                .add(egui::DragValue::new(&mut translation.y).speed(Self::SPEED))
+                .changed();
             ui.label("z: ");
-            ui.add(egui::DragValue::new(&mut translation.z).speed(Self::SPEED));
-            if update {
+            changed |= ui
+                .add(egui::DragValue::new(&mut translation.z).speed(Self::SPEED))
+                .changed();
+            if changed && update {
                 transform.set_translation(translation);
             }
         });
@@ -359,14 +371,22 @@ where
             let mut rotation = transform.rotation();
             ui.label("Rotation     ");
             ui.label("x: ");
-            ui.add(egui::DragValue::new(&mut rotation.x).speed(Self::SPEED));
+            changed |= ui
+                .add(egui::DragValue::new(&mut rotation.x).speed(Self::SPEED))
+                .changed();
             ui.label("y: ");
-            ui.add(egui::DragValue::new(&mut rotation.y).speed(Self::SPEED));
+            changed |= ui
+                .add(egui::DragValue::new(&mut rotation.y).speed(Self::SPEED))
+                .changed();
             ui.label("z: ");
-            ui.add(egui::DragValue::new(&mut rotation.z).speed(Self::SPEED));
+            changed |= ui
+                .add(egui::DragValue::new(&mut rotation.z).speed(Self::SPEED))
+                .changed();
             ui.label("w: ");
-            ui.add(egui::DragValue::new(&mut rotation.w).speed(Self::SPEED));
-            if update {
+            changed |= ui
+                .add(egui::DragValue::new(&mut rotation.w).speed(Self::SPEED))
+                .changed();
+            if changed && update {
                 transform.set_rotation(rotation);
             }
         });
@@ -375,15 +395,23 @@ where
             let mut scaling = transform.scaling();
             ui.label("Scaling        ");
             ui.label("x: ");
-            ui.add(egui::DragValue::new(&mut scaling.x).speed(Self::SPEED));
+            changed |= ui
+                .add(egui::DragValue::new(&mut scaling.x).speed(Self::SPEED))
+                .changed();
             ui.label("y: ");
-            ui.add(egui::DragValue::new(&mut scaling.y).speed(Self::SPEED));
+            changed |= ui
+                .add(egui::DragValue::new(&mut scaling.y).speed(Self::SPEED))
+                .changed();
             ui.label("z: ");
-            ui.add(egui::DragValue::new(&mut scaling.z).speed(Self::SPEED));
-            if update {
+            changed |= ui
+                .add(egui::DragValue::new(&mut scaling.z).speed(Self::SPEED))
+                .changed();
+            if changed && update {
                 transform.set_scaling(scaling);
             }
         });
+
+        changed
     }
 
     #[tracing::instrument(target = "profile", skip_all, level = "trace")]
@@ -391,11 +419,7 @@ where
         egui::CollapsingHeader::new("Local")
             .default_open(true)
             .show(ui, |ui| {
-                node.update_transform(|transform| {
-                    self.draw_transform(ui, transform, true);
-
-                    true
-                });
+                node.update_transform(|transform| self.draw_transform(ui, transform, true));
 
                 ui.label("");
             });

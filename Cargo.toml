@@ -98,3 +98,6 @@ winit = "0.30"
 [profile.release-with-debug]
 inherits = "release"
 debug = true
+
+[profile.dev.package."*"]
+opt-level = 3
