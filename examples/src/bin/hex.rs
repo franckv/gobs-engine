@@ -52,7 +52,7 @@ impl<Context: GobsContext> GobsGame for App<Context> {
     }
 
     fn input(&mut self, _ctx: &mut Context, input: Input) {
-        self.input.input(input, false);
+        self.input.input(input, self.ui.ui_hovered);
     }
 
     fn resize(&mut self, _ctx: &mut Context, width: u32, height: u32) {

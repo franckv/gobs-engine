@@ -80,7 +80,7 @@ impl<Context: GobsContext> GobsGame for App<Context> {
     }
 
     fn input(&mut self, _ctx: &mut Context, input: Input) {
-        self.input.input(input, false);
+        self.input.input(input, self.ui.ui_hovered);
 
         if let Input::KeyPressed(key) = input {
             match key {
