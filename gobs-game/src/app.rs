@@ -103,6 +103,7 @@ where
                         KeyEvent {
                             logical_key: key_code,
                             state,
+                            text,
                             ..
                         },
                     ..
@@ -115,10 +116,15 @@ where
                         let key = key_code.into();
                         match state {
                             ElementState::Pressed => {
-                                Self::process_input(context, runnable, Input::KeyPressed(key))
+                                Self::process_input(context, runnable, Input::KeyPressed(key));
+                                if let Some(text) = text {
+                                    for c in text.chars().filter(|c| !c.is_control()) {
+                                        Self::process_input(context, runnable, Input::Char(c));
+                                    }
+                                }
                             }
                             ElementState::Released => {
-                                Self::process_input(context, runnable, Input::KeyReleased(key))
+                                Self::process_input(context, runnable, Input::KeyReleased(key));
                             }
                         }
                     }

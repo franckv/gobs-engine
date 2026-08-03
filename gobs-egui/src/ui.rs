@@ -82,6 +82,16 @@ impl UIRenderer {
 
     fn get_key(key: Key) -> egui::Key {
         match key {
+            Key::N0 => egui::Key::Num0,
+            Key::N1 => egui::Key::Num1,
+            Key::N2 => egui::Key::Num2,
+            Key::N3 => egui::Key::Num3,
+            Key::N4 => egui::Key::Num4,
+            Key::N5 => egui::Key::Num5,
+            Key::N6 => egui::Key::Num6,
+            Key::N7 => egui::Key::Num7,
+            Key::N8 => egui::Key::Num8,
+            Key::N9 => egui::Key::Num9,
             Key::A => egui::Key::A,
             Key::B => egui::Key::B,
             Key::C => egui::Key::C,
@@ -142,6 +152,9 @@ impl UIRenderer {
                     modifiers: Modifiers::NONE,
                     physical_key: None,
                 });
+            }
+            Input::Char(c) => {
+                input.events.push(Event::Text(c.to_string()));
             }
             Input::MousePressed(button) => match button {
                 MouseButton::Left => {

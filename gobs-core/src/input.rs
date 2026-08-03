@@ -150,4 +150,5 @@ pub enum Input {
     MouseMotion(f64, f64),
     MousePressed(MouseButton),
     MouseReleased(MouseButton),
+    Char(char),
 }
