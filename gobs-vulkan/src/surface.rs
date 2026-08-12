@@ -81,11 +81,18 @@ impl Surface {
         };
 
         for format in formats {
-            let format = SurfaceFormat {
-                format: VkFormat::from(format.format).into(),
-                color_space: format.color_space.into(),
-            };
-            results.push(format);
+            match VkFormat::from(format.format).try_into() {
+                Ok(vkformat) => {
+                    let format = SurfaceFormat {
+                        format: vkformat,
+                        color_space: format.color_space.into(),
+                    };
+                    results.push(format);
+                }
+                Err(e) => {
+                    tracing::warn!(target: logger::INIT, "Unknown swapchain format {:?}", e);
+                }
+            }
         }
 
         results
