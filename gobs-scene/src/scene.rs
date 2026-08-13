@@ -137,29 +137,12 @@ impl Renderable for Scene {
         ctx: &mut GfxContext,
         resource_manager: &mut ResourceManager,
         batch: &mut RenderBatch,
-        _transform: Option<Transform>,
-        _bounding_box: Option<BoundingBox>,
+        transform: Option<Transform>,
+        bounding_box: Option<BoundingBox>,
         render_flags: RenderFlags,
     ) -> Result<(), ResourceError> {
         self.graph.visit(self.graph.root, &mut |node| {
-            if let NodeValue::Model(model) = &node.base.value {
-                let mut render_flags = render_flags;
-
-                if node.base.selected {
-                    render_flags |= RenderFlags::SELECTED;
-                }
-
-                model.draw(
-                    ctx,
-                    resource_manager,
-                    batch,
-                    Some(*node.global_transform()),
-                    Some(node.bounding.bounding_box),
-                    render_flags,
-                )?;
-            }
-
-            Ok(())
+            node.draw(ctx, resource_manager, batch, transform, bounding_box, render_flags)
         })?;
 
         let (light_transform, light) = self.light();

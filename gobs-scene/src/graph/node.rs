@@ -1,4 +1,5 @@
 use gobs_core::Transform;
+use gobs_render::{BoundingBox, RenderFlags, Renderable};
 
 use crate::components::{BaseComponent, BoundingComponent, NodeId, NodeValue};
 
@@ -56,5 +57,41 @@ impl Node {
         F: FnMut(&mut Transform) -> bool,
     {
         self.base.updated |= f(&mut self.transform);
+    }
+}
+
+impl Renderable for Node {
+    fn draw(
+        &self,
+        ctx: &mut gobs_render::GfxContext,
+        resource_manager: &mut gobs_resource::ResourceManager,
+        batch: &mut gobs_render::RenderBatch,
+        _transform: Option<gobs_core::Transform>,
+        _bounding_box: Option<BoundingBox>,
+        render_flags: gobs_render::RenderFlags,
+    ) -> Result<(), gobs_resource::ResourceError> {
+        match &self.base.value  {
+            NodeValue::None => (),
+            NodeValue::Camera(_camera) => (),
+            NodeValue::Light(_light) => (),
+            NodeValue::Model(model) => {
+                let mut render_flags = render_flags;
+
+                if self.base.selected {
+                    render_flags |= RenderFlags::SELECTED;
+                }
+
+                model.draw(
+                    ctx,
+                    resource_manager,
+                    batch,
+                    Some(*self.global_transform()),
+                    Some(self.bounding.bounding_box),
+                    render_flags,
+                )?;
+            }
+        }
+
+        Ok(())
     }
 }
