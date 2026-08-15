@@ -70,7 +70,7 @@ impl Renderable for Node {
         _bounding_box: Option<BoundingBox>,
         render_flags: gobs_render::RenderFlags,
     ) -> Result<(), gobs_resource::ResourceError> {
-        match &self.base.value  {
+        match &self.base.value {
             NodeValue::None => (),
             NodeValue::Camera(_camera) => (),
             NodeValue::Light(_light) => (),

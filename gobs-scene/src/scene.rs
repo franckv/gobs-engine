@@ -142,7 +142,14 @@ impl Renderable for Scene {
         render_flags: RenderFlags,
     ) -> Result<(), ResourceError> {
         self.graph.visit(self.graph.root, &mut |node| {
-            node.draw(ctx, resource_manager, batch, transform, bounding_box, render_flags)
+            node.draw(
+                ctx,
+                resource_manager,
+                batch,
+                transform,
+                bounding_box,
+                render_flags,
+            )
         })?;
 
         let (light_transform, light) = self.light();

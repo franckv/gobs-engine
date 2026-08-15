@@ -14,5 +14,8 @@ smallvec = { workspace = true }
 tracing = { workspace = true }
 uuid = { workspace = true }
 
+[dev-dependencies]
+tracing-subscriber = { workspace = true }
+
 [build-dependencies]
 fs_extra = { workspace = true }
