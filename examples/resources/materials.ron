@@ -26,6 +26,12 @@ MaterialsConfig(
                 EmissionColor
             ]
         ),
+        "color.light": (
+            vertex_shader: "color_light.spv",
+            vertex_entry: "vertex_color_light_main",
+            fragment_shader: "color_light.spv",
+            fragment_entry: "fragment_color_light_main",
+        ),
         "color.transparent": (
             vertex_shader: "color.spv",
             vertex_entry: "vertex_main",
