@@ -51,7 +51,7 @@ VSOutput vertex_main(uint vertex_index: SV_VertexID) {
 
     output.position = mul(scene_data.view_proj, world_position);
     output.uv = v.uv;
-    output.normal = mul(normal_matrix, v.normal);
+    output.normal = mul(tangent_matrix, mul(normal_matrix, v.normal));
     output.tangent_position = mul(tangent_matrix, world_position.xyz);
     output.tangent_view_position = mul(tangent_matrix, scene_data.camera_position.xyz);
     output.tangent_light_dir = normalize(mul(tangent_matrix, scene_data.light_direction));
