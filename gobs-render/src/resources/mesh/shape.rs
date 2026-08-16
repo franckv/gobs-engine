@@ -144,6 +144,88 @@ impl Shapes {
         builder.build()
     }
 
+    pub fn cube(
+        colors: &[Color],
+        size: f32) -> Arc<MeshGeometry> {
+        let mut builder = MeshGeometry::builder("cube");
+
+        let (top, bottom, left, right, front, back) = (
+            size / 2.,
+            -size / 2.,
+            -size / 2.,
+            size / 2.,
+            size / 2.,
+            -size / 2.,
+        );
+
+        let v = [
+            [left, top, front],
+            [right, top, front],
+            [left, bottom, front],
+            [right, bottom, front],
+            [left, top, back],
+            [right, top, back],
+            [left, bottom, back],
+            [right, bottom, back],
+        ];
+
+        let n = [
+            [0., 0., 1.],
+            [0., 0., -1.],
+            [-1., 0., 0.],
+            [1., 0., 0.],
+            [0., 1., 0.],
+            [0., -1., 0.],
+        ];
+
+        let t = [
+            [T_MIN, T_MIN],
+            [T_MAX, T_MIN],
+            [T_MIN, T_MAX],
+            [T_MAX, T_MAX],
+        ];
+
+        let vi = [
+            3, 4, 2, 3, 2, 1, // F
+            8, 7, 5, 8, 5, 6, // B
+            7, 3, 1, 7, 1, 5, // L
+            4, 8, 6, 4, 6, 2, // R
+            1, 2, 6, 1, 6, 5, // U
+            7, 8, 4, 7, 4, 3, // D
+        ];
+
+        let ni = [
+            1, 1, 1, 1, 1, 1, // F
+            2, 2, 2, 2, 2, 2, // B
+            3, 3, 3, 3, 3, 3, // L
+            4, 4, 4, 4, 4, 4, // R
+            5, 5, 5, 5, 5, 5, // U
+            6, 6, 6, 6, 6, 6, // D
+        ];
+
+        let ti = [
+            3, 4, 2, 3, 2, 1, // F
+            3, 4, 2, 3, 2, 1, // B
+            3, 4, 2, 3, 2, 1, // L
+            3, 4, 2, 3, 2, 1, // R
+            3, 4, 2, 3, 2, 1, // U
+            3, 4, 2, 3, 2, 1, // D
+        ];
+
+        for i in 0..vi.len() {
+            let vertex_data = VertexData::builder()
+                .position(v[vi[i] - 1].into())
+                .color(colors[(vi[i] - 1) % colors.len()])
+                .normal(n[ni[i] - 1].into())
+                .texture(t[ti[i] - 1].into())
+                .build();
+
+            builder.vertex(vertex_data);
+        }
+
+        builder.build()
+    }
+
     pub fn cubemap(cols: u32, rows: u32, index: &[u32], size: f32) -> Arc<MeshGeometry> {
         let mut builder = MeshGeometry::builder("cube");
 
