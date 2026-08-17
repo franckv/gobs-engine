@@ -5,7 +5,7 @@ use gobs::{
     game::{AppError, Application, GameContext, GobsContext, GobsGame},
     render::{
         BoundingBox, GfxContext, MaterialInstance, Model, RenderBatch, RenderError, RenderFlags,
-        RenderType, Renderable, Shapes,
+        RenderType, Renderable,
     },
     resource::{ResourceError, ResourceHandle, ResourceManager, camera::Camera, light::Light},
     scene::voxel::{map::VoxelTree, node::VoxelNode64},
@@ -18,18 +18,16 @@ struct VoxelData;
 type Chunk = VoxelTree<VoxelData, VoxelNode64<VoxelData>>;
 
 struct World {
-    cube: Arc<Model>,
     camera: Camera,
     camera_transform: Transform,
     light: Light,
     voxels: Chunk,
-    meshes: Vec<Transform>,
+    material: ResourceHandle<MaterialInstance>,
+    meshes: Vec<Arc<Model>>,
 }
 
 impl World {
     pub async fn new<Context: GobsContext>(ctx: &mut Context) -> Self {
-        let cube = Self::create_model(ctx).await;
-
         let extent = ctx.extent();
 
         let yawn: f32 = 45.;
@@ -46,12 +44,14 @@ impl World {
 
         let light = Light::new(Color::WHITE);
 
+        let material = Self::create_color_material(ctx).await;
+
         Self {
-            cube,
             camera,
             camera_transform: Transform::from_translation([-6., 9., 36.].into()),
             light,
             voxels: Chunk::new(3),
+            material,
             meshes: Vec::new(),
         }
     }
@@ -63,21 +63,6 @@ impl World {
 
         ctx.new_material("color.light")
             .from_base("color.light")
-            .build()
-    }
-
-    async fn create_model<Context: GobsContext>(ctx: &mut Context) -> Arc<Model> {
-        let material = Self::create_color_material(ctx).await;
-
-        let mesh = ctx
-            .new_mesh("cube")
-            .with_geometry(Shapes::cube(&[Color::RED], 1.))
-            .for_material(material)
-            .build();
-
-        ctx.new_model("cube")
-            .with_mesh(mesh)
-            .with_material(material)
             .build()
     }
 }
@@ -96,8 +81,8 @@ impl Renderable for World {
             batch.add_model(
                 ctx,
                 resource_manager,
-                self.cube.clone(),
-                *mesh,
+                mesh.clone(),
+                Transform::default(),
                 bounding_box,
                 render_flags,
             )?;
@@ -119,6 +104,7 @@ impl Renderable for World {
 struct App<Context: GobsContext> {
     world: World,
     input: InputManager,
+    fps: f32,
     marker: PhantomData<Context>,
 }
 
@@ -129,40 +115,49 @@ impl<Context: GobsContext> GobsGame for App<Context> {
         Ok(App {
             world: World::new(ctx).await,
             input: InputManager::new(),
+            fps: 0.,
             marker: PhantomData,
         })
     }
 
     async fn start(&mut self, _ctx: &mut Context) {
-        for z in 0..32 {
-            for x in 0..32 {
-                self.world.voxels.insert(VoxelData, x, 0, z);
-            }
-        }
-
-        self.world.voxels.insert(VoxelData, 7, 2, 13);
+        // self.load_plane();
+        self.load_sphere();
     }
 
     fn should_update(&mut self, _ctx: &mut Context) -> bool {
         self.input.process_updates
     }
 
-    fn update(&mut self, _ctx: &mut Context, delta: f32) {
+    fn update(&mut self, ctx: &mut Context, delta: f32) {
         self.input.controller.update_camera(
             &mut self.world.camera,
             &mut self.world.camera_transform,
             delta,
         );
 
+        self.fps = 1. / delta;
+
         if self.world.voxels.is_dirty() {
             self.world.meshes.clear();
-            self.world.voxels.visit(true, &mut |pos, _| {
-                let pos_f = [pos[0] as f32, pos[1] as f32, pos[2] as f32];
 
-                self.world
-                    .meshes
-                    .push(Transform::from_translation(pos_f.into()));
-            });
+            let geometry = self.world.voxels.meshify();
+
+            let mesh = ctx
+                .new_mesh("voxel")
+                .with_geometry(geometry)
+                .for_material(self.world.material)
+                .build();
+
+            let model = ctx
+                .new_model("voxel")
+                .with_mesh(mesh)
+                .with_material(self.world.material)
+                .build();
+
+            self.world.meshes.push(model);
+
+            tracing::info!(target: logger::APP, "{} meshes added", self.world.meshes.len());
         }
     }
 
@@ -182,6 +177,9 @@ impl<Context: GobsContext> GobsGame for App<Context> {
                 Key::I => {
                     tracing::info!(target: logger::APP, "Camera: {} ({:?})", self.world.camera, self.world.camera_transform)
                 }
+                Key::F => {
+                    tracing::info!(target: logger::APP, "FPS: {}", self.fps);
+                }
                 Key::Backspace => {}
                 _ => (),
             }
@@ -194,6 +192,37 @@ impl<Context: GobsContext> GobsGame for App<Context> {
 
     fn close(&mut self, _ctx: &mut Context) {
         tracing::info!(target: logger::APP, "Closed");
+    }
+}
+
+#[allow(unused)]
+impl<Context: GobsContext> App<Context> {
+    pub fn load_plane(&mut self) {
+        for z in 0..32 {
+            for x in 0..32 {
+                self.world.voxels.insert(VoxelData, x, 0, z);
+            }
+        }
+
+        self.world.voxels.insert(VoxelData, 7, 2, 13);
+    }
+
+    pub fn load_sphere(&mut self) {
+        let radius: i32 = 16;
+        let diameter = 2 * radius;
+
+        for z in 0..diameter {
+            for y in 0..diameter {
+                for x in 0..diameter {
+                    let d = (x - radius).pow(2) + (y - radius).pow(2) + (z - radius).pow(2);
+                    if d.isqrt() < radius {
+                        self.world
+                            .voxels
+                            .insert(VoxelData, x as u32, y as u32, z as u32);
+                    }
+                }
+            }
+        }
     }
 }
 

@@ -1,4 +1,7 @@
-use std::marker::PhantomData;
+use std::{marker::PhantomData, sync::Arc};
+
+use gobs_core::{Color, logger, utils::timer::Timer};
+use gobs_render::{MeshGeometry, ShapeBuilder};
 
 use crate::voxel::node::VoxelNode;
 
@@ -162,6 +165,61 @@ impl<D, N: VoxelNode<D>> VoxelTree<D, N> {
         } else {
             debug_assert!(!self.nodes[root].is_dirty());
         }
+    }
+
+    pub fn meshify(&mut self) -> Arc<MeshGeometry> {
+        let mut timer = Timer::new();
+
+        let mut builder = ShapeBuilder::new("voxel").colors(&[Color::RED]);
+
+        let size = 1.;
+        let (top, bottom, left, right, front, back) = (
+            size / 2.,
+            -size / 2.,
+            -size / 2.,
+            size / 2.,
+            size / 2.,
+            -size / 2.,
+        );
+
+        let mut quads = Vec::new();
+
+        self.visit(true, &mut |pos, _| {
+            let top = top + pos[1] as f32;
+            let bottom = bottom + pos[1] as f32;
+            let left = left + pos[0] as f32;
+            let right = right + pos[0] as f32;
+            let front = front + pos[2] as f32;
+            let back = back + pos[2] as f32;
+
+            let v = [
+                [left, top, front],
+                [right, top, front],
+                [left, bottom, front],
+                [right, bottom, front],
+                [left, top, back],
+                [right, top, back],
+                [left, bottom, back],
+                [right, bottom, back],
+            ];
+
+            quads.push([v[2], v[0], v[3], v[1]]);
+            quads.push([v[7], v[5], v[6], v[4]]);
+            quads.push([v[6], v[4], v[2], v[0]]);
+            quads.push([v[3], v[1], v[7], v[5]]);
+            quads.push([v[0], v[4], v[1], v[5]]);
+            quads.push([v[6], v[2], v[7], v[3]]);
+        });
+
+        let count = quads.len();
+
+        for quad in quads {
+            builder = builder.add_quad(quad);
+        }
+
+        tracing::info!(target: logger::RENDER, "Meshify {} quads in {}ms", count, 1000. * timer.delta());
+
+        builder.build()
     }
 }
 
