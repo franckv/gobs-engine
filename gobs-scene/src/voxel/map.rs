@@ -5,7 +5,7 @@ use crate::voxel::node::VoxelNode;
 pub struct VoxelTree<D, N: VoxelNode<D>> {
     root: usize,
     order: u32,
-    data: Vec<N>,
+    nodes: Vec<N>,
     marker: PhantomData<D>,
 }
 
@@ -16,32 +16,39 @@ impl<D, N: VoxelNode<D>> VoxelTree<D, N> {
         Self {
             root: 0,
             order,
-            data: vec![root_node],
+            nodes: vec![root_node],
             marker: PhantomData,
         }
     }
 
     pub fn allocate_node(&mut self) -> usize {
-        self.data.push(N::new());
+        self.nodes.push(N::new());
 
-        self.data.len() - 1
+        self.nodes.len() - 1
     }
 
+    /*
+     * Insert a voxel in a tree at a specific position.
+     * x, y, z is the relative position of a voxel within a tree (chunk).
+     * Coordinate range is (0, 0, 0) to (max, max, max) where max = SUBDIVISION^order
+     */
     pub fn insert(&mut self, data: D, x: u32, y: u32, z: u32) -> Option<D> {
         let mut node_idx = self.root;
 
         for level in 0..=self.order {
+            self.nodes[node_idx].set_dirty(true);
+
             if level == self.order {
-                return self.data[node_idx].set_data(data);
+                return self.nodes[node_idx].set_data(data);
             }
 
-            let idx = Self::index(x, y, z, level, self.order);
+            let child_idx = Self::index(x, y, z, level, self.order);
 
-            if let Some(child_node_idx) = self.data[node_idx].child(idx) {
+            if let Some(child_node_idx) = self.nodes[node_idx].child(child_idx) {
                 node_idx = child_node_idx;
             } else {
                 let child_node_idx = self.allocate_node();
-                self.data[node_idx].add_child(idx, child_node_idx);
+                self.nodes[node_idx].add_child(child_idx, child_node_idx);
                 node_idx = child_node_idx;
             }
         }
@@ -62,6 +69,7 @@ impl<D, N: VoxelNode<D>> VoxelTree<D, N> {
 
     /*
      * Return the coordinate of a voxel at a specific level
+     * x, y, z is the relative position of a voxel within a tree (chunk)
      */
     pub fn location(x: u32, y: u32, z: u32, level: u32, order: u32) -> (u32, u32, u32) {
         debug_assert!(Self::check_bounds(x, y, z, level, order));
@@ -77,6 +85,7 @@ impl<D, N: VoxelNode<D>> VoxelTree<D, N> {
 
     /*
      * Return the child index (0-63) of a voxel at a specific level
+     * x, y, z is the relative position of a voxel within a tree (chunk)
      */
     pub fn index(x: u32, y: u32, z: u32, level: u32, order: u32) -> usize {
         debug_assert!(Self::check_bounds(x, y, z, level, order));
@@ -92,6 +101,67 @@ impl<D, N: VoxelNode<D>> VoxelTree<D, N> {
         );
 
         (rel_x + N::SUBDIVISION * rel_y + N::SUBDIVISION * N::SUBDIVISION * rel_z) as usize
+    }
+
+    pub fn offset(idx: usize) -> [u32; 3] {
+        debug_assert!(idx < N::CHILDREN_NUMBER);
+
+        let mut idx = idx as u32;
+
+        let x = idx % N::SUBDIVISION;
+        idx /= N::SUBDIVISION;
+        let y = idx % N::SUBDIVISION;
+        idx /= N::SUBDIVISION;
+        let z = idx % N::SUBDIVISION;
+
+        [x, y, z]
+    }
+
+    pub fn is_dirty(&self) -> bool {
+        self.nodes[self.root].is_dirty()
+    }
+
+    pub fn visit<F>(&mut self, clean: bool, visitor: &mut F)
+    where
+        F: FnMut([u32; 3], &D),
+    {
+        self.visit_local(self.root, [0; 3], 0, clean, visitor);
+    }
+
+    pub fn visit_local<F>(
+        &mut self,
+        root: usize,
+        pos: [u32; 3],
+        level: u32,
+        clean: bool,
+        visitor: &mut F,
+    ) where
+        F: FnMut([u32; 3], &D),
+    {
+        if let Some(data) = self.nodes[root].get_data() {
+            visitor(pos, data);
+            if clean {
+                self.nodes[root].set_dirty(false);
+            }
+        } else if self.nodes[root].has_children() {
+            for idx in 0..N::CHILDREN_NUMBER {
+                if let Some(child_idx) = self.nodes[root].child(idx) {
+                    let scale = N::SUBDIVISION.pow(self.order - level - 1);
+                    let offset = Self::offset(idx);
+                    let child_pos = [
+                        pos[0] + scale * offset[0],
+                        pos[1] + scale * offset[1],
+                        pos[2] + scale * offset[2],
+                    ];
+                    self.visit_local(child_idx, child_pos, level + 1, clean, visitor);
+                }
+            }
+            if clean {
+                self.nodes[root].set_dirty(false);
+            }
+        } else {
+            debug_assert!(!self.nodes[root].is_dirty());
+        }
     }
 }
 
@@ -173,23 +243,40 @@ mod tests {
     }
 
     #[test]
+    fn test_offset() {
+        setup();
+
+        assert_eq!(Tree::offset(0), [0, 0, 0]);
+        assert_eq!(Tree::offset(1), [1, 0, 0]);
+        assert_eq!(Tree::offset(4), [0, 1, 0]);
+        assert_eq!(Tree::offset(16), [0, 0, 1]);
+        assert_eq!(Tree::offset(42), [2, 2, 2]);
+        assert_eq!(Tree::offset(63), [3, 3, 3]);
+    }
+
+    #[test]
     fn test_insert() {
+        setup();
+
         let mut tree = Tree::new(0);
         tree.insert(VoxelData, 0, 0, 0);
-        assert!(matches!(tree.data[tree.root].data, VoxelChildData::Leaf(_)));
+        assert!(matches!(
+            tree.nodes[tree.root].data,
+            VoxelChildData::Leaf(_)
+        ));
 
         let mut tree = Tree::new(1);
         tree.insert(VoxelData, 2, 1, 3);
         let idx = Tree::index(2, 1, 3, 0, 1);
         assert!(matches!(
-            tree.data[tree.root].data,
+            tree.nodes[tree.root].data,
             VoxelChildData::Children(_)
         ));
-        assert!(tree.data[tree.root].has_child(idx));
-        if let VoxelChildData::Children(children) = &tree.data[tree.root].data {
+        assert!(tree.nodes[tree.root].has_child(idx));
+        if let VoxelChildData::Children(children) = &tree.nodes[tree.root].data {
             let child_idx = children[idx];
             assert!(matches!(
-                &tree.data[child_idx].data,
+                &tree.nodes[child_idx].data,
                 VoxelChildData::Leaf(_)
             ));
         }
@@ -198,15 +285,15 @@ mod tests {
         tree.insert(VoxelData, 0, 0, 0);
         tree.insert(VoxelData, 1, 0, 0);
         assert!(matches!(
-            tree.data[tree.root].data,
+            tree.nodes[tree.root].data,
             VoxelChildData::Children(_)
         ));
         let idx1 = Tree::index(0, 0, 0, 0, 2);
         let idx2 = Tree::index(1, 0, 0, 0, 2);
         assert_eq!(idx1, idx2);
-        assert!(tree.data[tree.root].has_child(idx1));
-        if let VoxelChildData::Children(children) = &tree.data[tree.root].data {
-            let l1 = &tree.data[children[idx1]];
+        assert!(tree.nodes[tree.root].has_child(idx1));
+        if let VoxelChildData::Children(children) = &tree.nodes[tree.root].data {
+            let l1 = &tree.nodes[children[idx1]];
             let idx1 = Tree::index(0, 0, 0, 1, 2);
             let idx2 = Tree::index(1, 0, 0, 1, 2);
             assert_ne!(idx1, idx2);
@@ -220,13 +307,13 @@ mod tests {
         for level in 0..3 {
             let idx = Tree::index(63, 63, 63, level, 3);
             assert_eq!(idx, 63);
-            assert!(tree.data[node_idx].has_child(idx));
-            node_idx = match &tree.data[node_idx].data {
+            assert!(tree.nodes[node_idx].has_child(idx));
+            node_idx = match &tree.nodes[node_idx].data {
                 VoxelChildData::Children(children) => children[idx],
                 _ => panic!("Missing children data, level={}", level),
             };
         }
-        assert!(matches!(tree.data[node_idx].data, VoxelChildData::Leaf(_)));
+        assert!(matches!(tree.nodes[node_idx].data, VoxelChildData::Leaf(_)));
 
         let mut tree = Tree::new(3);
         tree.insert(VoxelData, 0, 0, 0);
@@ -237,16 +324,105 @@ mod tests {
             let idx1 = Tree::index(0, 0, 0, level, 3);
             let idx2 = Tree::index(63, 63, 63, level, 3);
             assert_ne!(idx1, idx2);
-            assert!(tree.data[node_idx1].has_child(idx1));
-            assert!(tree.data[node_idx2].has_child(idx2));
-            node_idx1 = match &tree.data[node_idx1].data {
+            assert!(tree.nodes[node_idx1].has_child(idx1));
+            assert!(tree.nodes[node_idx2].has_child(idx2));
+            node_idx1 = match &tree.nodes[node_idx1].data {
                 VoxelChildData::Children(children) => children[idx1],
                 _ => panic!("Missing children data, level={}", level),
             };
-            node_idx2 = match &tree.data[node_idx2].data {
+            node_idx2 = match &tree.nodes[node_idx2].data {
                 VoxelChildData::Children(children) => children[idx2],
                 _ => panic!("Missing children data, level={}", level),
             };
         }
+    }
+
+    #[test]
+    fn test_dirty() {
+        setup();
+
+        let mut tree = Tree::new(2);
+        tree.insert(VoxelData, 0, 0, 0);
+        let idx = Tree::index(0, 0, 0, 0, 2);
+        let node_idx = tree.nodes[tree.root].child(idx).unwrap();
+
+        assert!(tree.nodes[tree.root].is_dirty());
+        assert!(tree.nodes[node_idx].is_dirty());
+
+        for node in &mut tree.nodes {
+            node.set_dirty(false);
+        }
+
+        assert!(!tree.nodes[tree.root].is_dirty());
+        assert!(!tree.nodes[node_idx].is_dirty());
+
+        tree.insert(VoxelData, 1, 0, 0);
+
+        assert!(tree.nodes[tree.root].is_dirty());
+        assert!(tree.nodes[node_idx].is_dirty());
+
+        let idx1 = Tree::index(0, 0, 0, 1, 2);
+        let idx2 = Tree::index(1, 0, 0, 1, 2);
+        let node_idx1 = tree.nodes[node_idx].child(idx1).unwrap();
+        let node_idx2 = tree.nodes[node_idx].child(idx2).unwrap();
+        assert!(!tree.nodes[node_idx1].is_dirty());
+        assert!(tree.nodes[node_idx2].is_dirty());
+    }
+
+    #[test]
+    fn test_visit() {
+        setup();
+
+        let tests = vec![
+            [0, 0, 0],
+            [2, 1, 3],
+            [42, 0, 0],
+            [0, 42, 0],
+            [0, 0, 42],
+            [42, 42, 42],
+            [63, 63, 63],
+        ];
+        let mut tree = Tree::new(3);
+
+        for test in &tests {
+            let data = tree.insert(VoxelData, test[0], test[1], test[2]);
+            assert!(data.is_none());
+        }
+
+        assert!(tree.nodes[tree.root].is_dirty());
+
+        tree.visit(false, &mut |_, _| {});
+        assert!(tree.nodes[tree.root].is_dirty());
+
+        let mut visited = Vec::new();
+        tree.visit(true, &mut |pos, _| {
+            visited.push(pos);
+        });
+
+        assert!(!tree.nodes[tree.root].is_dirty());
+
+        assert_eq!(visited.len(), tests.len());
+        for test in &tests {
+            assert!(visited.contains(test));
+        }
+
+        let data = tree.insert(VoxelData, tests[0][0], tests[0][1], tests[0][2]);
+        assert_eq!(visited.len(), tests.len());
+        assert!(data.is_some());
+
+        let mut tree = Tree::new(0);
+        tree.insert(VoxelData, 0, 0, 0);
+        let mut visited = Vec::new();
+        tree.visit(true, &mut |pos, _| visited.push(pos));
+        assert_eq!(visited, vec![[0, 0, 0]]);
+
+        let mut tree = Tree::new(1);
+        tree.insert(VoxelData, 3, 3, 3);
+        tree.insert(VoxelData, 1, 2, 3);
+        let mut visited = Vec::new();
+        tree.visit(false, &mut |pos, _| visited.push(pos));
+        assert_eq!(visited.len(), 2);
+        assert!(visited.contains(&[3, 3, 3]));
+        assert!(visited.contains(&[1, 2, 3]));
     }
 }
