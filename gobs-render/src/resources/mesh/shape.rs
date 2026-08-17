@@ -144,9 +144,7 @@ impl Shapes {
         builder.build()
     }
 
-    pub fn cube(
-        colors: &[Color],
-        size: f32) -> Arc<MeshGeometry> {
+    pub fn cube(colors: &[Color], size: f32) -> Arc<MeshGeometry> {
         let mut builder = MeshGeometry::builder("cube");
 
         let (top, bottom, left, right, front, back) = (
