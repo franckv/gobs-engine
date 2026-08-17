@@ -29,6 +29,6 @@ pub use resources::{
     Bounded, BoundingBox, GraphicsPipelineProperties, Material, MaterialData, MaterialInstance,
     MaterialInstanceLoader, MaterialInstanceProperties, MaterialLoader, MaterialProperties,
     MaterialsConfig, Mesh, MeshBuilder, MeshData, MeshGeometry, MeshLoader, MeshProperties,
-    Pipeline, PipelineLoader, PipelineProperties, PipelinesConfig, Shapes, Texture, TextureData,
-    TextureLoader, TexturePath, TextureProperties, TextureType, TextureUpdate,
+    Pipeline, PipelineLoader, PipelineProperties, PipelinesConfig, ShapeBuilder, Shapes, Texture,
+    TextureData, TextureLoader, TexturePath, TextureProperties, TextureType, TextureUpdate,
 };

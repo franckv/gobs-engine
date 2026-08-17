@@ -99,7 +99,7 @@ impl<Context: GobsContext> App<Context> {
 
         let square_mesh = ctx
             .new_mesh("quad")
-            .with_geometry(Shapes::quad(&[Color::new(1., 1., 1., 0.5)]))
+            .with_geometry(Shapes::square(&[Color::new(1., 1., 1., 0.5)]))
             .for_material(material)
             .build();
 

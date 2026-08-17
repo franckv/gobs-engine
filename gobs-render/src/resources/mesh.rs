@@ -9,4 +9,4 @@ pub use bounds::{Bounded, BoundingBox};
 pub use mesh::{Mesh, MeshData, MeshPath, MeshPrimitiveType, MeshProperties};
 pub use mesh_geometry::{MeshBuilder, MeshGeometry};
 pub use mesh_loader::MeshLoader;
-pub use shape::Shapes;
+pub use shape::{ShapeBuilder, Shapes};

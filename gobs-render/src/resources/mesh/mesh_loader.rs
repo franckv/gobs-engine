@@ -113,6 +113,9 @@ impl MeshLoader {
 
         let indices = &geometry.indices;
 
+        debug_assert!(!vertices.is_empty());
+        debug_assert!(!indices.is_empty());
+
         self.load_data(hal, &vertices, indices)
     }
 }

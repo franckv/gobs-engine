@@ -5,50 +5,30 @@ use glam::Vec2;
 use gobs_core::Color;
 use gobs_render_hal::VertexData;
 
-use crate::resources::{BoundingBox, MeshGeometry};
+use crate::{
+    MeshBuilder,
+    resources::{BoundingBox, MeshGeometry},
+};
 
 const T_MIN: f32 = 0.01;
 const T_MID: f32 = 0.5;
 const T_MAX: f32 = 1. - T_MIN;
 
+const QUAD_UV: [[f32; 2]; 4] = [
+    [T_MIN, T_MAX],
+    [T_MIN, T_MIN],
+    [T_MAX, T_MAX],
+    [T_MAX, T_MIN],
+];
+
 pub struct Shapes;
 
 impl Shapes {
     pub fn triangle(colors: &[Color], size: f32) -> Arc<MeshGeometry> {
-        let mut builder = MeshGeometry::builder("triangle");
-
-        let (top, bottom, left, right) = (size / 2., -size / 2., -size / 2., size / 2.);
-
-        let v = [
-            [left, bottom, 0.],
-            [right, bottom, 0.],
-            [(left + right) / 2., top, 0.],
-        ];
-
-        let n = [[0., 0., 1.]];
-
-        let t = [
-            [T_MIN, T_MAX],
-            [T_MAX, T_MAX],
-            [(T_MIN + T_MAX) / 2., T_MIN],
-        ];
-
-        let vi = [1, 2, 3];
-
-        let ni = [1, 1, 1];
-
-        for i in 0..vi.len() {
-            let vertex_data = VertexData::builder()
-                .position(v[vi[i] - 1].into())
-                .color(colors[(vi[i] - 1) % colors.len()])
-                .normal(n[ni[i] - 1].into())
-                .texture(t[vi[i] - 1].into())
-                .build();
-
-            builder.vertex(vertex_data);
-        }
-
-        builder.build()
+        ShapeBuilder::new("triangle")
+            .colors(colors)
+            .add_triangle(size, size)
+            .build()
     }
 
     pub fn rect(
@@ -58,95 +38,32 @@ impl Shapes {
         left: f32,
         right: f32,
     ) -> Arc<MeshGeometry> {
-        let mut builder = MeshGeometry::builder("rect");
-
-        let v = [
-            [left, top, 0.],
-            [right, top, 0.],
-            [left, bottom, 0.],
-            [right, bottom, 0.],
-        ];
-
-        let n = [[0., 0., 1.]];
-
-        let t = [
-            [T_MIN, T_MIN],
-            [T_MAX, T_MIN],
-            [T_MIN, T_MAX],
-            [T_MAX, T_MAX],
-        ];
-
-        let vi = [1, 3, 4, 4, 2, 1];
-
-        let ni = [1, 1, 1, 1, 1, 1];
-
-        for i in 0..vi.len() {
-            let vertex_data = VertexData::builder()
-                .position(v[vi[i] - 1].into())
-                .color(colors[(vi[i] - 1) % colors.len()])
-                .texture(t[vi[i] - 1].into())
-                .normal(n[ni[i] - 1].into())
-                .build();
-
-            builder.vertex(vertex_data);
-        }
-
-        builder.build()
+        ShapeBuilder::new("rect")
+            .colors(colors)
+            .add_quad([
+                [left, top, 0.],
+                [right, top, 0.],
+                [left, bottom, 0.],
+                [right, bottom, 0.],
+            ])
+            .build()
     }
 
-    pub fn quad(colors: &[Color]) -> Arc<MeshGeometry> {
+    pub fn square(colors: &[Color]) -> Arc<MeshGeometry> {
         Self::rect(colors, 0.5, -0.5, -0.5, 0.5)
     }
 
     pub fn hexagon(colors: &[Color]) -> Arc<MeshGeometry> {
-        let mut builder = MeshGeometry::builder("hexagon");
-
         let width = 1.;
         let height = 3.0f32.sqrt() / 2.;
 
-        let center = [0., 0., 0.];
-        let ne = [width / 2., height, 0.];
-        let e = [width, 0., 0.];
-        let se = [width / 2., -height, 0.];
-        let sw = [-width / 2., -height, 0.];
-        let w = [-width, 0., 0.];
-        let nw = [-width / 2., height, 0.];
-
-        let v = [center, ne, e, se, sw, w, nw];
-
-        let n = [[0., 0., 1.]];
-
-        let t = [
-            [T_MID, T_MID],
-            [T_MAX, T_MAX],
-            [T_MAX, T_MID],
-            [T_MAX, T_MIN],
-            [T_MIN, T_MIN],
-            [T_MIN, T_MID],
-            [T_MIN, T_MAX],
-        ];
-
-        let vi = [1, 3, 2, 1, 4, 3, 1, 5, 4, 1, 6, 5, 1, 7, 6, 1, 2, 7];
-
-        let ni = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1];
-
-        for i in 0..vi.len() {
-            let vertex_data = VertexData::builder()
-                .position(v[vi[i] - 1].into())
-                .color(colors[(vi[i] - 1) % colors.len()])
-                .texture(t[vi[i] - 1].into())
-                .normal(n[ni[i] - 1].into())
-                .build();
-
-            builder.vertex(vertex_data);
-        }
-
-        builder.build()
+        ShapeBuilder::new("hexagon")
+            .colors(colors)
+            .add_hex(width, height)
+            .build()
     }
 
     pub fn cube(colors: &[Color], size: f32) -> Arc<MeshGeometry> {
-        let mut builder = MeshGeometry::builder("cube");
-
         let (top, bottom, left, right, front, back) = (
             size / 2.,
             -size / 2.,
@@ -167,66 +84,18 @@ impl Shapes {
             [right, bottom, back],
         ];
 
-        let n = [
-            [0., 0., 1.],
-            [0., 0., -1.],
-            [-1., 0., 0.],
-            [1., 0., 0.],
-            [0., 1., 0.],
-            [0., -1., 0.],
-        ];
-
-        let t = [
-            [T_MIN, T_MIN],
-            [T_MAX, T_MIN],
-            [T_MIN, T_MAX],
-            [T_MAX, T_MAX],
-        ];
-
-        let vi = [
-            3, 4, 2, 3, 2, 1, // F
-            8, 7, 5, 8, 5, 6, // B
-            7, 3, 1, 7, 1, 5, // L
-            4, 8, 6, 4, 6, 2, // R
-            1, 2, 6, 1, 6, 5, // U
-            7, 8, 4, 7, 4, 3, // D
-        ];
-
-        let ni = [
-            1, 1, 1, 1, 1, 1, // F
-            2, 2, 2, 2, 2, 2, // B
-            3, 3, 3, 3, 3, 3, // L
-            4, 4, 4, 4, 4, 4, // R
-            5, 5, 5, 5, 5, 5, // U
-            6, 6, 6, 6, 6, 6, // D
-        ];
-
-        let ti = [
-            3, 4, 2, 3, 2, 1, // F
-            3, 4, 2, 3, 2, 1, // B
-            3, 4, 2, 3, 2, 1, // L
-            3, 4, 2, 3, 2, 1, // R
-            3, 4, 2, 3, 2, 1, // U
-            3, 4, 2, 3, 2, 1, // D
-        ];
-
-        for i in 0..vi.len() {
-            let vertex_data = VertexData::builder()
-                .position(v[vi[i] - 1].into())
-                .color(colors[(vi[i] - 1) % colors.len()])
-                .normal(n[ni[i] - 1].into())
-                .texture(t[ti[i] - 1].into())
-                .build();
-
-            builder.vertex(vertex_data);
-        }
-
-        builder.build()
+        ShapeBuilder::new("cube")
+            .colors(colors)
+            .add_quad([v[2], v[0], v[3], v[1]])
+            .add_quad([v[7], v[5], v[6], v[4]])
+            .add_quad([v[6], v[4], v[2], v[0]])
+            .add_quad([v[3], v[1], v[7], v[5]])
+            .add_quad([v[0], v[4], v[1], v[5]])
+            .add_quad([v[6], v[2], v[7], v[3]])
+            .build()
     }
 
     pub fn cubemap(cols: u32, rows: u32, index: &[u32], size: f32) -> Arc<MeshGeometry> {
-        let mut builder = MeshGeometry::builder("cube");
-
         let (top, bottom, left, right, front, back) = (
             size / 2.,
             -size / 2.,
@@ -247,66 +116,20 @@ impl Shapes {
             [right, bottom, back],
         ];
 
-        let n = [
-            [0., 0., 1.],
-            [0., 0., -1.],
-            [-1., 0., 0.],
-            [1., 0., 0.],
-            [0., 1., 0.],
-            [0., -1., 0.],
-        ];
+        let uv = |i: u32| {
+            QUAD_UV.map(|c| {
+                Self::tex_map(c.into(), cols, rows, index[(i as usize) % index.len()]).into()
+            })
+        };
 
-        let t = [
-            [T_MIN, T_MIN],
-            [T_MAX, T_MIN],
-            [T_MIN, T_MAX],
-            [T_MAX, T_MAX],
-        ];
-
-        let vi = [
-            3, 4, 2, 3, 2, 1, // F
-            8, 7, 5, 8, 5, 6, // B
-            7, 3, 1, 7, 1, 5, // L
-            4, 8, 6, 4, 6, 2, // R
-            1, 2, 6, 1, 6, 5, // U
-            7, 8, 4, 7, 4, 3, // D
-        ];
-
-        let ni = [
-            1, 1, 1, 1, 1, 1, // F
-            2, 2, 2, 2, 2, 2, // B
-            3, 3, 3, 3, 3, 3, // L
-            4, 4, 4, 4, 4, 4, // R
-            5, 5, 5, 5, 5, 5, // U
-            6, 6, 6, 6, 6, 6, // D
-        ];
-
-        let ti = [
-            3, 4, 2, 3, 2, 1, // F
-            3, 4, 2, 3, 2, 1, // B
-            3, 4, 2, 3, 2, 1, // L
-            3, 4, 2, 3, 2, 1, // R
-            3, 4, 2, 3, 2, 1, // U
-            3, 4, 2, 3, 2, 1, // D
-        ];
-
-        for i in 0..vi.len() {
-            let vertex_data = VertexData::builder()
-                .position(v[vi[i] - 1].into())
-                .color(Color::WHITE)
-                .texture(Self::tex_map(
-                    t[ti[i] - 1].into(),
-                    cols,
-                    rows,
-                    index[(i / index.len()) % index.len()],
-                ))
-                .normal(n[ni[i] - 1].into())
-                .build();
-
-            builder.vertex(vertex_data);
-        }
-
-        builder.build()
+        ShapeBuilder::new("cube")
+            .add_quad_uv([v[2], v[0], v[3], v[1]], uv(0))
+            .add_quad_uv([v[7], v[5], v[6], v[4]], uv(1))
+            .add_quad_uv([v[6], v[4], v[2], v[0]], uv(2))
+            .add_quad_uv([v[3], v[1], v[7], v[5]], uv(3))
+            .add_quad_uv([v[0], v[4], v[1], v[5]], uv(4))
+            .add_quad_uv([v[6], v[2], v[7], v[3]], uv(5))
+            .build()
     }
 
     pub fn bounding_box(bounding_box: BoundingBox) -> Arc<MeshGeometry> {
@@ -357,6 +180,137 @@ impl Shapes {
     }
 }
 
+pub struct ShapeBuilder {
+    builder: MeshBuilder,
+    colors: Vec<Color>,
+}
+
+impl ShapeBuilder {
+    pub fn new(name: &str) -> Self {
+        let builder = MeshGeometry::builder(name);
+
+        Self {
+            builder,
+            colors: vec![Color::WHITE],
+        }
+    }
+
+    pub fn colors(mut self, colors: &[Color]) -> Self {
+        self.colors.clear();
+        self.colors.extend_from_slice(colors);
+
+        self
+    }
+
+    pub fn add_vertex(
+        mut self,
+        position: [f32; 3],
+        color: usize,
+        normal: [f32; 3],
+        uv: [f32; 2],
+    ) -> Self {
+        let vertex_data = VertexData::builder()
+            .position(position.into())
+            .color(self.colors[color % self.colors.len()])
+            .normal(normal.into())
+            .texture(uv.into())
+            .build();
+
+        self.builder.vertex(vertex_data);
+
+        self
+    }
+
+    fn add_face(mut self, vertices: &[[f32; 3]], uv: &[[f32; 2]], indices: &[usize]) -> Self {
+        debug_assert!(vertices.len() >= 3);
+        debug_assert!(vertices.len() == uv.len());
+
+        let normal = Self::normal(
+            vertices[indices[0]],
+            vertices[indices[1]],
+            vertices[indices[2]],
+        );
+        for &i in indices {
+            self = self.add_vertex(vertices[i], i, normal, uv[i]);
+        }
+
+        self
+    }
+
+    pub fn add_triangle(self, width: f32, height: f32) -> Self {
+        let (top, bottom, left, right) = (height / 2., -height / 2., -width / 2., width / 2.);
+
+        let v = [
+            [left, bottom, 0.],
+            [right, bottom, 0.],
+            [(left + right) / 2., top, 0.],
+        ];
+
+        let t = [
+            [T_MIN, T_MAX],
+            [T_MAX, T_MAX],
+            [(T_MIN + T_MAX) / 2., T_MIN],
+        ];
+
+        self.add_face(&v, &t, &[0, 1, 2])
+    }
+
+    pub fn add_quad(self, corners: [[f32; 3]; 4]) -> Self {
+        self.add_quad_uv(corners, QUAD_UV)
+    }
+
+    pub fn add_quad_uv(self, corners: [[f32; 3]; 4], uv: [[f32; 2]; 4]) -> Self {
+        self.add_face(&corners, &uv, &[0, 2, 3, 3, 1, 0])
+    }
+
+    fn add_hex(self, width: f32, height: f32) -> Self {
+        let center = [0., 0., 0.];
+        let ne = [width / 2., height, 0.];
+        let e = [width, 0., 0.];
+        let se = [width / 2., -height, 0.];
+        let sw = [-width / 2., -height, 0.];
+        let w = [-width, 0., 0.];
+        let nw = [-width / 2., height, 0.];
+
+        let v = [center, ne, e, se, sw, w, nw];
+
+        let t = [
+            [T_MID, T_MID],
+            [T_MAX, T_MAX],
+            [T_MAX, T_MID],
+            [T_MAX, T_MIN],
+            [T_MIN, T_MIN],
+            [T_MIN, T_MID],
+            [T_MIN, T_MAX],
+        ];
+
+        self.add_face(
+            &v,
+            &t,
+            &[0, 2, 1, 0, 3, 2, 0, 4, 3, 0, 5, 4, 0, 6, 5, 0, 1, 6],
+        )
+    }
+
+    fn normal(v0: [f32; 3], v1: [f32; 3], v2: [f32; 3]) -> [f32; 3] {
+        let e1 = [v1[0] - v0[0], v1[1] - v0[1], v1[2] - v0[2]];
+        let e2 = [v2[0] - v0[0], v2[1] - v0[1], v2[2] - v0[2]];
+
+        let n = [
+            e1[1] * e2[2] - e1[2] * e2[1],
+            e1[2] * e2[0] - e1[0] * e2[2],
+            e1[0] * e2[1] - e1[1] * e2[0],
+        ];
+
+        let len = (n[0] * n[0] + n[1] * n[1] + n[2] * n[2]).sqrt();
+
+        [n[0] / len, n[1] / len, n[2] / len]
+    }
+
+    pub fn build(self) -> Arc<MeshGeometry> {
+        self.builder.build()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use tracing::Level;
@@ -364,7 +318,7 @@ mod tests {
 
     use gobs_core::{Color, logger, utils::timer::Timer};
 
-    use crate::{BoundingBox, Shapes};
+    use crate::{BoundingBox, Shapes, resources::mesh::shape::ShapeBuilder};
 
     fn setup() {
         let sub = FmtSubscriber::builder()
@@ -396,5 +350,52 @@ mod tests {
             let _ = Shapes::bounding_box(bounding_box);
         }
         tracing::info!(target: logger::RENDER, "Build {} boxes: {}", n, 1000. * timer.delta());
+    }
+
+    #[test]
+    fn test_normal() {
+        setup();
+
+        let size = 1.;
+
+        let (top, bottom, left, right, front, back) = (
+            size / 2.,
+            -size / 2.,
+            -size / 2.,
+            size / 2.,
+            size / 2.,
+            -size / 2.,
+        );
+
+        let v = [
+            [left, top, front],
+            [right, top, front],
+            [left, bottom, front],
+            [right, bottom, front],
+            [left, top, back],
+            [right, top, back],
+            [left, bottom, back],
+            [right, bottom, back],
+        ];
+
+        let n1 = [
+            [0., 0., 1.],
+            [0., 0., -1.],
+            [-1., 0., 0.],
+            [1., 0., 0.],
+            [0., 1., 0.],
+            [0., -1., 0.],
+        ];
+
+        let n2 = [
+            ShapeBuilder::normal(v[2], v[3], v[1]), // F
+            ShapeBuilder::normal(v[7], v[6], v[4]), // B
+            ShapeBuilder::normal(v[6], v[2], v[0]), // L
+            ShapeBuilder::normal(v[3], v[7], v[5]), // R
+            ShapeBuilder::normal(v[0], v[1], v[5]), // U
+            ShapeBuilder::normal(v[6], v[7], v[3]), // D
+        ];
+
+        assert_eq!(n1, n2);
     }
 }
