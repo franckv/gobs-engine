@@ -52,6 +52,9 @@ impl<D> VoxelNode<D> for VoxelNode64<D> {
     }
 
     fn add_child(&mut self, idx: usize, node_idx: usize) {
+        debug_assert!(idx < Self::CHILDREN_NUMBER);
+        debug_assert!(!self.has_child(idx));
+
         self.childmask |= 1 << idx;
 
         match &mut self.data {
@@ -61,6 +64,7 @@ impl<D> VoxelNode<D> for VoxelNode64<D> {
                 self.data = VoxelChildData::Children(children);
             }
             VoxelChildData::Children(children) => {
+                debug_assert!(children[idx] == 0);
                 children[idx] = node_idx;
             }
             VoxelChildData::Leaf(_) => todo!(),
