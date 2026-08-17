@@ -48,7 +48,7 @@ impl World {
 
         Self {
             camera,
-            camera_transform: Transform::from_translation([-6., 9., 36.].into()),
+            camera_transform: Transform::from_translation([-17., 27., 48.].into()),
             light,
             voxels: Chunk::new(3),
             material,
@@ -121,7 +121,7 @@ impl<Context: GobsContext> GobsGame for App<Context> {
     }
 
     async fn start(&mut self, _ctx: &mut Context) {
-        // self.load_plane();
+        self.load_plane();
         self.load_sphere();
     }
 
@@ -203,12 +203,10 @@ impl<Context: GobsContext> App<Context> {
                 self.world.voxels.insert(VoxelData, x, 0, z);
             }
         }
-
-        self.world.voxels.insert(VoxelData, 7, 2, 13);
     }
 
     pub fn load_sphere(&mut self) {
-        let radius: i32 = 16;
+        let radius: i32 = 8;
         let diameter = 2 * radius;
 
         for z in 0..diameter {
@@ -216,9 +214,12 @@ impl<Context: GobsContext> App<Context> {
                 for x in 0..diameter {
                     let d = (x - radius).pow(2) + (y - radius).pow(2) + (z - radius).pow(2);
                     if d.isqrt() < radius {
-                        self.world
-                            .voxels
-                            .insert(VoxelData, x as u32, y as u32, z as u32);
+                        self.world.voxels.insert(
+                            VoxelData,
+                            (x + radius) as u32,
+                            (y + 5) as u32,
+                            (z + radius) as u32,
+                        );
                     }
                 }
             }

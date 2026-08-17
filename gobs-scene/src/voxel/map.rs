@@ -59,6 +59,36 @@ impl<D, N: VoxelNode<D>> VoxelTree<D, N> {
         None
     }
 
+    pub fn get(&self, x: u32, y: u32, z: u32) -> Option<&D> {
+        let mut node_idx = self.root;
+
+        for level in 0..=self.order {
+            if level == self.order {
+                return self.nodes[node_idx].get_data();
+            }
+
+            let child_idx = Self::index(x, y, z, level, self.order);
+
+            let child_node_idx = self.nodes[node_idx].child(child_idx)?;
+            node_idx = child_node_idx;
+        }
+
+        None
+    }
+
+    pub fn is_solid(&self, x: i64, y: i64, z: i64) -> bool {
+        if x < 0 || y < 0 || z < 0 {
+            return false;
+        }
+
+        let voxel_count = N::SUBDIVISION.pow(self.order) as i64;
+        if x >= voxel_count || y >= voxel_count || z >= voxel_count {
+            return false;
+        }
+
+        self.get(x as u32, y as u32, z as u32).is_some()
+    }
+
     fn check_bounds(x: u32, y: u32, z: u32, level: u32, order: u32) -> bool {
         debug_assert!(level <= order);
 
@@ -170,7 +200,7 @@ impl<D, N: VoxelNode<D>> VoxelTree<D, N> {
     pub fn meshify(&mut self) -> Arc<MeshGeometry> {
         let mut timer = Timer::new();
 
-        let mut builder = ShapeBuilder::new("voxel").colors(&[Color::RED]);
+        let mut builder = ShapeBuilder::new("voxel").colors(&[Color::RED, Color::BLUE]);
 
         let size = 1.;
         let (top, bottom, left, right, front, back) = (
@@ -182,9 +212,16 @@ impl<D, N: VoxelNode<D>> VoxelTree<D, N> {
             -size / 2.,
         );
 
-        let mut quads = Vec::new();
+        let mut positions = Vec::new();
 
         self.visit(true, &mut |pos, _| {
+            positions.push(pos);
+        });
+
+        let count = positions.len();
+        let mut faces = 0;
+
+        for pos in positions {
             let top = top + pos[1] as f32;
             let bottom = bottom + pos[1] as f32;
             let left = left + pos[0] as f32;
@@ -203,21 +240,33 @@ impl<D, N: VoxelNode<D>> VoxelTree<D, N> {
                 [right, bottom, back],
             ];
 
-            quads.push([v[2], v[0], v[3], v[1]]);
-            quads.push([v[7], v[5], v[6], v[4]]);
-            quads.push([v[6], v[4], v[2], v[0]]);
-            quads.push([v[3], v[1], v[7], v[5]]);
-            quads.push([v[0], v[4], v[1], v[5]]);
-            quads.push([v[6], v[2], v[7], v[3]]);
-        });
-
-        let count = quads.len();
-
-        for quad in quads {
-            builder = builder.add_quad(quad);
+            if !self.is_solid(pos[0] as i64, pos[1] as i64, pos[2] as i64 + 1) {
+                builder = builder.add_quad([v[2], v[0], v[3], v[1]]); // F
+                faces += 1;
+            }
+            if !self.is_solid(pos[0] as i64, pos[1] as i64, pos[2] as i64 - 1) {
+                builder = builder.add_quad([v[7], v[5], v[6], v[4]]); // B
+                faces += 1;
+            }
+            if !self.is_solid(pos[0] as i64 - 1, pos[1] as i64, pos[2] as i64) {
+                builder = builder.add_quad([v[6], v[4], v[2], v[0]]); // L
+                faces += 1;
+            }
+            if !self.is_solid(pos[0] as i64 + 1, pos[1] as i64, pos[2] as i64) {
+                builder = builder.add_quad([v[3], v[1], v[7], v[5]]); // R
+                faces += 1;
+            }
+            if !self.is_solid(pos[0] as i64, pos[1] as i64 + 1, pos[2] as i64) {
+                builder = builder.add_quad([v[0], v[4], v[1], v[5]]); // U
+                faces += 1;
+            }
+            if !self.is_solid(pos[0] as i64, pos[1] as i64 - 1, pos[2] as i64) {
+                builder = builder.add_quad([v[6], v[2], v[7], v[3]]); // D
+                faces += 1;
+            }
         }
 
-        tracing::info!(target: logger::RENDER, "Meshify {} quads in {}ms", count, 1000. * timer.delta());
+        tracing::info!(target: logger::RENDER, "Meshify {} voxels ({} faces) in {}ms", count, faces, 1000. * timer.delta());
 
         builder.build()
     }
@@ -393,6 +442,34 @@ mod tests {
                 _ => panic!("Missing children data, level={}", level),
             };
         }
+    }
+
+    #[test]
+    fn test_get() {
+        setup();
+
+        let mut tree = Tree::new(0);
+        assert!(tree.get(0, 0, 0).is_none());
+        tree.insert(VoxelData, 0, 0, 0);
+        assert!(tree.get(0, 0, 0).is_some());
+
+        let mut tree = Tree::new(2);
+        assert!(tree.get(0, 0, 0).is_none());
+        tree.insert(VoxelData, 0, 0, 0);
+        assert!(tree.get(0, 0, 0).is_some());
+        assert!(tree.get(1, 0, 0).is_none());
+        tree.insert(VoxelData, 0, 0, 0);
+        assert!(tree.get(0, 0, 0).is_some());
+
+        let mut tree = Tree::new(3);
+        assert!(tree.get(63, 63, 63).is_none());
+        tree.insert(VoxelData, 63, 63, 63);
+        assert!(tree.get(63, 63, 63).is_some());
+        assert!(tree.get(62, 63, 63).is_none());
+
+        let mut tree = Tree::new(3);
+        tree.insert(VoxelData, 0, 0, 0);
+        assert!(tree.get(63, 63, 63).is_none());
     }
 
     #[test]
