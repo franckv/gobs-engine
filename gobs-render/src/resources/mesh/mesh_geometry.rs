@@ -111,7 +111,6 @@ impl MeshBuilder {
         self
     }
 
-    #[tracing::instrument(target = "profile", skip_all, level = "trace")]
     pub fn indices(&mut self, indices: &[u32], append: bool) -> &mut Self {
         if append {
             let start = self.vertices.len();
@@ -144,17 +143,28 @@ impl MeshBuilder {
             return self;
         }
 
-        let mut unique = HashMap::new();
-
         tracing::trace!(target: logger::RESOURCES, "Indexing {} vertices", self.vertices.len());
 
+        let mut unique = HashMap::with_capacity(self.vertices.len());
         let mut idx = 0;
+
         let vertices = std::mem::take(&mut self.vertices)
             .into_iter()
             .filter(|v| {
-                // TODO: avoid allocation
-                let key = format!("{}:{}:{}", v.position(), v.texture(), v.normal());
-                if let hash_map::Entry::Vacant(e) = unique.entry(key.clone()) {
+                let (pos, tex, norm) = (v.position(), v.texture(), v.normal());
+
+                let key = [
+                    pos.x.to_bits(),
+                    pos.y.to_bits(),
+                    pos.z.to_bits(),
+                    tex.x.to_bits(),
+                    tex.y.to_bits(),
+                    norm.x.to_bits(),
+                    norm.y.to_bits(),
+                    norm.z.to_bits(),
+                ];
+
+                if let hash_map::Entry::Vacant(e) = unique.entry(key) {
                     e.insert(idx);
                     self.indices.push(idx);
                     idx += 1;
@@ -168,6 +178,8 @@ impl MeshBuilder {
             .collect::<Vec<VertexData>>();
 
         self.vertices = vertices;
+
+        tracing::warn!(target: logger::RESOURCES, "Autoindex {} vertices, {} indices", self.vertices.len(), self.indices.len());
 
         self
     }

@@ -76,7 +76,7 @@ where
     ) {
         let s = ui.style_mut();
         for id in s.text_styles.values_mut() {
-            id.size = 14.;
+            id.size = 24.;
         }
 
         egui::Panel::left("left").show(ui, |ui| {

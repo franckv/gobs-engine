@@ -7,7 +7,10 @@ pub(crate) mod registry;
 
 use std::{any::Any, collections::HashMap, sync::Arc};
 
-use winit::{dpi::PhysicalPosition, window::{CursorGrabMode, Window}};
+use winit::{
+    dpi::PhysicalPosition,
+    window::{CursorGrabMode, Window},
+};
 
 use gobs_core::{ImageExtent2D, ImageFormat, SamplerFilter, logger};
 use gobs_vulkan as vk;

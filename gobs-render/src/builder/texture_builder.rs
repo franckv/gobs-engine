@@ -47,7 +47,7 @@ impl<'a> RenderTextureBuilder<'a> {
         self
     }
 
-    pub fn diffuse_atlas(mut self, filename: &[&str], format: ImageFormat, cols: u32) -> Self {
+    pub fn diffuse_atlas(mut self, filename: &[&str], format: ImageFormat, cols: usize) -> Self {
         let properties = TextureProperties::with_atlas(self.name, format, filename, cols);
 
         self.properties = Some(properties);
@@ -55,7 +55,7 @@ impl<'a> RenderTextureBuilder<'a> {
         self
     }
 
-    pub fn normal_atlas(mut self, filename: &[&str], format: ImageFormat, cols: u32) -> Self {
+    pub fn normal_atlas(mut self, filename: &[&str], format: ImageFormat, cols: usize) -> Self {
         let mut properties = TextureProperties::with_atlas(self.name, format, filename, cols);
         properties.format.ty = TextureType::Normal;
 

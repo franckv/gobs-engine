@@ -30,8 +30,8 @@ pub const ATLAS_N: &[&str] = &[
     "blocks/cobblestone_n.png",
     "blocks/mossy_cobblestone_n.png",
 ];
-pub const ATLAS_COLS: u32 = 3;
-pub const ATLAS_ROWS: u32 = 2;
+pub const ATLAS_COLS: usize = 3;
+pub const ATLAS_ROWS: usize = 2;
 pub const MAP: &str = "dungeon.map";
 pub const TILE_SIZE: f32 = 1.;
 pub const WIDTH: u32 = 800;

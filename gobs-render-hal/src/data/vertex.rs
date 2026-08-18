@@ -196,40 +196,6 @@ impl VertexData {
     }
 }
 
-/*
-impl Add<VertexData> for VertexData {
-    type Output = Self;
-
-    fn add(self, rhs: VertexData) -> Self::Output {
-        VertexData {
-            position: self.position + rhs.position,
-            color: self.color + rhs.color,
-            texture: self.texture + rhs.texture,
-            normal: self.normal + rhs.normal,
-            normal_texture: self.normal_texture + rhs.normal_texture,
-            tangent: self.tangent + rhs.tangent,
-            bitangent: self.bitangent + rhs.bitangent,
-        }
-    }
-}
-
-impl Mul<f32> for VertexData {
-    type Output = Self;
-
-    fn mul(self, rhs: f32) -> Self::Output {
-        VertexData {
-            position: self.position * rhs,
-            color: self.color * rhs,
-            texture: self.texture * rhs,
-            normal: self.normal * rhs,
-            normal_texture: self.normal_texture * rhs,
-            tangent: self.tangent * rhs,
-            bitangent: self.bitangent * rhs,
-        }
-    }
-}
-*/
-
 pub struct VertexDataBuilder {
     pub position: Vec3,
     pub color: Color,

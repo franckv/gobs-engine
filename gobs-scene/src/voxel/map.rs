@@ -200,7 +200,7 @@ impl<D, N: VoxelNode<D>> VoxelTree<D, N> {
     pub fn meshify(&mut self) -> Arc<MeshGeometry> {
         let mut timer = Timer::new();
 
-        let mut builder = ShapeBuilder::new("voxel").colors(&[Color::RED, Color::BLUE]);
+        let mut builder = ShapeBuilder::new("voxel").with_colors(&[Color::RED, Color::BLUE]);
 
         let size = 1.;
         let (top, bottom, left, right, front, back) = (

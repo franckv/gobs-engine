@@ -4,12 +4,12 @@ use ahash::HashMap;
 
 use gobs_core::{ImageExtent2D, Transform, logger};
 use gobs_render_graph::{GfxContext, RenderFlags, RenderObject, SceneData};
-use gobs_render_hal::{BindResource, Handle, RenderHAL};
+use gobs_render_hal::{BindResource, Handle, RenderHAL, VertexData};
 use gobs_resource::{ResourceError, ResourceHandle, ResourceManager, camera::Camera, light::Light};
 
 use crate::{
-    BoundingBox, Material, MaterialInstance, Mesh, MeshBuilder, MeshGeometry, Pipeline,
-    PipelineProperties, RenderMeshBuilder, RenderModelBuilder, Shapes, Texture, model::Model,
+    BoundingBox, Material, MaterialInstance, Mesh, Pipeline, PipelineProperties, RenderMeshBuilder,
+    RenderModelBuilder, ShapeBuilder, Texture, model::Model,
 };
 
 #[derive(Clone)]
@@ -28,7 +28,7 @@ pub struct RenderBatch {
     pub(crate) lights: Vec<(Light, Transform)>,
     pub(crate) extent: ImageExtent2D,
     generate_bounds: bool,
-    bounding_geometry: Option<MeshBuilder>,
+    bounding_geometry: Option<ShapeBuilder>,
     material_cache: HashMap<ResourceHandle<MaterialInstance>, MaterialData>,
 }
 
@@ -246,21 +246,42 @@ impl RenderBatch {
     fn add_bounds(&mut self, bounding_box: BoundingBox) {
         tracing::debug!(target: logger::RENDER, "Add bounding box");
 
-        let mesh = Shapes::bounding_box(bounding_box);
+        let (left, bottom, back) = bounding_box.bottom_left().into();
+        let (right, top, front) = bounding_box.top_right().into();
 
-        tracing::trace!(target: logger::RENDER, "Bounding box mesh={:?}", &mesh.vertices);
+        let v = [
+            [left, top, front],
+            [right, top, front],
+            [left, bottom, front],
+            [right, bottom, front],
+            [left, top, back],
+            [right, top, back],
+            [left, bottom, back],
+            [right, bottom, back],
+        ];
 
-        let mut builder = match self.bounding_geometry.take() {
+        const VI: [u32; 36] = [
+            2, 3, 1, 2, 1, 0, // F
+            7, 6, 4, 7, 4, 5, // B
+            6, 2, 0, 6, 0, 4, // L
+            3, 7, 5, 3, 5, 1, // R
+            0, 1, 5, 0, 5, 4, // U
+            6, 7, 3, 6, 3, 2, // D
+        ];
+
+        tracing::trace!(target: logger::RENDER, "Bounding box mesh={:?}", &v);
+
+        let builder = match self.bounding_geometry.take() {
             Some(builder) => builder,
-            None => {
-                let mut builder = MeshGeometry::builder("bounding");
-                builder.generate_tangents(false);
-                builder
-            }
+            None => ShapeBuilder::new("bounding").geometry_only(),
         };
 
-        builder.extend(mesh);
-        self.bounding_geometry = Some(builder);
+        let vertices: Vec<_> = v
+            .iter()
+            .map(|&pos| VertexData::builder().position(pos.into()).build())
+            .collect();
+
+        self.bounding_geometry = Some(builder.add_vertices(&vertices, &VI));
     }
 
     #[tracing::instrument(target = "profile", skip_all, level = "trace")]

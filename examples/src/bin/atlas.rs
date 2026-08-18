@@ -126,7 +126,7 @@ impl<Context: GobsContext> App<Context> {
             .with_geometry(Shapes::cubemap(
                 examples::ATLAS_COLS,
                 examples::ATLAS_ROWS,
-                &[3, 3, 3, 3, 4, 1],
+                &[2, 2, 2, 2, 3, 0],
                 1.,
             ))
             .for_material(material)

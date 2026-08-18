@@ -5,28 +5,14 @@ use glam::Vec2;
 use gobs_core::Color;
 use gobs_render_hal::VertexData;
 
-use crate::{
-    MeshBuilder,
-    resources::{BoundingBox, MeshGeometry},
-};
-
-const T_MIN: f32 = 0.01;
-const T_MID: f32 = 0.5;
-const T_MAX: f32 = 1. - T_MIN;
-
-const QUAD_UV: [[f32; 2]; 4] = [
-    [T_MIN, T_MAX],
-    [T_MIN, T_MIN],
-    [T_MAX, T_MAX],
-    [T_MAX, T_MIN],
-];
+use crate::{MeshBuilder, resources::MeshGeometry};
 
 pub struct Shapes;
 
 impl Shapes {
     pub fn triangle(colors: &[Color], size: f32) -> Arc<MeshGeometry> {
         ShapeBuilder::new("triangle")
-            .colors(colors)
+            .with_colors(colors)
             .add_triangle(size, size)
             .build()
     }
@@ -39,7 +25,7 @@ impl Shapes {
         right: f32,
     ) -> Arc<MeshGeometry> {
         ShapeBuilder::new("rect")
-            .colors(colors)
+            .with_colors(colors)
             .add_quad([
                 [left, top, 0.],
                 [right, top, 0.],
@@ -58,7 +44,7 @@ impl Shapes {
         let height = 3.0f32.sqrt() / 2.;
 
         ShapeBuilder::new("hexagon")
-            .colors(colors)
+            .with_colors(colors)
             .add_hex(width, height)
             .build()
     }
@@ -85,7 +71,7 @@ impl Shapes {
         ];
 
         ShapeBuilder::new("cube")
-            .colors(colors)
+            .with_colors(colors)
             .add_quad([v[2], v[0], v[3], v[1]])
             .add_quad([v[7], v[5], v[6], v[4]])
             .add_quad([v[6], v[4], v[2], v[0]])
@@ -95,7 +81,7 @@ impl Shapes {
             .build()
     }
 
-    pub fn cubemap(cols: u32, rows: u32, index: &[u32], size: f32) -> Arc<MeshGeometry> {
+    pub fn cubemap(cols: usize, rows: usize, index: &[usize], size: f32) -> Arc<MeshGeometry> {
         let (top, bottom, left, right, front, back) = (
             size / 2.,
             -size / 2.,
@@ -116,73 +102,28 @@ impl Shapes {
             [right, bottom, back],
         ];
 
-        let uv = |i: u32| {
-            QUAD_UV.map(|c| {
-                Self::tex_map(c.into(), cols, rows, index[(i as usize) % index.len()]).into()
-            })
-        };
-
         ShapeBuilder::new("cube")
-            .add_quad_uv([v[2], v[0], v[3], v[1]], uv(0))
-            .add_quad_uv([v[7], v[5], v[6], v[4]], uv(1))
-            .add_quad_uv([v[6], v[4], v[2], v[0]], uv(2))
-            .add_quad_uv([v[3], v[1], v[7], v[5]], uv(3))
-            .add_quad_uv([v[0], v[4], v[1], v[5]], uv(4))
-            .add_quad_uv([v[6], v[2], v[7], v[3]], uv(5))
+            .with_atlas(cols, rows)
+            .with_atlas_index(index)
+            .add_quad([v[2], v[0], v[3], v[1]])
+            .add_quad([v[7], v[5], v[6], v[4]])
+            .add_quad([v[6], v[4], v[2], v[0]])
+            .add_quad([v[3], v[1], v[7], v[5]])
+            .add_quad([v[0], v[4], v[1], v[5]])
+            .add_quad([v[6], v[2], v[7], v[3]])
             .build()
-    }
-
-    pub fn bounding_box(bounding_box: BoundingBox) -> Arc<MeshGeometry> {
-        let (left, bottom, back) = bounding_box.bottom_left().into();
-        let (right, top, front) = bounding_box.top_right().into();
-
-        let v = [
-            [left, top, front],
-            [right, top, front],
-            [left, bottom, front],
-            [right, bottom, front],
-            [left, top, back],
-            [right, top, back],
-            [left, bottom, back],
-            [right, bottom, back],
-        ];
-
-        let vi = [
-            2, 3, 1, 2, 1, 0, // F
-            7, 6, 4, 7, 4, 5, // B
-            6, 2, 0, 6, 0, 4, // L
-            3, 7, 5, 3, 5, 1, // R
-            0, 1, 5, 0, 5, 4, // U
-            6, 7, 3, 6, 3, 2, // D
-        ];
-
-        let mut builder = MeshGeometry::builder("bounds");
-
-        for vertex in v {
-            let vertex_data = VertexData::builder().position(vertex.into()).build();
-
-            builder.vertex(vertex_data);
-        }
-
-        builder.generate_tangents(false).indices(&vi, false);
-
-        builder.build()
-    }
-
-    fn tex_map(tex_coords: Vec2, cols: u32, rows: u32, index: u32) -> Vec2 {
-        let col = ((index - 1) % cols) as f32;
-        let row = ((index - 1) / cols) as f32;
-
-        let u = (col + tex_coords.x) / cols as f32;
-        let v = (row + tex_coords.y) / rows as f32;
-
-        Vec2::new(u, v)
     }
 }
 
 pub struct ShapeBuilder {
     builder: MeshBuilder,
-    colors: Vec<Color>,
+    default_colors: Vec<Color>,
+    colors: Option<Vec<Color>>,
+    normals: Option<Vec<[f32; 3]>>,
+    atlas: Option<(usize, usize)>,
+    atlas_index: Option<Vec<usize>>,
+    face_index: usize,
+    geometry_only: bool,
 }
 
 impl ShapeBuilder {
@@ -191,13 +132,119 @@ impl ShapeBuilder {
 
         Self {
             builder,
-            colors: vec![Color::WHITE],
+            default_colors: vec![Color::WHITE],
+            colors: None,
+            normals: None,
+            atlas: None,
+            atlas_index: None,
+            face_index: 0,
+            geometry_only: false,
         }
     }
 
-    pub fn colors(mut self, colors: &[Color]) -> Self {
-        self.colors.clear();
-        self.colors.extend_from_slice(colors);
+    pub fn with_colors(mut self, colors: &[Color]) -> Self {
+        self.colors = Some(colors.to_vec());
+
+        self
+    }
+
+    pub fn with_normals(mut self, normals: &[[f32; 3]]) -> Self {
+        self.normals = Some(normals.to_vec());
+
+        self
+    }
+
+    pub fn with_atlas(mut self, cols: usize, rows: usize) -> Self {
+        self.atlas = Some((cols, rows));
+
+        self
+    }
+
+    pub fn with_atlas_index(mut self, index: &[usize]) -> Self {
+        self.atlas_index = Some(index.to_vec());
+
+        self
+    }
+
+    pub fn geometry_only(mut self) -> Self {
+        self.geometry_only = true;
+        self.builder.generate_tangents(false);
+
+        self
+    }
+
+    fn get_atlas_index(&self) -> usize {
+        if let Some(index) = &self.atlas_index {
+            index[self.face_index % index.len()]
+        } else {
+            self.face_index
+        }
+    }
+
+    fn get_colors(&self) -> &[Color] {
+        if let Some(colors) = &self.colors {
+            colors
+        } else {
+            &self.default_colors
+        }
+    }
+
+    fn default_uv(corners: usize) -> Vec<[f32; 2]> {
+        let t_min: f32 = 0.01;
+        let t_mid: f32 = 0.5;
+        let t_max: f32 = 1. - t_min;
+
+        if corners == 3 {
+            vec![
+                [t_min, t_max],
+                [t_max, t_max],
+                [(t_min + t_max) / 2., t_min],
+            ]
+        } else if corners == 4 {
+            vec![
+                [t_min, t_max],
+                [t_min, t_min],
+                [t_max, t_max],
+                [t_max, t_min],
+            ]
+        } else if corners == 7 {
+            vec![
+                [t_mid, t_mid],
+                [t_max, t_max],
+                [t_max, t_mid],
+                [t_max, t_min],
+                [t_min, t_min],
+                [t_min, t_mid],
+                [t_min, t_max],
+            ]
+        } else {
+            todo!()
+        }
+    }
+
+    fn tex_map(tex_coords: Vec2, cols: usize, rows: usize, index: usize) -> Vec2 {
+        let col = (index % cols) as f32;
+        let row = (index / cols) as f32;
+
+        let u = (col + tex_coords.x) / cols as f32;
+        let v = (row + tex_coords.y) / rows as f32;
+
+        Vec2::new(u, v)
+    }
+
+    fn get_uv(&self, corners: usize) -> Vec<[f32; 2]> {
+        if let Some((cols, rows)) = self.atlas {
+            Self::default_uv(corners)
+                .into_iter()
+                .map(|c| Self::tex_map(c.into(), cols, rows, self.get_atlas_index()).into())
+                .collect::<Vec<_>>()
+        } else {
+            Self::default_uv(corners)
+        }
+    }
+
+    pub fn add_vertices(mut self, vertices: &[VertexData], indices: &[u32]) -> Self {
+        self.builder.indices(indices, true).vertices(vertices);
 
         self
     }
@@ -209,9 +256,11 @@ impl ShapeBuilder {
         normal: [f32; 3],
         uv: [f32; 2],
     ) -> Self {
+        let colors = self.get_colors();
+
         let vertex_data = VertexData::builder()
             .position(position.into())
-            .color(self.colors[color % self.colors.len()])
+            .color(colors[color % colors.len()])
             .normal(normal.into())
             .texture(uv.into())
             .build();
@@ -221,18 +270,40 @@ impl ShapeBuilder {
         self
     }
 
-    fn add_face(mut self, vertices: &[[f32; 3]], uv: &[[f32; 2]], indices: &[usize]) -> Self {
+    fn add_face(mut self, vertices: &[[f32; 3]], indices: &[usize]) -> Self {
         debug_assert!(vertices.len() >= 3);
-        debug_assert!(vertices.len() == uv.len());
-
-        let normal = Self::normal(
-            vertices[indices[0]],
-            vertices[indices[1]],
-            vertices[indices[2]],
+        debug_assert!(
+            self.normals
+                .as_ref()
+                .is_none_or(|n| { n.len() == 1 || n.len() == vertices.len() })
         );
-        for &i in indices {
-            self = self.add_vertex(vertices[i], i, normal, uv[i]);
+
+        if self.geometry_only {
+            for &i in indices {
+                self = self.add_vertex(vertices[i], 0, [0.; 3], [0.; 2]);
+            }
+        } else {
+            let face_normal = Self::normal(
+                vertices[indices[0]],
+                vertices[indices[1]],
+                vertices[indices[2]],
+            );
+
+            let uv = self.get_uv(vertices.len());
+
+            for &i in indices {
+                let normal = if let Some(normals) = &self.normals {
+                    normals[i % normals.len()]
+                } else {
+                    face_normal
+                };
+                let uv = uv[i % uv.len()];
+
+                self = self.add_vertex(vertices[i], i, normal, uv);
+            }
         }
+
+        self.face_index += 1;
 
         self
     }
@@ -246,21 +317,11 @@ impl ShapeBuilder {
             [(left + right) / 2., top, 0.],
         ];
 
-        let t = [
-            [T_MIN, T_MAX],
-            [T_MAX, T_MAX],
-            [(T_MIN + T_MAX) / 2., T_MIN],
-        ];
-
-        self.add_face(&v, &t, &[0, 1, 2])
+        self.add_face(&v, &[0, 1, 2])
     }
 
     pub fn add_quad(self, corners: [[f32; 3]; 4]) -> Self {
-        self.add_quad_uv(corners, QUAD_UV)
-    }
-
-    pub fn add_quad_uv(self, corners: [[f32; 3]; 4], uv: [[f32; 2]; 4]) -> Self {
-        self.add_face(&corners, &uv, &[0, 2, 3, 3, 1, 0])
+        self.add_face(&corners, &[0, 2, 3, 3, 1, 0])
     }
 
     fn add_hex(self, width: f32, height: f32) -> Self {
@@ -274,21 +335,7 @@ impl ShapeBuilder {
 
         let v = [center, ne, e, se, sw, w, nw];
 
-        let t = [
-            [T_MID, T_MID],
-            [T_MAX, T_MAX],
-            [T_MAX, T_MID],
-            [T_MAX, T_MIN],
-            [T_MIN, T_MIN],
-            [T_MIN, T_MID],
-            [T_MIN, T_MAX],
-        ];
-
-        self.add_face(
-            &v,
-            &t,
-            &[0, 2, 1, 0, 3, 2, 0, 4, 3, 0, 5, 4, 0, 6, 5, 0, 1, 6],
-        )
+        self.add_face(&v, &[0, 2, 1, 0, 3, 2, 0, 4, 3, 0, 5, 4, 0, 6, 5, 0, 1, 6])
     }
 
     fn normal(v0: [f32; 3], v1: [f32; 3], v2: [f32; 3]) -> [f32; 3] {
@@ -318,7 +365,7 @@ mod tests {
 
     use gobs_core::{Color, logger, utils::timer::Timer};
 
-    use crate::{BoundingBox, Shapes, resources::mesh::shape::ShapeBuilder};
+    use crate::{Shapes, resources::mesh::shape::ShapeBuilder};
 
     fn setup() {
         let sub = FmtSubscriber::builder()
@@ -344,12 +391,6 @@ mod tests {
             let _ = Shapes::rect(&[Color::RED], 1., 0., 0., 1.);
         }
         tracing::info!(target: logger::RENDER, "Build {} rects: {}", n, 1000. * timer.delta());
-
-        let bounding_box = BoundingBox::default();
-        for _ in 0..n {
-            let _ = Shapes::bounding_box(bounding_box);
-        }
-        tracing::info!(target: logger::RENDER, "Build {} boxes: {}", n, 1000. * timer.delta());
     }
 
     #[test]

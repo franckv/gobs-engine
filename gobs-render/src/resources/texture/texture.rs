@@ -18,7 +18,7 @@ impl ResourceType for Texture {
 pub enum TexturePath {
     Default,
     File(String),
-    Atlas(Vec<String>, u32),
+    Atlas(Vec<String>, usize),
     Bytes(Vec<u8>),
     Color(Color),
     Colors(Vec<Color>),
@@ -81,7 +81,7 @@ impl TextureProperties {
         }
     }
 
-    pub fn with_atlas(name: &str, format: ImageFormat, filenames: &[&str], cols: u32) -> Self {
+    pub fn with_atlas(name: &str, format: ImageFormat, filenames: &[&str], cols: usize) -> Self {
         Self {
             name: name.to_string(),
             path: TexturePath::Atlas(filenames.iter().map(|&f| f.to_string()).collect(), cols),

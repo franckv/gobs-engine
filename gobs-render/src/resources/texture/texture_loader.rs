@@ -121,11 +121,12 @@ impl TextureLoader {
         f(data)
     }
 
-    fn load_atlas<F>(texture_files: &[String], cols: u32, format: &mut TextureFormat, mut f: F)
+    fn load_atlas<F>(texture_files: &[String], cols: usize, format: &mut TextureFormat, mut f: F)
     where
         F: FnMut(&[u8]),
     {
         let n = texture_files.len();
+        let cols = cols as u32;
 
         let (mut width, mut height) = (0, 0);
 
