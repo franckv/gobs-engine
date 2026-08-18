@@ -5,10 +5,10 @@ use gobs::{
     game::{AppError, Application, GameContext, GobsContext, GobsGame},
     render::{
         BoundingBox, GfxContext, MaterialInstance, Model, RenderBatch, RenderError, RenderFlags,
-        RenderType, Renderable,
+        RenderType, Renderable, Shapes,
     },
     resource::{ResourceError, ResourceHandle, ResourceManager, camera::Camera, light::Light},
-    scene::voxel::{map::VoxelTree, node::VoxelNode64},
+    scene::voxel::{map::VoxelTree, node::VoxelNode64, ray::RayCast as _},
 };
 
 use examples::InputManager;
@@ -17,17 +17,19 @@ struct VoxelData;
 
 type Chunk = VoxelTree<VoxelData, VoxelNode64<VoxelData>>;
 
-struct World {
+struct World<Context: GobsContext> {
     camera: Camera,
     camera_transform: Transform,
     light: Light,
     voxels: Chunk,
     material: ResourceHandle<MaterialInstance>,
     meshes: Vec<Arc<Model>>,
+    selection: Arc<Model>,
+    marker: PhantomData<Context>,
 }
 
-impl World {
-    pub async fn new<Context: GobsContext>(ctx: &mut Context) -> Self {
+impl<Context: GobsContext> World<Context> {
+    pub async fn new(ctx: &mut Context) -> Self {
         let extent = ctx.extent();
 
         let yawn: f32 = 45.;
@@ -46,6 +48,8 @@ impl World {
 
         let material = Self::create_color_material(ctx).await;
 
+        let selection = Self::create_selection_model(ctx);
+
         Self {
             camera,
             camera_transform: Transform::from_translation([-17., 27., 48.].into()),
@@ -53,21 +57,39 @@ impl World {
             voxels: Chunk::new(3),
             material,
             meshes: Vec::new(),
+            selection,
+            marker: PhantomData,
         }
     }
 
-    async fn create_color_material<Context: GobsContext>(
-        ctx: &mut Context,
-    ) -> ResourceHandle<MaterialInstance> {
+    async fn create_color_material(ctx: &mut Context) -> ResourceHandle<MaterialInstance> {
         ctx.load_material("materials.ron").await;
 
         ctx.new_material("color.light")
             .from_base("color.light")
             .build()
     }
+
+    fn create_selection_model(ctx: &mut Context) -> Arc<Model> {
+        let material = ctx
+            .new_material("color.light")
+            .from_base("color.light")
+            .build();
+
+        let mesh = ctx
+            .new_mesh("selection")
+            .with_geometry(Shapes::cube(&[Color::YELLOW], 1.01))
+            .for_material(material)
+            .build();
+
+        ctx.new_model("selection")
+            .with_mesh(mesh)
+            .with_material(material)
+            .build()
+    }
 }
 
-impl Renderable for World {
+impl<Context: GobsContext> Renderable for World<Context> {
     fn draw(
         &self,
         ctx: &mut GfxContext,
@@ -88,6 +110,23 @@ impl Renderable for World {
             )?;
         }
 
+        let origin = self.camera_transform.translation();
+        let dir = self.camera.dir();
+
+        if let Some((pos, _normal)) = self.voxels.raycast(origin.into(), dir.into(), 20.) {
+            let transform =
+                Transform::from_translation([pos[0] as f32, pos[1] as f32, pos[2] as f32].into());
+
+            batch.add_model(
+                ctx,
+                resource_manager,
+                self.selection.clone(),
+                transform,
+                None,
+                render_flags,
+            )?;
+        }
+
         let light_transform = Transform::from_translation(-self.camera.dir());
 
         batch.add_camera_data(
@@ -102,10 +141,9 @@ impl Renderable for World {
 }
 
 struct App<Context: GobsContext> {
-    world: World,
+    world: World<Context>,
     input: InputManager,
     fps: f32,
-    marker: PhantomData<Context>,
 }
 
 impl<Context: GobsContext> GobsGame for App<Context> {
@@ -116,7 +154,6 @@ impl<Context: GobsContext> GobsGame for App<Context> {
             world: World::new(ctx).await,
             input: InputManager::new(),
             fps: 0.,
-            marker: PhantomData,
         })
     }
 
