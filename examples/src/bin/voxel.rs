@@ -74,7 +74,7 @@ impl Renderable for World {
         resource_manager: &mut ResourceManager,
         batch: &mut RenderBatch,
         _transform: Option<Transform>,
-        bounding_box: Option<BoundingBox>,
+        _bounding_box: Option<BoundingBox>,
         render_flags: RenderFlags,
     ) -> Result<(), ResourceError> {
         for mesh in &self.meshes {
@@ -83,7 +83,7 @@ impl Renderable for World {
                 resource_manager,
                 mesh.clone(),
                 Transform::default(),
-                bounding_box,
+                Some(mesh.bounding_box),
                 render_flags,
             )?;
         }
