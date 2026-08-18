@@ -7,7 +7,7 @@ pub(crate) mod registry;
 
 use std::{any::Any, collections::HashMap, sync::Arc};
 
-use winit::window::Window;
+use winit::{dpi::PhysicalPosition, window::{CursorGrabMode, Window}};
 
 use gobs_core::{ImageExtent2D, ImageFormat, SamplerFilter, logger};
 use gobs_vulkan as vk;
@@ -242,6 +242,23 @@ impl RenderHAL for VulkanHAL {
             surface.is_minimized()
         } else {
             false
+        }
+    }
+
+    fn lock_mouse(&mut self, lock: bool) {
+        if let Some(surface) = &self.display.surface {
+            if lock {
+                surface
+                    .window
+                    .set_cursor_grab(CursorGrabMode::Locked)
+                    .or_else(|_| surface.window.set_cursor_grab(CursorGrabMode::Confined));
+                let extent = surface.window.inner_size();
+                let center = PhysicalPosition::new(extent.width / 2, extent.height / 2);
+                surface.window.set_cursor_position(center);
+            } else {
+                surface.window.set_cursor_grab(CursorGrabMode::None);
+            }
+            surface.window.set_cursor_visible(!lock);
         }
     }
 

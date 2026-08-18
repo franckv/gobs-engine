@@ -80,6 +80,7 @@ pub trait RenderHAL {
     fn resize(&mut self);
     fn request_redraw(&mut self);
     fn is_minimized(&self) -> bool;
+    fn lock_mouse(&mut self, lock: bool);
 
     fn get_render_target(&self) -> Option<Handle>;
     fn get_extent(&self) -> ImageExtent2D;

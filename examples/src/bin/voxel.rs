@@ -136,6 +136,8 @@ impl<Context: GobsContext> GobsGame for App<Context> {
             delta,
         );
 
+        ctx.lock_mouse(self.input.controller.lock_mouse());
+
         self.fps = 1. / delta;
 
         if self.world.voxels.is_dirty() {

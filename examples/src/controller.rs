@@ -33,6 +33,7 @@ impl InputManager {
                 Key::U => self.draw_ui = !self.draw_ui,
                 Key::B => self.draw_bounds = !self.draw_bounds,
                 Key::Z => self.draw_wire = !self.draw_wire,
+                Key::Tab => self.controller.fps_mode = !self.controller.fps_mode,
                 _ => {
                     if !ui_hovered {
                         self.controller.key_pressed(key)
@@ -85,6 +86,7 @@ pub struct CameraController {
     debug: bool,
     mouse_pressed: bool,
     reset: bool,
+    fps_mode: bool,
 }
 
 impl CameraController {
@@ -106,7 +108,12 @@ impl CameraController {
             debug: false,
             mouse_pressed: false,
             reset: false,
+            fps_mode: false,
         }
+    }
+
+    pub fn lock_mouse(&self) -> bool {
+        self.fps_mode
     }
 
     pub fn mouse_pressed(&mut self) {
@@ -166,7 +173,7 @@ impl CameraController {
     }
 
     pub fn mouse_drag(&mut self, mouse_dx: f64, mouse_dy: f64) {
-        if self.mouse_pressed {
+        if self.fps_mode || self.mouse_pressed {
             self.rotate_horizontal = -mouse_dx as f32;
             self.rotate_vertical = -mouse_dy as f32;
         }

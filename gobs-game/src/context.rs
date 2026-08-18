@@ -32,6 +32,7 @@ pub trait GobsContext {
 
     fn is_minimized(&self) -> bool;
     fn request_redraw(&mut self);
+    fn lock_mouse(&mut self, lock: bool);
     fn extent(&self) -> ImageExtent2D;
     fn hal(&self) -> &dyn RenderHAL;
     fn hal_mut(&mut self) -> &mut dyn RenderHAL;
@@ -145,6 +146,10 @@ impl GobsContext for GameContext {
 
     fn request_redraw(&mut self) {
         self.renderer.gfx.request_redraw();
+    }
+
+    fn lock_mouse(&mut self, lock: bool) {
+        self.renderer.gfx.hal_mut().lock_mouse(lock);
     }
 
     fn extent(&self) -> ImageExtent2D {
