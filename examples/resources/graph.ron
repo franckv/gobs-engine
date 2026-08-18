@@ -28,7 +28,7 @@ GraphConfig(
         ],
         "headless": [
             "depth",
-            "forward"
+            "forward_simple"
         ],
         "ui": [
             "ui",
@@ -140,7 +140,23 @@ GraphConfig(
                 LightAmbientColor,
             ],
             flags: "ENTITY"
- 
+        ),
+        "forward_simple": (
+            ty: Material,
+            attachments: {
+                "draw": ColorAttachment(
+                    access: ReadWrite,
+                    clear: false,
+                ),
+                "depth": DepthAttachment(
+                    access: Read,
+                    clear: false,
+                )
+            },
+            scene_layout: [
+                CameraViewProj,
+            ],
+            flags: "ENTITY"
         ),
         "ui_overlay": (
             ty: Material,
@@ -150,9 +166,6 @@ GraphConfig(
                     clear: false,
                 )
             },
-            object_layout: [
-                VertexBufferAddress,
-            ],
             scene_layout: [
                 CameraViewPort,
             ],
@@ -166,9 +179,6 @@ GraphConfig(
                     clear: true,
                 )
             },
-            object_layout: [
-                VertexBufferAddress,
-            ],
             scene_layout: [
                 CameraViewPort,
             ],

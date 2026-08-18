@@ -3,19 +3,20 @@ use std::{collections::hash_map::Entry, sync::Arc};
 use ahash::HashMap;
 
 use gobs_core::{ImageExtent2D, Transform, logger};
-use gobs_render_graph::{GfxContext, RenderFlags, RenderObject, SceneData};
-use gobs_render_hal::{BindResource, Handle, RenderHAL, VertexData};
+use gobs_render_graph::{GfxContext, RenderFlags, RenderObject, SceneData, SceneDataLayout};
+use gobs_render_hal::{AlignMode, BindResource, Handle, RenderHAL, VertexData};
 use gobs_resource::{ResourceError, ResourceHandle, ResourceManager, camera::Camera, light::Light};
 
 use crate::{
-    BoundingBox, Material, MaterialInstance, Mesh, Pipeline, PipelineProperties, RenderMeshBuilder,
-    RenderModelBuilder, ShapeBuilder, Texture, model::Model,
+    BoundingBox, GraphicsPipelineProperties, Material, MaterialInstance, Mesh, Pipeline,
+    PipelineProperties, RenderMeshBuilder, RenderModelBuilder, ShapeBuilder, Texture, model::Model,
 };
 
 #[derive(Clone)]
 struct MaterialData {
     render_flags: RenderFlags,
     pipeline: Option<Handle>,
+    pipeline_properties: Option<GraphicsPipelineProperties>,
     material_data: Option<BindResource>,
     material_textures: Option<BindResource>,
 }
@@ -72,7 +73,7 @@ impl RenderBatch {
             match self.material_cache.entry(*material_instance_handle) {
                 Entry::Occupied(e) => Ok(e.get().clone()),
                 Entry::Vacant(e) => {
-                    let pipeline = Self::get_pipeline(
+                    let (pipeline, pipeline_properties) = Self::get_pipeline(
                         ctx.hal_mut(),
                         resource_manager,
                         *material_instance_handle,
@@ -88,6 +89,7 @@ impl RenderBatch {
                     let material = MaterialData {
                         render_flags,
                         pipeline: Some(pipeline),
+                        pipeline_properties: Some(pipeline_properties),
                         material_data,
                         material_textures,
                     };
@@ -98,6 +100,7 @@ impl RenderBatch {
             Ok(MaterialData {
                 render_flags,
                 pipeline: None,
+                pipeline_properties: None,
                 material_data: None,
                 material_textures: None,
             })
@@ -144,6 +147,11 @@ impl RenderBatch {
                 )
             };
 
+            let scene_layout = match material.pipeline_properties {
+                Some(properties) => properties.scene_data_layout,
+                None => SceneDataLayout::new(AlignMode::Std140),
+            };
+
             let render_object = RenderObject {
                 model: model.name.clone(),
                 transform,
@@ -152,6 +160,7 @@ impl RenderBatch {
                 index_buffer,
                 index_len,
                 vertex_attribute,
+                scene_layout,
                 layer,
                 material_data: material.material_data,
                 material_textures: material.material_textures,
@@ -216,7 +225,7 @@ impl RenderBatch {
         resource_manager: &mut ResourceManager,
         material_instance_handle: ResourceHandle<MaterialInstance>,
         render_flags: &mut RenderFlags,
-    ) -> Result<Handle, ResourceError> {
+    ) -> Result<(Handle, GraphicsPipelineProperties), ResourceError> {
         let material_instance = resource_manager.get(&material_instance_handle);
         let material_handle = material_instance.properties.material;
         let material = resource_manager.get(&material_handle);
@@ -235,8 +244,8 @@ impl RenderBatch {
         let pipeline_properties = pipeline_data.properties;
 
         if let PipelineProperties::Graphics(properties) = pipeline_properties {
-            tracing::trace!("Using pipeline {:?}", properties);
-            Ok(pipeline_data.data.pipeline)
+            tracing::trace!(target: logger::RENDER, "Using pipeline {:?}", properties);
+            Ok((pipeline_data.data.pipeline, properties.clone()))
         } else {
             Err(ResourceError::InvalidData)
         }
@@ -319,6 +328,7 @@ impl RenderBatch {
         self.render_list.sort_unstable();
     }
 
+    #[cfg(debug_assertions)]
     #[tracing::instrument(target = "profile", skip_all, level = "trace")]
     fn validate(&mut self, ctx: &mut GfxContext) {
         for obj in &self.render_list {

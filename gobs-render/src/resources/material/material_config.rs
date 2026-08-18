@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 
+use gobs_render_graph::{SceneDataLayout, SceneDataProp};
 use serde::Deserialize;
 
 use gobs_core::{ImageFormat, logger};
@@ -27,6 +28,8 @@ pub struct MaterialsConfig {
 struct DefaultMaterialConfig {
     #[serde(default)]
     object_layout: Vec<ObjectDataProp>,
+    #[serde(default)]
+    scene_layout: Vec<SceneDataProp>,
     vertex_attributes: VertexAttribute,
     color_format: ImageFormat,
     depth_format: ImageFormat,
@@ -47,6 +50,8 @@ struct MaterialConfig {
     texture_layout: Vec<TextureDataProp>,
     #[serde(default)]
     material_layout: Vec<MaterialDataProp>,
+    #[serde(default)]
+    scene_layout: Vec<SceneDataProp>,
 }
 
 impl MaterialsConfig {
@@ -76,10 +81,25 @@ impl MaterialsConfig {
             object_layout = object_layout.prop(*prop);
         }
 
+        let mut default_scene_layout = SceneDataLayout::new(AlignMode::Std140);
+        for prop in &self.default.scene_layout {
+            default_scene_layout = default_scene_layout.prop(*prop);
+        }
+
         for (name, material) in &self.materials {
             let vertex_attributes = match material.vertex_attributes {
                 Some(vertex_attributes) => vertex_attributes,
                 None => self.default.vertex_attributes,
+            };
+
+            let scene_layout = if material.scene_layout.is_empty() {
+                default_scene_layout.clone()
+            } else {
+                let mut scene_layout = SceneDataLayout::new(AlignMode::Std140);
+                for prop in &material.scene_layout {
+                    scene_layout = scene_layout.prop(*prop);
+                }
+                scene_layout
             };
 
             let mut props = MaterialProperties::new(
@@ -90,6 +110,7 @@ impl MaterialsConfig {
                 &material.fragment_entry,
                 vertex_attributes,
                 object_layout.clone(),
+                scene_layout,
                 self.default.color_format,
                 self.default.depth_format,
             )

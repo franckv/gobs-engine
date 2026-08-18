@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use gobs_render_graph::GfxContext;
+use gobs_render_graph::{GfxContext, SceneDataLayout, SceneDataProp};
 use serde::{Deserialize, Serialize};
 
 use gobs_core::{ImageFormat, logger};
@@ -33,8 +33,8 @@ struct ComputePipelineConfig {
 struct GraphicsPipelineConfig {
     vertex_shader: Option<ShaderConfig>,
     fragment_shader: Option<ShaderConfig>,
-    #[serde(default)]
     object_layout: Vec<ObjectDataProp>,
+    scene_layout: Vec<SceneDataProp>,
     vertex_attributes: VertexAttribute,
     #[serde(default)]
     bindings: Vec<BindingConfig>,
@@ -145,6 +145,11 @@ impl PipelinesConfig {
         let mut object_layout = ObjectDataLayout::new(AlignMode::Std140);
         for prop in &pipeline.object_layout {
             object_layout = object_layout.prop(*prop);
+        }
+
+        let mut scene_layout = SceneDataLayout::new(AlignMode::Std140);
+        for prop in &pipeline.scene_layout {
+            scene_layout = scene_layout.prop(*prop);
         }
 
         let mut props = PipelineProperties::graphics(name)
@@ -267,6 +272,7 @@ mod tests {
                     vertex_shader: None,
                     fragment_shader: None,
                     object_layout: Vec::new(),
+                    scene_layout: Vec::new(),
                     vertex_attributes: VertexAttribute::POSITION,
                     bindings: Vec::new(),
                     polygon_mode: PolygonMode::Fill,

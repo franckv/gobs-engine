@@ -4,7 +4,7 @@ use gobs_core::{ImageExtent2D, Transform};
 use gobs_render_hal::{AlignMode, Attribute, UniformData, UniformLayout};
 use gobs_resource::{camera::Camera, light::Light};
 
-#[derive(Clone, Copy, Debug, Deserialize, Serialize)]
+#[derive(Clone, Copy, Debug, PartialEq, Deserialize, Serialize)]
 pub enum SceneDataProp {
     CameraPosition,
     CameraViewProj,
@@ -14,7 +14,7 @@ pub enum SceneDataProp {
     LightAmbientColor,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct SceneDataLayout {
     layout: Vec<SceneDataProp>,
     uniform_layout: UniformLayout,

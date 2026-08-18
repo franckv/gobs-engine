@@ -1,6 +1,7 @@
 use std::fmt::Debug;
 
 use gobs_core::ImageFormat;
+use gobs_render_graph::SceneDataLayout;
 use gobs_render_hal::{
     AlignMode, BindingGroupLayout, BindingGroupType, BlendMode, CompareOp, CullMode,
     DescriptorStage, DescriptorType, FrontFace, Handle, ObjectDataLayout, PolygonMode, RenderHAL,
@@ -25,6 +26,7 @@ pub struct PipelineData {
     pub pipeline: Handle,
 }
 
+#[allow(clippy::large_enum_variant)]
 #[derive(Clone)]
 pub enum PipelineProperties {
     Compute(ComputePipelineProperties),
@@ -60,6 +62,7 @@ pub struct GraphicsPipelineProperties {
     pub(crate) binding_groups: Vec<BindingGroupLayout>,
     pub ds_pool_size: usize,
     pub object_data_layout: ObjectDataLayout,
+    pub scene_data_layout: SceneDataLayout,
     pub vertex_attributes: VertexAttribute,
     pub(crate) color_format: Option<ImageFormat>,
     pub(crate) depth_format: Option<ImageFormat>,
@@ -83,6 +86,7 @@ impl GraphicsPipelineProperties {
             binding_groups: Vec::new(),
             ds_pool_size: 10,
             object_data_layout: ObjectDataLayout::new(AlignMode::Std140),
+            scene_data_layout: SceneDataLayout::new(AlignMode::Std140),
             vertex_attributes: VertexAttribute::empty(),
             color_format: None,
             depth_format: None,
@@ -193,6 +197,12 @@ impl GraphicsPipelineProperties {
 
     pub fn object_data_layout(mut self, layout: ObjectDataLayout) -> Self {
         self.object_data_layout = layout;
+
+        self
+    }
+
+    pub fn scene_data_layout(mut self, layout: SceneDataLayout) -> Self {
+        self.scene_data_layout = layout;
 
         self
     }

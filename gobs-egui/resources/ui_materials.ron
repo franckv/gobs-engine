@@ -20,6 +20,9 @@ MaterialsConfig(
                 Diffuse,
             ],
             vertex_attributes: Some("POSITION | COLOR | TEXTURE"),
+            scene_layout: [
+                CameraViewPort,
+            ],
         ),
     }
 )

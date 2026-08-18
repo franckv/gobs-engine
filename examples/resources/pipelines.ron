@@ -28,6 +28,9 @@ PipelinesConfig(
                 WorldMatrix,
                 VertexBufferAddress,
             ],
+            scene_layout: [
+                CameraViewProj,
+            ],
             vertex_attributes: "POSITION | COLOR | TEXTURE | NORMAL | TANGENT | BITANGENT",
             bindings: [
             (
@@ -55,6 +58,9 @@ PipelinesConfig(
             object_layout: [
                 WorldMatrix,
                 VertexBufferAddress,
+            ],
+            scene_layout: [
+                CameraViewProj,
             ],
             vertex_attributes: "POSITION | COLOR | TEXTURE | NORMAL | TANGENT | BITANGENT",
             bindings: [

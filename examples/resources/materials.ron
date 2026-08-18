@@ -5,6 +5,13 @@ MaterialsConfig(
             WorldMatrix,
             VertexBufferAddress,
         ],
+        scene_layout: [
+            CameraPosition,
+            CameraViewProj,
+            LightDirection,
+            LightColor,
+            LightAmbientColor,
+        ],
         vertex_attributes: "POSITION | COLOR | TEXTURE | NORMAL | TANGENT | BITANGENT",
         color_format: R16g16b16a16Sfloat,
         depth_format: D32Sfloat,
@@ -15,6 +22,9 @@ MaterialsConfig(
             vertex_entry: "vertex_main",
             fragment_shader: "color.spv",
             fragment_entry: "fragment_main",
+            scene_layout: [
+                CameraViewProj,
+            ],
         ),
         "color.material": (
             vertex_shader: "color_mat.spv",
@@ -38,6 +48,9 @@ MaterialsConfig(
             fragment_shader: "color.spv",
             fragment_entry: "fragment_main",
             blend_mode: Alpha,
+            scene_layout: [
+                CameraViewProj,
+            ],
         ),
         "texture": (
             vertex_shader: "mesh.spv",
@@ -73,6 +86,9 @@ MaterialsConfig(
             vertex_entry: "vertex_main",
             fragment_shader: "color.spv",
             fragment_entry: "depth_fragment_main",
+            scene_layout: [
+                CameraViewProj,
+            ],
         ),
     }
 )

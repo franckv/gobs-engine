@@ -141,6 +141,24 @@ impl MaterialPass {
             cmd.transition_image_layout(hal, resource_manager.image(name), attachment.layout);
         }
     }
+
+    #[cfg(debug_assertions)]
+    fn validate_scene_layout(
+        render_job: &RenderJob,
+        scene_layout: &SceneDataLayout,
+        render_list: &[RenderObject],
+    ) {
+        for obj in render_list {
+            if render_job.should_render(obj) {
+                assert_eq!(
+                    scene_layout,
+                    &obj.scene_layout,
+                    "Validate pass scene layout = obj scene layout for pass {}",
+                    render_job.pass_name()
+                );
+            }
+        }
+    }
 }
 
 impl RenderPass for MaterialPass {
@@ -174,6 +192,11 @@ impl RenderPass for MaterialPass {
         let mut scene_data_bytes = Vec::new();
 
         tracing::debug!(target: logger::RENDER, "Scene data layout: {:?}", self.scene_layout.uniform_layout());
+
+        #[cfg(debug_assertions)]
+        if !render_job.has_pipeline() {
+            Self::validate_scene_layout(render_job, &self.scene_layout, render_list);
+        };
 
         self.scene_layout
             .copy_data(&mut scene_data_bytes, |prop| match prop {

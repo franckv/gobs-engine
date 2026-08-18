@@ -67,8 +67,16 @@ impl RenderJob {
         }
     }
 
+    pub fn pass_name(&self) -> &str {
+        &self.pass_name
+    }
+
     pub fn set_pipeline(&mut self, pipeline: Handle) {
         self.fixed_pipeline = Some(pipeline);
+    }
+
+    pub fn has_pipeline(&self) -> bool {
+        self.fixed_pipeline.is_some()
     }
 
     pub fn update_uniform(&self, ctx: &mut GfxContext, uniform_data: &[u8]) {

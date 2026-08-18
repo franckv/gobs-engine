@@ -7,6 +7,8 @@ use uuid::Uuid;
 use gobs_core::Transform;
 use gobs_render_hal::{BindResource, Handle, VertexAttribute};
 
+use crate::data::SceneDataLayout;
+
 pub type MaterialId = Uuid;
 pub type MaterialInstanceId = Uuid;
 pub type MeshId = Uuid;
@@ -32,6 +34,7 @@ pub struct RenderObject {
     pub index_buffer: Handle,
     pub index_len: usize,
     pub vertex_attribute: VertexAttribute,
+    pub scene_layout: SceneDataLayout,
     pub pipeline: Option<Handle>,
     pub material_data: Option<BindResource>,
     pub material_textures: Option<BindResource>,

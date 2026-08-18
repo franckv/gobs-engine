@@ -10,7 +10,7 @@ mod render_object;
 use std::sync::Arc;
 
 pub use context::GfxContext;
-pub use data::SceneData;
+pub use data::{SceneData, SceneDataLayout, SceneDataProp};
 pub use error::RenderError;
 pub use framedata::FrameData;
 pub use graph::{FrameGraph, GraphConfig};
