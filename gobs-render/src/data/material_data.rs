@@ -73,8 +73,11 @@ impl UniformData<MaterialDataProp> for MaterialDataLayout {
 
 impl MaterialDataLayout {
     pub fn bindings_layout(&self) -> BindingGroupLayout {
-        BindingGroupLayout::new(BindingGroupType::MaterialData)
-            .add_binding(DescriptorType::Uniform, DescriptorStage::Fragment)
+        BindingGroupLayout::new(BindingGroupType::MaterialData).add_binding(
+            DescriptorType::Uniform,
+            DescriptorStage::Fragment,
+            1,
+        )
     }
 }
 

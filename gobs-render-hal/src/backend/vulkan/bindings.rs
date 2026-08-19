@@ -120,7 +120,7 @@ impl BindingRegistry {
         debug_assert_eq!(resources.len(), bindings.len());
 
         // TODO: bind descriptor set
-        for ((ty, stage), handle) in bindings.iter().zip(resources) {
+        for ((ty, stage, count), handle) in bindings.iter().zip(resources) {
             match ty {
                 // scene data, material data
                 vk::DescriptorType::Uniform => {
@@ -163,8 +163,8 @@ pub(crate) fn vk_layout(
     let mut ds_layout =
         vk::descriptor::DescriptorSetLayout::builder(layout.binding_group_type.set());
 
-    for (ty, stage) in &layout.bindings {
-        ds_layout = ds_layout.binding(*ty, *stage);
+    for (ty, stage, count) in &layout.bindings {
+        ds_layout = ds_layout.binding(*ty, *stage, *count);
     }
 
     ds_layout.build(device.clone(), layout.binding_group_type.is_push())

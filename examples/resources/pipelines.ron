@@ -9,7 +9,8 @@ PipelinesConfig(
             (
                     group: ComputeData,
                     stage: Compute,
-                    descriptor_type: StorageImage
+                    descriptor_type: StorageImage,
+                    count: 1
             ),
             ],
         )
@@ -36,7 +37,8 @@ PipelinesConfig(
             (
                     group: SceneData,
                     stage: All,
-                    descriptor_type: Uniform
+                    descriptor_type: Uniform,
+                    count: 1
             ),
             ],
             polygon_mode: Line,
@@ -67,7 +69,8 @@ PipelinesConfig(
             (
                     group: SceneData,
                     stage: Vertex,
-                    descriptor_type: Uniform
+                    descriptor_type: Uniform,
+                    count: 1
             ),
             ],
             polygon_mode: Fill,

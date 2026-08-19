@@ -56,6 +56,7 @@ struct BindingConfig {
     group: BindingGroupType,
     stage: DescriptorStage,
     descriptor_type: DescriptorType,
+    count: u32,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -129,7 +130,7 @@ impl PipelinesConfig {
                 props = props.binding_group(binding.group);
                 last_group = binding.group;
             }
-            props = props.binding(binding.descriptor_type, binding.stage);
+            props = props.binding(binding.descriptor_type, binding.stage, binding.count);
         }
 
         Some(PipelineProperties::Compute(props))
@@ -168,7 +169,7 @@ impl PipelinesConfig {
                 props = props.binding_group(binding.group);
                 last_group = binding.group;
             }
-            props = props.binding(binding.descriptor_type, binding.stage);
+            props = props.binding(binding.descriptor_type, binding.stage, binding.count);
         }
 
         if let Some(format) = pipeline.attachments.color_format {

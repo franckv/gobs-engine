@@ -63,7 +63,7 @@ impl MaterialProperties {
             .depth_test_enable(false, CompareOp::LessEqual)
             .front_face(FrontFace::CCW)
             .binding_group(BindingGroupType::SceneData)
-            .binding(DescriptorType::Uniform, DescriptorStage::All)
+            .binding(DescriptorType::Uniform, DescriptorStage::All, 1)
             .color_format(color_format)
             .depth_format(depth_format);
 
@@ -86,7 +86,7 @@ impl MaterialProperties {
             self.pipeline_properties = self
                 .pipeline_properties
                 .binding_group(BindingGroupType::MaterialData)
-                .binding(DescriptorType::Uniform, DescriptorStage::Fragment);
+                .binding(DescriptorType::Uniform, DescriptorStage::Fragment, 1);
         }
 
         self.material_data_layout = self.material_data_layout.prop(prop);
@@ -110,14 +110,14 @@ impl MaterialProperties {
             TextureDataProp::Diffuse => {
                 self.pipeline_properties = self
                     .pipeline_properties
-                    .binding(DescriptorType::SampledImage, DescriptorStage::Fragment)
-                    .binding(DescriptorType::Sampler, DescriptorStage::Fragment);
+                    .binding(DescriptorType::SampledImage, DescriptorStage::Fragment, 1)
+                    .binding(DescriptorType::Sampler, DescriptorStage::Fragment, 1);
             }
             TextureDataProp::Normal => {
                 self.pipeline_properties = self
                     .pipeline_properties
-                    .binding(DescriptorType::SampledImage, DescriptorStage::Fragment)
-                    .binding(DescriptorType::Sampler, DescriptorStage::Fragment);
+                    .binding(DescriptorType::SampledImage, DescriptorStage::Fragment, 1)
+                    .binding(DescriptorType::Sampler, DescriptorStage::Fragment, 1);
             }
             _ => unimplemented!(),
         }

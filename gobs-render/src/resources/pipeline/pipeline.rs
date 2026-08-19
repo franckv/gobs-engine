@@ -180,9 +180,9 @@ impl GraphicsPipelineProperties {
         self
     }
 
-    pub fn binding(mut self, ty: DescriptorType, stage: DescriptorStage) -> Self {
+    pub fn binding(mut self, ty: DescriptorType, stage: DescriptorStage, count: u32) -> Self {
         if let Some(mut group) = self.binding_groups.pop() {
-            group = group.add_binding(ty, stage);
+            group = group.add_binding(ty, stage, count);
             self.binding_groups.push(group);
         }
 
@@ -254,9 +254,9 @@ impl ComputePipelineProperties {
         self
     }
 
-    pub fn binding(mut self, ty: DescriptorType, stage: DescriptorStage) -> Self {
+    pub fn binding(mut self, ty: DescriptorType, stage: DescriptorStage, count: u32) -> Self {
         if let Some(mut group) = self.binding_groups.pop() {
-            group = group.add_binding(ty, stage);
+            group = group.add_binding(ty, stage, count);
             self.binding_groups.push(group);
         }
 

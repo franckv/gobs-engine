@@ -56,6 +56,7 @@ impl From<DescriptorStage> for vk::ShaderStageFlags {
 pub struct DescriptorSetLayoutBinding {
     pub ty: DescriptorType,
     pub stage: DescriptorStage,
+    pub count: u32,
 }
 
 pub struct DescriptorSetLayoutBuilder {
@@ -71,8 +72,9 @@ impl DescriptorSetLayoutBuilder {
         }
     }
 
-    pub fn binding(mut self, ty: DescriptorType, stage: DescriptorStage) -> Self {
-        self.bindings.push(DescriptorSetLayoutBinding { ty, stage });
+    pub fn binding(mut self, ty: DescriptorType, stage: DescriptorStage, count: u32) -> Self {
+        self.bindings
+            .push(DescriptorSetLayoutBinding { ty, stage, count });
 
         self
     }
@@ -110,10 +112,21 @@ impl DescriptorSetLayout {
             .map(|(idx, binding)| vk::DescriptorSetLayoutBinding {
                 binding: idx as u32,
                 descriptor_type: binding.ty.into(),
-                descriptor_count: 1,
+                descriptor_count: binding.count,
                 p_immutable_samplers: ptr::null(),
                 stage_flags: binding.stage.into(),
                 _marker: std::marker::PhantomData,
+            })
+            .collect();
+
+        let vk_binding_flags: Vec<vk::DescriptorBindingFlags> = bindings
+            .iter()
+            .map(|binding| {
+                if binding.count > 1 {
+                    vk::DescriptorBindingFlags::PARTIALLY_BOUND
+                } else {
+                    vk::DescriptorBindingFlags::empty()
+                }
             })
             .collect();
 
@@ -121,6 +134,13 @@ impl DescriptorSetLayout {
 
         if !vk_bindings.is_empty() {
             descriptor_info = descriptor_info.bindings(&vk_bindings);
+        }
+
+        let mut binding_flags_info = vk::DescriptorSetLayoutBindingFlagsCreateInfo::default()
+            .binding_flags(&vk_binding_flags);
+
+        if !vk_binding_flags.is_empty() {
+            descriptor_info = descriptor_info.push_next(&mut binding_flags_info);
         }
 
         if push {

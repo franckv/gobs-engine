@@ -78,7 +78,7 @@ impl BindingGroupType {
 pub struct BindingGroupLayout {
     pub binding_group_id: u64,
     pub binding_group_type: BindingGroupType,
-    pub bindings: Vec<(DescriptorType, DescriptorStage)>,
+    pub bindings: Vec<(DescriptorType, DescriptorStage, u32)>,
 }
 
 impl BindingGroupLayout {
@@ -94,8 +94,8 @@ impl BindingGroupLayout {
         }
     }
 
-    pub fn add_binding(mut self, ty: DescriptorType, stage: DescriptorStage) -> Self {
-        self.bindings.push((ty, stage));
+    pub fn add_binding(mut self, ty: DescriptorType, stage: DescriptorStage, count: u32) -> Self {
+        self.bindings.push((ty, stage, count));
 
         // generate content hash for layout
         let mut hasher = DefaultHasher::new();

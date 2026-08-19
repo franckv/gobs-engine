@@ -26,8 +26,8 @@ impl TextureDataLayout {
 
         for _ in &self.layout {
             layout = layout
-                .add_binding(DescriptorType::SampledImage, DescriptorStage::Fragment)
-                .add_binding(DescriptorType::Sampler, DescriptorStage::Fragment);
+                .add_binding(DescriptorType::SampledImage, DescriptorStage::Fragment, 1)
+                .add_binding(DescriptorType::Sampler, DescriptorStage::Fragment, 1);
         }
 
         layout

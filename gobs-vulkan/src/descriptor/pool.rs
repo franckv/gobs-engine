@@ -188,10 +188,10 @@ mod tests {
         let ctx = crate::headless::Context::new("test");
 
         let layout = DescriptorSetLayout::builder(0)
-            .binding(DescriptorType::ImageSampler, DescriptorStage::Compute)
-            .binding(DescriptorType::Uniform, DescriptorStage::Compute)
-            .binding(DescriptorType::ImageSampler, DescriptorStage::Compute)
-            .binding(DescriptorType::StorageImage, DescriptorStage::Compute)
+            .binding(DescriptorType::ImageSampler, DescriptorStage::Compute, 1)
+            .binding(DescriptorType::Uniform, DescriptorStage::Compute, 1)
+            .binding(DescriptorType::ImageSampler, DescriptorStage::Compute, 1)
+            .binding(DescriptorType::StorageImage, DescriptorStage::Compute, 1)
             .build(ctx.device.clone(), false);
 
         // pool size: 4/6/9/13/19
