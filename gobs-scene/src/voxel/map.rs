@@ -24,6 +24,10 @@ impl<D, N: VoxelNode<D>> VoxelTree<D, N> {
         }
     }
 
+    pub fn size(order: u32) -> u32 {
+        N::SUBDIVISION.pow(order)
+    }
+
     pub fn allocate_node(&mut self) -> usize {
         self.nodes.push(N::new());
 
@@ -81,7 +85,7 @@ impl<D, N: VoxelNode<D>> VoxelTree<D, N> {
             return false;
         }
 
-        let voxel_count = N::SUBDIVISION.pow(self.order) as i64;
+        let voxel_count = Self::size(self.order) as i64;
         if x >= voxel_count || y >= voxel_count || z >= voxel_count {
             return false;
         }
@@ -92,7 +96,7 @@ impl<D, N: VoxelNode<D>> VoxelTree<D, N> {
     fn check_bounds(x: u32, y: u32, z: u32, level: u32, order: u32) -> bool {
         debug_assert!(level <= order);
 
-        let voxel_count = N::SUBDIVISION.pow(order);
+        let voxel_count = Self::size(order);
         debug_assert!(x < voxel_count);
         debug_assert!(y < voxel_count);
         debug_assert!(z < voxel_count);
@@ -107,7 +111,7 @@ impl<D, N: VoxelNode<D>> VoxelTree<D, N> {
     pub fn location(x: u32, y: u32, z: u32, level: u32, order: u32) -> (u32, u32, u32) {
         debug_assert!(Self::check_bounds(x, y, z, level, order));
 
-        let voxel_per_level = N::SUBDIVISION.pow(order - level);
+        let voxel_per_level = Self::size(order - level);
 
         (
             x / voxel_per_level,
@@ -124,8 +128,8 @@ impl<D, N: VoxelNode<D>> VoxelTree<D, N> {
         debug_assert!(Self::check_bounds(x, y, z, level, order));
         debug_assert!(level < order);
 
-        let voxel_per_level = N::SUBDIVISION.pow(order - level);
-        let voxel_per_child = N::SUBDIVISION.pow(order - level - 1);
+        let voxel_per_level = Self::size(order - level);
+        let voxel_per_child = Self::size(order - level - 1);
 
         let (rel_x, rel_y, rel_z) = (
             (x % voxel_per_level) / voxel_per_child,
@@ -179,7 +183,7 @@ impl<D, N: VoxelNode<D>> VoxelTree<D, N> {
         } else if self.nodes[root].has_children() {
             for idx in 0..N::CHILDREN_NUMBER {
                 if let Some(child_idx) = self.nodes[root].child(idx) {
-                    let scale = N::SUBDIVISION.pow(self.order - level - 1);
+                    let scale = Self::size(self.order - level - 1);
                     let offset = Self::offset(idx);
                     let child_pos = [
                         pos[0] + scale * offset[0],

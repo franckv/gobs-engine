@@ -1,4 +1,4 @@
-use std::{marker::PhantomData, sync::Arc};
+use std::{collections::HashMap, marker::PhantomData, sync::Arc};
 
 use gobs::{
     core::{Color, Input, Key, Transform, logger},
@@ -8,22 +8,20 @@ use gobs::{
         RenderType, Renderable, Shapes,
     },
     resource::{ResourceError, ResourceHandle, ResourceManager, camera::Camera, light::Light},
-    scene::voxel::{map::VoxelTree, node::VoxelNode64, ray::RayCast as _},
+    scene::voxel::{chunk::Chunks, ray::RayCast as _},
 };
 
 use examples::InputManager;
 
 struct VoxelData;
 
-type Chunk = VoxelTree<VoxelData, VoxelNode64<VoxelData>>;
-
 struct World<Context: GobsContext> {
     camera: Camera,
     camera_transform: Transform,
     light: Light,
-    voxels: Chunk,
+    voxels: Chunks<VoxelData>,
     material: ResourceHandle<MaterialInstance>,
-    meshes: Vec<Arc<Model>>,
+    meshes: HashMap<[i32; 3], Arc<Model>>,
     selection: Arc<Model>,
     marker: PhantomData<Context>,
 }
@@ -54,9 +52,9 @@ impl<Context: GobsContext> World<Context> {
             camera,
             camera_transform: Transform::from_translation([-17., 27., 48.].into()),
             light,
-            voxels: Chunk::new(3),
+            voxels: Chunks::new(3),
             material,
-            meshes: Vec::new(),
+            meshes: HashMap::new(),
             selection,
             marker: PhantomData,
         }
@@ -99,7 +97,7 @@ impl<Context: GobsContext> Renderable for World<Context> {
         _bounding_box: Option<BoundingBox>,
         render_flags: RenderFlags,
     ) -> Result<(), ResourceError> {
-        for mesh in &self.meshes {
+        for mesh in self.meshes.values() {
             batch.add_model(
                 ctx,
                 resource_manager,
@@ -113,9 +111,10 @@ impl<Context: GobsContext> Renderable for World<Context> {
         let origin = self.camera_transform.translation();
         let dir = self.camera.dir();
 
-        if let Some((pos, _normal)) = self.voxels.raycast(origin.into(), dir.into(), 20.) {
-            let transform =
-                Transform::from_translation([pos[0] as f32, pos[1] as f32, pos[2] as f32].into());
+        if let Some(hit) = self.voxels.raycast(origin.into(), dir.into(), 20.) {
+            let transform = Transform::from_translation(
+                [hit.pos[0] as f32, hit.pos[1] as f32, hit.pos[2] as f32].into(),
+            );
 
             batch.add_model(
                 ctx,
@@ -177,26 +176,34 @@ impl<Context: GobsContext> GobsGame for App<Context> {
 
         self.fps = 1. / delta;
 
-        if self.world.voxels.is_dirty() {
-            self.world.meshes.clear();
+        let chunk_positions: Vec<[i32; 3]> = self.world.voxels.chunks().collect();
 
-            let geometry = self.world.voxels.meshify();
+        let mut count = 0;
+        for pos in &chunk_positions {
+            if let Some(chunk) = self.world.voxels.get_mut(*pos)
+                && chunk.is_dirty()
+            {
+                let geometry = chunk.meshify();
 
-            let mesh = ctx
-                .new_mesh("voxel")
-                .with_geometry(geometry)
-                .for_material(self.world.material)
-                .build();
+                let mesh = ctx
+                    .new_mesh("voxel")
+                    .with_geometry(geometry)
+                    .for_material(self.world.material)
+                    .build();
 
-            let model = ctx
-                .new_model("voxel")
-                .with_mesh(mesh)
-                .with_material(self.world.material)
-                .build();
+                let model = ctx
+                    .new_model("voxel")
+                    .with_mesh(mesh)
+                    .with_material(self.world.material)
+                    .build();
 
-            self.world.meshes.push(model);
+                self.world.meshes.insert(*pos, model);
+                count += 1;
+            }
+        }
 
-            tracing::info!(target: logger::APP, "{} meshes added", self.world.meshes.len());
+        if count > 0 {
+            tracing::info!(target: logger::APP, "{} meshes added", count);
         }
     }
 
@@ -237,9 +244,10 @@ impl<Context: GobsContext> GobsGame for App<Context> {
 #[allow(unused)]
 impl<Context: GobsContext> App<Context> {
     pub fn load_plane(&mut self) {
+        let chunk = self.world.voxels.get_or_create([0, 0, 0]);
         for z in 0..32 {
             for x in 0..32 {
-                self.world.voxels.insert(VoxelData, x, 0, z);
+                chunk.insert(VoxelData, x, 0, z);
             }
         }
     }
@@ -248,12 +256,14 @@ impl<Context: GobsContext> App<Context> {
         let radius: i32 = 8;
         let diameter = 2 * radius;
 
+        let chunk = self.world.voxels.get_or_create([0, 0, 0]);
+
         for z in 0..diameter {
             for y in 0..diameter {
                 for x in 0..diameter {
                     let d = (x - radius).pow(2) + (y - radius).pow(2) + (z - radius).pow(2);
                     if d.isqrt() < radius {
-                        self.world.voxels.insert(
+                        chunk.insert(
                             VoxelData,
                             (x + radius) as u32,
                             (y + 5) as u32,
