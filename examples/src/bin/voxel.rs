@@ -97,12 +97,20 @@ impl<Context: GobsContext> Renderable for World<Context> {
         _bounding_box: Option<BoundingBox>,
         render_flags: RenderFlags,
     ) -> Result<(), ResourceError> {
-        for mesh in self.meshes.values() {
+        for (pos, mesh) in &self.meshes {
+            let chunk_size = self.voxels.chunk_size() as f32;
+
+            let offset = [
+                pos[0] as f32 * chunk_size,
+                pos[1] as f32 * chunk_size,
+                pos[2] as f32 * chunk_size,
+            ];
+
             batch.add_model(
                 ctx,
                 resource_manager,
                 mesh.clone(),
-                Transform::default(),
+                Transform::from_translation(offset.into()),
                 Some(mesh.bounding_box),
                 render_flags,
             )?;
@@ -111,7 +119,7 @@ impl<Context: GobsContext> Renderable for World<Context> {
         let origin = self.camera_transform.translation();
         let dir = self.camera.dir();
 
-        if let Some(hit) = self.voxels.raycast(origin.into(), dir.into(), 20.) {
+        if let Some(hit) = self.voxels.raycast(origin.into(), dir.into(), 50.) {
             let transform = Transform::from_translation(
                 [hit.pos[0] as f32, hit.pos[1] as f32, hit.pos[2] as f32].into(),
             );
@@ -172,6 +180,9 @@ impl<Context: GobsContext> GobsGame for App<Context> {
             delta,
         );
 
+        let camera_position = self.world.camera_transform.translation();
+        self.world.voxels.reveal(camera_position.into());
+
         ctx.lock_mouse(self.input.controller.lock_mouse());
 
         self.fps = 1. / delta;
@@ -180,7 +191,7 @@ impl<Context: GobsContext> GobsGame for App<Context> {
 
         let mut count = 0;
         for pos in &chunk_positions {
-            if let Some(chunk) = self.world.voxels.get_mut(*pos)
+            if let Some(chunk) = self.world.voxels.get_chunk_mut(*pos)
                 && chunk.is_dirty()
             {
                 let geometry = chunk.meshify();
@@ -244,31 +255,25 @@ impl<Context: GobsContext> GobsGame for App<Context> {
 #[allow(unused)]
 impl<Context: GobsContext> App<Context> {
     pub fn load_plane(&mut self) {
-        let chunk = self.world.voxels.get_or_create([0, 0, 0]);
         for z in 0..32 {
             for x in 0..32 {
-                chunk.insert(VoxelData, x, 0, z);
+                self.world.voxels.insert(VoxelData, [x, 0, z]);
             }
         }
     }
 
     pub fn load_sphere(&mut self) {
-        let radius: i32 = 8;
+        let radius: i64 = 8;
         let diameter = 2 * radius;
-
-        let chunk = self.world.voxels.get_or_create([0, 0, 0]);
 
         for z in 0..diameter {
             for y in 0..diameter {
                 for x in 0..diameter {
                     let d = (x - radius).pow(2) + (y - radius).pow(2) + (z - radius).pow(2);
                     if d.isqrt() < radius {
-                        chunk.insert(
-                            VoxelData,
-                            (x + radius) as u32,
-                            (y + 5) as u32,
-                            (z + radius) as u32,
-                        );
+                        self.world
+                            .voxels
+                            .insert(VoxelData, [x + radius, y + 5, z + radius]);
                     }
                 }
             }

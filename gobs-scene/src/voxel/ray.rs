@@ -11,13 +11,7 @@ pub trait RayCast {
 
 impl<D> RayCast for Chunks<D> {
     fn raycast(&self, origin: [f32; 3], dir: [f32; 3], max_distance: f32) -> Option<RayHit> {
-        let origin = [origin[0] + 0.5, origin[1] + 0.5, origin[2] + 0.5];
-
-        let mut pos = [
-            origin[0].floor() as i64,
-            origin[1].floor() as i64,
-            origin[2].floor() as i64,
-        ];
+        let mut pos = Chunks::<D>::integer_position(origin);
 
         let step_dir = [
             if dir[0] > 0. { 1 } else { -1 },
@@ -72,7 +66,7 @@ impl<D> RayCast for Chunks<D> {
 
         while distance < max_distance {
             let voxel_pos = self.world_to_chunk(pos);
-            let chunk = self.get(voxel_pos.chunk)?;
+            let chunk = self.get_chunk(voxel_pos.chunk)?;
             if chunk.is_solid(
                 voxel_pos.local[0] as i64,
                 voxel_pos.local[1] as i64,
@@ -125,7 +119,7 @@ mod tests {
         setup();
 
         let mut chunks = Chunks::new(2);
-        let tree = chunks.get_or_create([0, 0, 0]);
+        let tree = chunks.get_or_create_chunk([0, 0, 0]);
         tree.insert(VoxelData, 5, 5, 5);
 
         let origin = [5., 5., 10.];
@@ -148,7 +142,7 @@ mod tests {
         let hit = chunks.raycast(origin, dir, 5.);
         assert!(hit.is_none());
 
-        let tree = chunks.get_or_create([0, 0, 0]);
+        let tree = chunks.get_or_create_chunk([0, 0, 0]);
         tree.insert(VoxelData, 5, 5, 7);
         let origin = [5., 5., 10.];
         let dir = [0., 0., -1.];
@@ -168,7 +162,7 @@ mod tests {
         assert_eq!(hit.face_normal, [0., 0., -1.]);
 
         let mut chunks = Chunks::new(3);
-        let tree = chunks.get_or_create([0, 0, 0]);
+        let tree = chunks.get_or_create_chunk([0, 0, 0]);
         tree.insert(VoxelData, 10, 10, 10);
 
         let origin = [0., 0., 0.];
@@ -183,7 +177,7 @@ mod tests {
         assert_eq!(hit.face_normal, [-1., 0., 0.]);
 
         let mut chunks = Chunks::new(2);
-        let tree = chunks.get_or_create([0, 0, 0]);
+        let tree = chunks.get_or_create_chunk([0, 0, 0]);
         tree.insert(VoxelData, 5, 0, 5);
 
         let origin = [5., 3., 5.];
@@ -196,7 +190,7 @@ mod tests {
         assert_eq!(hit.face_normal, [0., 1., 0.]);
 
         let mut chunks = Chunks::new(2);
-        let tree = chunks.get_or_create([0, 0, 0]);
+        let tree = chunks.get_or_create_chunk([0, 0, 0]);
         tree.insert(VoxelData, 5, 5, 5);
 
         let origin = [5., 5., 5.];
@@ -216,7 +210,7 @@ mod tests {
         assert_eq!(hit.pos, [5, 5, 5]);
         assert_eq!(hit.face_normal, [0., 0., 1.]);
 
-        let tree = chunks.get_or_create([0, 0, 0]);
+        let tree = chunks.get_or_create_chunk([0, 0, 0]);
         tree.insert(VoxelData, 6, 5, 5);
 
         let origin = [4.6, 5., 5.];
@@ -241,8 +235,8 @@ mod tests {
         setup();
 
         let mut chunks = Chunks::new(1);
-        chunks.get_or_create([-1, 0, 0]);
-        let chunk = chunks.get_or_create([0, 0, 0]);
+        chunks.get_or_create_chunk([-1, 0, 0]);
+        let chunk = chunks.get_or_create_chunk([0, 0, 0]);
         chunk.insert(VoxelData, 1, 1, 1);
 
         let origin = [-2., 1., 1.];
@@ -255,9 +249,9 @@ mod tests {
         assert_eq!(hit.face_normal, [-1., 0., 0.]);
 
         let mut chunks = Chunks::new(1);
-        chunks.get_or_create([-1, 0, 0]);
-        chunks.get_or_create([0, 0, 0]);
-        let chunk = chunks.get_or_create([1, 0, 0]);
+        chunks.get_or_create_chunk([-1, 0, 0]);
+        chunks.get_or_create_chunk([0, 0, 0]);
+        let chunk = chunks.get_or_create_chunk([1, 0, 0]);
         chunk.insert(VoxelData, 1, 1, 1);
 
         let origin = [-2., 1., 1.];
@@ -270,9 +264,9 @@ mod tests {
         assert_eq!(hit.face_normal, [-1., 0., 0.]);
 
         let mut chunks = Chunks::new(1);
-        chunks.get_or_create([-3, 0, 0]);
-        chunks.get_or_create([-2, 0, 0]);
-        let chunk = chunks.get_or_create([-1, 0, 0]);
+        chunks.get_or_create_chunk([-3, 0, 0]);
+        chunks.get_or_create_chunk([-2, 0, 0]);
+        let chunk = chunks.get_or_create_chunk([-1, 0, 0]);
         chunk.insert(VoxelData, 3, 1, 1);
 
         let origin = [-10., 1., 1.];

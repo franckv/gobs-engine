@@ -37,7 +37,7 @@ impl<D> VoxelNode<D> for VoxelNode64<D> {
         Self {
             childmask: 0,
             data: VoxelChildData::Empty,
-            dirty: true,
+            dirty: false,
         }
     }
 

@@ -1,5 +1,7 @@
 use std::collections::HashMap;
 
+use gobs_core::logger;
+
 use crate::voxel::{map::VoxelTree, node::VoxelNode64};
 
 pub type Tree<D> = VoxelTree<D, VoxelNode64<D>>;
@@ -26,22 +28,34 @@ impl<D> Chunks<D> {
         }
     }
 
+    pub fn chunk_size(&self) -> u32 {
+        self.chunk_size
+    }
+
     pub fn chunks(&self) -> impl Iterator<Item = [i32; 3]> {
         self.chunks.keys().copied()
     }
 
-    pub fn get(&self, pos: [i32; 3]) -> Option<&Tree<D>> {
+    pub fn insert(&mut self, data: D, world_pos: [i64; 3]) -> Option<D> {
+        let pos = self.world_to_chunk(world_pos);
+
+        let chunk = self.get_or_create_chunk(pos.chunk);
+        chunk.insert(data, pos.local[0], pos.local[1], pos.local[2])
+    }
+
+    pub fn get_chunk(&self, pos: [i32; 3]) -> Option<&Tree<D>> {
         self.chunks.get(&pos)
     }
 
-    pub fn get_mut(&mut self, pos: [i32; 3]) -> Option<&mut Tree<D>> {
+    pub fn get_chunk_mut(&mut self, pos: [i32; 3]) -> Option<&mut Tree<D>> {
         self.chunks.get_mut(&pos)
     }
 
-    pub fn get_or_create(&mut self, pos: [i32; 3]) -> &mut Tree<D> {
-        self.chunks
-            .entry(pos)
-            .or_insert_with(|| Tree::new(self.order))
+    pub fn get_or_create_chunk(&mut self, pos: [i32; 3]) -> &mut Tree<D> {
+        self.chunks.entry(pos).or_insert_with(|| {
+            tracing::info!(target: logger::INIT, "Create chunk {:?}", pos);
+            Tree::new(self.order)
+        })
     }
 
     pub fn world_to_chunk(&self, world_pos: [i64; 3]) -> VoxelPos {
@@ -60,6 +74,23 @@ impl<D> Chunks<D> {
         ];
 
         VoxelPos { chunk, local }
+    }
+
+    pub(crate) fn integer_position(world_pos: [f32; 3]) -> [i64; 3] {
+        let pos = [world_pos[0] + 0.5, world_pos[1] + 0.5, world_pos[2] + 0.5];
+
+        [
+            pos[0].floor() as i64,
+            pos[1].floor() as i64,
+            pos[2].floor() as i64,
+        ]
+    }
+
+    pub fn reveal(&mut self, world_pos: [f32; 3]) {
+        let pos = Self::integer_position(world_pos);
+        let voxel_pos = self.world_to_chunk(pos);
+
+        self.get_or_create_chunk(voxel_pos.chunk);
     }
 }
 
