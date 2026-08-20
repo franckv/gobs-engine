@@ -13,7 +13,14 @@ use crate::{
 };
 
 #[derive(Debug)]
-enum ResourceInfo {
+struct ResourceInfo {
+    binding: u32,
+    index: u32,
+    ty: ResourceInfoType,
+}
+
+#[derive(Debug)]
+enum ResourceInfoType {
     Buffer(vk::DescriptorBufferInfo),
     DynamicBuffer(vk::DescriptorBufferInfo),
     Image(vk::DescriptorImageInfo),
@@ -69,50 +76,94 @@ impl DescriptorSetUpdates {
         }
     }
 
-    pub fn bind_buffer(mut self, buffer: &Buffer, start: u64, len: usize) -> Self {
+    pub fn bind_buffer(
+        mut self,
+        binding: u32,
+        index: u32,
+        buffer: &Buffer,
+        start: u64,
+        len: usize,
+    ) -> Self {
         let buffer_info = vk::DescriptorBufferInfo::default()
             .buffer(buffer.raw())
             .offset(start)
             .range(len as u64);
 
-        self.updates.push(ResourceInfo::Buffer(buffer_info));
+        self.updates.push(ResourceInfo {
+            binding,
+            index,
+            ty: ResourceInfoType::Buffer(buffer_info),
+        });
 
         self
     }
 
-    pub fn bind_dynamic_buffer(mut self, buffer: &Buffer, start: usize, len: usize) -> Self {
+    pub fn bind_dynamic_buffer(
+        mut self,
+        binding: u32,
+        index: u32,
+        buffer: &Buffer,
+        start: usize,
+        len: usize,
+    ) -> Self {
         let buffer_info = vk::DescriptorBufferInfo::default()
             .buffer(buffer.raw())
             .offset(start as u64)
             .range(len as u64);
 
-        self.updates.push(ResourceInfo::DynamicBuffer(buffer_info));
+        self.updates.push(ResourceInfo {
+            binding,
+            index,
+            ty: ResourceInfoType::DynamicBuffer(buffer_info),
+        });
 
         self
     }
 
-    pub fn bind_image(mut self, image: &Image, layout: ImageLayout) -> Self {
+    pub fn bind_image(
+        mut self,
+        binding: u32,
+        index: u32,
+        image: &Image,
+        layout: ImageLayout,
+    ) -> Self {
         let image_info = vk::DescriptorImageInfo::default()
             .image_layout(layout.into())
             .image_view(image.image_view);
 
-        self.updates.push(ResourceInfo::Image(image_info));
+        self.updates.push(ResourceInfo {
+            binding,
+            index,
+            ty: ResourceInfoType::Image(image_info),
+        });
 
         self
     }
 
-    pub fn bind_sampled_image(mut self, image: &Image, layout: ImageLayout) -> Self {
+    pub fn bind_sampled_image(
+        mut self,
+        binding: u32,
+        index: u32,
+        image: &Image,
+        layout: ImageLayout,
+    ) -> Self {
         let image_info = vk::DescriptorImageInfo::default()
             .image_layout(layout.into())
             .image_view(image.image_view);
 
-        self.updates.push(ResourceInfo::SampledImage(image_info));
+        self.updates.push(ResourceInfo {
+            binding,
+            index,
+            ty: ResourceInfoType::SampledImage(image_info),
+        });
 
         self
     }
 
     pub fn bind_image_combined(
         mut self,
+        binding: u32,
+        index: u32,
         image: &Image,
         sampler: &Sampler,
         layout: ImageLayout,
@@ -122,15 +173,23 @@ impl DescriptorSetUpdates {
             .image_view(image.image_view)
             .sampler(sampler.raw());
 
-        self.updates.push(ResourceInfo::ImageCombined(image_info));
+        self.updates.push(ResourceInfo {
+            binding,
+            index,
+            ty: ResourceInfoType::ImageCombined(image_info),
+        });
 
         self
     }
 
-    pub fn bind_sampler(mut self, sampler: &Sampler) -> Self {
+    pub fn bind_sampler(mut self, binding: u32, index: u32, sampler: &Sampler) -> Self {
         let image_info = vk::DescriptorImageInfo::default().sampler(sampler.raw());
 
-        self.updates.push(ResourceInfo::Sampler(image_info));
+        self.updates.push(ResourceInfo {
+            binding,
+            index,
+            ty: ResourceInfoType::Sampler(image_info),
+        });
 
         self
     }
@@ -141,41 +200,42 @@ impl DescriptorSetUpdates {
     ) -> Vec<(vk::WriteDescriptorSet<'a>, DescriptorInfo)> {
         let updates: Vec<(vk::WriteDescriptorSet, DescriptorInfo)> = updates
             .iter()
-            .enumerate()
-            .map(|(idx, update)| {
+            .map(|update| {
                 let mut write_info = vk::WriteDescriptorSet::default()
-                    .dst_binding(idx as u32)
-                    .dst_array_element(0)
-                    .descriptor_type(match update {
-                        ResourceInfo::Buffer(_) => vk::DescriptorType::UNIFORM_BUFFER,
-                        ResourceInfo::DynamicBuffer(_) => {
+                    .dst_binding(update.binding)
+                    .dst_array_element(update.index)
+                    .descriptor_type(match &update.ty {
+                        ResourceInfoType::Buffer(_) => vk::DescriptorType::UNIFORM_BUFFER,
+                        ResourceInfoType::DynamicBuffer(_) => {
                             vk::DescriptorType::UNIFORM_BUFFER_DYNAMIC
                         }
-                        ResourceInfo::Image(_) => vk::DescriptorType::STORAGE_IMAGE,
-                        ResourceInfo::SampledImage(_) => vk::DescriptorType::SAMPLED_IMAGE,
-                        ResourceInfo::ImageCombined(_) => {
+                        ResourceInfoType::Image(_) => vk::DescriptorType::STORAGE_IMAGE,
+                        ResourceInfoType::SampledImage(_) => vk::DescriptorType::SAMPLED_IMAGE,
+                        ResourceInfoType::ImageCombined(_) => {
                             vk::DescriptorType::COMBINED_IMAGE_SAMPLER
                         }
-                        ResourceInfo::Sampler(_) => vk::DescriptorType::SAMPLER,
+                        ResourceInfoType::Sampler(_) => vk::DescriptorType::SAMPLER,
                     });
 
                 if let Some(set) = set {
                     write_info = write_info.dst_set(set.raw())
                 }
 
-                let resource_info = match update {
-                    ResourceInfo::Buffer(buffer_info) => DescriptorInfo::BufferInfo(*buffer_info),
-                    ResourceInfo::DynamicBuffer(buffer_info) => {
+                let resource_info = match &update.ty {
+                    ResourceInfoType::Buffer(buffer_info) => {
                         DescriptorInfo::BufferInfo(*buffer_info)
                     }
-                    ResourceInfo::ImageCombined(image_info) => {
+                    ResourceInfoType::DynamicBuffer(buffer_info) => {
+                        DescriptorInfo::BufferInfo(*buffer_info)
+                    }
+                    ResourceInfoType::ImageCombined(image_info) => {
                         DescriptorInfo::ImageInfo(*image_info)
                     }
-                    ResourceInfo::SampledImage(image_info) => {
+                    ResourceInfoType::SampledImage(image_info) => {
                         DescriptorInfo::ImageInfo(*image_info)
                     }
-                    ResourceInfo::Image(image_info) => DescriptorInfo::ImageInfo(*image_info),
-                    ResourceInfo::Sampler(image_info) => DescriptorInfo::ImageInfo(*image_info),
+                    ResourceInfoType::Image(image_info) => DescriptorInfo::ImageInfo(*image_info),
+                    ResourceInfoType::Sampler(image_info) => DescriptorInfo::ImageInfo(*image_info),
                 };
 
                 (write_info, resource_info)

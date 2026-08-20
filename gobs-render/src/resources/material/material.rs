@@ -94,7 +94,7 @@ impl MaterialProperties {
         self
     }
 
-    pub fn texture(mut self, prop: TextureDataProp) -> Self {
+    pub fn textures(mut self, props: &[TextureDataProp], indexing: bool) -> Self {
         if self
             .pipeline_properties
             .binding_groups
@@ -106,23 +106,38 @@ impl MaterialProperties {
                 .binding_group(BindingGroupType::MaterialTextures);
         }
 
-        match prop {
-            TextureDataProp::Diffuse => {
-                self.pipeline_properties = self
-                    .pipeline_properties
-                    .binding(DescriptorType::SampledImage, DescriptorStage::Fragment, 1)
-                    .binding(DescriptorType::Sampler, DescriptorStage::Fragment, 1);
+        if indexing {
+            self.pipeline_properties = self
+                .pipeline_properties
+                .binding(
+                    DescriptorType::SampledImage,
+                    DescriptorStage::Fragment,
+                    props.len() as u32,
+                )
+                .binding(DescriptorType::Sampler, DescriptorStage::Fragment, 1);
+        } else {
+            for &prop in props {
+                match prop {
+                    TextureDataProp::Diffuse => {
+                        self.pipeline_properties = self
+                            .pipeline_properties
+                            .binding(DescriptorType::SampledImage, DescriptorStage::Fragment, 1)
+                            .binding(DescriptorType::Sampler, DescriptorStage::Fragment, 1);
+                    }
+                    TextureDataProp::Normal => {
+                        self.pipeline_properties = self
+                            .pipeline_properties
+                            .binding(DescriptorType::SampledImage, DescriptorStage::Fragment, 1)
+                            .binding(DescriptorType::Sampler, DescriptorStage::Fragment, 1);
+                    }
+                    _ => unimplemented!(),
+                }
             }
-            TextureDataProp::Normal => {
-                self.pipeline_properties = self
-                    .pipeline_properties
-                    .binding(DescriptorType::SampledImage, DescriptorStage::Fragment, 1)
-                    .binding(DescriptorType::Sampler, DescriptorStage::Fragment, 1);
-            }
-            _ => unimplemented!(),
         }
 
-        self.texture_data_layout = self.texture_data_layout.prop(prop);
+        for &prop in props {
+            self.texture_data_layout = self.texture_data_layout.prop(prop);
+        }
 
         self
     }

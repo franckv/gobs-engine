@@ -81,6 +81,17 @@ MaterialsConfig(
                 Normal
             ],
         ),
+        "normal.array": (
+            vertex_shader: "mesh_array.spv",
+            vertex_entry: "vertex_main",
+            fragment_shader: "mesh_array.spv",
+            fragment_entry: "fragment_normal_main",
+            texture_indexing: true,
+            texture_layout: [
+                Diffuse,
+                Normal
+            ],
+        ),
         "depth": (
             vertex_shader: "color.spv",
             vertex_entry: "vertex_main",

@@ -4,7 +4,9 @@ use ahash::HashMap;
 
 use gobs_core::{ImageExtent2D, Transform, logger};
 use gobs_render_graph::{GfxContext, RenderFlags, RenderObject, SceneData, SceneDataLayout};
-use gobs_render_hal::{AlignMode, BindResource, BindingGroupType, Handle, RenderHAL, VertexData};
+use gobs_render_hal::{
+    AlignMode, BindResource, BindingGroupType, DescriptorType, Handle, RenderHAL, VertexData,
+};
 use gobs_resource::{ResourceError, ResourceHandle, ResourceManager, camera::Camera, light::Light};
 
 use crate::{
@@ -216,10 +218,38 @@ impl RenderBatch {
                     .expect("Material pipeline has no textures layout")
                     .clone();
 
-                for texture in textures {
-                    let tex_data = resource_manager.get_data(hal, &texture)?;
-                    texture_handles.push(tex_data.data.image);
-                    texture_handles.push(tex_data.data.sampler);
+                let mut texture_idx = 0;
+                let mut sampler_idx = 0;
+
+                let tex_data = textures
+                    .iter()
+                    .map(|t| {
+                        let data = resource_manager.get_data(&mut *hal, t)?;
+
+                        Ok((data.data.image, data.data.sampler))
+                    })
+                    .collect::<Result<Vec<_>, ResourceError>>()?;
+
+                for (ty, _, count) in &texture_data_layout.bindings {
+                    match ty {
+                        DescriptorType::SampledImage => {
+                            for i in texture_idx..texture_idx + *count {
+                                let texture = tex_data[i as usize];
+
+                                texture_handles.push(texture.0);
+                            }
+                            texture_idx += count;
+                        }
+                        DescriptorType::Sampler => {
+                            for i in sampler_idx..sampler_idx + *count {
+                                let texture = tex_data[i as usize];
+
+                                texture_handles.push(texture.1);
+                            }
+                            sampler_idx += count;
+                        }
+                        _ => unimplemented!(),
+                    }
                 }
 
                 Some(BindResource::new(texture_data_layout, texture_handles))

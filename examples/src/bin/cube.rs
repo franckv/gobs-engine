@@ -109,7 +109,7 @@ impl<Context: GobsContext> App<Context> {
 
         let material = ctx
             .new_material("normal")
-            .from_base("normal")
+            .from_base("normal.array")
             .with_textures(&[diffuse_texture, normal_texture])
             .build();
 

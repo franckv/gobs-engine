@@ -49,6 +49,8 @@ struct MaterialConfig {
     #[serde(default)]
     texture_layout: Vec<TextureDataProp>,
     #[serde(default)]
+    texture_indexing: bool,
+    #[serde(default)]
     material_layout: Vec<MaterialDataProp>,
     #[serde(default)]
     scene_layout: Vec<SceneDataProp>,
@@ -124,9 +126,7 @@ impl MaterialsConfig {
                 props = props.property(*prop);
             }
 
-            for prop in &material.texture_layout {
-                props = props.texture(*prop);
-            }
+            props = props.textures(&material.texture_layout, material.texture_indexing);
 
             resource_manager.add::<Material>(props, ResourceLifetime::Static, true);
         }

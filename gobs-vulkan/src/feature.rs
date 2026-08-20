@@ -74,7 +74,9 @@ impl Features {
         );
         enabled_features.set(
             Feature::DescriptorIndexing,
-            features12.descriptor_indexing == 1,
+            features12.descriptor_indexing == 1
+                && features12.descriptor_binding_partially_bound == 1
+                && features12.shader_sampled_image_array_non_uniform_indexing == 1,
         );
         enabled_features.set(
             Feature::ScalarBlockLayout,
@@ -107,6 +109,12 @@ impl Features {
         vk::PhysicalDeviceVulkan12Features::default()
             .buffer_device_address(self.enabled_features.contains(Feature::BufferDeviceAddress))
             .descriptor_indexing(self.enabled_features.contains(Feature::DescriptorIndexing))
+            .descriptor_binding_partially_bound(
+                self.enabled_features.contains(Feature::DescriptorIndexing),
+            )
+            .shader_sampled_image_array_non_uniform_indexing(
+                self.enabled_features.contains(Feature::DescriptorIndexing),
+            )
             .scalar_block_layout(self.enabled_features.contains(Feature::ScalarBlockLayout))
     }
 

@@ -117,39 +117,65 @@ impl BindingRegistry {
             resources,
         } = resource;
 
-        debug_assert_eq!(resources.len(), bindings.len());
+        let n_bindings: usize = bindings.iter().map(|(_, _, count)| *count as usize).sum();
 
-        // TODO: bind descriptor set
-        for ((ty, stage, count), handle) in bindings.iter().zip(resources) {
-            match ty {
-                // scene data, material data
-                vk::DescriptorType::Uniform => {
-                    if let Some(buffer) = registry.buffers.get(*handle) {
-                        update = update.bind_buffer(&buffer.buffer, buffer.offset, buffer.len);
+        debug_assert_eq!(resources.len(), n_bindings);
+
+        let mut binding_idx = 0;
+        let mut idx = 0;
+
+        for (ty, stage, count) in bindings {
+            for descriptor in 0..*count {
+                let handle = resources[idx];
+                idx += 1;
+
+                match ty {
+                    // scene data, material data
+                    vk::DescriptorType::Uniform => {
+                        if let Some(buffer) = registry.buffers.get(handle) {
+                            update = update.bind_buffer(
+                                binding_idx,
+                                descriptor,
+                                &buffer.buffer,
+                                buffer.offset,
+                                buffer.len,
+                            );
+                        }
                     }
-                }
-                // compute data
-                vk::DescriptorType::StorageImage => {
-                    if let Some(image) = registry.images.get(*handle) {
-                        // TODO: hardcoded
-                        update = update.bind_image(image, ImageLayout::General);
+                    // compute data
+                    vk::DescriptorType::StorageImage => {
+                        if let Some(image) = registry.images.get(handle) {
+                            update = update.bind_image(
+                                binding_idx,
+                                descriptor,
+                                image,
+                                ImageLayout::General,
+                            );
+                        }
                     }
-                }
-                // texture
-                vk::DescriptorType::Sampler => {
-                    if let Some(sampler) = registry.samplers.get(*handle) {
-                        update = update.bind_sampler(sampler);
+                    // texture
+                    vk::DescriptorType::Sampler => {
+                        if let Some(sampler) = registry.samplers.get(handle) {
+                            update = update.bind_sampler(binding_idx, descriptor, sampler);
+                        }
                     }
-                }
-                vk::DescriptorType::SampledImage => {
-                    if let Some(image) = registry.images.get(*handle) {
-                        update = update.bind_sampled_image(image, ImageLayout::Shader);
+                    vk::DescriptorType::SampledImage => {
+                        if let Some(image) = registry.images.get(handle) {
+                            update = update.bind_sampled_image(
+                                binding_idx,
+                                descriptor,
+                                image,
+                                ImageLayout::Shader,
+                            );
+                        }
                     }
+                    // unused
+                    vk::DescriptorType::UniformDynamic => todo!(),
+                    vk::DescriptorType::ImageSampler => todo!(),
                 }
-                // unused
-                vk::DescriptorType::UniformDynamic => todo!(),
-                vk::DescriptorType::ImageSampler => todo!(),
             }
+
+            binding_idx += count;
         }
 
         update
