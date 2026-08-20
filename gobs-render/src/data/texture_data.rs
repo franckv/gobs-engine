@@ -1,7 +1,5 @@
 use serde::{Deserialize, Serialize};
 
-use gobs_render_hal::{BindingGroupLayout, BindingGroupType, DescriptorStage, DescriptorType};
-
 // TODO: Emissive, Specular, Opacity, Glossiness, ...
 #[derive(Clone, Copy, Debug, Deserialize, Serialize)]
 pub enum TextureDataProp {
@@ -19,18 +17,6 @@ pub struct TextureDataLayout {
 impl TextureDataLayout {
     pub fn is_empty(&self) -> bool {
         self.layout.is_empty()
-    }
-
-    pub fn bindings_layout(&self) -> BindingGroupLayout {
-        let mut layout = BindingGroupLayout::new(BindingGroupType::MaterialTextures);
-
-        for _ in &self.layout {
-            layout = layout
-                .add_binding(DescriptorType::SampledImage, DescriptorStage::Fragment, 1)
-                .add_binding(DescriptorType::Sampler, DescriptorStage::Fragment, 1);
-        }
-
-        layout
     }
 
     pub fn prop(mut self, prop: TextureDataProp) -> Self {

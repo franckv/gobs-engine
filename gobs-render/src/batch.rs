@@ -4,7 +4,7 @@ use ahash::HashMap;
 
 use gobs_core::{ImageExtent2D, Transform, logger};
 use gobs_render_graph::{GfxContext, RenderFlags, RenderObject, SceneData, SceneDataLayout};
-use gobs_render_hal::{AlignMode, BindResource, Handle, RenderHAL, VertexData};
+use gobs_render_hal::{AlignMode, BindResource, BindingGroupType, Handle, RenderHAL, VertexData};
 use gobs_resource::{ResourceError, ResourceHandle, ResourceManager, camera::Camera, light::Light};
 
 use crate::{
@@ -190,12 +190,16 @@ impl RenderBatch {
 
         let material_properties = &resource_manager.get(&material).properties;
 
-        let material_data_layout = material_properties.material_data_layout.bindings_layout();
-
-        let texture_data_layout = &material_properties.texture_data_layout.bindings_layout();
-
         let material_data = material_buffer.map(|material_buffer| {
-            BindResource::new(material_data_layout.clone(), vec![material_buffer])
+            let material_data_layout = material_properties
+                .pipeline_properties
+                .binding_groups
+                .iter()
+                .find(|group| group.binding_group_type == BindingGroupType::MaterialData)
+                .expect("Material pipeline has no material data layout")
+                .clone();
+
+            BindResource::new(material_data_layout, vec![material_buffer])
         });
 
         let material_textures = {
@@ -204,16 +208,21 @@ impl RenderBatch {
             } else {
                 let mut texture_handles = vec![];
 
+                let texture_data_layout = material_properties
+                    .pipeline_properties
+                    .binding_groups
+                    .iter()
+                    .find(|group| group.binding_group_type == BindingGroupType::MaterialTextures)
+                    .expect("Material pipeline has no textures layout")
+                    .clone();
+
                 for texture in textures {
                     let tex_data = resource_manager.get_data(hal, &texture)?;
                     texture_handles.push(tex_data.data.image);
                     texture_handles.push(tex_data.data.sampler);
                 }
 
-                Some(BindResource::new(
-                    texture_data_layout.clone(),
-                    texture_handles,
-                ))
+                Some(BindResource::new(texture_data_layout, texture_handles))
             }
         };
 

@@ -1,9 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use gobs_render_hal::{
-    AlignMode, Attribute, BindingGroupLayout, BindingGroupType, DescriptorStage, DescriptorType,
-    UniformLayout,
-};
+use gobs_render_hal::{AlignMode, Attribute, UniformLayout};
 
 use crate::UniformData;
 
@@ -68,16 +65,6 @@ impl UniformData<MaterialDataProp> for MaterialDataLayout {
 
     fn uniform_layout(&self) -> &UniformLayout {
         &self.uniform_layout
-    }
-}
-
-impl MaterialDataLayout {
-    pub fn bindings_layout(&self) -> BindingGroupLayout {
-        BindingGroupLayout::new(BindingGroupType::MaterialData).add_binding(
-            DescriptorType::Uniform,
-            DescriptorStage::Fragment,
-            1,
-        )
     }
 }
 
