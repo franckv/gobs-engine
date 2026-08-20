@@ -106,16 +106,21 @@ impl DescriptorSetLayout {
         set: u32,
         push: bool,
     ) -> Arc<Self> {
+        let mut idx = 0;
+
         let vk_bindings: Vec<vk::DescriptorSetLayoutBinding> = bindings
             .iter()
-            .enumerate()
-            .map(|(idx, binding)| vk::DescriptorSetLayoutBinding {
-                binding: idx as u32,
-                descriptor_type: binding.ty.into(),
-                descriptor_count: binding.count,
-                p_immutable_samplers: ptr::null(),
-                stage_flags: binding.stage.into(),
-                _marker: std::marker::PhantomData,
+            .map(|binding| {
+                let b = vk::DescriptorSetLayoutBinding {
+                    binding: idx,
+                    descriptor_type: binding.ty.into(),
+                    descriptor_count: binding.count,
+                    p_immutable_samplers: ptr::null(),
+                    stage_flags: binding.stage.into(),
+                    _marker: std::marker::PhantomData,
+                };
+                idx += binding.count;
+                b
             })
             .collect();
 
