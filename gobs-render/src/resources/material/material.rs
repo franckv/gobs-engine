@@ -95,6 +95,10 @@ impl MaterialProperties {
     }
 
     pub fn textures(mut self, props: &[TextureDataProp], indexing: bool) -> Self {
+        if props.is_empty() {
+            return self;
+        }
+
         if self
             .pipeline_properties
             .binding_groups
