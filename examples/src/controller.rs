@@ -1,6 +1,7 @@
 use std::f32::consts::FRAC_PI_2;
 
 use gobs::core::{Input, Key, MouseButton, Transform};
+use gobs::game::GobsContext;
 use gobs::resource::camera::{Camera, ProjectionMode};
 
 const SAFE_FRAC_PI_2: f32 = FRAC_PI_2 - 0.0001;
@@ -26,13 +27,19 @@ impl InputManager {
         }
     }
 
-    pub fn input(&mut self, input: Input, ui_hovered: bool) {
+    pub fn input<Context: GobsContext>(
+        &mut self,
+        ctx: &mut Context,
+        input: Input,
+        ui_hovered: bool,
+    ) {
         match input {
             Input::KeyPressed(key) => match key {
                 Key::P => self.process_updates = !self.process_updates,
                 Key::U => self.draw_ui = !self.draw_ui,
                 Key::B => self.draw_bounds = !self.draw_bounds,
                 Key::Z => self.draw_wire = !self.draw_wire,
+                Key::H => ctx.hal().info(),
                 Key::Tab => self.controller.fps_mode = !self.controller.fps_mode,
                 _ => {
                     if !ui_hovered {

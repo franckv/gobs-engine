@@ -94,10 +94,12 @@ impl MaterialProperties {
         self
     }
 
-    pub fn textures(mut self, props: &[TextureDataProp], indexing: bool) -> Self {
+    pub fn textures(mut self, props: &[TextureDataProp], indexing: bool, array_size: u32) -> Self {
         if props.is_empty() {
             return self;
         }
+
+        debug_assert!(!indexing || array_size > 0);
 
         if self
             .pipeline_properties
@@ -113,12 +115,12 @@ impl MaterialProperties {
         if indexing {
             self.pipeline_properties = self
                 .pipeline_properties
+                .binding(DescriptorType::Sampler, DescriptorStage::Fragment, 1)
                 .binding(
                     DescriptorType::SampledImage,
                     DescriptorStage::Fragment,
-                    props.len() as u32,
-                )
-                .binding(DescriptorType::Sampler, DescriptorStage::Fragment, 1);
+                    array_size,
+                );
         } else {
             for &prop in props {
                 match prop {

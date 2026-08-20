@@ -33,6 +33,8 @@ struct DefaultMaterialConfig {
     vertex_attributes: VertexAttribute,
     color_format: ImageFormat,
     depth_format: ImageFormat,
+    #[serde(default)]
+    texture_array_size: u32,
 }
 
 #[derive(Debug, Deserialize)]
@@ -126,7 +128,11 @@ impl MaterialsConfig {
                 props = props.property(*prop);
             }
 
-            props = props.textures(&material.texture_layout, material.texture_indexing);
+            props = props.textures(
+                &material.texture_layout,
+                material.texture_indexing,
+                self.default.texture_array_size,
+            );
 
             resource_manager.add::<Material>(props, ResourceLifetime::Static, true);
         }

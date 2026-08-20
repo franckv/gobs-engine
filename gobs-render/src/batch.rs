@@ -201,15 +201,13 @@ impl RenderBatch {
                 .expect("Material pipeline has no material data layout")
                 .clone();
 
-            BindResource::new(material_data_layout, vec![material_buffer])
+            BindResource::with_resources(material_data_layout, vec![material_buffer])
         });
 
         let material_textures = {
             if textures.is_empty() {
                 None
             } else {
-                let mut texture_handles = vec![];
-
                 let texture_data_layout = material_properties
                     .pipeline_properties
                     .binding_groups
@@ -217,9 +215,6 @@ impl RenderBatch {
                     .find(|group| group.binding_group_type == BindingGroupType::MaterialTextures)
                     .expect("Material pipeline has no textures layout")
                     .clone();
-
-                let mut texture_idx = 0;
-                let mut sampler_idx = 0;
 
                 let tex_data = textures
                     .iter()
@@ -230,29 +225,35 @@ impl RenderBatch {
                     })
                     .collect::<Result<Vec<_>, ResourceError>>()?;
 
+                let mut texture_idx = 0;
+                let mut sampler_idx = 0;
+
+                let mut resource = BindResource::new(texture_data_layout.clone());
+
                 for (ty, _, count) in &texture_data_layout.bindings {
+                    resource = resource.next();
                     match ty {
                         DescriptorType::SampledImage => {
-                            for i in texture_idx..texture_idx + *count {
-                                let texture = tex_data[i as usize];
+                            let to_write = (tex_data.len() - texture_idx).min(*count as usize);
 
-                                texture_handles.push(texture.0);
+                            for i in 0..to_write {
+                                resource = resource.binding(tex_data[texture_idx + i].0, i)
                             }
-                            texture_idx += count;
+                            texture_idx += to_write;
                         }
                         DescriptorType::Sampler => {
-                            for i in sampler_idx..sampler_idx + *count {
-                                let texture = tex_data[i as usize];
+                            let to_write = (tex_data.len() - sampler_idx).min(*count as usize);
 
-                                texture_handles.push(texture.1);
+                            for i in 0..to_write {
+                                resource = resource.binding(tex_data[sampler_idx + i].1, i)
                             }
-                            sampler_idx += count;
+                            sampler_idx += to_write;
                         }
                         _ => unimplemented!(),
                     }
                 }
 
-                Some(BindResource::new(texture_data_layout, texture_handles))
+                Some(resource)
             }
         };
 

@@ -11,23 +11,89 @@ use crate::{DescriptorStage, DescriptorType, Handle};
 pub type BindingId = Uuid;
 
 #[derive(Clone)]
-pub struct BindResource {
-    pub id: BindingId,
-    pub layout: BindingGroupLayout,
-    pub resources: Vec<Handle>,
+pub struct BindSet {
+    bindings: Vec<(Handle, usize)>,
 }
 
-impl BindResource {
-    pub fn new(layout: BindingGroupLayout, resources: Vec<Handle>) -> Self {
+impl BindSet {
+    pub fn new() -> Self {
         Self {
-            id: Uuid::new_v4(),
-            layout,
-            resources,
+            bindings: Vec::new(),
         }
     }
 
+    pub fn binding(mut self, handle: Handle, index: usize) -> Self {
+        self.bindings.push((handle, index));
+
+        self
+    }
+
+    pub fn bindings(&self) -> impl Iterator<Item = &(Handle, usize)> {
+        self.bindings.iter()
+    }
+}
+
+#[derive(Clone)]
+pub struct BindResource {
+    pub id: BindingId,
+    layout: BindingGroupLayout,
+    binding_sets: Vec<BindSet>,
+}
+
+impl BindResource {
+    pub fn with_resources(layout: BindingGroupLayout, resources: Vec<Handle>) -> Self {
+        // debug_assert_eq!(resources_count.iter().sum::<usize>(), resources.len());
+
+        let binding_sets = resources
+            .into_iter()
+            .map(|handle| BindSet::new().binding(handle, 0))
+            .collect();
+
+        Self {
+            id: Uuid::new_v4(),
+            layout,
+            binding_sets,
+        }
+    }
+
+    pub fn new(layout: BindingGroupLayout) -> Self {
+        Self {
+            id: Uuid::new_v4(),
+            layout,
+            binding_sets: Vec::new(),
+        }
+    }
+
+    pub fn binding(mut self, resource: Handle, index: usize) -> Self {
+        if self.binding_sets.is_empty() {
+            self.binding_sets.push(BindSet::new());
+        }
+
+        let bindset = self.binding_sets.pop().unwrap();
+        self.binding_sets.push(bindset.binding(resource, index));
+
+        self
+    }
+
+    pub fn next(mut self) -> Self {
+        self.binding_sets.push(BindSet::new());
+
+        self
+    }
+
     pub fn slot(&self, index: usize) -> Option<Handle> {
-        self.resources.get(index).cloned()
+        self.binding_sets
+            .get(index)
+            .and_then(|set| set.bindings.first())
+            .map(|b| b.0)
+    }
+
+    pub fn bindsets(&self) -> impl Iterator<Item = &BindSet> {
+        self.binding_sets.iter()
+    }
+
+    pub fn layout(&self) -> &BindingGroupLayout {
+        &self.layout
     }
 }
 

@@ -226,8 +226,8 @@ impl<Context: GobsContext> GobsGame for App<Context> {
             .build()
     }
 
-    fn input(&mut self, _ctx: &mut Context, input: Input) {
-        self.input.input(input, false);
+    fn input(&mut self, ctx: &mut Context, input: Input) {
+        self.input.input(ctx, input, false);
 
         if let Input::KeyPressed(key) = input {
             match key {

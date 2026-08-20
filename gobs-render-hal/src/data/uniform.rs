@@ -19,7 +19,7 @@ impl UniformBuffer {
         let buffer = hal.create_buffer(label, data_layout.size(), BufferType::Uniform);
 
         UniformBuffer {
-            buffer: BindResource::new(bind_layout, vec![buffer]),
+            buffer: BindResource::with_resources(bind_layout, vec![buffer]),
         }
     }
 

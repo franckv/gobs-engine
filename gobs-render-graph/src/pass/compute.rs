@@ -88,7 +88,7 @@ impl RenderPass for ComputePass {
                 .get_pipeline_descriptor_layout(self.pipeline, &BindingGroupType::ComputeData)
                 .ok_or(RenderError::InvalidData)?;
 
-            let bind_resource = BindResource::new(binding_layout.clone(), resources);
+            let bind_resource = BindResource::with_resources(binding_layout.clone(), resources);
             cmd.bind_resource(ctx.hal_mut(), self.pipeline, &bind_resource);
         }
 

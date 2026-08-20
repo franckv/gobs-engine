@@ -53,7 +53,7 @@ impl BindingRegistry {
     ) {
         let update = self.generate_update(device, registry, resource);
 
-        update.push_descriptors(cmd, pipeline, resource.layout.binding_group_type.set());
+        update.push_descriptors(cmd, pipeline, resource.layout().binding_group_type.set());
     }
 
     fn get_pool(
@@ -64,11 +64,11 @@ impl BindingRegistry {
     ) -> &mut DescriptorSetPool {
         let mut map = &mut self.pools[frame_id];
 
-        map.entry(resource.layout.binding_group_id)
+        map.entry(resource.layout().binding_group_id)
             .or_insert_with(|| {
                 DescriptorSetPool::new(
                     device.clone(),
-                    vk_layout(device.clone(), &resource.layout),
+                    vk_layout(device.clone(), resource.layout()),
                     MAX_SET,
                 )
             })
@@ -106,36 +106,19 @@ impl BindingRegistry {
     ) -> DescriptorSetUpdates {
         let mut update = DescriptorSetUpdates::new(device);
 
-        let BindResource {
-            id,
-            layout:
-                BindingGroupLayout {
-                    binding_group_id,
-                    binding_group_type,
-                    bindings,
-                },
-            resources,
-        } = resource;
-
-        let n_bindings: usize = bindings.iter().map(|(_, _, count)| *count as usize).sum();
-
-        debug_assert_eq!(resources.len(), n_bindings);
-
         let mut binding_idx = 0;
-        let mut idx = 0;
 
-        for (ty, stage, count) in bindings {
-            for descriptor in 0..*count {
-                let handle = resources[idx];
-                idx += 1;
-
+        for ((ty, stage, count), bindsets) in
+            resource.layout().bindings.iter().zip(resource.bindsets())
+        {
+            for (handle, index) in bindsets.bindings() {
                 match ty {
                     // scene data, material data
                     vk::DescriptorType::Uniform => {
-                        if let Some(buffer) = registry.buffers.get(handle) {
+                        if let Some(buffer) = registry.buffers.get(*handle) {
                             update = update.bind_buffer(
                                 binding_idx,
-                                descriptor,
+                                *index as u32,
                                 &buffer.buffer,
                                 buffer.offset,
                                 buffer.len,
@@ -144,10 +127,10 @@ impl BindingRegistry {
                     }
                     // compute data
                     vk::DescriptorType::StorageImage => {
-                        if let Some(image) = registry.images.get(handle) {
+                        if let Some(image) = registry.images.get(*handle) {
                             update = update.bind_image(
                                 binding_idx,
-                                descriptor,
+                                *index as u32,
                                 image,
                                 ImageLayout::General,
                             );
@@ -155,15 +138,15 @@ impl BindingRegistry {
                     }
                     // texture
                     vk::DescriptorType::Sampler => {
-                        if let Some(sampler) = registry.samplers.get(handle) {
-                            update = update.bind_sampler(binding_idx, descriptor, sampler);
+                        if let Some(sampler) = registry.samplers.get(*handle) {
+                            update = update.bind_sampler(binding_idx, *index as u32, sampler);
                         }
                     }
                     vk::DescriptorType::SampledImage => {
-                        if let Some(image) = registry.images.get(handle) {
+                        if let Some(image) = registry.images.get(*handle) {
                             update = update.bind_sampled_image(
                                 binding_idx,
-                                descriptor,
+                                *index as u32,
                                 image,
                                 ImageLayout::Shader,
                             );

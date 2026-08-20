@@ -3,7 +3,7 @@ use glam::{Quat, Vec3};
 use gobs::{
     core::{Color, Input, Transform, logger},
     game::{AppError, Application, GameContext, GobsContext, GobsGame},
-    render::{RenderError, Shapes},
+    render::{MaterialDataPropData, RenderError, Shapes},
     scene::{components::NodeValue, scene::Scene},
 };
 
@@ -21,7 +21,7 @@ impl<Context: GobsContext> GobsGame for App<Context> {
     async fn create(ctx: &mut Context) -> Result<Self, AppError> {
         let scene = ctx
             .new_scene()
-            .with_perspective_camera(0., -25., [0., 1., 0.])
+            .with_perspective_camera(0., -25., [-0.6, 2., 4.])
             .with_light(Color::WHITE, [-2., 2.5, 10.])
             .build();
 
@@ -98,41 +98,62 @@ impl<Context: GobsContext> App<Context> {
     async fn init(&mut self, ctx: &mut Context) {
         ctx.load_material("materials.ron").await;
 
-        let diffuse_texture = ctx
-            .new_texture("Wall Diffuse")
-            .diffuse(examples::WALL_TEXTURE, examples::DIFFUSE_FORMAT)
-            .build();
-        let normal_texture = ctx
-            .new_texture("Wall Normal")
-            .normal(examples::WALL_TEXTURE_N, examples::NORMAL_FORMAT)
-            .build();
+        let n_textures = 6;
 
-        let material = ctx
-            .new_material("normal")
-            .from_base("normal")
-            .with_textures(&[diffuse_texture, normal_texture])
-            .build();
+        let materials: Vec<_> = (0..n_textures)
+            .map(|i| {
+                let name = format!("Texture {}", i);
+
+                let diffuse_texture = ctx
+                    .new_texture(&name)
+                    .diffuse(examples::ATLAS[i], examples::DIFFUSE_FORMAT)
+                    .build();
+
+                let normal_texture = ctx
+                    .new_texture(&format!("Texture normal {}", i))
+                    .normal(examples::ATLAS_N[i], examples::NORMAL_FORMAT)
+                    .build();
+
+                ctx.new_material(&name)
+                    .from_base("normal.array")
+                    .with_textures(&[diffuse_texture, normal_texture])
+                    .with_prop(MaterialDataPropData::EmissionColor(
+                        Color::new(0., 0.1, 0.3, 1.).into(),
+                    ))
+                    .build()
+            })
+            .collect();
 
         let mesh = ctx
             .new_mesh("cube")
             .with_geometry(Shapes::cube(&[Color::WHITE], 1.))
-            .for_material(material)
+            .for_material(materials[0])
             .build();
 
-        let cube = ctx
-            .new_model("cube")
-            .with_mesh(mesh)
-            .with_material(material)
-            .build();
+        let mut x = -2.;
+        let mut y = -2.;
+        for material in &materials {
+            let cube = ctx
+                .new_model("cube")
+                .with_mesh(mesh)
+                .with_material(*material)
+                .build();
 
-        let transform = Transform::new(
-            [0., 0., -2.].into(),
-            Quat::from_rotation_y(std::f32::consts::FRAC_PI_2),
-            Vec3::splat(1.),
-        );
-        self.scene
-            .graph
-            .insert(self.scene.graph.root, NodeValue::Model(cube), transform);
+            let transform = Transform::new(
+                [x, y, -2.].into(),
+                Quat::from_rotation_y(std::f32::consts::FRAC_PI_2),
+                Vec3::splat(1.),
+            );
+            self.scene
+                .graph
+                .insert(self.scene.graph.root, NodeValue::Model(cube), transform);
+
+            x += 1.5;
+            if x > 2. {
+                x = -2.;
+                y += 2.;
+            }
+        }
     }
 }
 
@@ -141,5 +162,5 @@ fn main() {
 
     tracing::info!(target: logger::APP, "Engine start");
 
-    Application::<App<GameContext>>::new("Cube", examples::WIDTH, examples::HEIGHT).run();
+    Application::<App<GameContext>>::new("Cubes", examples::WIDTH, examples::HEIGHT).run();
 }

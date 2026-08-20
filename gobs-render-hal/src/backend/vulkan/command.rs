@@ -193,11 +193,11 @@ impl CommandBuffer for VkCommandBuffer {
 
         let pipeline = &hal.registry.pipelines.get(pipeline).unwrap();
 
-        let binding_type = resource.layout.binding_group_type;
+        let binding_type = resource.layout().binding_group_type;
 
-        Self::validate_layout(pipeline, &resource.layout);
+        Self::validate_layout(pipeline, resource.layout());
 
-        if resource.layout.binding_group_type.is_push() {
+        if resource.layout().binding_group_type.is_push() {
             hal.bindings.push_descriptor(
                 hal.device.clone(),
                 &hal.registry,

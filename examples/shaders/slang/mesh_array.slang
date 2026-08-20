@@ -12,10 +12,16 @@ struct SceneData {
 [[vk::binding(0, SCENE_DATA_SET)]]
 ConstantBuffer<SceneData> scene_data;
 
+struct Material {
+    float4 emissive_color;
+}
+[[vk::binding(0, MATERIAL_DATA_SET)]]
+ConstantBuffer<Material> material;
+
 [[vk::binding(0, MATERIAL_TEXTURES_SET)]]
-Texture2D textures[2];
-[[vk::binding(2, MATERIAL_TEXTURES_SET)]]
 SamplerState sampler;
+[[vk::binding(1, MATERIAL_TEXTURES_SET)]]
+Texture2D textures[256];
 
 struct PushConstants {
     float4x4 world_matrix;
@@ -56,16 +62,6 @@ VSOutput vertex_main(uint vertex_index: SV_VertexID) {
 }
 
 [shader("fragment")]
-float4 fragment_main(VSOutput input) {
-	float4 object_color = textures[0].Sample(sampler, input.uv);
-
-	float3 light = phong_reflection(input.normal, input.tangent_position, input.tangent_light_dir,
-            scene_data.light_color.xyz, input.tangent_view_position, scene_data.ambient_color.xyz);
-
-    return float4(light * object_color.xyz, object_color.a);
-}
-
-[shader("fragment")]
 float4 fragment_normal_main(VSOutput input) {
 	float4 object_color = textures[0].Sample(sampler, input.uv);
 	float4 object_normal = textures[1].Sample(sampler, input.uv);
@@ -73,6 +69,6 @@ float4 fragment_normal_main(VSOutput input) {
 	float3 light = phong_reflection_normal(object_normal.xyz, input.tangent_position, input.tangent_light_dir,
             scene_data.light_color.xyz, input.tangent_view_position, scene_data.ambient_color.xyz);
 
-    return float4(light * object_color.xyz, object_color.a);
+    return float4(light * object_color.xyz + material.emissive_color.xyz, object_color.a);
 }
 

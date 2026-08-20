@@ -50,7 +50,7 @@ impl DescriptorSetPool {
             .iter()
             .map(|binding| vk::DescriptorPoolSize {
                 ty: binding.ty.into(),
-                descriptor_count: max_sets as u32,
+                descriptor_count: binding.count * max_sets as u32,
             })
             .collect();
 

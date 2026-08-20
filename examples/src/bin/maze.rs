@@ -83,8 +83,8 @@ impl<Context: GobsContext> GobsGame for App<Context> {
     }
 
     #[tracing::instrument(target = "profile", skip_all, level = "trace")]
-    fn input(&mut self, _ctx: &mut Context, input: Input) {
-        self.input.input(input, self.ui.ui_hovered);
+    fn input(&mut self, ctx: &mut Context, input: Input) {
+        self.input.input(ctx, input, self.ui.ui_hovered);
     }
 
     #[tracing::instrument(target = "profile", skip_all, level = "trace")]
