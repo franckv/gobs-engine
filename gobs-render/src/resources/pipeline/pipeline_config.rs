@@ -212,7 +212,7 @@ mod tests {
     use tracing::Level;
     use tracing_subscriber::{FmtSubscriber, fmt::format::FmtSpan};
 
-    use gobs_core::ImageFormat;
+    use gobs_core::{GobsConfig, ImageFormat};
     use gobs_render_hal::{CompareOp, CullMode, FrontFace, PolygonMode, VertexAttribute};
     use gobs_resource::ResourceManager;
 
@@ -234,7 +234,8 @@ mod tests {
     fn test_load_resources() {
         setup();
 
-        let ctx = GfxContext::new("test", None, 1, 256, false);
+        let config = GobsConfig::default();
+        let ctx = GfxContext::new("test", None, config, false);
 
         let data = include_str!("../../../../examples/resources/pipelines.ron");
 
@@ -248,7 +249,8 @@ mod tests {
     fn test_load_pipeline() {
         setup();
 
-        let ctx = GfxContext::new("test", None, 1, 256, false);
+        let config = GobsConfig::default();
+        let ctx = GfxContext::new("test", None, config, false);
 
         let data = include_str!("../../../../examples/resources/pipelines.ron");
 

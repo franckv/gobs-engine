@@ -3,13 +3,13 @@ use std::fmt::Debug;
 use winit::window::Window;
 
 use gobs_assets::gltf_load;
-use gobs_core::{ConfigReader as _, GobsConfig, ImageExtent2D, Input, logger};
+use gobs_core::{GobsConfig, ImageExtent2D, Input, logger};
 use gobs_egui::UIRenderer;
 use gobs_render::{
     GfxContext, Material, MaterialInstance, MaterialInstanceLoader, MaterialLoader,
-    MaterialsConfig, Mesh, MeshLoader, Pipeline, PipelineLoader, RenderBuilder, RenderConfig,
-    RenderError, RenderHAL, RenderMaterialBuilder, RenderMeshBuilder, RenderModelBuilder,
-    RenderTextureBuilder, Renderer, Texture, TextureLoader,
+    MaterialsConfig, Mesh, MeshLoader, Pipeline, PipelineLoader, RenderBuilder, RenderError,
+    RenderHAL, RenderMaterialBuilder, RenderMeshBuilder, RenderModelBuilder, RenderTextureBuilder,
+    Renderer, Texture, TextureLoader,
 };
 use gobs_resource::{ResourceManager, load};
 use gobs_scene::{SceneBuilder, graph::scenegraph::SceneGraph};
@@ -63,16 +63,7 @@ pub struct GameContext {
 
 impl GobsContext for GameContext {
     fn new(name: &str, config: GobsConfig, window: Option<Window>, validation: bool) -> Self {
-        let frames_in_flight = config.get_int(RenderConfig::FramesInFlight) as usize;
-        let textures_array_size = config.get_int(RenderConfig::TextureArraySize) as usize;
-
-        let mut gfx = GfxContext::new(
-            name,
-            window,
-            frames_in_flight,
-            textures_array_size,
-            validation,
-        );
+        let mut gfx = GfxContext::new(name, window, config.clone(), validation);
         let mut resource_manager = ResourceManager::new(gfx.frames_in_flight());
 
         let texture_loader = TextureLoader::new(&mut gfx);

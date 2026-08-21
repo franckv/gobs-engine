@@ -5,8 +5,8 @@ use serde::Deserialize;
 use gobs_core::{ConfigReader as _, GobsConfig, ImageFormat, logger};
 use gobs_render_graph::{SceneDataLayout, SceneDataProp};
 use gobs_render_hal::{
-    AlignMode, BlendMode, CullMode, ObjectDataLayout, ObjectDataProp, UniformData as _,
-    VertexAttribute,
+    AlignMode, BlendMode, CullMode, ObjectDataLayout, ObjectDataProp, RenderHalConfig,
+    UniformData as _, VertexAttribute,
 };
 use gobs_resource::{
     ResourceLifetime, ResourceManager,
@@ -14,7 +14,7 @@ use gobs_resource::{
 };
 
 use crate::{
-    Material, MaterialProperties, RenderConfig,
+    Material, MaterialProperties,
     data::{MaterialDataProp, TextureDataProp},
 };
 
@@ -141,7 +141,7 @@ impl MaterialsConfig {
             props = props.textures(
                 &material.texture_layout,
                 material.texture_indexing,
-                config.get_int(RenderConfig::TextureArraySize),
+                config.get_int(RenderHalConfig::TextureArraySize),
             );
 
             resource_manager.add::<Material>(props, ResourceLifetime::Static, true);

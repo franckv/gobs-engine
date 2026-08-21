@@ -13,12 +13,12 @@ use winit::{
     window::{CursorGrabMode, Window},
 };
 
-use gobs_core::{ImageExtent2D, ImageFormat, SamplerFilter, logger};
+use gobs_core::{ConfigReader as _, GobsConfig, ImageExtent2D, ImageFormat, SamplerFilter, logger};
 use gobs_vulkan as vk;
 
 use crate::{
     BindingGroupLayout, BindingGroupType, CommandBuffer, CommandQueueType, ImageUsage,
-    ObjectDataLayout, RenderBackendError, VertexAttribute,
+    ObjectDataLayout, RenderBackendError, RenderHalConfig, VertexAttribute,
     backend::vulkan::{
         bindings::BindingRegistry,
         buffer::BufferView,
@@ -68,6 +68,10 @@ impl RenderHAL for VulkanHAL {
 
     fn frame_id(&self, frame_number: usize) -> usize {
         frame_number % self.frames_in_flight
+    }
+
+    fn frames_in_flight(&self) -> usize {
+        self.frames_in_flight
     }
 
     fn as_any(&self) -> &dyn Any {
@@ -306,13 +310,7 @@ impl RenderHAL for VulkanHAL {
 }
 
 impl VulkanHAL {
-    pub fn new(
-        name: &str,
-        window: Option<Window>,
-        frames_in_flight: usize,
-        textures_array_size: usize,
-        validation: bool,
-    ) -> Self {
+    pub fn new(name: &str, window: Option<Window>, config: GobsConfig, validation: bool) -> Self {
         let instance = vk::Instance::new(name, 1, window.as_ref(), validation).unwrap();
 
         let mut display = Display::new(instance.clone(), window);
@@ -323,6 +321,9 @@ impl VulkanHAL {
         let transfer_queue = device.clone().transfer_queue();
 
         let allocator = vk::Allocator::new(device.clone());
+
+        let frames_in_flight = config.get_int(RenderHalConfig::FramesInFlight) as usize;
+        let textures_array_size = config.get_int(RenderHalConfig::TextureArraySize) as usize;
 
         let mut registry = ResourcesRegistry::default();
         let bindings = BindingRegistry::new(frames_in_flight);

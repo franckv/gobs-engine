@@ -1,6 +1,6 @@
 use winit::window::Window;
 
-use gobs_core::ImageExtent2D;
+use gobs_core::{GobsConfig, ImageExtent2D};
 use gobs_render_hal::{RenderHAL, create_hal};
 
 pub struct GfxContext {
@@ -30,20 +30,10 @@ impl GfxContext {
         self.hal.frame_id(frame_number)
     }
 
-    pub fn new(
-        name: &str,
-        window: Option<Window>,
-        frames_in_flight: usize,
-        textures_array_size: usize,
-        validation: bool,
-    ) -> Self {
-        let hal = create_hal(
-            name,
-            window,
-            frames_in_flight,
-            textures_array_size,
-            validation,
-        );
+    pub fn new(name: &str, window: Option<Window>, config: GobsConfig, validation: bool) -> Self {
+        let hal = create_hal(name, window, config, validation);
+
+        let frames_in_flight = hal.frames_in_flight();
 
         Self {
             hal,

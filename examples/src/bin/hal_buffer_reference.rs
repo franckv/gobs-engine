@@ -6,8 +6,8 @@ use gobs::{
     render::{
         AlignMode, AttributeData, BufferType, CommandBuffer, CommandQueueType, CullMode,
         DynamicStateElem, FrontFace, Handle, ImageLayout, ObjectDataLayout, ObjectDataProp, Rect2D,
-        RenderConfig, RenderError, RenderHAL, Shapes, UniformData, VertexAttribute, VertexData,
-        Viewport,
+        RenderConfig, RenderError, RenderHAL, RenderHalConfig, Shapes, UniformData,
+        VertexAttribute, VertexData, Viewport,
     },
 };
 
@@ -198,8 +198,8 @@ fn main() {
     Application::<App<GameContext>>::new("Triangle", examples::WIDTH, examples::HEIGHT)
         .with_config(|config| {
             config.set_string(RenderConfig::GraphName, "none");
-            config.set_int(RenderConfig::FramesInFlight, 1);
             config.set_bool(RenderConfig::LoadGraph, false);
+            config.set_int(RenderHalConfig::FramesInFlight, 1);
         })
         .run();
 }

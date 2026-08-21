@@ -10,7 +10,7 @@ use winit::{
 
 use gobs_assets::config::GltfConfig;
 use gobs_core::{ConfigWriter as _, GobsConfig, Input, logger, utils::timer::Timer};
-use gobs_render::{RenderConfig, RenderError};
+use gobs_render::{RenderConfig, RenderError, RenderHalConfig};
 
 use crate::{AppError, context::GobsContext};
 
@@ -223,6 +223,7 @@ where
     pub fn new(title: &str, width: u32, height: u32) -> Application<R> {
         let mut config = GobsConfig::default();
         config.register::<RenderConfig>();
+        config.register::<RenderHalConfig>();
         config.register::<GltfConfig>();
 
         Application {

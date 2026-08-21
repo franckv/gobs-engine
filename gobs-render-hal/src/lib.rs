@@ -2,6 +2,7 @@
 mod backend;
 mod bindings;
 mod command;
+mod config;
 mod data;
 mod error;
 mod hal;
@@ -17,6 +18,7 @@ pub use gobs_vulkan::{
 
 pub use bindings::{BindResource, BindingGroupLayout, BindingGroupType, BindingId};
 pub use command::{CommandBuffer, CommandQueueType};
+pub use config::RenderHalConfig;
 pub use data::{
     AlignMode, Attribute, AttributeData, ObjectDataLayout, ObjectDataProp, UniformBuffer,
     UniformData, UniformLayout, VertexAttribute, VertexData,

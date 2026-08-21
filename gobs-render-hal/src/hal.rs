@@ -3,7 +3,7 @@ use std::any::Any;
 use slotmap::new_key_type;
 use winit::window::Window;
 
-use gobs_core::{ImageExtent2D, ImageFormat, SamplerFilter};
+use gobs_core::{GobsConfig, ImageExtent2D, ImageFormat, SamplerFilter};
 
 use crate::{
     BindingGroupLayout, BindingGroupType, CommandQueueType, ImageUsage, ObjectDataLayout,
@@ -18,17 +18,10 @@ new_key_type! { pub struct Handle; }
 pub fn create_hal(
     name: &str,
     window: Option<Window>,
-    frames_in_flight: usize,
-    textures_array_size: usize,
+    config: GobsConfig,
     validation: bool,
 ) -> Box<dyn RenderHAL> {
-    Box::new(VulkanHAL::new(
-        name,
-        window,
-        frames_in_flight,
-        textures_array_size,
-        validation,
-    ))
+    Box::new(VulkanHAL::new(name, window, config, validation))
 }
 
 #[derive(Clone, Copy, Debug, Hash, PartialEq, Eq)]
@@ -43,6 +36,7 @@ pub enum BufferType {
 pub trait RenderHAL {
     fn new_frame(&mut self, frame_number: usize);
     fn frame_id(&self, frame_number: usize) -> usize;
+    fn frames_in_flight(&self) -> usize;
 
     fn as_any(&self) -> &dyn Any;
     fn as_any_mut(&mut self) -> &mut dyn Any;

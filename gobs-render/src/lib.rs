@@ -11,7 +11,8 @@ pub use gobs_render_graph::{GfxContext, RenderError, RenderFlags};
 pub use gobs_render_hal::{
     AlignMode, Attribute, AttributeData, BlendMode, BufferType, CommandBuffer, CommandQueueType,
     CullMode, DynamicStateElem, FrontFace, Handle, ImageLayout, ObjectDataLayout, ObjectDataProp,
-    Rect2D, RenderHAL, UniformData, UniformLayout, VertexAttribute, VertexData, Viewport,
+    Rect2D, RenderHAL, RenderHalConfig, UniformData, UniformLayout, VertexAttribute, VertexData,
+    Viewport,
 };
 
 pub use batch::RenderBatch;

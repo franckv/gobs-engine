@@ -449,7 +449,7 @@ mod tests {
     use tracing::Level;
     use tracing_subscriber::{EnvFilter, FmtSubscriber, fmt::format::FmtSpan};
 
-    use gobs_core::{Color, Transform, logger, utils::timer::Timer};
+    use gobs_core::{Color, GobsConfig, Transform, logger, utils::timer::Timer};
     use gobs_render_graph::{GfxContext, RenderFlags};
     use gobs_resource::ResourceManager;
 
@@ -470,7 +470,8 @@ mod tests {
 
         let span = tracing::trace_span!(target: logger::PROFILE, "sort").entered();
 
-        let mut ctx = GfxContext::new("test", None, 1, 256, false);
+        let config = GobsConfig::default();
+        let mut ctx = GfxContext::new("test", None, config, false);
         let mut resource_manager = ResourceManager::new(ctx.frames_in_flight());
 
         let mesh_loader = MeshLoader::new(&mut ctx);
