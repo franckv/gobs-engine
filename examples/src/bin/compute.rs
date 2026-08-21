@@ -1,7 +1,7 @@
 use std::marker::PhantomData;
 
 use gobs::{
-    core::{Input, logger},
+    core::{ConfigWriter as _, Input, logger},
     game::{AppError, Application, GameContext, GobsContext, GobsGame},
     render::{RenderConfig, RenderError},
 };

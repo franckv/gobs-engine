@@ -1,10 +1,9 @@
-use std::{fmt::Debug, sync::Arc};
+use std::fmt::Debug;
 
-use parking_lot::RwLock;
 use winit::window::Window;
 
 use gobs_assets::gltf_load;
-use gobs_core::{Config, ImageExtent2D, Input, logger};
+use gobs_core::{ConfigReader as _, GobsConfig, ImageExtent2D, Input, logger};
 use gobs_egui::UIRenderer;
 use gobs_render::{
     GfxContext, Material, MaterialInstance, MaterialInstanceLoader, MaterialLoader,
@@ -22,7 +21,7 @@ pub struct AppInfo {
 
 #[allow(async_fn_in_trait)]
 pub trait GobsContext {
-    fn new(name: &str, config: Config, window: Option<Window>, validation: bool) -> Self;
+    fn new(name: &str, config: GobsConfig, window: Option<Window>, validation: bool) -> Self;
     fn resize(&mut self);
     fn pre_update(&mut self, delta: f32);
     fn post_update(&mut self, delta: f32);
@@ -41,7 +40,7 @@ pub trait GobsContext {
     where
         F: FnMut(&mut egui::Ui, &AppInfo, &mut ResourceManager, &mut Renderer);
 
-    fn config(&self) -> Arc<RwLock<Config>>;
+    fn config(&self) -> GobsConfig;
 
     fn new_scene(&self) -> SceneBuilder<'_>;
 
@@ -56,17 +55,24 @@ pub trait GobsContext {
 
 pub struct GameContext {
     app_info: AppInfo,
-    config: Arc<RwLock<Config>>,
+    config: GobsConfig,
     resource_manager: ResourceManager,
     renderer: Renderer,
     ui: UIRenderer,
 }
 
 impl GobsContext for GameContext {
-    fn new(name: &str, config: Config, window: Option<Window>, validation: bool) -> Self {
+    fn new(name: &str, config: GobsConfig, window: Option<Window>, validation: bool) -> Self {
         let frames_in_flight = config.get_int(RenderConfig::FramesInFlight) as usize;
+        let textures_array_size = config.get_int(RenderConfig::TextureArraySize) as usize;
 
-        let mut gfx = GfxContext::new(name, window, frames_in_flight, validation);
+        let mut gfx = GfxContext::new(
+            name,
+            window,
+            frames_in_flight,
+            textures_array_size,
+            validation,
+        );
         let mut resource_manager = ResourceManager::new(gfx.frames_in_flight());
 
         let texture_loader = TextureLoader::new(&mut gfx);
@@ -84,15 +90,15 @@ impl GobsContext for GameContext {
         let material_instance_loader = MaterialInstanceLoader::new();
         resource_manager.register_resource::<MaterialInstance>(material_instance_loader);
 
-        let ui = UIRenderer::new(&gfx, &mut resource_manager);
+        let ui = UIRenderer::new(&gfx, config.clone(), &mut resource_manager);
 
-        let renderer = Renderer::new(gfx, &config, &mut resource_manager);
+        let renderer = Renderer::new(gfx, config.clone(), &mut resource_manager);
 
         Self {
             app_info: AppInfo {
                 name: name.to_string(),
             },
-            config: Arc::new(RwLock::new(config)),
+            config,
             resource_manager,
             renderer,
             ui,
@@ -178,7 +184,7 @@ impl GobsContext for GameContext {
         });
     }
 
-    fn config(&self) -> Arc<RwLock<Config>> {
+    fn config(&self) -> GobsConfig {
         self.config.clone()
     }
 
@@ -203,12 +209,14 @@ impl GobsContext for GameContext {
     }
 
     async fn load_material(&mut self, filename: &str) {
-        MaterialsConfig::load_resources(filename, &mut self.resource_manager).await;
+        MaterialsConfig::load_resources(self.config.clone(), filename, &mut self.resource_manager)
+            .await;
     }
 
     fn load_gltf(&mut self, filename: &str) -> SceneGraph {
         let filename = load::get_asset_dir(filename, load::AssetType::MODEL).unwrap();
-        let mut gltf_loader = gltf_load::GLTFLoader::new(&mut self.resource_manager).unwrap();
+        let mut gltf_loader =
+            gltf_load::GLTFLoader::new(self.config.clone(), &mut self.resource_manager).unwrap();
 
         gltf_loader
             .load(self.config(), &mut self.resource_manager, filename)

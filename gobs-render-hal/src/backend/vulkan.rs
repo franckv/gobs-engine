@@ -4,6 +4,7 @@ mod command;
 pub(crate) mod display;
 mod pipeline;
 pub(crate) mod registry;
+mod textures;
 
 use std::{any::Any, collections::HashMap, sync::Arc};
 
@@ -19,17 +20,17 @@ use crate::{
     BindingGroupLayout, BindingGroupType, CommandBuffer, CommandQueueType, ImageUsage,
     ObjectDataLayout, RenderBackendError, VertexAttribute,
     backend::vulkan::{
+        bindings::BindingRegistry,
         buffer::BufferView,
+        command::VkCommandBuffer,
+        display::Display,
         pipeline::{VkComputePipelineBuilder, VkGraphicsPipelineBuilder},
+        registry::ResourcesRegistry,
+        textures::TextureRegistry,
     },
     hal::{BufferType, Handle, RenderHAL},
     pipeline::{ComputePipelineBuilder, GraphicsPipelineBuilder},
 };
-
-use bindings::BindingRegistry;
-use command::VkCommandBuffer;
-use display::Display;
-use registry::ResourcesRegistry;
 
 pub trait VulkanHALExt {
     fn get(&self) -> &VulkanHAL;
@@ -49,6 +50,7 @@ impl VulkanHALExt for dyn RenderHAL + '_ {
 pub struct VulkanHAL {
     registry: ResourcesRegistry,
     bindings: BindingRegistry,
+    textures: TextureRegistry,
     frames_in_flight: usize,
     pub display: Display,
     pub graphics_queue: Arc<vk::Queue>,
@@ -153,6 +155,10 @@ impl RenderHAL for VulkanHAL {
 
     fn destroy_image(&mut self, image: Handle) {
         let _ = self.registry.images.remove(image);
+    }
+
+    fn register_texture(&mut self, image: Handle) -> usize {
+        self.textures.register(image)
     }
 
     fn create_sampler(&mut self, mag_filter: SamplerFilter, min_filter: SamplerFilter) -> Handle {
@@ -304,6 +310,7 @@ impl VulkanHAL {
         name: &str,
         window: Option<Window>,
         frames_in_flight: usize,
+        textures_array_size: usize,
         validation: bool,
     ) -> Self {
         let instance = vk::Instance::new(name, 1, window.as_ref(), validation).unwrap();
@@ -320,11 +327,21 @@ impl VulkanHAL {
         let mut registry = ResourcesRegistry::default();
         let bindings = BindingRegistry::new(frames_in_flight);
 
+        let sampler = vk::images::Sampler::new(
+            device.clone(),
+            SamplerFilter::FilterLinear,
+            SamplerFilter::FilterLinear,
+        );
+        let sampler = registry.samplers.insert(sampler);
+
+        let textures = TextureRegistry::new(textures_array_size, sampler);
+
         display.init(&mut registry, device.clone(), frames_in_flight);
 
         Self {
             registry,
             bindings,
+            textures,
             frames_in_flight,
             display,
             graphics_queue,

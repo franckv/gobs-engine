@@ -1,4 +1,4 @@
-use gobs_core::{Config, ConfigDefault, ImageFormat};
+use gobs_core::{ConfigDefault, ConfigWriter as _, GobsConfig, ImageFormat};
 
 pub enum GltfConfig {
     TextureFormat,
@@ -13,7 +13,7 @@ impl AsRef<str> for GltfConfig {
 }
 
 impl ConfigDefault for GltfConfig {
-    fn register_defaults(config: &mut Config) {
+    fn register_defaults(config: &mut GobsConfig) {
         config.set_image_format(GltfConfig::TextureFormat, ImageFormat::R8g8b8a8Srgb);
     }
 }

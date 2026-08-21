@@ -118,7 +118,7 @@ impl<Context: GobsContext> App<Context> {
                     .from_base("normal.array")
                     .with_textures(&[diffuse_texture, normal_texture])
                     .with_prop(MaterialDataPropData::EmissionColor(
-                        Color::new(0., 0.1, 0.3, 1.).into(),
+                        Color::new(0., 0.01, 0.01, 1.).into(),
                     ))
                     .build()
             })

@@ -19,9 +19,16 @@ pub fn create_hal(
     name: &str,
     window: Option<Window>,
     frames_in_flight: usize,
+    textures_array_size: usize,
     validation: bool,
 ) -> Box<dyn RenderHAL> {
-    Box::new(VulkanHAL::new(name, window, frames_in_flight, validation))
+    Box::new(VulkanHAL::new(
+        name,
+        window,
+        frames_in_flight,
+        textures_array_size,
+        validation,
+    ))
 }
 
 #[derive(Clone, Copy, Debug, Hash, PartialEq, Eq)]
@@ -55,6 +62,7 @@ pub trait RenderHAL {
     fn invalidate_image(&mut self, image: Handle);
     fn get_image_extent(&self, image: Handle) -> ImageExtent2D;
     fn destroy_image(&mut self, image: Handle);
+    fn register_texture(&mut self, image: Handle) -> usize;
 
     fn create_sampler(&mut self, mag_filter: SamplerFilter, min_filter: SamplerFilter) -> Handle;
     fn destroy_sampler(&mut self, sampler: Handle);

@@ -34,9 +34,16 @@ impl GfxContext {
         name: &str,
         window: Option<Window>,
         frames_in_flight: usize,
+        textures_array_size: usize,
         validation: bool,
     ) -> Self {
-        let hal = create_hal(name, window, frames_in_flight, validation);
+        let hal = create_hal(
+            name,
+            window,
+            frames_in_flight,
+            textures_array_size,
+            validation,
+        );
 
         Self {
             hal,

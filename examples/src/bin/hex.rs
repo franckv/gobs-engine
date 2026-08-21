@@ -1,7 +1,7 @@
 use glam::Quat;
 
 use gobs::{
-    core::{Color, Input, Transform, logger},
+    core::{Color, ConfigWriter as _, Input, Transform, logger},
     game::{AppError, Application, GameContext, GobsContext, GobsGame},
     render::{RenderConfig, RenderError, RenderType, Shapes},
     scene::{components::NodeValue, scene::Scene},

@@ -10,6 +10,7 @@ bitflags = { workspace = true }
 bytemuck = { workspace = true }
 image = { workspace = true }
 glam = { workspace = true }
+parking_lot = { workspace = true }
 rand = { workspace = true }
 serde = { workspace = true }
 slotmap = { workspace = true }

@@ -10,7 +10,14 @@ use crate::{DescriptorStage, DescriptorType, Handle};
 
 pub type BindingId = Uuid;
 
-#[derive(Clone)]
+#[derive(Clone, Copy, Debug)]
+pub enum BindingLifetime {
+    PerFrame,
+    #[allow(unused)]
+    Static,
+}
+
+#[derive(Clone, Debug)]
 pub struct BindSet {
     bindings: Vec<(Handle, usize)>,
 }
@@ -31,9 +38,13 @@ impl BindSet {
     pub fn bindings(&self) -> impl Iterator<Item = &(Handle, usize)> {
         self.bindings.iter()
     }
+
+    pub fn len(&self) -> usize {
+        self.bindings.len()
+    }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct BindResource {
     pub id: BindingId,
     layout: BindingGroupLayout,
@@ -75,6 +86,32 @@ impl BindResource {
         self
     }
 
+    pub fn add_binding(&mut self, set: usize, resource: Handle, index: usize) {
+        let bindset = self
+            .binding_sets
+            .get_mut(set)
+            .unwrap_or_else(|| panic!("BindResource has not set {}", set));
+
+        debug_assert!(!bindset.bindings.iter().any(|(_, i)| *i == index));
+
+        bindset.bindings.push((resource, index));
+    }
+
+    pub fn remove_binding(&mut self, set: usize, index: usize) {
+        let bindset = self
+            .binding_sets
+            .get_mut(set)
+            .unwrap_or_else(|| panic!("BindResource has not set {}", set));
+
+        let pos = bindset
+            .bindings
+            .iter()
+            .position(|(_, i)| *i == index)
+            .unwrap_or_else(|| panic!("BindResource set {} has not index {}", set, index));
+
+        bindset.bindings.remove(pos);
+    }
+
     pub fn next(mut self) -> Self {
         self.binding_sets.push(BindSet::new());
 
@@ -86,6 +123,10 @@ impl BindResource {
             .get(index)
             .and_then(|set| set.bindings.first())
             .map(|b| b.0)
+    }
+
+    pub fn sets(&self) -> usize {
+        self.binding_sets.len()
     }
 
     pub fn bindsets(&self) -> impl Iterator<Item = &BindSet> {
@@ -104,6 +145,7 @@ pub enum BindingGroupType {
     SceneData,
     MaterialData,
     MaterialTextures,
+    BindlessTextures,
 }
 
 impl Debug for BindingGroupType {
@@ -114,6 +156,7 @@ impl Debug for BindingGroupType {
             Self::SceneData => write!(f, "SceneData ({}, push)", self.set()),
             Self::MaterialData => write!(f, "MaterialData ({})", self.set()),
             Self::MaterialTextures => write!(f, "MaterialTextures ({})", self.set()),
+            Self::BindlessTextures => write!(f, "BindlessTextures ({})", self.set()),
         }
     }
 }
@@ -135,7 +178,9 @@ impl BindingGroupType {
             BindingGroupType::ComputeData => 0,
             BindingGroupType::SceneData => 0,
             BindingGroupType::MaterialData => 1,
+            // bindless / material textures are mutually exclusive
             BindingGroupType::MaterialTextures => 2,
+            BindingGroupType::BindlessTextures => 2,
         }
     }
 }

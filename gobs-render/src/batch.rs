@@ -470,7 +470,7 @@ mod tests {
 
         let span = tracing::trace_span!(target: logger::PROFILE, "sort").entered();
 
-        let mut ctx = GfxContext::new("test", None, 1, false);
+        let mut ctx = GfxContext::new("test", None, 1, 256, false);
         let mut resource_manager = ResourceManager::new(ctx.frames_in_flight());
 
         let mesh_loader = MeshLoader::new(&mut ctx);

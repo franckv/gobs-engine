@@ -1,9 +1,9 @@
 use std::collections::HashMap;
 
-use gobs_render_graph::{SceneDataLayout, SceneDataProp};
 use serde::Deserialize;
 
-use gobs_core::{ImageFormat, logger};
+use gobs_core::{ConfigReader as _, GobsConfig, ImageFormat, logger};
+use gobs_render_graph::{SceneDataLayout, SceneDataProp};
 use gobs_render_hal::{
     AlignMode, BlendMode, CullMode, ObjectDataLayout, ObjectDataProp, UniformData as _,
     VertexAttribute,
@@ -14,7 +14,7 @@ use gobs_resource::{
 };
 
 use crate::{
-    Material, MaterialProperties,
+    Material, MaterialProperties, RenderConfig,
     data::{MaterialDataProp, TextureDataProp},
 };
 
@@ -33,8 +33,6 @@ struct DefaultMaterialConfig {
     vertex_attributes: VertexAttribute,
     color_format: ImageFormat,
     depth_format: ImageFormat,
-    #[serde(default)]
-    texture_array_size: u32,
 }
 
 #[derive(Debug, Deserialize)]
@@ -59,27 +57,39 @@ struct MaterialConfig {
 }
 
 impl MaterialsConfig {
-    pub async fn load_resources(filename: &str, resource_manager: &mut ResourceManager) {
+    pub async fn load_resources(
+        config: GobsConfig,
+        filename: &str,
+        resource_manager: &mut ResourceManager,
+    ) {
         let resources = load::load_string(filename, AssetType::RESOURCES)
             .await
             .unwrap();
 
-        Self::load_resources_with_data(&resources, resource_manager);
+        Self::load_resources_with_data(config, &resources, resource_manager);
     }
 
-    pub fn load_resources_sync(filename: &str, resource_manager: &mut ResourceManager) {
+    pub fn load_resources_sync(
+        config: GobsConfig,
+        filename: &str,
+        resource_manager: &mut ResourceManager,
+    ) {
         let resources = load::load_string_sync(filename, AssetType::RESOURCES).unwrap();
 
-        Self::load_resources_with_data(&resources, resource_manager);
+        Self::load_resources_with_data(config, &resources, resource_manager);
     }
 
-    pub fn load_resources_with_data(data: &str, resource_manager: &mut ResourceManager) {
-        let config: MaterialsConfig = ron::from_str(data).unwrap();
+    pub fn load_resources_with_data(
+        config: GobsConfig,
+        data: &str,
+        resource_manager: &mut ResourceManager,
+    ) {
+        let material_config: MaterialsConfig = ron::from_str(data).unwrap();
 
-        config.load_materials(resource_manager);
+        material_config.load_materials(config, resource_manager);
     }
 
-    fn load_materials(&self, resource_manager: &mut ResourceManager) {
+    fn load_materials(&self, config: GobsConfig, resource_manager: &mut ResourceManager) {
         let mut object_layout = ObjectDataLayout::new(AlignMode::Std140);
         for prop in &self.default.object_layout {
             object_layout = object_layout.prop(*prop);
@@ -131,7 +141,7 @@ impl MaterialsConfig {
             props = props.textures(
                 &material.texture_layout,
                 material.texture_indexing,
-                self.default.texture_array_size,
+                config.get_int(RenderConfig::TextureArraySize),
             );
 
             resource_manager.add::<Material>(props, ResourceLifetime::Static, true);

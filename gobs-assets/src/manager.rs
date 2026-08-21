@@ -1,4 +1,4 @@
-use gobs_core::{Color, logger};
+use gobs_core::{Color, GobsConfig, logger};
 use gobs_render::{
     BlendMode, Material, MaterialDataPropData, MaterialInstance, MaterialInstanceProperties,
     MaterialsConfig, Texture, TextureProperties,
@@ -50,8 +50,11 @@ pub struct MaterialManager {
 }
 
 impl MaterialManager {
-    pub fn new(resource_manager: &mut ResourceManager) -> Result<Self, AssetError> {
-        MaterialsConfig::load_resources_sync("gltf_materials.ron", resource_manager);
+    pub fn new(
+        config: GobsConfig,
+        resource_manager: &mut ResourceManager,
+    ) -> Result<Self, AssetError> {
+        MaterialsConfig::load_resources_sync(config, "gltf_materials.ron", resource_manager);
 
         let texture = resource_manager
             .get_by_name("gltf.texture")

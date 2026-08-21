@@ -1,4 +1,4 @@
-use gobs_core::{Config, ImageExtent2D, logger};
+use gobs_core::{ConfigReader as _, GobsConfig, ImageExtent2D, logger};
 use gobs_render_graph::{FrameData, FrameGraph, GfxContext, RenderError};
 use gobs_resource::ResourceManager;
 
@@ -14,21 +14,21 @@ pub struct Renderer {
 impl Renderer {
     pub fn new(
         mut gfx: GfxContext,
-        config: &Config,
+        config: GobsConfig,
         resource_manager: &mut ResourceManager,
     ) -> Self {
         let graph = if config.get_bool(RenderConfig::LoadGraph) {
             PipelinesConfig::load_resources(
                 &gfx,
-                config.get_string(RenderConfig::PipelineFileName),
+                &config.get_string(RenderConfig::PipelineFileName),
                 resource_manager,
             )
             .expect("Load pipelines");
 
             FrameGraph::load(
                 &mut gfx,
-                config.get_string(RenderConfig::GraphFileName),
-                config.get_string(RenderConfig::GraphName),
+                &config.get_string(RenderConfig::GraphFileName),
+                &config.get_string(RenderConfig::GraphName),
                 |pipeline, ctx| {
                     let pipeline_handle = resource_manager.get_by_name::<Pipeline>(pipeline)?;
 

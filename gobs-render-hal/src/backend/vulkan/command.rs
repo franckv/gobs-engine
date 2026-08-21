@@ -10,6 +10,7 @@ use crate::{
         VulkanHAL, VulkanHALExt,
         vulkan::pipeline::{self, VkPipeline},
     },
+    bindings::BindingLifetime,
     command::CommandBuffer,
 };
 
@@ -207,9 +208,13 @@ impl CommandBuffer for VkCommandBuffer {
             );
         } else {
             let frame_id = hal.frame_id(self.frame_number);
-            let ds = hal
-                .bindings
-                .get_ds(hal.device.clone(), &hal.registry, resource, frame_id);
+            let ds = hal.bindings.get_ds(
+                hal.device.clone(),
+                &hal.registry,
+                resource,
+                frame_id,
+                BindingLifetime::PerFrame,
+            );
 
             let set = binding_type.set();
             self.command

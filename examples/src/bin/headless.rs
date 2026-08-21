@@ -4,7 +4,7 @@ use glam::Quat;
 use pollster::FutureExt;
 
 use gobs::{
-    core::{Color, Config, Input, Transform, logger},
+    core::{Color, ConfigWriter as _, GobsConfig, Input, Transform, logger},
     game::{AppError, GameContext, GobsContext, GobsGame},
     render::{RenderConfig, RenderError, RenderType, Shapes},
     scene::{components::NodeValue, scene::Scene},
@@ -95,7 +95,7 @@ fn main() {
 
     tracing::info!(target: logger::APP, "Engine start");
 
-    let mut config = Config::default();
+    let mut config = GobsConfig::default();
     config.register::<RenderConfig>();
     config.set_string(RenderConfig::GraphName, "headless");
 

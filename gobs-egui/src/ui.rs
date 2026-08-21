@@ -8,7 +8,9 @@ use egui::{
 use parking_lot::RwLock;
 use tracing::Level;
 
-use gobs_core::{ImageExtent2D, ImageFormat, Input, Key, MouseButton, Transform, logger};
+use gobs_core::{
+    GobsConfig, ImageExtent2D, ImageFormat, Input, Key, MouseButton, Transform, logger,
+};
 use gobs_render::{
     BoundingBox, GfxContext, Material, MaterialInstance, MaterialInstanceProperties,
     MaterialsConfig, Model, RenderBatch, RenderFlags, RenderMeshBuilder, RenderModelBuilder,
@@ -40,14 +42,18 @@ pub struct UIRenderer {
 }
 
 impl UIRenderer {
-    pub fn new(ctx: &GfxContext, resource_manager: &mut ResourceManager) -> Self {
+    pub fn new(
+        ctx: &GfxContext,
+        config: GobsConfig,
+        resource_manager: &mut ResourceManager,
+    ) -> Self {
         let ectx = egui::Context::default();
 
         let (width, height): (f32, f32) = ctx.extent().into();
 
         ectx.set_pixels_per_point(PIXEL_PER_POINT);
 
-        MaterialsConfig::load_resources_sync("ui_materials.ron", resource_manager);
+        MaterialsConfig::load_resources_sync(config, "ui_materials.ron", resource_manager);
 
         let material = resource_manager.get_by_name("ui").unwrap();
 

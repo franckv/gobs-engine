@@ -12,7 +12,7 @@ use vk::{
 
 use crate::{
     BindResource, BindingGroupLayout, BindingId, Handle,
-    backend::vulkan::registry::ResourcesRegistry,
+    backend::vulkan::registry::ResourcesRegistry, bindings::BindingLifetime,
 };
 
 pub(crate) struct BindingRegistry {
@@ -80,21 +80,29 @@ impl BindingRegistry {
         registry: &ResourcesRegistry,
         resource: &BindResource,
         frame_id: usize,
+        lifetime: BindingLifetime,
     ) -> DescriptorSet {
-        if let Some(ds) = self.ds_cache[frame_id].get(&resource.id) {
-            ds.clone()
-        } else {
-            let ds_pool = self.get_pool(device.clone(), resource, frame_id);
+        match lifetime {
+            BindingLifetime::Static => {
+                todo!()
+            }
+            BindingLifetime::PerFrame => {
+                if let Some(ds) = self.ds_cache[frame_id].get(&resource.id) {
+                    ds.clone()
+                } else {
+                    let ds_pool = self.get_pool(device.clone(), resource, frame_id);
 
-            let ds = ds_pool.allocate();
+                    let ds = ds_pool.allocate();
 
-            let update = self.generate_update(device, registry, resource);
+                    let update = self.generate_update(device, registry, resource);
 
-            update.write(&ds);
+                    update.write(&ds);
 
-            self.ds_cache[frame_id].insert(resource.id, ds.clone());
+                    self.ds_cache[frame_id].insert(resource.id, ds.clone());
 
-            ds
+                    ds
+                }
+            }
         }
     }
 
@@ -106,11 +114,14 @@ impl BindingRegistry {
     ) -> DescriptorSetUpdates {
         let mut update = DescriptorSetUpdates::new(device);
 
+        debug_assert_eq!(resource.layout().bindings.len(), resource.sets());
+
         let mut binding_idx = 0;
 
         for ((ty, stage, count), bindsets) in
             resource.layout().bindings.iter().zip(resource.bindsets())
         {
+            debug_assert!(bindsets.len() <= *count as usize);
             for (handle, index) in bindsets.bindings() {
                 match ty {
                     // scene data, material data

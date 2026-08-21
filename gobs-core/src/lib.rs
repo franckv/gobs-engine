@@ -11,7 +11,7 @@ mod transform;
 pub mod utils;
 
 pub use color::Color;
-pub use config::{Config, ConfigDefault, ConfigValue};
+pub use config::{ConfigDefault, ConfigReader, ConfigValue, ConfigWriter, GobsConfig};
 pub use extent::ImageExtent2D;
 pub use format::ImageFormat;
 pub use input::{Input, Key, MouseButton};

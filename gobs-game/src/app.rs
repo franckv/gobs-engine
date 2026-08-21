@@ -9,7 +9,7 @@ use winit::{
 };
 
 use gobs_assets::config::GltfConfig;
-use gobs_core::{Config, Input, logger, utils::timer::Timer};
+use gobs_core::{ConfigWriter as _, GobsConfig, Input, logger, utils::timer::Timer};
 use gobs_render::{RenderConfig, RenderError};
 
 use crate::{AppError, context::GobsContext};
@@ -24,7 +24,7 @@ where
     close_requested: bool,
     is_minimized: bool,
     title: String,
-    config: Config,
+    config: GobsConfig,
     width: u32,
     height: u32,
 }
@@ -221,7 +221,7 @@ where
     R: GobsGame + 'static,
 {
     pub fn new(title: &str, width: u32, height: u32) -> Application<R> {
-        let mut config = Config::default();
+        let mut config = GobsConfig::default();
         config.register::<RenderConfig>();
         config.register::<GltfConfig>();
 
@@ -240,7 +240,7 @@ where
 
     pub fn with_config<F>(&mut self, mut f: F) -> &mut Self
     where
-        F: FnMut(&mut Config),
+        F: FnMut(&mut GobsConfig),
     {
         f(&mut self.config);
 
