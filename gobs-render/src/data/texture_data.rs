@@ -11,7 +11,8 @@ pub enum TextureDataProp {
 
 #[derive(Clone, Debug, Default)]
 pub struct TextureDataLayout {
-    pub layout: Vec<TextureDataProp>,
+    pub(crate) layout: Vec<TextureDataProp>,
+    pub(crate) texture_indexing: bool,
 }
 
 impl TextureDataLayout {

@@ -1,11 +1,12 @@
+use gobs_core::logger;
 use gobs_render_hal::{AttributeData, BufferType, Handle, RenderHAL, UniformData as _};
 use gobs_resource::{
     ResourceRegistry, {ResourceError, ResourceHandle, ResourceLoader, ResourceProperties},
 };
 
 use crate::{
-    MaterialInstanceProperties, MaterialProperties,
-    data::{MaterialConstantData, MaterialDataLayout, MaterialDataProp},
+    MaterialDataPropData, MaterialInstanceProperties, MaterialProperties,
+    data::{MaterialConstantData, MaterialDataLayout, MaterialDataProp, TextureDataProp},
     resources::{MaterialInstance, MaterialInstanceData},
 };
 
@@ -31,13 +32,25 @@ impl ResourceLoader<MaterialInstance> for MaterialInstanceLoader {
         handle: &ResourceHandle<MaterialInstance>,
         registry: &mut ResourceRegistry,
     ) -> Result<MaterialInstanceData, ResourceError> {
-        let resource = registry.get(handle);
-        let properties = &resource.properties;
-        let material_handle = properties.material;
-        let material_resource = registry.get(&material_handle);
-        let material_properties = &material_resource.properties;
+        let material_properties = {
+            let resource = registry.get(handle);
+            let properties = &resource.properties;
+            let material_handle = properties.material;
+            let material_resource = registry.get(&material_handle);
+            let material_properties = &material_resource.properties;
 
-        Self::validate_layout(properties, material_properties);
+            material_properties.clone()
+        };
+
+        let properties = {
+            let resource = registry.get_mut(handle);
+
+            &mut resource.properties
+        };
+
+        Self::update_textures_index(hal, properties, &material_properties);
+
+        tracing::warn!(target: logger::RESOURCES, "Layout {:?}", &material_properties.material_data_layout);
 
         let material_buffer = self.create_buffer(
             hal,
@@ -65,6 +78,7 @@ impl ResourceLoader<MaterialInstance> for MaterialInstanceLoader {
 }
 
 impl MaterialInstanceLoader {
+    #[cfg(debug_assertions)]
     fn validate_layout(
         properties: &MaterialInstanceProperties,
         material_properties: &MaterialProperties,
@@ -72,8 +86,36 @@ impl MaterialInstanceLoader {
         if properties.material_data.is_none()
             && !material_properties.material_data_layout.is_empty()
         {
-            tracing::error!("Material instance does not contain material data");
+            tracing::error!(target: logger::RESOURCES, "Material instance does not contain material data");
             panic!("Failed to load material instance: {}", properties.name);
+        }
+    }
+
+    fn update_textures_index(
+        hal: &mut dyn RenderHAL,
+        properties: &mut MaterialInstanceProperties,
+        material_properties: &MaterialProperties,
+    ) {
+        #[cfg(debug_assertions)]
+        Self::validate_layout(properties, material_properties);
+
+        let layout = &material_properties.texture_data_layout;
+
+        if layout.texture_indexing {
+            for &texture_prop in &layout.layout {
+                let index = hal.allocate_texture_index() as u32;
+
+                tracing::warn!(target: logger::RESOURCES, "Alloc texture index {} for {:?}", index, texture_prop);
+
+                let prop = match texture_prop {
+                    TextureDataProp::Diffuse => MaterialDataPropData::DiffuseIndex(index),
+                    TextureDataProp::Normal => MaterialDataPropData::NormalIndex(index),
+                    TextureDataProp::Emission => MaterialDataPropData::EmissionIndex(index),
+                    TextureDataProp::Specular => MaterialDataPropData::SpecularIndex(index),
+                };
+
+                properties.add_prop(prop);
+            }
         }
     }
 
@@ -96,7 +138,13 @@ impl MaterialInstanceLoader {
                     AttributeData::Vec4F(material_data.specular_color)
                 }
                 MaterialDataProp::SpecularPower => AttributeData::F32(material_data.specular_power),
+                MaterialDataProp::DiffuseIndex => AttributeData::U32(material_data.diffuse_index),
+                MaterialDataProp::NormalIndex => AttributeData::U32(material_data.normal_index),
+                MaterialDataProp::EmissionIndex => AttributeData::U32(material_data.emission_index),
+                MaterialDataProp::SpecularIndex => AttributeData::U32(material_data.specular_index),
             });
+
+            tracing::warn!(target: logger::RESOURCES, "Data {:?}", &data);
 
             let buffer = hal.create_buffer(name, data.len(), BufferType::Uniform);
             hal.upload_buffer(buffer, &data, 0);

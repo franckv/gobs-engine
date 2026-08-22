@@ -112,6 +112,8 @@ impl MaterialProperties {
                 .binding_group(BindingGroupType::MaterialTextures);
         }
 
+        self.texture_data_layout.texture_indexing = indexing;
+
         if indexing {
             self.pipeline_properties = self
                 .pipeline_properties

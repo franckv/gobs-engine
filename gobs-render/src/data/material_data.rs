@@ -11,6 +11,10 @@ pub enum MaterialDataPropData {
     EmissionColor([f32; 4]),
     SpecularColor([f32; 4]),
     SpecularPower(f32),
+    DiffuseIndex(u32),
+    NormalIndex(u32),
+    EmissionIndex(u32),
+    SpecularIndex(u32),
 }
 
 // TODO: Emissive, Specular, Opacity, Glossiness, ...
@@ -20,6 +24,10 @@ pub enum MaterialDataProp {
     EmissionColor,
     SpecularColor,
     SpecularPower,
+    DiffuseIndex,
+    NormalIndex,
+    EmissionIndex,
+    SpecularIndex,
 }
 
 #[derive(Clone, Debug)]
@@ -54,6 +62,18 @@ impl UniformData<MaterialDataProp> for MaterialDataLayout {
             MaterialDataProp::SpecularPower => {
                 self.uniform_layout.prop("specular power", Attribute::F32)
             }
+            MaterialDataProp::DiffuseIndex => {
+                self.uniform_layout.prop("diffuse index", Attribute::U32)
+            }
+            MaterialDataProp::NormalIndex => {
+                self.uniform_layout.prop("diffuse index", Attribute::U32)
+            }
+            MaterialDataProp::EmissionIndex => {
+                self.uniform_layout.prop("diffuse index", Attribute::U32)
+            }
+            MaterialDataProp::SpecularIndex => {
+                self.uniform_layout.prop("diffuse index", Attribute::U32)
+            }
         };
 
         self
@@ -74,4 +94,8 @@ pub struct MaterialConstantData {
     pub emission_color: [f32; 4],
     pub specular_color: [f32; 4],
     pub specular_power: f32,
+    pub diffuse_index: u32,
+    pub normal_index: u32,
+    pub emission_index: u32,
+    pub specular_index: u32,
 }

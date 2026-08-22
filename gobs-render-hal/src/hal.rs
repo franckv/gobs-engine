@@ -1,4 +1,4 @@
-use std::any::Any;
+use std::{any::Any, sync::Arc};
 
 use slotmap::new_key_type;
 use winit::window::Window;
@@ -57,6 +57,7 @@ pub trait RenderHAL {
     fn get_image_extent(&self, image: Handle) -> ImageExtent2D;
     fn destroy_image(&mut self, image: Handle);
     fn register_texture(&mut self, image: Handle) -> usize;
+    fn allocate_texture_index(&mut self) -> usize;
 
     fn create_sampler(&mut self, mag_filter: SamplerFilter, min_filter: SamplerFilter) -> Handle;
     fn destroy_sampler(&mut self, sampler: Handle);
@@ -74,7 +75,7 @@ pub trait RenderHAL {
         &self,
         pipeline: Handle,
         binding_group_type: &BindingGroupType,
-    ) -> Option<&BindingGroupLayout>;
+    ) -> Option<Arc<BindingGroupLayout>>;
     fn get_pipeline_vertex_attributes(&self, pipeline: Handle) -> VertexAttribute;
 
     fn acquire(&mut self, frame: usize) -> Result<(), RenderBackendError>;

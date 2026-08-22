@@ -46,8 +46,8 @@ impl MaterialInstanceProperties {
         self
     }
 
-    pub fn prop(mut self, prop: MaterialDataPropData) -> Self {
-        let mut material_data = self.material_data.unwrap_or_default();
+    pub fn add_prop(&mut self, prop: MaterialDataPropData) {
+        let material_data = self.material_data.get_or_insert_with(Default::default);
 
         match prop {
             MaterialDataPropData::DiffuseColor(color) => {
@@ -62,9 +62,23 @@ impl MaterialInstanceProperties {
             MaterialDataPropData::SpecularPower(power) => {
                 material_data.specular_power = power;
             }
+            MaterialDataPropData::DiffuseIndex(index) => {
+                material_data.diffuse_index = index;
+            }
+            MaterialDataPropData::NormalIndex(index) => {
+                material_data.normal_index = index;
+            }
+            MaterialDataPropData::EmissionIndex(index) => {
+                material_data.emission_index = index;
+            }
+            MaterialDataPropData::SpecularIndex(index) => {
+                material_data.specular_index = index;
+            }
         }
+    }
 
-        self.material_data = Some(material_data);
+    pub fn prop(mut self, prop: MaterialDataPropData) -> Self {
+        self.add_prop(prop);
 
         self
     }

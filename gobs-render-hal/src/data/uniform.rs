@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use gobs_core::data::fixed_buffer::DataBuffer;
 
 use crate::{
@@ -13,7 +15,7 @@ impl UniformBuffer {
     pub fn new(
         label: &str,
         hal: &mut dyn RenderHAL,
-        bind_layout: BindingGroupLayout,
+        bind_layout: Arc<BindingGroupLayout>,
         data_layout: &UniformLayout,
     ) -> Self {
         let buffer = hal.create_buffer(label, data_layout.size(), BufferType::Uniform);

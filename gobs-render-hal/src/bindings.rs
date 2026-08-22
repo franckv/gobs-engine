@@ -1,6 +1,7 @@
 use std::{
     fmt::Debug,
     hash::{DefaultHasher, Hash, Hasher},
+    sync::Arc,
 };
 
 use serde::{Deserialize, Serialize};
@@ -47,12 +48,12 @@ impl BindSet {
 #[derive(Clone, Debug)]
 pub struct BindResource {
     pub id: BindingId,
-    layout: BindingGroupLayout,
+    layout: Arc<BindingGroupLayout>,
     binding_sets: Vec<BindSet>,
 }
 
 impl BindResource {
-    pub fn with_resources(layout: BindingGroupLayout, resources: Vec<Handle>) -> Self {
+    pub fn with_resources(layout: Arc<BindingGroupLayout>, resources: Vec<Handle>) -> Self {
         // debug_assert_eq!(resources_count.iter().sum::<usize>(), resources.len());
 
         let binding_sets = resources
@@ -67,7 +68,7 @@ impl BindResource {
         }
     }
 
-    pub fn new(layout: BindingGroupLayout) -> Self {
+    pub fn new(layout: Arc<BindingGroupLayout>) -> Self {
         Self {
             id: Uuid::new_v4(),
             layout,
@@ -193,27 +194,29 @@ pub struct BindingGroupLayout {
 }
 
 impl BindingGroupLayout {
-    pub fn new(binding_group_type: BindingGroupType) -> Self {
+    pub fn new(binding_group_type: BindingGroupType) -> Arc<Self> {
         let mut hasher = DefaultHasher::new();
         binding_group_type.hash(&mut hasher);
         let binding_group_id = hasher.finish();
 
-        Self {
+        Arc::new(Self {
             binding_group_id,
             binding_group_type,
             bindings: Vec::new(),
-        }
+        })
     }
 
-    pub fn add_binding(mut self, ty: DescriptorType, stage: DescriptorStage, count: u32) -> Self {
-        self.bindings.push((ty, stage, count));
+    pub fn add_binding(self: Arc<Self>, ty: DescriptorType, stage: DescriptorStage, count: u32) -> Arc<Self> {
+        let mut group = Arc::unwrap_or_clone(self);
+
+        group.bindings.push((ty, stage, count));
 
         // generate content hash for layout
         let mut hasher = DefaultHasher::new();
-        self.binding_group_type.hash(&mut hasher);
-        self.bindings.hash(&mut hasher);
-        self.binding_group_id = hasher.finish();
+        group.binding_group_type.hash(&mut hasher);
+        group.bindings.hash(&mut hasher);
+        group.binding_group_id = hasher.finish();
 
-        self
+        Arc::new(group)
     }
 }

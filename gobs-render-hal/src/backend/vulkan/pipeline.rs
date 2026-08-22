@@ -19,14 +19,14 @@ use crate::{
 pub struct VkPipeline {
     pub pipeline: vk::Pipeline,
     pub push_layout: ObjectDataLayout,
-    pub descriptor_layout: IndexMap<BindingGroupType, BindingGroupLayout>,
+    pub descriptor_layout: IndexMap<BindingGroupType, Arc<BindingGroupLayout>>,
     pub vertex_attribute: VertexAttribute,
 }
 
 pub(crate) struct VkComputePipelineBuilder {
     device: Arc<vk::Device>,
     builder: vk::ComputePipelineBuilder,
-    descriptor_layouts: IndexMap<BindingGroupType, BindingGroupLayout>,
+    descriptor_layouts: IndexMap<BindingGroupType, Arc<BindingGroupLayout>>,
     push_constants: usize,
     push_layout: ObjectDataLayout,
 }
@@ -48,7 +48,7 @@ impl ComputePipelineBuilder for VkComputePipelineBuilder {
 
     fn binding_group(
         mut self: Box<Self>,
-        layout: BindingGroupLayout,
+        layout: Arc<BindingGroupLayout>,
     ) -> Box<dyn ComputePipelineBuilder> {
         self.descriptor_layouts
             .insert(layout.binding_group_type, layout);
@@ -97,7 +97,7 @@ impl VkComputePipelineBuilder {
 pub(crate) struct VkGraphicsPipelineBuilder {
     device: Arc<vk::Device>,
     builder: vk::GraphicsPipelineBuilder,
-    descriptor_layouts: IndexMap<BindingGroupType, BindingGroupLayout>,
+    descriptor_layouts: IndexMap<BindingGroupType, Arc<BindingGroupLayout>>,
     push_constants: usize,
     vertex_attributes: VertexAttribute,
     push_layout: ObjectDataLayout,
@@ -187,7 +187,7 @@ impl GraphicsPipelineBuilder for VkGraphicsPipelineBuilder {
 
     fn binding_group(
         mut self: Box<Self>,
-        layout: BindingGroupLayout,
+        layout: Arc<BindingGroupLayout>,
     ) -> Box<dyn GraphicsPipelineBuilder> {
         self.descriptor_layouts
             .insert(layout.binding_group_type, layout);

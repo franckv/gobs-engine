@@ -1,4 +1,4 @@
-use std::fmt::Debug;
+use std::{fmt::Debug, sync::Arc};
 
 use gobs_core::ImageFormat;
 use gobs_render_graph::SceneDataLayout;
@@ -59,7 +59,7 @@ pub struct GraphicsPipelineProperties {
     pub(crate) vertex_shader: Option<String>,
     pub(crate) fragment_entry: Option<String>,
     pub(crate) fragment_shader: Option<String>,
-    pub(crate) binding_groups: Vec<BindingGroupLayout>,
+    pub(crate) binding_groups: Vec<Arc<BindingGroupLayout>>,
     pub ds_pool_size: usize,
     pub object_data_layout: ObjectDataLayout,
     pub scene_data_layout: SceneDataLayout,
@@ -175,14 +175,15 @@ impl GraphicsPipelineProperties {
     }
 
     pub fn binding_group(mut self, ty: BindingGroupType) -> Self {
-        self.binding_groups.push(BindingGroupLayout::new(ty));
+        self.binding_groups
+            .push(BindingGroupLayout::new(ty));
 
         self
     }
 
     pub fn binding(mut self, ty: DescriptorType, stage: DescriptorStage, count: u32) -> Self {
-        if let Some(mut group) = self.binding_groups.pop() {
-            group = group.add_binding(ty, stage, count);
+        if let Some(group) = self.binding_groups.pop() {
+            let group = group.add_binding(ty, stage, count);
             self.binding_groups.push(group);
         }
 
@@ -223,7 +224,7 @@ pub struct ComputePipelineProperties {
     pub name: String,
     pub(crate) compute_entry: String,
     pub(crate) compute_shader: Option<String>,
-    pub(crate) binding_groups: Vec<BindingGroupLayout>,
+    pub(crate) binding_groups: Vec<Arc<BindingGroupLayout>>,
 }
 
 impl ComputePipelineProperties {
@@ -249,14 +250,15 @@ impl ComputePipelineProperties {
     }
 
     pub fn binding_group(mut self, ty: BindingGroupType) -> Self {
-        self.binding_groups.push(BindingGroupLayout::new(ty));
+        self.binding_groups
+            .push(BindingGroupLayout::new(ty));
 
         self
     }
 
     pub fn binding(mut self, ty: DescriptorType, stage: DescriptorStage, count: u32) -> Self {
-        if let Some(mut group) = self.binding_groups.pop() {
-            group = group.add_binding(ty, stage, count);
+        if let Some(group) = self.binding_groups.pop() {
+            let group = group.add_binding(ty, stage, count);
             self.binding_groups.push(group);
         }
 

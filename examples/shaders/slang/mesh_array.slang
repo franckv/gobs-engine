@@ -14,6 +14,8 @@ ConstantBuffer<SceneData> scene_data;
 
 struct Material {
     float4 emissive_color;
+    uint diffuse_index;
+    uint normal_index;
 }
 [[vk::binding(0, MATERIAL_DATA_SET)]]
 ConstantBuffer<Material> material;

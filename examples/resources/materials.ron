@@ -92,7 +92,9 @@ MaterialsConfig(
                 Normal
             ],
             material_layout: [
-                EmissionColor
+                EmissionColor,
+                DiffuseIndex,
+                NormalIndex,
             ],
         ),
         "depth": (

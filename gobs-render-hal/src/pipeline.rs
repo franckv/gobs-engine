@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use gobs_core::ImageFormat;
 
 use crate::{
@@ -9,7 +11,7 @@ pub trait ComputePipelineBuilder {
     fn shader(self: Box<Self>, filename: &str, entry: &str) -> Box<dyn ComputePipelineBuilder>;
     fn binding_group(
         self: Box<Self>,
-        binding_group_layout: BindingGroupLayout,
+        binding_group_layout: Arc<BindingGroupLayout>,
     ) -> Box<dyn ComputePipelineBuilder>;
     fn build(self: Box<Self>, hal: &mut dyn RenderHAL) -> Handle;
 }
@@ -39,7 +41,7 @@ pub trait GraphicsPipelineBuilder {
     ) -> Box<dyn GraphicsPipelineBuilder>;
     fn binding_group(
         self: Box<Self>,
-        binding_group_layout: BindingGroupLayout,
+        binding_group_layout: Arc<BindingGroupLayout>,
     ) -> Box<dyn GraphicsPipelineBuilder>;
     fn polygon_mode(self: Box<Self>, mode: PolygonMode) -> Box<dyn GraphicsPipelineBuilder>;
     fn viewports(self: Box<Self>, viewports: Vec<Viewport>) -> Box<dyn GraphicsPipelineBuilder>;

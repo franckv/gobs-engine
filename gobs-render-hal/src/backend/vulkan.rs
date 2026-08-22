@@ -165,6 +165,10 @@ impl RenderHAL for VulkanHAL {
         self.textures.register(image)
     }
 
+    fn allocate_texture_index(&mut self) -> usize {
+        self.textures.reserve_index()
+    }
+
     fn create_sampler(&mut self, mag_filter: SamplerFilter, min_filter: SamplerFilter) -> Handle {
         let sampler = vk::images::Sampler::new(self.device.clone(), mag_filter, min_filter);
 
@@ -211,10 +215,10 @@ impl RenderHAL for VulkanHAL {
         &self,
         pipeline: Handle,
         binding_group_type: &BindingGroupType,
-    ) -> Option<&BindingGroupLayout> {
+    ) -> Option<Arc<BindingGroupLayout>> {
         let pipeline = self.registry.pipelines.get(pipeline).unwrap();
 
-        pipeline.descriptor_layout.get(binding_group_type)
+        pipeline.descriptor_layout.get(binding_group_type).cloned()
     }
 
     fn get_pipeline_object_layout(&self, pipeline: Handle) -> &ObjectDataLayout {
