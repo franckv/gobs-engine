@@ -183,6 +183,10 @@ impl RenderHAL for VulkanHAL {
         self.textures.free(index);
     }
 
+    fn max_textures(&self) -> usize {
+        self.textures.size()
+    }
+
     fn create_sampler(&mut self, mag_filter: SamplerFilter, min_filter: SamplerFilter) -> Handle {
         let sampler = vk::images::Sampler::new(self.device.clone(), mag_filter, min_filter);
 

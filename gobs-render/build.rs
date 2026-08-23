@@ -1,0 +1,21 @@
+use gobs_build::{compile_slang_shaders, copy_files};
+
+const SHADERS_SLANG_DIR: &str = "shaders/slang";
+const SHADERS_SLANG_INCLUDE_DIR: &str = "shaders/slang";
+const SHADERS_OUT_DIR: &str = "shaders/spv";
+const SHADERS_ASM_DIR: &str = "shaders/spvasm";
+const SHADERS_DIR: &str = "shaders";
+
+fn main() {
+    println!("cargo:rerun-if-changed={SHADERS_SLANG_DIR}/");
+    println!("cargo:rerun-if-changed={SHADERS_SLANG_INCLUDE_DIR}/");
+
+    compile_slang_shaders(
+        SHADERS_SLANG_DIR,
+        SHADERS_SLANG_INCLUDE_DIR,
+        SHADERS_OUT_DIR,
+        SHADERS_ASM_DIR,
+    )
+    .expect("Compile shaders");
+    copy_files(SHADERS_OUT_DIR, SHADERS_DIR);
+}

@@ -289,14 +289,17 @@ impl Default for RenderBatch {
 
 #[cfg(test)]
 mod tests {
+    use gobs_render_hal::RenderHalConfig;
     use tracing::Level;
     use tracing_subscriber::{EnvFilter, FmtSubscriber, fmt::format::FmtSpan};
 
-    use gobs_core::{Color, GobsConfig, Transform, logger, utils::timer::Timer};
+    use gobs_core::{Color, ConfigWriter as _, GobsConfig, Transform, logger, utils::timer::Timer};
     use gobs_render_graph::{GfxContext, RenderFlags};
     use gobs_resource::ResourceManager;
 
-    use crate::{Mesh, MeshLoader, RenderBatch, RenderMeshBuilder, RenderModelBuilder, Shapes};
+    use crate::{
+        Mesh, MeshLoader, RenderBatch, RenderConfig, RenderMeshBuilder, RenderModelBuilder, Shapes,
+    };
 
     fn setup() {
         let sub = FmtSubscriber::builder()
@@ -313,7 +316,10 @@ mod tests {
 
         let span = tracing::trace_span!(target: logger::PROFILE, "sort").entered();
 
-        let config = GobsConfig::default();
+        let mut config = GobsConfig::default();
+        config.register::<RenderConfig>();
+        config.register::<RenderHalConfig>();
+
         let mut ctx = GfxContext::new("test", None, config, false);
         let mut resource_manager = ResourceManager::new(ctx.frames_in_flight());
 

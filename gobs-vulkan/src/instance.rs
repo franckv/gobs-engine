@@ -73,7 +73,7 @@ unsafe extern "system" fn debug_cb(
                     &message_id_number.to_string(),
                     message,
                 );
-                #[cfg(debug_assertions)]
+                #[cfg(all(debug_assertions, not(feature = "no-validation-panic")))]
                 if !std::thread::panicking() {
                     panic!("{}", message);
                 }

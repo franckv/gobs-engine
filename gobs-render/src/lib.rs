@@ -8,6 +8,9 @@ mod renderable;
 mod renderer;
 mod resources;
 
+#[cfg(test)]
+mod tests;
+
 pub use gobs_render_graph::{GfxContext, RenderError, RenderFlags};
 pub use gobs_render_hal::{
     AlignMode, Attribute, AttributeData, BlendMode, BufferType, CommandBuffer, CommandQueueType,

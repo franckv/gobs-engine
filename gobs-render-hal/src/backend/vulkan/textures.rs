@@ -49,6 +49,10 @@ impl TextureRegistry {
         &self.binding
     }
 
+    pub fn size(&self) -> usize {
+        self.textures.len()
+    }
+
     pub fn reserve_index(&mut self) -> usize {
         self.free_list.pop().expect("Not enough texture slots")
     }

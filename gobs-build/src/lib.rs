@@ -22,6 +22,7 @@ pub fn copy_files(path: &str, dest: &str) {
         target = target.parent().unwrap().to_path_buf();
     }
 
+    let target_deps = target.join("deps").join(dest);
     target = target.join(dest);
 
     debug!("Target {target:?}");
@@ -31,4 +32,5 @@ pub fn copy_files(path: &str, dest: &str) {
     copy_options.content_only = true;
 
     copy(path, target, &copy_options).unwrap();
+    copy(path, target_deps, &copy_options).unwrap();
 }

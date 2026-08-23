@@ -43,7 +43,8 @@ impl PipelineLoader {
     ) -> PipelineData {
         tracing::debug!(target: logger::RESOURCES, "Loading pipeline: {:?}", properties);
 
-        // let mut pipeline = GfxPipeline::graphics(&properties.name, self.device.clone())
+        #[cfg(debug_assertions)]
+        self.validate_pipeline_properties(hal, properties);
 
         let mut pipeline = hal
             .create_graphics_pipeline(&properties.name)
@@ -86,6 +87,29 @@ impl PipelineLoader {
         tracing::debug!(target: logger::RESOURCES, "Loaded pipeline: {:?}", pipeline);
 
         PipelineData { pipeline }
+    }
+
+    #[cfg(debug_assertions)]
+    fn validate_pipeline_properties(
+        &self,
+        hal: &mut dyn RenderHAL,
+        properties: &GraphicsPipelineProperties,
+    ) {
+        use gobs_render_hal::{BindingGroupType, DescriptorType};
+
+        if let Some(count) = properties
+            .binding_groups
+            .iter()
+            .find(|g| g.binding_group_type == BindingGroupType::BindlessTextures)
+            .and_then(|g| {
+                g.bindings
+                    .iter()
+                    .find(|(ty, ..)| *ty == DescriptorType::SampledImage)
+            })
+            .map(|(_, _, count)| *count as usize)
+        {
+            debug_assert_eq!(count, hal.max_textures(), "bindless array_size mismatch");
+        }
     }
 }
 

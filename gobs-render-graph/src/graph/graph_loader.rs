@@ -283,7 +283,8 @@ impl GraphConfig {
 mod tests {
     use std::collections::HashMap;
 
-    use gobs_core::GobsConfig;
+    use gobs_core::{ConfigWriter as _, GobsConfig};
+    use gobs_render_hal::RenderHalConfig;
     use tracing::Level;
     use tracing_subscriber::{FmtSubscriber, fmt::format::FmtSpan};
 
@@ -306,7 +307,9 @@ mod tests {
     fn test_load() {
         setup();
 
-        let config = GobsConfig::default();
+        let mut config = GobsConfig::default();
+        config.register::<RenderHalConfig>();
+
         let mut ctx = GfxContext::new("test", None, config, false);
 
         let data = include_str!("../../../examples/resources/graph.ron");
@@ -326,7 +329,9 @@ mod tests {
     fn test_load_pass() {
         setup();
 
-        let config = GobsConfig::default();
+        let mut config = GobsConfig::default();
+        config.register::<RenderHalConfig>();
+
         let mut ctx = GfxContext::new("test", None, config, false);
 
         let data = include_str!("../../../examples/resources/graph.ron");

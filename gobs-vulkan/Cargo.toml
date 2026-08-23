@@ -29,3 +29,4 @@ tracing-subscriber = { workspace = true }
 
 [features]
 ci = []
+no-validation-panic = []

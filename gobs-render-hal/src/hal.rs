@@ -59,6 +59,7 @@ pub trait RenderHAL {
     fn allocate_texture_index(&mut self) -> usize;
     fn update_texture_index(&mut self, index: usize, image: Handle);
     fn release_texture_index(&mut self, index: usize);
+    fn max_textures(&self) -> usize;
 
     fn create_sampler(&mut self, mag_filter: SamplerFilter, min_filter: SamplerFilter) -> Handle;
     fn destroy_sampler(&mut self, sampler: Handle);

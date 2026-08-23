@@ -174,7 +174,7 @@ mod tests {
 
     fn setup() {
         let sub = FmtSubscriber::builder()
-            .with_max_level(Level::DEBUG)
+            .with_max_level(Level::INFO)
             .with_span_events(FmtSpan::CLOSE)
             .finish();
         tracing::subscriber::set_global_default(sub).unwrap_or_default();

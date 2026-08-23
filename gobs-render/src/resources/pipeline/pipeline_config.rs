@@ -212,13 +212,18 @@ mod tests {
     use tracing::Level;
     use tracing_subscriber::{FmtSubscriber, fmt::format::FmtSpan};
 
-    use gobs_core::{GobsConfig, ImageFormat};
-    use gobs_render_hal::{CompareOp, CullMode, FrontFace, PolygonMode, VertexAttribute};
+    use gobs_core::{ConfigWriter as _, GobsConfig, ImageFormat};
+    use gobs_render_hal::{
+        CompareOp, CullMode, FrontFace, PolygonMode, RenderHalConfig, VertexAttribute,
+    };
     use gobs_resource::ResourceManager;
 
-    use crate::resources::{
-        PipelinesConfig,
-        pipeline::pipeline_config::{AttachmentFormat, DepthConfig, GraphicsPipelineConfig},
+    use crate::{
+        RenderConfig,
+        resources::{
+            PipelinesConfig,
+            pipeline::pipeline_config::{AttachmentFormat, DepthConfig, GraphicsPipelineConfig},
+        },
     };
 
     fn setup() {
@@ -234,7 +239,10 @@ mod tests {
     fn test_load_resources() {
         setup();
 
-        let config = GobsConfig::default();
+        let mut config = GobsConfig::default();
+        config.register::<RenderConfig>();
+        config.register::<RenderHalConfig>();
+
         let ctx = GfxContext::new("test", None, config, false);
 
         let data = include_str!("../../../../examples/resources/pipelines.ron");
@@ -249,7 +257,10 @@ mod tests {
     fn test_load_pipeline() {
         setup();
 
-        let config = GobsConfig::default();
+        let mut config = GobsConfig::default();
+        config.register::<RenderConfig>();
+        config.register::<RenderHalConfig>();
+
         let ctx = GfxContext::new("test", None, config, false);
 
         let data = include_str!("../../../../examples/resources/pipelines.ron");
