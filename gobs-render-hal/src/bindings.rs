@@ -36,6 +36,13 @@ impl BindSet {
         self
     }
 
+    pub fn get(&self, idx: usize) -> Option<Handle> {
+        self.bindings
+            .iter()
+            .find(|(_, index)| *index == idx)
+            .map(|(handle, _)| *handle)
+    }
+
     pub fn bindings(&self) -> impl Iterator<Item = &(Handle, usize)> {
         self.bindings.iter()
     }
@@ -130,6 +137,10 @@ impl BindResource {
         self.binding_sets.len()
     }
 
+    pub fn bindset(&self, idx: usize) -> &BindSet {
+        &self.binding_sets[idx]
+    }
+
     pub fn bindsets(&self) -> impl Iterator<Item = &BindSet> {
         self.binding_sets.iter()
     }
@@ -184,6 +195,13 @@ impl BindingGroupType {
             BindingGroupType::BindlessTextures => 2,
         }
     }
+
+    pub fn lifetime(&self) -> BindingLifetime {
+        match self {
+            BindingGroupType::BindlessTextures => BindingLifetime::Static,
+            _ => BindingLifetime::PerFrame,
+        }
+    }
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -206,7 +224,12 @@ impl BindingGroupLayout {
         })
     }
 
-    pub fn add_binding(self: Arc<Self>, ty: DescriptorType, stage: DescriptorStage, count: u32) -> Arc<Self> {
+    pub fn add_binding(
+        self: Arc<Self>,
+        ty: DescriptorType,
+        stage: DescriptorStage,
+        count: u32,
+    ) -> Arc<Self> {
         let mut group = Arc::unwrap_or_clone(self);
 
         group.bindings.push((ty, stage, count));

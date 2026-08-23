@@ -175,8 +175,7 @@ impl GraphicsPipelineProperties {
     }
 
     pub fn binding_group(mut self, ty: BindingGroupType) -> Self {
-        self.binding_groups
-            .push(BindingGroupLayout::new(ty));
+        self.binding_groups.push(BindingGroupLayout::new(ty));
 
         self
     }
@@ -250,8 +249,7 @@ impl ComputePipelineProperties {
     }
 
     pub fn binding_group(mut self, ty: BindingGroupType) -> Self {
-        self.binding_groups
-            .push(BindingGroupLayout::new(ty));
+        self.binding_groups.push(BindingGroupLayout::new(ty));
 
         self
     }

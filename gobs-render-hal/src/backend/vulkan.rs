@@ -17,8 +17,8 @@ use gobs_core::{ConfigReader as _, GobsConfig, ImageExtent2D, ImageFormat, Sampl
 use gobs_vulkan as vk;
 
 use crate::{
-    BindingGroupLayout, BindingGroupType, CommandBuffer, CommandQueueType, ImageUsage,
-    ObjectDataLayout, RenderBackendError, RenderHalConfig, VertexAttribute,
+    BindResource, BindingGroupLayout, BindingGroupType, CommandBuffer, CommandQueueType,
+    ImageUsage, ObjectDataLayout, RenderBackendError, RenderHalConfig, VertexAttribute,
     backend::vulkan::{
         bindings::BindingRegistry,
         buffer::BufferView,
@@ -161,12 +161,22 @@ impl RenderHAL for VulkanHAL {
         let _ = self.registry.images.remove(image);
     }
 
-    fn register_texture(&mut self, image: Handle) -> usize {
-        self.textures.register(image)
-    }
-
     fn allocate_texture_index(&mut self) -> usize {
         self.textures.reserve_index()
+    }
+
+    fn update_texture_index(&mut self, index: usize, image: Handle) {
+        let updated = self.textures.register_with_index(image, index);
+
+        if updated {
+            self.bindings.update_static_ds(
+                self.device.clone(),
+                &self.registry,
+                self.textures.get_binding(),
+                textures::TEXTURES_BINDING,
+                index,
+            );
+        }
     }
 
     fn create_sampler(&mut self, mag_filter: SamplerFilter, min_filter: SamplerFilter) -> Handle {
@@ -303,13 +313,15 @@ impl RenderHAL for VulkanHAL {
             tracing::info!(target: logger::MEMORY, "{}", &image.label);
         }
 
-        for pool in &self.bindings.pools {
-            tracing::info!(target: logger::MEMORY, "Pool: {}", pool.len());
+        for pool in &self.bindings.per_frame_pools {
+            tracing::info!(target: logger::MEMORY, "Per frame pool: {}", pool.len());
         }
+        tracing::info!(target: logger::MEMORY, "Static pool: {}", self.bindings.static_pools.len());
 
-        for cache in &self.bindings.ds_cache {
-            tracing::info!(target: logger::MEMORY, "DS Cache: {}", cache.len());
+        for cache in &self.bindings.per_frame_ds_cache {
+            tracing::info!(target: logger::MEMORY, "DS in per frame cache: {}", cache.len());
         }
+        tracing::info!(target: logger::MEMORY, "DS in static cache: {}", self.bindings.static_ds_cache.len());
     }
 }
 

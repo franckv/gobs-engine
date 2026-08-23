@@ -22,6 +22,7 @@ struct RenderJobState {
     last_index_buffer: Option<Handle>,
     last_material_data: Option<BindingId>,
     last_material_textures: Option<BindingId>,
+    texture_array_bound: bool,
     scene_data_bound: bool,
     object_data: FixedBuffer<128>,
 }
@@ -33,9 +34,18 @@ impl RenderJobState {
             last_index_buffer: None,
             last_material_data: None,
             last_material_textures: None,
+            texture_array_bound: false,
             scene_data_bound: false,
             object_data: FixedBuffer::new(),
         }
+    }
+
+    pub fn switch_pipeline(&mut self, pipeline: Handle) {
+        self.last_pipeline = Some(pipeline);
+        self.scene_data_bound = false;
+        self.texture_array_bound = false;
+        self.last_material_data = None;
+        self.last_material_textures = None;
     }
 }
 
@@ -54,12 +64,11 @@ impl RenderJob {
         render_flags: RenderFlags,
     ) -> Self {
         let label = format!("Scene data {}", pass_name);
-        let uniform_bindgroup =
-            BindingGroupLayout::new(BindingGroupType::SceneData).add_binding(
-                DescriptorType::Uniform,
-                DescriptorStage::All,
-                1,
-            );
+        let uniform_bindgroup = BindingGroupLayout::new(BindingGroupType::SceneData).add_binding(
+            DescriptorType::Uniform,
+            DescriptorStage::All,
+            1,
+        );
         let uniform_buffer =
             UniformBuffer::new(&label, ctx.hal_mut(), uniform_bindgroup, scene_data_layout);
 
@@ -121,6 +130,8 @@ impl RenderJob {
             // bind camera and lights (push, set=0)
             self.bind_scene_data(ctx, frame, pipeline, &mut state)?;
 
+            self.bind_texture_array(ctx, frame, render_object, pipeline, &mut state)?;
+
             // bind materials (ds, set 1=material, 2=textures)
             self.bind_material_data(ctx, frame, render_object, pipeline, &mut state)?;
 
@@ -158,10 +169,29 @@ impl RenderJob {
         if state.last_pipeline != Some(pipeline) {
             tracing::trace!(target: logger::RENDER, "Bind pipeline: {:?}", pipeline);
             frame.command.bind_pipeline(ctx.hal(), pipeline);
-            state.last_pipeline = Some(pipeline);
-            state.scene_data_bound = false;
+            state.switch_pipeline(pipeline);
         } else {
             tracing::trace!(target: logger::RENDER, "Skip bind pipeline {:?}={:?}", state.last_pipeline, pipeline);
+        }
+
+        Ok(())
+    }
+
+    fn bind_texture_array(
+        &self,
+        ctx: &mut GfxContext,
+        frame: &mut FrameData,
+        render_object: &RenderObject,
+        pipeline: Handle,
+        state: &mut RenderJobState,
+    ) -> Result<(), RenderJobError> {
+        if self.fixed_pipeline.is_none()
+            && render_object.texture_indexing
+            && !state.texture_array_bound
+        {
+            frame.command.bind_texture_array(ctx.hal_mut(), pipeline);
+
+            state.texture_array_bound = true;
         }
 
         Ok(())

@@ -56,8 +56,8 @@ pub trait RenderHAL {
     fn invalidate_image(&mut self, image: Handle);
     fn get_image_extent(&self, image: Handle) -> ImageExtent2D;
     fn destroy_image(&mut self, image: Handle);
-    fn register_texture(&mut self, image: Handle) -> usize;
     fn allocate_texture_index(&mut self) -> usize;
+    fn update_texture_index(&mut self, index: usize, image: Handle);
 
     fn create_sampler(&mut self, mag_filter: SamplerFilter, min_filter: SamplerFilter) -> Handle;
     fn destroy_sampler(&mut self, sampler: Handle);

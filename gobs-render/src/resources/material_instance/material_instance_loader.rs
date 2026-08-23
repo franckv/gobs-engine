@@ -42,6 +42,8 @@ impl ResourceLoader<MaterialInstance> for MaterialInstanceLoader {
             material_properties.clone()
         };
 
+        tracing::debug!(target: logger::RESOURCES, "Load material instance with layout {:?}", &material_properties.material_data_layout);
+
         let properties = {
             let resource = registry.get_mut(handle);
 
@@ -49,8 +51,6 @@ impl ResourceLoader<MaterialInstance> for MaterialInstanceLoader {
         };
 
         Self::update_textures_index(hal, properties, &material_properties);
-
-        tracing::warn!(target: logger::RESOURCES, "Layout {:?}", &material_properties.material_data_layout);
 
         let material_buffer = self.create_buffer(
             hal,
@@ -105,7 +105,7 @@ impl MaterialInstanceLoader {
             for &texture_prop in &layout.layout {
                 let index = hal.allocate_texture_index() as u32;
 
-                tracing::warn!(target: logger::RESOURCES, "Alloc texture index {} for {:?}", index, texture_prop);
+                tracing::debug!(target: logger::RESOURCES, "Alloc texture index {} for {:?}", index, texture_prop);
 
                 let prop = match texture_prop {
                     TextureDataProp::Diffuse => MaterialDataPropData::DiffuseIndex(index),
@@ -144,7 +144,7 @@ impl MaterialInstanceLoader {
                 MaterialDataProp::SpecularIndex => AttributeData::U32(material_data.specular_index),
             });
 
-            tracing::warn!(target: logger::RESOURCES, "Data {:?}", &data);
+            tracing::debug!(target: logger::RESOURCES, "Create material data buffer {:?}", &data);
 
             let buffer = hal.create_buffer(name, data.len(), BufferType::Uniform);
             hal.upload_buffer(buffer, &data, 0);

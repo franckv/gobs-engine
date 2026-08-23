@@ -101,15 +101,19 @@ impl MaterialProperties {
 
         debug_assert!(!indexing || array_size > 0);
 
+        let binding_group_type = if indexing {
+            BindingGroupType::BindlessTextures
+        } else {
+            BindingGroupType::MaterialTextures
+        };
+
         if self
             .pipeline_properties
             .binding_groups
             .last()
-            .is_none_or(|group| group.binding_group_type != BindingGroupType::MaterialTextures)
+            .is_none_or(|group| group.binding_group_type != binding_group_type)
         {
-            self.pipeline_properties = self
-                .pipeline_properties
-                .binding_group(BindingGroupType::MaterialTextures);
+            self.pipeline_properties = self.pipeline_properties.binding_group(binding_group_type);
         }
 
         self.texture_data_layout.texture_indexing = indexing;

@@ -8,7 +8,11 @@ use crate::{
     UniformData as _,
     backend::{
         VulkanHAL, VulkanHALExt,
-        vulkan::pipeline::{self, VkPipeline},
+        vulkan::{
+            bindings::BindingRegistry,
+            pipeline::{self, VkPipeline},
+            registry::ResourcesRegistry,
+        },
     },
     bindings::BindingLifetime,
     command::CommandBuffer,
@@ -192,34 +196,32 @@ impl CommandBuffer for VkCommandBuffer {
     ) {
         let mut hal = hal.get_mut();
 
-        let pipeline = &hal.registry.pipelines.get(pipeline).unwrap();
+        let frame_id = hal.frame_id(self.frame_number);
 
-        let binding_type = resource.layout().binding_group_type;
+        self.bind_resource_internal(
+            hal.device.clone(),
+            &hal.registry,
+            &mut hal.bindings,
+            pipeline,
+            resource,
+            frame_id,
+        );
+    }
 
-        Self::validate_layout(pipeline, resource.layout());
+    fn bind_texture_array(&mut self, hal: &mut dyn RenderHAL, pipeline: Handle) {
+        let hal = hal.get_mut();
 
-        if resource.layout().binding_group_type.is_push() {
-            hal.bindings.push_descriptor(
-                hal.device.clone(),
-                &hal.registry,
-                resource,
-                &pipeline.pipeline,
-                &self.command,
-            );
-        } else {
-            let frame_id = hal.frame_id(self.frame_number);
-            let ds = hal.bindings.get_ds(
-                hal.device.clone(),
-                &hal.registry,
-                resource,
-                frame_id,
-                BindingLifetime::PerFrame,
-            );
+        let frame_id = hal.frame_id(self.frame_number);
+        let resource = hal.textures.get_binding();
 
-            let set = binding_type.set();
-            self.command
-                .bind_descriptor_set(&ds, set, &pipeline.pipeline);
-        }
+        self.bind_resource_internal(
+            hal.device.clone(),
+            &hal.registry,
+            &mut hal.bindings,
+            pipeline,
+            resource,
+            frame_id,
+        );
     }
 
     fn push_constants(&mut self, hal: &dyn RenderHAL, pipeline: Handle, constants: &[u8]) {
@@ -314,6 +316,38 @@ impl CommandBuffer for VkCommandBuffer {
 }
 
 impl VkCommandBuffer {
+    fn bind_resource_internal(
+        &mut self,
+        device: Arc<vk::Device>,
+        registry: &ResourcesRegistry,
+        bindings: &mut BindingRegistry,
+        pipeline: Handle,
+        resource: &BindResource,
+        frame_id: usize,
+    ) {
+        let pipeline = registry.pipelines.get(pipeline).unwrap();
+
+        let binding_type = resource.layout().binding_group_type;
+
+        Self::validate_layout(pipeline, resource.layout());
+
+        if binding_type.is_push() {
+            bindings.push_descriptor(
+                device.clone(),
+                registry,
+                resource,
+                &pipeline.pipeline,
+                &self.command,
+            );
+        } else {
+            let ds = bindings.get_ds(device.clone(), registry, resource, frame_id);
+
+            let set = binding_type.set();
+            self.command
+                .bind_descriptor_set(&ds, set, &pipeline.pipeline);
+        }
+    }
+
     fn validate_layout(pipeline: &VkPipeline, resource_layout: &BindingGroupLayout) {
         tracing::debug!(target: logger::RENDER, "Bind resource to pipeline {}", pipeline.pipeline.label);
         tracing::debug!(target: logger::RENDER, "Bind descriptors layout {:?}", resource_layout);

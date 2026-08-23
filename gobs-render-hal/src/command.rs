@@ -44,6 +44,7 @@ pub trait CommandBuffer {
     fn bind_vertex_buffer(&mut self, hal: &dyn RenderHAL, buffer: Handle);
     fn bind_index_buffer(&mut self, hal: &dyn RenderHAL, buffer: Handle);
     fn bind_resource(&mut self, hal: &mut dyn RenderHAL, pipeline: Handle, resource: &BindResource);
+    fn bind_texture_array(&mut self, hal: &mut dyn RenderHAL, pipeline: Handle);
     fn push_constants(&mut self, hal: &dyn RenderHAL, pipeline: Handle, constants: &[u8]);
     fn wait(&self);
     fn reset(&mut self);

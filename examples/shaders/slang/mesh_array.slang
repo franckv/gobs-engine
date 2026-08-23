@@ -65,8 +65,8 @@ VSOutput vertex_main(uint vertex_index: SV_VertexID) {
 
 [shader("fragment")]
 float4 fragment_normal_main(VSOutput input) {
-	float4 object_color = textures[0].Sample(sampler, input.uv);
-	float4 object_normal = textures[1].Sample(sampler, input.uv);
+	float4 object_color = textures[material.diffuse_index].Sample(sampler, input.uv);
+	float4 object_normal = textures[material.normal_index].Sample(sampler, input.uv);
 
 	float3 light = phong_reflection_normal(object_normal.xyz, input.tangent_position, input.tangent_light_dir,
             scene_data.light_color.xyz, input.tangent_view_position, scene_data.ambient_color.xyz);

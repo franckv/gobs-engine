@@ -38,6 +38,7 @@ pub struct RenderObject {
     pub pipeline: Option<Handle>,
     pub material_data: Option<BindResource>,
     pub material_textures: Option<BindResource>,
+    pub texture_indexing: bool,
     pub layer: u32,
     pub render_flags: RenderFlags,
 }

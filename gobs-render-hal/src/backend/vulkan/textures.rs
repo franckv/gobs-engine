@@ -11,16 +11,15 @@ pub struct TextureRegistry {
     allocated: HashMap<Handle, usize>,
 }
 
-const SAMPLER_BINDING: usize = 0;
-const TEXTURES_BINDING: usize = 1;
+pub(crate) const SAMPLER_BINDING: usize = 0;
+pub(crate) const TEXTURES_BINDING: usize = 1;
 
 impl TextureRegistry {
     pub fn new(size: usize, sampler: Handle) -> Self {
         let free_list = (0..size).rev().collect();
         let textures = (0..size).map(|_| None).collect();
 
-        let layout = 
-            BindingGroupLayout::new(BindingGroupType::BindlessTextures)
+        let layout = BindingGroupLayout::new(BindingGroupType::BindlessTextures)
             .add_binding(DescriptorType::Sampler, DescriptorStage::Fragment, 1)
             .add_binding(
                 DescriptorType::SampledImage,
@@ -46,6 +45,10 @@ impl TextureRegistry {
         self.textures.get(index).copied().flatten()
     }
 
+    pub fn get_binding(&self) -> &BindResource {
+        &self.binding
+    }
+
     pub fn reserve_index(&mut self) -> usize {
         self.free_list.pop().expect("Not enough texture slots")
     }
@@ -62,13 +65,19 @@ impl TextureRegistry {
         index
     }
 
-    pub fn register_with_index(&mut self, texture: Handle, index: usize) {
+    pub fn register_with_index(&mut self, texture: Handle, index: usize) -> bool {
+        if self.textures[index] == Some(texture) {
+            return false;
+        }
+
         debug_assert!(!self.allocated.contains_key(&texture));
         debug_assert!(self.textures[index].is_none());
 
         self.textures[index] = Some(texture);
         self.binding.add_binding(TEXTURES_BINDING, texture, index);
         self.allocated.insert(texture, index);
+
+        true
     }
 
     pub fn free(&mut self, index: usize) -> Option<Handle> {

@@ -17,8 +17,10 @@ use crate::{
 
 pub(crate) struct BindingRegistry {
     frames_in_flight: usize,
-    pub(crate) pools: Vec<HashMap<u64, DescriptorSetPool>>,
-    pub(crate) ds_cache: Vec<HashMap<BindingId, DescriptorSet>>,
+    pub(crate) per_frame_pools: Vec<HashMap<u64, DescriptorSetPool>>,
+    pub(crate) per_frame_ds_cache: Vec<HashMap<BindingId, DescriptorSet>>,
+    pub(crate) static_pools: HashMap<u64, DescriptorSetPool>,
+    pub(crate) static_ds_cache: HashMap<BindingId, DescriptorSet>,
 }
 
 const MAX_SET: usize = 10;
@@ -27,19 +29,21 @@ impl BindingRegistry {
     pub fn new(frames_in_flight: usize) -> Self {
         Self {
             frames_in_flight,
-            pools: (0..frames_in_flight).map(|_| HashMap::new()).collect(),
-            ds_cache: (0..frames_in_flight).map(|_| HashMap::new()).collect(),
+            per_frame_pools: (0..frames_in_flight).map(|_| HashMap::new()).collect(),
+            per_frame_ds_cache: (0..frames_in_flight).map(|_| HashMap::new()).collect(),
+            static_pools: HashMap::new(),
+            static_ds_cache: HashMap::new(),
         }
     }
 
     pub fn reset(&mut self, frame_id: usize) {
-        let mut pool_map = &mut self.pools[frame_id];
+        let mut pool_map = &mut self.per_frame_pools[frame_id];
 
         for pool in pool_map.values_mut() {
             pool.reset();
         }
 
-        let mut ds_cache = &mut self.ds_cache[frame_id];
+        let mut ds_cache = &mut self.per_frame_ds_cache[frame_id];
         ds_cache.clear();
     }
 
@@ -61,15 +65,19 @@ impl BindingRegistry {
         device: Arc<vk::Device>,
         resource: &BindResource,
         frame_id: usize,
+        lifetime: BindingLifetime,
     ) -> &mut DescriptorSetPool {
-        let mut map = &mut self.pools[frame_id];
+        let (map, max_sets) = match lifetime {
+            BindingLifetime::PerFrame => (&mut self.per_frame_pools[frame_id], MAX_SET),
+            BindingLifetime::Static => (&mut self.static_pools, 1),
+        };
 
         map.entry(resource.layout().binding_group_id)
             .or_insert_with(|| {
                 DescriptorSetPool::new(
                     device.clone(),
                     vk_layout(device.clone(), resource.layout()),
-                    MAX_SET,
+                    max_sets,
                 )
             })
     }
@@ -80,30 +88,84 @@ impl BindingRegistry {
         registry: &ResourcesRegistry,
         resource: &BindResource,
         frame_id: usize,
-        lifetime: BindingLifetime,
     ) -> DescriptorSet {
-        match lifetime {
-            BindingLifetime::Static => {
-                todo!()
-            }
-            BindingLifetime::PerFrame => {
-                if let Some(ds) = self.ds_cache[frame_id].get(&resource.id) {
-                    ds.clone()
-                } else {
-                    let ds_pool = self.get_pool(device.clone(), resource, frame_id);
+        let binding_type = resource.layout().binding_group_type;
+        let lifetime = binding_type.lifetime();
 
-                    let ds = ds_pool.allocate();
+        let cache = match lifetime {
+            BindingLifetime::PerFrame => &mut self.per_frame_ds_cache[frame_id],
+            BindingLifetime::Static => &mut self.static_ds_cache,
+        };
 
-                    let update = self.generate_update(device, registry, resource);
+        if let Some(ds) = cache.get(&resource.id) {
+            return ds.clone();
+        }
 
-                    update.write(&ds);
+        let ds_pool = self.get_pool(device.clone(), resource, frame_id, lifetime);
 
-                    self.ds_cache[frame_id].insert(resource.id, ds.clone());
+        let ds = ds_pool.allocate();
 
-                    ds
+        let update = self.generate_update(device, registry, resource);
+
+        update.write(&ds);
+
+        let cache = match lifetime {
+            BindingLifetime::PerFrame => &mut self.per_frame_ds_cache[frame_id],
+            BindingLifetime::Static => &mut self.static_ds_cache,
+        };
+
+        cache.insert(resource.id, ds.clone());
+
+        ds
+    }
+
+    pub fn update_static_ds(
+        &mut self,
+        device: Arc<vk::Device>,
+        registry: &ResourcesRegistry,
+        resource: &BindResource,
+        binding: usize,
+        index: usize,
+    ) {
+        debug_assert!(resource.layout().bindings.len() > binding);
+        debug_assert_eq!(resource.layout().bindings.len(), resource.sets());
+
+        let ds = self.get_ds(device.clone(), registry, resource, 0);
+
+        let mut update = DescriptorSetUpdates::new(device);
+
+        let (ty, _, count) = resource.layout().bindings[binding];
+        let bindset = resource.bindset(binding);
+
+        let binding_idx: u32 = resource.layout().bindings[..binding]
+            .iter()
+            .map(|(_, _, count)| count)
+            .sum();
+
+        debug_assert!(count > index as u32);
+
+        let handle = bindset.get(index).unwrap_or_else(|| {
+            panic!(
+                "Invalid binding {} with index: {} for ty={:?}",
+                binding, index, ty
+            )
+        });
+
+        match ty {
+            vk::DescriptorType::SampledImage => {
+                if let Some(image) = registry.images.get(handle) {
+                    update = update.bind_sampled_image(
+                        binding_idx,
+                        index as u32,
+                        image,
+                        ImageLayout::Shader,
+                    );
                 }
             }
+            _ => todo!(),
         }
+
+        update.write(&ds);
     }
 
     fn generate_update(
