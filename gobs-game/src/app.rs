@@ -42,33 +42,10 @@ where
 
         let window = event_loop.create_window(window_attributes).unwrap();
 
-        #[cfg(debug_assertions)]
-        let validation_enabled = true;
-        #[cfg(not(debug_assertions))]
-        let validation_enabled = false;
-
-        tracing::info!("Running with validation layers: {}", validation_enabled);
-
-        let mut context = R::Context::new(
-            &self.title,
-            self.config.clone(),
-            Some(window),
-            validation_enabled,
-        );
-
         tracing::info!(target: logger::EVENTS, "Start main loop");
 
-        let future = async {
-            let mut runnable = R::create(&mut context).await.unwrap();
-            runnable.start(&mut context).await;
+        self.build(Some(window)).block_on();
 
-            runnable
-        };
-
-        let runnable = future.block_on();
-
-        self.context = Some(context);
-        self.runnable = Some(runnable);
         self.timer.reset();
     }
 
@@ -221,11 +198,6 @@ where
     R: GobsGame + 'static,
 {
     pub fn new(title: &str, width: u32, height: u32) -> Application<R> {
-        let mut config = GobsConfig::default();
-        config.register::<RenderConfig>();
-        config.register::<RenderHalConfig>();
-        config.register::<GltfConfig>();
-
         Application {
             context: None,
             runnable: None,
@@ -233,19 +205,55 @@ where
             is_minimized: false,
             timer: Timer::new(),
             title: title.to_string(),
-            config,
+            config: Self::default_config(),
             width,
             height,
         }
     }
 
-    pub fn with_config<F>(&mut self, mut f: F) -> &mut Self
+    pub async fn build(&mut self, window: Option<Window>) {
+        #[cfg(debug_assertions)]
+        let validation_enabled = true;
+        #[cfg(not(debug_assertions))]
+        let validation_enabled = false;
+
+        tracing::info!("Running with validation layers: {}", validation_enabled);
+
+        let mut context =
+            R::Context::new(&self.title, self.config.clone(), window, validation_enabled);
+
+        let mut runnable = R::create(&mut context).await.unwrap();
+        runnable.start(&mut context).await;
+
+        self.context = Some(context);
+        self.runnable = Some(runnable);
+    }
+
+    pub fn with_config<F>(mut self, mut f: F) -> Self
     where
         F: FnMut(&mut GobsConfig),
     {
         f(&mut self.config);
 
         self
+    }
+
+    pub fn default_config() -> GobsConfig {
+        let mut config = GobsConfig::default();
+        config.register::<RenderConfig>();
+        config.register::<RenderHalConfig>();
+        config.register::<GltfConfig>();
+
+        config
+    }
+
+    pub fn run_once<F>(&mut self, mut f: F)
+    where
+        F: FnMut(&mut R, &mut R::Context),
+    {
+        if let (Some(runnable), Some(context)) = (&mut self.runnable, &mut self.context) {
+            f(runnable, context);
+        }
     }
 
     #[tracing::instrument(target = "profile", skip_all, level = "trace")]

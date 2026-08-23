@@ -4,8 +4,8 @@ use glam::Quat;
 use pollster::FutureExt;
 
 use gobs::{
-    core::{Color, ConfigWriter as _, GobsConfig, Input, Transform, logger},
-    game::{AppError, GameContext, GobsContext, GobsGame},
+    core::{Color, ConfigWriter as _, Input, Transform, logger},
+    game::{AppError, Application, GameContext, GobsContext, GobsGame},
     render::{RenderConfig, RenderError, RenderType, Shapes},
     scene::{components::NodeValue, scene::Scene},
 };
@@ -95,28 +95,19 @@ fn main() {
 
     tracing::info!(target: logger::APP, "Engine start");
 
-    let mut config = GobsConfig::default();
-    config.register::<RenderConfig>();
-    config.set_string(RenderConfig::GraphName, "headless");
+    let mut application =
+        Application::<App<GameContext>>::new("Headless", examples::WIDTH, examples::HEIGHT)
+            .with_config(|config| config.set_string(RenderConfig::GraphName, "headless"));
 
-    let mut ctx = GameContext::new("Triangle", config, None, true);
+    application.build(None).block_on();
 
-    let future = async {
-        let mut app = App::create(&mut ctx).await.unwrap();
-        app.start(&mut ctx).await;
+    application.run_once(|app, ctx| {
+        app.update(ctx, 0.);
 
-        app
-    };
+        app.resize(ctx, 1920, 1080);
 
-    let mut app = future.block_on();
+        app.render(ctx).unwrap();
 
-    app.update(&mut ctx, 0.);
-
-    app.resize(&mut ctx, 1920, 1080);
-
-    app.render(&mut ctx).unwrap();
-
-    app.close(&mut ctx);
-
-    // app.common.screenshot(&mut ctx);
+        app.close(ctx);
+    });
 }
