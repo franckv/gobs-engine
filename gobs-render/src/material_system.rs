@@ -11,14 +11,16 @@ use gobs_resource::{ResourceError, ResourceHandle, ResourceManager, ResourceProp
 use crate::{
     MaterialDataPropData, MaterialInstance, MaterialInstanceProperties, MaterialProperties,
     PipelineProperties, Texture,
-    data::{MaterialConstantData, MaterialDataLayout, MaterialDataProp, TextureDataProp},
+    data::{
+        MaterialConstantData, MaterialDataLayout, MaterialDataProp, TextureDataLayout,
+        TextureDataProp,
+    },
 };
 
 #[derive(Clone)]
 pub struct MaterialBinding {
     material_data_binding: Option<BindResource>,
-    texture_indexing: bool,
-    texture_data_layout: Vec<TextureDataProp>,
+    texture_data_layout: TextureDataLayout,
     texture_binding_group_layout: Option<Arc<BindingGroupLayout>>,
     scene_layout: Option<SceneDataLayout>,
 }
@@ -46,10 +48,15 @@ impl MaterialSystem {
         let material_constant_data = resource_data.properties.material_data.clone();
         let textures = resource_data.properties.textures.clone();
 
-        if material_binding.texture_indexing
-            && let Some(material_constant_data) = material_constant_data
-        {
-            for (prop, texture) in material_binding.texture_data_layout.iter().zip(&textures) {
+        let texture_indexing = material_binding.texture_data_layout.texture_indexing;
+
+        if texture_indexing && let Some(material_constant_data) = material_constant_data {
+            for (prop, texture) in material_binding
+                .texture_data_layout
+                .layout
+                .iter()
+                .zip(&textures)
+            {
                 let handle = resource_manager.get_data(&mut *hal, texture)?.data.image;
 
                 let index = match prop {
@@ -65,14 +72,16 @@ impl MaterialSystem {
             }
         }
 
-        let material_textures = if textures.is_empty() || material_binding.texture_indexing {
+        let material_textures = if textures.is_empty() || texture_indexing {
             None
         } else {
             Self::get_material_textures_binding(
                 hal,
                 resource_manager,
                 &textures,
-                material_binding.texture_binding_group_layout.unwrap(),
+                material_binding
+                    .texture_binding_group_layout
+                    .expect("Material with textures but no layout"),
             )
         };
 
@@ -82,7 +91,7 @@ impl MaterialSystem {
             material_data: material_binding.material_data_binding,
             material_textures,
             scene_layout: material_binding.scene_layout,
-            texture_indexing: material_binding.texture_indexing,
+            texture_indexing,
         })
     }
 
@@ -229,8 +238,7 @@ impl MaterialSystem {
 
         MaterialBinding {
             material_data_binding,
-            texture_indexing: material_properties.texture_data_layout.texture_indexing,
-            texture_data_layout: material_properties.texture_data_layout.layout.clone(),
+            texture_data_layout: material_properties.texture_data_layout.clone(),
             texture_binding_group_layout,
             scene_layout: Some(scene_layout),
         }
@@ -241,8 +249,6 @@ impl MaterialSystem {
         properties: &MaterialInstanceProperties,
         material_properties: &MaterialProperties,
     ) {
-        use gobs_render_hal::UniformData as _;
-
         if properties.material_data.is_none()
             && !material_properties.material_data_layout.is_empty()
         {
