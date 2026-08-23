@@ -2,6 +2,7 @@ mod batch;
 mod builder;
 mod config;
 mod data;
+mod material_system;
 mod model;
 mod renderable;
 mod renderer;
