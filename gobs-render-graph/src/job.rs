@@ -97,15 +97,11 @@ impl RenderJob {
     }
 
     pub fn should_render(&self, render_object: &RenderObject) -> bool {
-        if !render_object
-            .material
-            .render_flags
-            .contains(self.render_flags)
-        {
-            tracing::trace!(target: logger::RENDER, "[{}] Skip object {}, object flags: {:?}, pass flags: {:?}", &self.pass_name, &render_object.model, render_object.material.render_flags, self.render_flags);
+        if !render_object.render_flags.contains(self.render_flags) {
+            tracing::trace!(target: logger::RENDER, "[{}] Skip object {}, object flags: {:?}, pass flags: {:?}", &self.pass_name, &render_object.model, render_object.render_flags, self.render_flags);
             false
         } else {
-            tracing::trace!(target: logger::RENDER, "[{}] Draw object {}, object flags: {:?}, pass flags: {:?}", &self.pass_name, &render_object.model, render_object.material.render_flags, self.render_flags);
+            tracing::trace!(target: logger::RENDER, "[{}] Draw object {}, object flags: {:?}, pass flags: {:?}", &self.pass_name, &render_object.model, render_object.render_flags, self.render_flags);
             true
         }
     }

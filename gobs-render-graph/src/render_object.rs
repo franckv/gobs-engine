@@ -29,7 +29,7 @@ bitflags! {
 
 #[derive(Clone, Debug, Default)]
 pub struct MaterialRenderData {
-    pub render_flags: RenderFlags,
+    pub material_render_flags: RenderFlags,
     pub pipeline: Option<Handle>,
     pub material_data: Option<BindResource>,
     pub material_textures: Option<BindResource>,
@@ -78,14 +78,13 @@ pub struct RenderObject {
     pub index_len: usize,
     pub vertex_attribute: VertexAttribute,
     pub material: MaterialRenderData,
+    pub render_flags: RenderFlags,
     pub layer: u32,
 }
 
 impl RenderObject {
     pub fn is_transparent(&self) -> bool {
-        self.material
-            .render_flags
-            .contains(RenderFlags::TRANSPARENT)
+        self.render_flags.contains(RenderFlags::TRANSPARENT)
     }
 }
 

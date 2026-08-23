@@ -17,13 +17,13 @@ impl MaterialSystem {
         resource_manager: &mut ResourceManager,
         material_instance_handle: ResourceHandle<MaterialInstance>,
     ) -> Result<MaterialRenderData, ResourceError> {
-        let mut render_flags = RenderFlags::default();
+        let mut material_render_flags = RenderFlags::default();
 
         let pipeline = Self::get_pipeline(
             hal,
             resource_manager,
             material_instance_handle,
-            &mut render_flags,
+            &mut material_render_flags,
         )?;
 
         let (material_buffer, material_constant_data, material, textures) = {
@@ -95,7 +95,7 @@ impl MaterialSystem {
         };
 
         Ok(MaterialRenderData {
-            render_flags,
+            material_render_flags,
             pipeline: Some(pipeline),
             material_data,
             material_textures,

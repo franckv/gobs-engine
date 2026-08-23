@@ -96,7 +96,7 @@ impl RenderBatch {
         for (mesh, material_instance_handle) in &model.meshes {
             let material = self.get_material(ctx, resource_manager, material_instance_handle)?;
 
-            let render_flags = flags.union(material.render_flags);
+            let render_flags = flags.union(material.material_render_flags);
 
             if material.pipeline.is_none() {
                 tracing::debug!("No material for model {}", model.name());
@@ -124,6 +124,7 @@ impl RenderBatch {
                 index_len,
                 vertex_attribute,
                 material,
+                render_flags,
                 layer,
             };
 
