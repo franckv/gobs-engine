@@ -3,7 +3,8 @@ use glam::{Quat, Vec3};
 use gobs::{
     core::{Color, Input, Transform, logger},
     game::{AppError, Application, GameContext, GobsContext, GobsGame},
-    render::{MaterialDataPropData, RenderError, Shapes},
+    render::{MaterialDataPropData, Mesh, RenderError, Shapes},
+    resource::ResourceHandle,
     scene::{components::NodeValue, scene::Scene},
 };
 
@@ -13,6 +14,8 @@ struct App<Context: GobsContext> {
     scene: Scene,
     ui: Ui<Context>,
     input: InputManager,
+    cube: Option<ResourceHandle<Mesh>>,
+    n_cubes: usize,
 }
 
 impl<Context: GobsContext> GobsGame for App<Context> {
@@ -29,6 +32,8 @@ impl<Context: GobsContext> GobsGame for App<Context> {
             scene,
             ui: Ui::new(),
             input: InputManager::new(),
+            cube: None,
+            n_cubes: 0,
         })
     }
 
@@ -41,6 +46,12 @@ impl<Context: GobsContext> GobsGame for App<Context> {
     }
 
     fn update(&mut self, ctx: &mut Context, delta: f32) {
+        let frame = ctx.frame_number();
+
+        if frame.is_multiple_of(49) && self.n_cubes < 6 {
+            self.spawn_cube(ctx);
+        }
+
         let angular_speed = 10.;
 
         self.scene
@@ -95,65 +106,65 @@ impl<Context: GobsContext> GobsGame for App<Context> {
 }
 
 impl<Context: GobsContext> App<Context> {
-    async fn init(&mut self, ctx: &mut Context) {
-        ctx.load_material("materials.ron").await;
+    fn spawn_cube(&mut self, ctx: &mut Context) {
+        let name = format!("Texture {}", self.n_cubes);
 
-        let n_textures = 6;
-
-        let materials: Vec<_> = (0..n_textures)
-            .map(|i| {
-                let name = format!("Texture {}", i);
-
-                let diffuse_texture = ctx
-                    .new_texture(&name)
-                    .diffuse(examples::ATLAS[i], examples::DIFFUSE_FORMAT)
-                    .build();
-
-                let normal_texture = ctx
-                    .new_texture(&format!("Texture normal {}", i))
-                    .normal(examples::ATLAS_N[i], examples::NORMAL_FORMAT)
-                    .build();
-
-                ctx.new_material(&name)
-                    .from_base("normal.array")
-                    .with_textures(&[diffuse_texture, normal_texture])
-                    .with_prop(MaterialDataPropData::EmissionColor(
-                        Color::new(0., 0.01, 0.01, 1.).into(),
-                    ))
-                    .build()
-            })
-            .collect();
-
-        let mesh = ctx
-            .new_mesh("cube")
-            .with_geometry(Shapes::cube(&[Color::WHITE], 1.))
-            .for_material(materials[0])
+        let diffuse_texture = ctx
+            .new_texture(&name)
+            .diffuse(examples::ATLAS[self.n_cubes], examples::DIFFUSE_FORMAT)
             .build();
 
-        let mut x = -2.;
-        let mut y = -2.;
-        for material in &materials {
-            let cube = ctx
-                .new_model("cube")
-                .with_mesh(mesh)
-                .with_material(*material)
+        let normal_texture = ctx
+            .new_texture(&format!("Texture normal {}", self.n_cubes))
+            .normal(examples::ATLAS_N[self.n_cubes], examples::NORMAL_FORMAT)
+            .build();
+
+        let material = ctx
+            .new_material(&name)
+            .from_base("normal.array")
+            .with_textures(&[diffuse_texture, normal_texture])
+            .with_prop(MaterialDataPropData::EmissionColor(
+                Color::new(0., 0.01, 0.01, 1.).into(),
+            ))
+            .build();
+
+        let mesh = if let Some(mesh) = self.cube {
+            mesh
+        } else {
+            let mesh = ctx
+                .new_mesh("cube")
+                .with_geometry(Shapes::cube(&[Color::WHITE], 1.))
+                .for_material(material)
                 .build();
 
-            let transform = Transform::new(
-                [x, y, -2.].into(),
-                Quat::from_rotation_y(std::f32::consts::FRAC_PI_2),
-                Vec3::splat(1.),
-            );
-            self.scene
-                .graph
-                .insert(self.scene.graph.root, NodeValue::Model(cube), transform);
+            self.cube = Some(mesh);
 
-            x += 1.5;
-            if x > 2. {
-                x = -2.;
-                y += 2.;
-            }
-        }
+            mesh
+        };
+
+        let cube = ctx
+            .new_model("cube")
+            .with_mesh(mesh)
+            .with_material(material)
+            .build();
+
+        let x = -2. + (self.n_cubes % 3) as f32 * 1.5;
+        let y = -2. + (self.n_cubes / 3) as f32 * 2.;
+
+        let transform = Transform::new(
+            [x, y, -2.].into(),
+            Quat::from_rotation_y(std::f32::consts::FRAC_PI_2),
+            Vec3::splat(1.),
+        );
+        self.scene
+            .graph
+            .insert(self.scene.graph.root, NodeValue::Model(cube), transform);
+
+        self.n_cubes += 1;
+    }
+
+    async fn init(&mut self, ctx: &mut Context) {
+        ctx.load_material("materials.ron").await;
     }
 }
 

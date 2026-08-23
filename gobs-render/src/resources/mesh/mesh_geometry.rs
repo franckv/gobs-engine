@@ -179,7 +179,7 @@ impl MeshBuilder {
 
         self.vertices = vertices;
 
-        tracing::warn!(target: logger::RESOURCES, "Autoindex {} vertices, {} indices", self.vertices.len(), self.indices.len());
+        tracing::debug!(target: logger::RESOURCES, "Autoindex {} vertices, {} indices", self.vertices.len(), self.indices.len());
 
         self
     }

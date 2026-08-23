@@ -130,6 +130,8 @@ impl BindingRegistry {
         debug_assert!(resource.layout().bindings.len() > binding);
         debug_assert_eq!(resource.layout().bindings.len(), resource.sets());
 
+        tracing::debug!("Update static ds, binding={}, index={}", binding, index);
+
         let ds = self.get_ds(device.clone(), registry, resource, 0);
 
         let mut update = DescriptorSetUpdates::new(device);

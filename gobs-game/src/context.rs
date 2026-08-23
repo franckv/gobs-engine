@@ -28,6 +28,7 @@ pub trait GobsContext {
     fn close(&mut self);
     fn render(&mut self) -> Result<RenderBuilder<'_>, RenderError>;
     fn input(&mut self, input: Input);
+    fn frame_number(&self) -> usize;
 
     fn is_minimized(&self) -> bool;
     fn request_redraw(&mut self);
@@ -135,6 +136,10 @@ impl GobsContext for GameContext {
 
     fn input(&mut self, input: Input) {
         self.ui.input(input);
+    }
+
+    fn frame_number(&self) -> usize {
+        self.renderer.frame_number()
     }
 
     fn is_minimized(&self) -> bool {
