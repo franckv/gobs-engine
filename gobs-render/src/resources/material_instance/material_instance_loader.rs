@@ -9,7 +9,7 @@ use crate::{
     resources::{MaterialInstance, MaterialInstanceData},
 };
 
-pub struct MaterialInstanceLoader {}
+pub struct MaterialInstanceLoader;
 
 impl MaterialInstanceLoader {
     pub fn new() -> Self {
@@ -66,5 +66,3 @@ impl ResourceLoader<MaterialInstance> for MaterialInstanceLoader {
 
     fn flush(&mut self) {}
 }
-
-impl MaterialInstanceLoader {}
