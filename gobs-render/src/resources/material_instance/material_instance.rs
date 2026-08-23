@@ -1,8 +1,9 @@
-use gobs_render_hal::{Handle, RenderHAL};
+use gobs_render_hal::RenderHAL;
 use gobs_resource::{ResourceHandle, ResourceProperties, ResourceType};
 
 use crate::{
     data::{MaterialConstantData, MaterialDataPropData},
+    material_system::MaterialBinding,
     resources::{Material, MaterialInstanceLoader, Texture},
 };
 
@@ -86,5 +87,5 @@ impl MaterialInstanceProperties {
 
 pub struct MaterialInstanceData {
     pub material: ResourceHandle<Material>,
-    pub material_buffer: Option<Handle>,
+    pub material_binding: MaterialBinding,
 }

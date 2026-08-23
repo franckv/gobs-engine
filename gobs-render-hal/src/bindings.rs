@@ -61,8 +61,6 @@ pub struct BindResource {
 
 impl BindResource {
     pub fn with_resources(layout: Arc<BindingGroupLayout>, resources: Vec<Handle>) -> Self {
-        // debug_assert_eq!(resources_count.iter().sum::<usize>(), resources.len());
-
         let binding_sets = resources
             .into_iter()
             .map(|handle| BindSet::new().binding(handle, 0))
