@@ -14,7 +14,7 @@ pub enum SceneDataProp {
     LightAmbientColor,
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, Default, PartialEq)]
 pub struct SceneDataLayout {
     layout: Vec<SceneDataProp>,
     uniform_layout: UniformLayout,

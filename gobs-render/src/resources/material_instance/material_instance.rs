@@ -87,5 +87,4 @@ impl MaterialInstanceProperties {
 pub struct MaterialInstanceData {
     pub material: ResourceHandle<Material>,
     pub material_buffer: Option<Handle>,
-    pub bound: bool,
 }

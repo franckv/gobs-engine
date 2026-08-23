@@ -62,7 +62,6 @@ impl ResourceLoader<MaterialInstance> for MaterialInstanceLoader {
         let data = MaterialInstanceData {
             material: properties.material,
             material_buffer,
-            bound: false,
         };
 
         Ok(data)

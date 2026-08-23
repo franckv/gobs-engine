@@ -16,7 +16,7 @@ pub use framedata::FrameData;
 pub use graph::{FrameGraph, GraphConfig};
 pub use job::RenderJob;
 pub use render_object::{
-    MaterialId, MaterialInstanceId, MeshId, PassId, RenderFlags, RenderObject,
+    MaterialId, MaterialInstanceId, MaterialRenderData, MeshId, PassId, RenderFlags, RenderObject,
 };
 
 pub type RenderPass = Arc<dyn pass::RenderPass>;

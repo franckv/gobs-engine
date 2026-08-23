@@ -149,10 +149,12 @@ impl MaterialPass {
         render_list: &[RenderObject],
     ) {
         for obj in render_list {
-            if render_job.should_render(obj) {
+            if render_job.should_render(obj)
+                && let Some(material_scene_layout) = &obj.material.scene_layout
+            {
                 assert_eq!(
                     scene_layout,
-                    &obj.scene_layout,
+                    material_scene_layout,
                     "Validate pass scene layout = obj scene layout for pass {}",
                     render_job.pass_name()
                 );

@@ -97,11 +97,15 @@ impl RenderJob {
     }
 
     pub fn should_render(&self, render_object: &RenderObject) -> bool {
-        if !render_object.render_flags.contains(self.render_flags) {
-            tracing::trace!(target: logger::RENDER, "[{}] Skip object {}, object flags: {:?}, pass flags: {:?}", &self.pass_name, &render_object.model, render_object.render_flags, self.render_flags);
+        if !render_object
+            .material
+            .render_flags
+            .contains(self.render_flags)
+        {
+            tracing::trace!(target: logger::RENDER, "[{}] Skip object {}, object flags: {:?}, pass flags: {:?}", &self.pass_name, &render_object.model, render_object.material.render_flags, self.render_flags);
             false
         } else {
-            tracing::trace!(target: logger::RENDER, "[{}] Draw object {}, object flags: {:?}, pass flags: {:?}", &self.pass_name, &render_object.model, render_object.render_flags, self.render_flags);
+            tracing::trace!(target: logger::RENDER, "[{}] Draw object {}, object flags: {:?}, pass flags: {:?}", &self.pass_name, &render_object.model, render_object.material.render_flags, self.render_flags);
             true
         }
     }
@@ -149,7 +153,7 @@ impl RenderJob {
         if let Some(pipeline) = self.fixed_pipeline {
             tracing::trace!(target: logger::RENDER, "Use fixed pipeline");
             Ok(pipeline)
-        } else if let Some(pipeline) = render_object.pipeline {
+        } else if let Some(pipeline) = render_object.material.pipeline {
             tracing::trace!(target: logger::RENDER, "Use object pipeline");
             Ok(pipeline)
         } else {
@@ -186,7 +190,7 @@ impl RenderJob {
         state: &mut RenderJobState,
     ) -> Result<(), RenderJobError> {
         if self.fixed_pipeline.is_none()
-            && render_object.texture_indexing
+            && render_object.material.texture_indexing
             && !state.texture_array_bound
         {
             frame.command.bind_texture_array(ctx.hal_mut(), pipeline);
@@ -206,10 +210,18 @@ impl RenderJob {
         state: &mut RenderJobState,
     ) -> Result<(), RenderJobError> {
         if self.fixed_pipeline.is_none() {
-            let material_data_id = render_object.material_data.as_ref().map(|bind| bind.id);
-            let texture_data_id = render_object.material_textures.as_ref().map(|bind| bind.id);
+            let material_data_id = render_object
+                .material
+                .material_data
+                .as_ref()
+                .map(|bind| bind.id);
+            let texture_data_id = render_object
+                .material
+                .material_textures
+                .as_ref()
+                .map(|bind| bind.id);
 
-            if let Some(material_data) = &render_object.material_data
+            if let Some(material_data) = &render_object.material.material_data
                 && state.last_material_data != material_data_id
             {
                 tracing::trace!(target: logger::RENDER, "Bind material data resources");
@@ -221,7 +233,7 @@ impl RenderJob {
                 state.last_material_data = material_data_id
             }
 
-            if let Some(material_textures) = &render_object.material_textures
+            if let Some(material_textures) = &render_object.material.material_textures
                 && state.last_material_textures != texture_data_id
             {
                 tracing::trace!(target: logger::RENDER, "Bind material texture resources");

@@ -1,61 +1,17 @@
 use std::sync::Arc;
 
 use gobs_core::logger;
-use gobs_render_graph::RenderFlags;
+use gobs_render_graph::{MaterialRenderData, RenderFlags};
 use gobs_render_hal::{
     BindResource, BindingGroupLayout, BindingGroupType, DescriptorType, Handle, RenderHAL,
 };
 use gobs_resource::{ResourceError, ResourceHandle, ResourceManager};
 
-use crate::{
-    GraphicsPipelineProperties, MaterialInstance, PipelineProperties, Texture,
-    data::TextureDataProp,
-};
+use crate::{MaterialInstance, PipelineProperties, Texture, data::TextureDataProp};
 
 pub struct MaterialSystem;
 
-#[derive(Clone, Debug, Default)]
-pub struct MaterialRenderData {
-    pub render_flags: RenderFlags,
-    pub pipeline: Option<Handle>,
-    pub pipeline_properties: Option<GraphicsPipelineProperties>,
-    pub material_data: Option<BindResource>,
-    pub material_textures: Option<BindResource>,
-    pub texture_indexing: bool,
-}
-
 impl MaterialSystem {
-    pub fn get_pipeline(
-        hal: &mut dyn RenderHAL,
-        resource_manager: &mut ResourceManager,
-        material_instance_handle: ResourceHandle<MaterialInstance>,
-        render_flags: &mut RenderFlags,
-    ) -> Result<(Handle, GraphicsPipelineProperties), ResourceError> {
-        let material_instance = resource_manager.get(&material_instance_handle);
-        let material_handle = material_instance.properties.material;
-        let material = resource_manager.get(&material_handle);
-
-        if material.properties.blending_enabled {
-            *render_flags |= RenderFlags::TRANSPARENT;
-        } else {
-            *render_flags |= RenderFlags::OPAQUE;
-        }
-
-        let material_data = resource_manager.get_data(hal, &material_handle)?;
-
-        let pipeline_handle = material_data.data.pipeline;
-
-        let pipeline_data = resource_manager.get_data(hal, &pipeline_handle)?;
-        let pipeline_properties = pipeline_data.properties;
-
-        if let PipelineProperties::Graphics(properties) = pipeline_properties {
-            tracing::trace!(target: logger::RENDER, "Using pipeline {:?}", properties);
-            Ok((pipeline_data.data.pipeline, properties.clone()))
-        } else {
-            Err(ResourceError::InvalidData)
-        }
-    }
-
     pub fn get_material_data(
         hal: &mut dyn RenderHAL,
         resource_manager: &mut ResourceManager,
@@ -63,7 +19,7 @@ impl MaterialSystem {
     ) -> Result<MaterialRenderData, ResourceError> {
         let mut render_flags = RenderFlags::default();
 
-        let (pipeline, pipeline_properties) = Self::get_pipeline(
+        let pipeline = Self::get_pipeline(
             hal,
             resource_manager,
             material_instance_handle,
@@ -109,6 +65,13 @@ impl MaterialSystem {
 
         let material_properties = &resource_manager.get(&material).properties;
 
+        let scene_layout = Some(
+            material_properties
+                .pipeline_properties
+                .scene_data_layout
+                .clone(),
+        );
+
         let material_data = material_properties
             .pipeline_properties
             .binding_groups
@@ -134,14 +97,45 @@ impl MaterialSystem {
         Ok(MaterialRenderData {
             render_flags,
             pipeline: Some(pipeline),
-            pipeline_properties: Some(pipeline_properties),
             material_data,
             material_textures,
+            scene_layout,
             texture_indexing,
         })
     }
 
-    pub fn get_material_data_binding(
+    fn get_pipeline(
+        hal: &mut dyn RenderHAL,
+        resource_manager: &mut ResourceManager,
+        material_instance_handle: ResourceHandle<MaterialInstance>,
+        render_flags: &mut RenderFlags,
+    ) -> Result<Handle, ResourceError> {
+        let material_instance = resource_manager.get(&material_instance_handle);
+        let material_handle = material_instance.properties.material;
+        let material = resource_manager.get(&material_handle);
+
+        if material.properties.blending_enabled {
+            *render_flags |= RenderFlags::TRANSPARENT;
+        } else {
+            *render_flags |= RenderFlags::OPAQUE;
+        }
+
+        let material_data = resource_manager.get_data(hal, &material_handle)?;
+
+        let pipeline_handle = material_data.data.pipeline;
+
+        let pipeline_data = resource_manager.get_data(hal, &pipeline_handle)?;
+        let pipeline_properties = pipeline_data.properties;
+
+        if let PipelineProperties::Graphics(properties) = pipeline_properties {
+            tracing::trace!(target: logger::RENDER, "Using pipeline {:?}", properties);
+            Ok(pipeline_data.data.pipeline)
+        } else {
+            Err(ResourceError::InvalidData)
+        }
+    }
+
+    fn get_material_data_binding(
         material_buffer: Option<Handle>,
         material_data_layout: Arc<BindingGroupLayout>,
     ) -> Option<BindResource> {
@@ -150,7 +144,7 @@ impl MaterialSystem {
         })
     }
 
-    pub fn get_material_textures_binding(
+    fn get_material_textures_binding(
         hal: &mut dyn RenderHAL,
         resource_manager: &mut ResourceManager,
         textures: Vec<ResourceHandle<Texture>>,

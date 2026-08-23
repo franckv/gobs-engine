@@ -3,15 +3,13 @@ use std::{collections::hash_map::Entry, sync::Arc};
 use ahash::HashMap;
 
 use gobs_core::{ImageExtent2D, Transform, logger};
-use gobs_render_graph::{GfxContext, RenderFlags, RenderObject, SceneData, SceneDataLayout};
-use gobs_render_hal::{AlignMode, VertexData};
+use gobs_render_graph::{GfxContext, MaterialRenderData, RenderFlags, RenderObject, SceneData};
+use gobs_render_hal::VertexData;
 use gobs_resource::{ResourceError, ResourceHandle, ResourceManager, camera::Camera, light::Light};
 
 use crate::{
     BoundingBox, Material, MaterialInstance, Mesh, Pipeline, RenderMeshBuilder, RenderModelBuilder,
-    ShapeBuilder, Texture,
-    material_system::{MaterialRenderData, MaterialSystem},
-    model::Model,
+    ShapeBuilder, Texture, material_system::MaterialSystem, model::Model,
 };
 
 pub struct RenderBatch {
@@ -118,25 +116,15 @@ impl RenderBatch {
                 )
             };
 
-            let scene_layout = match material.pipeline_properties {
-                Some(properties) => properties.scene_data_layout,
-                None => SceneDataLayout::new(AlignMode::Std140),
-            };
-
             let render_object = RenderObject {
                 model: model.name.clone(),
                 transform,
-                pipeline: material.pipeline,
                 vertex_buffer,
                 index_buffer,
                 index_len,
                 vertex_attribute,
-                scene_layout,
+                material,
                 layer,
-                material_data: material.material_data,
-                material_textures: material.material_textures,
-                texture_indexing: material.texture_indexing,
-                render_flags,
             };
 
             self.render_list.push(render_object);
@@ -226,7 +214,7 @@ impl RenderBatch {
     #[tracing::instrument(target = "profile", skip_all, level = "trace")]
     fn validate(&mut self, ctx: &mut GfxContext) {
         for obj in &self.render_list {
-            if let Some(pipeline) = obj.pipeline {
+            if let Some(pipeline) = obj.material.pipeline {
                 let descriptors = ctx.hal().get_pipeline_descriptor_types(pipeline);
                 for descriptor_type in descriptors {
                     let descriptor_layout = ctx
