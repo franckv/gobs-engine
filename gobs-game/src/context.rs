@@ -11,7 +11,7 @@ use gobs_render::{
     RenderHAL, RenderMaterialBuilder, RenderMeshBuilder, RenderModelBuilder, RenderTextureBuilder,
     Renderer, Texture, TextureLoader,
 };
-use gobs_resource::{ResourceManager, load};
+use gobs_resource::{ResourceHandle, ResourceManager, load};
 use gobs_scene::{SceneBuilder, graph::scenegraph::SceneGraph};
 
 #[derive(Clone, Debug)]
@@ -49,6 +49,9 @@ pub trait GobsContext {
     fn new_material<'a>(&'a mut self, name: &'a str) -> RenderMaterialBuilder<'a>;
     fn new_mesh<'a>(&'a mut self, name: &'a str) -> RenderMeshBuilder<'a>;
     fn new_texture<'a>(&'a mut self, name: &'a str) -> RenderTextureBuilder<'a>;
+    fn free_material(&mut self, material: ResourceHandle<MaterialInstance>, delete_textures: bool);
+    fn free_mesh(&mut self, mesh: ResourceHandle<Mesh>);
+    fn free_texture(&mut self, mesh: ResourceHandle<Texture>);
 
     async fn load_material(&mut self, filename: &str);
     fn load_gltf(&mut self, filename: &str) -> SceneGraph;
@@ -202,6 +205,31 @@ impl GobsContext for GameContext {
 
     fn new_texture<'a>(&'a mut self, name: &'a str) -> RenderTextureBuilder<'a> {
         RenderTextureBuilder::new(&mut self.resource_manager, name)
+    }
+
+    fn free_material(&mut self, material: ResourceHandle<MaterialInstance>, delete_textures: bool) {
+        if delete_textures {
+            let textures = self
+                .resource_manager
+                .get(&material)
+                .properties
+                .textures
+                .clone();
+
+            for texture in textures {
+                self.resource_manager.schedule_removal(&texture);
+            }
+        }
+
+        self.resource_manager.schedule_removal(&material);
+    }
+
+    fn free_mesh(&mut self, mesh: ResourceHandle<Mesh>) {
+        self.resource_manager.schedule_removal(&mesh);
+    }
+
+    fn free_texture(&mut self, texture: ResourceHandle<Texture>) {
+        self.resource_manager.schedule_removal(&texture);
     }
 
     async fn load_material(&mut self, filename: &str) {

@@ -13,7 +13,10 @@ use gobs_resource::{
     {ResourceError, ResourceHandle, ResourceLoader, ResourceProperties},
 };
 
-use crate::resources::{BufferPool, Texture, TextureData, TextureFormat, texture::TexturePath};
+use crate::{
+    TextureProperties,
+    resources::{BufferPool, Texture, TextureData, TextureFormat, texture::TexturePath},
+};
 
 pub struct TextureLoader {
     cmd: Box<dyn CommandBuffer>,
@@ -248,7 +251,12 @@ impl ResourceLoader<Texture> for TextureLoader {
         })
     }
 
-    fn unload<'a>(&mut self, hal: &mut (dyn RenderHAL + 'a), data: TextureData) {
+    fn unload<'a>(
+        &mut self,
+        hal: &mut (dyn RenderHAL + 'a),
+        data: TextureData,
+        _properties: TextureProperties,
+    ) {
         hal.destroy_image(data.image);
         hal.destroy_sampler(data.sampler);
     }

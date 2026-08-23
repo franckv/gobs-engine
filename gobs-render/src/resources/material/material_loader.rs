@@ -4,9 +4,12 @@ use gobs_resource::{
     ResourceRegistry, {ResourceError, ResourceHandle, ResourceLoader, ResourceProperties},
 };
 
-use crate::resources::{MaterialData, Pipeline, PipelineProperties, material::Material};
+use crate::{
+    MaterialProperties,
+    resources::{MaterialData, Pipeline, PipelineProperties, material::Material},
+};
 
-pub struct MaterialLoader {}
+pub struct MaterialLoader;
 
 impl MaterialLoader {
     pub fn new() -> Self {
@@ -44,8 +47,12 @@ impl ResourceLoader<Material> for MaterialLoader {
         })
     }
 
-    fn unload<'a>(&mut self, _hal: &mut (dyn RenderHAL + 'a), _data: MaterialData) {
-        todo!()
+    fn unload<'a>(
+        &mut self,
+        _hal: &mut (dyn RenderHAL + 'a),
+        _data: MaterialData,
+        _properties: MaterialProperties,
+    ) {
     }
 
     fn flush(&mut self) {}

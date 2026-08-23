@@ -7,7 +7,10 @@ use gobs_resource::{
     ResourceRegistry, {ResourceError, ResourceHandle, ResourceLoader, ResourceProperties},
 };
 
-use crate::resources::{BufferPool, Mesh, MeshData, MeshGeometry, MeshPath, MeshPrimitiveType};
+use crate::{
+    MeshProperties,
+    resources::{BufferPool, Mesh, MeshData, MeshGeometry, MeshPath, MeshPrimitiveType},
+};
 
 pub struct MeshLoader {
     cmd: Box<dyn CommandBuffer>,
@@ -145,7 +148,12 @@ impl ResourceLoader<Mesh> for MeshLoader {
         Ok(data)
     }
 
-    fn unload<'a>(&mut self, hal: &mut (dyn RenderHAL + 'a), data: MeshData) {
+    fn unload<'a>(
+        &mut self,
+        hal: &mut (dyn RenderHAL + 'a),
+        data: MeshData,
+        _properties: MeshProperties,
+    ) {
         hal.destroy_buffer(data.vertex_view);
         hal.destroy_buffer(data.index_view);
     }

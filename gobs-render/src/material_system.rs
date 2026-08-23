@@ -295,11 +295,27 @@ impl MaterialSystem {
     pub(crate) fn destroy_material_binding(
         hal: &mut dyn RenderHAL,
         material_binding: MaterialBinding,
+        material_data: Option<MaterialConstantData>,
     ) {
         if let Some(resource) = &material_binding.material_data_binding {
             let handle = resource.slot(0);
             if let Some(buffer) = handle {
                 hal.destroy_buffer(buffer);
+            }
+        }
+
+        if material_binding.texture_data_layout.texture_indexing
+            && let Some(data) = material_data
+        {
+            for prop in material_binding.texture_data_layout.layout {
+                let index = match prop {
+                    TextureDataProp::Diffuse => data.diffuse_index,
+                    TextureDataProp::Normal => data.normal_index,
+                    TextureDataProp::Emission => data.emission_index,
+                    TextureDataProp::Specular => data.specular_index,
+                };
+
+                hal.release_texture_index(index as usize);
             }
         }
     }

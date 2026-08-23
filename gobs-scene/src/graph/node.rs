@@ -43,6 +43,10 @@ impl Node {
         }
     }
 
+    pub fn value(&self) -> &NodeValue {
+        &self.base.value
+    }
+
     pub fn transform(&self) -> &Transform {
         &self.transform
     }

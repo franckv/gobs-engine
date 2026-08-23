@@ -116,7 +116,12 @@ impl ResourceLoader<Pipeline> for PipelineLoader {
         Ok(data)
     }
 
-    fn unload<'a>(&mut self, hal: &mut (dyn RenderHAL + 'a), data: PipelineData) {
+    fn unload<'a>(
+        &mut self,
+        hal: &mut (dyn RenderHAL + 'a),
+        data: PipelineData,
+        _properties: PipelineProperties,
+    ) {
         hal.destroy_pipeline(data.pipeline);
     }
 

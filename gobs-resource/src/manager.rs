@@ -205,7 +205,7 @@ impl ResourceManager {
             if let Some(resource) = self.registry.remove(&handle)
                 && let ResourceState::Loaded(data) = resource.data
             {
-                loader.unload(backend, data);
+                loader.unload(backend, data, resource.properties);
             }
         }
     }
@@ -349,7 +349,13 @@ mod tests {
             Ok(DummyData {})
         }
 
-        fn unload(&mut self, _backend: &mut Backend, _data: DummyData) {}
+        fn unload(
+            &mut self,
+            _backend: &mut Backend,
+            _data: DummyData,
+            _properties: DummyProperties,
+        ) {
+        }
 
         fn flush(&mut self) {}
     }

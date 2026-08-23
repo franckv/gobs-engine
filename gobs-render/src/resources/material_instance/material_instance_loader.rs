@@ -5,6 +5,7 @@ use gobs_resource::{
 };
 
 use crate::{
+    MaterialInstanceProperties,
     material_system::MaterialSystem,
     resources::{MaterialInstance, MaterialInstanceData},
 };
@@ -60,8 +61,17 @@ impl ResourceLoader<MaterialInstance> for MaterialInstanceLoader {
         Ok(data)
     }
 
-    fn unload<'a>(&mut self, hal: &mut (dyn RenderHAL + 'a), data: MaterialInstanceData) {
-        MaterialSystem::destroy_material_binding(hal, data.material_binding);
+    fn unload<'a>(
+        &mut self,
+        hal: &mut (dyn RenderHAL + 'a),
+        data: MaterialInstanceData,
+        properties: MaterialInstanceProperties,
+    ) {
+        MaterialSystem::destroy_material_binding(
+            hal,
+            data.material_binding,
+            properties.material_data,
+        );
     }
 
     fn flush(&mut self) {}
