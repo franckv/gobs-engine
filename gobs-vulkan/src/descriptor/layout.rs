@@ -17,6 +17,8 @@ pub enum DescriptorType {
     StorageImage,
     Sampler,
     SampledImage,
+    StorageBuffer,
+    StorageBufferDynamic,
 }
 
 impl From<DescriptorType> for vk::DescriptorType {
@@ -28,6 +30,8 @@ impl From<DescriptorType> for vk::DescriptorType {
             DescriptorType::StorageImage => vk::DescriptorType::STORAGE_IMAGE,
             DescriptorType::Sampler => vk::DescriptorType::SAMPLER,
             DescriptorType::SampledImage => vk::DescriptorType::SAMPLED_IMAGE,
+            DescriptorType::StorageBuffer => vk::DescriptorType::STORAGE_BUFFER,
+            DescriptorType::StorageBufferDynamic => vk::DescriptorType::STORAGE_BUFFER_DYNAMIC,
         }
     }
 }

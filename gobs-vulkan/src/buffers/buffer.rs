@@ -21,6 +21,7 @@ pub enum BufferUsage {
     Instance,
     Index,
     Uniform,
+    Storage,
 }
 
 impl From<BufferUsage> for vk::MemoryPropertyFlags {
@@ -40,6 +41,7 @@ impl From<BufferUsage> for vk::MemoryPropertyFlags {
             BufferUsage::Uniform => {
                 vk::MemoryPropertyFlags::HOST_VISIBLE | vk::MemoryPropertyFlags::HOST_COHERENT
             }
+            BufferUsage::Storage => vk::MemoryPropertyFlags::DEVICE_LOCAL,
         }
     }
 }
@@ -53,6 +55,7 @@ impl From<BufferUsage> for MemoryLocation {
             BufferUsage::Instance => MemoryLocation::CpuToGpu,
             BufferUsage::Index => MemoryLocation::GpuOnly,
             BufferUsage::Uniform => MemoryLocation::CpuToGpu,
+            BufferUsage::Storage => MemoryLocation::GpuOnly,
         }
     }
 }
@@ -72,6 +75,9 @@ impl From<BufferUsage> for vk::BufferUsageFlags {
                 vk::BufferUsageFlags::TRANSFER_DST | vk::BufferUsageFlags::INDEX_BUFFER
             }
             BufferUsage::Uniform => vk::BufferUsageFlags::UNIFORM_BUFFER,
+            BufferUsage::Storage => {
+                vk::BufferUsageFlags::TRANSFER_DST | vk::BufferUsageFlags::STORAGE_BUFFER
+            }
         }
     }
 }
