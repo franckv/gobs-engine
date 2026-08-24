@@ -1,29 +1,44 @@
-use thiserror::Error;
+use crate::{
+    logger,
+    memory::allocator::{AllocError, Allocation, Allocator},
+};
 
-use crate::logger;
-
-#[derive(Debug, Error)]
-pub enum AllocError {
-    #[error("out of memory")]
-    OutOfMemory,
-    #[error("invalid block index")]
-    InvalidBlockIndex,
-    #[error("order too high")]
-    InvalidOrder,
-}
-
-pub struct Allocation {
+pub struct BuddyAllocation {
     order: usize,
     idx: usize,
-    pub memory_start: usize,
+    memory_start: usize,
+    size: usize,
+    requested_size: usize,
 }
 
-impl Allocation {
-    fn new(order: usize, idx: usize, memory_start: usize) -> Self {
+impl Allocation for BuddyAllocation {
+    fn start(&self) -> usize {
+        self.memory_start
+    }
+
+    fn size(&self) -> usize {
+        self.size
+    }
+
+    fn requested_size(&self) -> usize {
+        self.requested_size
+    }
+}
+
+impl BuddyAllocation {
+    fn new(
+        order: usize,
+        idx: usize,
+        memory_start: usize,
+        size: usize,
+        requested_size: usize,
+    ) -> Self {
         Self {
             order,
             idx,
             memory_start,
+            size,
+            requested_size,
         }
     }
 }
@@ -36,6 +51,60 @@ pub struct BuddyAllocator {
     free_blocks: Vec<u128>,
 }
 
+impl Allocator for BuddyAllocator {
+    type Allocation = BuddyAllocation;
+
+    fn allocate(&mut self, size: usize) -> Result<Self::Allocation, AllocError> {
+        let target_order = self.get_order(size)?;
+
+        tracing::trace!(target: logger::MEMORY, "allocate {}, target order {}", size, target_order);
+
+        if !self.has_free(target_order) {
+            let mut start_order = target_order;
+            // find first free parent node
+            for i in (0..target_order).rev() {
+                if self.has_free(i) {
+                    start_order = i;
+                    break;
+                }
+            }
+            tracing::trace!(target: logger::MEMORY, "starting from {}", start_order);
+
+            // split blocks from parent to target
+            if start_order < target_order {
+                for i in start_order..target_order {
+                    let idx = self.get_free_index(i)?;
+                    self.split_block(i, idx);
+                }
+            }
+        }
+
+        if self.has_free(target_order) {
+            let idx = self.get_free_index(target_order)?;
+            self.toggle_free_block(target_order, idx);
+            return Ok(self.new_allocation(target_order, idx, size));
+        }
+
+        Err(AllocError::OutOfMemory)
+    }
+
+    fn release(&mut self, allocation: Self::Allocation) {
+        tracing::trace!(target: logger::MEMORY, "release block {},{}", allocation.order, allocation.idx);
+
+        self.toggle_free_block(allocation.order, allocation.idx);
+
+        let mut idx = allocation.idx;
+        for i in (1..=allocation.order).rev() {
+            if self.is_free(i, self.buddy_idx(idx)) {
+                self.merge_block(i, idx);
+                idx = self.parent_idx(idx);
+            } else {
+                break;
+            }
+        }
+    }
+}
+
 impl BuddyAllocator {
     pub fn new(size: usize, order: usize) -> Result<Self, AllocError> {
         let log2 = size.ilog2();
@@ -45,7 +114,7 @@ impl BuddyAllocator {
         let block_count = 2_usize.pow(order as u32);
 
         if block_count > 128 {
-            return Err(AllocError::InvalidOrder);
+            return Err(AllocError::InvalidInitData);
         }
 
         Ok(Self {
@@ -67,8 +136,14 @@ impl BuddyAllocator {
         0
     }
 
-    fn new_allocation(&self, order: usize, idx: usize) -> Allocation {
-        Allocation::new(order, idx, self.block_start(order, idx))
+    fn new_allocation(&self, order: usize, idx: usize, requested_size: usize) -> BuddyAllocation {
+        BuddyAllocation::new(
+            order,
+            idx,
+            self.block_start(order, idx),
+            self.block_size(order),
+            requested_size,
+        )
     }
 
     fn block_size(&self, order: usize) -> usize {
@@ -132,7 +207,7 @@ impl BuddyAllocator {
             }
         }
 
-        Err(AllocError::InvalidBlockIndex)
+        Err(AllocError::InvalidData)
     }
 
     fn get_order(&self, size: usize) -> Result<usize, AllocError> {
@@ -193,56 +268,6 @@ impl BuddyAllocator {
         }
 
         block
-    }
-
-    pub fn allocate(&mut self, size: usize) -> Result<Allocation, AllocError> {
-        let target_order = self.get_order(size)?;
-
-        tracing::trace!(target: logger::MEMORY, "allocate {}, target order {}", size, target_order);
-
-        if !self.has_free(target_order) {
-            let mut start_order = target_order;
-            // find first free parent node
-            for i in (0..target_order).rev() {
-                if self.has_free(i) {
-                    start_order = i;
-                    break;
-                }
-            }
-            tracing::trace!(target: logger::MEMORY, "starting from {}", start_order);
-
-            // split blocks from parent to target
-            if start_order < target_order {
-                for i in start_order..target_order {
-                    let idx = self.get_free_index(i)?;
-                    self.split_block(i, idx);
-                }
-            }
-        }
-
-        if self.has_free(target_order) {
-            let idx = self.get_free_index(target_order)?;
-            self.toggle_free_block(target_order, idx);
-            return Ok(self.new_allocation(target_order, idx));
-        }
-
-        Err(AllocError::OutOfMemory)
-    }
-
-    pub fn release(&mut self, allocation: Allocation) {
-        tracing::trace!(target: logger::MEMORY, "release block {},{}", allocation.order, allocation.idx);
-
-        self.toggle_free_block(allocation.order, allocation.idx);
-
-        let mut idx = allocation.idx;
-        for i in (1..=allocation.order).rev() {
-            if self.is_free(i, self.buddy_idx(idx)) {
-                self.merge_block(i, idx);
-                idx = self.parent_idx(idx);
-            } else {
-                break;
-            }
-        }
     }
 }
 
