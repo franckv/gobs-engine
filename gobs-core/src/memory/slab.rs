@@ -1,4 +1,7 @@
-use crate::memory::allocator::{AllocError, Allocation, Allocator};
+use crate::memory::{
+    allocator::{AllocError, Allocation, Allocator},
+    index_pool::IndexPool,
+};
 
 #[derive(Clone)]
 pub struct SlabAllocation {
@@ -33,9 +36,7 @@ impl SlabAllocation {
 
 pub struct SlabAllocator {
     slot_size: usize,
-    free_list: Vec<usize>,
-    border: usize,
-    capacity: usize,
+    index_pool: IndexPool,
 }
 
 impl Allocator for SlabAllocator {
@@ -46,34 +47,23 @@ impl Allocator for SlabAllocator {
             return Err(AllocError::RequestTooLarge);
         }
 
-        if let Some(slot) = self.free_list.pop() {
-            Ok(SlabAllocation::new(slot, self.slot_size, size))
-        } else {
-            let slot = self.border;
-            self.border += 1;
+        let slot = self.index_pool.allocate()?;
 
-            if self.border > self.capacity {
-                Err(AllocError::OutOfMemory)
-            } else {
-                Ok(SlabAllocation::new(slot, self.slot_size, size))
-            }
-        }
+        Ok(SlabAllocation::new(slot, self.slot_size, size))
     }
 
     fn release(&mut self, allocation: Self::Allocation) {
-        debug_assert!(!self.free_list.contains(&allocation.idx));
-
-        self.free_list.push(allocation.idx);
+        self.index_pool.release(allocation.idx);
     }
 }
 
 impl SlabAllocator {
     pub fn new(slot_size: usize, capacity: usize) -> Self {
+        let index_pool = IndexPool::new(capacity);
+
         Self {
-            capacity,
             slot_size,
-            free_list: Vec::new(),
-            border: 0,
+            index_pool,
         }
     }
 }

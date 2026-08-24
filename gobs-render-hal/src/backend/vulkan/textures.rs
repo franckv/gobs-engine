@@ -1,12 +1,13 @@
 use std::{collections::HashMap, sync::Arc};
 
+use gobs_core::memory::index_pool::IndexPool;
 use gobs_vulkan::{DescriptorStage, DescriptorType};
 
 use crate::{BindResource, BindingGroupLayout, BindingGroupType, Handle};
 
 pub struct TextureRegistry {
     textures: Vec<Option<Handle>>,
-    free_list: Vec<usize>,
+    index_pool: IndexPool,
     binding: BindResource,
     allocated: HashMap<Handle, usize>,
 }
@@ -16,8 +17,9 @@ pub(crate) const TEXTURES_BINDING: usize = 1;
 
 impl TextureRegistry {
     pub fn new(size: usize, sampler: Handle) -> Self {
-        let free_list = (0..size).rev().collect();
         let textures = (0..size).map(|_| None).collect();
+
+        let index_pool = IndexPool::new(size);
 
         let layout = BindingGroupLayout::new(BindingGroupType::BindlessTextures)
             .add_binding(DescriptorType::Sampler, DescriptorStage::Fragment, 1)
@@ -35,7 +37,7 @@ impl TextureRegistry {
 
         Self {
             textures,
-            free_list,
+            index_pool,
             binding,
             allocated: HashMap::new(),
         }
@@ -54,7 +56,9 @@ impl TextureRegistry {
     }
 
     pub fn reserve_index(&mut self) -> usize {
-        self.free_list.pop().expect("Not enough texture slots")
+        self.index_pool
+            .allocate()
+            .expect("Not enough texture slots")
     }
 
     pub fn register(&mut self, texture: Handle) -> usize {
@@ -87,7 +91,7 @@ impl TextureRegistry {
     pub fn free(&mut self, index: usize) -> Option<Handle> {
         if let Some(handle) = self.textures[index].take() {
             self.binding.remove_binding(TEXTURES_BINDING, index);
-            self.free_list.push(index);
+            self.index_pool.release(index);
             self.allocated.remove(&handle);
 
             Some(handle)
