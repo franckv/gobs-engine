@@ -199,7 +199,9 @@ impl BindingGroupType {
 
     pub fn lifetime(&self) -> BindingLifetime {
         match self {
-            BindingGroupType::BindlessTextures => BindingLifetime::Static,
+            BindingGroupType::BindlessTextures | BindingGroupType::BindlessMaterial => {
+                BindingLifetime::Static
+            }
             _ => BindingLifetime::PerFrame,
         }
     }
