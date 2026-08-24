@@ -323,7 +323,7 @@ impl MaterialSystem {
         if let Some(material_data) = material_data {
             let data = Self::collect_material_data(material_data_layout, material_data);
 
-            let index = hal.allocate_material_index(data.len() as u32);
+            let index = hal.allocate_material_index();
 
             hal.update_material_data(index, &data);
 

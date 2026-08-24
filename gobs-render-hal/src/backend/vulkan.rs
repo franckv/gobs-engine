@@ -15,7 +15,7 @@ use winit::{
 };
 
 use gobs_core::{ConfigReader as _, GobsConfig, ImageExtent2D, ImageFormat, SamplerFilter, logger};
-use gobs_vulkan as vk;
+use gobs_vulkan::{self as vk, Device};
 
 use crate::{
     BindResource, BindingGroupLayout, BindingGroupType, CommandBuffer, CommandQueueType,
@@ -25,6 +25,7 @@ use crate::{
         buffer::BufferView,
         command::VkCommandBuffer,
         display::Display,
+        material::MaterialRegistry,
         pipeline::{VkComputePipelineBuilder, VkGraphicsPipelineBuilder},
         registry::ResourcesRegistry,
         textures::TextureRegistry,
@@ -52,6 +53,7 @@ pub struct VulkanHAL {
     registry: ResourcesRegistry,
     bindings: BindingRegistry,
     textures: TextureRegistry,
+    materials: MaterialRegistry,
     frames_in_flight: usize,
     pub display: Display,
     pub graphics_queue: Arc<vk::Queue>,
@@ -84,32 +86,14 @@ impl RenderHAL for VulkanHAL {
     }
 
     fn create_buffer(&mut self, name: &str, size: usize, ty: BufferType) -> Handle {
-        tracing::debug!(target: logger::RESOURCES, "Create buffer {}, size={}", name, size);
-
-        let usage = match ty {
-            BufferType::Vertex => vk::BufferUsage::Vertex,
-            BufferType::Index => vk::BufferUsage::Index,
-            BufferType::Staging => vk::BufferUsage::Staging,
-            BufferType::StagingDst => vk::BufferUsage::StagingDst,
-            BufferType::Uniform => vk::BufferUsage::Uniform,
-            BufferType::Storage => vk::BufferUsage::Storage,
-        };
-
-        let buffer = vk::buffers::Buffer::new(
+        Self::create_buffer_internal(
             name,
             size,
-            usage,
+            ty,
             self.device.clone(),
             self.allocator.clone(),
-        );
-
-        let buffer_view = BufferView {
-            buffer: Arc::new(buffer),
-            offset: 0,
-            len: size,
-        };
-
-        self.registry.buffers.insert(buffer_view)
+            &mut self.registry,
+        )
     }
 
     fn upload_buffer(&mut self, handle: Handle, data: &[u8], offset: u64) {
@@ -128,18 +112,29 @@ impl RenderHAL for VulkanHAL {
         let _ = self.registry.buffers.remove(buffer);
     }
 
-    fn allocate_material_index(&mut self, size: u32) -> usize {
-        todo!()
+    fn allocate_material_index(&mut self) -> usize {
+        self.materials.reserve_index()
     }
 
     fn update_material_data(&mut self, index: usize, data: &[u8]) {
-        todo!()
+        assert!(data.len() <= self.materials.material_size(index));
+
+        let offset = self
+            .get_material_offset(index)
+            .unwrap_or_else(|| panic!("Material index {} is not allocated", index))
+            as u64;
+
+        let buffer = self.materials.get_buffer();
+
+        self.upload_buffer(buffer, data, offset);
     }
+
     fn release_material_index(&mut self, index: usize) {
-        todo!()
+        self.materials.free(index);
     }
-    fn get_material_offset(&self, index: usize) -> u32 {
-        todo!()
+
+    fn get_material_offset(&self, index: usize) -> Option<u32> {
+        self.materials.get_offset(index)
     }
 
     fn create_image(
@@ -364,6 +359,8 @@ impl VulkanHAL {
 
         let frames_in_flight = config.get_int(RenderHalConfig::FramesInFlight) as usize;
         let textures_array_size = config.get_int(RenderHalConfig::TextureArraySize) as usize;
+        let material_array_size = config.get_int(RenderHalConfig::MaterialArraySize) as usize;
+        let material_data_size = config.get_int(RenderHalConfig::MaterialDataSize) as usize;
 
         let mut registry = ResourcesRegistry::default();
         let bindings = BindingRegistry::new(frames_in_flight);
@@ -377,12 +374,26 @@ impl VulkanHAL {
 
         let textures = TextureRegistry::new(textures_array_size, sampler);
 
+        let total_size = material_data_size * material_array_size;
+
+        let buffer = Self::create_buffer_internal(
+            "Bindless material",
+            total_size,
+            BufferType::Storage,
+            device.clone(),
+            allocator.clone(),
+            &mut registry,
+        );
+
+        let materials = MaterialRegistry::new(buffer, material_data_size, material_array_size);
+
         display.init(&mut registry, device.clone(), frames_in_flight);
 
         Self {
             registry,
             bindings,
             textures,
+            materials,
             frames_in_flight,
             display,
             graphics_queue,
@@ -412,6 +423,36 @@ impl VulkanHAL {
         tracing::info!(target: logger::INIT, "Using adapter {}", p_device.name);
 
         vk::Device::new(instance.clone(), p_device, display.surface.as_deref()).unwrap()
+    }
+
+    fn create_buffer_internal(
+        name: &str,
+        size: usize,
+        ty: BufferType,
+        device: Arc<Device>,
+        allocator: Arc<vk::Allocator>,
+        registry: &mut ResourcesRegistry,
+    ) -> Handle {
+        tracing::debug!(target: logger::RESOURCES, "Create buffer {}, size={}", name, size);
+
+        let usage = match ty {
+            BufferType::Vertex => vk::BufferUsage::Vertex,
+            BufferType::Index => vk::BufferUsage::Index,
+            BufferType::Staging => vk::BufferUsage::Staging,
+            BufferType::StagingDst => vk::BufferUsage::StagingDst,
+            BufferType::Uniform => vk::BufferUsage::Uniform,
+            BufferType::Storage => vk::BufferUsage::Storage,
+        };
+
+        let buffer = vk::buffers::Buffer::new(name, size, usage, device.clone(), allocator.clone());
+
+        let buffer_view = BufferView {
+            buffer: Arc::new(buffer),
+            offset: 0,
+            len: size,
+        };
+
+        registry.buffers.insert(buffer_view)
     }
 }
 

@@ -46,10 +46,10 @@ pub trait RenderHAL {
     fn upload_buffer(&mut self, buffer: Handle, data: &[u8], offset: u64);
     fn get_buffer_address(&self, buffer: Handle) -> u64;
     fn destroy_buffer(&mut self, buffer: Handle);
-    fn allocate_material_index(&mut self, size: u32) -> usize;
+    fn allocate_material_index(&mut self) -> usize;
     fn update_material_data(&mut self, index: usize, data: &[u8]);
     fn release_material_index(&mut self, index: usize);
-    fn get_material_offset(&self, index: usize) -> u32;
+    fn get_material_offset(&self, index: usize) -> Option<u32>;
 
     fn create_image(
         &mut self,
