@@ -3,7 +3,7 @@ use std::{fmt::Debug, marker::PhantomData};
 use serde::Serialize;
 use thiserror::Error;
 
-use gobs_core::memory::allocator::AllocationError;
+use gobs_core::memory::recycler::AllocationError;
 
 use crate::{
     load::LoadingError,

@@ -55,7 +55,7 @@ impl<F: ResourceFamily, A> AllocableBlock<F, A> {
     }
 }
 
-pub struct Allocator<F, A>
+pub struct BlockRecycler<F, A>
 where
     F: ResourceFamily,
 {
@@ -63,13 +63,13 @@ where
     pub allocated: HashMap<Uuid, AllocableBlock<F, A>>,
 }
 
-impl<F: ResourceFamily, A: AllocableInfo<F>> Default for Allocator<F, A> {
+impl<F: ResourceFamily, A: AllocableInfo<F>> Default for BlockRecycler<F, A> {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl<F: ResourceFamily, A: AllocableInfo<F>> Allocator<F, A> {
+impl<F: ResourceFamily, A: AllocableInfo<F>> BlockRecycler<F, A> {
     pub fn new() -> Self {
         Self {
             pool: ObjectPool::new(),
