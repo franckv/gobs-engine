@@ -23,6 +23,7 @@ struct RenderJobState {
     last_material_data: Option<BindingId>,
     last_material_textures: Option<BindingId>,
     texture_array_bound: bool,
+    material_array_bound: bool,
     scene_data_bound: bool,
     object_data: FixedBuffer<128>,
 }
@@ -35,6 +36,7 @@ impl RenderJobState {
             last_material_data: None,
             last_material_textures: None,
             texture_array_bound: false,
+            material_array_bound: false,
             scene_data_bound: false,
             object_data: FixedBuffer::new(),
         }
@@ -131,6 +133,7 @@ impl RenderJob {
             self.bind_scene_data(ctx, frame, pipeline, &mut state)?;
 
             self.bind_texture_array(ctx, frame, render_object, pipeline, &mut state)?;
+            self.bind_material_array(ctx, frame, render_object, pipeline, &mut state)?;
 
             // bind materials (ds, set 1=material, 2=textures)
             self.bind_material_data(ctx, frame, render_object, pipeline, &mut state)?;
@@ -189,9 +192,31 @@ impl RenderJob {
             && render_object.material.texture_indexing
             && !state.texture_array_bound
         {
+            tracing::trace!(target: logger::RENDER, "Bind texture array");
             frame.command.bind_texture_array(ctx.hal_mut(), pipeline);
 
             state.texture_array_bound = true;
+        }
+
+        Ok(())
+    }
+
+    fn bind_material_array(
+        &self,
+        ctx: &mut GfxContext,
+        frame: &mut FrameData,
+        render_object: &RenderObject,
+        pipeline: Handle,
+        state: &mut RenderJobState,
+    ) -> Result<(), RenderJobError> {
+        if self.fixed_pipeline.is_none()
+            && render_object.material.material_indexing
+            && !state.material_array_bound
+        {
+            tracing::trace!(target: logger::RENDER, "Bind material array");
+            frame.command.bind_material_array(ctx.hal_mut(), pipeline);
+
+            state.material_array_bound = true;
         }
 
         Ok(())
@@ -290,6 +315,12 @@ impl RenderJob {
                     ctx.hal().get_buffer_address(render_object.vertex_buffer);
                 AttributeData::U64(vertex_buffer_address)
             }
+            ObjectDataProp::MaterialOffset => AttributeData::U32(
+                render_object
+                    .material
+                    .material_offset
+                    .expect("Material offset is None"),
+            ),
         });
 
         // TODO: check pipeline object layout compatibility

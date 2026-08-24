@@ -66,7 +66,7 @@ impl PipelineLayout {
                 vk::PushConstantRange::default()
                     .offset(0)
                     .size(push_constant_size as u32)
-                    .stage_flags(vk::ShaderStageFlags::VERTEX),
+                    .stage_flags(vk::ShaderStageFlags::VERTEX | vk::ShaderStageFlags::FRAGMENT),
             );
             layout_info = layout_info.push_constant_ranges(&push_constant_range);
         }

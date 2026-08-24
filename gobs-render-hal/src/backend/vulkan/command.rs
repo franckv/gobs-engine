@@ -224,6 +224,22 @@ impl CommandBuffer for VkCommandBuffer {
         );
     }
 
+    fn bind_material_array(&mut self, hal: &mut dyn RenderHAL, pipeline: Handle) {
+        let hal = hal.get_mut();
+
+        let frame_id = hal.frame_id(self.frame_number);
+        let resource = hal.materials.get_binding();
+
+        self.bind_resource_internal(
+            hal.device.clone(),
+            &hal.registry,
+            &mut hal.bindings,
+            pipeline,
+            resource,
+            frame_id,
+        );
+    }
+
     fn push_constants(&mut self, hal: &dyn RenderHAL, pipeline: Handle, constants: &[u8]) {
         let mut hal = hal.get();
 

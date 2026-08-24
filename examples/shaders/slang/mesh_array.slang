@@ -18,7 +18,7 @@ struct Material {
     uint normal_index;
 }
 [[vk::binding(0, MATERIAL_DATA_SET)]]
-ConstantBuffer<Material> material;
+ByteAddressBuffer materials;
 
 [[vk::binding(0, MATERIAL_TEXTURES_SET)]]
 SamplerState sampler;
@@ -28,6 +28,7 @@ Texture2D textures[256];
 struct PushConstants {
     float4x4 world_matrix;
     ConstBufferPointer<Vertex> vertex_reference;
+    uint material_offset;
 }
 [[vk::push_constant]]
 PushConstants push_constants;
@@ -65,8 +66,10 @@ VSOutput vertex_main(uint vertex_index: SV_VertexID) {
 
 [shader("fragment")]
 float4 fragment_normal_main(VSOutput input) {
-	float4 object_color = textures[material.diffuse_index].Sample(sampler, input.uv);
-	float4 object_normal = textures[material.normal_index].Sample(sampler, input.uv);
+    Material material = materials.Load<Material>(push_constants.material_offset);
+
+	float4 object_color = textures[NonUniformResourceIndex(material.diffuse_index)].Sample(sampler, input.uv);
+	float4 object_normal = textures[NonUniformResourceIndex(material.normal_index)].Sample(sampler, input.uv);
 
 	float3 light = phong_reflection_normal(object_normal.xyz, input.tangent_position, input.tangent_light_dir,
             scene_data.light_color.xyz, input.tangent_view_position, scene_data.ambient_color.xyz);

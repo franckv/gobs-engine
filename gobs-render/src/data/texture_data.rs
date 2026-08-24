@@ -16,6 +16,13 @@ pub struct TextureDataLayout {
 }
 
 impl TextureDataLayout {
+    pub fn new(texture_indexing: bool) -> Self {
+        Self {
+            layout: Vec::new(),
+            texture_indexing,
+        }
+    }
+
     pub fn is_empty(&self) -> bool {
         self.layout.is_empty()
     }

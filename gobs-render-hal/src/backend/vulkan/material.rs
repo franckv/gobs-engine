@@ -48,9 +48,19 @@ impl MaterialRegistry {
     }
 
     pub fn reserve_index(&mut self) -> usize {
-        self.index_pool
+        let index = self
+            .index_pool
             .allocate()
-            .expect("Not enough texture slots")
+            .expect("Not enough material slots");
+
+        let alloc = self
+            .allocator
+            .allocate(self.material_size)
+            .expect("Cannot allocate material");
+
+        self.materials[index] = Some(alloc);
+
+        index
     }
 
     pub fn free(&mut self, index: usize) {
@@ -70,5 +80,9 @@ impl MaterialRegistry {
         self.binding
             .slot(0)
             .expect("Material registry buffer not initialized")
+    }
+
+    pub fn get_binding(&self) -> &BindResource {
+        &self.binding
     }
 }

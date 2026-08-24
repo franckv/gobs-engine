@@ -191,7 +191,7 @@ impl BindingRegistry {
                     // scene data, material data
                     vk::DescriptorType::Uniform => {
                         if let Some(buffer) = registry.buffers.get(*handle) {
-                            update = update.bind_buffer(
+                            update = update.bind_uniform_buffer(
                                 binding_idx,
                                 *index as u32,
                                 &buffer.buffer,
@@ -203,7 +203,7 @@ impl BindingRegistry {
                     // material ssbo
                     vk::DescriptorType::StorageBuffer => {
                         if let Some(buffer) = registry.buffers.get(*handle) {
-                            update = update.bind_buffer(
+                            update = update.bind_storage_buffer(
                                 binding_idx,
                                 *index as u32,
                                 &buffer.buffer,

@@ -21,8 +21,9 @@ struct ResourceInfo {
 
 #[derive(Debug)]
 enum ResourceInfoType {
-    Buffer(vk::DescriptorBufferInfo),
-    DynamicBuffer(vk::DescriptorBufferInfo),
+    Uniform(vk::DescriptorBufferInfo),
+    UniformDynamic(vk::DescriptorBufferInfo),
+    Storage(vk::DescriptorBufferInfo),
     Image(vk::DescriptorImageInfo),
     SampledImage(vk::DescriptorImageInfo),
     ImageCombined(vk::DescriptorImageInfo),
@@ -76,7 +77,7 @@ impl DescriptorSetUpdates {
         }
     }
 
-    pub fn bind_buffer(
+    pub fn bind_uniform_buffer(
         mut self,
         binding: u32,
         index: u32,
@@ -92,7 +93,29 @@ impl DescriptorSetUpdates {
         self.updates.push(ResourceInfo {
             binding,
             index,
-            ty: ResourceInfoType::Buffer(buffer_info),
+            ty: ResourceInfoType::Uniform(buffer_info),
+        });
+
+        self
+    }
+
+    pub fn bind_storage_buffer(
+        mut self,
+        binding: u32,
+        index: u32,
+        buffer: &Buffer,
+        start: u64,
+        len: usize,
+    ) -> Self {
+        let buffer_info = vk::DescriptorBufferInfo::default()
+            .buffer(buffer.raw())
+            .offset(start)
+            .range(len as u64);
+
+        self.updates.push(ResourceInfo {
+            binding,
+            index,
+            ty: ResourceInfoType::Storage(buffer_info),
         });
 
         self
@@ -114,7 +137,7 @@ impl DescriptorSetUpdates {
         self.updates.push(ResourceInfo {
             binding,
             index,
-            ty: ResourceInfoType::DynamicBuffer(buffer_info),
+            ty: ResourceInfoType::UniformDynamic(buffer_info),
         });
 
         self
@@ -205,10 +228,11 @@ impl DescriptorSetUpdates {
                     .dst_binding(update.binding)
                     .dst_array_element(update.index)
                     .descriptor_type(match &update.ty {
-                        ResourceInfoType::Buffer(_) => vk::DescriptorType::UNIFORM_BUFFER,
-                        ResourceInfoType::DynamicBuffer(_) => {
+                        ResourceInfoType::Uniform(_) => vk::DescriptorType::UNIFORM_BUFFER,
+                        ResourceInfoType::UniformDynamic(_) => {
                             vk::DescriptorType::UNIFORM_BUFFER_DYNAMIC
                         }
+                        ResourceInfoType::Storage(_) => vk::DescriptorType::STORAGE_BUFFER,
                         ResourceInfoType::Image(_) => vk::DescriptorType::STORAGE_IMAGE,
                         ResourceInfoType::SampledImage(_) => vk::DescriptorType::SAMPLED_IMAGE,
                         ResourceInfoType::ImageCombined(_) => {
@@ -222,10 +246,13 @@ impl DescriptorSetUpdates {
                 }
 
                 let resource_info = match &update.ty {
-                    ResourceInfoType::Buffer(buffer_info) => {
+                    ResourceInfoType::Storage(buffer_info) => {
                         DescriptorInfo::BufferInfo(*buffer_info)
                     }
-                    ResourceInfoType::DynamicBuffer(buffer_info) => {
+                    ResourceInfoType::Uniform(buffer_info) => {
+                        DescriptorInfo::BufferInfo(*buffer_info)
+                    }
+                    ResourceInfoType::UniformDynamic(buffer_info) => {
                         DescriptorInfo::BufferInfo(*buffer_info)
                     }
                     ResourceInfoType::ImageCombined(image_info) => {

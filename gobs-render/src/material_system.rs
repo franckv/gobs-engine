@@ -53,8 +53,8 @@ impl MaterialSystem {
 
         let material_binding = resource_data.data.material_binding.clone();
         let material_constant_data = resource_data.properties.material_data.clone();
-        let textures = resource_data.properties.textures.clone();
 
+        let textures = resource_data.properties.textures.clone();
         let texture_indexing = material_binding.texture_data_layout.texture_indexing;
 
         if texture_indexing && let Some(material_constant_data) = material_constant_data {
@@ -92,6 +92,13 @@ impl MaterialSystem {
             )
         };
 
+        let (material_indexing, material_offset) =
+            if let MaterialDataBinding::Bindless(offset) = material_binding.material_data_binding {
+                (true, Some(offset as u32))
+            } else {
+                (false, None)
+            };
+
         let material_data = if let MaterialDataBinding::Binded(material_data) =
             material_binding.material_data_binding
         {
@@ -105,8 +112,10 @@ impl MaterialSystem {
             pipeline: Some(pipeline),
             material_data,
             material_textures,
+            material_offset,
             scene_layout: material_binding.scene_layout,
             texture_indexing,
+            material_indexing,
         })
     }
 

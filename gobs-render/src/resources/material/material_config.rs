@@ -56,6 +56,8 @@ struct MaterialConfig {
     material_layout: Vec<MaterialDataProp>,
     #[serde(default)]
     scene_layout: Vec<SceneDataProp>,
+    #[serde(default)]
+    object_layout: Vec<ObjectDataProp>,
 }
 
 impl MaterialsConfig {
@@ -92,9 +94,9 @@ impl MaterialsConfig {
     }
 
     fn load_materials(&self, config: GobsConfig, resource_manager: &mut ResourceManager) {
-        let mut object_layout = ObjectDataLayout::new(AlignMode::Std140);
+        let mut default_object_layout = ObjectDataLayout::new(AlignMode::Std140);
         for prop in &self.default.object_layout {
-            object_layout = object_layout.prop(*prop);
+            default_object_layout = default_object_layout.prop(*prop);
         }
 
         let mut default_scene_layout = SceneDataLayout::new(AlignMode::Std140);
@@ -106,6 +108,16 @@ impl MaterialsConfig {
             let vertex_attributes = match material.vertex_attributes {
                 Some(vertex_attributes) => vertex_attributes,
                 None => self.default.vertex_attributes,
+            };
+
+            let object_layout = if material.object_layout.is_empty() {
+                default_object_layout.clone()
+            } else {
+                let mut object_layout = ObjectDataLayout::new(AlignMode::Std140);
+                for prop in &material.object_layout {
+                    object_layout = object_layout.prop(*prop);
+                }
+                object_layout
             };
 
             let scene_layout = if material.scene_layout.is_empty() {
@@ -125,10 +137,11 @@ impl MaterialsConfig {
                 &material.fragment_shader,
                 &material.fragment_entry,
                 vertex_attributes,
-                object_layout.clone(),
+                object_layout,
                 scene_layout,
                 self.default.color_format,
                 self.default.depth_format,
+                material.texture_indexing,
                 material.material_indexing,
             )
             .cull_mode(material.cull_mode)
@@ -143,7 +156,6 @@ impl MaterialsConfig {
 
             props = props.textures(
                 &material.texture_layout,
-                material.texture_indexing,
                 config.get_int(RenderHalConfig::TextureArraySize),
             );
 

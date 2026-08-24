@@ -41,7 +41,9 @@ impl From<BufferUsage> for vk::MemoryPropertyFlags {
             BufferUsage::Uniform => {
                 vk::MemoryPropertyFlags::HOST_VISIBLE | vk::MemoryPropertyFlags::HOST_COHERENT
             }
-            BufferUsage::Storage => vk::MemoryPropertyFlags::DEVICE_LOCAL,
+            BufferUsage::Storage => {
+                vk::MemoryPropertyFlags::HOST_VISIBLE | vk::MemoryPropertyFlags::HOST_COHERENT
+            } // BufferUsage::Storage => vk::MemoryPropertyFlags::DEVICE_LOCAL,
         }
     }
 }
@@ -55,7 +57,8 @@ impl From<BufferUsage> for MemoryLocation {
             BufferUsage::Instance => MemoryLocation::CpuToGpu,
             BufferUsage::Index => MemoryLocation::GpuOnly,
             BufferUsage::Uniform => MemoryLocation::CpuToGpu,
-            BufferUsage::Storage => MemoryLocation::GpuOnly,
+            // BufferUsage::Storage => MemoryLocation::GpuOnly,
+            BufferUsage::Storage => MemoryLocation::CpuToGpu,
         }
     }
 }

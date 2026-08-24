@@ -87,6 +87,7 @@ MaterialsConfig(
             fragment_shader: "mesh_array.spv",
             fragment_entry: "fragment_normal_main",
             texture_indexing: true,
+            material_indexing: true,
             texture_layout: [
                 Diffuse,
                 Normal
@@ -95,6 +96,11 @@ MaterialsConfig(
                 EmissionColor,
                 DiffuseIndex,
                 NormalIndex,
+            ],
+            object_layout: [
+                WorldMatrix,
+                VertexBufferAddress,
+                MaterialOffset,
             ],
         ),
         "depth": (

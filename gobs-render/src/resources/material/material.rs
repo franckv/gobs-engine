@@ -50,6 +50,7 @@ impl MaterialProperties {
         scene_data_layout: SceneDataLayout,
         color_format: ImageFormat,
         depth_format: ImageFormat,
+        texture_indexing: bool,
         material_indexing: bool,
     ) -> Self {
         let pipeline_properties = PipelineProperties::graphics(name)
@@ -68,26 +69,42 @@ impl MaterialProperties {
             .color_format(color_format)
             .depth_format(depth_format);
 
+        let texture_data_layout = TextureDataLayout::new(texture_indexing);
+
         Self {
             name: name.to_string(),
             pipeline_properties,
             blending_enabled: false,
-            texture_data_layout: TextureDataLayout::default(),
+            texture_data_layout,
             material_data_layout: MaterialDataLayout::new(AlignMode::Std140, material_indexing),
         }
     }
 
     pub fn property(mut self, prop: MaterialDataProp) -> Self {
+        let material_indexing = self.material_data_layout.material_indexing;
+
+        let binding_group_type = if material_indexing {
+            BindingGroupType::BindlessMaterial
+        } else {
+            BindingGroupType::MaterialData
+        };
+
+        let descriptor_type = if material_indexing {
+            DescriptorType::StorageBuffer
+        } else {
+            DescriptorType::Uniform
+        };
+
         if self
             .pipeline_properties
             .binding_groups
             .last()
-            .is_none_or(|group| group.binding_group_type != BindingGroupType::MaterialData)
+            .is_none_or(|group| group.binding_group_type != binding_group_type)
         {
             self.pipeline_properties = self
                 .pipeline_properties
-                .binding_group(BindingGroupType::MaterialData)
-                .binding(DescriptorType::Uniform, DescriptorStage::Fragment, 1);
+                .binding_group(binding_group_type)
+                .binding(descriptor_type, DescriptorStage::Fragment, 1);
         }
 
         self.material_data_layout = self.material_data_layout.prop(prop);
@@ -95,14 +112,16 @@ impl MaterialProperties {
         self
     }
 
-    pub fn textures(mut self, props: &[TextureDataProp], indexing: bool, array_size: u32) -> Self {
+    pub fn textures(mut self, props: &[TextureDataProp], array_size: u32) -> Self {
         if props.is_empty() {
             return self;
         }
 
-        debug_assert!(!indexing || array_size > 0);
+        let texture_indexing = self.texture_data_layout.texture_indexing;
 
-        let binding_group_type = if indexing {
+        debug_assert!(!texture_indexing || array_size > 0);
+
+        let binding_group_type = if texture_indexing {
             BindingGroupType::BindlessTextures
         } else {
             BindingGroupType::MaterialTextures
@@ -117,9 +136,7 @@ impl MaterialProperties {
             self.pipeline_properties = self.pipeline_properties.binding_group(binding_group_type);
         }
 
-        self.texture_data_layout.texture_indexing = indexing;
-
-        if indexing {
+        if texture_indexing {
             self.pipeline_properties = self
                 .pipeline_properties
                 .binding(DescriptorType::Sampler, DescriptorStage::Fragment, 1)

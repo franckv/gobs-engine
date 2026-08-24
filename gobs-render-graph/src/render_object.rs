@@ -33,8 +33,10 @@ pub struct MaterialRenderData {
     pub pipeline: Option<Handle>,
     pub material_data: Option<BindResource>,
     pub material_textures: Option<BindResource>,
+    pub material_offset: Option<u32>,
     pub scene_layout: Option<SceneDataLayout>,
     pub texture_indexing: bool,
+    pub material_indexing: bool,
 }
 
 impl Ord for MaterialRenderData {

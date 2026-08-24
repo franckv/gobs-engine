@@ -353,7 +353,7 @@ impl CommandBuffer {
             self.device.raw().cmd_push_constants(
                 self.command_buffer,
                 layout.layout,
-                vk::ShaderStageFlags::VERTEX,
+                vk::ShaderStageFlags::VERTEX | vk::ShaderStageFlags::FRAGMENT,
                 0,
                 bytemuck::cast_slice(constants),
             );
