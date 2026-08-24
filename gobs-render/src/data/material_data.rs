@@ -38,7 +38,13 @@ pub struct MaterialDataLayout {
 }
 
 impl MaterialDataLayout {
-    pub fn new(mode: AlignMode, material_indexing: bool) -> Self {
+    pub fn new(material_indexing: bool) -> Self {
+        let mode = if material_indexing {
+            AlignMode::Std430
+        } else {
+            AlignMode::Std140
+        };
+
         Self {
             layout: Vec::new(),
             uniform_layout: UniformLayout::new(mode),

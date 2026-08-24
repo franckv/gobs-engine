@@ -93,8 +93,11 @@ impl MaterialSystem {
         };
 
         let (material_indexing, material_offset) =
-            if let MaterialDataBinding::Bindless(offset) = material_binding.material_data_binding {
-                (true, Some(offset as u32))
+            if let MaterialDataBinding::Bindless(index) = material_binding.material_data_binding {
+                let offset = hal
+                    .get_material_offset(index)
+                    .expect("Material offset is None");
+                (true, Some(offset))
             } else {
                 (false, None)
             };

@@ -1,8 +1,8 @@
 use gobs_core::ImageFormat;
 use gobs_render_graph::SceneDataLayout;
 use gobs_render_hal::{
-    AlignMode, BindingGroupType, BlendMode, CompareOp, CullMode, DescriptorStage, DescriptorType,
-    FrontFace, ObjectDataLayout, RenderHAL, UniformData as _, VertexAttribute,
+    BindingGroupType, BlendMode, CompareOp, CullMode, DescriptorStage, DescriptorType, FrontFace,
+    ObjectDataLayout, RenderHAL, UniformData as _, VertexAttribute,
 };
 use gobs_resource::{ResourceHandle, ResourceProperties, ResourceType};
 
@@ -76,7 +76,7 @@ impl MaterialProperties {
             pipeline_properties,
             blending_enabled: false,
             texture_data_layout,
-            material_data_layout: MaterialDataLayout::new(AlignMode::Std140, material_indexing),
+            material_data_layout: MaterialDataLayout::new(material_indexing),
         }
     }
 
