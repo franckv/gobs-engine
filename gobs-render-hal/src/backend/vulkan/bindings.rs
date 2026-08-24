@@ -200,6 +200,18 @@ impl BindingRegistry {
                             );
                         }
                     }
+                    // material ssbo
+                    vk::DescriptorType::StorageBuffer => {
+                        if let Some(buffer) = registry.buffers.get(*handle) {
+                            update = update.bind_buffer(
+                                binding_idx,
+                                *index as u32,
+                                &buffer.buffer,
+                                buffer.offset,
+                                buffer.len,
+                            );
+                        }
+                    }
                     // compute data
                     vk::DescriptorType::StorageImage => {
                         if let Some(image) = registry.images.get(*handle) {
@@ -228,8 +240,7 @@ impl BindingRegistry {
                         }
                     }
                     // unused
-                    vk::DescriptorType::UniformDynamic => todo!(),
-                    vk::DescriptorType::ImageSampler => todo!(),
+                    _ => todo!(),
                 }
             }
 

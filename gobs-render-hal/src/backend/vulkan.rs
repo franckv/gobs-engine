@@ -2,6 +2,7 @@ mod bindings;
 mod buffer;
 mod command;
 pub(crate) mod display;
+mod material;
 mod pipeline;
 pub(crate) mod registry;
 mod textures;
@@ -91,6 +92,7 @@ impl RenderHAL for VulkanHAL {
             BufferType::Staging => vk::BufferUsage::Staging,
             BufferType::StagingDst => vk::BufferUsage::StagingDst,
             BufferType::Uniform => vk::BufferUsage::Uniform,
+            BufferType::Storage => vk::BufferUsage::Storage,
         };
 
         let buffer = vk::buffers::Buffer::new(
@@ -124,6 +126,20 @@ impl RenderHAL for VulkanHAL {
 
     fn destroy_buffer(&mut self, buffer: Handle) {
         let _ = self.registry.buffers.remove(buffer);
+    }
+
+    fn allocate_material_index(&mut self, size: u32) -> usize {
+        todo!()
+    }
+
+    fn update_material_data(&mut self, index: usize, data: &[u8]) {
+        todo!()
+    }
+    fn release_material_index(&mut self, index: usize) {
+        todo!()
+    }
+    fn get_material_offset(&self, index: usize) -> u32 {
+        todo!()
     }
 
     fn create_image(

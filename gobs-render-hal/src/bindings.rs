@@ -155,6 +155,7 @@ pub enum BindingGroupType {
     SceneData,
     MaterialData,
     MaterialTextures,
+    BindlessMaterial,
     BindlessTextures,
 }
 
@@ -166,6 +167,7 @@ impl Debug for BindingGroupType {
             Self::SceneData => write!(f, "SceneData ({}, push)", self.set()),
             Self::MaterialData => write!(f, "MaterialData ({})", self.set()),
             Self::MaterialTextures => write!(f, "MaterialTextures ({})", self.set()),
+            Self::BindlessMaterial => write!(f, "BindlessMaterial ({})", self.set()),
             Self::BindlessTextures => write!(f, "BindlessTextures ({})", self.set()),
         }
     }
@@ -187,9 +189,10 @@ impl BindingGroupType {
             BindingGroupType::None => panic!("Invalid binding group"),
             BindingGroupType::ComputeData => 0,
             BindingGroupType::SceneData => 0,
+            // bindless / per instance material / textures are mutually exclusive
             BindingGroupType::MaterialData => 1,
-            // bindless / material textures are mutually exclusive
             BindingGroupType::MaterialTextures => 2,
+            BindingGroupType::BindlessMaterial => 1,
             BindingGroupType::BindlessTextures => 2,
         }
     }

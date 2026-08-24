@@ -34,13 +34,15 @@ pub enum MaterialDataProp {
 pub struct MaterialDataLayout {
     layout: Vec<MaterialDataProp>,
     uniform_layout: UniformLayout,
+    pub(crate) material_indexing: bool,
 }
 
 impl MaterialDataLayout {
-    pub fn new(mode: AlignMode) -> Self {
+    pub fn new(mode: AlignMode, material_indexing: bool) -> Self {
         Self {
             layout: Vec::new(),
             uniform_layout: UniformLayout::new(mode),
+            material_indexing,
         }
     }
 }

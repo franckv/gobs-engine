@@ -18,8 +18,15 @@ use crate::{
 };
 
 #[derive(Clone)]
+pub enum MaterialDataBinding {
+    None,
+    Binded(BindResource),
+    Bindless(usize),
+}
+
+#[derive(Clone)]
 pub struct MaterialBinding {
-    material_data_binding: Option<BindResource>,
+    material_data_binding: MaterialDataBinding,
     texture_data_layout: TextureDataLayout,
     texture_binding_group_layout: Option<Arc<BindingGroupLayout>>,
     scene_layout: Option<SceneDataLayout>,
@@ -85,10 +92,18 @@ impl MaterialSystem {
             )
         };
 
+        let material_data = if let MaterialDataBinding::Binded(material_data) =
+            material_binding.material_data_binding
+        {
+            Some(material_data)
+        } else {
+            None
+        };
+
         Ok(MaterialRenderData {
             material_render_flags,
             pipeline: Some(pipeline),
-            material_data: material_binding.material_data_binding,
+            material_data,
             material_textures,
             scene_layout: material_binding.scene_layout,
             texture_indexing,
@@ -190,10 +205,11 @@ impl MaterialSystem {
         #[cfg(debug_assertions)]
         Self::validate_material_layout(material_instance_properties, material_properties);
 
-        let layout = &material_properties.texture_data_layout;
+        let texture_layout = &material_properties.texture_data_layout;
+        let material_layout = &material_properties.material_data_layout;
 
-        if layout.texture_indexing {
-            for &texture_prop in &layout.layout {
+        if texture_layout.texture_indexing {
+            for &texture_prop in &texture_layout.layout {
                 let index = hal.allocate_texture_index() as u32;
 
                 tracing::debug!(target: logger::RESOURCES, "Alloc texture index {} for {:?}", index, texture_prop);
@@ -209,20 +225,40 @@ impl MaterialSystem {
             }
         }
 
-        let material_buffer = Self::create_material_buffer(
-            hal,
-            material_instance_properties.name(),
-            &material_properties.material_data_layout,
-            material_instance_properties.material_data.as_ref(),
-        );
+        let material_data_binding = if material_layout.material_indexing {
+            let index = Self::upload_material_data(
+                hal,
+                &material_properties.material_data_layout,
+                material_instance_properties.material_data.as_ref(),
+            );
 
-        let material_data_binding = material_properties
-            .pipeline_properties
-            .binding_groups
-            .iter()
-            .find(|group| group.binding_group_type == BindingGroupType::MaterialData)
-            .cloned()
-            .and_then(|layout| Self::get_material_data_binding(material_buffer, layout));
+            if let Some(index) = index {
+                MaterialDataBinding::Bindless(index)
+            } else {
+                MaterialDataBinding::None
+            }
+        } else {
+            let material_buffer = Self::create_material_buffer(
+                hal,
+                material_instance_properties.name(),
+                &material_properties.material_data_layout,
+                material_instance_properties.material_data.as_ref(),
+            );
+
+            let material_data_binding = material_properties
+                .pipeline_properties
+                .binding_groups
+                .iter()
+                .find(|group| group.binding_group_type == BindingGroupType::MaterialData)
+                .cloned()
+                .and_then(|layout| Self::get_material_data_binding(material_buffer, layout));
+
+            if let Some(material_data_binding) = material_data_binding {
+                MaterialDataBinding::Binded(material_data_binding)
+            } else {
+                MaterialDataBinding::None
+            }
+        };
 
         let texture_binding_group_layout = material_properties
             .pipeline_properties
@@ -257,31 +293,54 @@ impl MaterialSystem {
         }
     }
 
+    fn collect_material_data(
+        material_data_layout: &MaterialDataLayout,
+        material_data: &MaterialConstantData,
+    ) -> Vec<u8> {
+        let mut data = Vec::new();
+
+        material_data_layout.copy_data(&mut data, |prop| match prop {
+            MaterialDataProp::DiffuseColor => AttributeData::Vec4F(material_data.diffuse_color),
+            MaterialDataProp::EmissionColor => AttributeData::Vec4F(material_data.emission_color),
+            MaterialDataProp::SpecularColor => AttributeData::Vec4F(material_data.specular_color),
+            MaterialDataProp::SpecularPower => AttributeData::F32(material_data.specular_power),
+            MaterialDataProp::DiffuseIndex => AttributeData::U32(material_data.diffuse_index),
+            MaterialDataProp::NormalIndex => AttributeData::U32(material_data.normal_index),
+            MaterialDataProp::EmissionIndex => AttributeData::U32(material_data.emission_index),
+            MaterialDataProp::SpecularIndex => AttributeData::U32(material_data.specular_index),
+        });
+
+        tracing::debug!(target: logger::RESOURCES, "Create material data buffer {:?}", &data);
+
+        data
+    }
+
+    fn upload_material_data(
+        hal: &mut dyn RenderHAL,
+        material_data_layout: &MaterialDataLayout,
+        material_data: Option<&MaterialConstantData>,
+    ) -> Option<usize> {
+        if let Some(material_data) = material_data {
+            let data = Self::collect_material_data(material_data_layout, material_data);
+
+            let index = hal.allocate_material_index(data.len() as u32);
+
+            hal.update_material_data(index, &data);
+
+            Some(index)
+        } else {
+            None
+        }
+    }
+
     fn create_material_buffer(
         hal: &mut dyn RenderHAL,
         name: &str,
         material_data_layout: &MaterialDataLayout,
         material_data: Option<&MaterialConstantData>,
     ) -> Option<Handle> {
-        let mut data = Vec::new();
-
         if let Some(material_data) = material_data {
-            material_data_layout.copy_data(&mut data, |prop| match prop {
-                MaterialDataProp::DiffuseColor => AttributeData::Vec4F(material_data.diffuse_color),
-                MaterialDataProp::EmissionColor => {
-                    AttributeData::Vec4F(material_data.emission_color)
-                }
-                MaterialDataProp::SpecularColor => {
-                    AttributeData::Vec4F(material_data.specular_color)
-                }
-                MaterialDataProp::SpecularPower => AttributeData::F32(material_data.specular_power),
-                MaterialDataProp::DiffuseIndex => AttributeData::U32(material_data.diffuse_index),
-                MaterialDataProp::NormalIndex => AttributeData::U32(material_data.normal_index),
-                MaterialDataProp::EmissionIndex => AttributeData::U32(material_data.emission_index),
-                MaterialDataProp::SpecularIndex => AttributeData::U32(material_data.specular_index),
-            });
-
-            tracing::debug!(target: logger::RESOURCES, "Create material data buffer {:?}", &data);
+            let data = Self::collect_material_data(material_data_layout, material_data);
 
             let buffer = hal.create_buffer(name, data.len(), BufferType::Uniform);
             hal.upload_buffer(buffer, &data, 0);
@@ -297,11 +356,17 @@ impl MaterialSystem {
         material_binding: MaterialBinding,
         material_data: Option<MaterialConstantData>,
     ) {
-        if let Some(resource) = &material_binding.material_data_binding {
-            let handle = resource.slot(0);
-            if let Some(buffer) = handle {
-                hal.destroy_buffer(buffer);
+        match &material_binding.material_data_binding {
+            MaterialDataBinding::Binded(resource) => {
+                let handle = resource.slot(0);
+                if let Some(buffer) = handle {
+                    hal.destroy_buffer(buffer);
+                }
             }
+            MaterialDataBinding::Bindless(index) => {
+                hal.release_material_index(*index);
+            }
+            MaterialDataBinding::None => (),
         }
 
         if material_binding.texture_data_layout.texture_indexing

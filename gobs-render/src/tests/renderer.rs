@@ -115,6 +115,7 @@ mod tests {
                 SceneDataLayout::default(),
                 ImageFormat::R8g8b8a8Unorm,
                 ImageFormat::D32Sfloat,
+                false,
             )
             .textures(&[TextureDataProp::Diffuse], true, array_size)
         };

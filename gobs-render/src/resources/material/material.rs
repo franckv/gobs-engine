@@ -50,6 +50,7 @@ impl MaterialProperties {
         scene_data_layout: SceneDataLayout,
         color_format: ImageFormat,
         depth_format: ImageFormat,
+        material_indexing: bool,
     ) -> Self {
         let pipeline_properties = PipelineProperties::graphics(name)
             .vertex_shader(vertex_shader)
@@ -72,7 +73,7 @@ impl MaterialProperties {
             pipeline_properties,
             blending_enabled: false,
             texture_data_layout: TextureDataLayout::default(),
-            material_data_layout: MaterialDataLayout::new(AlignMode::Std140),
+            material_data_layout: MaterialDataLayout::new(AlignMode::Std140, material_indexing),
         }
     }
 

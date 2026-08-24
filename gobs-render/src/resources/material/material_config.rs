@@ -51,6 +51,8 @@ struct MaterialConfig {
     #[serde(default)]
     texture_indexing: bool,
     #[serde(default)]
+    material_indexing: bool,
+    #[serde(default)]
     material_layout: Vec<MaterialDataProp>,
     #[serde(default)]
     scene_layout: Vec<SceneDataProp>,
@@ -127,6 +129,7 @@ impl MaterialsConfig {
                 scene_layout,
                 self.default.color_format,
                 self.default.depth_format,
+                material.material_indexing,
             )
             .cull_mode(material.cull_mode)
             .blend_mode(material.blend_mode);
