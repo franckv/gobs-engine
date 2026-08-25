@@ -3,14 +3,14 @@ use std::collections::HashMap;
 use serde::{Deserialize, Serialize};
 
 use gobs_core::{ImageExtent2D, ImageFormat, logger};
-use gobs_render_hal::{ImageLayout, ImageUsage};
+use gobs_render_hal::{GfxContext, ImageLayout, ImageUsage};
 use gobs_resource::{
     ResourceError,
     load::{self, AssetType},
 };
 
 use crate::{
-    FrameGraph, GfxContext, PassMetaData,
+    FrameGraph, PassMetaData,
     pass::{Attachment, AttachmentAccess, AttachmentType, RenderPassType},
 };
 
@@ -148,7 +148,7 @@ impl GraphConfig {
     }
 
     fn get_render_target_extent(ctx: &GfxContext) -> ImageExtent2D {
-        let extent = ctx.extent();
+        let extent = ctx.get_extent();
         ImageExtent2D::new(
             extent.width.max(FRAME_WIDTH),
             extent.height.max(FRAME_HEIGHT),
@@ -215,12 +215,12 @@ mod tests {
     use std::collections::HashMap;
 
     use gobs_core::{ConfigWriter as _, GobsConfig};
-    use gobs_render_hal::RenderHalConfig;
+    use gobs_render_hal::{RenderHalConfig, create_hal};
     use tracing::Level;
     use tracing_subscriber::{FmtSubscriber, fmt::format::FmtSpan};
 
     use crate::{
-        GfxContext, GraphConfig,
+        GraphConfig,
         graph::graph_loader::{AttachmentInfo, RenderPassConfig},
         pass::{AttachmentAccess, RenderPassType},
     };
@@ -241,14 +241,15 @@ mod tests {
         let mut config = GobsConfig::default();
         config.register::<RenderHalConfig>();
 
-        let mut ctx = GfxContext::new("test", None, config, false);
+        let mut ctx = create_hal("test", None, config, false);
 
         let data = include_str!("../../../examples/resources/graph.ron");
 
         let graph = GraphConfig::load_with_data(data).unwrap();
         tracing::info!("Graph: {:?}", graph.graphes["scene"]);
 
-        let graph = GraphConfig::load_graph_with_data(&mut ctx, data, "ui", |_, _, _| {}).unwrap();
+        let graph =
+            GraphConfig::load_graph_with_data(ctx.as_mut(), data, "ui", |_, _, _| {}).unwrap();
 
         for pass in graph.passes {
             tracing::info!("Load pass: {}", &pass.pass.name);
@@ -263,14 +264,14 @@ mod tests {
         let mut config = GobsConfig::default();
         config.register::<RenderHalConfig>();
 
-        let mut ctx = GfxContext::new("test", None, config, false);
+        let mut ctx = create_hal("test", None, config, false);
 
         let data = include_str!("../../../examples/resources/graph.ron");
 
         let graph_config = GraphConfig::load_with_data(data).unwrap();
 
         let _pass =
-            GraphConfig::load_pass(&mut ctx, &graph_config, "forward", |_, _, _| {}).unwrap();
+            GraphConfig::load_pass(ctx.as_mut(), &graph_config, "forward", |_, _, _| {}).unwrap();
     }
 
     #[test]

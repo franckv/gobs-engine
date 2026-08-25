@@ -28,7 +28,7 @@ impl Scene {
     ) -> Self {
         let mut graph = SceneGraph::new();
 
-        let (width, height): (f32, f32) = ctx.extent().into();
+        let (width, height): (f32, f32) = ctx.get_extent().into();
 
         let camera = graph
             .insert(

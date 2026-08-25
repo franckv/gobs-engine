@@ -1,7 +1,7 @@
 use gobs_core::logger;
-use gobs_render_graph::GfxContext;
 use gobs_render_hal::{
-    AlignMode, BufferType, CommandBuffer, CommandQueueType, RenderHAL, VertexAttribute, VertexData,
+    AlignMode, BufferType, CommandBuffer, CommandQueueType, GfxContext, RenderHAL, VertexAttribute,
+    VertexData,
 };
 use gobs_resource::{
     ResourceRegistry, {ResourceError, ResourceHandle, ResourceLoader, ResourceProperties},
@@ -21,9 +21,7 @@ pub struct MeshLoader {
 impl MeshLoader {
     pub fn new(ctx: &mut GfxContext) -> Self {
         Self {
-            cmd: ctx
-                .hal_mut()
-                .create_command_buffer("Mesh loader", CommandQueueType::Transfer),
+            cmd: ctx.create_command_buffer("Mesh loader", CommandQueueType::Transfer),
             buffer_pool: BufferPool::new(),
             recording: false,
         }

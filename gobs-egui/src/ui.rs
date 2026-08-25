@@ -49,7 +49,7 @@ impl UIRenderer {
     ) -> Self {
         let ectx = egui::Context::default();
 
-        let (width, height): (f32, f32) = ctx.extent().into();
+        let (width, height): (f32, f32) = ctx.get_extent().into();
 
         ectx.set_pixels_per_point(PIXEL_PER_POINT);
 
@@ -299,7 +299,7 @@ impl UIRenderer {
                 let mut to_remove = Vec::new();
 
                 if let Some(material_handle) = material_handle {
-                    let material = resource_manager.get_data(ctx.hal_mut(), &material_handle);
+                    let material = resource_manager.get_data(ctx, &material_handle);
                     if let Ok(material) = material {
                         for texture in &material.properties.textures {
                             to_remove.push(*texture);

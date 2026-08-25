@@ -65,5 +65,5 @@ pub trait GraphicsPipelineBuilder {
     -> Box<dyn GraphicsPipelineBuilder>;
     fn cull_mode(self: Box<Self>, cull_mode: CullMode) -> Box<dyn GraphicsPipelineBuilder>;
     fn front_face(self: Box<Self>, front_face: FrontFace) -> Box<dyn GraphicsPipelineBuilder>;
-    fn build(self: Box<Self>, hal: &mut dyn RenderHAL) -> Handle;
+    fn build(self: Box<Self>, ctx: &mut dyn RenderHAL) -> Handle;
 }

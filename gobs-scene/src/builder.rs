@@ -7,7 +7,7 @@ use gobs_resource::{camera::Camera, light::Light};
 use crate::scene::Scene;
 
 pub struct SceneBuilder<'a> {
-    gfx: &'a GfxContext,
+    gfx: &'a GfxContext<'a>,
     camera: Camera,
     camera_position: Vec3,
     light: Light,
@@ -26,7 +26,7 @@ impl<'a> SceneBuilder<'a> {
     }
 
     pub fn with_perspective_camera(mut self, yawn: f32, pitch: f32, pos: [f32; 3]) -> Self {
-        let extent = self.gfx.extent();
+        let extent = self.gfx.get_extent();
 
         let camera = Camera::perspective(
             extent.width as f32 / extent.height as f32,
@@ -44,7 +44,7 @@ impl<'a> SceneBuilder<'a> {
     }
 
     pub fn with_ortho_camera(mut self, pos: [f32; 3]) -> Self {
-        let extent = self.gfx.extent();
+        let extent = self.gfx.get_extent();
 
         let camera = Camera::ortho(extent.width as f32, extent.height as f32, 0.1, 100., 0., 0.);
 

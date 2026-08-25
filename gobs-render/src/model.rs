@@ -5,7 +5,7 @@ use serde::Serialize;
 use uuid::Uuid;
 
 use gobs_core::{Transform, logger};
-use gobs_render_graph::GfxContext;
+use gobs_render_hal::GfxContext;
 use gobs_resource::{
     ResourceManager, {ResourceError, ResourceHandle},
 };

@@ -44,7 +44,7 @@ impl<'a> RenderBuilder<'a> {
         tracing::debug!("Draw renderable: {:?}", ty);
         renderable
             .draw(
-                &mut self.renderer.gfx,
+                self.renderer.gfx.as_mut(),
                 self.resource_manager,
                 &mut self.batch,
                 None,
@@ -71,7 +71,7 @@ impl<'a> RenderBuilder<'a> {
 
     pub fn build(mut self) -> Result<(), RenderError> {
         self.batch
-            .finish(&mut self.renderer.gfx, self.resource_manager);
+            .finish(self.renderer.gfx.as_mut(), self.resource_manager);
 
         self.renderer.submit(&mut self.batch)?;
 

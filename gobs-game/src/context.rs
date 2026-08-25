@@ -1,5 +1,6 @@
 use std::fmt::Debug;
 
+use gobs_render_hal::create_hal;
 use winit::window::Window;
 
 use gobs_assets::gltf_load;
@@ -34,8 +35,8 @@ pub trait GobsContext {
     fn request_redraw(&mut self);
     fn lock_mouse(&mut self, lock: bool);
     fn extent(&self) -> ImageExtent2D;
-    fn hal(&self) -> &dyn RenderHAL;
-    fn hal_mut(&mut self) -> &mut dyn RenderHAL;
+    fn gfx(&self) -> &dyn RenderHAL;
+    fn gfx_mut(&mut self) -> &mut dyn RenderHAL;
 
     fn draw_ui<F>(&mut self, delta: f32, callback: F)
     where
@@ -67,13 +68,13 @@ pub struct GameContext {
 
 impl GobsContext for GameContext {
     fn new(name: &str, config: GobsConfig, window: Option<Window>, validation: bool) -> Self {
-        let mut gfx = GfxContext::new(name, window, config.clone(), validation);
+        let mut gfx = create_hal(name, window, config.clone(), validation);
         let mut resource_manager = ResourceManager::new(gfx.frames_in_flight());
 
-        let texture_loader = TextureLoader::new(&mut gfx);
+        let texture_loader = TextureLoader::new(gfx.as_mut());
         resource_manager.register_resource::<Texture>(texture_loader);
 
-        let mesh_loader = MeshLoader::new(&mut gfx);
+        let mesh_loader = MeshLoader::new(gfx.as_mut());
         resource_manager.register_resource::<Mesh>(mesh_loader);
 
         let pipeline_loader = PipelineLoader::new();
@@ -85,7 +86,7 @@ impl GobsContext for GameContext {
         let material_instance_loader = MaterialInstanceLoader::new();
         resource_manager.register_resource::<MaterialInstance>(material_instance_loader);
 
-        let ui = UIRenderer::new(&gfx, config.clone(), &mut resource_manager);
+        let ui = UIRenderer::new(gfx.as_ref(), config.clone(), &mut resource_manager);
 
         let renderer = Renderer::new(gfx, config.clone(), &mut resource_manager);
 
@@ -110,21 +111,21 @@ impl GobsContext for GameContext {
     #[tracing::instrument(target = "profile", skip_all, level = "trace")]
     fn pre_update(&mut self, _delta: f32) {
         self.resource_manager
-            .update::<Texture>(self.renderer.gfx.hal_mut());
+            .update::<Texture>(self.renderer.gfx.as_mut());
         self.resource_manager
-            .update::<Mesh>(self.renderer.gfx.hal_mut());
+            .update::<Mesh>(self.renderer.gfx.as_mut());
         self.resource_manager
-            .update::<Pipeline>(self.renderer.gfx.hal_mut());
+            .update::<Pipeline>(self.renderer.gfx.as_mut());
         self.resource_manager
-            .update::<Material>(self.renderer.gfx.hal_mut());
+            .update::<Material>(self.renderer.gfx.as_mut());
         self.resource_manager
-            .update::<MaterialInstance>(self.renderer.gfx.hal_mut());
+            .update::<MaterialInstance>(self.renderer.gfx.as_mut());
     }
 
     #[tracing::instrument(target = "profile", skip_all, level = "trace")]
     fn post_update(&mut self, _delta: f32) {
         self.ui
-            .update(&mut self.renderer.gfx, &mut self.resource_manager);
+            .update(self.renderer.gfx.as_mut(), &mut self.resource_manager);
     }
 
     fn close(&mut self) {
@@ -153,19 +154,19 @@ impl GobsContext for GameContext {
     }
 
     fn lock_mouse(&mut self, lock: bool) {
-        self.renderer.gfx.hal_mut().lock_mouse(lock);
+        self.renderer.gfx.lock_mouse(lock);
     }
 
     fn extent(&self) -> ImageExtent2D {
         self.renderer.extent()
     }
 
-    fn hal(&self) -> &dyn RenderHAL {
-        self.renderer.gfx.hal()
+    fn gfx(&self) -> &GfxContext<'_> {
+        self.renderer.gfx.as_ref()
     }
 
-    fn hal_mut(&mut self) -> &mut dyn RenderHAL {
-        self.renderer.gfx.hal_mut()
+    fn gfx_mut(&mut self) -> &mut GfxContext<'_> {
+        self.renderer.gfx.as_mut()
     }
 
     fn draw_ui<F>(&mut self, delta: f32, mut callback: F)
@@ -187,7 +188,7 @@ impl GobsContext for GameContext {
     }
 
     fn new_scene(&self) -> SceneBuilder<'_> {
-        SceneBuilder::new(&self.renderer.gfx)
+        SceneBuilder::new(self.renderer.gfx.as_ref())
     }
 
     fn new_model<'a>(&'a mut self, name: &'a str) -> RenderModelBuilder<'a> {

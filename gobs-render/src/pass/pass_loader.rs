@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
-use gobs_render_graph::{GfxContext, RenderPassType};
-use gobs_render_hal::{AlignMode, UniformData as _};
+use gobs_render_graph::RenderPassType;
+use gobs_render_hal::{AlignMode, GfxContext, UniformData as _};
 use gobs_resource::{
     ResourceError, ResourceManager,
     load::{self, AssetType},
@@ -95,7 +95,7 @@ impl PassConfig {
 
         let pipeline = resource_manager
             .get_by_name::<Pipeline>(&pass_config.pipeline)
-            .and_then(|handle| resource_manager.get_data(ctx.hal_mut(), &handle).ok())
+            .and_then(|handle| resource_manager.get_data(ctx, &handle).ok())
             .map(|data| data.data.pipeline)
             .expect("No pipeline for compute pass");
 
@@ -113,7 +113,7 @@ impl PassConfig {
         let pipeline = pass_config.pipeline.as_ref().and_then(|pipeline| {
             resource_manager
                 .get_by_name::<Pipeline>(pipeline)
-                .and_then(|handle| resource_manager.get_data(ctx.hal_mut(), &handle).ok())
+                .and_then(|handle| resource_manager.get_data(ctx, &handle).ok())
                 .map(|data| data.data.pipeline)
         });
 
@@ -146,8 +146,8 @@ impl PassConfig {
 #[cfg(test)]
 mod tests {
     use gobs_core::{ConfigWriter as _, GobsConfig};
-    use gobs_render_graph::{GfxContext, RenderPassType};
-    use gobs_render_hal::RenderHalConfig;
+    use gobs_render_graph::RenderPassType;
+    use gobs_render_hal::{RenderHalConfig, create_hal};
     use gobs_resource::ResourceManager;
     use tracing::Level;
     use tracing_subscriber::{FmtSubscriber, fmt::format::FmtSpan};
@@ -170,7 +170,7 @@ mod tests {
         let mut config = GobsConfig::default();
         config.register::<RenderHalConfig>();
 
-        let mut ctx = GfxContext::new("test", None, config, false);
+        let mut ctx = create_hal("test", None, config, false);
         let mut resource_manager = ResourceManager::new(ctx.frames_in_flight());
 
         let data = include_str!("../../../examples/resources/pass_config.ron");
@@ -178,7 +178,7 @@ mod tests {
         let pass_config = PassConfig::load_with_data(data).unwrap();
 
         let pass_data = PassConfig::load_pass_data(
-            &mut ctx,
+            ctx.as_mut(),
             &mut resource_manager,
             &pass_config,
             "ui",

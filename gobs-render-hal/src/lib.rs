@@ -8,6 +8,8 @@ mod error;
 mod hal;
 mod pipeline;
 
+pub type GfxContext<'a> = dyn RenderHAL + 'a;
+
 pub use gobs_vulkan::{
     descriptor::{DescriptorStage, DescriptorType},
     images::{ImageLayout, ImageUsage},

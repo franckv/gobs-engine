@@ -1,7 +1,8 @@
 use std::collections::HashMap;
 
 use gobs_core::{ConfigReader as _, GobsConfig, ImageExtent2D, logger};
-use gobs_render_graph::{FrameData, FrameGraph, GfxContext, PassId, RenderError};
+use gobs_render_graph::{FrameData, FrameGraph, PassId, RenderError};
+use gobs_render_hal::GfxContext;
 use gobs_resource::ResourceManager;
 
 use crate::{
@@ -14,7 +15,7 @@ use crate::{
 
 pub struct Renderer {
     pub graph: FrameGraph,
-    pub gfx: GfxContext,
+    pub gfx: Box<GfxContext<'static>>,
     pub frames: Vec<FrameData>,
     pub frame_number: usize,
     passes: HashMap<PassId, PassData>,
@@ -22,7 +23,7 @@ pub struct Renderer {
 
 impl Renderer {
     pub fn new(
-        mut gfx: GfxContext,
+        mut gfx: Box<GfxContext<'static>>,
         config: GobsConfig,
         resource_manager: &mut ResourceManager,
     ) -> Self {
@@ -30,7 +31,7 @@ impl Renderer {
 
         let graph = if config.get_bool(RenderConfig::LoadGraph) {
             PipelinesConfig::load_resources(
-                &gfx,
+                gfx.as_ref(),
                 &config.get_string(RenderConfig::PipelineFileName),
                 resource_manager,
             )
@@ -41,7 +42,7 @@ impl Renderer {
                     .expect("Load passes config");
 
             FrameGraph::load(
-                &mut gfx,
+                gfx.as_mut(),
                 &config.get_string(RenderConfig::GraphFileName),
                 &config.get_string(RenderConfig::GraphName),
                 |ctx, pass_metadata, ty| {
@@ -66,7 +67,7 @@ impl Renderer {
         let frames_in_flight = gfx.frames_in_flight();
 
         let frames = (0..frames_in_flight)
-            .map(|id| FrameData::new(&mut gfx, id, frames_in_flight))
+            .map(|id| FrameData::new(gfx.as_mut(), id, frames_in_flight))
             .collect();
 
         Self {
@@ -79,12 +80,12 @@ impl Renderer {
     }
 
     pub fn extent(&self) -> ImageExtent2D {
-        self.gfx.extent()
+        self.gfx.get_extent()
     }
 
     pub fn resize(&mut self) {
-        self.gfx.hal_mut().wait();
-        self.gfx.hal_mut().resize();
+        self.gfx.wait();
+        self.gfx.resize();
     }
 
     pub fn enable_pass(&mut self, name: &str, enabled: bool) {
@@ -111,10 +112,10 @@ impl Renderer {
 
         self.gfx.new_frame(self.frame_number);
 
-        self.graph.begin(&mut self.gfx, frame)?;
+        self.graph.begin(self.gfx.as_mut(), frame)?;
 
         self.graph.run(
-            &mut self.gfx,
+            self.gfx.as_mut(),
             frame,
             |ctx, frame, resource_manager, pass| {
                 if let Some(pass_data) = self.passes.get_mut(&pass.id) {
@@ -150,7 +151,7 @@ impl Renderer {
             },
         )?;
 
-        self.graph.end(&mut self.gfx, frame)?;
+        self.graph.end(self.gfx.as_mut(), frame)?;
 
         tracing::debug!(target: logger::SYNC, "End frame {}", self.frame_number);
         tracing::debug!(target: logger::RENDER, "End frame {}", self.frame_number);
@@ -170,6 +171,6 @@ impl Renderer {
     }
 
     pub fn wait(&mut self) {
-        self.gfx.hal_mut().wait();
+        self.gfx.wait();
     }
 }

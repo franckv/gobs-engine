@@ -86,7 +86,7 @@ where
 
             self.draw_general(ui, renderer, scene, delta);
 
-            self.show_texture(&mut renderer.gfx, ui, resource_manager);
+            self.show_texture(renderer.gfx.as_mut(), ui, resource_manager);
 
             ui.separator();
 
@@ -507,10 +507,8 @@ where
             .open(&mut show_texture)
             .show(ui, |ui| {
                 if let Some(texture) = self.selected_texture {
-                    let texture_properties = resource_manager
-                        .get_data(ctx.hal_mut(), &texture)
-                        .unwrap()
-                        .properties;
+                    let texture_properties =
+                        resource_manager.get_data(ctx, &texture).unwrap().properties;
 
                     if self.texture_view.is_none() {
                         let mut format = texture_properties.format.clone();

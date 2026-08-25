@@ -3,8 +3,7 @@ use std::{collections::hash_map::Entry, sync::Arc};
 use ahash::HashMap;
 
 use gobs_core::{ImageExtent2D, Transform, logger};
-use gobs_render_graph::GfxContext;
-use gobs_render_hal::VertexData;
+use gobs_render_hal::{GfxContext, VertexData};
 use gobs_resource::{ResourceError, ResourceHandle, ResourceManager, camera::Camera, light::Light};
 
 use crate::{
@@ -67,7 +66,7 @@ impl RenderBatch {
                 Entry::Occupied(e) => Ok(e.get().clone()),
                 Entry::Vacant(e) => {
                     let material = MaterialSystem::get_material_data(
-                        ctx.hal_mut(),
+                        ctx,
                         resource_manager,
                         *material_instance_handle,
                     )?;
@@ -109,7 +108,7 @@ impl RenderBatch {
             tracing::debug!(target: logger::RENDER, "Add mesh: {} to render list [{:?}]", model.name(), render_flags);
 
             let (vertex_buffer, index_buffer, index_len, vertex_attribute, layer) = {
-                let mesh_data = resource_manager.get_data(ctx.hal_mut(), mesh)?;
+                let mesh_data = resource_manager.get_data(ctx, mesh)?;
 
                 (
                     mesh_data.data.vertex_view,
@@ -220,15 +219,14 @@ impl RenderBatch {
     fn validate(&mut self, ctx: &mut GfxContext) {
         for obj in &self.render_list {
             if let Some(pipeline) = obj.material.pipeline {
-                let descriptors = ctx.hal().get_pipeline_descriptor_types(pipeline);
+                let descriptors = ctx.get_pipeline_descriptor_types(pipeline);
                 for descriptor_type in descriptors {
-                    let descriptor_layout = ctx
-                        .hal()
-                        .get_pipeline_descriptor_layout(pipeline, &descriptor_type);
+                    let descriptor_layout =
+                        ctx.get_pipeline_descriptor_layout(pipeline, &descriptor_type);
                     tracing::trace!(target: logger::RENDER, "Render object: {}, descriptor layout: {:#?}", &obj.model, descriptor_layout);
                 }
 
-                let vertex_attributes = ctx.hal().get_pipeline_vertex_attributes(pipeline);
+                let vertex_attributes = ctx.get_pipeline_vertex_attributes(pipeline);
                 debug_assert_eq!(
                     vertex_attributes, obj.vertex_attribute,
                     "Invalid vertex layout for {}",
@@ -293,12 +291,11 @@ impl Default for RenderBatch {
 
 #[cfg(test)]
 mod tests {
-    use gobs_render_hal::RenderHalConfig;
+    use gobs_render_hal::{RenderHalConfig, create_hal};
     use tracing::Level;
     use tracing_subscriber::{EnvFilter, FmtSubscriber, fmt::format::FmtSpan};
 
     use gobs_core::{Color, ConfigWriter as _, GobsConfig, Transform, logger, utils::timer::Timer};
-    use gobs_render_graph::GfxContext;
     use gobs_resource::ResourceManager;
 
     use crate::{
@@ -325,10 +322,10 @@ mod tests {
         config.register::<RenderConfig>();
         config.register::<RenderHalConfig>();
 
-        let mut ctx = GfxContext::new("test", None, config, false);
+        let mut ctx = create_hal("test", None, config, false);
         let mut resource_manager = ResourceManager::new(ctx.frames_in_flight());
 
-        let mesh_loader = MeshLoader::new(&mut ctx);
+        let mesh_loader = MeshLoader::new(ctx.as_mut());
         resource_manager.register_resource::<Mesh>(mesh_loader);
 
         let mesh = RenderMeshBuilder::new(&mut resource_manager, "triangle")
@@ -347,7 +344,7 @@ mod tests {
 
         for _ in 0..30000 {
             let _ = batch.add_model(
-                &mut ctx,
+                ctx.as_mut(),
                 &mut resource_manager,
                 triangle.clone(),
                 Transform::IDENTITY,

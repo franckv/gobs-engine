@@ -1,10 +1,8 @@
 use std::collections::HashMap;
 
-use gobs_render_hal::{Handle, ImageUsage, RenderHAL};
+use gobs_render_hal::{GfxContext, Handle, ImageUsage, RenderHAL};
 
 use gobs_core::{ImageExtent2D, ImageFormat};
-
-use crate::GfxContext;
 
 pub struct GraphResourceManager {
     pub resources: HashMap<String, Handle>,
@@ -25,7 +23,7 @@ impl GraphResourceManager {
         usage: ImageUsage,
         extent: ImageExtent2D,
     ) {
-        let image = ctx.hal_mut().create_image(label, format, usage, extent);
+        let image = ctx.create_image(label, format, usage, extent);
 
         self.resources.insert(label.to_string(), image);
     }

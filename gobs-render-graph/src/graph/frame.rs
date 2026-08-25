@@ -1,9 +1,9 @@
 use crate::{
-    FrameData, GfxContext, GraphConfig, PassMetaData, RenderError, RenderPassType,
+    FrameData, GraphConfig, PassMetaData, RenderError, RenderPassType,
     graph::resource::GraphResourceManager, pass::Attachment,
 };
 use gobs_core::logger;
-use gobs_render_hal::{CommandBuffer, ImageLayout, RenderHAL};
+use gobs_render_hal::{CommandBuffer, GfxContext, ImageLayout, RenderHAL};
 
 pub struct FrameGraphPass {
     pub pass: PassMetaData,
@@ -146,24 +146,21 @@ impl FrameGraph {
         let cmd = &mut frame.command;
 
         // FIXME: use attachments from graph
-        let draw_image_extent = ctx
-            .hal()
-            .get_image_extent(self.resource_manager.image("draw"));
+        let draw_image_extent = ctx.get_image_extent(self.resource_manager.image("draw"));
         if self.resource_manager.resources.contains_key("depth") {
             debug_assert_eq!(
                 draw_image_extent,
-                ctx.hal()
-                    .get_image_extent(self.resource_manager.image("depth"))
+                ctx.get_image_extent(self.resource_manager.image("depth"))
             );
         }
 
-        if ctx.hal_mut().acquire(frame.id).is_err() {
+        if ctx.acquire(frame.id).is_err() {
             return Err(RenderError::Outdated);
         }
 
         cmd.reset();
 
-        self.resource_manager.invalidate(ctx.hal_mut());
+        self.resource_manager.invalidate(ctx);
 
         cmd.begin(frame.frame_number);
 
@@ -182,8 +179,8 @@ impl FrameGraph {
 
         //TODO: cmd.write_timestamp(&frame.query_pool, PipelineStage::BottomOfPipe, 1);
 
-        if let Some(render_target) = ctx.hal().get_render_target() {
-            cmd.transition_image_layout(ctx.hal_mut(), render_target, ImageLayout::Present);
+        if let Some(render_target) = ctx.get_render_target() {
+            cmd.transition_image_layout(ctx, render_target, ImageLayout::Present);
         } else {
             tracing::debug!(target: logger::RENDER, "No render target to present");
         }
@@ -192,9 +189,9 @@ impl FrameGraph {
 
         cmd.end();
 
-        cmd.submit_graphics(ctx.hal(), frame_id);
+        cmd.submit_graphics(ctx, frame_id);
 
-        let Ok(_) = ctx.hal_mut().present() else {
+        let Ok(_) = ctx.present() else {
             tracing::debug!(target: logger::SYNC, "Exit frame: outdated");
             return Err(RenderError::Outdated);
         };
@@ -228,12 +225,7 @@ impl FrameGraph {
 
             let pass = &pass.pass;
 
-            Self::transition_attachments(
-                ctx.hal_mut(),
-                frame.command.as_mut(),
-                &self.resource_manager,
-                pass,
-            );
+            Self::transition_attachments(ctx, frame.command.as_mut(), &self.resource_manager, pass);
 
             tracing::debug!(target: logger::SYNC, "Begin render pass {}", &pass.name);
 

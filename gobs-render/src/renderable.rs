@@ -1,5 +1,5 @@
 use gobs_core::Transform;
-use gobs_render_graph::GfxContext;
+use gobs_render_hal::GfxContext;
 use gobs_resource::{ResourceError, ResourceManager};
 
 use crate::{BoundingBox, RenderBatch, data::RenderFlags};

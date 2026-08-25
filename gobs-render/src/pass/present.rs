@@ -29,17 +29,17 @@ impl PresentPass {
 
         let cmd = &mut frame.command;
 
-        if let Some(render_target) = ctx.hal().get_render_target() {
+        if let Some(render_target) = ctx.get_render_target() {
             cmd.transition_image_layout(
-                ctx.hal_mut(),
+                ctx,
                 resource_manager.image(&pass_data.render_target),
                 ImageLayout::TransferSrc,
             );
 
-            cmd.transition_image_layout(ctx.hal_mut(), render_target, ImageLayout::TransferDst);
+            cmd.transition_image_layout(ctx, render_target, ImageLayout::TransferDst);
 
             cmd.copy_image_to_image(
-                ctx.hal(),
+                ctx,
                 resource_manager.image(&pass_data.render_target),
                 render_target,
             );

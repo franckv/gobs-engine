@@ -39,7 +39,7 @@ impl InputManager {
                 Key::U => self.draw_ui = !self.draw_ui,
                 Key::B => self.draw_bounds = !self.draw_bounds,
                 Key::Z => self.draw_wire = !self.draw_wire,
-                Key::H => ctx.hal().info(),
+                Key::H => ctx.gfx().info(),
                 Key::Tab => self.controller.fps_mode = !self.controller.fps_mode,
                 _ => {
                     if !ui_hovered {

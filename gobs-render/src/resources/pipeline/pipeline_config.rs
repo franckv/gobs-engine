@@ -1,12 +1,11 @@
 use std::collections::HashMap;
 
-use gobs_render_graph::GfxContext;
 use serde::{Deserialize, Serialize};
 
 use gobs_core::{ImageFormat, logger};
 use gobs_render_hal::{
     AlignMode, BindingGroupType, CompareOp, CullMode, DescriptorStage, DescriptorType, FrontFace,
-    ObjectDataLayout, ObjectDataProp, PolygonMode, UniformData as _, VertexAttribute,
+    GfxContext, ObjectDataLayout, ObjectDataProp, PolygonMode, UniformData as _, VertexAttribute,
 };
 use gobs_resource::{
     ResourceManager,
@@ -211,13 +210,12 @@ impl PipelinesConfig {
 mod tests {
     use std::collections::HashMap;
 
-    use gobs_render_graph::GfxContext;
     use tracing::Level;
     use tracing_subscriber::{FmtSubscriber, fmt::format::FmtSpan};
 
     use gobs_core::{ConfigWriter as _, GobsConfig, ImageFormat};
     use gobs_render_hal::{
-        CompareOp, CullMode, FrontFace, PolygonMode, RenderHalConfig, VertexAttribute,
+        CompareOp, CullMode, FrontFace, PolygonMode, RenderHalConfig, VertexAttribute, create_hal,
     };
     use gobs_resource::ResourceManager;
 
@@ -246,13 +244,14 @@ mod tests {
         config.register::<RenderConfig>();
         config.register::<RenderHalConfig>();
 
-        let ctx = GfxContext::new("test", None, config, false);
+        let ctx = create_hal("test", None, config, false);
 
         let data = include_str!("../../../../examples/resources/pipelines.ron");
 
         let mut resource_manager = ResourceManager::new(ctx.frames_in_flight());
 
-        PipelinesConfig::load_resources_with_data(&ctx, data, &mut resource_manager).unwrap();
+        PipelinesConfig::load_resources_with_data(ctx.as_ref(), data, &mut resource_manager)
+            .unwrap();
     }
 
     #[test]
@@ -264,7 +263,7 @@ mod tests {
         config.register::<RenderConfig>();
         config.register::<RenderHalConfig>();
 
-        let ctx = GfxContext::new("test", None, config, false);
+        let ctx = create_hal("test", None, config, false);
 
         let data = include_str!("../../../../examples/resources/pipelines.ron");
 
@@ -274,7 +273,8 @@ mod tests {
         let pipeline_config: PipelinesConfig = options.from_str(data).unwrap();
 
         let _pipeline =
-            PipelinesConfig::load_graphics_pipeline(&ctx, &pipeline_config, "wireframe").unwrap();
+            PipelinesConfig::load_graphics_pipeline(ctx.as_ref(), &pipeline_config, "wireframe")
+                .unwrap();
     }
 
     #[test]

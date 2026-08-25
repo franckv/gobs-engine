@@ -5,9 +5,9 @@ use gobs::{
     game::{AppError, Application, GameContext, GobsContext, GobsGame},
     render::{
         AlignMode, BufferType, CommandBuffer, CommandQueueType, CullMode, DynamicStateElem,
-        FrontFace, Handle, ImageLayout, ObjectDataLayout, ObjectDataProp, Rect2D, RenderConfig,
-        RenderError, RenderHAL, RenderHalConfig, Shapes, UniformData, VertexAttribute, VertexData,
-        Viewport,
+        FrontFace, GfxContext, Handle, ImageLayout, ObjectDataLayout, ObjectDataProp, Rect2D,
+        RenderConfig, RenderError, RenderHalConfig, Shapes, UniformData, VertexAttribute,
+        VertexData, Viewport,
     },
 };
 
@@ -25,12 +25,12 @@ impl<Context: GobsContext> GobsGame for App<Context> {
     type Context = Context;
 
     async fn create(ctx: &mut Context) -> Result<Self, AppError> {
-        let hal = ctx.hal_mut();
-        let mut cmd = hal.create_command_buffer("cmd", CommandQueueType::Graphics);
+        let gfx = ctx.gfx_mut();
+        let mut cmd = gfx.create_command_buffer("cmd", CommandQueueType::Graphics);
 
-        let (vertex_buffer, index_buffer) = Self::load_mesh(hal, cmd.as_mut());
+        let (vertex_buffer, index_buffer) = Self::load_mesh(gfx, cmd.as_mut());
 
-        let pipeline = Self::create_pipeline(hal);
+        let pipeline = Self::create_pipeline(gfx);
 
         Ok(App {
             frame_number: 0,
@@ -45,22 +45,22 @@ impl<Context: GobsContext> GobsGame for App<Context> {
     fn update(&mut self, _ctx: &mut Context, _delta: f32) {}
 
     fn render(&mut self, ctx: &mut Context) -> Result<(), RenderError> {
-        let hal = ctx.hal_mut();
+        let gfx = ctx.gfx_mut();
 
         self.frame_number += 1;
 
-        let frame_id = hal.frame_id(self.frame_number);
+        let frame_id = gfx.frame_id(self.frame_number);
 
         self.cmd.wait();
 
-        if hal.acquire(frame_id).is_err() {
+        if gfx.acquire(frame_id).is_err() {
             return Err(RenderError::Outdated);
         }
 
         self.cmd.reset();
 
-        let color = hal.get_render_target();
-        let extent = hal.get_extent();
+        let color = gfx.get_render_target();
+        let extent = gfx.get_extent();
 
         self.cmd.begin(self.frame_number);
         self.cmd
@@ -68,16 +68,16 @@ impl<Context: GobsContext> GobsGame for App<Context> {
 
         if let Some(color) = color {
             self.cmd
-                .transition_image_layout(hal, color, ImageLayout::Color);
+                .transition_image_layout(gfx, color, ImageLayout::Color);
         }
 
         self.cmd
-            .begin_rendering(hal, color, extent, None, true, false, [0., 0., 0., 0.], 0.);
+            .begin_rendering(gfx, color, extent, None, true, false, [0., 0., 0., 0.], 0.);
 
         self.cmd.set_viewport(extent.width, extent.height);
-        self.cmd.bind_pipeline(hal, self.pipeline);
-        self.cmd.bind_vertex_buffer(hal, self.vertex_buffer);
-        self.cmd.bind_index_buffer(hal, self.index_buffer);
+        self.cmd.bind_pipeline(gfx, self.pipeline);
+        self.cmd.bind_vertex_buffer(gfx, self.vertex_buffer);
+        self.cmd.bind_index_buffer(gfx, self.index_buffer);
 
         self.cmd.draw_indexed(3, 1);
 
@@ -85,7 +85,7 @@ impl<Context: GobsContext> GobsGame for App<Context> {
 
         if let Some(color) = color {
             self.cmd
-                .transition_image_layout(hal, color, ImageLayout::Present);
+                .transition_image_layout(gfx, color, ImageLayout::Present);
         } else {
             tracing::info!("no image");
         }
@@ -93,9 +93,9 @@ impl<Context: GobsContext> GobsGame for App<Context> {
         self.cmd.end_label();
         self.cmd.end();
 
-        self.cmd.submit_graphics(hal, frame_id);
+        self.cmd.submit_graphics(gfx, frame_id);
 
-        let Ok(_) = hal.present() else {
+        let Ok(_) = gfx.present() else {
             return Err(RenderError::Outdated);
         };
 
@@ -118,7 +118,7 @@ impl<Context: GobsContext> GobsGame for App<Context> {
 }
 
 impl<Context: GobsContext> App<Context> {
-    fn load_mesh(hal: &mut dyn RenderHAL, cmd: &mut dyn CommandBuffer) -> (Handle, Handle) {
+    fn load_mesh(gfx: &mut GfxContext, cmd: &mut dyn CommandBuffer) -> (Handle, Handle) {
         let mesh = Shapes::triangle(&[Color::RED, Color::GREEN, Color::BLUE], 0.5);
         let vertex_attributes = VertexAttribute::POSITION | VertexAttribute::COLOR;
 
@@ -137,17 +137,17 @@ impl<Context: GobsContext> App<Context> {
         let indices_size = indices.len() * std::mem::size_of::<u32>();
         let staging_size = indices_size + vertices_size;
 
-        let vertex_buffer = hal.create_buffer("vertex", vertices_size, BufferType::Vertex);
-        let index_buffer = hal.create_buffer("index", indices_size, BufferType::Index);
-        let staging = hal.create_buffer("staging", staging_size, BufferType::Staging);
+        let vertex_buffer = gfx.create_buffer("vertex", vertices_size, BufferType::Vertex);
+        let index_buffer = gfx.create_buffer("index", indices_size, BufferType::Index);
+        let staging = gfx.create_buffer("staging", staging_size, BufferType::Staging);
 
-        hal.upload_buffer(staging, &vertices, 0);
-        hal.upload_buffer(staging, bytemuck::cast_slice(indices), vertices_size as u64);
+        gfx.upload_buffer(staging, &vertices, 0);
+        gfx.upload_buffer(staging, bytemuck::cast_slice(indices), vertices_size as u64);
 
         cmd.run_immediate_mut("Upload buffer", &mut |cmd| {
-            cmd.copy_buffer_to_buffer(hal, staging, vertex_buffer, vertices_size, 0, 0);
+            cmd.copy_buffer_to_buffer(gfx, staging, vertex_buffer, vertices_size, 0, 0);
             cmd.copy_buffer_to_buffer(
-                hal,
+                gfx,
                 staging,
                 index_buffer,
                 indices_size,
@@ -156,13 +156,13 @@ impl<Context: GobsContext> App<Context> {
             );
         });
 
-        hal.destroy_buffer(staging);
+        gfx.destroy_buffer(staging);
 
         (vertex_buffer, index_buffer)
     }
 
-    fn create_pipeline(hal: &mut dyn RenderHAL) -> Handle {
-        hal.create_graphics_pipeline("color")
+    fn create_pipeline(gfx: &mut GfxContext) -> Handle {
+        gfx.create_graphics_pipeline("color")
             .vertex_shader("color_direct.spv", "vertex_main")
             .fragment_shader("color_direct.spv", "fragment_main")
             .push_constants(
@@ -177,7 +177,7 @@ impl<Context: GobsContext> App<Context> {
             .cull_mode(CullMode::Back)
             .vertex_attributes(VertexAttribute::POSITION | VertexAttribute::COLOR)
             .vertex_binding(VertexAttribute::POSITION | VertexAttribute::COLOR)
-            .build(hal)
+            .build(gfx)
     }
 }
 

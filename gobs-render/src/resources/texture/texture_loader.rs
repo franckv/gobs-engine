@@ -3,9 +3,8 @@ use image::{DynamicImage, GenericImage, GenericImageView, ImageBuffer, imageops:
 use pollster::FutureExt;
 
 use gobs_core::{Color, ImageExtent2D, logger};
-use gobs_render_graph::GfxContext;
 use gobs_render_hal::{
-    BufferType, CommandBuffer, CommandQueueType, ImageLayout, ImageUsage, RenderHAL,
+    BufferType, CommandBuffer, CommandQueueType, GfxContext, ImageLayout, ImageUsage, RenderHAL,
 };
 use gobs_resource::{
     ResourceRegistry,
@@ -27,9 +26,7 @@ pub struct TextureLoader {
 impl TextureLoader {
     pub fn new(ctx: &mut GfxContext) -> Self {
         Self {
-            cmd: ctx
-                .hal_mut()
-                .create_command_buffer("Mesh loader", CommandQueueType::Transfer),
+            cmd: ctx.create_command_buffer("Mesh loader", CommandQueueType::Transfer),
             buffer_pool: BufferPool::new(),
             recording: false,
         }

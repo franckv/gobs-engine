@@ -36,22 +36,21 @@ impl ComputePass {
 
         for name in pass_metadata.attachments.keys() {
             let image = resource_manager.image(name);
-            draw_extent = ctx.hal().get_image_extent(image);
+            draw_extent = ctx.get_image_extent(image);
 
             resources.push(image);
         }
 
-        cmd.bind_pipeline(ctx.hal(), pass_data.pipeline);
+        cmd.bind_pipeline(ctx, pass_data.pipeline);
 
         if !resources.is_empty() {
             // TODO: assume one ds
             let binding_layout = ctx
-                .hal()
                 .get_pipeline_descriptor_layout(pass_data.pipeline, &BindingGroupType::ComputeData)
                 .ok_or(RenderError::InvalidData)?;
 
             let bind_resource = BindResource::with_resources(binding_layout.clone(), resources);
-            cmd.bind_resource(ctx.hal_mut(), pass_data.pipeline, &bind_resource);
+            cmd.bind_resource(ctx, pass_data.pipeline, &bind_resource);
         }
 
         // TODO: hardcoded

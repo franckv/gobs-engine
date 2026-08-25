@@ -38,7 +38,7 @@ impl MaterialPassData {
 
                 UniformBuffer::new(
                     &label,
-                    ctx.hal_mut(),
+                    ctx,
                     uniform_bindgroup,
                     scene_layout.uniform_layout(),
                 )
@@ -54,7 +54,7 @@ impl MaterialPassData {
     }
 
     pub fn update_uniform(&self, ctx: &mut GfxContext, frame_id: usize, uniform_data: &[u8]) {
-        self.uniform_buffer[frame_id].update(ctx.hal_mut(), uniform_data);
+        self.uniform_buffer[frame_id].update(ctx, uniform_data);
     }
 }
 
@@ -151,12 +151,7 @@ impl MaterialPass {
     ) -> Result<(), RenderError> {
         tracing::debug!(target: logger::RENDER, "Draw {}", pass_metadata.name());
 
-        Self::begin_pass(
-            ctx.hal(),
-            frame.command.as_mut(),
-            pass_metadata,
-            resource_manager,
-        );
+        Self::begin_pass(ctx, frame.command.as_mut(), pass_metadata, resource_manager);
 
         tracing::debug!(target: logger::RENDER, "Upload scene data");
         let mut scene_data_bytes = Vec::new();
