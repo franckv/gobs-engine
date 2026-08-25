@@ -10,7 +10,7 @@ GraphConfig(
             "present",
         ],
         "debug": [
-        "compute",
+            "compute",
             "depth",
             "forward",
             "ui_overlay",

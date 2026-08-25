@@ -68,6 +68,7 @@ impl FrameGraph {
         resource_manager: &GraphResourceManager,
         pass: &PassMetaData,
     ) {
+        tracing::debug!(target: logger::SYNC, "Transition attachment for pass {}", &pass.name);
         for (name, attachment) in &pass.attachments {
             cmd.transition_image_layout(hal, resource_manager.image(name), attachment.layout);
         }
@@ -138,13 +139,7 @@ impl FrameGraph {
     }
 
     #[tracing::instrument(target = "profile", skip_all, level = "trace")]
-    pub fn begin(
-        &mut self,
-        ctx: &mut GfxContext,
-        frame: &mut FrameData,
-    ) -> Result<(), RenderError> {
-        let cmd = &mut frame.command;
-
+    fn begin(&mut self, ctx: &mut GfxContext) -> Result<(), RenderError> {
         // FIXME: use attachments from graph
         let draw_image_extent = ctx.get_image_extent(self.resource_manager.image("draw"));
         if self.resource_manager.resources.contains_key("depth") {
@@ -154,59 +149,17 @@ impl FrameGraph {
             );
         }
 
-        if ctx.acquire(frame.id).is_err() {
-            return Err(RenderError::Outdated);
-        }
-
-        cmd.reset();
-
         self.resource_manager.invalidate(ctx);
 
-        cmd.begin(frame.frame_number);
-
-        cmd.begin_label(&format!("Frame {}", frame.frame_number));
-
-        //TODO: cmd.reset_query_pool(&frame.query_pool, 0, 2);
-        //TODO: cmd.write_timestamp(&frame.query_pool, PipelineStage::TopOfPipe, 0);
-
         Ok(())
     }
 
-    #[tracing::instrument(target = "profile", skip_all, level = "trace")]
-    pub fn end(&mut self, ctx: &mut GfxContext, frame: &mut FrameData) -> Result<(), RenderError> {
-        let frame_id = ctx.frame_id(frame.frame_number);
-        let cmd = &mut frame.command;
-
-        //TODO: cmd.write_timestamp(&frame.query_pool, PipelineStage::BottomOfPipe, 1);
-
-        if let Some(render_target) = ctx.get_render_target() {
-            cmd.transition_image_layout(ctx, render_target, ImageLayout::Present);
-        } else {
-            tracing::debug!(target: logger::RENDER, "No render target to present");
-        }
-
-        cmd.end_label();
-
-        cmd.end();
-
-        cmd.submit_graphics(ctx, frame_id);
-
-        let Ok(_) = ctx.present() else {
-            tracing::debug!(target: logger::SYNC, "Exit frame: outdated");
-            return Err(RenderError::Outdated);
-        };
-
-        tracing::debug!(target: logger::SYNC, "End frame");
-
-        Ok(())
-    }
-
-    #[tracing::instrument(target = "profile", skip_all, level = "trace")]
-    pub fn run<F>(
-        &mut self,
+    fn run_pass<F>(
         ctx: &mut GfxContext,
         frame: &mut FrameData,
-        mut run_pass: F,
+        pass: &mut FrameGraphPass,
+        resource_manager: &GraphResourceManager,
+        mut run_pass_cb: F,
     ) -> Result<(), RenderError>
     where
         F: FnMut(
@@ -216,32 +169,69 @@ impl FrameGraph {
             &PassMetaData,
         ) -> Result<(), RenderError>,
     {
-        for pass in &mut self.passes {
-            if !pass.enabled {
-                tracing::debug!(target: logger::RENDER,
+        if !pass.enabled {
+            tracing::debug!(target: logger::RENDER,
                     "Skip pass: {}", &pass.pass.name);
-                continue;
-            }
+            return Ok(());
+        }
 
-            let pass = &pass.pass;
+        let pass = &pass.pass;
 
-            Self::transition_attachments(ctx, frame.command.as_mut(), &self.resource_manager, pass);
+        Self::transition_attachments(ctx, frame.command.as_mut(), resource_manager, pass);
 
-            tracing::debug!(target: logger::SYNC, "Begin render pass {}", &pass.name);
+        tracing::debug!(target: logger::SYNC, "Begin render pass {}", &pass.name);
 
-            let span =
+        let span =
                 tracing::span!(target: logger::PROFILE, tracing::Level::TRACE, "Pass", "{}", &pass.name)
                     .entered();
 
-            tracing::debug!(target: logger::RENDER, ">>> Begin rendering pass {}", &pass.name);
+        tracing::debug!(target: logger::RENDER, ">>> Begin rendering pass {}", &pass.name);
 
-            run_pass(ctx, frame, &self.resource_manager, pass)?;
+        run_pass_cb(ctx, frame, resource_manager, pass)?;
 
-            tracing::debug!(target: logger::RENDER, "<<< End rendering pass {}", &pass.name);
-            span.exit();
+        tracing::debug!(target: logger::RENDER, "<<< End rendering pass {}", &pass.name);
+        span.exit();
 
-            tracing::debug!(target: logger::SYNC, "End render pass {}", &pass.name);
+        tracing::debug!(target: logger::SYNC, "End render pass {}", &pass.name);
+
+        Ok(())
+    }
+
+    #[tracing::instrument(target = "profile", skip_all, level = "trace")]
+    fn end(&mut self, ctx: &mut GfxContext, frame: &mut FrameData) -> Result<(), RenderError> {
+        let cmd = &mut frame.command;
+
+        if let Some(render_target) = ctx.get_render_target() {
+            cmd.transition_image_layout(ctx, render_target, ImageLayout::Present);
+        } else {
+            tracing::debug!(target: logger::RENDER, "No render target to present");
         }
+
+        Ok(())
+    }
+
+    #[tracing::instrument(target = "profile", skip_all, level = "trace")]
+    pub fn run<F>(
+        &mut self,
+        ctx: &mut GfxContext,
+        frame: &mut FrameData,
+        mut run_pass_cb: F,
+    ) -> Result<(), RenderError>
+    where
+        F: FnMut(
+            &mut GfxContext,
+            &mut FrameData,
+            &GraphResourceManager,
+            &PassMetaData,
+        ) -> Result<(), RenderError>,
+    {
+        self.begin(ctx)?;
+
+        for pass in &mut self.passes {
+            Self::run_pass(ctx, frame, pass, &self.resource_manager, &mut run_pass_cb)?;
+        }
+
+        self.end(ctx, frame)?;
 
         Ok(())
     }

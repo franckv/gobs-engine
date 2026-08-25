@@ -102,17 +102,9 @@ impl Renderer {
 
         tracing::debug!(target: logger::RENDER, "Submit render batch");
 
-        tracing::debug!(target: logger::SYNC, "Begin new frame {}", self.frame_number);
-        tracing::debug!(target: logger::RENDER, "Begin new frame {}", self.frame_number);
-
-        let frame_id = self.gfx.frame_id(self.frame_number);
+        let frame_id = self.begin_frame()?;
 
         let frame = &mut self.frames[frame_id];
-        frame.wait(self.frame_number);
-
-        self.gfx.new_frame(self.frame_number);
-
-        self.graph.begin(self.gfx.as_mut(), frame)?;
 
         self.graph.run(
             self.gfx.as_mut(),
@@ -151,7 +143,58 @@ impl Renderer {
             },
         )?;
 
-        self.graph.end(self.gfx.as_mut(), frame)?;
+        self.end_frame()?;
+
+        Ok(())
+    }
+
+    fn begin_frame(&mut self) -> Result<usize, RenderError> {
+        tracing::debug!(target: logger::SYNC, "Begin new frame {}", self.frame_number);
+        tracing::debug!(target: logger::RENDER, "Begin new frame {}", self.frame_number);
+
+        let frame_id = self.gfx.frame_id(self.frame_number);
+        let frame = &mut self.frames[frame_id];
+
+        frame.wait(self.frame_number);
+
+        self.gfx.new_frame(self.frame_number);
+
+        let cmd = &mut frame.command;
+
+        if self.gfx.acquire(frame.id).is_err() {
+            return Err(RenderError::Outdated);
+        }
+
+        cmd.reset();
+
+        cmd.begin(frame.frame_number);
+
+        cmd.begin_label(&format!("Frame {}", frame.frame_number));
+
+        //TODO: cmd.reset_query_pool(&frame.query_pool, 0, 2);
+        //TODO: cmd.write_timestamp(&frame.query_pool, PipelineStage::TopOfPipe, 0);
+
+        Ok(frame_id)
+    }
+
+    fn end_frame(&mut self) -> Result<(), RenderError> {
+        let frame_id = self.gfx.frame_id(self.frame_number);
+        let frame = &mut self.frames[frame_id];
+
+        //TODO: cmd.write_timestamp(&frame.query_pool, PipelineStage::BottomOfPipe, 1);
+
+        let cmd = &mut frame.command;
+
+        cmd.end_label();
+
+        cmd.end();
+
+        cmd.submit_graphics(self.gfx.as_ref(), frame_id);
+
+        let Ok(_) = self.gfx.present() else {
+            tracing::debug!(target: logger::SYNC, "Exit frame: outdated");
+            return Err(RenderError::Outdated);
+        };
 
         tracing::debug!(target: logger::SYNC, "End frame {}", self.frame_number);
         tracing::debug!(target: logger::RENDER, "End frame {}", self.frame_number);
