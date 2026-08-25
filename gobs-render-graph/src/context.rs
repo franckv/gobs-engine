@@ -5,8 +5,6 @@ use gobs_render_hal::{RenderHAL, create_hal};
 
 pub struct GfxContext {
     hal: Box<dyn RenderHAL>,
-    frames_in_flight: usize,
-    pub stats_refresh: usize,
 }
 
 impl GfxContext {
@@ -19,7 +17,7 @@ impl GfxContext {
     }
 
     pub fn frames_in_flight(&self) -> usize {
-        self.frames_in_flight
+        self.hal.frames_in_flight()
     }
 
     pub fn new_frame(&mut self, frame_number: usize) {
@@ -33,13 +31,7 @@ impl GfxContext {
     pub fn new(name: &str, window: Option<Window>, config: GobsConfig, validation: bool) -> Self {
         let hal = create_hal(name, window, config, validation);
 
-        let frames_in_flight = hal.frames_in_flight();
-
-        Self {
-            hal,
-            frames_in_flight,
-            stats_refresh: 60,
-        }
+        Self { hal }
     }
 
     pub fn is_minimized(&self) -> bool {
