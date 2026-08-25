@@ -9,6 +9,7 @@ pub type PassId = Uuid;
 pub struct PassMetaData {
     pub id: PassId,
     pub name: String,
+    pub config: String,
     pub attachments: HashMap<String, Attachment>,
     pub input_attachments: Vec<String>,
     pub color_attachments: Vec<String>,
@@ -17,10 +18,11 @@ pub struct PassMetaData {
 }
 
 impl PassMetaData {
-    pub fn new(name: &str) -> Self {
+    pub fn new(name: &str, config: &str) -> Self {
         Self {
             id: PassId::new_v4(),
             name: name.to_string(),
+            config: config.to_string(),
             attachments: HashMap::new(),
             input_attachments: Vec::new(),
             color_attachments: Vec::new(),

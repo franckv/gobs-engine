@@ -3,13 +3,14 @@ use std::{collections::hash_map::Entry, sync::Arc};
 use ahash::HashMap;
 
 use gobs_core::{ImageExtent2D, Transform, logger};
-use gobs_render_graph::{GfxContext, RenderFlags, SceneData};
+use gobs_render_graph::GfxContext;
 use gobs_render_hal::VertexData;
 use gobs_resource::{ResourceError, ResourceHandle, ResourceManager, camera::Camera, light::Light};
 
 use crate::{
     BoundingBox, Material, MaterialInstance, Mesh, Pipeline, RenderMeshBuilder, RenderModelBuilder,
     ShapeBuilder, Texture,
+    data::{RenderFlags, SceneData},
     material_system::MaterialSystem,
     model::Model,
     render_object::{MaterialRenderData, RenderObject},
@@ -297,11 +298,12 @@ mod tests {
     use tracing_subscriber::{EnvFilter, FmtSubscriber, fmt::format::FmtSpan};
 
     use gobs_core::{Color, ConfigWriter as _, GobsConfig, Transform, logger, utils::timer::Timer};
-    use gobs_render_graph::{GfxContext, RenderFlags};
+    use gobs_render_graph::GfxContext;
     use gobs_resource::ResourceManager;
 
     use crate::{
         Mesh, MeshLoader, RenderBatch, RenderConfig, RenderMeshBuilder, RenderModelBuilder, Shapes,
+        data::RenderFlags,
     };
 
     fn setup() {

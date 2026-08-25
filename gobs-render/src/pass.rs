@@ -2,6 +2,7 @@ use crate::pass::{compute::ComputePassData, material::MaterialPassData, present:
 
 pub mod compute;
 pub mod material;
+pub mod pass_loader;
 pub mod present;
 
 pub enum PassData {

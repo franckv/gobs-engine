@@ -5,12 +5,14 @@ use serde::Serialize;
 use uuid::Uuid;
 
 use gobs_core::{Transform, logger};
-use gobs_render_graph::{GfxContext, RenderFlags};
+use gobs_render_graph::GfxContext;
 use gobs_resource::{
     ResourceManager, {ResourceError, ResourceHandle},
 };
 
-use crate::{Bounded, BoundingBox, MaterialInstance, Mesh, Renderable, batch::RenderBatch};
+use crate::{
+    Bounded, BoundingBox, MaterialInstance, Mesh, Renderable, batch::RenderBatch, data::RenderFlags,
+};
 
 pub type ModelId = Uuid;
 

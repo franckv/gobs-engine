@@ -7,7 +7,7 @@ use gobs_render_hal::{
     AttributeData, BindingId, Handle, ObjectDataProp, UniformBuffer, UniformData as _,
 };
 
-use crate::{GfxContext, RenderFlags, render_object::RenderObject};
+use crate::{GfxContext, data::RenderFlags, render_object::RenderObject};
 
 struct RenderJobState {
     last_pipeline: Option<Handle>,

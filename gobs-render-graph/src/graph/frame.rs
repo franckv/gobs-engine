@@ -1,7 +1,6 @@
 use crate::{
-    FrameData, GfxContext, GraphConfig, PassMetaData, RenderError,
-    graph::{graph_loader::RenderPassConfig, resource::GraphResourceManager},
-    pass::Attachment,
+    FrameData, GfxContext, GraphConfig, PassMetaData, RenderError, RenderPassType,
+    graph::resource::GraphResourceManager, pass::Attachment,
 };
 use gobs_core::logger;
 use gobs_render_hal::{CommandBuffer, ImageLayout, RenderHAL};
@@ -35,7 +34,7 @@ impl FrameGraph {
         pass_config: F,
     ) -> Result<Self, RenderError>
     where
-        F: FnMut(&mut GfxContext, &PassMetaData, &RenderPassConfig),
+        F: FnMut(&mut GfxContext, &PassMetaData, RenderPassType),
     {
         tracing::debug!(target: logger::INIT, "Load graph: {}", graph_name);
         GraphConfig::load_graph(ctx, graph_filename, graph_name, pass_config)

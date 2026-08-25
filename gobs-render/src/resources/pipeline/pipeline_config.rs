@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use gobs_render_graph::{GfxContext, SceneDataLayout, SceneDataProp};
+use gobs_render_graph::GfxContext;
 use serde::{Deserialize, Serialize};
 
 use gobs_core::{ImageFormat, logger};
@@ -14,7 +14,10 @@ use gobs_resource::{
     {ResourceError, ResourceLifetime},
 };
 
-use crate::resources::{Pipeline, PipelineProperties};
+use crate::{
+    data::{SceneDataLayout, SceneDataProp},
+    resources::{Pipeline, PipelineProperties},
+};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct PipelinesConfig {

@@ -14,7 +14,7 @@ mod resources;
 #[cfg(test)]
 mod tests;
 
-pub use gobs_render_graph::{GfxContext, RenderError, RenderFlags};
+pub use gobs_render_graph::{GfxContext, RenderError};
 pub use gobs_render_hal::{
     AlignMode, Attribute, AttributeData, BlendMode, BufferType, CommandBuffer, CommandQueueType,
     CullMode, DynamicStateElem, FrontFace, Handle, ImageLayout, ObjectDataLayout, ObjectDataProp,
@@ -28,7 +28,7 @@ pub use builder::{
     RenderTextureBuilder, RenderType,
 };
 pub use config::RenderConfig;
-pub use data::MaterialDataPropData;
+pub use data::{MaterialDataPropData, RenderFlags};
 pub use model::{Model, ModelId};
 pub use renderable::Renderable;
 pub use renderer::Renderer;

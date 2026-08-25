@@ -1,7 +1,5 @@
 use gobs_core::logger;
-use gobs_render_graph::{
-    FrameData, GraphResourceManager, PassMetaData, SceneData, SceneDataLayout, SceneDataProp,
-};
+use gobs_render_graph::{FrameData, GraphResourceManager, PassMetaData};
 use gobs_render_hal::{
     AttributeData, BindingGroupLayout, BindingGroupType, CommandBuffer, Handle, RenderHAL,
     UniformBuffer, UniformData as _,
@@ -10,7 +8,11 @@ use gobs_vulkan::{DescriptorStage, DescriptorType};
 
 #[cfg(debug_assertions)]
 use crate::render_object::RenderObject;
-use crate::{GfxContext, RenderError, RenderFlags, job::RenderJob};
+use crate::{
+    GfxContext, RenderError,
+    data::{RenderFlags, SceneData, SceneDataLayout, SceneDataProp},
+    job::RenderJob,
+};
 
 pub struct MaterialPassData {
     pub(crate) pipeline: Option<Handle>,
@@ -22,15 +24,14 @@ pub struct MaterialPassData {
 impl MaterialPassData {
     pub fn new(
         ctx: &mut GfxContext,
-        pass_metadata: &PassMetaData,
+        pass_name: &str,
         pipeline: Option<Handle>,
         render_flags: RenderFlags,
         scene_layout: SceneDataLayout,
-        frames_in_flight: usize,
     ) -> Self {
-        let label = format!("Scene data {}", pass_metadata.name());
+        let label = format!("Scene data {}", pass_name);
 
-        let uniform_buffer = (0..frames_in_flight)
+        let uniform_buffer = (0..ctx.frames_in_flight())
             .map(|_| {
                 let uniform_bindgroup = BindingGroupLayout::new(BindingGroupType::SceneData)
                     .add_binding(DescriptorType::Uniform, DescriptorStage::All, 1);
@@ -117,27 +118,24 @@ impl MaterialPass {
         cmd.end_label();
     }
 
-    /*
     #[cfg(debug_assertions)]
     fn validate_scene_layout(
-        render_job: &RenderJob,
-        scene_layout: &SceneDataLayout,
+        pass_name: &str,
+        pass_data: &MaterialPassData,
         render_list: &[RenderObject],
     ) {
         for obj in render_list {
-            if render_job.should_render(obj)
+            if RenderJob::should_render(pass_name, pass_data.render_flags, obj)
                 && let Some(material_scene_layout) = &obj.material.scene_layout
             {
                 assert_eq!(
-                    scene_layout,
-                    material_scene_layout,
+                    &pass_data.scene_layout, material_scene_layout,
                     "Validate pass scene layout = obj scene layout for pass {}",
-                    render_job.pass_name()
+                    pass_name
                 );
             }
         }
     }
-    */
 }
 
 impl MaterialPass {
@@ -164,11 +162,6 @@ impl MaterialPass {
         let mut scene_data_bytes = Vec::new();
 
         tracing::debug!(target: logger::RENDER, "Scene data layout: {:?}", pass_data.scene_layout.uniform_layout());
-
-        // #[cfg(debug_assertions)]
-        // if !render_job.has_pipeline() {
-        //     Self::validate_scene_layout(render_job, &self.scene_layout, render_list);
-        // };
 
         pass_data
             .scene_layout
@@ -206,6 +199,11 @@ impl MaterialPass {
         let mut render_job = RenderJob::new()
             .with_pipeline(pass_data.pipeline)
             .with_scene_buffer(&pass_data.uniform_buffer[frame.id]);
+
+        #[cfg(debug_assertions)]
+        if pass_data.pipeline.is_none() {
+            Self::validate_scene_layout(pass_metadata.name(), pass_data, render_list);
+        };
 
         tracing::debug!(target: logger::RENDER, "Draw render object list");
         render_job.draw_list(

@@ -11,7 +11,6 @@ use gobs_resource::{
 
 use crate::{
     FrameGraph, GfxContext, PassMetaData,
-    data::{RenderFlags, SceneDataProp},
     pass::{Attachment, AttachmentAccess, AttachmentType, RenderPassType},
 };
 
@@ -33,16 +32,11 @@ fn default_true() -> bool {
 #[derive(Debug, Deserialize, Serialize)]
 pub struct RenderPassConfig {
     pub ty: RenderPassType,
-    pub pipeline: Option<String>,
+    pub config: String,
     #[serde(default)]
     attachments: HashMap<String, AttachmentInfo>,
-    #[serde(default)]
-    pub scene_layout: Vec<SceneDataProp>,
     #[serde(default = "default_true")]
     enabled: bool,
-    #[serde(default)]
-    pub flags: RenderFlags,
-    pub target: Option<String>,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -84,7 +78,7 @@ impl GraphConfig {
         pass_config: F,
     ) -> Result<FrameGraph, ResourceError>
     where
-        F: FnMut(&mut GfxContext, &PassMetaData, &RenderPassConfig),
+        F: FnMut(&mut GfxContext, &PassMetaData, RenderPassType),
     {
         let data = load::load_string_sync(filename, AssetType::RESOURCES)?;
 
@@ -98,7 +92,7 @@ impl GraphConfig {
         mut pass_config: F,
     ) -> Result<FrameGraph, ResourceError>
     where
-        F: FnMut(&mut GfxContext, &PassMetaData, &RenderPassConfig),
+        F: FnMut(&mut GfxContext, &PassMetaData, RenderPassType),
     {
         let graph_config = Self::load_with_data(data)?;
 
@@ -135,20 +129,20 @@ impl GraphConfig {
         mut pass_config: F,
     ) -> Option<PassMetaData>
     where
-        F: FnMut(&mut GfxContext, &PassMetaData, &RenderPassConfig),
+        F: FnMut(&mut GfxContext, &PassMetaData, RenderPassType),
     {
         tracing::info!(target: logger::INIT, "Load pass: {}", passname);
 
         let pass = graph.passes.get(passname)?;
 
-        let mut metadata = PassMetaData::new(passname);
+        let mut metadata = PassMetaData::new(passname, &pass.config);
 
         for (attach_name, attach_config) in &pass.attachments {
             let attachment = Self::load_attachment_usage(ctx, graph, attach_name, attach_config)?;
             metadata.add_attachment(attach_name, attachment);
         }
 
-        pass_config(ctx, &metadata, pass);
+        pass_config(ctx, &metadata, pass.ty);
 
         Some(metadata)
     }
@@ -227,7 +221,6 @@ mod tests {
 
     use crate::{
         GfxContext, GraphConfig,
-        data::RenderFlags,
         graph::graph_loader::{AttachmentInfo, RenderPassConfig},
         pass::{AttachmentAccess, RenderPassType},
     };
@@ -289,10 +282,10 @@ mod tests {
         let graph = GraphConfig {
             graphes: HashMap::from([("scene".to_string(), vec![pass_name.clone()])]),
             passes: HashMap::from([(
-                pass_name,
+                pass_name.clone(),
                 RenderPassConfig {
                     ty: RenderPassType::Material,
-                    pipeline: None,
+                    config: pass_name,
                     attachments: HashMap::from([(
                         "draw".to_string(),
                         AttachmentInfo::ColorAttachment {
@@ -300,10 +293,7 @@ mod tests {
                             clear: true,
                         },
                     )]),
-                    scene_layout: Vec::new(),
                     enabled: true,
-                    flags: RenderFlags::ENTITY,
-                    target: None,
                 },
             )]),
             attachments: HashMap::new(),

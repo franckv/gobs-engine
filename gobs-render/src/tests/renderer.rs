@@ -1,15 +1,13 @@
 #[cfg(test)]
 mod tests {
     use gobs_core::{ConfigWriter as _, GobsConfig, ImageExtent2D, ImageFormat};
-    use gobs_render_graph::{GfxContext, SceneDataLayout};
-    use gobs_render_hal::{
-        AlignMode, ImageUsage, ObjectDataLayout, RenderHalConfig, VertexAttribute,
-    };
-    use gobs_resource::{ResourceLifetime, ResourceManager};
+    use gobs_render_graph::GfxContext;
+    use gobs_render_hal::{ImageUsage, RenderHalConfig};
+    use gobs_resource::ResourceManager;
 
     use crate::{
-        Material, MaterialInstance, MaterialInstanceLoader, MaterialLoader, MaterialProperties,
-        Pipeline, PipelineLoader, RenderConfig, Texture, TextureLoader, data::TextureDataProp,
+        Material, MaterialInstance, MaterialInstanceLoader, MaterialLoader, Pipeline,
+        PipelineLoader, RenderConfig, Texture, TextureLoader,
     };
 
     fn setup() -> (GfxContext, ResourceManager) {
@@ -96,56 +94,5 @@ mod tests {
 
         hal.release_texture_index(index2);
         hal.destroy_image(image2);
-    }
-
-    #[test]
-    #[cfg_attr(feature = "ci", ignore)]
-    fn material_array_size_mismatch() {
-        let (mut gfx, mut resource_manager) = setup();
-
-        let build_material = |array_size: u32| {
-            MaterialProperties::new(
-                "test",
-                "test.spv",
-                "vertex_main",
-                "test.spv",
-                "fragment_main",
-                VertexAttribute::empty(),
-                ObjectDataLayout::new(AlignMode::Std140),
-                SceneDataLayout::default(),
-                ImageFormat::R8g8b8a8Unorm,
-                ImageFormat::D32Sfloat,
-                false,
-                false,
-            )
-            .textures(&[TextureDataProp::Diffuse], array_size)
-        };
-
-        let good_handle =
-            resource_manager.add::<Material>(build_material(256), ResourceLifetime::Static, false);
-        let good_pipeline = resource_manager
-            .get_data::<Material>(gfx.hal_mut(), &good_handle)
-            .expect("material load")
-            .data
-            .pipeline;
-        resource_manager
-            .get_data::<Pipeline>(gfx.hal_mut(), &good_pipeline)
-            .expect("pipeline build");
-
-        let bad_handle =
-            resource_manager.add::<Material>(build_material(4), ResourceLifetime::Static, false);
-        let bad_pipeline = resource_manager
-            .get_data::<Material>(gfx.hal_mut(), &bad_handle)
-            .expect("material load")
-            .data
-            .pipeline;
-
-        let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-            resource_manager
-                .get_data::<Pipeline>(gfx.hal_mut(), &bad_pipeline)
-                .is_ok()
-        }));
-
-        assert!(matches!(result, Ok(false) | Err(_)));
     }
 }

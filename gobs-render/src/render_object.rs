@@ -1,8 +1,9 @@
 use std::{cmp::Ordering, sync::Arc};
 
 use gobs_core::Transform;
-use gobs_render_graph::{RenderFlags, SceneDataLayout};
 use gobs_render_hal::{BindResource, Handle, VertexAttribute};
+
+use crate::data::{RenderFlags, SceneDataLayout};
 
 #[derive(Clone, Debug, Default)]
 pub struct MaterialRenderData {

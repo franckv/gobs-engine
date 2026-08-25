@@ -3,7 +3,6 @@ use std::collections::HashMap;
 use serde::Deserialize;
 
 use gobs_core::{ConfigReader as _, GobsConfig, ImageFormat, logger};
-use gobs_render_graph::{SceneDataLayout, SceneDataProp};
 use gobs_render_hal::{
     AlignMode, BlendMode, CullMode, ObjectDataLayout, ObjectDataProp, RenderHalConfig,
     UniformData as _, VertexAttribute,
@@ -15,7 +14,7 @@ use gobs_resource::{
 
 use crate::{
     Material, MaterialProperties,
-    data::{MaterialDataProp, TextureDataProp},
+    data::{MaterialDataProp, SceneDataLayout, SceneDataProp, TextureDataProp},
 };
 
 #[derive(Debug, Deserialize)]

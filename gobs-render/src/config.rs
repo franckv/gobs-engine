@@ -4,6 +4,7 @@ pub enum RenderConfig {
     GraphFileName,
     GraphName,
     PipelineFileName,
+    PassConfigFileName,
     LoadGraph,
 }
 
@@ -14,6 +15,7 @@ impl AsRef<str> for RenderConfig {
             RenderConfig::GraphName => "config.render.graph.name",
             RenderConfig::PipelineFileName => "config.render.pipeline.filename",
             RenderConfig::LoadGraph => "config.render.graph.load",
+            RenderConfig::PassConfigFileName => "config.render.passconfig.filename",
         }
     }
 }
@@ -23,6 +25,7 @@ impl ConfigDefault for RenderConfig {
         config.set_string(RenderConfig::GraphFileName, "graph.ron");
         config.set_string(RenderConfig::GraphName, "scene");
         config.set_string(RenderConfig::PipelineFileName, "pipelines.ron");
+        config.set_string(RenderConfig::PassConfigFileName, "pass_config.ron");
         config.set_bool(RenderConfig::LoadGraph, true);
     }
 }

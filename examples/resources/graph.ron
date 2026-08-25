@@ -42,7 +42,7 @@ GraphConfig(
     passes: {
         "compute" : (
             ty: Compute,
-            pipeline: "sky",
+            config: "skybox",
             attachments: {
                 "draw": StorageImage(
                     access: ReadWrite,
@@ -51,77 +51,59 @@ GraphConfig(
         ),
         "bounds": (
             ty: Material,
-            pipeline: "wireframe",
+            config: "bounds",
             attachments: {
                 "draw": ColorAttachment(
                     access: ReadWrite,
                     clear: false,
                 )
             },
-            scene_layout: [
-                CameraViewProj,
-            ],
             enabled: false,
-            flags: "BOUNDS"
         ),
         "select": (
             ty: Material,
-            pipeline: "wireframe",
+            config: "select",
             attachments: {
                 "draw": ColorAttachment(
                     access: ReadWrite,
                     clear: false,
                 )
             },
-            scene_layout: [
-                CameraViewProj,
-            ],
-            flags: "SELECTED"
         ),
         "wire": (
             ty: Material,
-            pipeline: "wireframe",
+            config: "wire",
             attachments: {
                 "draw": ColorAttachment(
                     access: ReadWrite,
                     clear: false,
                 )
             },
-            scene_layout: [
-                CameraViewProj,
-            ],
             enabled: false,
-            flags: "ENTITY"
         ),
         "depth": (
             ty: Material,
-            pipeline: "depth",
+            config: "depth",
             attachments: {
                 "depth": DepthAttachment(
                     access: ReadWrite,
                     clear: true,
                 )
             },
-            scene_layout: [
-                CameraViewProj,
-            ],
-            flags: "ENTITY | OPAQUE"
         ),
         "forward_nodepth": (
             ty: Material,
+            config: "forward_simple",
             attachments: {
                 "draw": ColorAttachment(
                     access: ReadWrite,
                     clear: true,
                 ),
             },
-            scene_layout: [
-                CameraViewProj,
-            ],
-            flags: "ENTITY"
         ),
         "forward": (
             ty: Material,
+            config: "forward",
             attachments: {
                 "draw": ColorAttachment(
                     access: ReadWrite,
@@ -132,17 +114,10 @@ GraphConfig(
                     clear: false,
                 )
             },
-            scene_layout: [
-                CameraPosition,
-                CameraViewProj,
-                LightDirection,
-                LightColor,
-                LightAmbientColor,
-            ],
-            flags: "ENTITY"
         ),
         "forward_simple": (
             ty: Material,
+            config: "forward_simple",
             attachments: {
                 "draw": ColorAttachment(
                     access: ReadWrite,
@@ -153,40 +128,30 @@ GraphConfig(
                     clear: false,
                 )
             },
-            scene_layout: [
-                CameraViewProj,
-            ],
-            flags: "ENTITY"
         ),
         "ui_overlay": (
             ty: Material,
+            config: "ui",
             attachments: {
                 "draw": ColorAttachment(
                     access: ReadWrite,
                     clear: false,
                 )
             },
-            scene_layout: [
-                CameraViewPort,
-            ],
-            flags: "UI"
         ),
         "ui": (
             ty: Material,
+            config: "ui",
             attachments: {
                 "draw": ColorAttachment(
                     access: ReadWrite,
                     clear: true,
                 )
             },
-            scene_layout: [
-                CameraViewPort,
-            ],
-            flags: "UI"
         ),
         "present": (
             ty: Present,
-            target: "draw",
+            config: "present",
         )
     },
     attachments: {

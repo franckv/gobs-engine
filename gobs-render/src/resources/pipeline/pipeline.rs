@@ -1,7 +1,6 @@
 use std::{fmt::Debug, sync::Arc};
 
 use gobs_core::ImageFormat;
-use gobs_render_graph::SceneDataLayout;
 use gobs_render_hal::{
     AlignMode, BindingGroupLayout, BindingGroupType, BlendMode, CompareOp, CullMode,
     DescriptorStage, DescriptorType, FrontFace, Handle, ObjectDataLayout, PolygonMode, RenderHAL,
@@ -9,7 +8,7 @@ use gobs_render_hal::{
 };
 use gobs_resource::{ResourceProperties, ResourceType};
 
-use crate::resources::PipelineLoader;
+use crate::{data::SceneDataLayout, resources::PipelineLoader};
 
 #[derive(Clone, Copy, Debug)]
 pub struct Pipeline;
