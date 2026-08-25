@@ -5,20 +5,18 @@ use crate::{
     FrameData, GfxContext, RenderError, RenderObject,
     data::SceneData,
     graph::GraphResourceManager,
-    pass::{PassId, RenderPass},
+    pass::{PassId, RenderPass, metadata::PassMetaData},
 };
 
 pub struct PresentPass {
-    id: PassId,
-    name: String,
+    pub metadata: PassMetaData,
     render_target: String,
 }
 
 impl PresentPass {
-    pub fn new(_ctx: &GfxContext, name: &str, render_target: &str) -> Self {
+    pub fn new(_ctx: &GfxContext, metadata: PassMetaData, render_target: &str) -> Self {
         Self {
-            id: PassId::new_v4(),
-            name: name.to_string(),
+            metadata,
             render_target: render_target.to_string(),
         }
     }
@@ -26,11 +24,15 @@ impl PresentPass {
 
 impl RenderPass for PresentPass {
     fn id(&self) -> PassId {
-        self.id
+        self.metadata.id
     }
 
     fn name(&self) -> &str {
-        &self.name
+        &self.metadata.name
+    }
+
+    fn metadata(&self) -> &PassMetaData {
+        &self.metadata
     }
 
     fn render(

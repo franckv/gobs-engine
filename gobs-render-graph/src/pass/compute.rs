@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-
 use gobs_core::{ImageExtent2D, logger};
 use gobs_render_hal::{BindResource, BindingGroupType, Handle};
 
@@ -7,45 +5,31 @@ use crate::{
     FrameData, GfxContext, RenderError, RenderObject,
     data::SceneData,
     graph::GraphResourceManager,
-    pass::{Attachment, AttachmentType, PassId, RenderPass},
+    pass::{PassId, RenderPass, metadata::PassMetaData},
 };
 
 pub struct ComputePass {
-    id: PassId,
-    name: String,
-    attachments: HashMap<String, Attachment>,
-    image_attachments: Vec<String>,
+    pub metadata: PassMetaData,
     pub pipeline: Handle,
 }
 
 impl ComputePass {
-    pub fn new(name: &str, pipeline: Handle) -> Self {
-        Self {
-            id: PassId::new_v4(),
-            name: name.to_string(),
-            attachments: Default::default(),
-            image_attachments: vec![],
-            pipeline,
-        }
-    }
-
-    pub fn add_attachment(&mut self, name: &str, attachment: Attachment) {
-        match attachment.ty {
-            AttachmentType::ImageStorage => self.image_attachments.push(name.to_string()),
-            _ => todo!(),
-        }
-
-        self.attachments.insert(name.to_string(), attachment);
+    pub fn new(metadata: PassMetaData, pipeline: Handle) -> Self {
+        Self { metadata, pipeline }
     }
 }
 
 impl RenderPass for ComputePass {
     fn id(&self) -> PassId {
-        self.id
+        self.metadata.id
     }
 
     fn name(&self) -> &str {
-        &self.name
+        &self.metadata.name
+    }
+
+    fn metadata(&self) -> &PassMetaData {
+        &self.metadata
     }
 
     fn render(
@@ -66,13 +50,7 @@ impl RenderPass for ComputePass {
 
         let mut draw_extent = ImageExtent2D::default();
 
-        for (name, attachment) in &self.attachments {
-            cmd.transition_image_layout(
-                ctx.hal_mut(),
-                resource_manager.image(name),
-                attachment.layout,
-            );
-
+        for name in self.metadata.attachments.keys() {
             let image = resource_manager.image(name);
             draw_extent = ctx.hal().get_image_extent(image);
 

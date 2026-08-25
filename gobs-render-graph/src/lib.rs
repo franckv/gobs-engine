@@ -15,6 +15,7 @@ pub use error::RenderError;
 pub use framedata::FrameData;
 pub use graph::{FrameGraph, GraphConfig};
 pub use job::RenderJob;
+pub use pass::RenderPassType;
 pub use render_object::{
     MaterialId, MaterialInstanceId, MaterialRenderData, MeshId, PassId, RenderFlags, RenderObject,
 };

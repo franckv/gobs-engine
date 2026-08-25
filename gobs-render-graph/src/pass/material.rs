@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-
 use gobs_core::logger;
 use gobs_render_hal::{AttributeData, CommandBuffer, Handle, RenderHAL, UniformData as _};
 
@@ -7,16 +5,11 @@ use crate::{
     FrameData, GfxContext, PassId, RenderError, RenderFlags, RenderJob, RenderObject,
     data::{SceneData, SceneDataLayout, SceneDataProp},
     graph::GraphResourceManager,
-    pass::{Attachment, AttachmentType, RenderPass},
+    pass::{RenderPass, metadata::PassMetaData},
 };
 
 pub struct MaterialPass {
-    id: PassId,
-    name: String,
-    attachments: HashMap<String, Attachment>,
-    input_attachments: Vec<String>,
-    color_attachments: Vec<String>,
-    depth_attachments: Vec<String>,
+    pub metadata: PassMetaData,
     scene_layout: SceneDataLayout,
     render_jobs: Vec<RenderJob>,
     fixed_pipeline: Option<Handle>,
@@ -25,17 +18,15 @@ pub struct MaterialPass {
 impl MaterialPass {
     pub fn new(
         ctx: &mut GfxContext,
-        name: &str,
+        metadata: PassMetaData,
         scene_layout: SceneDataLayout,
         render_flags: RenderFlags,
     ) -> Self {
-        let id = PassId::new_v4();
-
         let render_jobs = (0..ctx.frames_in_flight())
             .map(|_| {
                 RenderJob::new(
                     ctx,
-                    name.to_string(),
+                    metadata.name.to_string(),
                     scene_layout.uniform_layout(),
                     render_flags,
                 )
@@ -43,12 +34,7 @@ impl MaterialPass {
             .collect();
 
         Self {
-            id,
-            name: name.to_string(),
-            attachments: Default::default(),
-            input_attachments: vec![],
-            color_attachments: vec![],
-            depth_attachments: vec![],
+            metadata,
             scene_layout,
             render_jobs,
             fixed_pipeline: None,
@@ -62,17 +48,6 @@ impl MaterialPass {
         }
     }
 
-    pub fn add_attachment(&mut self, name: &str, attachment: Attachment) {
-        match attachment.ty {
-            AttachmentType::Input => self.input_attachments.push(name.to_string()),
-            AttachmentType::Color => self.color_attachments.push(name.to_string()),
-            AttachmentType::Depth => self.depth_attachments.push(name.to_string()),
-            _ => unimplemented!(),
-        }
-
-        self.attachments.insert(name.to_string(), attachment);
-    }
-
     #[tracing::instrument(target = "profile", skip_all, level = "trace")]
     fn begin_pass(
         &self,
@@ -80,13 +55,13 @@ impl MaterialPass {
         cmd: &mut dyn CommandBuffer,
         resource_manager: &GraphResourceManager,
     ) {
-        tracing::debug!(target: logger::RENDER, "Begin material pass {}", &self.name);
+        tracing::debug!(target: logger::RENDER, "Begin material pass {}", &self.metadata.name);
 
-        cmd.begin_label(&format!("Draw {}", self.name));
+        cmd.begin_label(&format!("Draw {}", self.metadata.name));
 
-        let (color_img, color_clear, color_extent) = match self.color_attachments.first() {
+        let (color_img, color_clear, color_extent) = match self.metadata.color_attachments.first() {
             Some(color) => {
-                let color_attach = &self.attachments[color];
+                let color_attach = &self.metadata.attachments[color];
                 (
                     Some(resource_manager.image(color)),
                     color_attach.clear,
@@ -96,9 +71,9 @@ impl MaterialPass {
             None => (None, false, None),
         };
 
-        let (depth_img, depth_clear, depth_extent) = match self.depth_attachments.first() {
+        let (depth_img, depth_clear, depth_extent) = match self.metadata.depth_attachments.first() {
             Some(depth) => {
-                let depth_attach = &self.attachments[depth];
+                let depth_attach = &self.metadata.attachments[depth];
                 (
                     Some(resource_manager.image(depth)),
                     depth_attach.clear,
@@ -130,18 +105,6 @@ impl MaterialPass {
         cmd.end_label();
     }
 
-    #[tracing::instrument(target = "profile", skip_all, level = "trace")]
-    fn transition_attachments(
-        &self,
-        hal: &mut dyn RenderHAL,
-        cmd: &mut dyn CommandBuffer,
-        resource_manager: &GraphResourceManager,
-    ) {
-        for (name, attachment) in &self.attachments {
-            cmd.transition_image_layout(hal, resource_manager.image(name), attachment.layout);
-        }
-    }
-
     #[cfg(debug_assertions)]
     fn validate_scene_layout(
         render_job: &RenderJob,
@@ -165,11 +128,15 @@ impl MaterialPass {
 
 impl RenderPass for MaterialPass {
     fn id(&self) -> PassId {
-        self.id
+        self.metadata.id
     }
 
     fn name(&self) -> &str {
-        &self.name
+        &self.metadata.name
+    }
+
+    fn metadata(&self) -> &PassMetaData {
+        &self.metadata
     }
 
     #[tracing::instrument(target = "profile", skip_all, level = "trace")]
@@ -182,8 +149,6 @@ impl RenderPass for MaterialPass {
         scene_data: &SceneData,
     ) -> Result<(), RenderError> {
         tracing::debug!(target: logger::RENDER, "Draw {}", &self.name());
-
-        self.transition_attachments(ctx.hal_mut(), frame.command.as_mut(), resource_manager);
 
         self.begin_pass(ctx.hal(), frame.command.as_mut(), resource_manager);
 

@@ -14,7 +14,7 @@ use crate::{
     data::{SceneDataLayout, SceneDataProp},
     pass::{
         Attachment, AttachmentAccess, AttachmentType, RenderPass, RenderPassType,
-        compute::ComputePass, material::MaterialPass, present::PresentPass,
+        compute::ComputePass, material::MaterialPass, metadata::PassMetaData, present::PresentPass,
     },
 };
 
@@ -166,12 +166,14 @@ impl GraphConfig {
         graph: &GraphConfig,
         pipeline: Handle,
     ) -> Option<Arc<dyn RenderPass>> {
-        let mut compute_pass = ComputePass::new(passname, pipeline);
+        let mut metadata = PassMetaData::new(passname, RenderPassType::Compute);
 
         for (attach_name, attach_config) in &pass.attachments {
             let attachment = Self::load_attachment_usage(ctx, graph, attach_name, attach_config)?;
-            compute_pass.add_attachment(attach_name, attachment);
+            metadata.add_attachment(attach_name, attachment);
         }
+
+        let compute_pass = ComputePass::new(metadata, pipeline);
 
         Some(Arc::new(compute_pass))
     }
@@ -182,7 +184,9 @@ impl GraphConfig {
         pass: &RenderPassConfig,
     ) -> Option<Arc<dyn RenderPass>> {
         if let Some(target) = &pass.target {
-            Some(Arc::new(PresentPass::new(ctx, passname, target)))
+            let metadata = PassMetaData::new(passname, RenderPassType::Present);
+
+            Some(Arc::new(PresentPass::new(ctx, metadata, target)))
         } else {
             tracing::error!(target: logger::INIT, "Invalid present target");
             None
@@ -201,16 +205,18 @@ impl GraphConfig {
             scene_layout = scene_layout.prop(*prop);
         }
 
-        let mut material_pass = MaterialPass::new(ctx, passname, scene_layout, pass.flags);
-
-        if let Some(pipeline) = pipeline {
-            material_pass.set_fixed_pipeline(pipeline);
-        }
+        let mut metadata = PassMetaData::new(passname, RenderPassType::Material);
 
         for (attach_name, attach_config) in &pass.attachments {
             let attachment = Self::load_attachment_usage(ctx, graph, attach_name, attach_config)?;
 
-            material_pass.add_attachment(attach_name, attachment);
+            metadata.add_attachment(attach_name, attachment);
+        }
+
+        let mut material_pass = MaterialPass::new(ctx, metadata, scene_layout, pass.flags);
+
+        if let Some(pipeline) = pipeline {
+            material_pass.set_fixed_pipeline(pipeline);
         }
 
         Some(Arc::new(material_pass))

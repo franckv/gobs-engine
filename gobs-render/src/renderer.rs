@@ -1,5 +1,5 @@
 use gobs_core::{ConfigReader as _, GobsConfig, ImageExtent2D, logger};
-use gobs_render_graph::{FrameData, FrameGraph, GfxContext, RenderError};
+use gobs_render_graph::{FrameData, FrameGraph, GfxContext, RenderError, RenderPassType};
 use gobs_resource::ResourceManager;
 
 use crate::{Pipeline, PipelinesConfig, RenderBatch, RenderConfig};
@@ -94,11 +94,20 @@ impl Renderer {
 
         self.graph.begin(&mut self.gfx, frame)?;
 
-        self.graph.render(
+        self.graph.run(
             &mut self.gfx,
             frame,
-            &batch.render_list,
-            &batch.scene_data(),
+            |ctx, frame, resource_manager, pass| match pass.metadata().ty {
+                RenderPassType::Compute | RenderPassType::Material | RenderPassType::Present => {
+                    pass.render(
+                        ctx,
+                        frame,
+                        resource_manager,
+                        &batch.render_list,
+                        &batch.scene_data(),
+                    )
+                }
+            },
         )?;
 
         self.graph.end(&mut self.gfx, frame)?;

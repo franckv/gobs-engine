@@ -7,11 +7,12 @@ use gobs_render_hal::{ImageLayout, ImageUsage};
 
 use crate::{
     FrameData, GfxContext, PassId, RenderError, RenderObject, data::SceneData,
-    graph::GraphResourceManager,
+    graph::GraphResourceManager, pass::metadata::PassMetaData,
 };
 
 pub mod compute;
 pub mod material;
+pub mod metadata;
 pub mod present;
 
 #[derive(Clone, Copy, Debug, Deserialize, Serialize, PartialEq)]
@@ -50,7 +51,7 @@ pub struct Attachment {
     pub format: ImageFormat,
     pub usage: ImageUsage,
     pub extent: ImageExtent2D,
-    layout: ImageLayout,
+    pub layout: ImageLayout,
     clear: bool,
     scaling: f32,
 }
@@ -106,6 +107,7 @@ impl Attachment {
 pub trait RenderPass {
     fn id(&self) -> PassId;
     fn name(&self) -> &str;
+    fn metadata(&self) -> &PassMetaData;
     fn render(
         &self,
         ctx: &mut GfxContext,

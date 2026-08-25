@@ -1,9 +1,10 @@
 use crate::{
-    FrameData, GfxContext, GraphConfig, RenderError, RenderObject, RenderPass, data::SceneData,
-    graph::resource::GraphResourceManager, pass::Attachment,
+    FrameData, GfxContext, GraphConfig, RenderError, RenderPass,
+    graph::resource::GraphResourceManager,
+    pass::{Attachment, metadata::PassMetaData},
 };
 use gobs_core::logger;
-use gobs_render_hal::{Handle, ImageLayout};
+use gobs_render_hal::{CommandBuffer, Handle, ImageLayout, RenderHAL};
 
 pub struct FrameGraphPass {
     pub pass: RenderPass,
@@ -60,6 +61,17 @@ impl FrameGraph {
             attachment.usage,
             attachment.extent,
         );
+    }
+
+    fn transition_attachments(
+        hal: &mut dyn RenderHAL,
+        cmd: &mut dyn CommandBuffer,
+        resource_manager: &GraphResourceManager,
+        pass: &PassMetaData,
+    ) {
+        for (name, attachment) in &pass.attachments {
+            cmd.transition_image_layout(hal, resource_manager.image(name), attachment.layout);
+        }
     }
 
     pub fn get_pass<F>(&self, cmp: F) -> Result<RenderPass, RenderError>
@@ -196,13 +208,20 @@ impl FrameGraph {
     pub fn update(&mut self, _ctx: &GfxContext, _delta: f32) {}
 
     #[tracing::instrument(target = "profile", skip_all, level = "trace")]
-    pub fn render(
+    pub fn run<F>(
         &mut self,
         ctx: &mut GfxContext,
         frame: &mut FrameData,
-        render_list: &[RenderObject],
-        scene_data: &SceneData,
-    ) -> Result<(), RenderError> {
+        mut run_pass: F,
+    ) -> Result<(), RenderError>
+    where
+        F: FnMut(
+            &mut GfxContext,
+            &mut FrameData,
+            &GraphResourceManager,
+            RenderPass,
+        ) -> Result<(), RenderError>,
+    {
         for pass in &mut self.passes {
             if !pass.enabled {
                 tracing::debug!(target: logger::RENDER,
@@ -210,7 +229,15 @@ impl FrameGraph {
                 continue;
             }
 
-            let pass = &pass.pass;
+            let pass = pass.pass.clone();
+            let metadata = pass.metadata();
+
+            Self::transition_attachments(
+                ctx.hal_mut(),
+                frame.command.as_mut(),
+                &self.resource_manager,
+                metadata,
+            );
 
             tracing::debug!(target: logger::SYNC, "Begin render pass {}", pass.name());
 
@@ -220,7 +247,7 @@ impl FrameGraph {
 
             tracing::debug!(target: logger::RENDER, ">>> Begin rendering pass {}", pass.name());
 
-            pass.render(ctx, frame, &self.resource_manager, render_list, scene_data)?;
+            run_pass(ctx, frame, &self.resource_manager, pass.clone())?;
 
             tracing::debug!(target: logger::RENDER, "<<< End rendering pass {}", pass.name());
             span.exit();
