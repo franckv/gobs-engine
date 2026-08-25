@@ -136,7 +136,7 @@ impl Renderer {
                             pass_data,
                             frame,
                             resource_manager,
-                            ),
+                        ),
                         PassData::Compute(pass_data) => ComputePass::render(
                             ctx,
                             pass_data,
