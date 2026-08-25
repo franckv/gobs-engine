@@ -147,7 +147,7 @@ impl Surface {
         let dim = self.get_dimensions();
 
         match caps.width {
-            std::u32::MAX => dim,
+            u32::MAX => dim,
             _ => ImageExtent2D::new(caps.width, caps.height),
         }
     }

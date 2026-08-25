@@ -12,7 +12,6 @@ gobs-resource = { workspace = true }
 slotmap = { workspace = true }
 smallvec = { workspace = true }
 tracing = { workspace = true }
-uuid = { workspace = true }
 
 [dev-dependencies]
 tracing-subscriber = { workspace = true }

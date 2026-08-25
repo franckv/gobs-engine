@@ -6,8 +6,8 @@ use gobs::{
     render::{
         AlignMode, AttributeData, BufferType, CommandBuffer, CommandQueueType, CullMode,
         DynamicStateElem, FrontFace, GfxContext, Handle, ImageLayout, ObjectDataLayout,
-        ObjectDataProp, Rect2D, RenderConfig, RenderError, RenderHAL, RenderHalConfig, Shapes,
-        UniformData, VertexAttribute, VertexData, Viewport,
+        ObjectDataProp, Rect2D, RenderConfig, RenderError, RenderHalConfig, Shapes, UniformData,
+        VertexAttribute, VertexData, Viewport,
     },
 };
 

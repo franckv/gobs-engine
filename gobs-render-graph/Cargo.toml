@@ -5,18 +5,14 @@ authors = { workspace = true }
 edition = { workspace = true }
 
 [dependencies]
-futures = { workspace = true }
-glam = { workspace = true }
 gobs-core = { workspace = true }
 gobs-render-hal = { workspace = true }
 gobs-resource = { workspace = true }
-image = { workspace = true }
 ron = { workspace = true }
 serde = { workspace = true }
 thiserror = { workspace = true }
 tracing = { workspace = true }
 uuid = { workspace = true }
-winit = { workspace = true }
 
 [dev-dependencies]
 ron = { workspace = true }

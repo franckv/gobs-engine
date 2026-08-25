@@ -6,7 +6,6 @@ use gobs_render_hal::{
 };
 use gobs_vulkan::{DescriptorStage, DescriptorType};
 
-#[cfg(debug_assertions)]
 use crate::render_object::RenderObject;
 use crate::{
     GfxContext, RenderError,
