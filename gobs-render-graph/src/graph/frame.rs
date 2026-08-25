@@ -204,8 +204,6 @@ impl FrameGraph {
         Ok(())
     }
 
-    pub fn update(&mut self, _ctx: &GfxContext, _delta: f32) {}
-
     #[tracing::instrument(target = "profile", skip_all, level = "trace")]
     pub fn run<F>(
         &mut self,
@@ -254,16 +252,6 @@ impl FrameGraph {
         }
 
         Ok(())
-    }
-
-    pub fn resize(&mut self, ctx: &mut GfxContext) {
-        self.resize_swapchain(ctx);
-    }
-
-    fn resize_swapchain(&mut self, ctx: &mut GfxContext) {
-        ctx.hal_mut().wait();
-
-        ctx.hal_mut().resize();
     }
 
     pub fn enable_pass(&mut self, name: &str, enabled: bool) {

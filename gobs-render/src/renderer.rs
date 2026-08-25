@@ -83,11 +83,8 @@ impl Renderer {
     }
 
     pub fn resize(&mut self) {
-        self.graph.resize(&mut self.gfx);
-    }
-
-    pub fn update(&mut self, delta: f32) {
-        self.graph.update(&self.gfx, delta);
+        self.gfx.hal_mut().wait();
+        self.gfx.hal_mut().resize();
     }
 
     pub fn enable_pass(&mut self, name: &str, enabled: bool) {

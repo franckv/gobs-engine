@@ -108,8 +108,7 @@ impl GobsContext for GameContext {
     }
 
     #[tracing::instrument(target = "profile", skip_all, level = "trace")]
-    fn pre_update(&mut self, delta: f32) {
-        self.renderer.update(delta);
+    fn pre_update(&mut self, _delta: f32) {
         self.resource_manager
             .update::<Texture>(self.renderer.gfx.hal_mut());
         self.resource_manager
