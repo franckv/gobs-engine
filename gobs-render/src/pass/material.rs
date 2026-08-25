@@ -1,67 +1,79 @@
 use gobs_core::logger;
-use gobs_render_hal::{AttributeData, CommandBuffer, Handle, RenderHAL, UniformData as _};
-
-use crate::{
-    FrameData, GfxContext, PassId, RenderError, RenderFlags, RenderJob, RenderObject,
-    data::{SceneData, SceneDataLayout, SceneDataProp},
-    graph::GraphResourceManager,
-    pass::{RenderPass, metadata::PassMetaData},
+use gobs_render_graph::{
+    FrameData, GraphResourceManager, PassMetaData, SceneData, SceneDataLayout, SceneDataProp,
 };
+use gobs_render_hal::{
+    AttributeData, BindingGroupLayout, BindingGroupType, CommandBuffer, Handle, RenderHAL,
+    UniformBuffer, UniformData as _,
+};
+use gobs_vulkan::{DescriptorStage, DescriptorType};
 
-pub struct MaterialPass {
-    pub metadata: PassMetaData,
+#[cfg(debug_assertions)]
+use crate::render_object::RenderObject;
+use crate::{GfxContext, RenderError, RenderFlags, job::RenderJob};
+
+pub struct MaterialPassData {
+    pub(crate) pipeline: Option<Handle>,
+    pub(crate) render_flags: RenderFlags,
+    pub(crate) uniform_buffer: Vec<UniformBuffer>,
     scene_layout: SceneDataLayout,
-    render_jobs: Vec<RenderJob>,
-    fixed_pipeline: Option<Handle>,
 }
 
-impl MaterialPass {
+impl MaterialPassData {
     pub fn new(
         ctx: &mut GfxContext,
-        metadata: PassMetaData,
-        scene_layout: SceneDataLayout,
+        pass_metadata: &PassMetaData,
+        pipeline: Option<Handle>,
         render_flags: RenderFlags,
+        scene_layout: SceneDataLayout,
+        frames_in_flight: usize,
     ) -> Self {
-        let render_jobs = (0..ctx.frames_in_flight())
+        let label = format!("Scene data {}", pass_metadata.name());
+
+        let uniform_buffer = (0..frames_in_flight)
             .map(|_| {
-                RenderJob::new(
-                    ctx,
-                    metadata.name.to_string(),
+                let uniform_bindgroup = BindingGroupLayout::new(BindingGroupType::SceneData)
+                    .add_binding(DescriptorType::Uniform, DescriptorStage::All, 1);
+
+                UniformBuffer::new(
+                    &label,
+                    ctx.hal_mut(),
+                    uniform_bindgroup,
                     scene_layout.uniform_layout(),
-                    render_flags,
                 )
             })
             .collect();
 
         Self {
-            metadata,
+            pipeline,
+            render_flags,
+            uniform_buffer,
             scene_layout,
-            render_jobs,
-            fixed_pipeline: None,
         }
     }
 
-    pub fn set_fixed_pipeline(&mut self, pipeline: Handle) {
-        self.fixed_pipeline = Some(pipeline);
-        for job in &mut self.render_jobs {
-            job.set_pipeline(pipeline);
-        }
+    pub fn update_uniform(&self, ctx: &mut GfxContext, frame_id: usize, uniform_data: &[u8]) {
+        self.uniform_buffer[frame_id].update(ctx.hal_mut(), uniform_data);
     }
+}
 
+pub struct MaterialPass;
+
+impl MaterialPass {
     #[tracing::instrument(target = "profile", skip_all, level = "trace")]
     fn begin_pass(
-        &self,
         hal: &dyn RenderHAL,
         cmd: &mut dyn CommandBuffer,
+        pass_metadata: &PassMetaData,
         resource_manager: &GraphResourceManager,
     ) {
-        tracing::debug!(target: logger::RENDER, "Begin material pass {}", &self.metadata.name);
+        tracing::debug!(target: logger::RENDER, "Begin material pass {}", pass_metadata.name);
 
-        cmd.begin_label(&format!("Draw {}", self.metadata.name));
+        cmd.begin_label(&format!("Draw {}", pass_metadata.name));
 
-        let (color_img, color_clear, color_extent) = match self.metadata.color_attachments.first() {
+        let (color_img, color_clear, color_extent) = match pass_metadata.color_attachments.first() {
             Some(color) => {
-                let color_attach = &self.metadata.attachments[color];
+                let color_attach = &pass_metadata.attachments[color];
                 (
                     Some(resource_manager.image(color)),
                     color_attach.clear,
@@ -71,9 +83,9 @@ impl MaterialPass {
             None => (None, false, None),
         };
 
-        let (depth_img, depth_clear, depth_extent) = match self.metadata.depth_attachments.first() {
+        let (depth_img, depth_clear, depth_extent) = match pass_metadata.depth_attachments.first() {
             Some(depth) => {
-                let depth_attach = &self.metadata.attachments[depth];
+                let depth_attach = &pass_metadata.attachments[depth];
                 (
                     Some(resource_manager.image(depth)),
                     depth_attach.clear,
@@ -100,11 +112,12 @@ impl MaterialPass {
     }
 
     #[tracing::instrument(target = "profile", skip_all, level = "trace")]
-    fn end_pass(&self, cmd: &mut dyn CommandBuffer) {
+    fn end_pass(cmd: &mut dyn CommandBuffer) {
         cmd.end_rendering();
         cmd.end_label();
     }
 
+    /*
     #[cfg(debug_assertions)]
     fn validate_scene_layout(
         render_job: &RenderJob,
@@ -124,48 +137,41 @@ impl MaterialPass {
             }
         }
     }
+    */
 }
 
-impl RenderPass for MaterialPass {
-    fn id(&self) -> PassId {
-        self.metadata.id
-    }
-
-    fn name(&self) -> &str {
-        &self.metadata.name
-    }
-
-    fn metadata(&self) -> &PassMetaData {
-        &self.metadata
-    }
-
+impl MaterialPass {
     #[tracing::instrument(target = "profile", skip_all, level = "trace")]
-    fn render(
-        &self,
+    pub fn render(
         ctx: &mut GfxContext,
+        pass_data: &mut MaterialPassData,
+        pass_metadata: &PassMetaData,
         frame: &mut FrameData,
         resource_manager: &GraphResourceManager,
         render_list: &[RenderObject],
         scene_data: &SceneData,
     ) -> Result<(), RenderError> {
-        tracing::debug!(target: logger::RENDER, "Draw {}", &self.name());
+        tracing::debug!(target: logger::RENDER, "Draw {}", pass_metadata.name());
 
-        self.begin_pass(ctx.hal(), frame.command.as_mut(), resource_manager);
-
-        tracing::debug!(target: logger::RENDER, "Start render job");
-        let render_job = &self.render_jobs[frame.id];
+        Self::begin_pass(
+            ctx.hal(),
+            frame.command.as_mut(),
+            pass_metadata,
+            resource_manager,
+        );
 
         tracing::debug!(target: logger::RENDER, "Upload scene data");
         let mut scene_data_bytes = Vec::new();
 
-        tracing::debug!(target: logger::RENDER, "Scene data layout: {:?}", self.scene_layout.uniform_layout());
+        tracing::debug!(target: logger::RENDER, "Scene data layout: {:?}", pass_data.scene_layout.uniform_layout());
 
-        #[cfg(debug_assertions)]
-        if !render_job.has_pipeline() {
-            Self::validate_scene_layout(render_job, &self.scene_layout, render_list);
-        };
+        // #[cfg(debug_assertions)]
+        // if !render_job.has_pipeline() {
+        //     Self::validate_scene_layout(render_job, &self.scene_layout, render_list);
+        // };
 
-        self.scene_layout
+        pass_data
+            .scene_layout
             .copy_data(&mut scene_data_bytes, |prop| match prop {
                 SceneDataProp::CameraPosition => {
                     AttributeData::Vec3F(scene_data.camera_transform.translation().into())
@@ -194,14 +200,25 @@ impl RenderPass for MaterialPass {
             });
 
         tracing::debug!(target: logger::RENDER, "Update uniform (scene data, push)");
-        render_job.update_uniform(ctx, &scene_data_bytes);
+        pass_data.update_uniform(ctx, frame.id, &scene_data_bytes);
+
+        tracing::debug!(target: logger::RENDER, "Start render job");
+        let mut render_job = RenderJob::new()
+            .with_pipeline(pass_data.pipeline)
+            .with_scene_buffer(&pass_data.uniform_buffer[frame.id]);
 
         tracing::debug!(target: logger::RENDER, "Draw render object list");
-        render_job.draw_list(ctx, frame, render_list)?;
+        render_job.draw_list(
+            ctx,
+            frame,
+            pass_metadata.name(),
+            render_list,
+            pass_data.render_flags,
+        )?;
 
         tracing::debug!(target: logger::RENDER, "Stop render job");
 
-        self.end_pass(frame.command.as_mut());
+        Self::end_pass(frame.command.as_mut());
 
         Ok(())
     }

@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use gobs_core::logger;
-use gobs_render_graph::{MaterialRenderData, RenderFlags, SceneDataLayout};
+use gobs_render_graph::{RenderFlags, SceneDataLayout};
 use gobs_render_hal::{
     AttributeData, BindResource, BindingGroupLayout, BindingGroupType, BufferType, DescriptorType,
     Handle, RenderHAL, UniformData as _,
@@ -15,6 +15,7 @@ use crate::{
         MaterialConstantData, MaterialDataLayout, MaterialDataProp, TextureDataLayout,
         TextureDataProp,
     },
+    render_object::MaterialRenderData,
 };
 
 #[derive(Clone)]

@@ -1,13 +1,13 @@
 use crate::{
-    FrameData, GfxContext, GraphConfig, RenderError, RenderPass,
-    graph::resource::GraphResourceManager,
-    pass::{Attachment, metadata::PassMetaData},
+    FrameData, GfxContext, GraphConfig, PassMetaData, RenderError,
+    graph::{graph_loader::RenderPassConfig, resource::GraphResourceManager},
+    pass::Attachment,
 };
 use gobs_core::logger;
-use gobs_render_hal::{CommandBuffer, Handle, ImageLayout, RenderHAL};
+use gobs_render_hal::{CommandBuffer, ImageLayout, RenderHAL};
 
 pub struct FrameGraphPass {
-    pub pass: RenderPass,
+    pub pass: PassMetaData,
     pub enabled: bool,
 }
 
@@ -32,17 +32,17 @@ impl FrameGraph {
         ctx: &mut GfxContext,
         graph_filename: &str,
         graph_name: &str,
-        pipeline_resolver: F,
+        pass_config: F,
     ) -> Result<Self, RenderError>
     where
-        F: FnMut(&str, &mut GfxContext) -> Option<Handle>,
+        F: FnMut(&mut GfxContext, &PassMetaData, &RenderPassConfig),
     {
         tracing::debug!(target: logger::INIT, "Load graph: {}", graph_name);
-        GraphConfig::load_graph(ctx, graph_filename, graph_name, pipeline_resolver)
+        GraphConfig::load_graph(ctx, graph_filename, graph_name, pass_config)
             .map_err(|_| RenderError::InvalidData)
     }
 
-    pub fn register_pass(&mut self, pass: RenderPass, enabled: bool) {
+    pub fn register_pass(&mut self, pass: PassMetaData, enabled: bool) {
         let pass = FrameGraphPass { pass, enabled };
 
         self.passes.push(pass);
@@ -74,13 +74,13 @@ impl FrameGraph {
         }
     }
 
-    pub fn get_pass<F>(&self, cmp: F) -> Result<RenderPass, RenderError>
+    pub fn get_pass<F>(&self, cmp: F) -> Result<&PassMetaData, RenderError>
     where
-        F: Fn(&RenderPass) -> bool,
+        F: Fn(&PassMetaData) -> bool,
     {
         for pass in &self.passes {
             if cmp(&pass.pass) {
-                return Ok(pass.pass.clone());
+                return Ok(&pass.pass);
             }
         }
 
@@ -134,8 +134,8 @@ impl FrameGraph {
     }
     */
 
-    pub fn pass_by_name(&self, pass_name: &str) -> Result<RenderPass, RenderError> {
-        self.get_pass(|pass| pass.name() == pass_name)
+    pub fn pass_by_name(&self, pass_name: &str) -> Result<&PassMetaData, RenderError> {
+        self.get_pass(|pass| pass.name == pass_name)
     }
 
     #[tracing::instrument(target = "profile", skip_all, level = "trace")]
@@ -219,40 +219,39 @@ impl FrameGraph {
             &mut GfxContext,
             &mut FrameData,
             &GraphResourceManager,
-            RenderPass,
+            &PassMetaData,
         ) -> Result<(), RenderError>,
     {
         for pass in &mut self.passes {
             if !pass.enabled {
                 tracing::debug!(target: logger::RENDER,
-                    "Skip pass: {}", pass.pass.name());
+                    "Skip pass: {}", &pass.pass.name);
                 continue;
             }
 
-            let pass = pass.pass.clone();
-            let metadata = pass.metadata();
+            let pass = &pass.pass;
 
             Self::transition_attachments(
                 ctx.hal_mut(),
                 frame.command.as_mut(),
                 &self.resource_manager,
-                metadata,
+                pass,
             );
 
-            tracing::debug!(target: logger::SYNC, "Begin render pass {}", pass.name());
+            tracing::debug!(target: logger::SYNC, "Begin render pass {}", &pass.name);
 
             let span =
-                tracing::span!(target: logger::PROFILE, tracing::Level::TRACE, "Pass", "{}", pass.name())
+                tracing::span!(target: logger::PROFILE, tracing::Level::TRACE, "Pass", "{}", &pass.name)
                     .entered();
 
-            tracing::debug!(target: logger::RENDER, ">>> Begin rendering pass {}", pass.name());
+            tracing::debug!(target: logger::RENDER, ">>> Begin rendering pass {}", &pass.name);
 
-            run_pass(ctx, frame, &self.resource_manager, pass.clone())?;
+            run_pass(ctx, frame, &self.resource_manager, pass)?;
 
-            tracing::debug!(target: logger::RENDER, "<<< End rendering pass {}", pass.name());
+            tracing::debug!(target: logger::RENDER, "<<< End rendering pass {}", &pass.name);
             span.exit();
 
-            tracing::debug!(target: logger::SYNC, "End render pass {}", pass.name());
+            tracing::debug!(target: logger::SYNC, "End render pass {}", &pass.name);
         }
 
         Ok(())
@@ -270,7 +269,7 @@ impl FrameGraph {
 
     pub fn enable_pass(&mut self, name: &str, enabled: bool) {
         for pass in &mut self.passes {
-            if pass.pass.name() == name {
+            if pass.pass.name == name {
                 pass.enabled = enabled;
             }
         }

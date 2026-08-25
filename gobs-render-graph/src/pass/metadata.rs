@@ -1,13 +1,13 @@
 use std::collections::HashMap;
 
-use crate::{
-    PassId,
-    pass::{Attachment, AttachmentType, RenderPassType},
-};
+use uuid::Uuid;
+
+use crate::pass::{Attachment, AttachmentType};
+
+pub type PassId = Uuid;
 
 pub struct PassMetaData {
     pub id: PassId,
-    pub ty: RenderPassType,
     pub name: String,
     pub attachments: HashMap<String, Attachment>,
     pub input_attachments: Vec<String>,
@@ -17,10 +17,9 @@ pub struct PassMetaData {
 }
 
 impl PassMetaData {
-    pub fn new(name: &str, ty: RenderPassType) -> Self {
+    pub fn new(name: &str) -> Self {
         Self {
             id: PassId::new_v4(),
-            ty,
             name: name.to_string(),
             attachments: HashMap::new(),
             input_attachments: Vec::new(),
@@ -28,6 +27,10 @@ impl PassMetaData {
             depth_attachments: Vec::new(),
             image_attachments: Vec::new(),
         }
+    }
+
+    pub fn name(&self) -> &str {
+        &self.name
     }
 
     pub fn add_attachment(&mut self, name: &str, attachment: Attachment) {

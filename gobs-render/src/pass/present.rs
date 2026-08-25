@@ -1,47 +1,29 @@
 use gobs_core::logger;
+use gobs_render_graph::{FrameData, GraphResourceManager};
 use gobs_render_hal::ImageLayout;
 
-use crate::{
-    FrameData, GfxContext, RenderError, RenderObject,
-    data::SceneData,
-    graph::GraphResourceManager,
-    pass::{PassId, RenderPass, metadata::PassMetaData},
-};
+use crate::{GfxContext, RenderError};
 
-pub struct PresentPass {
-    pub metadata: PassMetaData,
+pub struct PresentPassData {
     render_target: String,
 }
 
-impl PresentPass {
-    pub fn new(_ctx: &GfxContext, metadata: PassMetaData, render_target: &str) -> Self {
+impl PresentPassData {
+    pub fn new(render_target: &str) -> Self {
         Self {
-            metadata,
             render_target: render_target.to_string(),
         }
     }
 }
 
-impl RenderPass for PresentPass {
-    fn id(&self) -> PassId {
-        self.metadata.id
-    }
+pub struct PresentPass;
 
-    fn name(&self) -> &str {
-        &self.metadata.name
-    }
-
-    fn metadata(&self) -> &PassMetaData {
-        &self.metadata
-    }
-
-    fn render(
-        &self,
+impl PresentPass {
+    pub fn render(
         ctx: &mut GfxContext,
+        pass_data: &PresentPassData,
         frame: &mut FrameData,
         resource_manager: &GraphResourceManager,
-        _render_list: &[RenderObject],
-        _scene_data: &SceneData,
     ) -> Result<(), RenderError> {
         tracing::debug!(target: logger::RENDER, "Present");
 
@@ -50,7 +32,7 @@ impl RenderPass for PresentPass {
         if let Some(render_target) = ctx.hal().get_render_target() {
             cmd.transition_image_layout(
                 ctx.hal_mut(),
-                resource_manager.image(&self.render_target),
+                resource_manager.image(&pass_data.render_target),
                 ImageLayout::TransferSrc,
             );
 
@@ -58,7 +40,7 @@ impl RenderPass for PresentPass {
 
             cmd.copy_image_to_image(
                 ctx.hal(),
-                resource_manager.image(&self.render_target),
+                resource_manager.image(&pass_data.render_target),
                 render_target,
             );
         }

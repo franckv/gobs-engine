@@ -1,14 +1,29 @@
+use std::collections::HashMap;
+
 use gobs_core::{ConfigReader as _, GobsConfig, ImageExtent2D, logger};
-use gobs_render_graph::{FrameData, FrameGraph, GfxContext, RenderError, RenderPassType};
+use gobs_render_graph::{
+    FrameData, FrameGraph, GfxContext, PassId, PassMetaData, RenderError, RenderPassConfig,
+    RenderPassType, SceneDataLayout,
+};
+use gobs_render_hal::{AlignMode, RenderHalConfig, UniformData as _};
 use gobs_resource::ResourceManager;
 
-use crate::{Pipeline, PipelinesConfig, RenderBatch, RenderConfig};
+use crate::{
+    Pipeline, PipelinesConfig, RenderBatch, RenderConfig,
+    pass::{
+        PassData,
+        compute::{ComputePass, ComputePassData},
+        material::{MaterialPass, MaterialPassData},
+        present::{PresentPass, PresentPassData},
+    },
+};
 
 pub struct Renderer {
     pub graph: FrameGraph,
     pub gfx: GfxContext,
     pub frames: Vec<FrameData>,
     pub frame_number: usize,
+    passes: HashMap<PassId, PassData>,
 }
 
 impl Renderer {
@@ -17,6 +32,9 @@ impl Renderer {
         config: GobsConfig,
         resource_manager: &mut ResourceManager,
     ) -> Self {
+        let mut passes = HashMap::new();
+        let frames_in_flight = config.get_int(RenderHalConfig::FramesInFlight) as usize;
+
         let graph = if config.get_bool(RenderConfig::LoadGraph) {
             PipelinesConfig::load_resources(
                 &gfx,
@@ -29,12 +47,16 @@ impl Renderer {
                 &mut gfx,
                 &config.get_string(RenderConfig::GraphFileName),
                 &config.get_string(RenderConfig::GraphName),
-                |pipeline, ctx| {
-                    let pipeline_handle = resource_manager.get_by_name::<Pipeline>(pipeline)?;
+                |ctx, pass_metadata, pass_config| {
+                    let pass_data = Self::build_pass_data(
+                        ctx,
+                        resource_manager,
+                        pass_metadata,
+                        pass_config,
+                        frames_in_flight,
+                    );
 
-                    let pipeline = resource_manager.get_data(ctx.hal_mut(), &pipeline_handle);
-
-                    pipeline.ok().map(|data| data.data.pipeline)
+                    passes.insert(pass_metadata.id, pass_data);
                 },
             )
             .unwrap()
@@ -53,6 +75,58 @@ impl Renderer {
             gfx,
             frames,
             frame_number: 0,
+            passes,
+        }
+    }
+
+    fn build_pass_data(
+        ctx: &mut GfxContext,
+        resource_manager: &mut ResourceManager,
+        pass_metadata: &PassMetaData,
+        pass_config: &RenderPassConfig,
+        frames_in_flight: usize,
+    ) -> PassData {
+        let pipeline = pass_config.pipeline.as_ref().and_then(|pipeline| {
+            let pipeline_handle = resource_manager.get_by_name::<Pipeline>(pipeline)?;
+            let pipeline_data = resource_manager
+                .get_data(ctx.hal_mut(), &pipeline_handle)
+                .ok()?;
+            Some(pipeline_data.data.pipeline)
+        });
+
+        let render_flags = pass_config.flags;
+
+        match pass_config.ty {
+            RenderPassType::Compute => {
+                let pass_data =
+                    ComputePassData::new(pipeline.expect("Compute pass with no pipeline"));
+
+                PassData::Compute(pass_data)
+            }
+            RenderPassType::Material => {
+                let mut scene_layout = SceneDataLayout::new(AlignMode::Std140);
+                for prop in &pass_config.scene_layout {
+                    scene_layout = scene_layout.prop(*prop);
+                }
+
+                let pass_data = MaterialPassData::new(
+                    ctx,
+                    pass_metadata,
+                    pipeline,
+                    render_flags,
+                    scene_layout,
+                    frames_in_flight,
+                );
+
+                PassData::Material(pass_data)
+            }
+            RenderPassType::Present => {
+                let target = pass_config.target.as_ref().expect("Invalid present target");
+
+                let pass_data = PresentPassData::new(target);
+
+                PassData::Present(pass_data)
+            }
         }
     }
 
@@ -97,15 +171,36 @@ impl Renderer {
         self.graph.run(
             &mut self.gfx,
             frame,
-            |ctx, frame, resource_manager, pass| match pass.metadata().ty {
-                RenderPassType::Compute | RenderPassType::Material | RenderPassType::Present => {
-                    pass.render(
-                        ctx,
-                        frame,
-                        resource_manager,
-                        &batch.render_list,
-                        &batch.scene_data(),
-                    )
+            |ctx, frame, resource_manager, pass| {
+                if let Some(pass_data) = self.passes.get_mut(&pass.id) {
+                    match pass_data {
+                        PassData::Material(pass_data) => MaterialPass::render(
+                            ctx,
+                            pass_data,
+                            pass,
+                            frame,
+                            resource_manager,
+                            &batch.render_list,
+                            &batch.scene_data(),
+                        ),
+                        PassData::Present(pass_data) => PresentPass::render(
+                            ctx,
+                            pass_data,
+                            frame,
+                            resource_manager,
+                            ),
+                        PassData::Compute(pass_data) => ComputePass::render(
+                            ctx,
+                            pass_data,
+                            pass,
+                            frame,
+                            resource_manager,
+                        )
+                    }
+                } else {
+                    tracing::error!(target: logger::RENDER, "Invoke unregisted pass: {}", pass.name());
+
+                    Ok(())
                 }
             },
         )?;

@@ -3,21 +3,11 @@ mod data;
 mod error;
 mod framedata;
 mod graph;
-mod job;
 mod pass;
-mod render_object;
-
-use std::sync::Arc;
 
 pub use context::GfxContext;
-pub use data::{SceneData, SceneDataLayout, SceneDataProp};
+pub use data::{RenderFlags, SceneData, SceneDataLayout, SceneDataProp};
 pub use error::RenderError;
 pub use framedata::FrameData;
-pub use graph::{FrameGraph, GraphConfig};
-pub use job::RenderJob;
-pub use pass::RenderPassType;
-pub use render_object::{
-    MaterialId, MaterialInstanceId, MaterialRenderData, MeshId, PassId, RenderFlags, RenderObject,
-};
-
-pub type RenderPass = Arc<dyn pass::RenderPass>;
+pub use graph::{FrameGraph, GraphConfig, GraphResourceManager, RenderPassConfig};
+pub use pass::{PassId, PassMetaData, RenderPassType};

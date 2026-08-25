@@ -1,44 +1,28 @@
 use gobs_core::{ImageExtent2D, logger};
+use gobs_render_graph::{FrameData, GraphResourceManager, PassMetaData};
 use gobs_render_hal::{BindResource, BindingGroupType, Handle};
 
-use crate::{
-    FrameData, GfxContext, RenderError, RenderObject,
-    data::SceneData,
-    graph::GraphResourceManager,
-    pass::{PassId, RenderPass, metadata::PassMetaData},
-};
+use crate::{GfxContext, RenderError};
 
-pub struct ComputePass {
-    pub metadata: PassMetaData,
+pub struct ComputePassData {
     pub pipeline: Handle,
 }
 
-impl ComputePass {
-    pub fn new(metadata: PassMetaData, pipeline: Handle) -> Self {
-        Self { metadata, pipeline }
+impl ComputePassData {
+    pub fn new(pipeline: Handle) -> Self {
+        Self { pipeline }
     }
 }
 
-impl RenderPass for ComputePass {
-    fn id(&self) -> PassId {
-        self.metadata.id
-    }
+pub struct ComputePass;
 
-    fn name(&self) -> &str {
-        &self.metadata.name
-    }
-
-    fn metadata(&self) -> &PassMetaData {
-        &self.metadata
-    }
-
-    fn render(
-        &self,
+impl ComputePass {
+    pub fn render(
         ctx: &mut GfxContext,
+        pass_data: &mut ComputePassData,
+        pass_metadata: &PassMetaData,
         frame: &mut FrameData,
         resource_manager: &GraphResourceManager,
-        _render_list: &[RenderObject],
-        _scene_data: &SceneData,
     ) -> Result<(), RenderError> {
         tracing::debug!(target: logger::RENDER, "Draw compute");
 
@@ -50,24 +34,24 @@ impl RenderPass for ComputePass {
 
         let mut draw_extent = ImageExtent2D::default();
 
-        for name in self.metadata.attachments.keys() {
+        for name in pass_metadata.attachments.keys() {
             let image = resource_manager.image(name);
             draw_extent = ctx.hal().get_image_extent(image);
 
             resources.push(image);
         }
 
-        cmd.bind_pipeline(ctx.hal(), self.pipeline);
+        cmd.bind_pipeline(ctx.hal(), pass_data.pipeline);
 
         if !resources.is_empty() {
             // TODO: assume one ds
             let binding_layout = ctx
                 .hal()
-                .get_pipeline_descriptor_layout(self.pipeline, &BindingGroupType::ComputeData)
+                .get_pipeline_descriptor_layout(pass_data.pipeline, &BindingGroupType::ComputeData)
                 .ok_or(RenderError::InvalidData)?;
 
             let bind_resource = BindResource::with_resources(binding_layout.clone(), resources);
-            cmd.bind_resource(ctx.hal_mut(), self.pipeline, &bind_resource);
+            cmd.bind_resource(ctx.hal_mut(), pass_data.pipeline, &bind_resource);
         }
 
         // TODO: hardcoded

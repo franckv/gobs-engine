@@ -1,31 +1,8 @@
 use std::{cmp::Ordering, sync::Arc};
 
-use bitflags::bitflags;
-use serde::{Deserialize, Serialize};
-use uuid::Uuid;
-
 use gobs_core::Transform;
+use gobs_render_graph::{RenderFlags, SceneDataLayout};
 use gobs_render_hal::{BindResource, Handle, VertexAttribute};
-
-use crate::data::SceneDataLayout;
-
-pub type MaterialId = Uuid;
-pub type MaterialInstanceId = Uuid;
-pub type MeshId = Uuid;
-pub type PassId = Uuid;
-
-bitflags! {
-    #[derive(Debug, Default, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
-    #[serde(transparent)]
-    pub struct RenderFlags: u32 {
-        const ENTITY = 1 << 0;
-        const TRANSPARENT = 1 << 1;
-        const OPAQUE = 1 << 2;
-        const UI = 1 << 3;
-        const SELECTED = 1 << 4;
-        const BOUNDS = 1 << 5;
-    }
-}
 
 #[derive(Clone, Debug, Default)]
 pub struct MaterialRenderData {

@@ -5,15 +5,9 @@ use serde::{Deserialize, Serialize};
 use gobs_core::{ImageExtent2D, ImageFormat};
 use gobs_render_hal::{ImageLayout, ImageUsage};
 
-use crate::{
-    FrameData, GfxContext, PassId, RenderError, RenderObject, data::SceneData,
-    graph::GraphResourceManager, pass::metadata::PassMetaData,
-};
+mod metadata;
 
-pub mod compute;
-pub mod material;
-pub mod metadata;
-pub mod present;
+pub use metadata::{PassId, PassMetaData};
 
 #[derive(Clone, Copy, Debug, Deserialize, Serialize, PartialEq)]
 pub enum RenderPassType {
@@ -52,7 +46,7 @@ pub struct Attachment {
     pub usage: ImageUsage,
     pub extent: ImageExtent2D,
     pub layout: ImageLayout,
-    clear: bool,
+    pub clear: bool,
     scaling: f32,
 }
 
@@ -102,18 +96,4 @@ impl Attachment {
             (self.extent.height as f32 * self.scaling) as u32,
         )
     }
-}
-
-pub trait RenderPass {
-    fn id(&self) -> PassId;
-    fn name(&self) -> &str;
-    fn metadata(&self) -> &PassMetaData;
-    fn render(
-        &self,
-        ctx: &mut GfxContext,
-        frame: &mut FrameData,
-        resource_manager: &GraphResourceManager,
-        render_list: &[RenderObject],
-        scene_data: &SceneData,
-    ) -> Result<(), RenderError>;
 }

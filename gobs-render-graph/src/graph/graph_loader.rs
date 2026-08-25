@@ -1,21 +1,18 @@
-use std::{collections::HashMap, sync::Arc};
+use std::collections::HashMap;
 
 use serde::{Deserialize, Serialize};
 
 use gobs_core::{ImageExtent2D, ImageFormat, logger};
-use gobs_render_hal::{AlignMode, Handle, ImageLayout, ImageUsage, UniformData as _};
+use gobs_render_hal::{ImageLayout, ImageUsage};
 use gobs_resource::{
     ResourceError,
     load::{self, AssetType},
 };
 
 use crate::{
-    FrameGraph, GfxContext, RenderFlags,
-    data::{SceneDataLayout, SceneDataProp},
-    pass::{
-        Attachment, AttachmentAccess, AttachmentType, RenderPass, RenderPassType,
-        compute::ComputePass, material::MaterialPass, metadata::PassMetaData, present::PresentPass,
-    },
+    FrameGraph, GfxContext, PassMetaData,
+    data::{RenderFlags, SceneDataProp},
+    pass::{Attachment, AttachmentAccess, AttachmentType, RenderPassType},
 };
 
 // TODO: store in config file
@@ -34,18 +31,18 @@ fn default_true() -> bool {
 }
 
 #[derive(Debug, Deserialize, Serialize)]
-struct RenderPassConfig {
-    ty: RenderPassType,
-    pipeline: Option<String>,
+pub struct RenderPassConfig {
+    pub ty: RenderPassType,
+    pub pipeline: Option<String>,
     #[serde(default)]
     attachments: HashMap<String, AttachmentInfo>,
     #[serde(default)]
-    scene_layout: Vec<SceneDataProp>,
+    pub scene_layout: Vec<SceneDataProp>,
     #[serde(default = "default_true")]
     enabled: bool,
     #[serde(default)]
-    flags: RenderFlags,
-    target: Option<String>,
+    pub flags: RenderFlags,
+    pub target: Option<String>,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -84,24 +81,24 @@ impl GraphConfig {
         ctx: &mut GfxContext,
         filename: &str,
         name: &str,
-        pipeline_resolver: F,
+        pass_config: F,
     ) -> Result<FrameGraph, ResourceError>
     where
-        F: FnMut(&str, &mut GfxContext) -> Option<Handle>,
+        F: FnMut(&mut GfxContext, &PassMetaData, &RenderPassConfig),
     {
         let data = load::load_string_sync(filename, AssetType::RESOURCES)?;
 
-        Self::load_graph_with_data(ctx, &data, name, pipeline_resolver)
+        Self::load_graph_with_data(ctx, &data, name, pass_config)
     }
 
     pub fn load_graph_with_data<F>(
         ctx: &mut GfxContext,
         data: &str,
         name: &str,
-        mut pipeline_resolver: F,
+        mut pass_config: F,
     ) -> Result<FrameGraph, ResourceError>
     where
-        F: FnMut(&str, &mut GfxContext) -> Option<Handle>,
+        F: FnMut(&mut GfxContext, &PassMetaData, &RenderPassConfig),
     {
         let graph_config = Self::load_with_data(data)?;
 
@@ -120,12 +117,12 @@ impl GraphConfig {
         for passname in &graph_config.graphes[name] {
             tracing::debug!(target: logger::INIT, "Load pass: {}", passname);
 
-            let pass = Self::load_pass(ctx, &graph_config, passname, &mut pipeline_resolver)
+            let pass = Self::load_pass(ctx, &graph_config, passname, &mut pass_config)
                 .unwrap_or_else(|| panic!("Failed to load pass {}", passname));
 
             let enabled = graph_config.passes.get(passname).is_some_and(|p| p.enabled);
 
-            graph.register_pass(pass.clone(), enabled);
+            graph.register_pass(pass, enabled);
         }
 
         Ok(graph)
@@ -135,91 +132,25 @@ impl GraphConfig {
         ctx: &mut GfxContext,
         graph: &GraphConfig,
         passname: &str,
-        mut pipeline_resolver: F,
-    ) -> Option<Arc<dyn RenderPass>>
+        mut pass_config: F,
+    ) -> Option<PassMetaData>
     where
-        F: FnMut(&str, &mut GfxContext) -> Option<Handle>,
+        F: FnMut(&mut GfxContext, &PassMetaData, &RenderPassConfig),
     {
         tracing::info!(target: logger::INIT, "Load pass: {}", passname);
 
         let pass = graph.passes.get(passname)?;
-        let pipeline = pass
-            .pipeline
-            .as_ref()
-            .and_then(|pipeline| pipeline_resolver(pipeline, ctx));
 
-        match pass.ty {
-            RenderPassType::Compute => {
-                Self::load_compute_pass(ctx, passname, pass, graph, pipeline?)
-            }
-            RenderPassType::Material => {
-                Self::load_material_pass(ctx, passname, pass, graph, pipeline)
-            }
-            RenderPassType::Present => Self::load_present_pass(ctx, passname, pass),
-        }
-    }
-
-    fn load_compute_pass(
-        ctx: &mut GfxContext,
-        passname: &str,
-        pass: &RenderPassConfig,
-        graph: &GraphConfig,
-        pipeline: Handle,
-    ) -> Option<Arc<dyn RenderPass>> {
-        let mut metadata = PassMetaData::new(passname, RenderPassType::Compute);
+        let mut metadata = PassMetaData::new(passname);
 
         for (attach_name, attach_config) in &pass.attachments {
             let attachment = Self::load_attachment_usage(ctx, graph, attach_name, attach_config)?;
             metadata.add_attachment(attach_name, attachment);
         }
 
-        let compute_pass = ComputePass::new(metadata, pipeline);
+        pass_config(ctx, &metadata, pass);
 
-        Some(Arc::new(compute_pass))
-    }
-
-    fn load_present_pass(
-        ctx: &mut GfxContext,
-        passname: &str,
-        pass: &RenderPassConfig,
-    ) -> Option<Arc<dyn RenderPass>> {
-        if let Some(target) = &pass.target {
-            let metadata = PassMetaData::new(passname, RenderPassType::Present);
-
-            Some(Arc::new(PresentPass::new(ctx, metadata, target)))
-        } else {
-            tracing::error!(target: logger::INIT, "Invalid present target");
-            None
-        }
-    }
-
-    fn load_material_pass(
-        ctx: &mut GfxContext,
-        passname: &str,
-        pass: &RenderPassConfig,
-        graph: &GraphConfig,
-        pipeline: Option<Handle>,
-    ) -> Option<Arc<dyn RenderPass>> {
-        let mut scene_layout = SceneDataLayout::new(AlignMode::Std140);
-        for prop in &pass.scene_layout {
-            scene_layout = scene_layout.prop(*prop);
-        }
-
-        let mut metadata = PassMetaData::new(passname, RenderPassType::Material);
-
-        for (attach_name, attach_config) in &pass.attachments {
-            let attachment = Self::load_attachment_usage(ctx, graph, attach_name, attach_config)?;
-
-            metadata.add_attachment(attach_name, attachment);
-        }
-
-        let mut material_pass = MaterialPass::new(ctx, metadata, scene_layout, pass.flags);
-
-        if let Some(pipeline) = pipeline {
-            material_pass.set_fixed_pipeline(pipeline);
-        }
-
-        Some(Arc::new(material_pass))
+        Some(metadata)
     }
 
     fn get_render_target_extent(ctx: &GfxContext) -> ImageExtent2D {
@@ -295,7 +226,8 @@ mod tests {
     use tracing_subscriber::{FmtSubscriber, fmt::format::FmtSpan};
 
     use crate::{
-        GfxContext, GraphConfig, RenderFlags,
+        GfxContext, GraphConfig,
+        data::RenderFlags,
         graph::graph_loader::{AttachmentInfo, RenderPassConfig},
         pass::{AttachmentAccess, RenderPassType},
     };
@@ -323,10 +255,10 @@ mod tests {
         let graph = GraphConfig::load_with_data(data).unwrap();
         tracing::info!("Graph: {:?}", graph.graphes["scene"]);
 
-        let graph = GraphConfig::load_graph_with_data(&mut ctx, data, "ui", |_, _| None).unwrap();
+        let graph = GraphConfig::load_graph_with_data(&mut ctx, data, "ui", |_, _, _| {}).unwrap();
 
         for pass in graph.passes {
-            tracing::info!("Load pass: {}", pass.pass.name());
+            tracing::info!("Load pass: {}", &pass.pass.name);
         }
     }
 
@@ -345,7 +277,7 @@ mod tests {
         let graph_config = GraphConfig::load_with_data(data).unwrap();
 
         let _pass =
-            GraphConfig::load_pass(&mut ctx, &graph_config, "forward", |_, _| None).unwrap();
+            GraphConfig::load_pass(&mut ctx, &graph_config, "forward", |_, _, _| {}).unwrap();
     }
 
     #[test]

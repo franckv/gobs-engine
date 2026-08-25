@@ -3,13 +3,16 @@ use std::{collections::hash_map::Entry, sync::Arc};
 use ahash::HashMap;
 
 use gobs_core::{ImageExtent2D, Transform, logger};
-use gobs_render_graph::{GfxContext, MaterialRenderData, RenderFlags, RenderObject, SceneData};
+use gobs_render_graph::{GfxContext, RenderFlags, SceneData};
 use gobs_render_hal::VertexData;
 use gobs_resource::{ResourceError, ResourceHandle, ResourceManager, camera::Camera, light::Light};
 
 use crate::{
     BoundingBox, Material, MaterialInstance, Mesh, Pipeline, RenderMeshBuilder, RenderModelBuilder,
-    ShapeBuilder, Texture, material_system::MaterialSystem, model::Model,
+    ShapeBuilder, Texture,
+    material_system::MaterialSystem,
+    model::Model,
+    render_object::{MaterialRenderData, RenderObject},
 };
 
 pub struct RenderBatch {
