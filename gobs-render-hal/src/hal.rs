@@ -81,6 +81,7 @@ pub trait RenderHAL {
     fn destroy_pipeline(&mut self, pipeline: Handle);
 
     fn get_pipeline_object_layout(&self, pipeline: Handle) -> &ObjectDataLayout;
+    fn get_pipeline_push_layout(&self, pipeline: Handle) -> &ObjectDataLayout;
     fn get_pipeline_descriptor_types(&self, pipeline: Handle) -> Vec<BindingGroupType>;
     fn get_pipeline_descriptor_layout(
         &self,

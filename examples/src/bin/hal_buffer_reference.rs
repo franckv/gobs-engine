@@ -79,8 +79,8 @@ impl<Context: GobsContext> GobsGame for App<Context> {
         self.cmd.bind_index_buffer(gfx, self.index_buffer);
 
         let mut constants = vec![];
-        let object_layout = gfx.get_pipeline_object_layout(self.pipeline);
-        object_layout.copy_data(&mut constants, |p| match p {
+        let push_layout = gfx.get_pipeline_push_layout(self.pipeline);
+        push_layout.copy_data(&mut constants, |p| match p {
             ObjectDataProp::VertexBufferAddress => {
                 let vertex_buffer_address = gfx.get_buffer_address(self.vertex_buffer);
                 AttributeData::U64(vertex_buffer_address)

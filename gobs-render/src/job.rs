@@ -4,8 +4,7 @@ use gobs_core::{
 };
 use gobs_render_graph::{FrameData, RenderError};
 use gobs_render_hal::{
-    AttributeData, BindResource, BindingId, Handle, ObjectDataLayout, ObjectDataProp,
-    UniformBuffer, UniformData as _,
+    AttributeData, BindResource, BindingId, Handle, ObjectDataProp, UniformBuffer, UniformData as _,
 };
 
 use crate::{GfxContext, data::RenderFlags, render_object::RenderObject};
@@ -438,14 +437,13 @@ impl<'a> RenderJob<'a> {
 
         match instance_data {
             InstanceData::Buffer(address) => {
-                let mut layout = ObjectDataLayout::new(false);
-                layout = layout.prop(ObjectDataProp::InstanceBufferAddress);
+                let push_layout = ctx.get_pipeline_push_layout(pipeline);
 
                 let mut data = FixedBuffer::<128>::new();
 
-                layout.copy_data(&mut data, |prop| match prop {
+                push_layout.copy_data(&mut data, |prop| match prop {
                     ObjectDataProp::InstanceBufferAddress => AttributeData::U64(*address),
-                    _ => unreachable!(),
+                    _ => unimplemented!(),
                 });
 
                 frame.command.push_constants(ctx, pipeline, data.as_slice());

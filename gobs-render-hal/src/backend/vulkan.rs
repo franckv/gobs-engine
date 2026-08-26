@@ -274,6 +274,12 @@ impl RenderHAL for VulkanHAL {
         &pipeline.instance_layout
     }
 
+    fn get_pipeline_push_layout(&self, pipeline: Handle) -> &ObjectDataLayout {
+        let pipeline = self.registry.pipelines.get(pipeline).unwrap();
+
+        &pipeline.push_layout
+    }
+
     fn get_pipeline_vertex_attributes(&self, pipeline: Handle) -> VertexAttribute {
         let pipeline = self.registry.pipelines.get(pipeline).unwrap();
 
