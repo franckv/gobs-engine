@@ -200,13 +200,15 @@ impl MaterialPass {
         };
 
         tracing::debug!(target: logger::RENDER, "Draw render object list");
-        render_job.draw_list(
+        let stats = render_job.draw_list(
             ctx,
             frame,
             pass_metadata.name(),
             render_list,
             pass_data.render_flags,
         )?;
+
+        tracing::debug!(target: logger::STATS, "Render stats pass: {}, {:?}", pass_metadata.name(), stats);
 
         tracing::debug!(target: logger::RENDER, "Stop render job");
 

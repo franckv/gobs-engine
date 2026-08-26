@@ -43,18 +43,41 @@ impl RenderJobState {
     }
 }
 
+#[derive(Clone, Debug)]
+pub struct RenderStats {
+    pub objects: u32,
+    pub draws: u32,
+    pub pipelines: u32,
+    pub materials: u32,
+    pub uniforms: u32,
+    pub indexes: u32,
+}
+
+impl RenderStats {
+    pub fn new() -> Self {
+        Self {
+            objects: 0,
+            draws: 0,
+            pipelines: 0,
+            materials: 0,
+            uniforms: 0,
+            indexes: 0,
+        }
+    }
+}
+
 pub struct RenderJob<'a> {
     state: RenderJobState,
+    stats: RenderStats,
     fixed_pipeline: Option<Handle>,
     scene_buffer: Option<&'a UniformBuffer>,
 }
 
 impl<'a> RenderJob<'a> {
     pub fn new() -> Self {
-        let state = RenderJobState::new();
-
         Self {
-            state,
+            state: RenderJobState::new(),
+            stats: RenderStats::new(),
             fixed_pipeline: None,
             scene_buffer: None,
         }
@@ -94,12 +117,14 @@ impl<'a> RenderJob<'a> {
         pass_name: &str,
         render_list: &[RenderObject],
         render_flags: RenderFlags,
-    ) -> Result<(), RenderError> {
+    ) -> Result<RenderStats, RenderError> {
         for render_object in render_list {
             if !Self::should_render(pass_name, render_flags, render_object) {
                 tracing::trace!(target: logger::RENDER, "Skip object");
                 continue;
             }
+
+            self.stats.objects += 1;
 
             tracing::debug!(target: logger::RENDER, "Render model:  {}", &render_object.model);
 
@@ -121,9 +146,10 @@ impl<'a> RenderJob<'a> {
 
             tracing::trace!(target: logger::RENDER, "Draw object ({})", render_object.index_len);
             frame.command.draw_indexed(render_object.index_len, 1);
+            self.stats.draws += 1;
         }
 
-        Ok(())
+        Ok(self.stats.clone())
     }
 
     fn get_pipeline(&self, render_object: &RenderObject) -> Result<Handle, RenderError> {
@@ -150,6 +176,7 @@ impl<'a> RenderJob<'a> {
             tracing::trace!(target: logger::RENDER, "Bind pipeline: {:?}", pipeline);
             frame.command.bind_pipeline(ctx, pipeline);
             self.state.switch_pipeline(pipeline);
+            self.stats.pipelines += 1;
         } else {
             tracing::trace!(target: logger::RENDER, "Skip bind pipeline {:?}={:?}", self.state.last_pipeline, pipeline);
         }
@@ -172,6 +199,7 @@ impl<'a> RenderJob<'a> {
             frame.command.bind_texture_array(ctx, pipeline);
 
             self.state.texture_array_bound = true;
+            self.stats.materials += 1;
         }
 
         Ok(())
@@ -192,6 +220,7 @@ impl<'a> RenderJob<'a> {
             frame.command.bind_material_array(ctx, pipeline);
 
             self.state.material_array_bound = true;
+            self.stats.materials += 1;
         }
 
         Ok(())
@@ -223,7 +252,8 @@ impl<'a> RenderJob<'a> {
 
                 frame.command.bind_resource(ctx, pipeline, material_data);
 
-                self.state.last_material_data = material_data_id
+                self.state.last_material_data = material_data_id;
+                self.stats.materials += 1;
             }
 
             if let Some(material_textures) = &render_object.material.material_textures
@@ -236,6 +266,7 @@ impl<'a> RenderJob<'a> {
                     .bind_resource(ctx, pipeline, material_textures);
 
                 self.state.last_material_textures = texture_data_id;
+                self.stats.materials += 1;
             }
         }
 
@@ -256,6 +287,7 @@ impl<'a> RenderJob<'a> {
                 frame
                     .command
                     .bind_resource(ctx, pipeline, &uniform_buffer.buffer);
+                self.stats.uniforms += 1;
             }
             self.state.scene_data_bound = true;
         }
@@ -304,6 +336,7 @@ impl<'a> RenderJob<'a> {
                 .command
                 .bind_index_buffer(ctx, render_object.index_buffer);
             self.state.last_index_buffer = Some(render_object.index_buffer);
+            self.stats.indexes += 1;
         }
 
         Ok(())

@@ -10,3 +10,4 @@ pub const SYNC: &str = "sync";
 pub const UI: &str = "ui";
 pub const UPDATE: &str = "update";
 pub const DEBUG: &str = "debug";
+pub const STATS: &str = "stats";
