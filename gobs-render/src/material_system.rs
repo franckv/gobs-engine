@@ -214,9 +214,6 @@ impl MaterialSystem {
         material_instance_properties: &mut MaterialInstanceProperties,
         material_properties: &MaterialProperties,
     ) -> MaterialBinding {
-        #[cfg(debug_assertions)]
-        Self::validate_material_layout(material_instance_properties, material_properties);
-
         let texture_layout = &material_properties.texture_data_layout;
         let material_layout = &material_properties.material_data_layout;
 
@@ -236,6 +233,9 @@ impl MaterialSystem {
                 material_instance_properties.add_prop(prop);
             }
         }
+
+        #[cfg(debug_assertions)]
+        Self::validate_material_layout(material_instance_properties, material_properties);
 
         let material_data_binding = if material_layout.material_indexing {
             let index = Self::upload_material_data(

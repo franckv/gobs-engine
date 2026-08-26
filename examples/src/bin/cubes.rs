@@ -5,7 +5,7 @@ use glam::{Quat, Vec3};
 use gobs::{
     core::{Color, Input, Transform, logger},
     game::{AppError, Application, GameContext, GobsContext, GobsGame},
-    render::{MaterialDataPropData, Mesh, Model, RenderError, Shapes},
+    render::{Mesh, Model, RenderError, Shapes},
     resource::ResourceHandle,
     scene::{
         components::{NodeId, NodeValue},
@@ -136,9 +136,6 @@ impl<Context: GobsContext> App<Context> {
             .new_material(name)
             .from_base("normal.array")
             .with_textures(&[diffuse_texture, normal_texture])
-            .with_prop(MaterialDataPropData::EmissionColor(
-                Color::new(0., 0.01, 0.01, 1.).into(),
-            ))
             .build();
 
         let mesh = if let Some(mesh) = self.cube {

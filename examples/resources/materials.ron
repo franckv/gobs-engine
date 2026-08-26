@@ -93,7 +93,6 @@ MaterialsConfig(
                 Normal
             ],
             material_layout: [
-                EmissionColor,
                 DiffuseIndex,
                 NormalIndex,
             ],

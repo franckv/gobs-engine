@@ -13,7 +13,6 @@ struct SceneData {
 ConstantBuffer<SceneData> scene_data;
 
 struct Material {
-    float4 emissive_color;
     uint diffuse_index;
     uint normal_index;
 }
@@ -74,6 +73,6 @@ float4 fragment_normal_main(VSOutput input) {
 	float3 light = phong_reflection_normal(object_normal.xyz, input.tangent_position, input.tangent_light_dir,
             scene_data.light_color.xyz, input.tangent_view_position, scene_data.ambient_color.xyz);
 
-    return float4(light * object_color.xyz + material.emissive_color.xyz, object_color.a);
+    return float4(light * object_color.xyz, object_color.a);
 }
 
