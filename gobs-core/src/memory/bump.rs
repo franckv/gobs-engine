@@ -41,7 +41,7 @@ impl Allocator for BumpAllocator {
 
     fn allocate(&mut self, size: usize) -> Result<Self::Allocation, AllocError> {
         if self.cursor + size > self.capacity {
-            return Err(AllocError::RequestTooLarge);
+            return Err(AllocError::OutOfMemory);
         }
 
         let start = self.cursor;
@@ -51,7 +51,7 @@ impl Allocator for BumpAllocator {
     }
 
     fn release(&mut self, _allocation: Self::Allocation) {
-        unimplemented!()
+        unimplemented!("Bump allocator can only be cleared")
     }
 
     fn clear(&mut self) {
