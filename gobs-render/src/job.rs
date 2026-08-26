@@ -185,12 +185,10 @@ impl<'a> RenderJob<'a> {
             let index_buffer = render_object.index_buffer;
             let index_len = render_object.index_len;
 
-            let instance_data = self.get_object_data(ctx, frame, pipeline, render_object);
-
-            let instancing = matches!(instance_data, InstanceData::Buffer(_));
+            let object_layout = ctx.get_pipeline_object_layout(pipeline);
 
             let add_to_draw = if let Some(last_instance) = draws.last() {
-                instancing
+                object_layout.instancing
                     && last_instance.pipeline == pipeline
                     && last_instance.index_buffer == index_buffer
                     && last_instance.index_len == index_len
@@ -202,11 +200,15 @@ impl<'a> RenderJob<'a> {
             };
 
             if add_to_draw {
+                self.update_object_data(ctx, frame, pipeline, render_object);
+
                 draws
                     .last_mut()
                     .expect("Cannot add render object to draw call")
                     .instance_len += 1;
             } else {
+                let instance_data = self.get_object_data(ctx, frame, pipeline, render_object);
+
                 let draw = DrawCall {
                     pipeline,
                     material_indexing,
@@ -401,13 +403,12 @@ impl<'a> RenderJob<'a> {
         Ok(())
     }
 
-    fn get_object_data(
+    fn copy_object_data(
         &mut self,
         ctx: &mut GfxContext,
-        frame: &mut FrameData,
         pipeline: Handle,
         render_object: &RenderObject,
-    ) -> InstanceData {
+    ) -> FixedBuffer<128> {
         let mut object_data = FixedBuffer::new();
 
         let object_layout = ctx.get_pipeline_object_layout(pipeline);
@@ -430,20 +431,48 @@ impl<'a> RenderJob<'a> {
             _ => unimplemented!(),
         });
 
+        object_data
+    }
+
+    fn get_object_data(
+        &mut self,
+        ctx: &mut GfxContext,
+        frame: &mut FrameData,
+        pipeline: Handle,
+        render_object: &RenderObject,
+    ) -> InstanceData {
+        let object_layout = ctx.get_pipeline_object_layout(pipeline);
+
         if object_layout.instancing {
+            let local_offset = self.update_object_data(ctx, frame, pipeline, render_object);
+
             let instance_buffer = ctx.get_instance_buffer(frame.id);
             let instance_buffer_address = ctx.get_buffer_address(instance_buffer);
-
-            let local_offset = ctx.allocate_instance(frame.id, object_data.len()) as u64;
-
-            ctx.update_instance_data(frame.id, local_offset, object_data.as_slice());
 
             let offset = instance_buffer_address + local_offset;
 
             InstanceData::Buffer(offset)
         } else {
+            let object_data = self.copy_object_data(ctx, pipeline, render_object);
+
             InstanceData::Push(object_data)
         }
+    }
+
+    fn update_object_data(
+        &mut self,
+        ctx: &mut GfxContext,
+        frame: &mut FrameData,
+        pipeline: Handle,
+        render_object: &RenderObject,
+    ) -> u64 {
+        let object_data = self.copy_object_data(ctx, pipeline, render_object);
+
+        let local_offset = ctx.allocate_instance(frame.id, object_data.len()) as u64;
+
+        ctx.update_instance_data(frame.id, local_offset, object_data.as_slice());
+
+        local_offset
     }
 
     fn bind_object_data(
