@@ -1,5 +1,5 @@
 use gobs_core::{
-    data::fixed_buffer::{DataBuffer as _, FixedBuffer},
+    data::fixed_buffer::{DataBuffer, FixedBuffer},
     logger,
 };
 use gobs_render_graph::{FrameData, RenderError};
@@ -14,6 +14,8 @@ struct RenderJobState {
     last_index_buffer: Option<Handle>,
     last_material_data: Option<BindingId>,
     last_material_textures: Option<BindingId>,
+    last_vertex_buffer: Option<Handle>,
+    last_vertex_buffer_address: u64,
     texture_array_bound: bool,
     material_array_bound: bool,
     scene_data_bound: bool,
@@ -26,6 +28,8 @@ impl RenderJobState {
             last_index_buffer: None,
             last_material_data: None,
             last_material_textures: None,
+            last_vertex_buffer: None,
+            last_vertex_buffer_address: 0,
             texture_array_bound: false,
             material_array_bound: false,
             scene_data_bound: false,
@@ -66,6 +70,7 @@ impl RenderStats {
 
 #[allow(unused)]
 enum InstanceData {
+    Pending(Vec<u8>),
     Buffer(u64),
     Push(FixedBuffer<128>),
 }
@@ -156,6 +161,7 @@ impl<'a> RenderJob<'a> {
         Ok(self.stats.clone())
     }
 
+    #[tracing::instrument(target = "profile", skip_all, level = "trace")]
     fn prepare_draws(
         &mut self,
         ctx: &mut GfxContext,
@@ -179,9 +185,6 @@ impl<'a> RenderJob<'a> {
             let material_indexing = render_object.material.material_indexing;
             let texture_indexing = render_object.material.texture_indexing;
 
-            let material_data = render_object.material.material_data.clone();
-            let material_textures = render_object.material.material_textures.clone();
-
             let index_buffer = render_object.index_buffer;
             let index_len = render_object.index_len;
 
@@ -193,28 +196,38 @@ impl<'a> RenderJob<'a> {
                     && last_instance.index_buffer == index_buffer
                     && last_instance.index_len == index_len
                     && ((material_indexing && texture_indexing)
-                        || (last_instance.material_data == material_data
-                            && last_instance.material_textures == material_textures))
+                        || (last_instance.material_data == render_object.material.material_data
+                            && last_instance.material_textures
+                                == render_object.material.material_textures))
             } else {
                 false
             };
 
             if add_to_draw {
-                self.update_object_data(ctx, frame, pipeline, render_object);
-
-                draws
-                    .last_mut()
-                    .expect("Cannot add render object to draw call")
-                    .instance_len += 1;
+                if let Some(draw) = draws.last_mut()
+                    && let InstanceData::Pending(data) = &mut draw.instance_data
+                {
+                    draw.instance_len += 1;
+                    self.copy_object_data(ctx, pipeline, render_object, data);
+                } else {
+                    return Err(RenderError::InvalidData);
+                }
             } else {
-                let instance_data = self.get_object_data(ctx, frame, pipeline, render_object);
+                if let Some(draw) = draws.last_mut()
+                    && let InstanceData::Pending(data) = &draw.instance_data
+                {
+                    let instance_data = self.upload_instance_data(ctx, frame, data);
+                    draw.instance_data = instance_data;
+                }
+
+                let instance_data = self.create_instance_data(ctx, pipeline, render_object);
 
                 let draw = DrawCall {
                     pipeline,
                     material_indexing,
                     texture_indexing,
-                    material_data,
-                    material_textures,
+                    material_data: render_object.material.material_data.clone(),
+                    material_textures: render_object.material.material_textures.clone(),
                     instance_data,
                     instance_len: 1,
                     index_buffer,
@@ -225,7 +238,88 @@ impl<'a> RenderJob<'a> {
             }
         }
 
+        if let Some(draw) = draws.last_mut()
+            && let InstanceData::Pending(data) = &draw.instance_data
+        {
+            let instance_data = self.upload_instance_data(ctx, frame, data);
+            draw.instance_data = instance_data;
+        }
+
         Ok(draws)
+    }
+
+    fn copy_object_data<B>(
+        &mut self,
+        ctx: &mut GfxContext,
+        pipeline: Handle,
+        render_object: &RenderObject,
+        object_data: &mut B,
+    ) where
+        B: DataBuffer,
+    {
+        let object_layout = ctx.get_pipeline_object_layout(pipeline);
+        tracing::trace!(target: logger::RENDER, "Copy object data: {} (layout: {:?})", object_layout.uniform_layout().size(), object_layout);
+
+        object_layout.copy_data(object_data, |prop| match prop {
+            ObjectDataProp::WorldMatrix => {
+                AttributeData::Mat4F(render_object.transform.matrix().to_cols_array_2d())
+            }
+            ObjectDataProp::VertexBufferAddress => {
+                if self.state.last_vertex_buffer != Some(render_object.vertex_buffer) {
+                    self.state.last_vertex_buffer_address =
+                        ctx.get_buffer_address(render_object.vertex_buffer);
+                    self.state.last_vertex_buffer = Some(render_object.vertex_buffer);
+                }
+                AttributeData::U64(self.state.last_vertex_buffer_address)
+            }
+            ObjectDataProp::MaterialOffset => AttributeData::U32(
+                render_object
+                    .material
+                    .material_offset
+                    .expect("Material offset is None"),
+            ),
+            _ => unimplemented!(),
+        });
+    }
+
+    #[tracing::instrument(target = "profile", skip_all, level = "trace")]
+    fn create_instance_data(
+        &mut self,
+        ctx: &mut GfxContext,
+        pipeline: Handle,
+        render_object: &RenderObject,
+    ) -> InstanceData {
+        let object_layout = ctx.get_pipeline_object_layout(pipeline);
+
+        if object_layout.instancing {
+            let mut data = Vec::new();
+            self.copy_object_data(ctx, pipeline, render_object, &mut data);
+
+            InstanceData::Pending(data)
+        } else {
+            let mut data = FixedBuffer::<128>::new();
+            self.copy_object_data(ctx, pipeline, render_object, &mut data);
+
+            InstanceData::Push(data)
+        }
+    }
+
+    #[tracing::instrument(target = "profile", skip_all, level = "trace")]
+    fn upload_instance_data(
+        &self,
+        ctx: &mut GfxContext,
+        frame: &mut FrameData,
+        data: &[u8],
+    ) -> InstanceData {
+        let local_offset = ctx.allocate_instance(frame.id, data.len()) as u64;
+        ctx.update_instance_data(frame.id, local_offset, data);
+
+        let instance_buffer = ctx.get_instance_buffer(frame.id);
+        let instance_buffer_address = ctx.get_buffer_address(instance_buffer);
+
+        let offset = instance_buffer_address + local_offset;
+
+        InstanceData::Buffer(offset)
     }
 
     fn draw_objects(
@@ -403,78 +497,6 @@ impl<'a> RenderJob<'a> {
         Ok(())
     }
 
-    fn copy_object_data(
-        &mut self,
-        ctx: &mut GfxContext,
-        pipeline: Handle,
-        render_object: &RenderObject,
-    ) -> FixedBuffer<128> {
-        let mut object_data = FixedBuffer::new();
-
-        let object_layout = ctx.get_pipeline_object_layout(pipeline);
-        tracing::trace!(target: logger::RENDER, "Copy object data: {} (layout: {:?})", object_layout.uniform_layout().size(), object_layout);
-
-        object_layout.copy_data(&mut object_data, |prop| match prop {
-            ObjectDataProp::WorldMatrix => {
-                AttributeData::Mat4F(render_object.transform.matrix().to_cols_array_2d())
-            }
-            ObjectDataProp::VertexBufferAddress => {
-                let vertex_buffer_address = ctx.get_buffer_address(render_object.vertex_buffer);
-                AttributeData::U64(vertex_buffer_address)
-            }
-            ObjectDataProp::MaterialOffset => AttributeData::U32(
-                render_object
-                    .material
-                    .material_offset
-                    .expect("Material offset is None"),
-            ),
-            _ => unimplemented!(),
-        });
-
-        object_data
-    }
-
-    fn get_object_data(
-        &mut self,
-        ctx: &mut GfxContext,
-        frame: &mut FrameData,
-        pipeline: Handle,
-        render_object: &RenderObject,
-    ) -> InstanceData {
-        let object_layout = ctx.get_pipeline_object_layout(pipeline);
-
-        if object_layout.instancing {
-            let local_offset = self.update_object_data(ctx, frame, pipeline, render_object);
-
-            let instance_buffer = ctx.get_instance_buffer(frame.id);
-            let instance_buffer_address = ctx.get_buffer_address(instance_buffer);
-
-            let offset = instance_buffer_address + local_offset;
-
-            InstanceData::Buffer(offset)
-        } else {
-            let object_data = self.copy_object_data(ctx, pipeline, render_object);
-
-            InstanceData::Push(object_data)
-        }
-    }
-
-    fn update_object_data(
-        &mut self,
-        ctx: &mut GfxContext,
-        frame: &mut FrameData,
-        pipeline: Handle,
-        render_object: &RenderObject,
-    ) -> u64 {
-        let object_data = self.copy_object_data(ctx, pipeline, render_object);
-
-        let local_offset = ctx.allocate_instance(frame.id, object_data.len()) as u64;
-
-        ctx.update_instance_data(frame.id, local_offset, object_data.as_slice());
-
-        local_offset
-    }
-
     fn bind_object_data(
         &mut self,
         ctx: &GfxContext,
@@ -501,6 +523,7 @@ impl<'a> RenderJob<'a> {
             InstanceData::Push(data) => {
                 frame.command.push_constants(ctx, pipeline, data.as_slice());
             }
+            InstanceData::Pending(_) => return Err(RenderError::InvalidData),
         }
 
         if self.state.last_index_buffer != Some(index_buffer) {

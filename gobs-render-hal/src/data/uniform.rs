@@ -39,10 +39,10 @@ pub trait UniformData<DataProp> {
 
     fn layout(&self) -> &[DataProp];
 
-    fn copy_data<B, F>(&self, buffer: &mut B, get_data: F)
+    fn copy_data<B, F>(&self, buffer: &mut B, mut get_data: F)
     where
         B: DataBuffer,
-        F: Fn(&DataProp) -> AttributeData,
+        F: FnMut(&DataProp) -> AttributeData,
     {
         let layout = self.uniform_layout();
         let data_start = buffer.len();
