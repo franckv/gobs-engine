@@ -19,6 +19,7 @@ use crate::{
 pub struct VkPipeline {
     pub pipeline: vk::Pipeline,
     pub push_layout: ObjectDataLayout,
+    pub instance_layout: ObjectDataLayout,
     pub descriptor_layout: IndexMap<BindingGroupType, Arc<BindingGroupLayout>>,
     pub vertex_attribute: VertexAttribute,
 }
@@ -76,6 +77,7 @@ impl ComputePipelineBuilder for VkComputePipelineBuilder {
         hal.registry.pipelines.insert(VkPipeline {
             pipeline,
             push_layout: self.push_layout,
+            instance_layout: ObjectDataLayout::new(false),
             descriptor_layout: self.descriptor_layouts,
             vertex_attribute: VertexAttribute::empty(),
         })
@@ -89,7 +91,7 @@ impl VkComputePipelineBuilder {
             builder: vk::pipelines::Pipeline::compute_builder(name, device.clone()),
             descriptor_layouts: IndexMap::new(),
             push_constants: 0,
-            push_layout: ObjectDataLayout::new(AlignMode::Std430),
+            push_layout: ObjectDataLayout::new(false),
         }
     }
 }
@@ -101,6 +103,7 @@ pub(crate) struct VkGraphicsPipelineBuilder {
     push_constants: usize,
     vertex_attributes: VertexAttribute,
     push_layout: ObjectDataLayout,
+    instance_layout: ObjectDataLayout,
 }
 
 impl GraphicsPipelineBuilder for VkGraphicsPipelineBuilder {
@@ -138,6 +141,15 @@ impl GraphicsPipelineBuilder for VkGraphicsPipelineBuilder {
         .unwrap();
 
         self.builder = self.builder.fragment_shader(entry, shader);
+
+        self
+    }
+
+    fn instance_layout(
+        mut self: Box<Self>,
+        layout: ObjectDataLayout,
+    ) -> Box<dyn GraphicsPipelineBuilder> {
+        self.instance_layout = layout;
 
         self
     }
@@ -302,6 +314,7 @@ impl GraphicsPipelineBuilder for VkGraphicsPipelineBuilder {
 
         hal.registry.pipelines.insert(VkPipeline {
             pipeline,
+            instance_layout: self.instance_layout,
             push_layout: self.push_layout,
             descriptor_layout: self.descriptor_layouts,
             vertex_attribute: self.vertex_attributes,
@@ -317,7 +330,8 @@ impl VkGraphicsPipelineBuilder {
             descriptor_layouts: IndexMap::new(),
             push_constants: 0,
             vertex_attributes: VertexAttribute::empty(),
-            push_layout: ObjectDataLayout::new(AlignMode::Std430),
+            push_layout: ObjectDataLayout::new(false),
+            instance_layout: ObjectDataLayout::new(false),
         }
     }
 }

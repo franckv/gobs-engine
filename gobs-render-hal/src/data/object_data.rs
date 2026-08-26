@@ -6,6 +6,7 @@ use crate::data::{AlignMode, Attribute, UniformLayout, uniform::UniformData};
 pub enum ObjectDataProp {
     WorldMatrix,
     VertexBufferAddress,
+    InstanceBufferAddress,
     MaterialOffset,
 }
 
@@ -13,13 +14,15 @@ pub enum ObjectDataProp {
 pub struct ObjectDataLayout {
     layout: Vec<ObjectDataProp>,
     uniform_layout: UniformLayout,
+    pub instancing: bool,
 }
 
 impl ObjectDataLayout {
-    pub fn new(mode: AlignMode) -> Self {
+    pub fn new(instancing: bool) -> Self {
         Self {
             layout: Vec::new(),
-            uniform_layout: UniformLayout::new(mode),
+            uniform_layout: UniformLayout::new(AlignMode::Std430),
+            instancing,
         }
     }
 }
@@ -33,6 +36,9 @@ impl UniformData<ObjectDataProp> for ObjectDataLayout {
                 self.uniform_layout = self.uniform_layout.prop("world_matrix", Attribute::Mat4F);
             }
             ObjectDataProp::VertexBufferAddress => {
+                self.uniform_layout = self.uniform_layout.prop("buffer_reference", Attribute::U64);
+            }
+            ObjectDataProp::InstanceBufferAddress => {
                 self.uniform_layout = self.uniform_layout.prop("buffer_reference", Attribute::U64);
             }
             ObjectDataProp::MaterialOffset => {

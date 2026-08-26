@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use gobs_render_graph::RenderPassType;
-use gobs_render_hal::{AlignMode, GfxContext, UniformData as _};
+use gobs_render_hal::{GfxContext, UniformData as _};
 use gobs_resource::{
     ResourceError, ResourceManager,
     load::{self, AssetType},
@@ -119,7 +119,7 @@ impl PassConfig {
 
         let render_flags = pass_config.flags;
 
-        let mut scene_layout = SceneDataLayout::new(AlignMode::Std140);
+        let mut scene_layout = SceneDataLayout::new();
         for prop in &pass_config.scene_layout {
             scene_layout = scene_layout.prop(*prop);
         }

@@ -21,10 +21,10 @@ pub struct SceneDataLayout {
 }
 
 impl SceneDataLayout {
-    pub fn new(mode: AlignMode) -> Self {
+    pub fn new() -> Self {
         Self {
             layout: Vec::new(),
-            uniform_layout: UniformLayout::new(mode),
+            uniform_layout: UniformLayout::new(AlignMode::Std140),
         }
     }
 }

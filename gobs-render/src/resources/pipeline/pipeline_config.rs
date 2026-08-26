@@ -4,8 +4,8 @@ use serde::{Deserialize, Serialize};
 
 use gobs_core::{ImageFormat, logger};
 use gobs_render_hal::{
-    AlignMode, BindingGroupType, CompareOp, CullMode, DescriptorStage, DescriptorType, FrontFace,
-    GfxContext, ObjectDataLayout, ObjectDataProp, PolygonMode, UniformData as _, VertexAttribute,
+    BindingGroupType, CompareOp, CullMode, DescriptorStage, DescriptorType, FrontFace, GfxContext,
+    ObjectDataLayout, ObjectDataProp, PolygonMode, UniformData as _, VertexAttribute,
 };
 use gobs_resource::{
     ResourceManager,
@@ -36,6 +36,7 @@ struct GraphicsPipelineConfig {
     vertex_shader: Option<ShaderConfig>,
     fragment_shader: Option<ShaderConfig>,
     object_layout: Vec<ObjectDataProp>,
+    object_instancing: bool,
     scene_layout: Vec<SceneDataProp>,
     vertex_attributes: VertexAttribute,
     #[serde(default)]
@@ -145,18 +146,25 @@ impl PipelinesConfig {
     ) -> Option<PipelineProperties> {
         let pipeline = config.graphics_pipelines.get(name)?;
 
-        let mut object_layout = ObjectDataLayout::new(AlignMode::Std140);
+        let mut object_layout = ObjectDataLayout::new(pipeline.object_instancing);
         for prop in &pipeline.object_layout {
             object_layout = object_layout.prop(*prop);
         }
 
-        let mut scene_layout = SceneDataLayout::new(AlignMode::Std140);
+        let push_layout = if object_layout.instancing {
+            ObjectDataLayout::new(true).prop(ObjectDataProp::InstanceBufferAddress)
+        } else {
+            object_layout.clone()
+        };
+
+        let mut scene_layout = SceneDataLayout::new();
         for prop in &pipeline.scene_layout {
             scene_layout = scene_layout.prop(*prop);
         }
 
         let mut props = PipelineProperties::graphics(name)
             .object_data_layout(object_layout)
+            .push_data_layout(push_layout)
             .pool_size(ctx.frames_in_flight())
             .vertex_attributes(pipeline.vertex_attributes)
             .polygon_mode(pipeline.polygon_mode)
@@ -289,6 +297,7 @@ mod tests {
                     vertex_shader: None,
                     fragment_shader: None,
                     object_layout: Vec::new(),
+                    object_instancing: false,
                     scene_layout: Vec::new(),
                     vertex_attributes: VertexAttribute::POSITION,
                     bindings: Vec::new(),

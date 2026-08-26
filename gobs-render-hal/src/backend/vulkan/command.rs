@@ -245,7 +245,11 @@ impl CommandBuffer for VkCommandBuffer {
 
         let pipeline = &hal.registry.pipelines.get(pipeline).unwrap();
 
-        debug_assert!(constants.len() == pipeline.push_layout.uniform_layout().size());
+        debug_assert!(
+            constants.len() == pipeline.push_layout.uniform_layout().size(),
+            "Invalid push layout {:?}",
+            pipeline.push_layout
+        );
 
         self.command
             .push_constants(pipeline.pipeline.layout.clone(), constants);

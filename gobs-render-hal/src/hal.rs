@@ -28,6 +28,7 @@ pub fn create_hal(
 pub enum BufferType {
     Vertex,
     Index,
+    Instance,
     Staging,
     StagingDst,
     Uniform,
@@ -50,6 +51,9 @@ pub trait RenderHAL {
     fn update_material_data(&mut self, index: usize, data: &[u8]);
     fn release_material_index(&mut self, index: usize);
     fn get_material_offset(&self, index: usize) -> Option<u32>;
+    fn get_instance_buffer(&self, frame_id: usize) -> Handle;
+    fn allocate_instance(&mut self, frame_id: usize, size: usize) -> usize;
+    fn update_instance_data(&mut self, frame_id: usize, offset: u64, data: &[u8]);
 
     fn create_image(
         &mut self,

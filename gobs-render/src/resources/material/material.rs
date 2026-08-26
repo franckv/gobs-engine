@@ -48,6 +48,7 @@ impl MaterialProperties {
         fragment_entry: &str,
         vertex_attributes: VertexAttribute,
         object_data_layout: ObjectDataLayout,
+        push_data_layout: ObjectDataLayout,
         scene_data_layout: SceneDataLayout,
         color_format: ImageFormat,
         depth_format: ImageFormat,
@@ -61,6 +62,7 @@ impl MaterialProperties {
             .fragment_entry(fragment_entry)
             .pool_size(10)
             .object_data_layout(object_data_layout)
+            .push_data_layout(push_data_layout)
             .scene_data_layout(scene_data_layout)
             .vertex_attributes(vertex_attributes)
             .depth_test_enable(false, CompareOp::LessEqual)

@@ -27,6 +27,10 @@ pub trait GraphicsPipelineBuilder {
         filename: &str,
         entry: &str,
     ) -> Box<dyn GraphicsPipelineBuilder>;
+    fn instance_layout(
+        self: Box<Self>,
+        layout: ObjectDataLayout,
+    ) -> Box<dyn GraphicsPipelineBuilder>;
     fn push_constants(
         self: Box<Self>,
         layout: ObjectDataLayout,

@@ -7,9 +7,13 @@ struct SceneData {
 [[vk::binding(0, SCENE_DATA_SET)]]
 ConstantBuffer<SceneData> scene_data;
 
-struct PushConstants {
+struct InstanceData {
     float4x4 world_matrix;
     Vertex* vertex_reference;
+}
+
+struct PushConstants {
+    InstanceData* instance_reference;
 }
 [[vk::push_constant]]
 PushConstants push_constants;
@@ -20,11 +24,12 @@ struct VSOutput {
 }
 
 [shader("vertex")]
-VSOutput vertex_main(uint vertex_index: SV_VertexID) {
-    Vertex v = push_constants.vertex_reference[vertex_index];
+VSOutput vertex_main(uint vertex_index: SV_VertexID, uint instance_index: SV_InstanceID) {
+    InstanceData instance = push_constants.instance_reference[instance_index];
+    Vertex v = instance.vertex_reference[vertex_index];
 
     VSOutput output;
-    output.position = mul(scene_data.view_proj, mul(push_constants.world_matrix, float4(v.position, 1.0)));
+    output.position = mul(scene_data.view_proj, mul(instance.world_matrix, float4(v.position, 1.0)));
     output.color = float4(0., 1., 0., 1.);
 
     return output;

@@ -4,8 +4,8 @@ use serde::Deserialize;
 
 use gobs_core::{ConfigReader as _, GobsConfig, ImageFormat, logger};
 use gobs_render_hal::{
-    AlignMode, BlendMode, CullMode, ObjectDataLayout, ObjectDataProp, RenderHalConfig,
-    UniformData as _, VertexAttribute,
+    BlendMode, CullMode, ObjectDataLayout, ObjectDataProp, RenderHalConfig, UniformData as _,
+    VertexAttribute,
 };
 use gobs_resource::{
     ResourceLifetime, ResourceManager,
@@ -27,6 +27,8 @@ pub struct MaterialsConfig {
 struct DefaultMaterialConfig {
     #[serde(default)]
     object_layout: Vec<ObjectDataProp>,
+    #[serde(default)]
+    object_instancing: bool,
     #[serde(default)]
     scene_layout: Vec<SceneDataProp>,
     vertex_attributes: VertexAttribute,
@@ -57,6 +59,8 @@ struct MaterialConfig {
     scene_layout: Vec<SceneDataProp>,
     #[serde(default)]
     object_layout: Vec<ObjectDataProp>,
+    #[serde(default)]
+    object_instancing: bool,
 }
 
 impl MaterialsConfig {
@@ -93,12 +97,12 @@ impl MaterialsConfig {
     }
 
     fn load_materials(&self, config: GobsConfig, resource_manager: &mut ResourceManager) {
-        let mut default_object_layout = ObjectDataLayout::new(AlignMode::Std140);
+        let mut default_object_layout = ObjectDataLayout::new(self.default.object_instancing);
         for prop in &self.default.object_layout {
             default_object_layout = default_object_layout.prop(*prop);
         }
 
-        let mut default_scene_layout = SceneDataLayout::new(AlignMode::Std140);
+        let mut default_scene_layout = SceneDataLayout::new();
         for prop in &self.default.scene_layout {
             default_scene_layout = default_scene_layout.prop(*prop);
         }
@@ -112,17 +116,23 @@ impl MaterialsConfig {
             let object_layout = if material.object_layout.is_empty() {
                 default_object_layout.clone()
             } else {
-                let mut object_layout = ObjectDataLayout::new(AlignMode::Std140);
+                let mut object_layout = ObjectDataLayout::new(material.object_instancing);
                 for prop in &material.object_layout {
                     object_layout = object_layout.prop(*prop);
                 }
                 object_layout
             };
 
+            let push_layout = if object_layout.instancing {
+                ObjectDataLayout::new(true).prop(ObjectDataProp::InstanceBufferAddress)
+            } else {
+                object_layout.clone()
+            };
+
             let scene_layout = if material.scene_layout.is_empty() {
                 default_scene_layout.clone()
             } else {
-                let mut scene_layout = SceneDataLayout::new(AlignMode::Std140);
+                let mut scene_layout = SceneDataLayout::new();
                 for prop in &material.scene_layout {
                     scene_layout = scene_layout.prop(*prop);
                 }
@@ -137,6 +147,7 @@ impl MaterialsConfig {
                 &material.fragment_entry,
                 vertex_attributes,
                 object_layout,
+                push_layout,
                 scene_layout,
                 self.default.color_format,
                 self.default.depth_format,

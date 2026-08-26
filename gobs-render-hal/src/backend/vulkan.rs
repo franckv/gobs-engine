@@ -2,6 +2,7 @@ mod bindings;
 mod buffer;
 mod command;
 pub(crate) mod display;
+mod instance;
 mod material;
 mod pipeline;
 pub(crate) mod registry;
@@ -25,6 +26,7 @@ use crate::{
         buffer::BufferView,
         command::VkCommandBuffer,
         display::Display,
+        instance::InstanceRegistry,
         material::MaterialRegistry,
         pipeline::{VkComputePipelineBuilder, VkGraphicsPipelineBuilder},
         registry::ResourcesRegistry,
@@ -54,6 +56,7 @@ pub struct VulkanHAL {
     bindings: BindingRegistry,
     textures: TextureRegistry,
     materials: MaterialRegistry,
+    instances: InstanceRegistry,
     frames_in_flight: usize,
     pub display: Display,
     pub graphics_queue: Arc<vk::Queue>,
@@ -67,6 +70,7 @@ impl RenderHAL for VulkanHAL {
     fn new_frame(&mut self, frame_number: usize) {
         let frame_id = self.frame_id(frame_number);
         self.bindings.reset(frame_id);
+        self.instances.reset(frame_id);
     }
 
     fn frame_id(&self, frame_number: usize) -> usize {
@@ -135,6 +139,20 @@ impl RenderHAL for VulkanHAL {
 
     fn get_material_offset(&self, index: usize) -> Option<u32> {
         self.materials.get_offset(index)
+    }
+
+    fn get_instance_buffer(&self, frame_id: usize) -> Handle {
+        self.instances.get_buffer(frame_id)
+    }
+
+    fn allocate_instance(&mut self, frame_id: usize, size: usize) -> usize {
+        self.instances.allocate(frame_id, size)
+    }
+
+    fn update_instance_data(&mut self, frame_id: usize, offset: u64, data: &[u8]) {
+        let buffer = self.instances.get_buffer(frame_id);
+
+        self.upload_buffer(buffer, data, offset);
     }
 
     fn create_image(
@@ -253,7 +271,7 @@ impl RenderHAL for VulkanHAL {
     fn get_pipeline_object_layout(&self, pipeline: Handle) -> &ObjectDataLayout {
         let pipeline = self.registry.pipelines.get(pipeline).unwrap();
 
-        &pipeline.push_layout
+        &pipeline.instance_layout
     }
 
     fn get_pipeline_vertex_attributes(&self, pipeline: Handle) -> VertexAttribute {
@@ -361,6 +379,8 @@ impl VulkanHAL {
         let textures_array_size = config.get_int(RenderHalConfig::TextureArraySize) as usize;
         let material_array_size = config.get_int(RenderHalConfig::MaterialArraySize) as usize;
         let material_data_size = config.get_int(RenderHalConfig::MaterialDataSize) as usize;
+        let instance_array_size = config.get_int(RenderHalConfig::InstanceArraySize) as usize;
+        let instance_data_size = config.get_int(RenderHalConfig::InstanceDataSize) as usize;
 
         let mut registry = ResourcesRegistry::default();
         let bindings = BindingRegistry::new(frames_in_flight);
@@ -374,18 +394,37 @@ impl VulkanHAL {
 
         let textures = TextureRegistry::new(textures_array_size, sampler);
 
-        let total_size = material_data_size * material_array_size;
+        let material_total_size = material_data_size * material_array_size;
 
-        let buffer = Self::create_buffer_internal(
+        let material_buffer = Self::create_buffer_internal(
             "Bindless material",
-            total_size,
+            material_total_size,
             BufferType::Storage,
             device.clone(),
             allocator.clone(),
             &mut registry,
         );
 
-        let materials = MaterialRegistry::new(buffer, material_data_size, material_array_size);
+        let materials =
+            MaterialRegistry::new(material_buffer, material_data_size, material_array_size);
+
+        let instance_total_size = instance_data_size * instance_array_size;
+
+        let instance_buffers = (0..frames_in_flight)
+            .map(|_| {
+                Self::create_buffer_internal(
+                    "Instance buffer",
+                    instance_total_size,
+                    BufferType::Instance,
+                    device.clone(),
+                    allocator.clone(),
+                    &mut registry,
+                )
+            })
+            .collect();
+
+        let instances =
+            InstanceRegistry::new(instance_buffers, instance_data_size, instance_array_size);
 
         display.init(&mut registry, device.clone(), frames_in_flight);
 
@@ -394,6 +433,7 @@ impl VulkanHAL {
             bindings,
             textures,
             materials,
+            instances,
             frames_in_flight,
             display,
             graphics_queue,
@@ -438,6 +478,7 @@ impl VulkanHAL {
         let usage = match ty {
             BufferType::Vertex => vk::BufferUsage::Vertex,
             BufferType::Index => vk::BufferUsage::Index,
+            BufferType::Instance => vk::BufferUsage::Instance,
             BufferType::Staging => vk::BufferUsage::Staging,
             BufferType::StagingDst => vk::BufferUsage::StagingDst,
             BufferType::Uniform => vk::BufferUsage::Uniform,

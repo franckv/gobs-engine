@@ -4,7 +4,8 @@ use gobs_core::{
 };
 use gobs_render_graph::{FrameData, RenderError};
 use gobs_render_hal::{
-    AttributeData, BindResource, BindingId, Handle, ObjectDataProp, UniformBuffer, UniformData as _,
+    AttributeData, BindResource, BindingId, Handle, ObjectDataLayout, ObjectDataProp,
+    UniformBuffer, UniformData as _,
 };
 
 use crate::{GfxContext, data::RenderFlags, render_object::RenderObject};
@@ -66,7 +67,7 @@ impl RenderStats {
 
 #[allow(unused)]
 enum InstanceData {
-    Buffer(Handle),
+    Buffer(u64),
     Push(FixedBuffer<128>),
 }
 
@@ -147,7 +148,7 @@ impl<'a> RenderJob<'a> {
         render_list: &[RenderObject],
         render_flags: RenderFlags,
     ) -> Result<RenderStats, RenderError> {
-        let draws = &self.prepare_draws(ctx, pass_name, render_list, render_flags)?;
+        let draws = &self.prepare_draws(ctx, frame, pass_name, render_list, render_flags)?;
 
         for draw in draws {
             self.draw_objects(ctx, frame, draw)?;
@@ -159,6 +160,7 @@ impl<'a> RenderJob<'a> {
     fn prepare_draws(
         &mut self,
         ctx: &mut GfxContext,
+        frame: &mut FrameData,
         pass_name: &str,
         render_list: &[RenderObject],
         render_flags: RenderFlags,
@@ -181,8 +183,7 @@ impl<'a> RenderJob<'a> {
             let material_data = render_object.material.material_data.clone();
             let material_textures = render_object.material.material_textures.clone();
 
-            let object_data = self.get_object_data(ctx, pipeline, render_object);
-            let instance_data = InstanceData::Push(object_data);
+            let instance_data = self.get_object_data(ctx, frame, pipeline, render_object);
 
             let index_buffer = render_object.index_buffer;
             let index_len = render_object.index_len;
@@ -383,13 +384,13 @@ impl<'a> RenderJob<'a> {
     fn get_object_data(
         &mut self,
         ctx: &mut GfxContext,
+        frame: &mut FrameData,
         pipeline: Handle,
         render_object: &RenderObject,
-    ) -> FixedBuffer<128> {
+    ) -> InstanceData {
         let mut object_data = FixedBuffer::new();
 
         let object_layout = ctx.get_pipeline_object_layout(pipeline);
-
         tracing::trace!(target: logger::RENDER, "Copy object data: {} (layout: {:?})", object_layout.uniform_layout().size(), object_layout);
 
         object_layout.copy_data(&mut object_data, |prop| match prop {
@@ -406,9 +407,23 @@ impl<'a> RenderJob<'a> {
                     .material_offset
                     .expect("Material offset is None"),
             ),
+            _ => unimplemented!(),
         });
 
-        object_data
+        if object_layout.instancing {
+            let instance_buffer = ctx.get_instance_buffer(frame.id);
+
+            let instance_buffer_address = ctx.get_buffer_address(instance_buffer);
+            let local_offset = ctx.allocate_instance(frame.id, object_data.len()) as u64;
+
+            ctx.update_instance_data(frame.id, local_offset, object_data.as_slice());
+
+            let offset = instance_buffer_address + local_offset;
+
+            InstanceData::Buffer(offset)
+        } else {
+            InstanceData::Push(object_data)
+        }
     }
 
     fn bind_object_data(
@@ -421,11 +436,23 @@ impl<'a> RenderJob<'a> {
     ) -> Result<(), RenderError> {
         tracing::trace!(target: logger::RENDER, "Bind push constants");
 
-        // TODO: check pipeline object layout compatibility
-        if let InstanceData::Push(object_data) = instance_data {
-            frame
-                .command
-                .push_constants(ctx, pipeline, object_data.as_slice());
+        match instance_data {
+            InstanceData::Buffer(address) => {
+                let mut layout = ObjectDataLayout::new(false);
+                layout = layout.prop(ObjectDataProp::InstanceBufferAddress);
+
+                let mut data = FixedBuffer::<128>::new();
+
+                layout.copy_data(&mut data, |prop| match prop {
+                    ObjectDataProp::InstanceBufferAddress => AttributeData::U64(*address),
+                    _ => unreachable!(),
+                });
+
+                frame.command.push_constants(ctx, pipeline, data.as_slice());
+            }
+            InstanceData::Push(data) => {
+                frame.command.push_constants(ctx, pipeline, data.as_slice());
+            }
         }
 
         if self.state.last_index_buffer != Some(index_buffer) {

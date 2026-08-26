@@ -73,7 +73,9 @@ impl From<BufferUsage> for vk::BufferUsageFlags {
                     | vk::BufferUsageFlags::VERTEX_BUFFER
                     | vk::BufferUsageFlags::SHADER_DEVICE_ADDRESS
             }
-            BufferUsage::Instance => vk::BufferUsageFlags::VERTEX_BUFFER,
+            BufferUsage::Instance => {
+                vk::BufferUsageFlags::VERTEX_BUFFER | vk::BufferUsageFlags::SHADER_DEVICE_ADDRESS
+            }
             BufferUsage::Index => {
                 vk::BufferUsageFlags::TRANSFER_DST | vk::BufferUsageFlags::INDEX_BUFFER
             }

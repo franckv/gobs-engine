@@ -2,9 +2,8 @@ use std::{fmt::Debug, sync::Arc};
 
 use gobs_core::ImageFormat;
 use gobs_render_hal::{
-    AlignMode, BindingGroupLayout, BindingGroupType, BlendMode, CompareOp, CullMode,
-    DescriptorStage, DescriptorType, FrontFace, Handle, ObjectDataLayout, PolygonMode, RenderHAL,
-    VertexAttribute,
+    BindingGroupLayout, BindingGroupType, BlendMode, CompareOp, CullMode, DescriptorStage,
+    DescriptorType, FrontFace, Handle, ObjectDataLayout, PolygonMode, RenderHAL, VertexAttribute,
 };
 use gobs_resource::{ResourceProperties, ResourceType};
 
@@ -61,6 +60,7 @@ pub struct GraphicsPipelineProperties {
     pub(crate) binding_groups: Vec<Arc<BindingGroupLayout>>,
     pub ds_pool_size: usize,
     pub object_data_layout: ObjectDataLayout,
+    pub push_data_layout: ObjectDataLayout,
     pub scene_data_layout: SceneDataLayout,
     pub vertex_attributes: VertexAttribute,
     pub(crate) color_format: Option<ImageFormat>,
@@ -84,8 +84,9 @@ impl GraphicsPipelineProperties {
             fragment_shader: None,
             binding_groups: Vec::new(),
             ds_pool_size: 10,
-            object_data_layout: ObjectDataLayout::new(AlignMode::Std140),
-            scene_data_layout: SceneDataLayout::new(AlignMode::Std140),
+            object_data_layout: ObjectDataLayout::new(false),
+            push_data_layout: ObjectDataLayout::new(false),
+            scene_data_layout: SceneDataLayout::new(),
             vertex_attributes: VertexAttribute::empty(),
             color_format: None,
             depth_format: None,
@@ -196,6 +197,12 @@ impl GraphicsPipelineProperties {
 
     pub fn object_data_layout(mut self, layout: ObjectDataLayout) -> Self {
         self.object_data_layout = layout;
+
+        self
+    }
+
+    pub fn push_data_layout(mut self, layout: ObjectDataLayout) -> Self {
+        self.push_data_layout = layout;
 
         self
     }
