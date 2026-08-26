@@ -124,7 +124,7 @@ impl MaterialsConfig {
             };
 
             let push_layout = if object_layout.instancing {
-                ObjectDataLayout::new(true).prop(ObjectDataProp::InstanceBufferAddress)
+                ObjectDataLayout::new(false).prop(ObjectDataProp::InstanceBufferAddress)
             } else {
                 object_layout.clone()
             };

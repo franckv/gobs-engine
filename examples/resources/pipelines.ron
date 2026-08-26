@@ -62,7 +62,7 @@ PipelinesConfig(
                 WorldMatrix,
                 VertexBufferAddress,
             ],
-            object_instancing: false,
+            object_instancing: true,
             scene_layout: [
                 CameraViewProj,
             ],

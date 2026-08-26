@@ -164,7 +164,7 @@ impl<'a> RenderJob<'a> {
         render_list: &[RenderObject],
         render_flags: RenderFlags,
     ) -> Result<Vec<DrawCall>, RenderError> {
-        let mut result = Vec::new();
+        let mut draws: Vec<DrawCall> = Vec::new();
 
         for render_object in render_list {
             if !Self::should_render(pass_name, render_flags, render_object) {
@@ -182,27 +182,48 @@ impl<'a> RenderJob<'a> {
             let material_data = render_object.material.material_data.clone();
             let material_textures = render_object.material.material_textures.clone();
 
-            let instance_data = self.get_object_data(ctx, frame, pipeline, render_object);
-
             let index_buffer = render_object.index_buffer;
             let index_len = render_object.index_len;
 
-            let draw = DrawCall {
-                pipeline,
-                material_indexing,
-                texture_indexing,
-                material_data,
-                material_textures,
-                instance_data,
-                instance_len: 1,
-                index_buffer,
-                index_len,
+            let instance_data = self.get_object_data(ctx, frame, pipeline, render_object);
+
+            let instancing = matches!(instance_data, InstanceData::Buffer(_));
+
+            let add_to_draw = if let Some(last_instance) = draws.last() {
+                instancing
+                    && last_instance.pipeline == pipeline
+                    && last_instance.index_buffer == index_buffer
+                    && last_instance.index_len == index_len
+                    && ((material_indexing && texture_indexing)
+                        || (last_instance.material_data == material_data
+                            && last_instance.material_textures == material_textures))
+            } else {
+                false
             };
 
-            result.push(draw);
+            if add_to_draw {
+                draws
+                    .last_mut()
+                    .expect("Cannot add render object to draw call")
+                    .instance_len += 1;
+            } else {
+                let draw = DrawCall {
+                    pipeline,
+                    material_indexing,
+                    texture_indexing,
+                    material_data,
+                    material_textures,
+                    instance_data,
+                    instance_len: 1,
+                    index_buffer,
+                    index_len,
+                };
+
+                draws.push(draw);
+            }
         }
 
-        Ok(result)
+        Ok(draws)
     }
 
     fn draw_objects(
@@ -411,8 +432,8 @@ impl<'a> RenderJob<'a> {
 
         if object_layout.instancing {
             let instance_buffer = ctx.get_instance_buffer(frame.id);
-
             let instance_buffer_address = ctx.get_buffer_address(instance_buffer);
+
             let local_offset = ctx.allocate_instance(frame.id, object_data.len()) as u64;
 
             ctx.update_instance_data(frame.id, local_offset, object_data.as_slice());

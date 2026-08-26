@@ -101,6 +101,7 @@ MaterialsConfig(
                 VertexBufferAddress,
                 MaterialOffset,
             ],
+            object_instancing: true,
         ),
         "depth": (
             vertex_shader: "color.spv",

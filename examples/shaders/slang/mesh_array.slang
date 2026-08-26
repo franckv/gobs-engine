@@ -24,10 +24,14 @@ SamplerState sampler;
 [[vk::binding(1, MATERIAL_TEXTURES_SET)]]
 Texture2D textures[256];
 
-struct PushConstants {
+struct InstanceData {
     float4x4 world_matrix;
-    ConstBufferPointer<Vertex> vertex_reference;
+    Vertex* vertex_reference;
     uint material_offset;
+}
+
+struct PushConstants {
+    InstanceData* instance_reference;
 }
 [[vk::push_constant]]
 PushConstants push_constants;
@@ -39,14 +43,17 @@ struct VSOutput {
     float3 tangent_position;
     float3 tangent_view_position;
     float3 tangent_light_dir;
+    nointerpolation uint material_offset;
 }
 
 [shader("vertex")]
-VSOutput vertex_main(uint vertex_index: SV_VertexID) {
-    Vertex v = push_constants.vertex_reference[vertex_index];
+VSOutput vertex_main(uint vertex_index: SV_VertexID, uint instance_index: SV_InstanceID) {
+    InstanceData instance = push_constants.instance_reference[instance_index];
+    Vertex v = instance.vertex_reference[vertex_index];
+
     VSOutput output;
 
-    float4x4 world_matrix = push_constants.world_matrix;
+    float4x4 world_matrix = instance.world_matrix;
     // TODO: only works for uniform scaling
     float3x3 normal_matrix = (float3x3)world_matrix;
     float3x3 tangent_matrix = tangent_matrix(normal_matrix, v.normal, v.tangent, v.bitangent); 
@@ -59,13 +66,14 @@ VSOutput vertex_main(uint vertex_index: SV_VertexID) {
     output.tangent_position = mul(tangent_matrix, world_position.xyz);
     output.tangent_view_position = mul(tangent_matrix, scene_data.camera_position.xyz);
     output.tangent_light_dir = normalize(mul(tangent_matrix, scene_data.light_direction));
+    output.material_offset = instance.material_offset;
 
     return output;
 }
 
 [shader("fragment")]
 float4 fragment_normal_main(VSOutput input) {
-    Material material = materials.Load<Material>(push_constants.material_offset);
+    Material material = materials.Load<Material>(input.material_offset);
 
 	float4 object_color = textures[NonUniformResourceIndex(material.diffuse_index)].Sample(sampler, input.uv);
 	float4 object_normal = textures[NonUniformResourceIndex(material.normal_index)].Sample(sampler, input.uv);

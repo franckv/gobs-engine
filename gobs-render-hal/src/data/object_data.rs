@@ -19,9 +19,15 @@ pub struct ObjectDataLayout {
 
 impl ObjectDataLayout {
     pub fn new(instancing: bool) -> Self {
+        let align = if instancing {
+            AlignMode::Scalar
+        } else {
+            AlignMode::Std430
+        };
+
         Self {
             layout: Vec::new(),
-            uniform_layout: UniformLayout::new(AlignMode::Std430),
+            uniform_layout: UniformLayout::new(align),
             instancing,
         }
     }

@@ -148,6 +148,12 @@ impl BindResource {
     }
 }
 
+impl PartialEq for BindResource {
+    fn eq(&self, other: &Self) -> bool {
+        self.id == other.id
+    }
+}
+
 #[derive(Copy, Clone, Eq, Hash, Serialize, Deserialize, PartialEq)]
 pub enum BindingGroupType {
     None,
