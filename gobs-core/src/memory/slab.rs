@@ -55,6 +55,10 @@ impl Allocator for SlabAllocator {
     fn release(&mut self, allocation: Self::Allocation) {
         self.index_pool.release(allocation.idx);
     }
+
+    fn clear(&mut self) {
+        self.index_pool.clear();
+    }
 }
 
 impl SlabAllocator {
@@ -123,6 +127,9 @@ mod test {
         assert_eq!(alloc4.requested_size(), 12);
         assert_eq!(alloc4.start(), 16);
 
+        let result = allocator.allocate(17);
+        assert!(result.is_err());
+
         let alloc5 = allocator.allocate(12);
         assert!(alloc5.is_ok());
         let alloc5 = alloc5.unwrap();
@@ -130,10 +137,16 @@ mod test {
         assert_eq!(alloc5.requested_size(), 12);
         assert_eq!(alloc5.start(), 48);
 
-        let result = allocator.allocate(17);
-        assert!(result.is_err());
-
         let result = allocator.allocate(16);
         assert!(result.is_err());
+
+        allocator.clear();
+
+        let alloc6 = allocator.allocate(16);
+        assert!(alloc6.is_ok());
+        let alloc6 = alloc6.unwrap();
+        assert_eq!(alloc6.size(), 16);
+        assert_eq!(alloc6.requested_size(), 16);
+        assert_eq!(alloc6.start(), 0);
     }
 }

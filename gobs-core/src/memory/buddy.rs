@@ -103,6 +103,14 @@ impl Allocator for BuddyAllocator {
             }
         }
     }
+
+    fn clear(&mut self) {
+        let free_blocks = (0..=self.order)
+            .map(|i| if i == 0 { 1 } else { 0 })
+            .collect();
+
+        self.free_blocks = free_blocks;
+    }
 }
 
 impl BuddyAllocator {

@@ -39,6 +39,11 @@ impl IndexPool {
 
         self.free_list.push(index);
     }
+
+    pub fn clear(&mut self) {
+        self.free_list.clear();
+        self.border = 0;
+    }
 }
 
 #[cfg(test)]

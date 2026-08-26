@@ -17,4 +17,5 @@ pub trait Allocator {
 
     fn allocate(&mut self, size: usize) -> Result<Self::Allocation, AllocError>;
     fn release(&mut self, allocation: Self::Allocation);
+    fn clear(&mut self);
 }
