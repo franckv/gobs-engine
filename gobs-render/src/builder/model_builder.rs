@@ -28,7 +28,11 @@ impl<'a> RenderModelBuilder<'a> {
     }
 
     pub fn with_mesh(mut self, mesh: ResourceHandle<Mesh>) -> Self {
-        let mesh_properties = &self.resource_manager.get(&mesh).properties;
+        let mesh_properties = &self
+            .resource_manager
+            .get(&mesh)
+            .expect("Mesh not registered")
+            .properties;
 
         match &mesh_properties.path {
             MeshPath::Mesh(geometry) => {
@@ -50,7 +54,11 @@ impl<'a> RenderModelBuilder<'a> {
         if let Some((mesh, material_instance)) = self.meshes.last_mut() {
             *material_instance = Some(material);
 
-            let mesh_properties = &self.resource_manager.get(mesh).properties;
+            let mesh_properties = &self
+                .resource_manager
+                .get(mesh)
+                .expect("Mesh not registered")
+                .properties;
             debug_assert_eq!(mesh_properties.vertex_attributes, vertex_attributes);
         } else {
             panic!("Missing mesh in model");
@@ -73,10 +81,12 @@ impl<'a> RenderModelBuilder<'a> {
     ) -> VertexAttribute {
         let material_instance = self
             .resource_manager
-            .get::<MaterialInstance>(&material_instance);
+            .get::<MaterialInstance>(&material_instance)
+            .expect("Material instance not registered");
         let material = self
             .resource_manager
-            .get::<Material>(&material_instance.properties.material);
+            .get::<Material>(&material_instance.properties.material)
+            .expect("Material not registered");
 
         material.properties.pipeline_properties.vertex_attributes
     }

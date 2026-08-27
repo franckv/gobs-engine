@@ -95,6 +95,8 @@ pub enum ResourceError {
     ResourceLoadError(#[from] LoadingError),
     #[error("allocation error")]
     AllocationError(#[from] AllocationError),
+    #[error("resource not found")]
+    ResourceNotFound,
     #[error("invalid data")]
     InvalidData,
 }

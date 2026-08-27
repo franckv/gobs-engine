@@ -128,9 +128,9 @@ impl MaterialSystem {
         material_instance_handle: ResourceHandle<MaterialInstance>,
         render_flags: &mut RenderFlags,
     ) -> Result<Handle, ResourceError> {
-        let material_instance = resource_manager.get(&material_instance_handle);
+        let material_instance = resource_manager.get(&material_instance_handle)?;
         let material_handle = material_instance.properties.material;
-        let material = resource_manager.get(&material_handle);
+        let material = resource_manager.get(&material_handle)?;
 
         if material.properties.blending_enabled {
             *render_flags |= RenderFlags::TRANSPARENT;

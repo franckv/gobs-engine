@@ -207,21 +207,21 @@ impl GobsContext for GameContext {
         RenderTextureBuilder::new(&mut self.resource_manager, name)
     }
 
-    fn free_material(&mut self, material: ResourceHandle<MaterialInstance>, delete_textures: bool) {
-        if delete_textures {
-            let textures = self
-                .resource_manager
-                .get(&material)
-                .properties
-                .textures
-                .clone();
+    fn free_material(
+        &mut self,
+        material_handle: ResourceHandle<MaterialInstance>,
+        delete_textures: bool,
+    ) {
+        if let Ok(material) = self.resource_manager.get(&material_handle) {
+            if delete_textures {
+                let textures = material.properties.textures.clone();
 
-            for texture in textures {
-                self.resource_manager.schedule_removal(&texture);
+                for texture in textures {
+                    self.resource_manager.schedule_removal(&texture);
+                }
             }
+            self.resource_manager.schedule_removal(&material_handle);
         }
-
-        self.resource_manager.schedule_removal(&material);
     }
 
     fn free_mesh(&mut self, mesh: ResourceHandle<Mesh>) {

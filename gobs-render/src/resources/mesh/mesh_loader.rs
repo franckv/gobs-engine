@@ -129,7 +129,7 @@ impl ResourceLoader<Mesh> for MeshLoader {
         handle: &ResourceHandle<Mesh>,
         registry: &mut ResourceRegistry,
     ) -> Result<MeshData, ResourceError> {
-        let resource = registry.get_mut(handle);
+        let resource = registry.get_mut(handle)?;
         let properties = &mut resource.properties;
 
         tracing::debug!(target: logger::RESOURCES, "Load mesh resource {}", properties.name());

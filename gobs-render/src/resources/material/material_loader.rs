@@ -32,7 +32,7 @@ impl ResourceLoader<Material> for MaterialLoader {
         registry: &mut ResourceRegistry,
     ) -> Result<MaterialData, ResourceError> {
         let (pipeline_properties, lifetime) = {
-            let resource = registry.get(handle);
+            let resource = registry.get(handle)?;
             tracing::info!(target: logger::RESOURCES, "Load material resource {} with indexing: textures={}, data={}",
                 resource.properties.name(),
                 resource.properties.texture_data_layout.texture_indexing,

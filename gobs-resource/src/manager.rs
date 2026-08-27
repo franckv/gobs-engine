@@ -60,19 +60,27 @@ impl ResourceRegistry {
     }
 
     pub fn schedule_removal<R: ResourceType + 'static>(&mut self, handle: &ResourceHandle<R>) {
-        let resource = self.get_mut(handle);
-        resource.life = 0;
-        resource.lifetime = ResourceLifetime::Transient;
+        if let Ok(resource) = self.get_mut(handle) {
+            resource.life = 0;
+            resource.lifetime = ResourceLifetime::Transient;
+        } else {
+            tracing::warn!(
+                target: logger::RESOURCES,
+                "Scheduling for removal: resource not found"
+            );
+        }
     }
 
     /// Clone a resource and schedule old resource for deletion
+    /// Avoid mutating a resource that is still being used
     pub fn replace<R: ResourceType + 'static>(
         &mut self,
         handle: &ResourceHandle<R>,
-    ) -> ResourceHandle<R> {
+    ) -> Result<ResourceHandle<R>, ResourceError> {
         tracing::trace!(target: logger::RESOURCES, "Resource cloned: {:?}", handle);
 
-        let old_resource = self.get_mut::<R>(handle);
+        let old_resource = self.get_mut::<R>(handle)?;
+
         let properties = old_resource.properties.clone();
         let lifetime = old_resource.lifetime;
         old_resource.life = 0;
@@ -85,7 +93,7 @@ impl ResourceRegistry {
         let resource: &Resource<R> = self.registry.get(key).unwrap();
         tracing::debug!(target: logger::RESOURCES, "New resource: {} ({}): {:?}", &resource.properties.name(), std::any::type_name::<R>(), resource.handle.id);
 
-        resource.handle
+        Ok(resource.handle)
     }
 
     pub fn get_by_name<R: ResourceType + 'static>(&self, name: &str) -> Option<ResourceHandle<R>> {
@@ -98,16 +106,22 @@ impl ResourceRegistry {
         id.map(|id| ResourceHandle::new(*id))
     }
 
-    // TODO: return option
-    pub fn get<R: ResourceType + 'static>(&self, handle: &ResourceHandle<R>) -> &Resource<R> {
-        self.registry.get::<Resource<R>>(handle.id).unwrap()
+    pub fn get<R: ResourceType + 'static>(
+        &self,
+        handle: &ResourceHandle<R>,
+    ) -> Result<&Resource<R>, ResourceError> {
+        self.registry
+            .get::<Resource<R>>(handle.id)
+            .ok_or(ResourceError::ResourceNotFound)
     }
 
     pub fn get_mut<R: ResourceType + 'static>(
         &mut self,
         handle: &ResourceHandle<R>,
-    ) -> &mut Resource<R> {
-        self.registry.get_mut::<Resource<R>>(handle.id).unwrap()
+    ) -> Result<&mut Resource<R>, ResourceError> {
+        self.registry
+            .get_mut::<Resource<R>>(handle.id)
+            .ok_or(ResourceError::ResourceNotFound)
     }
 
     pub fn values<R: ResourceType + 'static>(&self) -> impl Iterator<Item = &Resource<R>> {
@@ -159,7 +173,7 @@ impl ResourceManager {
     pub fn replace<R: ResourceType + 'static>(
         &mut self,
         handle: &ResourceHandle<R>,
-    ) -> ResourceHandle<R> {
+    ) -> Result<ResourceHandle<R>, ResourceError> {
         self.registry.replace(handle)
     }
 
@@ -167,14 +181,17 @@ impl ResourceManager {
         self.registry.get_by_name(name)
     }
 
-    pub fn get<R: ResourceType + 'static>(&self, handle: &ResourceHandle<R>) -> &Resource<R> {
+    pub fn get<R: ResourceType + 'static>(
+        &self,
+        handle: &ResourceHandle<R>,
+    ) -> Result<&Resource<R>, ResourceError> {
         self.registry.get(handle)
     }
 
     pub fn get_mut<R: ResourceType + 'static>(
         &mut self,
         handle: &ResourceHandle<R>,
-    ) -> &mut Resource<R> {
+    ) -> Result<&mut Resource<R>, ResourceError> {
         self.registry.get_mut(handle)
     }
 
@@ -231,7 +248,7 @@ impl ResourceManager {
         backend: &mut R::ResourceBackend<'a>,
         handle: &ResourceHandle<R>,
     ) -> Result<(), ResourceError> {
-        let resource = self.get_mut(handle);
+        let resource = self.get_mut(handle)?;
 
         if !resource.is_loaded() {
             let loader = self
@@ -244,7 +261,7 @@ impl ResourceManager {
             tracing::trace!(target: logger::RESOURCES, "Loading resource {:?}", handle);
             let data = loader.load(backend, handle, &mut self.registry)?;
 
-            let resource = self.get_mut::<R>(handle);
+            let resource = self.get_mut::<R>(handle)?;
 
             resource.data = ResourceState::Loaded(data);
         }
@@ -259,7 +276,7 @@ impl ResourceManager {
     ) -> Result<ResourceData<'_, R>, ResourceError> {
         self.load_data::<R>(backend, handle)?;
 
-        let resource = self.get(handle);
+        let resource = self.get(handle)?;
 
         let data = match &resource.data {
             ResourceState::Loaded(data) => data,
@@ -279,7 +296,7 @@ impl ResourceManager {
     ) -> Result<ResourceDataMut<'_, R>, ResourceError> {
         self.load_data::<R>(backend, handle)?;
 
-        let resource = self.get_mut(handle);
+        let resource = self.get_mut(handle)?;
 
         let data = match &mut resource.data {
             ResourceState::Loaded(data) => data,

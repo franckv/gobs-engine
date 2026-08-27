@@ -94,10 +94,12 @@ impl<'a> RenderMeshBuilder<'a> {
     ) -> VertexAttribute {
         let material_instance = self
             .resource_manager
-            .get::<MaterialInstance>(&material_instance);
+            .get::<MaterialInstance>(&material_instance)
+            .expect("Material instance not registered");
         let material = self
             .resource_manager
-            .get::<Material>(&material_instance.properties.material);
+            .get::<Material>(&material_instance.properties.material)
+            .expect("Material not registered");
 
         material.properties.pipeline_properties.vertex_attributes
     }

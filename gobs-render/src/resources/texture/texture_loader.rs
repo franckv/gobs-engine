@@ -200,7 +200,7 @@ impl ResourceLoader<Texture> for TextureLoader {
         handle: &ResourceHandle<Texture>,
         registry: &mut ResourceRegistry,
     ) -> Result<TextureData, ResourceError> {
-        let resource = registry.get_mut(handle);
+        let resource = registry.get_mut(handle)?;
         let properties = &mut resource.properties;
 
         tracing::debug!(target: logger::RESOURCES, "Load texture resource {}", properties.name());

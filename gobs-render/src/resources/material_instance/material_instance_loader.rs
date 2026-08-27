@@ -33,10 +33,10 @@ impl ResourceLoader<MaterialInstance> for MaterialInstanceLoader {
         registry: &mut ResourceRegistry,
     ) -> Result<MaterialInstanceData, ResourceError> {
         let material_properties = {
-            let resource = registry.get(handle);
+            let resource = registry.get(handle)?;
             let properties = &resource.properties;
             let material_handle = properties.material;
-            let material_resource = registry.get(&material_handle);
+            let material_resource = registry.get(&material_handle)?;
             let material_properties = &material_resource.properties;
 
             material_properties.clone()
@@ -45,7 +45,7 @@ impl ResourceLoader<MaterialInstance> for MaterialInstanceLoader {
         tracing::debug!(target: logger::RESOURCES, "Load material instance with layout {:?}", &material_properties.material_data_layout);
 
         let properties = {
-            let resource = registry.get_mut(handle);
+            let resource = registry.get_mut(handle)?;
 
             &mut resource.properties
         };

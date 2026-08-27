@@ -128,7 +128,7 @@ impl ResourceLoader<Pipeline> for PipelineLoader {
         handle: &ResourceHandle<Pipeline>,
         registry: &mut ResourceRegistry,
     ) -> Result<PipelineData, ResourceError> {
-        let resource = registry.get_mut(handle);
+        let resource = registry.get_mut(handle)?;
         let properties = &mut resource.properties;
 
         tracing::debug!(target: logger::RESOURCES, "Load pipeline resource {}", properties.name());

@@ -485,7 +485,10 @@ where
         let (mesh, _) = &self.selected_mesh;
 
         if let Some(mesh) = mesh {
-            let mesh_props = &resource_manager.get(mesh).properties;
+            let mesh_props = &resource_manager
+                .get(mesh)
+                .expect("Mesh not registered")
+                .properties;
             egui::CollapsingHeader::new("Mesh")
                 .default_open(true)
                 .show(ui, |ui| {
@@ -531,9 +534,13 @@ where
     fn draw_material(&mut self, ui: &mut egui::Ui, resource_manager: &ResourceManager) {
         let (_, material) = &self.selected_mesh;
         if let Some(material) = material {
-            let mat_instance_props = &resource_manager.get(material).properties;
+            let mat_instance_props = &resource_manager
+                .get(material)
+                .expect("Material instance not registered")
+                .properties;
             let mat_props = &resource_manager
                 .get(&mat_instance_props.material)
+                .expect("Material not registered")
                 .properties;
 
             egui::CollapsingHeader::new("Material")
@@ -549,7 +556,10 @@ where
                         ui.label("Textures:");
                     }
                     for texture in &mat_instance_props.textures {
-                        let texture_props = &resource_manager.get(texture).properties;
+                        let texture_props = &resource_manager
+                            .get(texture)
+                            .expect("Texture not registered")
+                            .properties;
 
                         ui.label(format!("  Name: {}", texture_props.name(),));
                         ui.label(format!("  Id: {:?}", texture.id));

@@ -384,9 +384,17 @@ impl UIRenderer {
                     bytes.len()
                 );
 
-                let texture = resource_manager.get(&material).properties.textures[0];
-                let handle = resource_manager.replace(&texture);
-                let texture = resource_manager.get_mut(&handle);
+                let texture = resource_manager
+                    .get(&material)
+                    .expect("UI material not registered")
+                    .properties
+                    .textures[0];
+                let handle = resource_manager
+                    .replace(&texture)
+                    .expect("UI texture not registered");
+                let texture = resource_manager
+                    .get_mut(&handle)
+                    .expect("UI texture image not registered");
                 tracing::trace!(target: logger::UI,
                     "Patching texture original size: {:?}",
                     texture.properties.format.extent
