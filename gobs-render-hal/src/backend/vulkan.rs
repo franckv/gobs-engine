@@ -118,7 +118,7 @@ impl RenderHAL for VulkanHAL {
     ) {
         let buffer = self.registry.buffers.get(buffer).unwrap();
 
-        debug_assert!(offset + len < buffer.len);
+        debug_assert!(offset + len <= buffer.len);
 
         let total_offset = buffer.offset as usize + offset;
 
@@ -170,18 +170,8 @@ impl RenderHAL for VulkanHAL {
         self.instances.get_buffer(frame_id)
     }
 
-    fn get_instance_buffer_size(&self) -> usize {
-        self.instances.get_buffer_size()
-    }
-
     fn allocate_instance(&mut self, frame_id: usize, size: usize) -> usize {
         self.instances.allocate(frame_id, size)
-    }
-
-    fn update_instance_data(&mut self, frame_id: usize, offset: u64, data: &[u8]) {
-        let buffer = self.instances.get_buffer(frame_id);
-
-        self.upload_buffer(buffer, data, offset);
     }
 
     fn create_image(

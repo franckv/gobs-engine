@@ -61,9 +61,7 @@ pub trait RenderHAL {
     fn release_material_index(&mut self, index: usize);
     fn get_material_offset(&self, index: usize) -> Option<u32>;
     fn get_instance_buffer(&self, frame_id: usize) -> Handle;
-    fn get_instance_buffer_size(&self) -> usize;
     fn allocate_instance(&mut self, frame_id: usize, size: usize) -> usize;
-    fn update_instance_data(&mut self, frame_id: usize, offset: u64, data: &[u8]);
 
     fn create_image(
         &mut self,
