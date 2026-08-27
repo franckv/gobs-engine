@@ -2,7 +2,7 @@ use bitflags::bitflags;
 use glam::{Vec2, Vec3};
 use serde::{Deserialize, Serialize};
 
-use gobs_core::{Color, Transform, data::data_buffer::DataBuffer as _};
+use gobs_core::{Color, Transform, data::data_buffer::DataBuffer};
 use gobs_vulkan::pipelines::VertexAttributeFormat;
 
 use crate::{
@@ -168,16 +168,21 @@ impl VertexData {
         vertex
     }
 
-    fn get_bytes(&self, flag: VertexAttribute, data: &mut Vec<u8>) {
+    fn get_bytes<B>(&self, flag: VertexAttribute, data: &mut B)
+    where
+        B: DataBuffer,
+    {
         self.data[flag.idx()].copy(data);
     }
 
-    pub fn copy_data(
+    pub fn copy_data<B>(
         vertices: &[VertexData],
         flags: VertexAttribute,
-        data: &mut Vec<u8>,
+        data: &mut B,
         mode: AlignMode,
-    ) {
+    ) where
+        B: DataBuffer,
+    {
         let attributes = flags.attributes();
         let offsets = Attribute::offsets(&attributes, mode);
         let size = Attribute::stride(&attributes, mode);

@@ -1,3 +1,4 @@
+use gobs_core::data::data_buffer::{DataBuffer as _, FixedBuffer};
 use gobs_core::logger;
 use gobs_render_graph::{FrameData, GraphResourceManager, PassMetaData};
 use gobs_render_hal::{
@@ -12,6 +13,8 @@ use crate::{
     data::{RenderFlags, SceneData, SceneDataLayout, SceneDataProp},
     job::RenderJob,
 };
+
+const SCENE_DATA_SIZE: usize = 256;
 
 pub struct MaterialPassData {
     pub(crate) pipeline: Option<Handle>,
@@ -153,7 +156,9 @@ impl MaterialPass {
         Self::begin_pass(ctx, frame.command.as_mut(), pass_metadata, resource_manager);
 
         tracing::debug!(target: logger::RENDER, "Upload scene data");
-        let mut scene_data_bytes = Vec::new();
+        let mut scene_data_bytes = FixedBuffer::<SCENE_DATA_SIZE>::new();
+
+        debug_assert!(pass_data.scene_layout.uniform_layout().size() <= SCENE_DATA_SIZE);
 
         tracing::debug!(target: logger::RENDER, "Scene data layout: {:?}", pass_data.scene_layout.uniform_layout());
 
@@ -187,7 +192,7 @@ impl MaterialPass {
             });
 
         tracing::debug!(target: logger::RENDER, "Update uniform (scene data, push)");
-        pass_data.update_uniform(ctx, frame.id, &scene_data_bytes);
+        pass_data.update_uniform(ctx, frame.id, scene_data_bytes.as_slice());
 
         tracing::debug!(target: logger::RENDER, "Start render job");
         let mut render_job = RenderJob::new()
