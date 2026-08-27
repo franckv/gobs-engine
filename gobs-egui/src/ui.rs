@@ -278,7 +278,22 @@ impl UIRenderer {
 
                     *self.font_texture.get_mut(id).unwrap() = material_instance;
                 } else if self.font_texture.contains_key(id) {
-                    tracing::warn!(target: logger::UI, "Font texture already exist {:?}", id);
+                    tracing::warn!(target: logger::UI, "Replacing Font texture {:?}", id);
+
+                    let old_material_handle = self.font_texture.remove(id).unwrap();
+
+                    if let Ok(old_material) = resource_manager.get(&old_material_handle) {
+                        let old_textures = old_material.properties.textures.clone();
+                        for old_texture in old_textures {
+                            resource_manager.schedule_removal(&old_texture);
+                        }
+                        resource_manager.schedule_removal(&old_material_handle);
+
+                        let texture = self.decode_texture(resource_manager, img);
+
+                        self.font_texture.insert(*id, texture);
+                        tracing::trace!(target: logger::UI, "Texture reloaded");
+                    };
                 } else {
                     tracing::debug!(target: logger::UI, "Allocate new texture");
                     let texture = self.decode_texture(resource_manager, img);
