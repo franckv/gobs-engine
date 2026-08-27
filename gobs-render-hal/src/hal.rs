@@ -4,7 +4,8 @@ use slotmap::new_key_type;
 use winit::window::Window;
 
 use gobs_core::{
-    GobsConfig, ImageExtent2D, ImageFormat, SamplerFilter, data::data_buffer::SliceBuffer,
+    GobsConfig, ImageExtent2D, ImageFormat, SamplerFilter,
+    data::data_buffer::{DataBuffer, SliceBuffer},
 };
 
 use crate::{
@@ -73,6 +74,13 @@ pub trait RenderHAL {
     fn invalidate_image(&mut self, image: Handle);
     fn get_image_extent(&self, image: Handle) -> ImageExtent2D;
     fn destroy_image(&mut self, image: Handle);
+    fn capture_image(
+        &mut self,
+        image: Handle,
+        data: &mut dyn DataBuffer,
+        format: ImageFormat,
+    ) -> ImageExtent2D;
+
     fn allocate_texture_index(&mut self) -> usize;
     fn update_texture_index(&mut self, index: usize, image: Handle);
     fn release_texture_index(&mut self, index: usize);

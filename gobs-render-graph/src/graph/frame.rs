@@ -87,53 +87,6 @@ impl FrameGraph {
         Err(RenderError::PassNotFound)
     }
 
-    /*
-    pub fn get_image_data<T: Pod>(
-        &self,
-        ctx: &GfxContext,
-        label: &str,
-        data: &mut Vec<T>,
-        format: ImageFormat,
-    ) -> ImageExtent2D {
-        ctx.hal.wait();
-
-        let mut src_image = self.resource_manager.image(label);
-        let mut mid_image =
-            ctx.hal
-                .create_image("mid", format, ImageUsage::Color, src_image.extent());
-        let mut dst_image =
-            ctx.hal
-                .create_image("dst", format, ImageUsage::File, src_image.extent());
-
-        let mut buffer = ctx
-            .hal
-            .create_buffer("copy", dst_image.size(), BufferType::StagingDst);
-
-        let cmd = ctx
-            .hal
-            .create_command_buffer("Copy command", CommandQueueType::Graphics);
-
-        cmd.run_immediate_mut(label, &|cmd| {
-            cmd.transition_image_layout(src_image, ImageLayout::TransferSrc);
-            cmd.transition_image_layout(mid_image, ImageLayout::TransferDst);
-            let dst_extent = mid_image.extent();
-            cmd.copy_image_to_image(&src_image, src_image.extent(), &mut mid_image, dst_extent);
-
-            cmd.transition_image_layout(mid_image, ImageLayout::TransferSrc);
-            cmd.transition_image_layout(dst_image, ImageLayout::TransferDst);
-            let dst_extent = dst_image.extent();
-            cmd.copy_image_to_image(&mid_image, mid_image.extent(), &mut dst_image, dst_extent);
-
-            cmd.transition_image_layout(dst_image, ImageLayout::TransferSrc);
-            cmd.copy_image_to_buffer(&dst_image, &mut buffer);
-        });
-
-        buffer.get_bytes(data);
-
-        dst_image.extent()
-    }
-    */
-
     pub fn pass_by_name(&self, pass_name: &str) -> Result<&PassMetaData, RenderError> {
         self.get_pass(|pass| pass.name == pass_name)
     }

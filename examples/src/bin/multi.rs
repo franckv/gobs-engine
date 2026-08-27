@@ -36,6 +36,8 @@ impl<Context: GobsContext> GobsGame for App<Context> {
     }
 
     fn update(&mut self, ctx: &mut Context, delta: f32) {
+        self.input.update(delta);
+
         self.scene.update_camera(|transform, camera| {
             self.input
                 .controller

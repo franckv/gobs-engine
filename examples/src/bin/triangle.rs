@@ -33,6 +33,8 @@ impl<Context: GobsContext> GobsGame for App<Context> {
     }
 
     fn update(&mut self, ctx: &mut Context, delta: f32) {
+        self.input.update(delta);
+
         if self.input.draw_ui {
             self.ui.draw(ctx, &mut self.scene, delta);
         }

@@ -18,9 +18,10 @@ use winit::{
 
 use gobs_core::{
     ConfigReader as _, GobsConfig, ImageExtent2D, ImageFormat, SamplerFilter,
-    data::data_buffer::SliceBuffer, logger,
+    data::data_buffer::{DataBuffer, SliceBuffer},
+    logger,
 };
-use gobs_vulkan::{self as vk, Device};
+use gobs_vulkan::{self as vk, Device, images::ImageLayout};
 
 use crate::{
     BindResource, BindingGroupLayout, BindingGroupType, CommandBuffer, CommandQueueType,
@@ -209,6 +210,54 @@ impl RenderHAL for VulkanHAL {
 
     fn destroy_image(&mut self, image: Handle) {
         let _ = self.registry.images.remove(image);
+    }
+
+    fn capture_image(
+        &mut self,
+        image: Handle,
+        data: &mut dyn DataBuffer,
+        format: ImageFormat,
+    ) -> ImageExtent2D {
+        self.wait();
+
+        let src_image = self.registry.images.get(image).unwrap();
+        let extent = src_image.extent;
+
+        let mid_image = self.create_image("mid", format, ImageUsage::Color, extent);
+        let dst_image = self.create_image("dst", format, ImageUsage::File, extent);
+
+        let size = extent.width * extent.height * format.pixel_size();
+
+        let buffer = self.create_buffer("copy", size as usize, BufferType::StagingDst);
+
+        let mut cmd = self.create_command_buffer("Copy command", CommandQueueType::Graphics);
+
+        cmd.run_immediate_mut("Capture", &mut |cmd| {
+            cmd.transition_image_layout(&mut *self, image, ImageLayout::TransferSrc);
+            cmd.transition_image_layout(&mut *self, mid_image, ImageLayout::TransferDst);
+            cmd.copy_image_to_image(self, image, mid_image);
+
+            cmd.transition_image_layout(&mut *self, mid_image, ImageLayout::TransferSrc);
+            cmd.transition_image_layout(&mut *self, dst_image, ImageLayout::TransferDst);
+
+            cmd.copy_image_to_image(self, mid_image, dst_image);
+
+            cmd.transition_image_layout(&mut *self, dst_image, ImageLayout::TransferSrc);
+            cmd.copy_image_to_buffer(self, dst_image, buffer, 0);
+        });
+
+        let buffer_view = self.registry.buffers.get(buffer).unwrap();
+
+        let mut buf = Vec::new();
+        buffer_view.buffer.get_bytes(&mut buf);
+
+        self.destroy_image(mid_image);
+        self.destroy_image(dst_image);
+        self.destroy_buffer(buffer);
+
+        data.write(&buf);
+
+        extent
     }
 
     fn allocate_texture_index(&mut self) -> usize {

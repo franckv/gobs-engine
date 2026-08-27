@@ -53,6 +53,8 @@ impl<Context: GobsContext> GobsGame for App<Context> {
     }
 
     fn update(&mut self, ctx: &mut Context, delta: f32) {
+        self.input.update(delta);
+
         let frame = ctx.frame_number();
 
         if let Some(id) = self.starting_cube

@@ -10,6 +10,7 @@ egui = { workspace = true }
 egui_extras = { workspace = true }
 glam = { workspace = true }
 gobs = { workspace = true }
+image = { workspace = true }
 pollster = { workspace = true }
 tracing = { workspace = true }
 tracing-subscriber = { workspace = true }

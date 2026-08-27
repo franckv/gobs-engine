@@ -1,6 +1,6 @@
 use std::f32::consts::FRAC_PI_2;
 
-use gobs::core::{Input, Key, MouseButton, Transform};
+use gobs::core::{ImageFormat, Input, Key, MouseButton, Transform, logger};
 use gobs::game::GobsContext;
 use gobs::resource::camera::{Camera, ProjectionMode};
 
@@ -13,6 +13,7 @@ pub struct InputManager {
     pub draw_ui: bool,
     pub draw_wire: bool,
     pub freeze: bool,
+    pub delta: f32,
 }
 
 impl InputManager {
@@ -24,7 +25,12 @@ impl InputManager {
             draw_ui: false,
             draw_wire: false,
             freeze: false,
+            delta: 0.,
         }
+    }
+
+    pub fn update(&mut self, delta: f32) {
+        self.delta = delta;
     }
 
     pub fn input<Context: GobsContext>(
@@ -36,6 +42,10 @@ impl InputManager {
         match input {
             Input::KeyPressed(key) => match key {
                 Key::P => self.process_updates = !self.process_updates,
+                Key::C => self.screenshot(ctx),
+                Key::F => {
+                    tracing::info!(target: logger::APP, "FPS: {}", if self.delta == 0. {0.} else {1. / self.delta})
+                }
                 Key::U => self.draw_ui = !self.draw_ui,
                 Key::B => self.draw_bounds = !self.draw_bounds,
                 Key::Z => self.draw_wire = !self.draw_wire,
@@ -66,6 +76,29 @@ impl InputManager {
             Input::MouseMotion(dx, dy) if !ui_hovered => self.controller.mouse_drag(dx, dy),
             _ => (),
         }
+    }
+
+    fn screenshot<Context: GobsContext>(&self, ctx: &mut Context) {
+        let label = "draw";
+        let filename = "screenshot.png";
+
+        println!("Capture image {}", label);
+
+        let render_target = ctx.get_attachment(label).unwrap();
+
+        let mut data = Vec::new();
+
+        let extent =
+            ctx.gfx_mut()
+                .capture_image(render_target, &mut data, ImageFormat::R8g8b8a8Unorm);
+
+        let data_len = data.len();
+
+        let image = image::RgbaImage::from_raw(extent.width, extent.height, data).unwrap();
+
+        image.save(filename).unwrap();
+
+        println!("Saved {} ({} bytes)", filename, data_len);
     }
 }
 

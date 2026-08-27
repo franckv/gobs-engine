@@ -42,6 +42,8 @@ impl<Context: GobsContext> GobsGame for App<Context> {
     }
 
     fn update(&mut self, ctx: &mut Context, delta: f32) {
+        self.input.update(delta);
+
         if self.input.process_updates {
             let angular_speed = 10.;
             self.scene.graph.update(self.nodes[2], |node| {

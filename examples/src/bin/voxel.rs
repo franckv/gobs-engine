@@ -150,7 +150,6 @@ impl<Context: GobsContext> Renderable for World<Context> {
 struct App<Context: GobsContext> {
     world: World<Context>,
     input: InputManager,
-    fps: f32,
 }
 
 impl<Context: GobsContext> GobsGame for App<Context> {
@@ -160,7 +159,6 @@ impl<Context: GobsContext> GobsGame for App<Context> {
         Ok(App {
             world: World::new(ctx).await,
             input: InputManager::new(),
-            fps: 0.,
         })
     }
 
@@ -174,6 +172,8 @@ impl<Context: GobsContext> GobsGame for App<Context> {
     }
 
     fn update(&mut self, ctx: &mut Context, delta: f32) {
+        self.input.update(delta);
+
         self.input.controller.update_camera(
             &mut self.world.camera,
             &mut self.world.camera_transform,
@@ -184,8 +184,6 @@ impl<Context: GobsContext> GobsGame for App<Context> {
         self.world.voxels.reveal(camera_position.into());
 
         ctx.lock_mouse(self.input.controller.lock_mouse());
-
-        self.fps = 1. / delta;
 
         let chunk_positions: Vec<[i32; 3]> = self.world.voxels.chunks().collect();
 
@@ -229,17 +227,10 @@ impl<Context: GobsContext> GobsGame for App<Context> {
     fn input(&mut self, ctx: &mut Context, input: Input) {
         self.input.input(ctx, input, false);
 
-        if let Input::KeyPressed(key) = input {
-            match key {
-                Key::I => {
-                    tracing::info!(target: logger::APP, "Camera: {} ({:?})", self.world.camera, self.world.camera_transform)
-                }
-                Key::F => {
-                    tracing::info!(target: logger::APP, "FPS: {}", self.fps);
-                }
-                Key::Backspace => {}
-                _ => (),
-            }
+        if let Input::KeyPressed(key) = input
+            && key == Key::I
+        {
+            tracing::info!(target: logger::APP, "Camera: {} ({:?})", self.world.camera, self.world.camera_transform)
         }
     }
 
@@ -254,7 +245,7 @@ impl<Context: GobsContext> GobsGame for App<Context> {
 
 #[allow(unused)]
 impl<Context: GobsContext> App<Context> {
-    pub fn load_plane(&mut self) {
+    fn load_plane(&mut self) {
         for z in 0..32 {
             for x in 0..32 {
                 self.world.voxels.insert(VoxelData, [x, 0, z]);
@@ -262,7 +253,7 @@ impl<Context: GobsContext> App<Context> {
         }
     }
 
-    pub fn load_sphere(&mut self) {
+    fn load_sphere(&mut self) {
         let radius: i64 = 8;
         let diameter = 2 * radius;
 

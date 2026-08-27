@@ -7,7 +7,7 @@ use gobs_assets::gltf_load;
 use gobs_core::{GobsConfig, ImageExtent2D, Input, logger};
 use gobs_egui::UIRenderer;
 use gobs_render::{
-    GfxContext, Material, MaterialInstance, MaterialInstanceLoader, MaterialLoader,
+    GfxContext, Handle, Material, MaterialInstance, MaterialInstanceLoader, MaterialLoader,
     MaterialsConfig, Mesh, MeshLoader, Pipeline, PipelineLoader, RenderBuilder, RenderError,
     RenderHAL, RenderMaterialBuilder, RenderMeshBuilder, RenderModelBuilder, RenderTextureBuilder,
     Renderer, Texture, TextureLoader,
@@ -37,6 +37,7 @@ pub trait GobsContext {
     fn extent(&self) -> ImageExtent2D;
     fn gfx(&self) -> &dyn RenderHAL;
     fn gfx_mut(&mut self) -> &mut dyn RenderHAL;
+    fn get_attachment(&self, label: &str) -> Option<Handle>;
 
     fn draw_ui<F>(&mut self, delta: f32, callback: F)
     where
@@ -167,6 +168,10 @@ impl GobsContext for GameContext {
 
     fn gfx_mut(&mut self) -> &mut GfxContext<'_> {
         self.renderer.gfx.as_mut()
+    }
+
+    fn get_attachment(&self, label: &str) -> Option<Handle> {
+        Some(self.renderer.graph.resource_manager.image(label))
     }
 
     fn draw_ui<F>(&mut self, delta: f32, mut callback: F)
