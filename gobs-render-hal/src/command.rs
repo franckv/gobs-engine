@@ -60,4 +60,7 @@ pub trait CommandBuffer {
         image: Handle,
         layout: ImageLayout,
     );
+    fn reset_gpu_stats(&mut self, hal: &mut dyn RenderHAL, stats: Handle);
+    fn begin_gpu_stats(&mut self, hal: &mut dyn RenderHAL, stats: Handle);
+    fn end_gpu_stats(&mut self, hal: &mut dyn RenderHAL, stats: Handle);
 }

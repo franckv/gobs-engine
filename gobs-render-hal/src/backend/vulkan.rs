@@ -6,6 +6,7 @@ mod instance;
 mod material;
 mod pipeline;
 pub(crate) mod registry;
+mod stats;
 mod textures;
 
 use std::{any::Any, collections::HashMap, sync::Arc};
@@ -33,6 +34,7 @@ use crate::{
         material::MaterialRegistry,
         pipeline::{VkComputePipelineBuilder, VkGraphicsPipelineBuilder},
         registry::ResourcesRegistry,
+        stats::GpuStats,
         textures::TextureRegistry,
     },
     hal::{BufferType, Handle, RenderHAL},
@@ -384,6 +386,27 @@ impl RenderHAL for VulkanHAL {
             tracing::info!(target: logger::MEMORY, "DS in per frame cache: {}", cache.len());
         }
         tracing::info!(target: logger::MEMORY, "DS in static cache: {}", self.bindings.static_ds_cache.len());
+    }
+
+    fn create_gpu_stats(&mut self) -> Handle {
+        let stats = GpuStats::new(self.device.clone());
+
+        self.registry.stats.insert(stats)
+    }
+
+    fn get_gpu_stats_ms(&mut self, stats: Handle) -> f32 {
+        let stats = self.registry.stats.get(stats).unwrap();
+
+        let mut result = [0; 2];
+        stats.query_pool.get_query_pool_results(0, &mut result);
+
+        let delta = result[1] - result[0];
+
+        (delta as f32 * stats.query_pool.period) / 1_000_000.
+    }
+
+    fn destroy_gpu_stats(&mut self, stats: Handle) {
+        let _ = self.registry.stats.remove(stats);
     }
 }
 

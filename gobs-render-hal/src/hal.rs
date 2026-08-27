@@ -111,4 +111,8 @@ pub trait RenderHAL {
     fn wait(&mut self);
 
     fn info(&self);
+
+    fn create_gpu_stats(&mut self) -> Handle;
+    fn get_gpu_stats_ms(&mut self, stats: Handle) -> f32;
+    fn destroy_gpu_stats(&mut self, stats: Handle);
 }

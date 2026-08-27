@@ -12,6 +12,7 @@ use crate::{
             bindings::BindingRegistry,
             pipeline::{self, VkPipeline},
             registry::ResourcesRegistry,
+            stats::GpuStats,
         },
     },
     bindings::BindingLifetime,
@@ -332,6 +333,38 @@ impl CommandBuffer for VkCommandBuffer {
         let image = hal.registry.images.get_mut(image).unwrap();
 
         self.command.transition_image_layout(image, layout);
+    }
+
+    fn reset_gpu_stats(&mut self, hal: &mut dyn RenderHAL, stats: Handle) {
+        let mut hal = hal.get_mut();
+
+        let stats = hal.registry.stats.get(stats).unwrap();
+
+        self.command.reset_query_pool(&stats.query_pool, 0, 2);
+    }
+
+    fn begin_gpu_stats(&mut self, hal: &mut dyn RenderHAL, stats: Handle) {
+        let mut hal = hal.get_mut();
+
+        let stats = hal.registry.stats.get(stats).unwrap();
+
+        self.command.write_timestamp(
+            &stats.query_pool,
+            vk::pipelines::PipelineStage::TopOfPipe,
+            0,
+        );
+    }
+
+    fn end_gpu_stats(&mut self, hal: &mut dyn RenderHAL, stats: Handle) {
+        let mut hal = hal.get_mut();
+
+        let stats = hal.registry.stats.get(stats).unwrap();
+
+        self.command.write_timestamp(
+            &stats.query_pool,
+            vk::pipelines::PipelineStage::BottomOfPipe,
+            1,
+        );
     }
 }
 

@@ -1,15 +1,16 @@
 use gobs_core::logger;
-use gobs_render_hal::{CommandBuffer, CommandQueueType, GfxContext};
+use gobs_render_hal::{CommandBuffer, CommandQueueType, GfxContext, Handle};
 
 pub struct FrameData {
     pub id: usize,
     pub frame_number: usize,
     pub frames_in_flight: usize,
     pub command: Box<dyn CommandBuffer>,
+    pub stats: Handle,
 }
 
 impl FrameData {
-    pub fn new(ctx: &mut GfxContext, id: usize, frames_in_flight: usize) -> Self {
+    pub fn new(ctx: &mut GfxContext, id: usize, frames_in_flight: usize, stats: Handle) -> Self {
         let command = ctx.create_command_buffer("Frame", CommandQueueType::Graphics);
 
         FrameData {
@@ -17,6 +18,7 @@ impl FrameData {
             frame_number: 0,
             frames_in_flight,
             command,
+            stats,
         }
     }
 

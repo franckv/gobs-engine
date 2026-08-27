@@ -67,7 +67,10 @@ impl Renderer {
         let frames_in_flight = gfx.frames_in_flight();
 
         let frames = (0..frames_in_flight)
-            .map(|id| FrameData::new(gfx.as_mut(), id, frames_in_flight))
+            .map(|id| {
+                let stats = gfx.create_gpu_stats();
+                FrameData::new(gfx.as_mut(), id, frames_in_flight, stats)
+            })
             .collect();
 
         Self {
@@ -171,8 +174,13 @@ impl Renderer {
 
         cmd.begin_label(&format!("Frame {}", frame.frame_number));
 
-        //TODO: cmd.reset_query_pool(&frame.query_pool, 0, 2);
-        //TODO: cmd.write_timestamp(&frame.query_pool, PipelineStage::TopOfPipe, 0);
+        if frame.frame_number > frame.frames_in_flight {
+            let stats = self.gfx.get_gpu_stats_ms(frame.stats);
+            tracing::debug!(target: logger::STATS, "Gpu time={}ms", stats);
+        }
+
+        cmd.reset_gpu_stats(self.gfx.as_mut(), frame.stats);
+        cmd.begin_gpu_stats(self.gfx.as_mut(), frame.stats);
 
         Ok(frame_id)
     }
@@ -181,9 +189,9 @@ impl Renderer {
         let frame_id = self.gfx.frame_id(self.frame_number);
         let frame = &mut self.frames[frame_id];
 
-        //TODO: cmd.write_timestamp(&frame.query_pool, PipelineStage::BottomOfPipe, 1);
-
         let cmd = &mut frame.command;
+
+        cmd.end_gpu_stats(self.gfx.as_mut(), frame.stats);
 
         cmd.end_label();
 

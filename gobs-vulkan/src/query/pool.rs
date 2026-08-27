@@ -43,10 +43,15 @@ impl QueryPool {
 
     pub fn get_query_pool_results(&self, first_query: u32, buf: &mut [u64]) {
         unsafe {
-            self.device
-                .raw()
-                .get_query_pool_results(self.pool, first_query, buf, vk::QueryResultFlags::TYPE_64)
-                .unwrap();
+            match self.device.raw().get_query_pool_results(
+                self.pool,
+                first_query,
+                buf,
+                vk::QueryResultFlags::TYPE_64,
+            ) {
+                Ok(_) | Err(vk::Result::NOT_READY) => (),
+                Err(e) => panic!("get_query_pool_results: {:?}", e),
+            }
         }
     }
 }
