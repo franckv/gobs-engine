@@ -96,16 +96,6 @@ impl UniformLayout {
         self.size
     }
 
-    pub fn data(&self, props: &[AttributeData]) -> Vec<u8> {
-        let mut data = Vec::new();
-
-        for (pos, prop) in props.iter().enumerate() {
-            self.copy_data(*prop, pos, 0, &mut data);
-        }
-
-        data
-    }
-
     pub fn copy_data<B: DataBuffer>(
         &self,
         prop: AttributeData,
@@ -165,10 +155,16 @@ mod tests {
             .prop("position", Attribute::Vec4F)
             .prop("view_proj", Attribute::Mat4F);
 
-        let camera = camera_layout.data(&[
+        let mut camera = Vec::new();
+
+        let props = [
             AttributeData::Vec4F(camera_data.view_position),
             AttributeData::Mat4F(camera_data.view_proj),
-        ]);
+        ];
+
+        for (pos, prop) in props.iter().enumerate() {
+            camera_layout.copy_data(*prop, pos, 0, &mut camera);
+        }
 
         assert_eq!(camera_layout.size(), camera.len());
 
@@ -197,10 +193,16 @@ mod tests {
             .prop("position", Attribute::Vec3F)
             .prop("colour", Attribute::Vec3F);
 
-        let light = light_layout.data(&[
+        let mut light = Vec::new();
+
+        let props = [
             AttributeData::Vec3F(light_data.position),
             AttributeData::Vec3F(light_data.colour),
-        ]);
+        ];
+
+        for (pos, prop) in props.iter().enumerate() {
+            light_layout.copy_data(*prop, pos, 0, &mut light);
+        }
 
         assert_eq!(light_layout.size(), light.len());
 
@@ -216,7 +218,9 @@ mod tests {
         let mat3 = [[0 as f32; 3]; 3];
         let layout = UniformLayout::new(AlignMode::Std140).prop("mat3", Attribute::Mat3F);
 
-        let mat = layout.data(&[AttributeData::Mat3F(mat3)]);
+        let mut mat = Vec::new();
+
+        layout.copy_data(AttributeData::Mat3F(mat3), 0, 0, &mut mat);
 
         assert_eq!(mat.len(), Attribute::Mat3F.size());
     }
@@ -233,11 +237,17 @@ mod tests {
             .prop("mat3", Attribute::Mat3F)
             .prop("u64", Attribute::U64);
 
-        let uniform = layout.data(&[
+        let mut uniform = Vec::new();
+
+        let props = [
             AttributeData::Mat4F(mat4),
             AttributeData::Mat3F(mat3),
             AttributeData::U64(u),
-        ]);
+        ];
+
+        for (pos, prop) in props.iter().enumerate() {
+            layout.copy_data(*prop, pos, 0, &mut uniform);
+        }
 
         assert_eq!(uniform.len(), layout.size());
         assert_eq!(uniform.len(), 128);
