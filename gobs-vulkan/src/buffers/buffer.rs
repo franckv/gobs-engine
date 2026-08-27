@@ -43,7 +43,7 @@ impl From<BufferUsage> for vk::MemoryPropertyFlags {
             }
             BufferUsage::Storage => {
                 vk::MemoryPropertyFlags::HOST_VISIBLE | vk::MemoryPropertyFlags::HOST_COHERENT
-            } // BufferUsage::Storage => vk::MemoryPropertyFlags::DEVICE_LOCAL,
+            }
         }
     }
 }
@@ -57,7 +57,6 @@ impl From<BufferUsage> for MemoryLocation {
             BufferUsage::Instance => MemoryLocation::CpuToGpu,
             BufferUsage::Index => MemoryLocation::GpuOnly,
             BufferUsage::Uniform => MemoryLocation::CpuToGpu,
-            // BufferUsage::Storage => MemoryLocation::GpuOnly,
             BufferUsage::Storage => MemoryLocation::CpuToGpu,
         }
     }
@@ -154,6 +153,26 @@ impl Buffer {
 
     pub fn get_bytes<T: Pod>(&self, vec: &mut Vec<T>) {
         self.memory.read().download(vec);
+    }
+
+    fn is_host_writable(&self) -> bool {
+        let flags: vk::MemoryPropertyFlags = self.usage.into();
+
+        flags.contains(vk::MemoryPropertyFlags::HOST_VISIBLE)
+    }
+
+    pub fn mapped_slice_mut<F>(&self, mut f: F)
+    where
+        F: FnMut(&mut [u8]),
+    {
+        if let Some(allocation) = &mut self.memory.write().allocation
+            && let Some(bytes) = allocation.mapped_slice_mut()
+            && self.is_host_writable()
+        {
+            f(bytes);
+        } else {
+            panic!("Cannot map GPU memory")
+        }
     }
 }
 

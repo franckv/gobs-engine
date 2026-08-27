@@ -1,6 +1,6 @@
 use serde::Serialize;
 
-use gobs_core::data::fixed_buffer::DataBuffer;
+use gobs_core::data::data_buffer::DataBuffer;
 
 #[allow(unused)]
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq, Hash, Serialize)]

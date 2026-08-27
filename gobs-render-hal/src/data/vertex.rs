@@ -2,7 +2,7 @@ use bitflags::bitflags;
 use glam::{Vec2, Vec3};
 use serde::{Deserialize, Serialize};
 
-use gobs_core::{Color, Transform, data::fixed_buffer::DataBuffer as _};
+use gobs_core::{Color, Transform, data::data_buffer::DataBuffer as _};
 use gobs_vulkan::pipelines::VertexAttributeFormat;
 
 use crate::{

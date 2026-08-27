@@ -18,8 +18,8 @@ use crate::{
 
 pub struct VkPipeline {
     pub pipeline: vk::Pipeline,
-    pub push_layout: ObjectDataLayout,
-    pub instance_layout: ObjectDataLayout,
+    pub push_layout: Arc<ObjectDataLayout>,
+    pub instance_layout: Arc<ObjectDataLayout>,
     pub descriptor_layout: IndexMap<BindingGroupType, Arc<BindingGroupLayout>>,
     pub vertex_attribute: VertexAttribute,
 }
@@ -76,8 +76,8 @@ impl ComputePipelineBuilder for VkComputePipelineBuilder {
 
         hal.registry.pipelines.insert(VkPipeline {
             pipeline,
-            push_layout: self.push_layout,
-            instance_layout: ObjectDataLayout::new(false),
+            push_layout: Arc::new(self.push_layout),
+            instance_layout: Arc::new(ObjectDataLayout::new(false)),
             descriptor_layout: self.descriptor_layouts,
             vertex_attribute: VertexAttribute::empty(),
         })
@@ -314,8 +314,8 @@ impl GraphicsPipelineBuilder for VkGraphicsPipelineBuilder {
 
         hal.registry.pipelines.insert(VkPipeline {
             pipeline,
-            instance_layout: self.instance_layout,
-            push_layout: self.push_layout,
+            instance_layout: Arc::new(self.instance_layout),
+            push_layout: Arc::new(self.push_layout),
             descriptor_layout: self.descriptor_layouts,
             vertex_attribute: self.vertex_attributes,
         })

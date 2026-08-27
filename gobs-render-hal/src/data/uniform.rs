@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use gobs_core::data::fixed_buffer::DataBuffer;
+use gobs_core::data::data_buffer::DataBuffer;
 
 use crate::{
     BindResource, BindingGroupLayout, BufferType, RenderHAL,

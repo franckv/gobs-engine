@@ -9,6 +9,7 @@ use crate::{BindResource, BindingGroupLayout, BindingGroupType, Handle};
 pub struct InstanceRegistry {
     buffers: Vec<Handle>,
     allocators: Vec<BumpAllocator>,
+    buffer_size: usize,
 }
 
 impl InstanceRegistry {
@@ -23,6 +24,7 @@ impl InstanceRegistry {
         Self {
             buffers,
             allocators,
+            buffer_size: total_size,
         }
     }
 
@@ -36,6 +38,10 @@ impl InstanceRegistry {
         debug_assert!(frame_id < self.buffers.len());
 
         self.buffers[frame_id]
+    }
+
+    pub fn get_buffer_size(&self) -> usize {
+        self.buffer_size
     }
 
     pub fn allocate(&mut self, frame_id: usize, size: usize) -> usize {

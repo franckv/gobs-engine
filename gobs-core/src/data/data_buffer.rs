@@ -89,12 +89,59 @@ impl<const S: usize> DataBuffer for FixedBuffer<S> {
     }
 }
 
+pub struct SliceBuffer<'a> {
+    buffer: &'a mut [u8],
+    pos: usize,
+}
+
+impl<'a> SliceBuffer<'a> {
+    pub fn new(buffer: &'a mut [u8]) -> Self {
+        Self { buffer, pos: 0 }
+    }
+}
+
+impl<'a> DataBuffer for SliceBuffer<'a> {
+    fn write(&mut self, bytes: &[u8]) {
+        let new_pos = self.pos + bytes.len();
+        debug_assert!(new_pos <= self.buffer.len());
+
+        self.buffer[self.pos..new_pos].copy_from_slice(bytes);
+        self.pos = new_pos
+    }
+
+    fn pad(&mut self, len: usize) {
+        let new_pos = self.pos + len;
+        debug_assert!(new_pos <= self.buffer.len());
+
+        for b in &mut self.buffer[self.pos..new_pos] {
+            *b = 0;
+        }
+        self.pos = new_pos
+    }
+
+    fn len(&self) -> usize {
+        self.pos
+    }
+
+    fn is_empty(&self) -> bool {
+        self.pos == 0
+    }
+
+    fn clear(&mut self) {
+        self.pos = 0;
+    }
+
+    fn as_slice(&self) -> &[u8] {
+        &self.buffer[..self.pos]
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use tracing::Level;
     use tracing_subscriber::{FmtSubscriber, fmt::format::FmtSpan};
 
-    use crate::data::fixed_buffer::{DataBuffer, FixedBuffer};
+    use crate::data::data_buffer::{DataBuffer, FixedBuffer};
 
     fn setup() {
         let sub = FmtSubscriber::builder()

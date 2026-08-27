@@ -1,5 +1,5 @@
 pub mod anymap;
-pub mod fixed_buffer;
+pub mod data_buffer;
 pub mod object_arena;
 pub mod objectmap;
 pub mod pool;

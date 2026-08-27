@@ -8,3 +8,5 @@ Cargo.lock
 *.spv
 *.spvasm
 *.png
+perf.*
+flamegraph.svg

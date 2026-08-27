@@ -1,13 +1,18 @@
+use std::sync::Arc;
+
 use gobs_core::{
-    data::fixed_buffer::{DataBuffer, FixedBuffer},
+    data::data_buffer::{DataBuffer, FixedBuffer},
     logger,
 };
 use gobs_render_graph::{FrameData, RenderError};
 use gobs_render_hal::{
-    AttributeData, BindResource, BindingId, Handle, ObjectDataProp, UniformBuffer, UniformData as _,
+    AttributeData, BindResource, BindingId, Handle, ObjectDataLayout, ObjectDataProp,
+    UniformBuffer, UniformData as _,
 };
 
 use crate::{GfxContext, data::RenderFlags, render_object::RenderObject};
+
+const PUSH_SIZE: usize = 128;
 
 struct RenderJobState {
     last_pipeline: Option<Handle>,
@@ -68,11 +73,9 @@ impl RenderStats {
     }
 }
 
-#[allow(unused)]
 enum InstanceData {
-    Pending(Vec<u8>),
     Buffer(u64),
-    Push(FixedBuffer<128>),
+    Push(FixedBuffer<PUSH_SIZE>),
 }
 
 struct DrawCall {
@@ -170,7 +173,8 @@ impl<'a> RenderJob<'a> {
         render_list: &[RenderObject],
         render_flags: RenderFlags,
     ) -> Result<Vec<DrawCall>, RenderError> {
-        let mut draws: Vec<DrawCall> = Vec::new();
+        let mut draws: Vec<DrawCall> = Vec::with_capacity(render_list.len());
+        let instance_handle = ctx.get_instance_buffer(frame.id);
 
         for render_object in render_list {
             if !Self::should_render(pass_name, render_flags, render_object) {
@@ -205,22 +209,28 @@ impl<'a> RenderJob<'a> {
 
             if add_to_draw {
                 if let Some(draw) = draws.last_mut()
-                    && let InstanceData::Pending(data) = &mut draw.instance_data
+                    && let InstanceData::Buffer(_) = draw.instance_data
                 {
                     draw.instance_len += 1;
-                    self.copy_object_data(ctx, pipeline, render_object, data);
+
+                    self.write_instance_data(
+                        ctx,
+                        frame,
+                        render_object,
+                        object_layout.clone(),
+                        instance_handle,
+                    );
                 } else {
                     return Err(RenderError::InvalidData);
                 }
             } else {
-                if let Some(draw) = draws.last_mut()
-                    && let InstanceData::Pending(data) = &draw.instance_data
-                {
-                    let instance_data = self.upload_instance_data(ctx, frame, data);
-                    draw.instance_data = instance_data;
-                }
-
-                let instance_data = self.create_instance_data(ctx, pipeline, render_object);
+                let instance_data = self.create_instance_data(
+                    ctx,
+                    frame,
+                    render_object,
+                    object_layout,
+                    instance_handle,
+                );
 
                 let draw = DrawCall {
                     pipeline,
@@ -238,26 +248,18 @@ impl<'a> RenderJob<'a> {
             }
         }
 
-        if let Some(draw) = draws.last_mut()
-            && let InstanceData::Pending(data) = &draw.instance_data
-        {
-            let instance_data = self.upload_instance_data(ctx, frame, data);
-            draw.instance_data = instance_data;
-        }
-
         Ok(draws)
     }
 
     fn copy_object_data<B>(
-        &mut self,
         ctx: &mut GfxContext,
-        pipeline: Handle,
         render_object: &RenderObject,
+        state: &mut RenderJobState,
+        object_layout: Arc<ObjectDataLayout>,
         object_data: &mut B,
     ) where
         B: DataBuffer,
     {
-        let object_layout = ctx.get_pipeline_object_layout(pipeline);
         tracing::trace!(target: logger::RENDER, "Copy object data: {} (layout: {:?})", object_layout.uniform_layout().size(), object_layout);
 
         object_layout.copy_data(object_data, |prop| match prop {
@@ -265,12 +267,12 @@ impl<'a> RenderJob<'a> {
                 AttributeData::Mat4F(render_object.transform.matrix().to_cols_array_2d())
             }
             ObjectDataProp::VertexBufferAddress => {
-                if self.state.last_vertex_buffer != Some(render_object.vertex_buffer) {
-                    self.state.last_vertex_buffer_address =
+                if state.last_vertex_buffer != Some(render_object.vertex_buffer) {
+                    state.last_vertex_buffer_address =
                         ctx.get_buffer_address(render_object.vertex_buffer);
-                    self.state.last_vertex_buffer = Some(render_object.vertex_buffer);
+                    state.last_vertex_buffer = Some(render_object.vertex_buffer);
                 }
-                AttributeData::U64(self.state.last_vertex_buffer_address)
+                AttributeData::U64(state.last_vertex_buffer_address)
             }
             ObjectDataProp::MaterialOffset => AttributeData::U32(
                 render_object
@@ -286,40 +288,64 @@ impl<'a> RenderJob<'a> {
     fn create_instance_data(
         &mut self,
         ctx: &mut GfxContext,
-        pipeline: Handle,
+        frame: &mut FrameData,
         render_object: &RenderObject,
+        object_layout: Arc<ObjectDataLayout>,
+        instance_handle: Handle,
     ) -> InstanceData {
-        let object_layout = ctx.get_pipeline_object_layout(pipeline);
-
         if object_layout.instancing {
-            let mut data = Vec::new();
-            self.copy_object_data(ctx, pipeline, render_object, &mut data);
+            let local_offset =
+                self.write_instance_data(ctx, frame, render_object, object_layout, instance_handle);
 
-            InstanceData::Pending(data)
+            let instance_buffer_address = ctx.get_buffer_address(instance_handle);
+            let offset = instance_buffer_address + local_offset as u64;
+
+            InstanceData::Buffer(offset)
         } else {
-            let mut data = FixedBuffer::<128>::new();
-            self.copy_object_data(ctx, pipeline, render_object, &mut data);
+            let mut data = FixedBuffer::<PUSH_SIZE>::new();
+            Self::copy_object_data(
+                ctx,
+                render_object,
+                &mut self.state,
+                object_layout,
+                &mut data,
+            );
 
             InstanceData::Push(data)
         }
     }
 
-    #[tracing::instrument(target = "profile", skip_all, level = "trace")]
-    fn upload_instance_data(
-        &self,
+    fn write_instance_data(
+        &mut self,
         ctx: &mut GfxContext,
         frame: &mut FrameData,
-        data: &[u8],
-    ) -> InstanceData {
-        let local_offset = ctx.allocate_instance(frame.id, data.len()) as u64;
-        ctx.update_instance_data(frame.id, local_offset, data);
+        render_object: &RenderObject,
+        object_layout: Arc<ObjectDataLayout>,
+        instance_handle: Handle,
+    ) -> usize {
+        let instance_size = object_layout.uniform_layout().size();
+        let local_offset = ctx.allocate_instance(frame.id, instance_size);
 
-        let instance_buffer = ctx.get_instance_buffer(frame.id);
-        let instance_buffer_address = ctx.get_buffer_address(instance_buffer);
+        let mut data = FixedBuffer::<PUSH_SIZE>::new();
 
-        let offset = instance_buffer_address + local_offset;
+        Self::copy_object_data(
+            ctx,
+            render_object,
+            &mut self.state,
+            object_layout.clone(),
+            &mut data,
+        );
 
-        InstanceData::Buffer(offset)
+        ctx.upload_buffer_with(
+            instance_handle,
+            local_offset,
+            instance_size,
+            &mut |_ctx, instance_buffer| {
+                instance_buffer.write(data.as_slice());
+            },
+        );
+
+        local_offset
     }
 
     fn draw_objects(
@@ -511,7 +537,7 @@ impl<'a> RenderJob<'a> {
             InstanceData::Buffer(address) => {
                 let push_layout = ctx.get_pipeline_push_layout(pipeline);
 
-                let mut data = FixedBuffer::<128>::new();
+                let mut data = FixedBuffer::<PUSH_SIZE>::new();
 
                 push_layout.copy_data(&mut data, |prop| match prop {
                     ObjectDataProp::InstanceBufferAddress => AttributeData::U64(*address),
@@ -523,7 +549,6 @@ impl<'a> RenderJob<'a> {
             InstanceData::Push(data) => {
                 frame.command.push_constants(ctx, pipeline, data.as_slice());
             }
-            InstanceData::Pending(_) => return Err(RenderError::InvalidData),
         }
 
         if self.state.last_index_buffer != Some(index_buffer) {

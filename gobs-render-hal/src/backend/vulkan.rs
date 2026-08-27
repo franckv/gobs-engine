@@ -15,7 +15,10 @@ use winit::{
     window::{CursorGrabMode, Window},
 };
 
-use gobs_core::{ConfigReader as _, GobsConfig, ImageExtent2D, ImageFormat, SamplerFilter, logger};
+use gobs_core::{
+    ConfigReader as _, GobsConfig, ImageExtent2D, ImageFormat, SamplerFilter,
+    data::data_buffer::SliceBuffer, logger,
+};
 use gobs_vulkan::{self as vk, Device};
 
 use crate::{
@@ -100,14 +103,36 @@ impl RenderHAL for VulkanHAL {
         )
     }
 
-    fn upload_buffer(&mut self, handle: Handle, data: &[u8], offset: u64) {
-        let buffer = self.registry.buffers.get_mut(handle).unwrap();
+    fn upload_buffer(&mut self, buffer: Handle, data: &[u8], offset: u64) {
+        let buffer = self.registry.buffers.get_mut(buffer).unwrap();
 
         buffer.buffer.copy(data, buffer.offset + offset);
     }
 
-    fn get_buffer_address(&self, handle: Handle) -> u64 {
-        let buffer = self.registry.buffers.get(handle).unwrap();
+    fn upload_buffer_with(
+        &mut self,
+        buffer: Handle,
+        offset: usize,
+        len: usize,
+        f: &mut dyn FnMut(&mut dyn RenderHAL, &mut SliceBuffer),
+    ) {
+        let buffer = self.registry.buffers.get(buffer).unwrap();
+
+        debug_assert!(offset + len < buffer.len);
+
+        let total_offset = buffer.offset as usize + offset;
+
+        let buffer = buffer.buffer.clone();
+
+        buffer.mapped_slice_mut(|slice| {
+            let slice_offset = &mut slice[total_offset..total_offset + len];
+            let mut buf = SliceBuffer::new(slice_offset);
+            f(self, &mut buf)
+        });
+    }
+
+    fn get_buffer_address(&self, buffer: Handle) -> u64 {
+        let buffer = self.registry.buffers.get(buffer).unwrap();
 
         buffer.buffer.address() + buffer.offset
     }
@@ -143,6 +168,10 @@ impl RenderHAL for VulkanHAL {
 
     fn get_instance_buffer(&self, frame_id: usize) -> Handle {
         self.instances.get_buffer(frame_id)
+    }
+
+    fn get_instance_buffer_size(&self) -> usize {
+        self.instances.get_buffer_size()
     }
 
     fn allocate_instance(&mut self, frame_id: usize, size: usize) -> usize {
@@ -268,16 +297,16 @@ impl RenderHAL for VulkanHAL {
         pipeline.descriptor_layout.get(binding_group_type).cloned()
     }
 
-    fn get_pipeline_object_layout(&self, pipeline: Handle) -> &ObjectDataLayout {
+    fn get_pipeline_object_layout(&self, pipeline: Handle) -> Arc<ObjectDataLayout> {
         let pipeline = self.registry.pipelines.get(pipeline).unwrap();
 
-        &pipeline.instance_layout
+        pipeline.instance_layout.clone()
     }
 
-    fn get_pipeline_push_layout(&self, pipeline: Handle) -> &ObjectDataLayout {
+    fn get_pipeline_push_layout(&self, pipeline: Handle) -> Arc<ObjectDataLayout> {
         let pipeline = self.registry.pipelines.get(pipeline).unwrap();
 
-        &pipeline.push_layout
+        pipeline.push_layout.clone()
     }
 
     fn get_pipeline_vertex_attributes(&self, pipeline: Handle) -> VertexAttribute {
