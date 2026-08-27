@@ -264,7 +264,6 @@ impl GLTFLoader {
                 ty
             );
 
-            // TODO: move to config
             let texture_format = config.get_image_format(GltfConfig::TextureFormat);
             match data.format {
                 image::Format::R8G8B8A8 => {

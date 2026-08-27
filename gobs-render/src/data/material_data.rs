@@ -4,7 +4,7 @@ use gobs_render_hal::{AlignMode, Attribute, UniformLayout};
 
 use crate::UniformData;
 
-// TODO: Emissive, Specular, Opacity, Glossiness, ...
+// TODO: Opacity, Glossiness, ...
 #[derive(Clone, Copy, Debug, Deserialize, Serialize)]
 pub enum MaterialDataPropData {
     DiffuseColor([f32; 4]),
@@ -17,7 +17,7 @@ pub enum MaterialDataPropData {
     SpecularIndex(u32),
 }
 
-// TODO: Emissive, Specular, Opacity, Glossiness, ...
+// TODO: Opacity, Glossiness, ...
 #[derive(Clone, Copy, Debug, Deserialize, Serialize)]
 pub enum MaterialDataProp {
     DiffuseColor,

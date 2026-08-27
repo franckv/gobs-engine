@@ -203,5 +203,7 @@ pub struct TextureData {
 pub enum TextureType {
     Diffuse,
     Normal,
-    // TODO: Emissive, Specular, Opacity, Glossiness, ...
+    Emission,
+    Specular,
+    // TODO: Opacity, Glossiness, ...
 }
