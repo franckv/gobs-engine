@@ -168,8 +168,6 @@ impl TextureUpdate for Resource<Texture> {
         if let TexturePath::Bytes(old_data) = &self.properties.path {
             let extent = self.properties.format.extent;
 
-            // let mut new_data = vec![];
-            // new_data.extend_from_slice(&old_data);
             let mut new_data = old_data.clone();
 
             for x in 0..width {

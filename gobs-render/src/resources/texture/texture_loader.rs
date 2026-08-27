@@ -117,7 +117,6 @@ impl TextureLoader {
             .flat_map(|c| Into::<[u8; 4]>::into(*c))
             .collect::<Vec<u8>>();
 
-        // self.load_data("colors", data, format)
         f(data)
     }
 
