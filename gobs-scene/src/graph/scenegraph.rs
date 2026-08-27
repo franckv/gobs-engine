@@ -122,7 +122,19 @@ impl SceneGraph {
     }
 
     pub fn remove(&mut self, key: NodeId) -> Option<Node> {
-        self.arena.remove(key)
+        let node = self.arena.remove(key)?;
+
+        if let Some(parent_key) = node.base.parent
+            && let Some(parent) = self.arena.get_mut(parent_key)
+        {
+            let children = &mut parent.base.children;
+
+            if let Some(pos) = children.iter().position(|&child| child == key) {
+                children.remove(pos);
+            }
+        }
+
+        Some(node)
     }
 
     pub fn set_root(&mut self, value: NodeValue, transform: Transform) -> NodeId {
