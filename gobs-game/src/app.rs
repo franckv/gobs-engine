@@ -139,7 +139,7 @@ where
                             runnable.update(context, delta);
                             context.post_update(delta);
                         }
-                        tracing::trace!(target: logger::EVENTS, "[Redraw] FPS: {}", 1. / delta);
+                        tracing::trace!(target: logger::EVENTS, "[Redraw] FPS: {}", context.fps());
                         if !context.is_minimized() {
                             if self.is_minimized {
                                 self.is_minimized = false;

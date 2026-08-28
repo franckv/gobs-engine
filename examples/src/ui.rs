@@ -19,17 +19,13 @@ use gobs::{
 };
 
 pub struct Ui<C> {
-    pub show_camera: bool,
-    pub show_light: bool,
-    pub show_models: bool,
-    pub show_resources: bool,
-    pub show_batch: bool,
-    pub show_texture: bool,
+    show_resources: bool,
+    show_texture: bool,
     pub ui_hovered: bool,
-    pub texture_view: Option<TextureHandle>,
-    pub selected_node: NodeId,
-    pub selected_texture: Option<ResourceHandle<Texture>>,
-    pub selected_mesh: (
+    texture_view: Option<TextureHandle>,
+    selected_node: NodeId,
+    selected_texture: Option<ResourceHandle<Texture>>,
+    selected_mesh: (
         Option<ResourceHandle<Mesh>>,
         Option<ResourceHandle<MaterialInstance>>,
     ),
@@ -42,11 +38,7 @@ where
 {
     pub fn new() -> Self {
         Self {
-            show_camera: true,
-            show_light: true,
-            show_models: true,
             show_resources: false,
-            show_batch: false,
             show_texture: false,
             ui_hovered: false,
             texture_view: None,
@@ -59,8 +51,10 @@ where
 
     #[tracing::instrument(target = "profile", skip_all, level = "trace")]
     pub fn draw(&mut self, ctx: &mut C, scene: &mut Scene, delta: f32) {
+        let fps = ctx.fps();
+
         ctx.draw_ui(delta, |ui, app_info, resource_manager, renderer| {
-            self.draw_ui(ui, app_info, renderer, resource_manager, scene, delta);
+            self.draw_ui(ui, app_info, renderer, resource_manager, scene, fps);
         });
     }
 
@@ -72,7 +66,7 @@ where
         renderer: &mut Renderer,
         resource_manager: &mut ResourceManager,
         scene: &mut Scene,
-        delta: f32,
+        fps: u32,
     ) {
         let s = ui.style_mut();
         for id in s.text_styles.values_mut() {
@@ -84,7 +78,7 @@ where
 
             self.show_resources(ui, resource_manager);
 
-            self.draw_general(ui, renderer, scene, delta);
+            self.draw_general(ui, renderer, scene, fps);
 
             self.show_texture(renderer.gfx.as_mut(), ui, resource_manager);
 
@@ -207,7 +201,7 @@ where
         ui: &mut egui::Ui,
         renderer: &Renderer,
         scene: &mut Scene,
-        delta: f32,
+        fps: u32,
     ) {
         egui::CollapsingHeader::new("Settings")
             .default_open(true)
@@ -217,7 +211,7 @@ where
                     "Frame in flight: {}",
                     renderer.gfx.frames_in_flight()
                 ));
-                ui.label(format!("FPS: {}", (1. / delta).round() as u32));
+                ui.label(format!("FPS: {}", fps));
                 ui.horizontal(|ui| {
                     ui.label("Screen");
                     ui.add(egui::Button::new(format!("{}", scene.width)));

@@ -20,6 +20,36 @@ pub struct AppInfo {
     pub name: String,
 }
 
+struct FpsTimer {
+    fps: u32,
+    fps_time: f32,
+    fps_frames: u32,
+}
+
+impl FpsTimer {
+    pub fn new() -> Self {
+        Self {
+            fps: 0,
+            fps_time: 0.,
+            fps_frames: 0,
+        }
+    }
+
+    pub fn update(&mut self, delta: f32) {
+        self.fps_time += delta;
+        self.fps_frames += 1;
+        if self.fps_time > 1. {
+            self.fps = (self.fps_frames as f32 / self.fps_time).round() as u32;
+            self.fps_time = 0.;
+            self.fps_frames = 0;
+        }
+    }
+
+    pub fn fps(&self) -> u32 {
+        self.fps
+    }
+}
+
 #[allow(async_fn_in_trait)]
 pub trait GobsContext {
     fn new(name: &str, config: GobsConfig, window: Option<Window>, validation: bool) -> Self;
@@ -30,6 +60,7 @@ pub trait GobsContext {
     fn render(&mut self) -> Result<RenderBuilder<'_>, RenderError>;
     fn input(&mut self, input: Input);
     fn frame_number(&self) -> usize;
+    fn fps(&self) -> u32;
 
     fn is_minimized(&self) -> bool;
     fn request_redraw(&mut self);
@@ -65,6 +96,7 @@ pub struct GameContext {
     resource_manager: ResourceManager,
     renderer: Renderer,
     ui: UIRenderer,
+    fps_timer: FpsTimer,
 }
 
 impl GobsContext for GameContext {
@@ -99,6 +131,7 @@ impl GobsContext for GameContext {
             resource_manager,
             renderer,
             ui,
+            fps_timer: FpsTimer::new(),
         }
     }
 
@@ -110,7 +143,9 @@ impl GobsContext for GameContext {
     }
 
     #[tracing::instrument(target = "profile", skip_all, level = "trace")]
-    fn pre_update(&mut self, _delta: f32) {
+    fn pre_update(&mut self, delta: f32) {
+        self.fps_timer.update(delta);
+
         self.resource_manager
             .update::<Texture>(self.renderer.gfx.as_mut());
         self.resource_manager
@@ -144,6 +179,10 @@ impl GobsContext for GameContext {
 
     fn frame_number(&self) -> usize {
         self.renderer.frame_number()
+    }
+
+    fn fps(&self) -> u32 {
+        self.fps_timer.fps()
     }
 
     fn is_minimized(&self) -> bool {
