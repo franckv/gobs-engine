@@ -1,6 +1,6 @@
 import common;
 import light;
-import vertex_layout;
+import object_data;
 
 struct SceneData {
     float3 camera_position;
@@ -21,12 +21,29 @@ Texture2D normal_texture;
 [[vk::binding(3, MATERIAL_TEXTURES_SET)]]
 SamplerState normal_sampler;
 
-struct PushConstants {
+struct PushConstants: IObjectData {
     float4x4 world_matrix;
-    ConstBufferPointer<Vertex> vertex_reference;
+    Vertex* vertex_reference;
+
+    Vertex get_vertex(uint vertex_index) {
+        return vertex_reference[vertex_index];
+    }
+
+    float4x4 get_world_matrix() {
+        return world_matrix;
+    }
+
+    uint get_material_offset() {
+        return 0;
+    }
 }
+
 [[vk::push_constant]]
 PushConstants push_constants;
+
+IObjectData get_instance(uint instance_index) {
+    return push_constants;
+}
 
 struct VSOutput {
     float4 position: SV_POSITION;
@@ -38,11 +55,14 @@ struct VSOutput {
 }
 
 [shader("vertex")]
-VSOutput vertex_main(uint vertex_index: SV_VertexID) {
-    Vertex v = push_constants.vertex_reference[vertex_index];
+VSOutput vertex_main(uint vertex_index: SV_VertexID, uint instance_index: SV_InstanceID) {
+    IObjectData o = get_instance(instance_index);
+
+    Vertex v = o.get_vertex(vertex_index);
+    float4x4 world_matrix = o.get_world_matrix();
+
     VSOutput output;
 
-    float4x4 world_matrix = push_constants.world_matrix;
     // TODO: only works for uniform scaling
     float3x3 normal_matrix = (float3x3)world_matrix;
     float3x3 tangent_matrix = tangent_matrix(normal_matrix, v.normal, v.tangent, v.bitangent); 

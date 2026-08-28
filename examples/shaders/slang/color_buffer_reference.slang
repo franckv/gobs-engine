@@ -15,10 +15,16 @@ struct VSOutput {
     float4 color;
 }
 
+Vertex get_vertex(uint vertex_index: SV_VertexID, uint instance_index: SV_InstanceID) {
+    return  push_constants.vertex_reference[vertex_index];
+}
+
 [shader("vertex")]
-VSOutput vertex_main(uint vertex_index: SV_VertexID) {
-    Vertex v = push_constants.vertex_reference[vertex_index];
+VSOutput vertex_main(uint vertex_index: SV_VertexID, uint instance_index: SV_InstanceID) {
+    Vertex v = get_vertex(vertex_index, instance_index);
+
     VSOutput output;
+
     output.position = float4(v.position.x, -v.position.y, v.position.z, 1.0);
     output.color = v.color;
 

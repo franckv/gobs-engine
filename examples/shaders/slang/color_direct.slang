@@ -12,6 +12,7 @@ struct VSOutput {
 [shader("vertex")]
 VSOutput vertex_main(Vertex v) {
     VSOutput output;
+
     output.position = float4(v.position.x, -v.position.y, v.position.z, 1.0);
     output.color = v.color;
 

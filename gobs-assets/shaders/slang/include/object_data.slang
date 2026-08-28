@@ -1,4 +1,4 @@
-module vertex_layout;
+module object_data;
 
 // alignment 16
 public struct Vertex {
@@ -10,3 +10,8 @@ public struct Vertex {
     public float3 bitangent;
 }
 
+public interface IObjectData {
+    Vertex get_vertex(uint vertex_index);
+    float4x4 get_world_matrix();
+    uint get_material_offset();
+}

@@ -1,6 +1,6 @@
 import common;
 import light;
-import vertex_layout;
+import object_data;
 
 struct SceneData {
     float3 camera_position;
@@ -25,10 +25,22 @@ SamplerState sampler;
 [[vk::binding(1, MATERIAL_TEXTURES_SET)]]
 Texture2D textures[256];
 
-struct InstanceData {
+struct InstanceData: IObjectData {
     float4x4 world_matrix;
     Vertex* vertex_reference;
     uint material_offset;
+
+    Vertex get_vertex(uint vertex_index) {
+        return vertex_reference[vertex_index];
+    }
+
+    float4x4 get_world_matrix() {
+        return world_matrix;
+    }
+
+    uint get_material_offset() {
+        return material_offset;
+    }
 }
 
 struct PushConstants {
@@ -36,6 +48,10 @@ struct PushConstants {
 }
 [[vk::push_constant]]
 PushConstants push_constants;
+
+IObjectData get_instance(uint instance_index) {
+    return push_constants.instance_reference[instance_index];
+}
 
 struct VSOutputColor {
     float4 position: SV_POSITION;
@@ -45,17 +61,19 @@ struct VSOutputColor {
 
 [shader("vertex")]
 VSOutputColor vertex_color_main(uint vertex_index: SV_VertexID, uint instance_index: SV_InstanceID) {
-    InstanceData instance = push_constants.instance_reference[instance_index];
-    Vertex v = instance.vertex_reference[vertex_index];
-    VSOutputColor output;
+    IObjectData o = get_instance(instance_index);
 
-    float4x4 world_matrix = instance.world_matrix;
+    Vertex v = o.get_vertex(vertex_index);
+    float4x4 world_matrix = o.get_world_matrix();
+    uint material_offset = o.get_material_offset();
+
+    VSOutputColor output;
 
     float4 world_position = mul(world_matrix, float4(v.position, 1.0));
 
     output.position = mul(scene_data.view_proj, world_position);
     output.color = v.color;
-    output.material_offset = instance.material_offset;
+    output.material_offset = material_offset;
 
     return output;
 }

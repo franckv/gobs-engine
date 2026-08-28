@@ -1,5 +1,5 @@
 import common;
-import vertex_layout;
+import object_data;
 
 struct SceneData {
 	float4x4 view_proj;
@@ -7,9 +7,21 @@ struct SceneData {
 [[vk::binding(0, SCENE_DATA_SET)]]
 ConstantBuffer<SceneData> scene_data;
 
-struct InstanceData {
+struct InstanceData: IObjectData {
     float4x4 world_matrix;
     Vertex* vertex_reference;
+
+    Vertex get_vertex(uint vertex_index) {
+        return vertex_reference[vertex_index];
+    }
+
+    float4x4 get_world_matrix() {
+        return world_matrix;
+    }
+
+    uint get_material_offset() {
+        return 0;
+    }
 }
 
 struct PushConstants {
@@ -18,6 +30,10 @@ struct PushConstants {
 [[vk::push_constant]]
 PushConstants push_constants;
 
+IObjectData get_instance(uint instance_index) {
+    return push_constants.instance_reference[instance_index];
+}
+
 struct VSOutput {
     float4 position: SV_POSITION;
     float4 color;
@@ -25,11 +41,13 @@ struct VSOutput {
 
 [shader("vertex")]
 VSOutput vertex_main(uint vertex_index: SV_VertexID, uint instance_index: SV_InstanceID) {
-    InstanceData instance = push_constants.instance_reference[instance_index];
-    Vertex v = instance.vertex_reference[vertex_index];
+    IObjectData o = get_instance(instance_index);
+
+    Vertex v = o.get_vertex(vertex_index );
+    float4x4 world_matrix = o.get_world_matrix();
 
     VSOutput output;
-    output.position = mul(scene_data.view_proj, mul(instance.world_matrix, float4(v.position, 1.0)));
+    output.position = mul(scene_data.view_proj, mul(world_matrix, float4(v.position, 1.0)));
     output.color = float4(0., 1., 0., 1.);
 
     return output;
