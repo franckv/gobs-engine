@@ -74,7 +74,7 @@ impl RenderStats {
 }
 
 enum InstanceData {
-    Buffer(u64),
+    Buffer(usize, u64),
     Push(FixedBuffer<PUSH_SIZE>),
 }
 
@@ -174,7 +174,11 @@ impl<'a> RenderJob<'a> {
         render_flags: RenderFlags,
     ) -> Result<Vec<DrawCall>, RenderError> {
         let mut draws: Vec<DrawCall> = Vec::with_capacity(render_list.len());
+
         let instance_handle = ctx.get_instance_buffer(frame.id);
+        let instance_buffer_address = ctx.get_buffer_address(instance_handle);
+        let mut instance_buffer_offset = None;
+        let mut instance_cache: Vec<u8> = Vec::new();
 
         for render_object in render_list {
             if !Self::should_render(pass_name, render_flags, render_object) {
@@ -209,7 +213,7 @@ impl<'a> RenderJob<'a> {
 
             if add_to_draw {
                 if let Some(draw) = draws.last_mut()
-                    && let InstanceData::Buffer(_) = draw.instance_data
+                    && let InstanceData::Buffer(_, _) = draw.instance_data
                 {
                     draw.instance_len += 1;
 
@@ -218,7 +222,7 @@ impl<'a> RenderJob<'a> {
                         frame,
                         render_object,
                         object_layout.clone(),
-                        instance_handle,
+                        &mut instance_cache,
                     );
                 } else {
                     return Err(RenderError::InvalidData);
@@ -229,8 +233,15 @@ impl<'a> RenderJob<'a> {
                     frame,
                     render_object,
                     object_layout,
-                    instance_handle,
+                    instance_buffer_address,
+                    &mut instance_cache,
                 );
+
+                if let InstanceData::Buffer(local_offset, _) = instance_data
+                    && instance_buffer_offset.is_none()
+                {
+                    instance_buffer_offset = Some(local_offset);
+                }
 
                 let draw = DrawCall {
                     pipeline,
@@ -246,6 +257,17 @@ impl<'a> RenderJob<'a> {
 
                 draws.push(draw);
             }
+        }
+
+        if let Some(instance_buffer_offset) = instance_buffer_offset {
+            ctx.upload_buffer_with(
+                instance_handle,
+                instance_buffer_offset,
+                instance_cache.len(),
+                &mut |_ctx, instance_buffer| {
+                    instance_buffer.write(instance_cache.as_slice());
+                },
+            );
         }
 
         Ok(draws)
@@ -285,22 +307,25 @@ impl<'a> RenderJob<'a> {
     }
 
     #[tracing::instrument(target = "profile", skip_all, level = "trace")]
-    fn create_instance_data(
+    fn create_instance_data<B>(
         &mut self,
         ctx: &mut GfxContext,
         frame: &mut FrameData,
         render_object: &RenderObject,
         object_layout: Arc<ObjectDataLayout>,
-        instance_handle: Handle,
-    ) -> InstanceData {
+        instance_buffer_address: u64,
+        instance_cache: &mut B,
+    ) -> InstanceData
+    where
+        B: DataBuffer,
+    {
         if object_layout.instancing {
             let local_offset =
-                self.write_instance_data(ctx, frame, render_object, object_layout, instance_handle);
+                self.write_instance_data(ctx, frame, render_object, object_layout, instance_cache);
 
-            let instance_buffer_address = ctx.get_buffer_address(instance_handle);
             let offset = instance_buffer_address + local_offset as u64;
 
-            InstanceData::Buffer(offset)
+            InstanceData::Buffer(local_offset, offset)
         } else {
             let mut data = FixedBuffer::<PUSH_SIZE>::new();
             Self::copy_object_data(
@@ -315,34 +340,26 @@ impl<'a> RenderJob<'a> {
         }
     }
 
-    fn write_instance_data(
+    fn write_instance_data<B>(
         &mut self,
         ctx: &mut GfxContext,
         frame: &mut FrameData,
         render_object: &RenderObject,
         object_layout: Arc<ObjectDataLayout>,
-        instance_handle: Handle,
-    ) -> usize {
+        instance_cache: &mut B,
+    ) -> usize
+    where
+        B: DataBuffer,
+    {
         let instance_size = object_layout.uniform_layout().size();
         let local_offset = ctx.allocate_instance(frame.id, instance_size);
-
-        let mut data = FixedBuffer::<PUSH_SIZE>::new();
 
         Self::copy_object_data(
             ctx,
             render_object,
             &mut self.state,
             object_layout.clone(),
-            &mut data,
-        );
-
-        ctx.upload_buffer_with(
-            instance_handle,
-            local_offset,
-            instance_size,
-            &mut |_ctx, instance_buffer| {
-                instance_buffer.write(data.as_slice());
-            },
+            instance_cache,
         );
 
         local_offset
@@ -534,7 +551,7 @@ impl<'a> RenderJob<'a> {
         tracing::trace!(target: logger::RENDER, "Bind push constants");
 
         match instance_data {
-            InstanceData::Buffer(address) => {
+            InstanceData::Buffer(_, address) => {
                 let push_layout = ctx.get_pipeline_push_layout(pipeline);
 
                 let mut data = FixedBuffer::<PUSH_SIZE>::new();
