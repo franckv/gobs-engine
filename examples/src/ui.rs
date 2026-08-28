@@ -120,6 +120,11 @@ where
         egui::Window::new("Resources")
             .open(&mut show_resources)
             .show(ui, |ui| {
+                let s = ui.style_mut();
+                for id in s.text_styles.values_mut() {
+                    id.size = 24.;
+                }
+
                 egui::ScrollArea::vertical().show(ui, |ui| {
                     TableBuilder::new(ui)
                         .striped(true)
