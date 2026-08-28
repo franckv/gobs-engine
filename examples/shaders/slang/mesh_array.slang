@@ -12,12 +12,29 @@ struct SceneData {
 [[vk::binding(0, SCENE_DATA_SET)]]
 ConstantBuffer<SceneData> scene_data;
 
-struct Material {
+interface IMaterialData {
+    float4 sample_diffuse(float2 uv);
+    float4 sample_normal(float2 uv);
+}
+
+struct Material: IMaterialData {
     uint diffuse_index;
     uint normal_index;
+
+    float4 sample_diffuse(float2 uv) {
+        return textures[NonUniformResourceIndex(diffuse_index)].Sample(sampler, uv);
+    }
+
+    float4 sample_normal(float2 uv) {
+        return textures[NonUniformResourceIndex(normal_index)].Sample(sampler, uv);
+    }
 }
 [[vk::binding(0, MATERIAL_DATA_SET)]]
 ByteAddressBuffer materials;
+
+IMaterialData get_material(uint material_offset) {
+    return materials.Load<Material>(material_offset);
+}
 
 [[vk::binding(0, MATERIAL_TEXTURES_SET)]]
 SamplerState sampler;
@@ -90,10 +107,10 @@ VSOutput vertex_main(uint vertex_index: SV_VertexID, uint instance_index: SV_Ins
 
 [shader("fragment")]
 float4 fragment_normal_main(VSOutput input) {
-    Material material = materials.Load<Material>(input.material_offset);
+    IMaterialData material = get_material(input.material_offset);
 
-	float4 object_color = textures[NonUniformResourceIndex(material.diffuse_index)].Sample(sampler, input.uv);
-	float4 object_normal = textures[NonUniformResourceIndex(material.normal_index)].Sample(sampler, input.uv);
+	float4 object_color = material.sample_diffuse(input.uv);
+	float4 object_normal = material.sample_normal(input.uv);
 
 	float3 light = phong_reflection_normal(object_normal.xyz, input.tangent_position, input.tangent_light_dir,
             scene_data.light_color.xyz, input.tangent_view_position, scene_data.ambient_color.xyz);

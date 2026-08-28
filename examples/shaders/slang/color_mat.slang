@@ -11,12 +11,29 @@ struct SceneData {
 [[vk::binding(0, SCENE_DATA_SET)]]
 ConstantBuffer<SceneData> scene_data;
 
-struct Material {
+interface IMaterialData {
+    float4 get_diffuse_color();
+    float4 get_emissive_color();
+}
+
+struct Material: IMaterialData {
     float4 diffuse_color;
     float4 emissive_color;
+
+    float4 get_diffuse_color() {
+        return diffuse_color;
+    }
+
+    float4 get_emissive_color() {
+        return emissive_color;
+    }
 }
 [[vk::binding(0, MATERIAL_DATA_SET)]]
 ConstantBuffer<Material> material;
+
+IMaterialData get_material() {
+    return material;
+}
 
 struct PushConstants: IObjectData {
     float4x4 world_matrix;
@@ -61,7 +78,9 @@ VSOutput vertex_main(uint vertex_index: SV_VertexID, uint instance_index: SV_Ins
 
 [shader("fragment")]
 float4 fragment_main(VSOutput input) {
-    float4 color = material.diffuse_color + material.emissive_color;
+    IMaterialData m = get_material();
+
+    float4 color = m.get_diffuse_color() + m.get_emissive_color();
 
     return color;
 }
