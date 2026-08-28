@@ -38,7 +38,7 @@ impl FpsTimer {
     pub fn update(&mut self, delta: f32) {
         self.fps_time += delta;
         self.fps_frames += 1;
-        if self.fps_time > 1. {
+        if self.fps_time >= 1. {
             self.fps = (self.fps_frames as f32 / self.fps_time).round() as u32;
             self.fps_time = 0.;
             self.fps_frames = 0;
