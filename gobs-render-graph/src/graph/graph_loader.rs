@@ -147,6 +147,7 @@ impl GraphConfig {
         Some(metadata)
     }
 
+    // TODO: graph loader should not depend on ctx
     fn get_render_target_extent(ctx: &GfxContext) -> ImageExtent2D {
         let extent = ctx.get_extent();
         ImageExtent2D::new(

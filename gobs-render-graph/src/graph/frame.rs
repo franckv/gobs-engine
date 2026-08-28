@@ -53,6 +53,7 @@ impl FrameGraph {
         label: &str,
         attachment: Attachment,
     ) {
+        // TODO: image creation should be deferred to the renderer
         self.resource_manager.register_image(
             ctx,
             label,
