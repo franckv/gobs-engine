@@ -198,6 +198,17 @@ impl<'a> RenderJob<'a> {
 
             let object_layout = ctx.get_pipeline_object_layout(pipeline);
 
+            tracing::trace!(target: logger::RENDER, "[{}] Evaluate instance join criteria (pipeline={:?}, index_buffer={:?}, index_len={}, material_indexing={}, texture_indexing={}, material_data={:?}, material_textures={:?})",
+            pass_name,
+            pipeline,
+            index_buffer,
+            index_len,
+            material_indexing,
+            texture_indexing,
+            render_object.material.material_data.as_ref().map(|o| {o.id}),
+            render_object.material.material_textures.as_ref().map(|o| {o.id}),
+            );
+
             let add_to_draw = if let Some(last_instance) = draws.last() {
                 object_layout.instancing
                     && last_instance.pipeline == pipeline
@@ -210,6 +221,8 @@ impl<'a> RenderJob<'a> {
             } else {
                 false
             };
+
+            tracing::trace!(target: logger::RENDER, "[{}] Join batch {}, instancing={}", pass_name, add_to_draw, object_layout.instancing);
 
             if add_to_draw {
                 if let Some(draw) = draws.last_mut()

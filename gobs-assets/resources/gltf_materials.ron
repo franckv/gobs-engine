@@ -6,7 +6,7 @@ MaterialsConfig(
             VertexBufferAddress,
             MaterialOffset,
         ],
-        //object_instancing: true,
+        object_instancing: true,
         scene_layout: [
             CameraPosition,
             CameraViewProj,

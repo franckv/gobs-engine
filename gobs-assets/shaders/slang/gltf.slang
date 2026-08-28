@@ -25,10 +25,14 @@ SamplerState sampler;
 [[vk::binding(1, MATERIAL_TEXTURES_SET)]]
 Texture2D textures[256];
 
-struct PushConstants {
+struct InstanceData {
     float4x4 world_matrix;
-    ConstBufferPointer<Vertex> vertex_reference;
+    Vertex* vertex_reference;
     uint material_offset;
+}
+
+struct PushConstants {
+    InstanceData* instance_reference;
 }
 [[vk::push_constant]]
 PushConstants push_constants;
@@ -40,17 +44,18 @@ struct VSOutputColor {
 }
 
 [shader("vertex")]
-VSOutputColor vertex_color_main(uint vertex_index: SV_VertexID) {
-    Vertex v = push_constants.vertex_reference[vertex_index];
+VSOutputColor vertex_color_main(uint vertex_index: SV_VertexID, uint instance_index: SV_InstanceID) {
+    InstanceData instance = push_constants.instance_reference[instance_index];
+    Vertex v = instance.vertex_reference[vertex_index];
     VSOutputColor output;
 
-    float4x4 world_matrix = push_constants.world_matrix;
+    float4x4 world_matrix = instance.world_matrix;
 
     float4 world_position = mul(world_matrix, float4(v.position, 1.0));
 
     output.position = mul(scene_data.view_proj, world_position);
     output.color = v.color;
-    output.material_offset = push_constants.material_offset;
+    output.material_offset = instance.material_offset;
 
     return output;
 }
@@ -74,11 +79,12 @@ struct VSOutputLight {
 }
 
 [shader("vertex")]
-VSOutputLight vertex_color_light_main(uint vertex_index: SV_VertexID) {
-    Vertex v = push_constants.vertex_reference[vertex_index];
+VSOutputLight vertex_color_light_main(uint vertex_index: SV_VertexID, uint instance_index: SV_InstanceID) {
+    InstanceData instance = push_constants.instance_reference[instance_index];
+    Vertex v = instance.vertex_reference[vertex_index];
     VSOutputLight output;
 
-    float4x4 world_matrix = push_constants.world_matrix;
+    float4x4 world_matrix = instance.world_matrix;
     // TODO: only works for uniform scaling
     float3x3 normal_matrix = (float3x3)world_matrix;
     float3x3 tangent_matrix = tangent_matrix(normal_matrix, v.normal, v.tangent, v.bitangent); 
@@ -91,7 +97,7 @@ VSOutputLight vertex_color_light_main(uint vertex_index: SV_VertexID) {
     output.tangent_position = mul(tangent_matrix, world_position.xyz);
     output.tangent_view_position = mul(tangent_matrix, scene_data.camera_position.xyz);
     output.tangent_light_dir = normalize(mul(tangent_matrix, scene_data.light_direction));
-    output.material_offset = push_constants.material_offset;
+    output.material_offset = instance.material_offset;
 
     return output;
 }
@@ -109,11 +115,12 @@ float4 fragment_color_light_main(VSOutputLight input) {
 }
 
 [shader("vertex")]
-VSOutputLight vertex_texture_main(uint vertex_index: SV_VertexID) {
-    Vertex v = push_constants.vertex_reference[vertex_index];
+VSOutputLight vertex_texture_main(uint vertex_index: SV_VertexID, uint instance_index: SV_InstanceID) {
+    InstanceData instance = push_constants.instance_reference[instance_index];
+    Vertex v = instance.vertex_reference[vertex_index];
     VSOutputLight output;
 
-    float4x4 world_matrix = push_constants.world_matrix;
+    float4x4 world_matrix = instance.world_matrix;
     // TODO: only works for uniform scaling
     float3x3 normal_matrix = (float3x3)world_matrix;
     float3x3 tangent_matrix = tangent_matrix(normal_matrix, v.normal, v.tangent, v.bitangent); 
@@ -126,7 +133,7 @@ VSOutputLight vertex_texture_main(uint vertex_index: SV_VertexID) {
     output.tangent_position = mul(tangent_matrix, world_position.xyz);
     output.tangent_view_position = mul(tangent_matrix, scene_data.camera_position.xyz);
     output.tangent_light_dir = normalize(mul(tangent_matrix, scene_data.light_direction));
-    output.material_offset = push_constants.material_offset;
+    output.material_offset = instance.material_offset;
 
     return output;
 }
