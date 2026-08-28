@@ -139,6 +139,11 @@ impl MaterialsConfig {
                 scene_layout
             };
 
+            let texture_indexing = material.texture_indexing && !material.texture_layout.is_empty();
+
+            let material_indexing =
+                material.material_indexing && !material.material_layout.is_empty();
+
             let mut props = MaterialProperties::new(
                 name,
                 &material.vertex_shader,
@@ -151,8 +156,8 @@ impl MaterialsConfig {
                 scene_layout,
                 self.default.color_format,
                 self.default.depth_format,
-                material.texture_indexing,
-                material.material_indexing,
+                texture_indexing,
+                material_indexing,
             )
             .cull_mode(material.cull_mode)
             .blend_mode(material.blend_mode);

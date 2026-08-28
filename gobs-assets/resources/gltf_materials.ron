@@ -4,7 +4,9 @@ MaterialsConfig(
         object_layout: [
             WorldMatrix,
             VertexBufferAddress,
+            MaterialOffset,
         ],
+        //object_instancing: true,
         scene_layout: [
             CameraPosition,
             CameraViewProj,
@@ -22,8 +24,12 @@ MaterialsConfig(
             vertex_entry: "vertex_texture_main",
             fragment_shader: "gltf.spv",
             fragment_entry: "fragment_texture_main",
+            texture_indexing: true,
+            material_indexing: true,
             material_layout: [
                 DiffuseColor,
+                DiffuseIndex,
+                NormalIndex,
             ],
             texture_layout: [
                 Diffuse
@@ -35,8 +41,12 @@ MaterialsConfig(
             fragment_shader: "gltf.spv",
             fragment_entry: "fragment_texture_main",
             blend_mode: Alpha,
+            texture_indexing: true,
+            material_indexing: true,
             material_layout: [
                 DiffuseColor,
+                DiffuseIndex,
+                NormalIndex,
             ],
             texture_layout: [
                 Diffuse
@@ -47,8 +57,12 @@ MaterialsConfig(
             vertex_entry: "vertex_texture_main",
             fragment_shader: "gltf.spv",
             fragment_entry: "fragment_texture_normal_main",
+            texture_indexing: true,
+            material_indexing: true,
             material_layout: [
                 DiffuseColor,
+                DiffuseIndex,
+                NormalIndex,
             ],
             texture_layout: [
                 Diffuse,
@@ -61,8 +75,12 @@ MaterialsConfig(
             fragment_shader: "gltf.spv",
             fragment_entry: "fragment_texture_normal_main",
             blend_mode: Alpha,
+            texture_indexing: true,
+            material_indexing: true,
             material_layout: [
                 DiffuseColor,
+                DiffuseIndex,
+                NormalIndex,
             ],
             texture_layout: [
                 Diffuse,
@@ -74,8 +92,12 @@ MaterialsConfig(
             vertex_entry: "vertex_color_light_main",
             fragment_shader: "gltf.spv",
             fragment_entry: "fragment_color_light_main",
+            texture_indexing: true,
+            material_indexing: true,
             material_layout: [
                 DiffuseColor,
+                DiffuseIndex,
+                NormalIndex,
             ]
         ),
          "gltf.color.transparent": (
@@ -84,8 +106,12 @@ MaterialsConfig(
             fragment_shader: "gltf.spv",
             fragment_entry: "fragment_color_light_main",
             blend_mode: Alpha,
+            texture_indexing: true,
+            material_indexing: true,
             material_layout: [
                 DiffuseColor,
+                DiffuseIndex,
+                NormalIndex,
             ]
         ),
    }
