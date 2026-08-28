@@ -51,10 +51,8 @@ where
 
     #[tracing::instrument(target = "profile", skip_all, level = "trace")]
     pub fn draw(&mut self, ctx: &mut C, scene: &mut Scene, delta: f32) {
-        let fps = ctx.fps();
-
         ctx.draw_ui(delta, |ui, app_info, resource_manager, renderer| {
-            self.draw_ui(ui, app_info, renderer, resource_manager, scene, fps);
+            self.draw_ui(ui, app_info, renderer, resource_manager, scene);
         });
     }
 
@@ -66,7 +64,6 @@ where
         renderer: &mut Renderer,
         resource_manager: &mut ResourceManager,
         scene: &mut Scene,
-        fps: u32,
     ) {
         let s = ui.style_mut();
         for id in s.text_styles.values_mut() {
@@ -78,7 +75,7 @@ where
 
             self.show_resources(ui, resource_manager);
 
-            self.draw_general(ui, renderer, scene, fps);
+            self.draw_general(ui, renderer, scene);
 
             self.show_texture(renderer.gfx.as_mut(), ui, resource_manager);
 
@@ -196,13 +193,7 @@ where
     }
 
     #[tracing::instrument(target = "profile", skip_all, level = "trace")]
-    fn draw_general(
-        &mut self,
-        ui: &mut egui::Ui,
-        renderer: &Renderer,
-        scene: &mut Scene,
-        fps: u32,
-    ) {
+    fn draw_general(&mut self, ui: &mut egui::Ui, renderer: &Renderer, scene: &mut Scene) {
         egui::CollapsingHeader::new("Settings")
             .default_open(true)
             .show(ui, |ui| {
@@ -211,7 +202,7 @@ where
                     "Frame in flight: {}",
                     renderer.gfx.frames_in_flight()
                 ));
-                ui.label(format!("FPS: {}", fps));
+                ui.label(format!("FPS: {}", renderer.fps()));
                 ui.horizontal(|ui| {
                     ui.label("Screen");
                     ui.add(egui::Button::new(format!("{}", scene.width)));

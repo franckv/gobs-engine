@@ -20,36 +20,6 @@ pub struct AppInfo {
     pub name: String,
 }
 
-struct FpsTimer {
-    fps: u32,
-    fps_time: f32,
-    fps_frames: u32,
-}
-
-impl FpsTimer {
-    pub fn new() -> Self {
-        Self {
-            fps: 0,
-            fps_time: 0.,
-            fps_frames: 0,
-        }
-    }
-
-    pub fn update(&mut self, delta: f32) {
-        self.fps_time += delta;
-        self.fps_frames += 1;
-        if self.fps_time >= 1. {
-            self.fps = (self.fps_frames as f32 / self.fps_time).round() as u32;
-            self.fps_time = 0.;
-            self.fps_frames = 0;
-        }
-    }
-
-    pub fn fps(&self) -> u32 {
-        self.fps
-    }
-}
-
 #[allow(async_fn_in_trait)]
 pub trait GobsContext {
     fn new(name: &str, config: GobsConfig, window: Option<Window>, validation: bool) -> Self;
@@ -96,7 +66,6 @@ pub struct GameContext {
     resource_manager: ResourceManager,
     renderer: Renderer,
     ui: UIRenderer,
-    fps_timer: FpsTimer,
 }
 
 impl GobsContext for GameContext {
@@ -131,7 +100,6 @@ impl GobsContext for GameContext {
             resource_manager,
             renderer,
             ui,
-            fps_timer: FpsTimer::new(),
         }
     }
 
@@ -144,7 +112,7 @@ impl GobsContext for GameContext {
 
     #[tracing::instrument(target = "profile", skip_all, level = "trace")]
     fn pre_update(&mut self, delta: f32) {
-        self.fps_timer.update(delta);
+        self.renderer.update(delta);
 
         self.resource_manager
             .update::<Texture>(self.renderer.gfx.as_mut());
@@ -182,7 +150,7 @@ impl GobsContext for GameContext {
     }
 
     fn fps(&self) -> u32 {
-        self.fps_timer.fps()
+        self.renderer.fps()
     }
 
     fn is_minimized(&self) -> bool {

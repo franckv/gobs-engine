@@ -13,12 +13,43 @@ use crate::{
     },
 };
 
+struct FpsTimer {
+    fps: u32,
+    fps_time: f32,
+    fps_frames: u32,
+}
+
+impl FpsTimer {
+    pub fn new() -> Self {
+        Self {
+            fps: 0,
+            fps_time: 0.,
+            fps_frames: 0,
+        }
+    }
+
+    pub fn update(&mut self, delta: f32) {
+        self.fps_time += delta;
+        self.fps_frames += 1;
+        if self.fps_time >= 1. {
+            self.fps = (self.fps_frames as f32 / self.fps_time).round() as u32;
+            self.fps_time = 0.;
+            self.fps_frames = 0;
+        }
+    }
+
+    pub fn fps(&self) -> u32 {
+        self.fps
+    }
+}
+
 pub struct Renderer {
     pub graph: FrameGraph,
     pub gfx: Box<GfxContext<'static>>,
     pub frames: Vec<FrameData>,
     pub frame_number: usize,
     passes: HashMap<PassId, PassData>,
+    fps_timer: FpsTimer,
 }
 
 impl Renderer {
@@ -79,7 +110,16 @@ impl Renderer {
             frames,
             frame_number: 0,
             passes,
+            fps_timer: FpsTimer::new(),
         }
+    }
+
+    pub fn update(&mut self, delta: f32) {
+        self.fps_timer.update(delta);
+    }
+
+    pub fn fps(&self) -> u32 {
+        self.fps_timer.fps()
     }
 
     pub fn extent(&self) -> ImageExtent2D {
@@ -178,6 +218,7 @@ impl Renderer {
             let stats = self.gfx.get_gpu_stats_ms(frame.stats);
             tracing::debug!(target: logger::STATS, "Gpu time={}ms", stats);
         }
+        tracing::debug!(target: logger::STATS, "FPS={}", self.fps_timer.fps());
 
         cmd.reset_gpu_stats(self.gfx.as_mut(), frame.stats);
         cmd.begin_gpu_stats(self.gfx.as_mut(), frame.stats);
