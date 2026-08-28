@@ -105,3 +105,7 @@ opt-level = 3
 
 [profile.dev]
 opt-level = 1
+
+[profile.dev_noopt]
+inherits = "dev"
+opt-level = 0
