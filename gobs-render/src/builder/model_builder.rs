@@ -1,11 +1,10 @@
 use std::sync::Arc;
 
 use gobs_render_hal::VertexAttribute;
+use gobs_render_material::Material;
 use gobs_resource::{ResourceHandle, ResourceManager};
 
-use crate::{
-    Bounded, BoundingBox, Material, MaterialInstance, Mesh, Model, ModelId, resources::MeshPath,
-};
+use crate::{Bounded, BoundingBox, MaterialInstance, Mesh, Model, ModelId, resources::MeshPath};
 
 pub struct RenderModelBuilder<'a> {
     name: &'a str,

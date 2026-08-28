@@ -5,14 +5,11 @@ use gobs_render_hal::{
     AttributeData, BindingGroupLayout, BindingGroupType, CommandBuffer, Handle, RenderHAL,
     UniformBuffer, UniformData as _,
 };
+use gobs_render_material::{RenderFlags, SceneData, SceneDataLayout, SceneDataProp};
 use gobs_vulkan::{DescriptorStage, DescriptorType};
 
 use crate::render_object::RenderObject;
-use crate::{
-    GfxContext, RenderError,
-    data::{RenderFlags, SceneData, SceneDataLayout, SceneDataProp},
-    job::RenderJob,
-};
+use crate::{GfxContext, RenderError, job::RenderJob};
 
 const SCENE_DATA_SIZE: usize = 256;
 

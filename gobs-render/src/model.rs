@@ -1,6 +1,7 @@
 use std::fmt::Debug;
 use std::sync::Arc;
 
+use gobs_render_material::RenderFlags;
 use serde::Serialize;
 use uuid::Uuid;
 
@@ -10,9 +11,7 @@ use gobs_resource::{
     ResourceManager, {ResourceError, ResourceHandle},
 };
 
-use crate::{
-    Bounded, BoundingBox, MaterialInstance, Mesh, Renderable, batch::RenderBatch, data::RenderFlags,
-};
+use crate::{Bounded, BoundingBox, MaterialInstance, Mesh, Renderable, batch::RenderBatch};
 
 pub type ModelId = Uuid;
 

@@ -6,11 +6,11 @@ use gobs_render_hal::{
 use gobs_resource::{ResourceHandle, ResourceProperties, ResourceType};
 
 use crate::{
-    MaterialLoader, Pipeline,
+    MaterialLoader,
     data::{
         MaterialDataLayout, MaterialDataProp, SceneDataLayout, TextureDataLayout, TextureDataProp,
     },
-    resources::{GraphicsPipelineProperties, PipelineProperties},
+    resources::{GraphicsPipelineProperties, Pipeline, PipelineProperties},
 };
 
 #[derive(Clone, Copy, Debug)]

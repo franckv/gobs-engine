@@ -4,7 +4,8 @@ use pollster::FutureExt;
 
 use gobs_core::{Color, ImageExtent2D, logger};
 use gobs_render_hal::{
-    BufferType, CommandBuffer, CommandQueueType, GfxContext, ImageLayout, ImageUsage, RenderHAL,
+    BufferPool, BufferType, CommandBuffer, CommandQueueType, GfxContext, ImageLayout, ImageUsage,
+    RenderHAL,
 };
 use gobs_resource::{
     ResourceRegistry,
@@ -12,9 +13,8 @@ use gobs_resource::{
     {ResourceError, ResourceHandle, ResourceLoader, ResourceProperties},
 };
 
-use crate::{
-    TextureProperties,
-    resources::{BufferPool, Texture, TextureData, TextureFormat, texture::TexturePath},
+use crate::resources::{
+    Texture, TextureData, TextureFormat, TextureProperties, texture::TexturePath,
 };
 
 pub struct TextureLoader {

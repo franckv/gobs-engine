@@ -227,12 +227,9 @@ mod tests {
     };
     use gobs_resource::ResourceManager;
 
-    use crate::{
-        RenderConfig,
-        resources::{
-            PipelinesConfig,
-            pipeline::pipeline_config::{AttachmentFormat, DepthConfig, GraphicsPipelineConfig},
-        },
+    use crate::resources::{
+        PipelinesConfig,
+        pipeline::pipeline_config::{AttachmentFormat, DepthConfig, GraphicsPipelineConfig},
     };
 
     fn setup() {
@@ -249,7 +246,6 @@ mod tests {
         setup();
 
         let mut config = GobsConfig::default();
-        config.register::<RenderConfig>();
         config.register::<RenderHalConfig>();
 
         let ctx = create_hal("test", None, config, false);
@@ -268,7 +264,6 @@ mod tests {
         setup();
 
         let mut config = GobsConfig::default();
-        config.register::<RenderConfig>();
         config.register::<RenderHalConfig>();
 
         let ctx = create_hal("test", None, config, false);

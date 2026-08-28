@@ -72,7 +72,7 @@ impl Renderable for Node {
         batch: &mut gobs_render::RenderBatch,
         _transform: Option<gobs_core::Transform>,
         _bounding_box: Option<BoundingBox>,
-        render_flags: gobs_render::RenderFlags,
+        render_flags: RenderFlags,
     ) -> Result<(), gobs_resource::ResourceError> {
         match &self.base.value {
             NodeValue::None => (),

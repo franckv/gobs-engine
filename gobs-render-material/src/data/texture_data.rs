@@ -12,7 +12,7 @@ pub enum TextureDataProp {
 #[derive(Clone, Debug, Default)]
 pub struct TextureDataLayout {
     pub(crate) layout: Vec<TextureDataProp>,
-    pub(crate) texture_indexing: bool,
+    pub texture_indexing: bool,
 }
 
 impl TextureDataLayout {
@@ -25,6 +25,10 @@ impl TextureDataLayout {
 
     pub fn is_empty(&self) -> bool {
         self.layout.is_empty()
+    }
+
+    pub fn layout(&self) -> &[TextureDataProp] {
+        &self.layout
     }
 
     pub fn prop(mut self, prop: TextureDataProp) -> Self {

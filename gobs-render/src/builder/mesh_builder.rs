@@ -1,9 +1,10 @@
 use std::sync::Arc;
 
 use gobs_render_hal::VertexAttribute;
+use gobs_render_material::Material;
 use gobs_resource::{ResourceHandle, ResourceLifetime, ResourceManager};
 
-use crate::{Material, MaterialInstance, Mesh, MeshGeometry, MeshProperties};
+use crate::{MaterialInstance, Mesh, MeshGeometry, MeshProperties};
 
 pub struct RenderMeshBuilder<'a> {
     name: &'a str,

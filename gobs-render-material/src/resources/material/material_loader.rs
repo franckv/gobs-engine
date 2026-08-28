@@ -6,7 +6,10 @@ use gobs_resource::{
 
 use crate::{
     MaterialProperties,
-    resources::{MaterialData, Pipeline, PipelineProperties, material::Material},
+    resources::{
+        Pipeline, PipelineProperties,
+        material::material::{Material, MaterialData},
+    },
 };
 
 pub struct MaterialLoader;

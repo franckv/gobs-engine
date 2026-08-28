@@ -8,6 +8,7 @@ members = [
     "gobs-egui",
     "gobs-game",
     "gobs-render",
+    "gobs-render-material",
     "gobs-render-graph",
     "gobs-render-hal",
     "gobs-resource",
@@ -42,6 +43,9 @@ path = "./gobs-game"
 
 [workspace.dependencies.gobs-render-graph]
 path = "./gobs-render-graph"
+
+[workspace.dependencies.gobs-render-material]
+path = "./gobs-render-material"
 
 [workspace.dependencies.gobs-render-hal]
 path = "./gobs-render-hal"

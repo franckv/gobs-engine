@@ -1,8 +1,9 @@
 use gobs_core::logger;
 use gobs_render_graph::RenderError;
+use gobs_render_material::RenderFlags;
 use gobs_resource::ResourceManager;
 
-use crate::{RenderBatch, Renderable, Renderer, data::RenderFlags};
+use crate::{RenderBatch, Renderable, Renderer};
 
 #[derive(Clone, Copy, Debug)]
 pub enum RenderType {

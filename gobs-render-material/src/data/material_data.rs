@@ -1,8 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use gobs_render_hal::{AlignMode, Attribute, UniformLayout};
-
-use crate::UniformData;
+use gobs_render_hal::{AlignMode, Attribute, UniformData, UniformLayout};
 
 // TODO: Opacity, Glossiness, ...
 #[derive(Clone, Copy, Debug, Deserialize, Serialize)]
@@ -34,7 +32,7 @@ pub enum MaterialDataProp {
 pub struct MaterialDataLayout {
     layout: Vec<MaterialDataProp>,
     uniform_layout: UniformLayout,
-    pub(crate) material_indexing: bool,
+    pub material_indexing: bool,
 }
 
 impl MaterialDataLayout {

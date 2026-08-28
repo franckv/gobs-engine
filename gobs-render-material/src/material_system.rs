@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::{cmp::Ordering, sync::Arc};
 
 use gobs_core::logger;
 use gobs_render_hal::{
@@ -8,13 +8,11 @@ use gobs_render_hal::{
 use gobs_resource::{ResourceError, ResourceHandle, ResourceManager, ResourceProperties as _};
 
 use crate::{
-    MaterialDataPropData, MaterialInstance, MaterialInstanceProperties, MaterialProperties,
-    PipelineProperties, Texture,
-    data::{
-        MaterialConstantData, MaterialDataLayout, MaterialDataProp, RenderFlags, SceneDataLayout,
-        TextureDataLayout, TextureDataProp,
-    },
-    render_object::MaterialRenderData,
+    MaterialConstantData, MaterialDataLayout, MaterialDataProp, MaterialDataPropData,
+    MaterialProperties, PipelineProperties, SceneDataLayout, Texture, TextureDataLayout,
+    TextureDataProp,
+    data::RenderFlags,
+    resources::{MaterialInstance, MaterialInstanceProperties},
 };
 
 #[derive(Clone)]
@@ -31,6 +29,51 @@ pub struct MaterialBinding {
     texture_binding_group_layout: Option<Arc<BindingGroupLayout>>,
     scene_layout: Option<SceneDataLayout>,
 }
+
+#[derive(Clone, Debug, Default)]
+pub struct MaterialRenderData {
+    pub material_render_flags: RenderFlags,
+    pub pipeline: Option<Handle>,
+    pub material_data: Option<BindResource>,
+    pub material_textures: Option<BindResource>,
+    pub material_offset: Option<u32>,
+    pub scene_layout: Option<SceneDataLayout>,
+    pub texture_indexing: bool,
+    pub material_indexing: bool,
+}
+
+impl Ord for MaterialRenderData {
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.pipeline
+            .cmp(&other.pipeline)
+            .then(
+                self.material_data
+                    .as_ref()
+                    .map(|bind| bind.id)
+                    .cmp(&other.material_data.as_ref().map(|bind| bind.id)),
+            )
+            .then(
+                self.material_textures
+                    .as_ref()
+                    .map(|bind| bind.id)
+                    .cmp(&other.material_textures.as_ref().map(|bind| bind.id)),
+            )
+    }
+}
+
+impl PartialEq for MaterialRenderData {
+    fn eq(&self, other: &Self) -> bool {
+        self.cmp(other) == Ordering::Equal
+    }
+}
+
+impl PartialOrd for MaterialRenderData {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl Eq for MaterialRenderData {}
 
 pub struct MaterialSystem;
 
@@ -60,7 +103,7 @@ impl MaterialSystem {
         if texture_indexing && let Some(material_constant_data) = material_constant_data {
             for (prop, texture) in material_binding
                 .texture_data_layout
-                .layout
+                .layout()
                 .iter()
                 .zip(&textures)
             {
@@ -218,7 +261,7 @@ impl MaterialSystem {
         let material_layout = &material_properties.material_data_layout;
 
         if texture_layout.texture_indexing {
-            for &texture_prop in &texture_layout.layout {
+            for &texture_prop in texture_layout.layout() {
                 let index = hal.allocate_texture_index() as u32;
 
                 tracing::debug!(target: logger::RESOURCES, "Alloc texture index {} for {:?}", index, texture_prop);
@@ -384,7 +427,7 @@ impl MaterialSystem {
         if material_binding.texture_data_layout.texture_indexing
             && let Some(data) = material_data
         {
-            for prop in material_binding.texture_data_layout.layout {
+            for prop in material_binding.texture_data_layout.layout() {
                 let index = match prop {
                     TextureDataProp::Diffuse => data.diffuse_index,
                     TextureDataProp::Normal => data.normal_index,

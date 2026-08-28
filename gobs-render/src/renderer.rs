@@ -3,10 +3,11 @@ use std::collections::HashMap;
 use gobs_core::{ConfigReader as _, GobsConfig, ImageExtent2D, logger};
 use gobs_render_graph::{FrameData, FrameGraph, PassId, RenderError};
 use gobs_render_hal::GfxContext;
+use gobs_render_material::PipelinesConfig;
 use gobs_resource::ResourceManager;
 
 use crate::{
-    PipelinesConfig, RenderBatch, RenderConfig,
+    RenderBatch, RenderConfig,
     pass::{
         PassData, compute::ComputePass, material::MaterialPass, pass_loader::PassConfig,
         present::PresentPass,

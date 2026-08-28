@@ -7,6 +7,7 @@ mod data;
 mod error;
 mod hal;
 mod pipeline;
+mod staging;
 
 pub type GfxContext<'a> = dyn RenderHAL + 'a;
 
@@ -27,3 +28,4 @@ pub use data::{
 };
 pub use error::RenderBackendError;
 pub use hal::{BufferType, Handle, RenderHAL, create_hal};
+pub use staging::BufferPool;

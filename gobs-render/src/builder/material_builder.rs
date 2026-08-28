@@ -1,8 +1,7 @@
+use gobs_render_material::{Material, MaterialDataPropData};
 use gobs_resource::{ResourceHandle, ResourceLifetime, ResourceManager};
 
-use crate::{
-    Material, MaterialDataPropData, MaterialInstance, MaterialInstanceProperties, Texture,
-};
+use crate::{MaterialInstance, MaterialInstanceProperties, Texture};
 
 pub struct RenderMaterialBuilder<'a> {
     name: &'a str,

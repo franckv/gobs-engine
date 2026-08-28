@@ -57,7 +57,7 @@ pub struct GraphicsPipelineProperties {
     pub(crate) vertex_shader: Option<String>,
     pub(crate) fragment_entry: Option<String>,
     pub(crate) fragment_shader: Option<String>,
-    pub(crate) binding_groups: Vec<Arc<BindingGroupLayout>>,
+    pub binding_groups: Vec<Arc<BindingGroupLayout>>,
     pub ds_pool_size: usize,
     pub object_data_layout: ObjectDataLayout,
     pub push_data_layout: ObjectDataLayout,

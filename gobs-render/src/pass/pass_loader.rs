@@ -2,18 +2,15 @@ use std::collections::HashMap;
 
 use gobs_render_graph::RenderPassType;
 use gobs_render_hal::{GfxContext, UniformData as _};
+use gobs_render_material::{Pipeline, RenderFlags, SceneDataLayout, SceneDataProp};
 use gobs_resource::{
     ResourceError, ResourceManager,
     load::{self, AssetType},
 };
 use serde::{Deserialize, Serialize};
 
-use crate::{
-    Pipeline,
-    data::{RenderFlags, SceneDataLayout, SceneDataProp},
-    pass::{
-        PassData, compute::ComputePassData, material::MaterialPassData, present::PresentPassData,
-    },
+use crate::pass::{
+    PassData, compute::ComputePassData, material::MaterialPassData, present::PresentPassData,
 };
 
 #[derive(Debug, Deserialize, Serialize)]

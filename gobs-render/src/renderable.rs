@@ -1,8 +1,9 @@
 use gobs_core::Transform;
 use gobs_render_hal::GfxContext;
+use gobs_render_material::RenderFlags;
 use gobs_resource::{ResourceError, ResourceManager};
 
-use crate::{BoundingBox, RenderBatch, data::RenderFlags};
+use crate::{BoundingBox, RenderBatch};
 
 pub trait Renderable {
     fn draw(

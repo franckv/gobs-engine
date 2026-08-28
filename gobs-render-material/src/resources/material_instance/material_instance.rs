@@ -2,9 +2,8 @@ use gobs_render_hal::RenderHAL;
 use gobs_resource::{ResourceHandle, ResourceProperties, ResourceType};
 
 use crate::{
-    data::{MaterialConstantData, MaterialDataPropData},
-    material_system::MaterialBinding,
-    resources::{Material, MaterialInstanceLoader, Texture},
+    Material, MaterialConstantData, MaterialDataPropData, Texture,
+    material_system::MaterialBinding, resources::MaterialInstanceLoader,
 };
 
 #[derive(Clone, Copy, Debug, Hash, Eq, PartialEq)]

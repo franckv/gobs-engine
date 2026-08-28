@@ -1,7 +1,8 @@
 use uuid::Uuid;
 
 use gobs_core::memory::recycler::{Allocable, AllocableInfo, BlockRecycler};
-use gobs_render_hal::{BufferType, Handle, RenderHAL};
+
+use crate::{BufferType, Handle, RenderHAL};
 
 pub const STAGING_BUFFER_SIZE: usize = 1_048_576;
 
@@ -43,7 +44,6 @@ pub struct BufferPool {
     buffer_pool: BlockRecycler<BufferType, Buffer>,
 }
 
-#[allow(unused)]
 impl BufferPool {
     pub fn new() -> Self {
         Self {
@@ -73,5 +73,11 @@ impl BufferPool {
 
     pub fn recycle_all(&mut self) {
         self.buffer_pool.recycle_all();
+    }
+}
+
+impl Default for BufferPool {
+    fn default() -> Self {
+        Self::new()
     }
 }

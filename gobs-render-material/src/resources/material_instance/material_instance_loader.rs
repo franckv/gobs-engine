@@ -5,9 +5,8 @@ use gobs_resource::{
 };
 
 use crate::{
-    MaterialInstanceProperties,
     material_system::MaterialSystem,
-    resources::{MaterialInstance, MaterialInstanceData},
+    resources::{MaterialInstance, MaterialInstanceData, MaterialInstanceProperties},
 };
 
 pub struct MaterialInstanceLoader;

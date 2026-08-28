@@ -2,12 +2,10 @@
 mod tests {
     use gobs_core::{ConfigWriter as _, GobsConfig, ImageExtent2D, ImageFormat};
     use gobs_render_hal::{GfxContext, ImageUsage, RenderHalConfig, create_hal};
+    use gobs_render_material::{Material, MaterialLoader, Pipeline, PipelineLoader};
     use gobs_resource::ResourceManager;
 
-    use crate::{
-        Material, MaterialInstance, MaterialInstanceLoader, MaterialLoader, Pipeline,
-        PipelineLoader, RenderConfig, Texture, TextureLoader,
-    };
+    use crate::{MaterialInstance, MaterialInstanceLoader, RenderConfig, Texture, TextureLoader};
 
     fn setup() -> (Box<GfxContext<'static>>, ResourceManager) {
         let mut config = GobsConfig::default();

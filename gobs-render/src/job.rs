@@ -9,8 +9,9 @@ use gobs_render_hal::{
     AttributeData, BindResource, BindingId, Handle, ObjectDataLayout, ObjectDataProp,
     UniformBuffer, UniformData as _,
 };
+use gobs_render_material::RenderFlags;
 
-use crate::{GfxContext, data::RenderFlags, render_object::RenderObject};
+use crate::{GfxContext, render_object::RenderObject};
 
 const PUSH_SIZE: usize = 128;
 

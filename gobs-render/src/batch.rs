@@ -4,15 +4,14 @@ use ahash::HashMap;
 
 use gobs_core::{ImageExtent2D, Transform, logger};
 use gobs_render_hal::{GfxContext, VertexData};
+use gobs_render_material::{
+    Material, MaterialRenderData, MaterialSystem, Pipeline, RenderFlags, SceneData,
+};
 use gobs_resource::{ResourceError, ResourceHandle, ResourceManager, camera::Camera, light::Light};
 
 use crate::{
-    BoundingBox, Material, MaterialInstance, Mesh, Pipeline, RenderMeshBuilder, RenderModelBuilder,
-    ShapeBuilder, Texture,
-    data::{RenderFlags, SceneData},
-    material_system::MaterialSystem,
-    model::Model,
-    render_object::{MaterialRenderData, RenderObject},
+    BoundingBox, MaterialInstance, Mesh, RenderMeshBuilder, RenderModelBuilder, ShapeBuilder,
+    Texture, model::Model, render_object::RenderObject,
 };
 
 pub struct RenderBatch {
@@ -292,6 +291,7 @@ impl Default for RenderBatch {
 #[cfg(test)]
 mod tests {
     use gobs_render_hal::{RenderHalConfig, create_hal};
+    use gobs_render_material::RenderFlags;
     use tracing::Level;
     use tracing_subscriber::{EnvFilter, FmtSubscriber, fmt::format::FmtSpan};
 
@@ -300,7 +300,6 @@ mod tests {
 
     use crate::{
         Mesh, MeshLoader, RenderBatch, RenderConfig, RenderMeshBuilder, RenderModelBuilder, Shapes,
-        data::RenderFlags,
     };
 
     fn setup() {

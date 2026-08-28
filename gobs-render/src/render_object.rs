@@ -1,54 +1,8 @@
 use std::{cmp::Ordering, sync::Arc};
 
 use gobs_core::Transform;
-use gobs_render_hal::{BindResource, Handle, VertexAttribute};
-
-use crate::data::{RenderFlags, SceneDataLayout};
-
-#[derive(Clone, Debug, Default)]
-pub struct MaterialRenderData {
-    pub material_render_flags: RenderFlags,
-    pub pipeline: Option<Handle>,
-    pub material_data: Option<BindResource>,
-    pub material_textures: Option<BindResource>,
-    pub material_offset: Option<u32>,
-    pub scene_layout: Option<SceneDataLayout>,
-    pub texture_indexing: bool,
-    pub material_indexing: bool,
-}
-
-impl Ord for MaterialRenderData {
-    fn cmp(&self, other: &Self) -> Ordering {
-        self.pipeline
-            .cmp(&other.pipeline)
-            .then(
-                self.material_data
-                    .as_ref()
-                    .map(|bind| bind.id)
-                    .cmp(&other.material_data.as_ref().map(|bind| bind.id)),
-            )
-            .then(
-                self.material_textures
-                    .as_ref()
-                    .map(|bind| bind.id)
-                    .cmp(&other.material_textures.as_ref().map(|bind| bind.id)),
-            )
-    }
-}
-
-impl PartialEq for MaterialRenderData {
-    fn eq(&self, other: &Self) -> bool {
-        self.cmp(other) == Ordering::Equal
-    }
-}
-
-impl PartialOrd for MaterialRenderData {
-    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        Some(self.cmp(other))
-    }
-}
-
-impl Eq for MaterialRenderData {}
+use gobs_render_hal::{Handle, VertexAttribute};
+use gobs_render_material::{MaterialRenderData, RenderFlags};
 
 pub struct RenderObject {
     pub model: Arc<String>,
