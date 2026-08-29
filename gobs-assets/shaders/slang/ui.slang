@@ -44,10 +44,11 @@ VSOutput vertex_main(uint vertex_index: SV_VertexID) {
 
 [shader("fragment")]
 float4 fragment_main(VSOutput input) {
+    // input.color is gamma corrected with egui
+    // sampled textures are linear
+    // Gamma correct diffuse color if swapchain is linear
+    // Convert input color to linear if swapchain is srgb
     float4 diffuse_color = diffuse_texture.Sample(diffuse_sampler, input.uv);
-    // Do gamma conversion if swapchain is linear
-    // float3 diffuse_color_corrected = linear_to_gamma(diffuse_color).rgb;
-    // Convert to linear if swapchain is srgb
     float3 input_color_corrected = gamma_to_linear(input.color).rgb;
 
     return float4(input_color_corrected * diffuse_color.rgb, input.color.a);
