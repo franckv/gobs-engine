@@ -44,8 +44,12 @@ VSOutput vertex_main(uint vertex_index: SV_VertexID) {
 
 [shader("fragment")]
 float4 fragment_main(VSOutput input) {
-    let diffuse_color = linear_to_gamma(diffuse_texture.Sample(diffuse_sampler, input.uv)).rgb;
+    float4 diffuse_color = diffuse_texture.Sample(diffuse_sampler, input.uv);
+    // Do gamma conversion if swapchain is linear
+    // float3 diffuse_color_corrected = linear_to_gamma(diffuse_color).rgb;
+    // Convert to linear if swapchain is srgb
+    float3 input_color_corrected = gamma_to_linear(input.color).rgb;
 
-    return float4(input.color.rgb * diffuse_color, input.color.a);
+    return float4(input_color_corrected * diffuse_color.rgb, input.color.a);
 }
 

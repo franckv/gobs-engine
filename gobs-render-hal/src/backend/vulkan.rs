@@ -478,6 +478,7 @@ impl VulkanHAL {
         let material_data_size = config.get_int(RenderHalConfig::MaterialDataSize) as usize;
         let instance_array_size = config.get_int(RenderHalConfig::InstanceArraySize) as usize;
         let instance_data_size = config.get_int(RenderHalConfig::InstanceDataSize) as usize;
+        let swapchain_format = config.get_image_format(RenderHalConfig::SwapchainFormat);
 
         let mut registry = ResourcesRegistry::default();
         let bindings = BindingRegistry::new(frames_in_flight);
@@ -523,7 +524,12 @@ impl VulkanHAL {
         let instances =
             InstanceRegistry::new(instance_buffers, instance_data_size, instance_array_size);
 
-        display.init(&mut registry, device.clone(), frames_in_flight);
+        display.init(
+            &mut registry,
+            device.clone(),
+            swapchain_format,
+            frames_in_flight,
+        );
 
         Self {
             registry,

@@ -46,15 +46,12 @@ impl Display {
         &mut self,
         registry: &mut ResourcesRegistry,
         device: Arc<Device>,
+        format: ImageFormat,
         frames_in_flight: usize,
     ) {
         if let Some(surface) = &self.surface {
             // TODO: hardcoded
-            let swapchain = Self::create_swapchain(
-                surface.clone(),
-                device.clone(),
-                &[ImageFormat::B8g8r8a8Unorm],
-            );
+            let swapchain = Self::create_swapchain(surface.clone(), device.clone(), &[format]);
             self.swapchain_images = swapchain
                 .create_images()
                 .into_iter()
