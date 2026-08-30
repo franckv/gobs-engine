@@ -143,7 +143,9 @@ impl ShapeBuilder {
     }
 
     pub fn with_colors(mut self, colors: &[Color]) -> Self {
-        self.colors = Some(colors.to_vec());
+        if !colors.is_empty() {
+            self.colors = Some(colors.to_vec());
+        }
 
         self
     }

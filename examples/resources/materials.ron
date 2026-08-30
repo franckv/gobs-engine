@@ -112,5 +112,14 @@ MaterialsConfig(
                 CameraViewProj,
             ],
         ),
+        "gamma": (
+            vertex_shader: "gamma.spv",
+            vertex_entry: "vertex_main",
+            fragment_shader: "gamma.spv",
+            fragment_entry: "fragment_main",
+            scene_layout: [
+                CameraViewProj,
+            ],
+        ),
     }
 )
