@@ -5,7 +5,8 @@ use glam::{Quat, Vec3};
 use gobs::{
     core::{Color, Input, Transform, logger},
     game::{AppError, Application, GameContext, GobsContext, GobsGame},
-    render::{Mesh, Model, RenderError, Shapes},
+    graphics::Shapes,
+    render::{Mesh, Model, RenderError},
     resource::ResourceHandle,
     scene::{
         components::{NodeId, NodeValue},

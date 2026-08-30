@@ -2,7 +2,7 @@ use std::f32::consts::FRAC_PI_2;
 
 use gobs::core::{ImageFormat, Input, Key, MouseButton, Transform, logger};
 use gobs::game::GobsContext;
-use gobs::resource::camera::{Camera, ProjectionMode};
+use gobs::graphics::{Camera, ProjectionMode};
 
 const SAFE_FRAC_PI_2: f32 = FRAC_PI_2 - 0.0001;
 

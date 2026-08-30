@@ -3,9 +3,9 @@ use std::collections::HashMap;
 use serde::Deserialize;
 
 use gobs_core::{ConfigReader as _, GobsConfig, ImageFormat, logger};
+use gobs_graphics::VertexAttribute;
 use gobs_render_hal::{
     BlendMode, CullMode, ObjectDataLayout, ObjectDataProp, RenderHalConfig, UniformData as _,
-    VertexAttribute,
 };
 use gobs_resource::{
     ResourceLifetime, ResourceManager,

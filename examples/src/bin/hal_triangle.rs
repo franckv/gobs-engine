@@ -3,11 +3,11 @@ use std::marker::PhantomData;
 use gobs::{
     core::{Color, ConfigWriter as _, ImageFormat, Input, logger},
     game::{AppError, Application, GameContext, GobsContext, GobsGame},
+    graphics::{AlignMode, Shapes, VertexAttribute, VertexData},
     render::{
-        AlignMode, BufferType, CommandBuffer, CommandQueueType, CullMode, DynamicStateElem,
-        FrontFace, GfxContext, Handle, ImageLayout, ObjectDataLayout, ObjectDataProp, Rect2D,
-        RenderConfig, RenderError, RenderHalConfig, Shapes, UniformData, VertexAttribute,
-        VertexData, Viewport,
+        BufferType, CommandBuffer, CommandQueueType, CullMode, DynamicStateElem, FrontFace,
+        GfxContext, Handle, ImageLayout, ObjectDataLayout, ObjectDataProp, Rect2D, RenderConfig,
+        RenderError, RenderHalConfig, UniformData, Viewport,
     },
 };
 

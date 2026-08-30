@@ -6,7 +6,8 @@ use pollster::FutureExt;
 use gobs::{
     core::{Color, ConfigWriter as _, Input, Transform, logger},
     game::{AppError, Application, GameContext, GobsContext, GobsGame},
-    render::{RenderConfig, RenderError, RenderType, Shapes},
+    graphics::Shapes,
+    render::{RenderConfig, RenderError, RenderType},
     scene::{components::NodeValue, scene::Scene},
 };
 

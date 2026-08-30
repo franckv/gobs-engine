@@ -2,8 +2,8 @@ use std::sync::Arc;
 
 use slotmap::{DefaultKey, Key};
 
-use gobs_render::{Bounded, BoundingBox, Model};
-use gobs_resource::{camera::Camera, light::Light};
+use gobs_graphics::{Bounded, BoundingBox, Camera, Light};
+use gobs_render::Model;
 
 #[derive(Clone, Debug)]
 pub enum NodeValue {

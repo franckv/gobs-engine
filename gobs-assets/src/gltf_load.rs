@@ -10,9 +10,10 @@ use gltf::{
 use gobs_core::{
     Color, ConfigReader as _, GobsConfig, ImageExtent2D, SamplerFilter, Transform, logger,
 };
+use gobs_graphics::{MeshGeometry, VertexData};
 use gobs_render::{
-    BlendMode, MaterialInstance, Mesh, MeshGeometry, Model, RenderMeshBuilder, RenderModelBuilder,
-    TextureProperties, TextureType, VertexData,
+    BlendMode, MaterialInstance, Mesh, Model, RenderMeshBuilder, RenderModelBuilder,
+    TextureProperties, TextureType,
 };
 use gobs_resource::{ResourceHandle, ResourceLifetime, ResourceManager};
 use gobs_scene::{

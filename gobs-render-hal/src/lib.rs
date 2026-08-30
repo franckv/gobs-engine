@@ -22,10 +22,7 @@ pub use gobs_vulkan::{
 pub use bindings::{BindResource, BindingGroupLayout, BindingGroupType, BindingId};
 pub use command::{CommandBuffer, CommandQueueType};
 pub use config::RenderHalConfig;
-pub use data::{
-    AlignMode, Attribute, AttributeData, ObjectDataLayout, ObjectDataProp, UniformBuffer,
-    UniformData, UniformLayout, VertexAttribute, VertexData,
-};
+pub use data::{ObjectDataLayout, ObjectDataProp, UniformBuffer, UniformData, UniformLayout};
 pub use error::RenderBackendError;
 pub use hal::{BufferType, Handle, RenderHAL, create_hal};
 pub use staging::BufferPool;

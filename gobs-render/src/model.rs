@@ -1,17 +1,18 @@
 use std::fmt::Debug;
 use std::sync::Arc;
 
-use gobs_render_material::RenderFlags;
 use serde::Serialize;
 use uuid::Uuid;
 
 use gobs_core::{Transform, logger};
+use gobs_graphics::{Bounded, BoundingBox};
 use gobs_render_hal::GfxContext;
+use gobs_render_material::RenderFlags;
 use gobs_resource::{
     ResourceManager, {ResourceError, ResourceHandle},
 };
 
-use crate::{Bounded, BoundingBox, MaterialInstance, Mesh, Renderable, batch::RenderBatch};
+use crate::{MaterialInstance, Mesh, Renderable, batch::RenderBatch};
 
 pub type ModelId = Uuid;
 

@@ -1,10 +1,11 @@
 use std::sync::Arc;
 
 use gobs_core::ImageFormat;
+use gobs_graphics::VertexAttribute;
 
 use crate::{
     BlendMode, CompareOp, CullMode, DynamicStateElem, FrontFace, Handle, ObjectDataLayout,
-    PolygonMode, Rect2D, RenderHAL, VertexAttribute, Viewport, bindings::BindingGroupLayout,
+    PolygonMode, Rect2D, RenderHAL, Viewport, bindings::BindingGroupLayout,
 };
 
 pub trait ComputePipelineBuilder {

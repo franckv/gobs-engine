@@ -1,9 +1,10 @@
 use gobs_core::data::data_buffer::{DataBuffer as _, FixedBuffer};
 use gobs_core::logger;
+use gobs_graphics::AttributeData;
 use gobs_render_graph::{FrameData, GraphResourceManager, PassMetaData};
 use gobs_render_hal::{
-    AttributeData, BindingGroupLayout, BindingGroupType, CommandBuffer, Handle, RenderHAL,
-    UniformBuffer, UniformData as _,
+    BindingGroupLayout, BindingGroupType, CommandBuffer, Handle, RenderHAL, UniformBuffer,
+    UniformData as _,
 };
 use gobs_render_material::{RenderFlags, SceneData, SceneDataLayout, SceneDataProp};
 use gobs_vulkan::{DescriptorStage, DescriptorType};

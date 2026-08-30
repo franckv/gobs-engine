@@ -4,10 +4,11 @@ use gobs_core::{
     data::data_buffer::{DataBuffer, FixedBuffer},
     logger,
 };
+use gobs_graphics::AttributeData;
 use gobs_render_graph::{FrameData, RenderError};
 use gobs_render_hal::{
-    AttributeData, BindResource, BindingId, Handle, ObjectDataLayout, ObjectDataProp,
-    UniformBuffer, UniformData as _,
+    BindResource, BindingId, Handle, ObjectDataLayout, ObjectDataProp, UniformBuffer,
+    UniformData as _,
 };
 use gobs_render_material::RenderFlags;
 

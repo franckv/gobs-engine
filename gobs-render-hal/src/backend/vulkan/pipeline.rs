@@ -4,13 +4,14 @@ use std::sync::Arc;
 use indexmap::IndexMap;
 
 use gobs_core::{ImageFormat, logger};
+use gobs_graphics::{AlignMode, VertexAttribute};
 use gobs_resource::load;
 use gobs_vulkan as vk;
+use gobs_vulkan::pipelines::VertexAttributeFormat;
 
 use crate::BindingGroupType;
-use crate::data::AlignMode;
 use crate::{
-    Handle, ObjectDataLayout, RenderHAL, UniformData, VertexAttribute,
+    Handle, ObjectDataLayout, RenderHAL, UniformData,
     backend::{VulkanHAL, VulkanHALExt, vulkan::bindings::vk_layout},
     bindings::BindingGroupLayout,
     pipeline::{ComputePipelineBuilder, GraphicsPipelineBuilder},
@@ -185,7 +186,7 @@ impl GraphicsPipelineBuilder for VkGraphicsPipelineBuilder {
 
         for bit in self.vertex_attributes {
             vertex_layout = vertex_layout.attribute(
-                bit.into(),
+                Self::into_vk_format(bit),
                 self.vertex_attributes
                     .offset_of(bit, AlignMode::Scalar)
                     .unwrap(),
@@ -332,6 +333,19 @@ impl VkGraphicsPipelineBuilder {
             vertex_attributes: VertexAttribute::empty(),
             push_layout: ObjectDataLayout::new(false),
             instance_layout: ObjectDataLayout::new(false),
+        }
+    }
+
+    fn into_vk_format(value: VertexAttribute) -> VertexAttributeFormat {
+        match value {
+            VertexAttribute::POSITION => VertexAttributeFormat::Vec3,
+            VertexAttribute::COLOR => VertexAttributeFormat::Vec4,
+            VertexAttribute::TEXTURE => VertexAttributeFormat::Vec2,
+            VertexAttribute::NORMAL => VertexAttributeFormat::Vec3,
+            VertexAttribute::NORMAL_TEXTURE => VertexAttributeFormat::Vec2,
+            VertexAttribute::TANGENT => VertexAttributeFormat::Vec3,
+            VertexAttribute::BITANGENT => VertexAttributeFormat::Vec3,
+            _ => unimplemented!(),
         }
     }
 }

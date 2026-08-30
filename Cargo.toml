@@ -7,13 +7,14 @@ members = [
     "gobs-core",
     "gobs-egui",
     "gobs-game",
+    "gobs-graphics",
     "gobs-render",
     "gobs-render-material",
     "gobs-render-graph",
     "gobs-render-hal",
     "gobs-resource",
     "gobs-scene",
-    "gobs-vulkan",
+    "gobs-vulkan", "gobs-graphics",
 ]
 exclude = ["gobs-template"]
 resolver = "2"
@@ -40,6 +41,9 @@ path = "./gobs-egui"
 
 [workspace.dependencies.gobs-game]
 path = "./gobs-game"
+
+[workspace.dependencies.gobs-graphics]
+path = "./gobs-graphics"
 
 [workspace.dependencies.gobs-render-graph]
 path = "./gobs-render-graph"

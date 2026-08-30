@@ -1,7 +1,8 @@
 use std::{cmp::Ordering, sync::Arc};
 
 use gobs_core::Transform;
-use gobs_render_hal::{Handle, VertexAttribute};
+use gobs_graphics::VertexAttribute;
+use gobs_render_hal::Handle;
 use gobs_render_material::{MaterialRenderData, RenderFlags};
 
 pub struct RenderObject {

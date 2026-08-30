@@ -1,11 +1,9 @@
 use glam::{Vec3, Vec4};
 
 use gobs_core::Transform;
-use gobs_render::{BoundingBox, GfxContext, RenderBatch, RenderFlags, Renderable};
-use gobs_resource::{
-    ResourceError, ResourceManager,
-    {camera::Camera, light::Light},
-};
+use gobs_graphics::{BoundingBox, Camera, Light};
+use gobs_render::{GfxContext, RenderBatch, RenderFlags, Renderable};
+use gobs_resource::{ResourceError, ResourceManager};
 
 use crate::components::{NodeId, NodeValue};
 use crate::graph::scenegraph::SceneGraph;

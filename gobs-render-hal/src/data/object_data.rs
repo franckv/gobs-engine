@@ -1,6 +1,8 @@
 use serde::{Deserialize, Serialize};
 
-use crate::data::{AlignMode, Attribute, UniformLayout, uniform::UniformData};
+use gobs_graphics::{AlignMode, Attribute};
+
+use crate::data::{UniformLayout, uniform::UniformData};
 
 #[derive(Clone, Copy, Debug, Deserialize, Serialize)]
 pub enum ObjectDataProp {

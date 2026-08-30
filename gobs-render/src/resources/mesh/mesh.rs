@@ -1,9 +1,10 @@
 use std::sync::Arc;
 
-use gobs_render_hal::{Handle, RenderHAL, VertexAttribute};
+use gobs_graphics::{MeshGeometry, VertexAttribute};
+use gobs_render_hal::{Handle, RenderHAL};
 use gobs_resource::{ResourceProperties, ResourceType};
 
-use crate::resources::{MeshGeometry, MeshLoader};
+use crate::resources::MeshLoader;
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Mesh;

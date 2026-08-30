@@ -1,8 +1,8 @@
 use glam::Vec3;
 
 use gobs_core::Color;
+use gobs_graphics::{Camera, Light};
 use gobs_render::GfxContext;
-use gobs_resource::{camera::Camera, light::Light};
 
 use crate::scene::Scene;
 

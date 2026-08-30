@@ -220,7 +220,7 @@ mod tests {
 
     use gobs_core::logger;
 
-    use crate::entity::camera::Camera;
+    use crate::Camera;
 
     fn setup() {
         let sub = FmtSubscriber::builder()

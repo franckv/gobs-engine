@@ -7,10 +7,11 @@ use gobs_core::{
     GobsConfig, ImageExtent2D, ImageFormat, SamplerFilter,
     data::data_buffer::{DataBuffer, SliceBuffer},
 };
+use gobs_graphics::VertexAttribute;
 
 use crate::{
     BindingGroupLayout, BindingGroupType, CommandQueueType, ImageUsage, ObjectDataLayout,
-    RenderBackendError, VertexAttribute,
+    RenderBackendError,
     backend::VulkanHAL,
     command::CommandBuffer,
     pipeline::{ComputePipelineBuilder, GraphicsPipelineBuilder},

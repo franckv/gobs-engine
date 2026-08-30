@@ -3,12 +3,8 @@ use glam::{Vec2, Vec3};
 use serde::{Deserialize, Serialize};
 
 use gobs_core::{Color, Transform, data::data_buffer::DataBuffer};
-use gobs_vulkan::pipelines::VertexAttributeFormat;
 
-use crate::{
-    AttributeData,
-    data::{AlignMode, Attribute},
-};
+use crate::vertex::{AlignMode, Attribute, AttributeData};
 
 bitflags! {
     #[derive(Debug, Clone, Copy, Default, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -59,21 +55,6 @@ impl VertexAttribute {
 
     pub fn size(&self, mode: AlignMode) -> usize {
         Attribute::stride(&self.attributes(), mode)
-    }
-}
-
-impl From<VertexAttribute> for VertexAttributeFormat {
-    fn from(value: VertexAttribute) -> Self {
-        match value {
-            VertexAttribute::POSITION => VertexAttributeFormat::Vec3,
-            VertexAttribute::COLOR => VertexAttributeFormat::Vec4,
-            VertexAttribute::TEXTURE => VertexAttributeFormat::Vec2,
-            VertexAttribute::NORMAL => VertexAttributeFormat::Vec3,
-            VertexAttribute::NORMAL_TEXTURE => VertexAttributeFormat::Vec2,
-            VertexAttribute::TANGENT => VertexAttributeFormat::Vec3,
-            VertexAttribute::BITANGENT => VertexAttributeFormat::Vec3,
-            _ => unimplemented!(),
-        }
     }
 }
 
@@ -292,10 +273,7 @@ mod tests {
     use tracing::Level;
     use tracing_subscriber::{FmtSubscriber, fmt::format::FmtSpan};
 
-    use crate::{
-        VertexAttribute,
-        data::{AlignMode, Attribute},
-    };
+    use crate::vertex::{AlignMode, Attribute, VertexAttribute};
 
     fn setup() {
         let sub = FmtSubscriber::builder()

@@ -7,8 +7,8 @@ edition = { workspace = true }
 [dependencies]
 ahash = { workspace = true }
 bytemuck = { workspace = true }
-glam = { workspace = true }
 gobs-core = { workspace = true }
+gobs-graphics = { workspace = true }
 gobs-resource = { workspace = true }
 gobs-render-graph = { workspace = true }
 gobs-render-material = { workspace = true }

@@ -3,11 +3,12 @@ use std::{collections::HashMap, marker::PhantomData, sync::Arc};
 use gobs::{
     core::{Color, Input, Key, Transform, logger},
     game::{AppError, Application, GameContext, GobsContext, GobsGame},
+    graphics::{BoundingBox, Camera, Light, Shapes},
     render::{
-        BoundingBox, GfxContext, MaterialInstance, Model, RenderBatch, RenderError, RenderFlags,
-        RenderType, Renderable, Shapes,
+        GfxContext, MaterialInstance, Model, RenderBatch, RenderError, RenderFlags, RenderType,
+        Renderable,
     },
-    resource::{ResourceError, ResourceHandle, ResourceManager, camera::Camera, light::Light},
+    resource::{ResourceError, ResourceHandle, ResourceManager},
     scene::voxel::{chunk::Chunks, ray::RayCast as _},
 };
 

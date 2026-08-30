@@ -3,9 +3,10 @@ use std::collections::HashMap;
 use serde::{Deserialize, Serialize};
 
 use gobs_core::{ImageFormat, logger};
+use gobs_graphics::VertexAttribute;
 use gobs_render_hal::{
     BindingGroupType, CompareOp, CullMode, DescriptorStage, DescriptorType, FrontFace, GfxContext,
-    ObjectDataLayout, ObjectDataProp, PolygonMode, UniformData as _, VertexAttribute,
+    ObjectDataLayout, ObjectDataProp, PolygonMode, UniformData as _,
 };
 use gobs_resource::{
     ResourceManager,
@@ -218,12 +219,13 @@ impl PipelinesConfig {
 mod tests {
     use std::collections::HashMap;
 
+    use gobs_graphics::VertexAttribute;
     use tracing::Level;
     use tracing_subscriber::{FmtSubscriber, fmt::format::FmtSpan};
 
     use gobs_core::{ConfigWriter as _, GobsConfig, ImageFormat};
     use gobs_render_hal::{
-        CompareOp, CullMode, FrontFace, PolygonMode, RenderHalConfig, VertexAttribute, create_hal,
+        CompareOp, CullMode, FrontFace, PolygonMode, RenderHalConfig, create_hal,
     };
     use gobs_resource::ResourceManager;
 

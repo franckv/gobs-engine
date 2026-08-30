@@ -1,8 +1,8 @@
 use serde::{Deserialize, Serialize};
 
 use gobs_core::{ImageExtent2D, Transform};
-use gobs_render_hal::{AlignMode, Attribute, UniformData, UniformLayout};
-use gobs_resource::{camera::Camera, light::Light};
+use gobs_graphics::{AlignMode, Attribute, Camera, Light};
+use gobs_render_hal::{UniformData, UniformLayout};
 
 #[derive(Clone, Copy, Debug, PartialEq, Deserialize, Serialize)]
 pub enum SceneDataProp {

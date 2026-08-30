@@ -1,7 +1,8 @@
 use gobs_core::ImageFormat;
+use gobs_graphics::VertexAttribute;
 use gobs_render_hal::{
     BindingGroupType, BlendMode, CompareOp, CullMode, DescriptorStage, DescriptorType, FrontFace,
-    ObjectDataLayout, RenderHAL, UniformData as _, VertexAttribute,
+    ObjectDataLayout, RenderHAL, UniformData as _,
 };
 use gobs_resource::{ResourceHandle, ResourceProperties, ResourceType};
 

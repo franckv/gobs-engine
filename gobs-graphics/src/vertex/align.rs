@@ -179,7 +179,7 @@ mod tests {
     use tracing::Level;
     use tracing_subscriber::{FmtSubscriber, fmt::format::FmtSpan};
 
-    use crate::data::align::{AlignMode, Attribute};
+    use crate::vertex::{AlignMode, Attribute};
 
     fn setup() {
         let sub = FmtSubscriber::builder()

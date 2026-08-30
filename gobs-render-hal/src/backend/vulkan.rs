@@ -21,11 +21,12 @@ use gobs_core::{
     data::data_buffer::{DataBuffer, SliceBuffer},
     logger,
 };
+use gobs_graphics::VertexAttribute;
 use gobs_vulkan::{self as vk, Device, images::ImageLayout};
 
 use crate::{
     BindResource, BindingGroupLayout, BindingGroupType, CommandBuffer, CommandQueueType,
-    ImageUsage, ObjectDataLayout, RenderBackendError, RenderHalConfig, VertexAttribute,
+    ImageUsage, ObjectDataLayout, RenderBackendError, RenderHalConfig,
     backend::vulkan::{
         bindings::BindingRegistry,
         buffer::BufferView,

@@ -1,7 +1,7 @@
 use gobs_core::logger;
+use gobs_graphics::{AlignMode, MeshGeometry, VertexAttribute, VertexData};
 use gobs_render_hal::{
-    AlignMode, BufferPool, BufferType, CommandBuffer, CommandQueueType, GfxContext, RenderHAL,
-    VertexAttribute, VertexData,
+    BufferPool, BufferType, CommandBuffer, CommandQueueType, GfxContext, RenderHAL,
 };
 use gobs_resource::{
     ResourceRegistry, {ResourceError, ResourceHandle, ResourceLoader, ResourceProperties},
@@ -9,7 +9,7 @@ use gobs_resource::{
 
 use crate::{
     MeshProperties,
-    resources::{Mesh, MeshData, MeshGeometry, MeshPath, MeshPrimitiveType},
+    resources::{Mesh, MeshData, MeshPath, MeshPrimitiveType},
 };
 
 pub struct MeshLoader {

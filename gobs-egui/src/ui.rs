@@ -11,10 +11,11 @@ use tracing::Level;
 use gobs_core::{
     GobsConfig, ImageExtent2D, ImageFormat, Input, Key, MouseButton, Transform, logger,
 };
+use gobs_graphics::BoundingBox;
 use gobs_render::{
-    BoundingBox, GfxContext, Material, MaterialInstance, MaterialInstanceProperties,
-    MaterialsConfig, Model, RenderBatch, RenderFlags, RenderMeshBuilder, RenderModelBuilder,
-    Renderable, Texture, TextureProperties, TextureUpdate,
+    GfxContext, Material, MaterialInstance, MaterialInstanceProperties, MaterialsConfig, Model,
+    RenderBatch, RenderFlags, RenderMeshBuilder, RenderModelBuilder, Renderable, Texture,
+    TextureProperties, TextureUpdate,
 };
 use gobs_resource::{
     ResourceManager, {ResourceError, ResourceHandle, ResourceLifetime},

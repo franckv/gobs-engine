@@ -1,9 +1,10 @@
 use std::{fmt::Debug, sync::Arc};
 
 use gobs_core::ImageFormat;
+use gobs_graphics::VertexAttribute;
 use gobs_render_hal::{
     BindingGroupLayout, BindingGroupType, BlendMode, CompareOp, CullMode, DescriptorStage,
-    DescriptorType, FrontFace, Handle, ObjectDataLayout, PolygonMode, RenderHAL, VertexAttribute,
+    DescriptorType, FrontFace, Handle, ObjectDataLayout, PolygonMode, RenderHAL,
 };
 use gobs_resource::{ResourceProperties, ResourceType};
 

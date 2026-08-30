@@ -1,7 +1,7 @@
 use std::{marker::PhantomData, sync::Arc};
 
 use gobs_core::{Color, logger, utils::timer::Timer};
-use gobs_render::{MeshGeometry, ShapeBuilder};
+use gobs_graphics::{MeshGeometry, ShapeBuilder};
 
 use crate::voxel::node::VoxelNode;
 

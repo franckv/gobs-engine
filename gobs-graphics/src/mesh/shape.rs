@@ -3,9 +3,11 @@ use std::sync::Arc;
 use glam::Vec2;
 
 use gobs_core::Color;
-use gobs_render_hal::VertexData;
 
-use crate::{MeshBuilder, resources::MeshGeometry};
+use crate::{
+    VertexData,
+    mesh::{MeshBuilder, MeshGeometry},
+};
 
 pub struct Shapes;
 
@@ -367,7 +369,7 @@ mod tests {
 
     use gobs_core::{Color, logger, utils::timer::Timer};
 
-    use crate::{Shapes, resources::mesh::shape::ShapeBuilder};
+    use crate::mesh::{ShapeBuilder, Shapes};
 
     fn setup() {
         let sub = FmtSubscriber::builder()

@@ -1,11 +1,9 @@
 use std::sync::Arc;
 
 use gobs_core::data::data_buffer::DataBuffer;
+use gobs_graphics::{AlignMode, Attribute, AttributeData};
 
-use crate::{
-    BindResource, BindingGroupLayout, BufferType, RenderHAL,
-    data::{AlignMode, Attribute, align::AttributeData},
-};
+use crate::{BindResource, BindingGroupLayout, BufferType, RenderHAL};
 
 pub struct UniformBuffer {
     pub buffer: BindResource,
@@ -122,12 +120,11 @@ impl UniformLayout {
 mod tests {
     use glam::Vec3;
     use glam::{Mat4, Vec4};
+    use gobs_graphics::{AlignMode, Attribute, AttributeData};
     use tracing::Level;
     use tracing_subscriber::{FmtSubscriber, fmt::format::FmtSpan};
 
-    use crate::data::align::AttributeData;
     use crate::data::uniform::UniformLayout;
-    use crate::data::{AlignMode, Attribute};
 
     fn setup() {
         let sub = FmtSubscriber::builder()

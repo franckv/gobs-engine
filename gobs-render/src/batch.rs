@@ -3,15 +3,16 @@ use std::{collections::hash_map::Entry, sync::Arc};
 use ahash::HashMap;
 
 use gobs_core::{ImageExtent2D, Transform, logger};
-use gobs_render_hal::{GfxContext, VertexData};
+use gobs_graphics::{BoundingBox, Camera, Light, ShapeBuilder, VertexData};
+use gobs_render_hal::GfxContext;
 use gobs_render_material::{
     Material, MaterialRenderData, MaterialSystem, Pipeline, RenderFlags, SceneData,
 };
-use gobs_resource::{ResourceError, ResourceHandle, ResourceManager, camera::Camera, light::Light};
+use gobs_resource::{ResourceError, ResourceHandle, ResourceManager};
 
 use crate::{
-    BoundingBox, MaterialInstance, Mesh, RenderMeshBuilder, RenderModelBuilder, ShapeBuilder,
-    Texture, model::Model, render_object::RenderObject,
+    MaterialInstance, Mesh, RenderMeshBuilder, RenderModelBuilder, Texture, model::Model,
+    render_object::RenderObject,
 };
 
 pub struct RenderBatch {
@@ -290,6 +291,7 @@ impl Default for RenderBatch {
 
 #[cfg(test)]
 mod tests {
+    use gobs_graphics::Shapes;
     use gobs_render_hal::{RenderHalConfig, create_hal};
     use gobs_render_material::RenderFlags;
     use tracing::Level;
@@ -299,7 +301,7 @@ mod tests {
     use gobs_resource::ResourceManager;
 
     use crate::{
-        Mesh, MeshLoader, RenderBatch, RenderConfig, RenderMeshBuilder, RenderModelBuilder, Shapes,
+        Mesh, MeshLoader, RenderBatch, RenderConfig, RenderMeshBuilder, RenderModelBuilder,
     };
 
     fn setup() {

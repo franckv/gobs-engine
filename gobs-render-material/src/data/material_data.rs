@@ -1,6 +1,7 @@
 use serde::{Deserialize, Serialize};
 
-use gobs_render_hal::{AlignMode, Attribute, UniformData, UniformLayout};
+use gobs_graphics::{AlignMode, Attribute};
+use gobs_render_hal::{UniformData, UniformLayout};
 
 // TODO: Opacity, Glossiness, ...
 #[derive(Clone, Copy, Debug, Deserialize, Serialize)]

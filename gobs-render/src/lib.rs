@@ -15,10 +15,9 @@ mod tests;
 
 pub use gobs_render_graph::RenderError;
 pub use gobs_render_hal::{
-    AlignMode, Attribute, AttributeData, BlendMode, BufferType, CommandBuffer, CommandQueueType,
-    CullMode, DynamicStateElem, FrontFace, GfxContext, Handle, ImageLayout, ObjectDataLayout,
-    ObjectDataProp, Rect2D, RenderHAL, RenderHalConfig, UniformData, UniformLayout,
-    VertexAttribute, VertexData, Viewport,
+    BlendMode, BufferType, CommandBuffer, CommandQueueType, CullMode, DynamicStateElem, FrontFace,
+    GfxContext, Handle, ImageLayout, ObjectDataLayout, ObjectDataProp, Rect2D, RenderHAL,
+    RenderHalConfig, UniformData, UniformLayout, Viewport,
 };
 pub use gobs_render_material::{
     Material, MaterialDataPropData, MaterialInstance, MaterialInstanceLoader,
@@ -36,7 +35,4 @@ pub use model::{Model, ModelId};
 pub use renderable::Renderable;
 pub use renderer::Renderer;
 
-pub use resources::{
-    Bounded, BoundingBox, Mesh, MeshBuilder, MeshData, MeshGeometry, MeshLoader, MeshProperties,
-    ShapeBuilder, Shapes,
-};
+pub use resources::{Mesh, MeshData, MeshLoader, MeshProperties};

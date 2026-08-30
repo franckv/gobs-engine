@@ -1,9 +1,10 @@
 use std::{cmp::Ordering, sync::Arc};
 
 use gobs_core::logger;
+use gobs_graphics::AttributeData;
 use gobs_render_hal::{
-    AttributeData, BindResource, BindingGroupLayout, BindingGroupType, BufferType, DescriptorType,
-    Handle, RenderHAL, UniformData as _,
+    BindResource, BindingGroupLayout, BindingGroupType, BufferType, DescriptorType, Handle,
+    RenderHAL, UniformData as _,
 };
 use gobs_resource::{ResourceError, ResourceHandle, ResourceManager, ResourceProperties as _};
 

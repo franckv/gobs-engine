@@ -1,5 +1,6 @@
 use gobs_core::Transform;
-use gobs_render::{BoundingBox, RenderFlags, Renderable};
+use gobs_graphics::BoundingBox;
+use gobs_render::{RenderFlags, Renderable};
 
 use crate::components::{BaseComponent, BoundingComponent, NodeId, NodeValue};
 
