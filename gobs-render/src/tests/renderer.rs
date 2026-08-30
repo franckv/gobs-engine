@@ -7,7 +7,7 @@ mod tests {
 
     use crate::{MaterialInstance, MaterialInstanceLoader, RenderConfig, Texture, TextureLoader};
 
-    fn setup() -> (Box<GfxContext<'static>>, ResourceManager) {
+    fn setup() -> (Box<GfxContext>, ResourceManager) {
         let mut config = GobsConfig::default();
         config.register::<RenderConfig>();
         config.register::<RenderHalConfig>();
@@ -16,13 +16,14 @@ mod tests {
 
         let mut resource_manager = ResourceManager::new(ctx.frames_in_flight());
         let texture_loader = TextureLoader::new(ctx.as_mut());
-        resource_manager.register_resource::<Texture>(texture_loader);
+        resource_manager.register_resource::<Texture, GfxContext>(texture_loader);
         let pipeline_loader = PipelineLoader::new();
-        resource_manager.register_resource::<Pipeline>(pipeline_loader);
+        resource_manager.register_resource::<Pipeline, GfxContext>(pipeline_loader);
         let material_loader = MaterialLoader::new();
-        resource_manager.register_resource::<Material>(material_loader);
+        resource_manager.register_resource::<Material, GfxContext>(material_loader);
         let material_instance_loader = MaterialInstanceLoader::new();
-        resource_manager.register_resource::<MaterialInstance>(material_instance_loader);
+        resource_manager
+            .register_resource::<MaterialInstance, GfxContext>(material_instance_loader);
 
         (ctx, resource_manager)
     }

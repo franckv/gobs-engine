@@ -3,8 +3,8 @@ use std::{cmp::Ordering, sync::Arc};
 use gobs_core::logger;
 use gobs_graphics::AttributeData;
 use gobs_render_hal::{
-    BindResource, BindingGroupLayout, BindingGroupType, BufferType, DescriptorType, Handle,
-    RenderHAL, UniformData as _,
+    BindResource, BindingGroupLayout, BindingGroupType, BufferType, DescriptorType, GfxContext,
+    Handle, RenderHAL, UniformData as _,
 };
 use gobs_resource::{ResourceError, ResourceHandle, ResourceManager, ResourceProperties as _};
 
@@ -80,7 +80,7 @@ pub struct MaterialSystem;
 
 impl MaterialSystem {
     pub fn get_material_data(
-        hal: &mut dyn RenderHAL,
+        hal: &mut GfxContext,
         resource_manager: &mut ResourceManager,
         material_instance_handle: ResourceHandle<MaterialInstance>,
     ) -> Result<MaterialRenderData, ResourceError> {
@@ -167,7 +167,7 @@ impl MaterialSystem {
     }
 
     fn get_pipeline(
-        hal: &mut dyn RenderHAL,
+        hal: &mut GfxContext,
         resource_manager: &mut ResourceManager,
         material_instance_handle: ResourceHandle<MaterialInstance>,
         render_flags: &mut RenderFlags,
@@ -207,7 +207,7 @@ impl MaterialSystem {
     }
 
     fn get_material_textures_binding(
-        hal: &mut dyn RenderHAL,
+        hal: &mut GfxContext,
         resource_manager: &mut ResourceManager,
         textures: &[ResourceHandle<Texture>],
         texture_data_layout: Arc<BindingGroupLayout>,

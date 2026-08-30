@@ -1,19 +1,15 @@
 use std::sync::Arc;
 
 use gobs_graphics::{MeshGeometry, VertexAttribute};
-use gobs_render_hal::{Handle, RenderHAL};
+use gobs_render_hal::Handle;
 use gobs_resource::{ResourceProperties, ResourceType};
-
-use crate::resources::MeshLoader;
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Mesh;
 
 impl ResourceType for Mesh {
     type ResourceData = MeshData;
-    type ResourceBackend<'a> = dyn RenderHAL + 'a;
     type ResourceProperties = MeshProperties;
-    type ResourceLoader = MeshLoader;
 }
 
 #[derive(Clone, Debug)]

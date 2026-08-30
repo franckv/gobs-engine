@@ -56,9 +56,7 @@ impl<R: ResourceType> ResourceHandle<R> {
 
 pub trait ResourceType: Copy + Debug {
     type ResourceData;
-    type ResourceBackend<'a>: ?Sized;
     type ResourceProperties: ResourceProperties + Clone;
-    type ResourceLoader: ResourceLoader<Self>;
 }
 
 pub struct Resource<R: ResourceType> {
@@ -105,20 +103,15 @@ pub trait ResourceProperties {
     fn name(&self) -> &str;
 }
 
-pub trait ResourceLoader<R: ResourceType> {
-    fn load<'a>(
+pub trait ResourceLoader<R: ResourceType, B: ?Sized> {
+    fn load(
         &mut self,
-        backend: &mut R::ResourceBackend<'a>,
+        backend: &mut B,
         handle: &ResourceHandle<R>,
         resource_registry: &mut ResourceRegistry,
     ) -> Result<R::ResourceData, ResourceError>;
 
-    fn unload<'a>(
-        &mut self,
-        backend: &mut R::ResourceBackend<'a>,
-        data: R::ResourceData,
-        properties: R::ResourceProperties,
-    );
+    fn unload(&mut self, backend: &mut B, data: R::ResourceData, properties: R::ResourceProperties);
 
     fn flush(&mut self);
 }

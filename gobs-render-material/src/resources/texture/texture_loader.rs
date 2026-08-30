@@ -191,7 +191,7 @@ impl TextureLoader {
     }
 }
 
-impl ResourceLoader<Texture> for TextureLoader {
+impl ResourceLoader<Texture, GfxContext> for TextureLoader {
     #[tracing::instrument(target = "profile", skip_all, level = "trace")]
     fn load<'a>(
         &mut self,

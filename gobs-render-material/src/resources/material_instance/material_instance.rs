@@ -1,9 +1,7 @@
-use gobs_render_hal::RenderHAL;
 use gobs_resource::{ResourceHandle, ResourceProperties, ResourceType};
 
 use crate::{
-    Material, MaterialConstantData, MaterialDataPropData, Texture,
-    material_system::MaterialBinding, resources::MaterialInstanceLoader,
+    Material, MaterialConstantData, MaterialDataPropData, Texture, material_system::MaterialBinding,
 };
 
 #[derive(Clone, Copy, Debug, Hash, Eq, PartialEq)]
@@ -11,9 +9,7 @@ pub struct MaterialInstance;
 
 impl ResourceType for MaterialInstance {
     type ResourceData = MaterialInstanceData;
-    type ResourceBackend<'a> = dyn RenderHAL + 'a;
     type ResourceProperties = MaterialInstanceProperties;
-    type ResourceLoader = MaterialInstanceLoader;
 }
 
 #[derive(Clone, Debug)]

@@ -7,7 +7,7 @@ use gobs_render::GfxContext;
 use crate::scene::Scene;
 
 pub struct SceneBuilder<'a> {
-    gfx: &'a GfxContext<'a>,
+    gfx: &'a GfxContext,
     camera: Camera,
     camera_position: Vec3,
     light: Light,

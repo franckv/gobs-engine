@@ -121,7 +121,7 @@ impl MeshLoader {
     }
 }
 
-impl ResourceLoader<Mesh> for MeshLoader {
+impl ResourceLoader<Mesh, GfxContext> for MeshLoader {
     #[tracing::instrument(target = "profile", skip_all, level = "trace")]
     fn load<'a>(
         &mut self,

@@ -4,20 +4,18 @@ use gobs_core::ImageFormat;
 use gobs_graphics::VertexAttribute;
 use gobs_render_hal::{
     BindingGroupLayout, BindingGroupType, BlendMode, CompareOp, CullMode, DescriptorStage,
-    DescriptorType, FrontFace, Handle, ObjectDataLayout, PolygonMode, RenderHAL,
+    DescriptorType, FrontFace, Handle, ObjectDataLayout, PolygonMode,
 };
 use gobs_resource::{ResourceProperties, ResourceType};
 
-use crate::{data::SceneDataLayout, resources::PipelineLoader};
+use crate::data::SceneDataLayout;
 
 #[derive(Clone, Copy, Debug)]
 pub struct Pipeline;
 
 impl ResourceType for Pipeline {
     type ResourceData = PipelineData;
-    type ResourceBackend<'a> = dyn RenderHAL + 'a;
     type ResourceProperties = PipelineProperties;
-    type ResourceLoader = PipelineLoader;
 }
 
 #[derive(Clone)]

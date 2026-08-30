@@ -1,5 +1,5 @@
 use gobs_core::logger;
-use gobs_render_hal::{DynamicStateElem, Rect2D, RenderHAL, Viewport};
+use gobs_render_hal::{DynamicStateElem, GfxContext, Rect2D, RenderHAL, Viewport};
 use gobs_resource::{
     ResourceRegistry, {ResourceError, ResourceHandle, ResourceLoader, ResourceProperties},
 };
@@ -120,7 +120,7 @@ impl Default for PipelineLoader {
     }
 }
 
-impl ResourceLoader<Pipeline> for PipelineLoader {
+impl ResourceLoader<Pipeline, GfxContext> for PipelineLoader {
     #[tracing::instrument(target = "profile", skip_all, level = "trace")]
     fn load<'a>(
         &mut self,

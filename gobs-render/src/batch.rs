@@ -273,11 +273,11 @@ impl RenderBatch {
         self.recording = false;
 
         tracing::debug!(target: logger::RENDER, "Flush resource loaders");
-        resource_manager.flush::<Texture>();
-        resource_manager.flush::<Mesh>();
-        resource_manager.flush::<Pipeline>();
-        resource_manager.flush::<Material>();
-        resource_manager.flush::<MaterialInstance>();
+        resource_manager.flush::<Texture, GfxContext>();
+        resource_manager.flush::<Mesh, GfxContext>();
+        resource_manager.flush::<Pipeline, GfxContext>();
+        resource_manager.flush::<Material, GfxContext>();
+        resource_manager.flush::<MaterialInstance, GfxContext>();
 
         tracing::debug!(target: logger::RENDER, "<<< Finish render batch");
     }
@@ -292,7 +292,7 @@ impl Default for RenderBatch {
 #[cfg(test)]
 mod tests {
     use gobs_graphics::Shapes;
-    use gobs_render_hal::{RenderHalConfig, create_hal};
+    use gobs_render_hal::{GfxContext, RenderHalConfig, create_hal};
     use gobs_render_material::RenderFlags;
     use tracing::Level;
     use tracing_subscriber::{EnvFilter, FmtSubscriber, fmt::format::FmtSpan};
@@ -327,7 +327,7 @@ mod tests {
         let mut resource_manager = ResourceManager::new(ctx.frames_in_flight());
 
         let mesh_loader = MeshLoader::new(ctx.as_mut());
-        resource_manager.register_resource::<Mesh>(mesh_loader);
+        resource_manager.register_resource::<Mesh, GfxContext>(mesh_loader);
 
         let mesh = RenderMeshBuilder::new(&mut resource_manager, "triangle")
             .with_geometry(Shapes::triangle(

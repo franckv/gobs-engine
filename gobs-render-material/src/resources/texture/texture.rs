@@ -1,17 +1,13 @@
 use gobs_core::{Color, ImageExtent2D, ImageFormat, SamplerFilter, logger};
-use gobs_render_hal::{Handle, RenderHAL};
+use gobs_render_hal::Handle;
 use gobs_resource::{Resource, ResourceHandle, ResourceProperties, ResourceType};
-
-use crate::resources::TextureLoader;
 
 #[derive(Clone, Copy, Debug)]
 pub struct Texture;
 
 impl ResourceType for Texture {
     type ResourceData = TextureData;
-    type ResourceBackend<'a> = dyn RenderHAL + 'a;
     type ResourceProperties = TextureProperties;
-    type ResourceLoader = TextureLoader;
 }
 
 #[derive(Clone, Debug)]

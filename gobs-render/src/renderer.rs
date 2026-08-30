@@ -46,7 +46,7 @@ impl FpsTimer {
 
 pub struct Renderer {
     pub graph: FrameGraph,
-    pub gfx: Box<GfxContext<'static>>,
+    pub gfx: Box<GfxContext>,
     pub frames: Vec<FrameData>,
     pub frame_number: usize,
     passes: HashMap<PassId, PassData>,
@@ -55,7 +55,7 @@ pub struct Renderer {
 
 impl Renderer {
     pub fn new(
-        mut gfx: Box<GfxContext<'static>>,
+        mut gfx: Box<GfxContext>,
         config: GobsConfig,
         resource_manager: &mut ResourceManager,
     ) -> Self {

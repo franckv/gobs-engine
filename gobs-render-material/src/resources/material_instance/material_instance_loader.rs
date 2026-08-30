@@ -1,5 +1,5 @@
 use gobs_core::logger;
-use gobs_render_hal::RenderHAL;
+use gobs_render_hal::{GfxContext, RenderHAL};
 use gobs_resource::{
     ResourceRegistry, {ResourceError, ResourceHandle, ResourceLoader},
 };
@@ -23,7 +23,7 @@ impl Default for MaterialInstanceLoader {
     }
 }
 
-impl ResourceLoader<MaterialInstance> for MaterialInstanceLoader {
+impl ResourceLoader<MaterialInstance, GfxContext> for MaterialInstanceLoader {
     #[tracing::instrument(target = "profile", skip_all, level = "trace")]
     fn load<'a>(
         &mut self,

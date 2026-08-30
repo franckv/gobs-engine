@@ -200,7 +200,7 @@ impl ResourceManager {
     }
 
     #[tracing::instrument(target = "profile", skip_all, level = "trace")]
-    pub fn update<'a, R: ResourceType + 'static>(&mut self, backend: &mut R::ResourceBackend<'a>) {
+    pub fn update<R: ResourceType + 'static, B: ?Sized + 'static>(&mut self, backend: &mut B) {
         tracing::trace!(target: logger::RESOURCES, "Update registry for {:?}", std::any::type_name::<R>());
 
         let mut to_delete: Vec<ResourceHandle<R>> = vec![];
@@ -217,7 +217,10 @@ impl ResourceManager {
             }
         }
 
-        let loader = self.loader.get_mut::<R::ResourceLoader>().unwrap();
+        let loader = self
+            .loader
+            .get_mut::<Box<dyn ResourceLoader<R, B>>>()
+            .unwrap();
         for handle in to_delete {
             if let Some(resource) = self.registry.remove(&handle)
                 && let ResourceState::Loaded(data) = resource.data
@@ -228,24 +231,29 @@ impl ResourceManager {
     }
 
     #[tracing::instrument(target = "profile", skip_all, level = "trace")]
-    pub fn flush<R: ResourceType + 'static>(&mut self) {
+    pub fn flush<R: ResourceType + 'static, B: ?Sized + 'static>(&mut self) {
         tracing::trace!(target: logger::RESOURCES, "Flush loader {:?}", std::any::type_name::<R>());
 
         let loader = self
             .loader
-            .get_mut::<R::ResourceLoader>()
+            .get_mut::<Box<dyn ResourceLoader<R, B>>>()
             .unwrap_or_else(|| panic!("Loader not registered: {:?}", std::any::type_name::<R>()));
 
         loader.flush();
     }
 
-    pub fn register_resource<R: ResourceType + 'static>(&mut self, loader: R::ResourceLoader) {
+    pub fn register_resource<R: ResourceType + 'static, B: ?Sized + 'static>(
+        &mut self,
+        loader: impl ResourceLoader<R, B> + 'static,
+    ) {
+        let loader: Box<dyn ResourceLoader<R, B>> = Box::new(loader);
+
         self.loader.insert(loader);
     }
 
-    fn load_data<'a, R: ResourceType + 'static>(
+    fn load_data<R: ResourceType + 'static, B: ?Sized + 'static>(
         &mut self,
-        backend: &mut R::ResourceBackend<'a>,
+        backend: &mut B,
         handle: &ResourceHandle<R>,
     ) -> Result<(), ResourceError> {
         let resource = self.get_mut(handle)?;
@@ -253,7 +261,7 @@ impl ResourceManager {
         if !resource.is_loaded() {
             let loader = self
                 .loader
-                .get_mut::<R::ResourceLoader>()
+                .get_mut::<Box<dyn ResourceLoader<R, B>>>()
                 .unwrap_or_else(|| {
                     panic!("Loader not registered: {:?}", std::any::type_name::<R>())
                 });
@@ -269,12 +277,12 @@ impl ResourceManager {
         Ok(())
     }
 
-    pub fn get_data<'a, R: ResourceType + 'static>(
+    pub fn get_data<R: ResourceType + 'static, B: ?Sized + 'static>(
         &'_ mut self,
-        backend: &mut R::ResourceBackend<'a>,
+        backend: &mut B,
         handle: &ResourceHandle<R>,
     ) -> Result<ResourceData<'_, R>, ResourceError> {
-        self.load_data::<R>(backend, handle)?;
+        self.load_data::<R, B>(backend, handle)?;
 
         let resource = self.get(handle)?;
 
@@ -289,12 +297,12 @@ impl ResourceManager {
         })
     }
 
-    pub fn get_data_mut<'a, R: ResourceType + 'static>(
+    pub fn get_data_mut<R: ResourceType + 'static, B: ?Sized + 'static>(
         &'_ mut self,
-        backend: &mut R::ResourceBackend<'a>,
+        backend: &mut B,
         handle: &ResourceHandle<R>,
     ) -> Result<ResourceDataMut<'_, R>, ResourceError> {
-        self.load_data::<R>(backend, handle)?;
+        self.load_data::<R, B>(backend, handle)?;
 
         let resource = self.get_mut(handle)?;
 
@@ -335,9 +343,7 @@ mod tests {
 
     impl ResourceType for Dummy {
         type ResourceData = DummyData;
-        type ResourceBackend<'a> = Backend;
         type ResourceProperties = DummyProperties;
-        type ResourceLoader = DummyLoader;
     }
 
     #[derive(Clone, Debug)]
@@ -356,7 +362,7 @@ mod tests {
 
     pub struct DummyLoader {}
 
-    impl ResourceLoader<Dummy> for DummyLoader {
+    impl ResourceLoader<Dummy, Backend> for DummyLoader {
         fn load(
             &mut self,
             _backend: &mut Backend,
@@ -391,7 +397,7 @@ mod tests {
         setup();
 
         let mut resource_manager = ResourceManager::new(2);
-        resource_manager.register_resource::<Dummy>(DummyLoader {});
+        resource_manager.register_resource::<Dummy, Backend>(DummyLoader {});
 
         let mut backend = Backend;
 

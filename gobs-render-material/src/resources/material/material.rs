@@ -2,12 +2,11 @@ use gobs_core::ImageFormat;
 use gobs_graphics::VertexAttribute;
 use gobs_render_hal::{
     BindingGroupType, BlendMode, CompareOp, CullMode, DescriptorStage, DescriptorType, FrontFace,
-    ObjectDataLayout, RenderHAL, UniformData as _,
+    ObjectDataLayout, UniformData as _,
 };
 use gobs_resource::{ResourceHandle, ResourceProperties, ResourceType};
 
 use crate::{
-    MaterialLoader,
     data::{
         MaterialDataLayout, MaterialDataProp, SceneDataLayout, TextureDataLayout, TextureDataProp,
     },
@@ -19,9 +18,7 @@ pub struct Material;
 
 impl ResourceType for Material {
     type ResourceData = MaterialData;
-    type ResourceBackend<'a> = dyn RenderHAL + 'a;
     type ResourceProperties = MaterialProperties;
-    type ResourceLoader = MaterialLoader;
 }
 
 #[derive(Clone, Debug)]

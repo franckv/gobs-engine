@@ -9,7 +9,7 @@ mod hal;
 mod pipeline;
 mod staging;
 
-pub type GfxContext<'a> = dyn RenderHAL + 'a;
+pub type GfxContext = dyn RenderHAL + 'static;
 
 pub use gobs_vulkan::{
     descriptor::{DescriptorStage, DescriptorType},

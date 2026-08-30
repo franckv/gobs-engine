@@ -9,8 +9,8 @@ use gobs_egui::UIRenderer;
 use gobs_render::{
     GfxContext, Handle, Material, MaterialInstance, MaterialInstanceLoader, MaterialLoader,
     MaterialsConfig, Mesh, MeshLoader, Pipeline, PipelineLoader, RenderBuilder, RenderError,
-    RenderHAL, RenderMaterialBuilder, RenderMeshBuilder, RenderModelBuilder, RenderTextureBuilder,
-    Renderer, Texture, TextureLoader,
+    RenderMaterialBuilder, RenderMeshBuilder, RenderModelBuilder, RenderTextureBuilder, Renderer,
+    Texture, TextureLoader,
 };
 use gobs_resource::{ResourceHandle, ResourceManager, load};
 use gobs_scene::{SceneBuilder, graph::scenegraph::SceneGraph};
@@ -36,8 +36,8 @@ pub trait GobsContext {
     fn request_redraw(&mut self);
     fn lock_mouse(&mut self, lock: bool);
     fn extent(&self) -> ImageExtent2D;
-    fn gfx(&self) -> &dyn RenderHAL;
-    fn gfx_mut(&mut self) -> &mut dyn RenderHAL;
+    fn gfx(&self) -> &GfxContext;
+    fn gfx_mut(&mut self) -> &mut GfxContext;
     fn get_attachment(&self, label: &str) -> Option<Handle>;
 
     fn draw_ui<F>(&mut self, delta: f32, callback: F)
@@ -74,19 +74,20 @@ impl GobsContext for GameContext {
         let mut resource_manager = ResourceManager::new(gfx.frames_in_flight());
 
         let texture_loader = TextureLoader::new(gfx.as_mut());
-        resource_manager.register_resource::<Texture>(texture_loader);
+        resource_manager.register_resource::<Texture, GfxContext>(texture_loader);
 
         let mesh_loader = MeshLoader::new(gfx.as_mut());
-        resource_manager.register_resource::<Mesh>(mesh_loader);
+        resource_manager.register_resource::<Mesh, GfxContext>(mesh_loader);
 
         let pipeline_loader = PipelineLoader::new();
-        resource_manager.register_resource::<Pipeline>(pipeline_loader);
+        resource_manager.register_resource::<Pipeline, GfxContext>(pipeline_loader);
 
         let material_loader = MaterialLoader::new();
-        resource_manager.register_resource::<Material>(material_loader);
+        resource_manager.register_resource::<Material, GfxContext>(material_loader);
 
         let material_instance_loader = MaterialInstanceLoader::new();
-        resource_manager.register_resource::<MaterialInstance>(material_instance_loader);
+        resource_manager
+            .register_resource::<MaterialInstance, GfxContext>(material_instance_loader);
 
         let ui = UIRenderer::new(gfx.as_ref(), config.clone(), &mut resource_manager);
 
@@ -115,15 +116,15 @@ impl GobsContext for GameContext {
         self.renderer.update(delta);
 
         self.resource_manager
-            .update::<Texture>(self.renderer.gfx.as_mut());
+            .update::<Texture, GfxContext>(self.renderer.gfx.as_mut());
         self.resource_manager
-            .update::<Mesh>(self.renderer.gfx.as_mut());
+            .update::<Mesh, GfxContext>(self.renderer.gfx.as_mut());
         self.resource_manager
-            .update::<Pipeline>(self.renderer.gfx.as_mut());
+            .update::<Pipeline, GfxContext>(self.renderer.gfx.as_mut());
         self.resource_manager
-            .update::<Material>(self.renderer.gfx.as_mut());
+            .update::<Material, GfxContext>(self.renderer.gfx.as_mut());
         self.resource_manager
-            .update::<MaterialInstance>(self.renderer.gfx.as_mut());
+            .update::<MaterialInstance, GfxContext>(self.renderer.gfx.as_mut());
     }
 
     #[tracing::instrument(target = "profile", skip_all, level = "trace")]
@@ -169,11 +170,11 @@ impl GobsContext for GameContext {
         self.renderer.extent()
     }
 
-    fn gfx(&self) -> &GfxContext<'_> {
+    fn gfx(&self) -> &GfxContext {
         self.renderer.gfx.as_ref()
     }
 
-    fn gfx_mut(&mut self) -> &mut GfxContext<'_> {
+    fn gfx_mut(&mut self) -> &mut GfxContext {
         self.renderer.gfx.as_mut()
     }
 
