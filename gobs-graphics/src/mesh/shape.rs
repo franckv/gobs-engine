@@ -121,6 +121,7 @@ pub struct ShapeBuilder {
     builder: MeshBuilder,
     default_colors: Vec<Color>,
     colors: Option<Vec<Color>>,
+    color_indices: Option<Vec<usize>>,
     normals: Option<Vec<[f32; 3]>>,
     atlas: Option<(usize, usize)>,
     atlas_index: Option<Vec<usize>>,
@@ -136,6 +137,7 @@ impl ShapeBuilder {
             builder,
             default_colors: vec![Color::WHITE],
             colors: None,
+            color_indices: None,
             normals: None,
             atlas: None,
             atlas_index: None,
@@ -148,6 +150,12 @@ impl ShapeBuilder {
         if !colors.is_empty() {
             self.colors = Some(colors.to_vec());
         }
+
+        self
+    }
+
+    pub fn with_color_indices(mut self, color_indices: &[usize]) -> Self {
+        self.color_indices = Some(color_indices.to_vec());
 
         self
     }
@@ -281,6 +289,11 @@ impl ShapeBuilder {
                 .as_ref()
                 .is_none_or(|n| { n.len() == 1 || n.len() == vertices.len() })
         );
+        debug_assert!(
+            self.color_indices
+                .as_ref()
+                .is_none_or(|n| { n.len() == 1 || n.len() == indices.len() })
+        );
 
         if self.geometry_only {
             for &i in indices {
@@ -295,15 +308,20 @@ impl ShapeBuilder {
 
             let uv = self.get_uv(vertices.len());
 
-            for &i in indices {
+            for (n, &i) in indices.iter().enumerate() {
                 let normal = if let Some(normals) = &self.normals {
                     normals[i % normals.len()]
                 } else {
                     face_normal
                 };
                 let uv = uv[i % uv.len()];
+                let color_idx = if let Some(color_indices) = &self.color_indices {
+                    color_indices[n % color_indices.len()]
+                } else {
+                    i
+                };
 
-                self = self.add_vertex(vertices[i], i, normal, uv);
+                self = self.add_vertex(vertices[i], color_idx, normal, uv);
             }
         }
 

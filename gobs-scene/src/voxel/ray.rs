@@ -9,7 +9,7 @@ pub trait RayCast {
     fn raycast(&self, origin: [f32; 3], dir: [f32; 3], max_distance: f32) -> Option<RayHit>;
 }
 
-impl<D> RayCast for Chunks<D> {
+impl<D: Clone> RayCast for Chunks<D> {
     fn raycast(&self, origin: [f32; 3], dir: [f32; 3], max_distance: f32) -> Option<RayHit> {
         let mut pos = Chunks::<D>::integer_position(origin);
 
@@ -104,6 +104,7 @@ mod tests {
 
     use crate::voxel::{chunk::Chunks, ray::RayCast as _};
 
+    #[derive(Clone, Copy)]
     struct VoxelData;
 
     fn setup() {

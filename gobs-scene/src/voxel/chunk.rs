@@ -6,7 +6,7 @@ use crate::voxel::{map::VoxelTree, node::VoxelNode64};
 
 pub type Tree<D> = VoxelTree<D, VoxelNode64<D>>;
 
-pub struct Chunks<D> {
+pub struct Chunks<D: Clone> {
     chunks: HashMap<[i32; 3], Tree<D>>,
     order: u32,
     chunk_size: u32,
@@ -18,7 +18,7 @@ pub struct VoxelPos {
     pub local: [u32; 3],
 }
 
-impl<D> Chunks<D> {
+impl<D: Clone> Chunks<D> {
     pub fn new(order: u32) -> Self {
         let chunk_size = Tree::<D>::size(order);
         Self {
@@ -101,6 +101,7 @@ mod tests {
 
     use crate::voxel::chunk::{Chunks, VoxelPos};
 
+    #[derive(Clone, Copy)]
     struct VoxelData;
 
     fn setup() {

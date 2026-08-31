@@ -9,12 +9,15 @@ use gobs::{
         Renderable,
     },
     resource::{ResourceError, ResourceHandle, ResourceManager},
-    scene::voxel::{chunk::Chunks, ray::RayCast as _},
+    scene::voxel::{chunk::Chunks, map::VoxelFace, ray::RayCast as _},
 };
 
 use examples::InputManager;
 
-struct VoxelData;
+#[derive(Clone, Copy, Debug)]
+struct VoxelData {
+    block_type: u32,
+}
 
 struct World<Context: GobsContext> {
     camera: Camera,
@@ -193,7 +196,15 @@ impl<Context: GobsContext> GobsGame for App<Context> {
             if let Some(chunk) = self.world.voxels.get_chunk_mut(*pos)
                 && chunk.is_dirty()
             {
-                let geometry = chunk.meshify();
+                let geometry =
+                    chunk.meshify_solid(&[Color::RED, Color::BLUE], |_data, face| match face {
+                        VoxelFace::Up => 0,
+                        VoxelFace::Down => 0,
+                        VoxelFace::Left => 1,
+                        VoxelFace::Right => 1,
+                        VoxelFace::Front => 1,
+                        VoxelFace::Back => 1,
+                    });
 
                 let mesh = ctx
                     .new_mesh("voxel")
@@ -249,7 +260,9 @@ impl<Context: GobsContext> App<Context> {
     fn load_plane(&mut self) {
         for z in 0..32 {
             for x in 0..32 {
-                self.world.voxels.insert(VoxelData, [x, 0, z]);
+                self.world
+                    .voxels
+                    .insert(VoxelData { block_type: 0 }, [x, 0, z]);
             }
         }
     }
@@ -265,7 +278,7 @@ impl<Context: GobsContext> App<Context> {
                     if d.isqrt() < radius {
                         self.world
                             .voxels
-                            .insert(VoxelData, [x + radius, y + 5, z + radius]);
+                            .insert(VoxelData { block_type: 1 }, [x + radius, y + 5, z + radius]);
                     }
                 }
             }
@@ -278,5 +291,5 @@ fn main() {
 
     tracing::info!(target: logger::APP, "Engine start");
 
-    Application::<App<GameContext>>::new("Cube", examples::WIDTH, examples::HEIGHT).run();
+    Application::<App<GameContext>>::new("Voxel", examples::WIDTH, examples::HEIGHT).run();
 }

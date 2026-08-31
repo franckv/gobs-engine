@@ -5,14 +5,29 @@ use gobs_graphics::{MeshGeometry, ShapeBuilder};
 
 use crate::voxel::node::VoxelNode;
 
-pub struct VoxelTree<D, N: VoxelNode<D>> {
+pub enum VoxelFace {
+    Up,
+    Down,
+    Left,
+    Right,
+    Front,
+    Back,
+}
+
+pub enum MaterialType {
+    Solid,
+    Texture,
+    Atlas,
+}
+
+pub struct VoxelTree<D: Clone, N: VoxelNode<D>> {
     root: usize,
     order: u32,
     nodes: Vec<N>,
     marker: PhantomData<D>,
 }
 
-impl<D, N: VoxelNode<D>> VoxelTree<D, N> {
+impl<D: Clone, N: VoxelNode<D>> VoxelTree<D, N> {
     pub fn new(order: u32) -> Self {
         let root_node = N::new();
 
@@ -201,10 +216,13 @@ impl<D, N: VoxelNode<D>> VoxelTree<D, N> {
         }
     }
 
-    pub fn meshify(&mut self) -> Arc<MeshGeometry> {
+    pub fn meshify_solid<F>(&mut self, colors: &[Color], f: F) -> Arc<MeshGeometry>
+    where
+        F: Fn(&D, VoxelFace) -> usize,
+    {
         let mut timer = Timer::new();
 
-        let mut builder = ShapeBuilder::new("voxel").with_colors(&[Color::RED, Color::BLUE]);
+        let mut builder = ShapeBuilder::new("voxel").with_colors(colors);
 
         let size = 1.;
         let (top, bottom, left, right, front, back) = (
@@ -218,14 +236,14 @@ impl<D, N: VoxelNode<D>> VoxelTree<D, N> {
 
         let mut positions = Vec::new();
 
-        self.visit(true, &mut |pos, _| {
-            positions.push(pos);
+        self.visit(true, &mut |pos, data| {
+            positions.push((pos, data.clone()));
         });
 
         let count = positions.len();
         let mut faces = 0;
 
-        for pos in positions {
+        for (pos, data) in positions {
             let top = top + pos[1] as f32;
             let bottom = bottom + pos[1] as f32;
             let left = left + pos[0] as f32;
@@ -245,27 +263,45 @@ impl<D, N: VoxelNode<D>> VoxelTree<D, N> {
             ];
 
             if !self.is_solid(pos[0] as i64, pos[1] as i64, pos[2] as i64 + 1) {
-                builder = builder.add_quad([v[2], v[0], v[3], v[1]]); // F
+                let color_idx = f(&data, VoxelFace::Front);
+                builder = builder
+                    .with_color_indices(&[color_idx])
+                    .add_quad([v[2], v[0], v[3], v[1]]); // F
                 faces += 1;
             }
             if !self.is_solid(pos[0] as i64, pos[1] as i64, pos[2] as i64 - 1) {
-                builder = builder.add_quad([v[7], v[5], v[6], v[4]]); // B
+                let color_idx = f(&data, VoxelFace::Back);
+                builder = builder
+                    .with_color_indices(&[color_idx])
+                    .add_quad([v[7], v[5], v[6], v[4]]); // B
                 faces += 1;
             }
             if !self.is_solid(pos[0] as i64 - 1, pos[1] as i64, pos[2] as i64) {
-                builder = builder.add_quad([v[6], v[4], v[2], v[0]]); // L
+                let color_idx = f(&data, VoxelFace::Left);
+                builder = builder
+                    .with_color_indices(&[color_idx])
+                    .add_quad([v[6], v[4], v[2], v[0]]); // L
                 faces += 1;
             }
             if !self.is_solid(pos[0] as i64 + 1, pos[1] as i64, pos[2] as i64) {
-                builder = builder.add_quad([v[3], v[1], v[7], v[5]]); // R
+                let color_idx = f(&data, VoxelFace::Right);
+                builder = builder
+                    .with_color_indices(&[color_idx])
+                    .add_quad([v[3], v[1], v[7], v[5]]); // R
                 faces += 1;
             }
             if !self.is_solid(pos[0] as i64, pos[1] as i64 + 1, pos[2] as i64) {
-                builder = builder.add_quad([v[0], v[4], v[1], v[5]]); // U
+                let color_idx = f(&data, VoxelFace::Up);
+                builder = builder
+                    .with_color_indices(&[color_idx])
+                    .add_quad([v[0], v[4], v[1], v[5]]); // U
                 faces += 1;
             }
             if !self.is_solid(pos[0] as i64, pos[1] as i64 - 1, pos[2] as i64) {
-                builder = builder.add_quad([v[6], v[2], v[7], v[3]]); // D
+                let color_idx = f(&data, VoxelFace::Down);
+                builder = builder
+                    .with_color_indices(&[color_idx])
+                    .add_quad([v[6], v[2], v[7], v[3]]); // D
                 faces += 1;
             }
         }
@@ -286,6 +322,7 @@ mod tests {
         node::{VoxelChildData, VoxelNode64},
     };
 
+    #[derive(Clone, Copy)]
     struct VoxelData;
 
     type Tree = VoxelTree<VoxelData, VoxelNode64<VoxelData>>;
