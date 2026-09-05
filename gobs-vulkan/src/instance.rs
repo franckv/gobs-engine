@@ -102,7 +102,9 @@ impl Instance {
     ) -> Result<Arc<Self>, VulkanError> {
         let app_name = CString::new(name)?;
 
-        let vk_version = vk::make_api_version(0, 1, 3, 0);
+        let (major, minor, patch) = (1, 4, 0);
+        tracing::info!(target: logger::INIT, "Requested Vulkan API version {}.{}.{}", major, minor, patch);
+        let vk_version = vk::make_api_version(0, major, minor, patch);
 
         let app_info = vk::ApplicationInfo::default()
             .application_name(&app_name)
@@ -143,6 +145,21 @@ impl Instance {
         let entry = ash::Entry::linked();
 
         unsafe {
+            if let Ok(version) = entry.try_enumerate_instance_version() {
+                match version {
+                    Some(version) => {
+                        let major = vk::api_version_major(version);
+                        let minor = vk::api_version_minor(version);
+                        let patch = vk::api_version_patch(version);
+
+                        tracing::info!(target: logger::INIT, "Supported Vulkan API version {}.{}.{}", major, minor, patch);
+                    }
+                    None => {
+                        tracing::info!(target: logger::INIT, "Using Vulkan API version 1.0");
+                    }
+                }
+            }
+
             let available_extensions = entry.enumerate_instance_extension_properties(None)?;
 
             tracing::debug!(target: logger::INIT, "Available extensions: {:?}",
@@ -227,13 +244,23 @@ impl Instance {
             }
         }
 
-        candidates.into_iter().max_by(|_, device2| {
+        let adapter = candidates.into_iter().max_by(|_, device2| {
             if device2.gpu_type == PhysicalDeviceType::DiscreteGpu {
                 Ordering::Less
             } else {
                 Ordering::Greater
             }
-        })
+        });
+
+        if let Some(adapter) = &adapter {
+            let version = adapter.props.api_version;
+            let major = vk::api_version_major(version);
+            let minor = vk::api_version_minor(version);
+            let patch = vk::api_version_patch(version);
+            tracing::info!(target: logger::INIT, "Device API version: {}.{}.{}", major, minor, patch);
+        }
+
+        adapter
     }
 
     pub fn raw(&self) -> &ash::Instance {

@@ -217,7 +217,7 @@ where
         #[cfg(not(debug_assertions))]
         let validation_enabled = false;
 
-        tracing::info!("Running with validation layers: {}", validation_enabled);
+        tracing::info!(target: logger::INIT, "Running with validation layers: {}", validation_enabled);
 
         let mut context =
             R::Context::new(&self.title, self.config.clone(), window, validation_enabled);
