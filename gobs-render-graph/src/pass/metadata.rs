@@ -40,7 +40,6 @@ impl PassMetaData {
             AttachmentType::Color => self.color_attachments.push(name.to_string()),
             AttachmentType::Depth => self.depth_attachments.push(name.to_string()),
             AttachmentType::ImageStorage => self.image_attachments.push(name.to_string()),
-            _ => unimplemented!(),
         }
 
         self.attachments.insert(name.to_string(), attachment);

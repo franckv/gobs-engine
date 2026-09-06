@@ -9,7 +9,7 @@ use crate::{
     },
     pass::{Attachment, AttachmentAccess},
 };
-use gobs_core::logger;
+use gobs_core::{ImageExtent2D, logger};
 use gobs_render_hal::{CommandBuffer, GfxContext, ImageLayout, RenderHAL};
 
 pub struct FrameGraphPass {
@@ -20,7 +20,7 @@ pub struct FrameGraphPass {
 pub struct FrameGraph {
     pub render_scaling: f32,
     pub passes: Vec<FrameGraphPass>,
-    pub attachments: Vec<Attachment>,
+    pub attachments: HashMap<String, Attachment>,
     pub resource_manager: GraphResourceManager,
 }
 
@@ -29,22 +29,23 @@ impl FrameGraph {
         Self {
             render_scaling: 1.,
             passes: Vec::new(),
-            attachments: Vec::new(),
+            attachments: HashMap::new(),
             resource_manager: GraphResourceManager::new(),
         }
     }
 
     pub fn load<F>(
-        ctx: &mut GfxContext,
         graph_filename: &str,
         graph_name: &str,
+        default_extent: ImageExtent2D,
         pass_config: F,
     ) -> Result<Self, RenderError>
     where
-        F: FnMut(&mut GfxContext, &PassMetaData, RenderPassType),
+        F: FnMut(&PassMetaData, RenderPassType),
     {
         tracing::debug!(target: logger::INIT, "Load graph: {}", graph_name);
-        GraphConfig::load_graph(ctx, graph_filename, graph_name, pass_config)
+
+        GraphConfig::load_graph(graph_filename, graph_name, default_extent, pass_config)
             .map_err(|_| RenderError::InvalidData)
     }
 
@@ -54,20 +55,21 @@ impl FrameGraph {
         self.passes.push(pass);
     }
 
-    pub fn register_attachment(
-        &mut self,
-        ctx: &mut GfxContext,
-        label: &str,
-        attachment: Attachment,
-    ) {
+    pub fn register_attachment(&mut self, label: &str, attachment: Attachment) {
+        self.attachments.insert(label.to_string(), attachment);
+    }
+
+    pub fn allocate_attachments(&mut self, ctx: &mut GfxContext) {
         // TODO: image creation should be deferred to the renderer
-        self.resource_manager.register_image(
-            ctx,
-            label,
-            attachment.format,
-            attachment.usage,
-            attachment.extent,
-        );
+        for (label, attachment) in &self.attachments {
+            self.resource_manager.register_image(
+                ctx,
+                label,
+                attachment.format,
+                attachment.usage,
+                attachment.extent,
+            );
+        }
     }
 
     fn transition_attachments(
@@ -343,8 +345,8 @@ mod tests {
     use tracing::Level;
     use tracing_subscriber::{FmtSubscriber, fmt::format::FmtSpan};
 
-    use gobs_core::{ConfigWriter as _, GobsConfig, logger};
-    use gobs_render_hal::{RenderHalConfig, create_hal};
+    use gobs_core::{ConfigWriter as _, GobsConfig, ImageExtent2D, logger};
+    use gobs_render_hal::RenderHalConfig;
 
     use crate::GraphConfig;
 
@@ -364,10 +366,9 @@ mod tests {
         let mut config = GobsConfig::default();
         config.register::<RenderHalConfig>();
 
-        let mut ctx = create_hal("test", None, config, false);
-
         let graph =
-            GraphConfig::load_graph(ctx.as_mut(), "graph.ron", "scene", |_, _, _| {}).unwrap();
+            GraphConfig::load_graph("graph.ron", "scene", ImageExtent2D::default(), |_, _| {})
+                .unwrap();
 
         for pass in &graph.passes {
             tracing::info!(target: logger::INIT, "Load pass: {}", &pass.pass.name);

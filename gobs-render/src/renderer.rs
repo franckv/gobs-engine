@@ -61,7 +61,9 @@ impl Renderer {
     ) -> Self {
         let mut passes = HashMap::new();
 
-        let graph = if config.get_bool(RenderConfig::LoadGraph) {
+        let default_extent = gfx.get_extent();
+
+        let mut graph = if config.get_bool(RenderConfig::LoadGraph) {
             PipelinesConfig::load_resources(
                 gfx.as_ref(),
                 &config.get_string(RenderConfig::PipelineFileName),
@@ -74,12 +76,12 @@ impl Renderer {
                     .expect("Load passes config");
 
             FrameGraph::load(
-                gfx.as_mut(),
                 &config.get_string(RenderConfig::GraphFileName),
                 &config.get_string(RenderConfig::GraphName),
-                |ctx, pass_metadata, ty| {
+                default_extent,
+                |pass_metadata, ty| {
                     if let Some(pass_data) = PassConfig::load_pass_data(
-                        ctx,
+                        gfx.as_mut(),
                         resource_manager,
                         &passes_config,
                         &pass_metadata.config,
@@ -95,6 +97,8 @@ impl Renderer {
         } else {
             FrameGraph::default()
         };
+
+        graph.allocate_attachments(gfx.as_mut());
 
         let frames_in_flight = gfx.frames_in_flight();
 

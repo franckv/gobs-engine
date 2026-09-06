@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use serde::{Deserialize, Serialize};
 
 use gobs_core::{ImageExtent2D, ImageFormat, logger};
-use gobs_render_hal::{GfxContext, ImageLayout, ImageUsage};
+use gobs_render_hal::{ImageLayout, ImageUsage};
 use gobs_resource::{
     ResourceError,
     load::{self, AssetType},
@@ -13,10 +13,6 @@ use crate::{
     FrameGraph, PassMetaData,
     pass::{Attachment, AttachmentAccess, AttachmentType, RenderPassType},
 };
-
-// TODO: store in config file
-const FRAME_WIDTH: u32 = 1920;
-const FRAME_HEIGHT: u32 = 1080;
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct GraphConfig {
@@ -72,27 +68,27 @@ impl GraphConfig {
     }
 
     pub fn load_graph<F>(
-        ctx: &mut GfxContext,
         filename: &str,
         name: &str,
+        default_extent: ImageExtent2D,
         pass_config: F,
     ) -> Result<FrameGraph, ResourceError>
     where
-        F: FnMut(&mut GfxContext, &PassMetaData, RenderPassType),
+        F: FnMut(&PassMetaData, RenderPassType),
     {
         let data = load::load_string_sync(filename, AssetType::RESOURCES)?;
 
-        Self::load_graph_with_data(ctx, &data, name, pass_config)
+        Self::load_graph_with_data(&data, name, default_extent, pass_config)
     }
 
     pub fn load_graph_with_data<F>(
-        ctx: &mut GfxContext,
         data: &str,
         name: &str,
+        default_extent: ImageExtent2D,
         mut pass_config: F,
     ) -> Result<FrameGraph, ResourceError>
     where
-        F: FnMut(&mut GfxContext, &PassMetaData, RenderPassType),
+        F: FnMut(&PassMetaData, RenderPassType),
     {
         let graph_config = Self::load_with_data(data)?;
 
@@ -100,10 +96,10 @@ impl GraphConfig {
 
         // TODO: only register attachments used by passes
         for (attach_name, attach_config) in &graph_config.attachments {
-            let attachment =
-                Self::load_attachment(ctx, attach_config).ok_or(ResourceError::InvalidData)?;
+            let attachment = Self::load_attachment(attach_config, default_extent)
+                .ok_or(ResourceError::InvalidData)?;
 
-            graph.register_attachment(ctx, attach_name, attachment);
+            graph.register_attachment(attach_name, attachment);
         }
 
         tracing::debug!(target: logger::INIT, "Load graph: {}", "scene");
@@ -111,7 +107,7 @@ impl GraphConfig {
         for passname in &graph_config.graphes[name] {
             tracing::debug!(target: logger::INIT, "Load pass: {}", passname);
 
-            let pass = Self::load_pass(ctx, &graph_config, passname, &mut pass_config)
+            let pass = Self::load_pass(&graph_config, passname, default_extent, &mut pass_config)
                 .unwrap_or_else(|| panic!("Failed to load pass {}", passname));
 
             let enabled = graph_config.passes.get(passname).is_some_and(|p| p.enabled);
@@ -123,13 +119,13 @@ impl GraphConfig {
     }
 
     pub fn load_pass<F>(
-        ctx: &mut GfxContext,
         graph: &GraphConfig,
         passname: &str,
+        default_extent: ImageExtent2D,
         mut pass_config: F,
     ) -> Option<PassMetaData>
     where
-        F: FnMut(&mut GfxContext, &PassMetaData, RenderPassType),
+        F: FnMut(&PassMetaData, RenderPassType),
     {
         tracing::info!(target: logger::INIT, "Load pass: {}", passname);
 
@@ -138,27 +134,20 @@ impl GraphConfig {
         let mut metadata = PassMetaData::new(passname, &pass.config);
 
         for (attach_name, attach_config) in &pass.attachments {
-            let attachment = Self::load_attachment_usage(ctx, graph, attach_name, attach_config)?;
+            let attachment =
+                Self::load_attachment_usage(graph, attach_name, attach_config, default_extent)?;
             metadata.add_attachment(attach_name, attachment);
         }
 
-        pass_config(ctx, &metadata, pass.ty);
+        pass_config(&metadata, pass.ty);
 
         Some(metadata)
     }
 
-    // TODO: graph loader should not depend on ctx
-    fn get_render_target_extent(ctx: &GfxContext) -> ImageExtent2D {
-        let extent = ctx.get_extent();
-        ImageExtent2D::new(
-            extent.width.max(FRAME_WIDTH),
-            extent.height.max(FRAME_HEIGHT),
-        )
-    }
-
-    fn load_attachment(ctx: &GfxContext, attach_info: &ImageAttachmentInfo) -> Option<Attachment> {
-        let default_extent = Self::get_render_target_extent(ctx);
-
+    fn load_attachment(
+        attach_info: &ImageAttachmentInfo,
+        default_extent: ImageExtent2D,
+    ) -> Option<Attachment> {
         let mut attachment = Attachment::new(AttachmentType::Color, AttachmentAccess::ReadWrite);
         attachment
             .with_usage(attach_info.usage)
@@ -169,14 +158,12 @@ impl GraphConfig {
     }
 
     fn load_attachment_usage(
-        ctx: &GfxContext,
         graph: &GraphConfig,
         attach_name: &str,
         attach_usage: &AttachmentInfo,
+        default_extent: ImageExtent2D,
     ) -> Option<Attachment> {
         let image_info = graph.attachments.get(attach_name)?;
-
-        let default_extent = Self::get_render_target_extent(ctx);
 
         match attach_usage {
             AttachmentInfo::ColorAttachment { access, clear } => {
@@ -215,8 +202,8 @@ impl GraphConfig {
 mod tests {
     use std::collections::HashMap;
 
-    use gobs_core::{ConfigWriter as _, GobsConfig};
-    use gobs_render_hal::{RenderHalConfig, create_hal};
+    use gobs_core::{ConfigWriter as _, GobsConfig, ImageExtent2D};
+    use gobs_render_hal::RenderHalConfig;
     use tracing::Level;
     use tracing_subscriber::{FmtSubscriber, fmt::format::FmtSpan};
 
@@ -225,6 +212,9 @@ mod tests {
         graph::graph_loader::{AttachmentInfo, RenderPassConfig},
         pass::{AttachmentAccess, RenderPassType},
     };
+
+    const FRAME_WIDTH: u32 = 1920;
+    const FRAME_HEIGHT: u32 = 1080;
 
     fn setup() {
         let sub = FmtSubscriber::builder()
@@ -242,7 +232,7 @@ mod tests {
         let mut config = GobsConfig::default();
         config.register::<RenderHalConfig>();
 
-        let mut ctx = create_hal("test", None, config, false);
+        let default_extent = ImageExtent2D::new(FRAME_WIDTH, FRAME_HEIGHT);
 
         let data = include_str!("../../../examples/resources/graph.ron");
 
@@ -250,7 +240,7 @@ mod tests {
         tracing::info!("Graph: {:?}", graph.graphes["scene"]);
 
         let graph =
-            GraphConfig::load_graph_with_data(ctx.as_mut(), data, "ui", |_, _, _| {}).unwrap();
+            GraphConfig::load_graph_with_data(data, "ui", default_extent, |_, _| {}).unwrap();
 
         for pass in graph.passes {
             tracing::info!("Load pass: {}", &pass.pass.name);
@@ -265,14 +255,14 @@ mod tests {
         let mut config = GobsConfig::default();
         config.register::<RenderHalConfig>();
 
-        let mut ctx = create_hal("test", None, config, false);
+        let default_extent = ImageExtent2D::new(FRAME_WIDTH, FRAME_HEIGHT);
 
         let data = include_str!("../../../examples/resources/graph.ron");
 
         let graph_config = GraphConfig::load_with_data(data).unwrap();
 
         let _pass =
-            GraphConfig::load_pass(ctx.as_mut(), &graph_config, "forward", |_, _, _| {}).unwrap();
+            GraphConfig::load_pass(&graph_config, "forward", default_extent, |_, _| {}).unwrap();
     }
 
     #[test]
