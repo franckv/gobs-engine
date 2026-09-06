@@ -1,6 +1,13 @@
+use std::collections::HashMap;
+
 use crate::{
     FrameData, GraphConfig, PassMetaData, RenderError, RenderPassType,
-    graph::resource::GraphResourceManager, pass::Attachment,
+    graph::{
+        Barrier, BarrierAccess, BarrierStage,
+        barrier::{SyncScope, SyncStatus},
+        resource::GraphResourceManager,
+    },
+    pass::{Attachment, AttachmentAccess},
 };
 use gobs_core::logger;
 use gobs_render_hal::{CommandBuffer, GfxContext, ImageLayout, RenderHAL};
@@ -92,6 +99,132 @@ impl FrameGraph {
         self.get_pass(|pass| pass.name == pass_name)
     }
 
+    fn build_barriers(&self) -> Vec<Barrier> {
+        let mut barriers = Vec::new();
+        let mut attachments_status: HashMap<String, SyncStatus> = HashMap::new();
+
+        for pass in &self.passes {
+            if !pass.enabled {
+                continue;
+            }
+
+            tracing::info!(target: logger::SYNC, "Generate barriers for pass {} [{}]", pass.pass.name(), pass.pass.id);
+
+            for (attachment_name, attachment) in &pass.pass.attachments {
+                let pass_id = pass.pass.id;
+                let ty = attachment.ty;
+                let access = attachment.access;
+                let layout = attachment.layout;
+                let scope = Barrier::barrier_scope(ty, access);
+
+                if let Some(status) = attachments_status.get_mut(attachment_name) {
+                    if status.last_layout() != layout {
+                        // image layout transition barrier
+                        let barrier = Barrier::new(attachment_name, pass_id)
+                            .layouts(status.last_layout(), layout)
+                            .memory(status.last_write(), scope);
+
+                        barriers.push(barrier);
+
+                        status.update(scope, layout);
+                        status.clear_invalidates();
+                        if access == AttachmentAccess::Read {
+                            status.invalidate(scope);
+                        }
+                    } else {
+                        match access {
+                            AttachmentAccess::Read => {
+                                if !status.is_flushed() {
+                                    // RAW -> flush + invalidate
+                                    let barrier = Barrier::new(attachment_name, pass_id)
+                                        .layouts(status.last_layout(), layout)
+                                        .memory(status.last_write(), scope);
+
+                                    barriers.push(barrier);
+                                    status.invalidate(scope);
+                                } else if !status.is_invalidated(scope) {
+                                    // RAW, already flushed ->  invalidate
+                                    let barrier = Barrier::new(attachment_name, pass_id)
+                                        .layouts(status.last_layout(), layout)
+                                        .invalidation(status.last_write(), scope);
+
+                                    barriers.push(barrier);
+                                    status.invalidate(scope);
+                                } else {
+                                    // RAR, invalidated -> no barrier
+                                }
+                            }
+                            AttachmentAccess::Write => {
+                                if !status.is_flushed() {
+                                    // WAW -> flush
+                                    let barrier = Barrier::new(attachment_name, pass_id)
+                                        .layouts(status.last_layout(), layout)
+                                        .flush(status.last_write(), scope);
+
+                                    barriers.push(barrier);
+                                } else {
+                                    // WAR -> execution barrier only
+                                    let barrier = Barrier::new(attachment_name, pass_id)
+                                        .layouts(status.last_layout(), layout)
+                                        .execution(status.last_write(), scope);
+
+                                    barriers.push(barrier);
+                                }
+
+                                status.update(scope, layout);
+                                status.clear_invalidates();
+                            }
+                            AttachmentAccess::ReadWrite => {
+                                if !status.is_flushed() {
+                                    // WAW -> flush + invalidate
+                                    let barrier = Barrier::new(attachment_name, pass_id)
+                                        .layouts(status.last_layout(), layout)
+                                        .memory(status.last_write(), scope);
+
+                                    barriers.push(barrier);
+                                } else if !status.is_invalidated(scope) {
+                                    // WAR -> invalidate
+                                    let barrier = Barrier::new(attachment_name, pass_id)
+                                        .layouts(status.last_layout(), layout)
+                                        .invalidation(status.last_write(), scope);
+
+                                    barriers.push(barrier);
+                                } else {
+                                    // WAR -> flush
+                                    let barrier = Barrier::new(attachment_name, pass_id)
+                                        .layouts(status.last_layout(), layout)
+                                        .execution(status.last_write(), scope);
+
+                                    barriers.push(barrier);
+                                }
+
+                                status.update(scope, layout);
+                                status.clear_invalidates();
+                            }
+                        }
+                    }
+                } else {
+                    // first resource usage: do a transition from UNDEFINED
+                    let barrier = Barrier::new(attachment_name, pass_id)
+                        .layouts(ImageLayout::Undefined, layout)
+                        .memory(
+                            SyncScope {
+                                stage: BarrierStage::TopOfPipe,
+                                access: BarrierAccess::empty(),
+                            },
+                            scope,
+                        );
+
+                    attachments_status
+                        .insert(attachment_name.to_string(), SyncStatus::new(scope, layout));
+                    barriers.push(barrier);
+                }
+            }
+        }
+
+        barriers
+    }
+
     #[tracing::instrument(target = "profile", skip_all, level = "trace")]
     fn begin(&mut self, ctx: &mut GfxContext) -> Result<(), RenderError> {
         // FIXME: use attachments from graph
@@ -125,7 +258,7 @@ impl FrameGraph {
     {
         if !pass.enabled {
             tracing::debug!(target: logger::RENDER,
-                    "Skip pass: {}", &pass.pass.name);
+                "Skip pass: {}", &pass.pass.name);
             return Ok(());
         }
 
@@ -136,8 +269,8 @@ impl FrameGraph {
         tracing::debug!(target: logger::SYNC, "Begin render pass {}", &pass.name);
 
         let span =
-                tracing::span!(target: logger::PROFILE, tracing::Level::TRACE, "Pass", "{}", &pass.name)
-                    .entered();
+            tracing::span!(target: logger::PROFILE, tracing::Level::TRACE, "Pass", "{}", &pass.name)
+            .entered();
 
         tracing::debug!(target: logger::RENDER, ">>> Begin rendering pass {}", &pass.name);
 
@@ -202,5 +335,48 @@ impl FrameGraph {
 impl Default for FrameGraph {
     fn default() -> Self {
         Self::new()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use tracing::Level;
+    use tracing_subscriber::{FmtSubscriber, fmt::format::FmtSpan};
+
+    use gobs_core::{ConfigWriter as _, GobsConfig, logger};
+    use gobs_render_hal::{RenderHalConfig, create_hal};
+
+    use crate::GraphConfig;
+
+    fn setup() {
+        let sub = FmtSubscriber::builder()
+            .with_max_level(Level::INFO)
+            .with_span_events(FmtSpan::CLOSE)
+            .finish();
+        tracing::subscriber::set_global_default(sub).unwrap_or_default();
+    }
+
+    #[test]
+    #[cfg_attr(feature = "ci", ignore)]
+    fn test_barriers() {
+        setup();
+
+        let mut config = GobsConfig::default();
+        config.register::<RenderHalConfig>();
+
+        let mut ctx = create_hal("test", None, config, false);
+
+        let graph =
+            GraphConfig::load_graph(ctx.as_mut(), "graph.ron", "scene", |_, _, _| {}).unwrap();
+
+        for pass in &graph.passes {
+            tracing::info!(target: logger::INIT, "Load pass: {}", &pass.pass.name);
+        }
+
+        let barriers = graph.build_barriers();
+
+        for barrier in &barriers {
+            tracing::info!(target: logger::SYNC, "Generate barrier: {:?}", barrier);
+        }
     }
 }

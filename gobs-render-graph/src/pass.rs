@@ -17,7 +17,7 @@ pub enum RenderPassType {
 }
 
 #[allow(dead_code)]
-#[derive(Clone, Copy, Debug, Default, Deserialize, Serialize)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Deserialize, Serialize)]
 pub enum AttachmentAccess {
     #[default]
     Read,
@@ -29,19 +29,16 @@ pub enum AttachmentAccess {
 #[derive(Clone, Copy, Debug, Default)]
 pub enum AttachmentType {
     #[default]
-    Input,
     Color,
     Depth,
-    Resolve,
-    Preserve,
     ImageStorage,
 }
 
 #[allow(dead_code)]
 #[derive(Default)]
 pub struct Attachment {
-    ty: AttachmentType,
-    access: AttachmentAccess,
+    pub ty: AttachmentType,
+    pub access: AttachmentAccess,
     pub format: ImageFormat,
     pub usage: ImageUsage,
     pub extent: ImageExtent2D,

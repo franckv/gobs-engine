@@ -37,7 +37,6 @@ impl PassMetaData {
 
     pub fn add_attachment(&mut self, name: &str, attachment: Attachment) {
         match attachment.ty {
-            AttachmentType::Input => self.input_attachments.push(name.to_string()),
             AttachmentType::Color => self.color_attachments.push(name.to_string()),
             AttachmentType::Depth => self.depth_attachments.push(name.to_string()),
             AttachmentType::ImageStorage => self.image_attachments.push(name.to_string()),
