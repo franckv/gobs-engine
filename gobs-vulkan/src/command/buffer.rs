@@ -582,6 +582,43 @@ impl CommandBuffer {
         }
     }
 
+    pub fn image_memory_barrier(
+        &mut self,
+        image: &mut Image,
+        src_layout: ImageLayout,
+        dst_layout: ImageLayout,
+    ) {
+        tracing::trace!(target: logger::SYNC,
+            "Memory barrier",
+        );
+
+        let barrier_info = vk::ImageMemoryBarrier2::default()
+            .old_layout(src_layout.into())
+            .new_layout(dst_layout.into())
+            .image(image.raw())
+            .src_access_mask(vk::AccessFlags2::MEMORY_WRITE)
+            .dst_access_mask(vk::AccessFlags2::MEMORY_WRITE | vk::AccessFlags2::MEMORY_READ)
+            .src_stage_mask(vk::PipelineStageFlags2::ALL_COMMANDS)
+            .dst_stage_mask(vk::PipelineStageFlags2::ALL_COMMANDS)
+            .subresource_range(
+                vk::ImageSubresourceRange::default()
+                    .aspect_mask(image.usage.into())
+                    .base_mip_level(0)
+                    .level_count(vk::REMAINING_MIP_LEVELS)
+                    .base_array_layer(0)
+                    .layer_count(vk::REMAINING_ARRAY_LAYERS),
+            );
+
+        let dep_info = vk::DependencyInfo::default()
+            .image_memory_barriers(std::slice::from_ref(&barrier_info));
+
+        unsafe {
+            self.device
+                .raw()
+                .cmd_pipeline_barrier2(self.command_buffer, &dep_info);
+        }
+    }
+
     pub fn transition_image_layout(&mut self, image: &mut Image, dst_layout: ImageLayout) {
         tracing::trace!(target: logger::SYNC,
             "Transition [{}] from {:?} to {:?}",

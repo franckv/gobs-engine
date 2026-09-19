@@ -6,6 +6,7 @@ use crate::pass::{Attachment, AttachmentType};
 
 pub type PassId = Uuid;
 
+#[derive(Clone)]
 pub struct PassMetaData {
     pub id: PassId,
     pub name: String,

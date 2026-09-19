@@ -98,6 +98,7 @@ impl Renderer {
             FrameGraph::default()
         };
 
+        graph.build_barriers();
         graph.allocate_attachments(gfx.as_mut());
 
         let frames_in_flight = gfx.frames_in_flight();

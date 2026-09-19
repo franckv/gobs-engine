@@ -1,5 +1,6 @@
 #[allow(unused)]
 mod backend;
+mod barrier;
 mod bindings;
 mod command;
 mod config;
@@ -19,6 +20,7 @@ pub use gobs_vulkan::{
     },
 };
 
+pub use barrier::{Barrier, BarrierAccess, BarrierStage, BarrierSyncScope, BarrierType};
 pub use bindings::{BindResource, BindingGroupLayout, BindingGroupType, BindingId};
 pub use command::{CommandBuffer, CommandQueueType};
 pub use config::RenderHalConfig;

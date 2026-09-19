@@ -1,6 +1,6 @@
 use gobs_core::ImageExtent2D;
 
-use crate::{BindResource, Handle, ImageLayout, RenderHAL};
+use crate::{Barrier, BindResource, Handle, ImageLayout, RenderHAL};
 
 pub enum CommandQueueType {
     Graphics,
@@ -54,6 +54,7 @@ pub trait CommandBuffer {
     fn set_viewport(&mut self, width: u32, height: u32);
     fn submit_transfer(&mut self);
     fn submit_graphics(&self, hal: &dyn RenderHAL, frame: usize);
+    fn set_image_barrier(&mut self, hal: &mut dyn RenderHAL, barrier: &Barrier, image: Handle);
     fn transition_image_layout(
         &mut self,
         hal: &mut dyn RenderHAL,

@@ -4,7 +4,7 @@ use gobs_core::{ImageExtent2D, logger};
 use gobs_vulkan::{self as vk, descriptor::DescriptorSetUpdates};
 
 use crate::{
-    BindResource, BindingGroupLayout, CommandQueueType, Handle, ImageLayout, RenderHAL,
+    Barrier, BindResource, BindingGroupLayout, CommandQueueType, Handle, ImageLayout, RenderHAL,
     UniformData as _,
     backend::{
         VulkanHAL, VulkanHALExt,
@@ -15,6 +15,7 @@ use crate::{
             stats::GpuStats,
         },
     },
+    barrier::BarrierType,
     bindings::BindingLifetime,
     command::CommandBuffer,
 };
@@ -320,6 +321,21 @@ impl CommandBuffer for VkCommandBuffer {
         };
 
         self.command.submit2(wait, signal, &self.fence);
+    }
+
+    fn set_image_barrier(&mut self, hal: &mut dyn RenderHAL, barrier: &Barrier, image: Handle) {
+        let mut hal = hal.get_mut();
+
+        match barrier.ty {
+            BarrierType::Global => todo!(),
+            BarrierType::Image(_) => {
+                let image = hal.registry.images.get_mut(image).unwrap();
+                self.command
+                    .image_memory_barrier(image, barrier.src_layout, barrier.dst_layout);
+                image.layout = barrier.dst_layout;
+            }
+            BarrierType::Buffer(_) => todo!(),
+        }
     }
 
     fn transition_image_layout(

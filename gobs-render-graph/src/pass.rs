@@ -35,7 +35,7 @@ pub enum AttachmentType {
 }
 
 #[allow(dead_code)]
-#[derive(Default)]
+#[derive(Clone, Default)]
 pub struct Attachment {
     pub ty: AttachmentType,
     pub access: AttachmentAccess,
