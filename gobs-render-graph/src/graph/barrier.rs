@@ -77,10 +77,16 @@ pub struct SyncStatus {
 impl SyncStatus {
     pub fn new(scope: SyncScope, layout: ImageLayout) -> Self {
         Self {
-            last_write: scope,
+            last_write: Self::filter_writes(scope),
             last_layout: layout,
             invalidates: HashMap::new(),
         }
+    }
+
+    fn filter_writes(mut scope: SyncScope) -> SyncScope {
+        scope.access &= ALL_WRITES;
+
+        scope
     }
 
     pub fn last_write(&self) -> SyncScope {
@@ -92,7 +98,7 @@ impl SyncStatus {
     }
 
     pub fn update(&mut self, scope: SyncScope, layout: ImageLayout) {
-        self.last_write = scope;
+        self.last_write = Self::filter_writes(scope);
         self.last_layout = layout;
     }
 

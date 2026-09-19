@@ -213,9 +213,6 @@ mod tests {
         pass::{AttachmentAccess, RenderPassType},
     };
 
-    const FRAME_WIDTH: u32 = 1920;
-    const FRAME_HEIGHT: u32 = 1080;
-
     fn setup() {
         let sub = FmtSubscriber::builder()
             .with_max_level(Level::INFO)
@@ -229,10 +226,7 @@ mod tests {
     fn test_load() {
         setup();
 
-        let mut config = GobsConfig::default();
-        config.register::<RenderHalConfig>();
-
-        let default_extent = ImageExtent2D::new(FRAME_WIDTH, FRAME_HEIGHT);
+        let default_extent = ImageExtent2D::default();
 
         let data = include_str!("../../../examples/resources/graph.ron");
 
@@ -255,7 +249,7 @@ mod tests {
         let mut config = GobsConfig::default();
         config.register::<RenderHalConfig>();
 
-        let default_extent = ImageExtent2D::new(FRAME_WIDTH, FRAME_HEIGHT);
+        let default_extent = ImageExtent2D::default();
 
         let data = include_str!("../../../examples/resources/graph.ron");
 
