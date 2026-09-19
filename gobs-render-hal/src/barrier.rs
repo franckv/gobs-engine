@@ -122,7 +122,7 @@ impl Barrier {
     }
 
     pub fn memory(mut self, src_scope: BarrierSyncScope, dst_scope: BarrierSyncScope) -> Self {
-        self.src_scope = src_scope; // no flush
+        self.src_scope = src_scope;
         self.dst_scope = dst_scope;
 
         self

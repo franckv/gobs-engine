@@ -5,16 +5,23 @@ use gobs_render_hal::{BarrierAccess, BarrierStage, BarrierSyncScope, ImageLayout
 pub struct SyncStatus {
     last_write: BarrierSyncScope,
     last_layout: ImageLayout,
+    flushed: bool,
     invalidates: HashMap<BarrierStage, BarrierAccess>,
 }
 
 impl SyncStatus {
     pub fn new(scope: BarrierSyncScope, layout: ImageLayout) -> Self {
-        Self {
+        let mut status = Self {
             last_write: Self::filter_writes(scope),
             last_layout: layout,
+            // false if first access is a write
+            flushed: scope.access.writes().is_empty(),
             invalidates: HashMap::new(),
-        }
+        };
+
+        status.invalidate(scope);
+
+        status
     }
 
     fn filter_writes(mut scope: BarrierSyncScope) -> BarrierSyncScope {
@@ -34,6 +41,12 @@ impl SyncStatus {
     pub fn update(&mut self, scope: BarrierSyncScope, layout: ImageLayout) {
         self.last_write = Self::filter_writes(scope);
         self.last_layout = layout;
+        // false if current update is a write
+        self.flushed = scope.access.writes().is_empty();
+    }
+
+    pub fn flush(&mut self) {
+        self.flushed = true;
     }
 
     pub fn invalidate(&mut self, scope: BarrierSyncScope) {
@@ -79,7 +92,7 @@ impl SyncStatus {
     }
 
     pub fn is_flushed(&self) -> bool {
-        !self.invalidates.is_empty()
+        self.flushed
     }
 
     pub fn clear_invalidates(&mut self) {

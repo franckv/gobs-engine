@@ -170,9 +170,7 @@ impl FrameGraph {
 
                         status.update(scope, layout);
                         status.clear_invalidates();
-                        if access == AttachmentAccess::Read {
-                            status.invalidate(scope);
-                        }
+                        status.invalidate(scope);
                     } else {
                         match access {
                             AttachmentAccess::Read => {
@@ -185,6 +183,7 @@ impl FrameGraph {
 
                                     self.add_barrier(pass_id, barrier);
                                     status.invalidate(scope);
+                                    status.flush();
                                 } else if !status.is_invalidated(scope) {
                                     // RAW, already flushed ->  invalidate
                                     let barrier = Barrier::new(attachment_name)
@@ -207,6 +206,7 @@ impl FrameGraph {
                                         .flush(status.last_write(), scope);
 
                                     self.add_barrier(pass_id, barrier);
+                                    status.flush();
                                 } else {
                                     // WAR -> execution barrier only
                                     let barrier = Barrier::new(attachment_name)
@@ -229,6 +229,7 @@ impl FrameGraph {
                                         .memory(status.last_write(), scope);
 
                                     self.add_barrier(pass_id, barrier);
+                                    status.flush();
                                 } else if !status.is_invalidated(scope) {
                                     // WAR -> invalidate
                                     let barrier = Barrier::new(attachment_name)
@@ -238,7 +239,7 @@ impl FrameGraph {
 
                                     self.add_barrier(pass_id, barrier);
                                 } else {
-                                    // WAR -> flush
+                                    // WAR -> execution barrier only
                                     let barrier = Barrier::new(attachment_name)
                                         .image(attachment_name)
                                         .layouts(status.last_layout(), layout)
@@ -265,8 +266,8 @@ impl FrameGraph {
                             scope,
                         );
 
-                    attachments_status
-                        .insert(attachment_name.to_string(), SyncStatus::new(scope, layout));
+                    let status = SyncStatus::new(scope, layout);
+                    attachments_status.insert(attachment_name.to_string(), status);
 
                     self.add_barrier(pass_id, barrier);
                 }
@@ -420,18 +421,26 @@ mod tests {
     const GRAPH: &str = r#"
         GraphConfig(
             graphes: {
+                "graph_compute_rw": ["compute_reader_writer1"],
                 "graph_compute_raw": ["compute_writer1", "compute_reader1"],
                 "graph_compute_raww": ["compute_writer1", "compute_writer2", "compute_reader12"],
                 "graph_compute_war": ["compute_reader1", "compute_writer1"],
+                "graph_compute_waw": ["compute_writer1", "compute_writer1b"],
+                "graph_compute_rar": ["compute_reader1", "compute_reader1b"],
                 "graph_compute_color": ["compute_writer1", "color_writer1"],
+                "graph_compute_color_read": ["compute_writer1", "color_reader1"],
                 "graph_compute_color_blend": ["compute_writer1", "color_blend_writer1"],
             },
             passes: {
                 "compute_writer1": (ty: Compute, config: "test_c", attachments: { "draw": StorageImage(access: Write) }),
+                "compute_writer1b": (ty: Compute, config: "test_c", attachments: { "draw": StorageImage(access: Write) }),
                 "compute_writer2": (ty: Compute, config: "test_c", attachments: { "draw2": StorageImage(access: Write) }),
                 "compute_reader1": (ty: Compute, config: "test_c", attachments: { "draw": StorageImage(access: Read) }),
+                "compute_reader1b": (ty: Compute, config: "test_c", attachments: { "draw": StorageImage(access: Read) }),
                 "compute_reader12": (ty: Compute, config: "test_c", attachments: { "draw": StorageImage(access: Read), "draw2": StorageImage(access: Read) }),
+                "compute_reader_writer1": (ty: Compute, config: "test_c", attachments: { "draw": StorageImage(access: ReadWrite) }),
                 "color_writer1": (ty: Material, config: "test", attachments: { "draw": ColorAttachment(access: Write, clear: false) }),
+                "color_reader1": (ty: Material, config: "test", attachments: { "draw": ColorAttachment(access: Read, clear: false) }),
                 "color_blend_writer1": (ty: Material, config: "test", attachments: { "draw": ColorAttachment(access: ReadWrite, clear: false) }),
                 "depth_writer1": (ty: Material, config: "test", attachments: { "depth": DepthAttachment(access: ReadWrite, clear: true) }),
             },
@@ -449,6 +458,48 @@ mod tests {
             .with_span_events(FmtSpan::CLOSE)
             .finish();
         tracing::subscriber::set_global_default(sub).unwrap_or_default();
+    }
+
+    #[test]
+    #[cfg_attr(feature = "ci", ignore)]
+    fn test_barrier_compute_rw() {
+        setup();
+
+        let mut graph = GraphConfig::load_graph_with_data(
+            GRAPH,
+            "graph_compute_rw",
+            ImageExtent2D::default(),
+            |_, _| {},
+        )
+        .unwrap();
+
+        graph.build_barriers();
+
+        assert_eq!(graph.barriers.len(), 1);
+
+        for barrier in graph.barriers.values() {
+            tracing::info!(target: logger::SYNC, "Generate barrier: {:#?}", barrier);
+            assert_eq!(barrier.len(), 1);
+            assert_eq!(barrier[0].label, "draw");
+        }
+
+        let barrier = &graph.barriers[&graph.passes[0].pass.id][0];
+        assert_eq!(barrier.src_layout, ImageLayout::Undefined);
+        assert_eq!(barrier.dst_layout, ImageLayout::General);
+        assert_eq!(
+            barrier.src_scope,
+            BarrierSyncScope {
+                stage: BarrierStage::TopOfPipe,
+                access: BarrierAccess::empty()
+            }
+        );
+        assert_eq!(
+            barrier.dst_scope,
+            BarrierSyncScope {
+                stage: BarrierStage::ComputeShader,
+                access: BarrierAccess::ShaderStorageRead | BarrierAccess::ShaderStorageWrite
+            }
+        );
     }
 
     #[test]
@@ -666,6 +717,168 @@ mod tests {
             BarrierSyncScope {
                 stage: BarrierStage::ComputeShader,
                 access: BarrierAccess::empty()
+            }
+        );
+    }
+
+    #[test]
+    #[cfg_attr(feature = "ci", ignore)]
+    fn test_barrier_compute_waw() {
+        setup();
+
+        let mut graph = GraphConfig::load_graph_with_data(
+            GRAPH,
+            "graph_compute_waw",
+            ImageExtent2D::default(),
+            |_, _| {},
+        )
+        .unwrap();
+
+        graph.build_barriers();
+
+        assert_eq!(graph.barriers.len(), 2);
+
+        for barrier in graph.barriers.values() {
+            tracing::info!(target: logger::SYNC, "Generate barrier: {:#?}", barrier);
+            assert_eq!(barrier.len(), 1);
+            assert_eq!(barrier[0].label, "draw");
+        }
+
+        let barrier = &graph.barriers[&graph.passes[0].pass.id][0];
+        assert_eq!(barrier.src_layout, ImageLayout::Undefined);
+        assert_eq!(barrier.dst_layout, ImageLayout::General);
+        assert_eq!(
+            barrier.src_scope,
+            BarrierSyncScope {
+                stage: BarrierStage::TopOfPipe,
+                access: BarrierAccess::empty()
+            }
+        );
+        assert_eq!(
+            barrier.dst_scope,
+            BarrierSyncScope {
+                stage: BarrierStage::ComputeShader,
+                access: BarrierAccess::ShaderStorageWrite
+            }
+        );
+
+        let barrier = &graph.barriers[&graph.passes[1].pass.id][0];
+        assert_eq!(barrier.src_layout, ImageLayout::General);
+        assert_eq!(barrier.dst_layout, ImageLayout::General);
+        assert_eq!(
+            barrier.src_scope,
+            BarrierSyncScope {
+                stage: BarrierStage::ComputeShader,
+                access: BarrierAccess::ShaderStorageWrite
+            }
+        );
+        assert_eq!(
+            barrier.dst_scope,
+            BarrierSyncScope {
+                stage: BarrierStage::ComputeShader,
+                access: BarrierAccess::empty()
+            }
+        );
+    }
+
+    #[test]
+    #[cfg_attr(feature = "ci", ignore)]
+    fn test_barrier_compute_rar() {
+        setup();
+
+        let mut graph = GraphConfig::load_graph_with_data(
+            GRAPH,
+            "graph_compute_rar",
+            ImageExtent2D::default(),
+            |_, _| {},
+        )
+        .unwrap();
+
+        graph.build_barriers();
+
+        assert_eq!(graph.barriers.len(), 1);
+
+        for barrier in graph.barriers.values() {
+            tracing::info!(target: logger::SYNC, "Generate barrier: {:#?}", barrier);
+            assert_eq!(barrier.len(), 1);
+            assert_eq!(barrier[0].label, "draw");
+        }
+
+        let barrier = &graph.barriers[&graph.passes[0].pass.id][0];
+        assert_eq!(barrier.src_layout, ImageLayout::Undefined);
+        assert_eq!(barrier.dst_layout, ImageLayout::General);
+        assert_eq!(
+            barrier.src_scope,
+            BarrierSyncScope {
+                stage: BarrierStage::TopOfPipe,
+                access: BarrierAccess::empty()
+            }
+        );
+        assert_eq!(
+            barrier.dst_scope,
+            BarrierSyncScope {
+                stage: BarrierStage::ComputeShader,
+                access: BarrierAccess::ShaderStorageRead
+            }
+        );
+    }
+
+    #[test]
+    #[cfg_attr(feature = "ci", ignore)]
+    fn test_barrier_compute_color_read() {
+        setup();
+
+        let mut graph = GraphConfig::load_graph_with_data(
+            GRAPH,
+            "graph_compute_color_read",
+            ImageExtent2D::default(),
+            |_, _| {},
+        )
+        .unwrap();
+
+        graph.build_barriers();
+
+        assert_eq!(graph.barriers.len(), 2);
+
+        for barrier in graph.barriers.values() {
+            tracing::info!(target: logger::SYNC, "Generate barrier: {:#?}", barrier);
+            assert_eq!(barrier.len(), 1);
+            assert_eq!(barrier[0].label, "draw");
+        }
+
+        let barrier = &graph.barriers[&graph.passes[0].pass.id][0];
+        assert_eq!(barrier.src_layout, ImageLayout::Undefined);
+        assert_eq!(barrier.dst_layout, ImageLayout::General);
+        assert_eq!(
+            barrier.src_scope,
+            BarrierSyncScope {
+                stage: BarrierStage::TopOfPipe,
+                access: BarrierAccess::empty()
+            }
+        );
+        assert_eq!(
+            barrier.dst_scope,
+            BarrierSyncScope {
+                stage: BarrierStage::ComputeShader,
+                access: BarrierAccess::ShaderStorageWrite,
+            }
+        );
+
+        let barrier = &graph.barriers[&graph.passes[1].pass.id][0];
+        assert_eq!(barrier.src_layout, ImageLayout::General);
+        assert_eq!(barrier.dst_layout, ImageLayout::Color);
+        assert_eq!(
+            barrier.src_scope,
+            BarrierSyncScope {
+                stage: BarrierStage::ComputeShader,
+                access: BarrierAccess::ShaderStorageWrite,
+            }
+        );
+        assert_eq!(
+            barrier.dst_scope,
+            BarrierSyncScope {
+                stage: BarrierStage::ColorAttachmentOutput,
+                access: BarrierAccess::ColorAttachmentRead,
             }
         );
     }
