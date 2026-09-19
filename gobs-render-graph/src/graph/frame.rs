@@ -316,8 +316,8 @@ impl FrameGraph {
 
         if let Some(barriers) = barriers.get(&pass.id) {
             for barrier in barriers {
-                tracing::info!(target: logger::SYNC, "Insert barrier for pass {}", &pass.name);
                 if let BarrierType::Image(label) = &barrier.ty {
+                    tracing::debug!(target: logger::SYNC, "Insert image barrier image={}, pass={}", label, &pass.name);
                     let handle = resource_manager.image(label);
 
                     frame
