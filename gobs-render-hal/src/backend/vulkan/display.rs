@@ -143,7 +143,7 @@ impl Display {
     pub fn get_extent(&self, device: &Device) -> ImageExtent2D {
         match &self.surface {
             Some(surface) => surface.get_extent(device),
-            None => ImageExtent2D::new(0, 0),
+            None => ImageExtent2D::new(1, 1),
         }
     }
 

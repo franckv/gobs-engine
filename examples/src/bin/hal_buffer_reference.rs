@@ -177,7 +177,7 @@ impl<Context: GobsContext> App<Context> {
             .vertex_shader("color_buffer_reference.spv", "vertex_main")
             .fragment_shader("color_buffer_reference.spv", "fragment_main")
             .push_constants(ObjectDataLayout::new(false).prop(ObjectDataProp::VertexBufferAddress))
-            .attachments(Some(ImageFormat::B8g8r8a8Unorm), None)
+            .attachments(Some(ImageFormat::B8g8r8a8Srgb), None)
             .depth_test_disable()
             .viewports(vec![Viewport::new(0., 0., 0., 0.)])
             .scissors(vec![Rect2D::new(0, 0, 0, 0)])
