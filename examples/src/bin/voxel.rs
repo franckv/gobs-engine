@@ -14,6 +14,7 @@ use gobs::{
 
 use examples::InputManager;
 
+#[allow(unused)]
 #[derive(Clone, Copy, Debug)]
 struct VoxelData {
     block_type: u32,

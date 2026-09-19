@@ -7,6 +7,7 @@ use thiserror::Error;
 
 use gobs_core::logger;
 
+// TODO: move to core
 pub enum AssetType {
     SHADER,
     IMAGE,
