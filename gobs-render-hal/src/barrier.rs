@@ -16,10 +16,26 @@ impl BarrierSyncScope {
             access: BarrierAccess::empty(),
         }
     }
+
+    pub fn writes_only(&self) -> BarrierSyncScope {
+        BarrierSyncScope {
+            stage: self.stage,
+            access: self.access.writes(),
+        }
+    }
 }
 
 #[derive(Clone, Debug)]
 pub enum BarrierType {
+    Transition,
+    Flush,
+    Invalidate,
+    Execution,
+    Full,
+}
+
+#[derive(Clone, Debug)]
+pub enum BarrierTarget {
     Global,
     Image(String),
     Buffer(String),
@@ -29,6 +45,7 @@ pub enum BarrierType {
 pub struct Barrier {
     pub label: String,
     pub ty: BarrierType,
+    pub target: BarrierTarget,
     pub src_layout: ImageLayout,
     pub dst_layout: ImageLayout,
     pub src_scope: BarrierSyncScope,
@@ -44,7 +61,8 @@ impl Barrier {
 
         Self {
             label: label.to_string(),
-            ty: BarrierType::Global,
+            ty: BarrierType::Full,
+            target: BarrierTarget::Global,
             src_layout: ImageLayout::Undefined,
             dst_layout: ImageLayout::Undefined,
             src_scope: empty,
@@ -53,13 +71,13 @@ impl Barrier {
     }
 
     pub fn image(mut self, image: &str) -> Self {
-        self.ty = BarrierType::Image(image.to_string());
+        self.target = BarrierTarget::Image(image.to_string());
 
         self
     }
 
     pub fn buffer(mut self, buffer: &str) -> Self {
-        self.ty = BarrierType::Buffer(buffer.to_string());
+        self.target = BarrierTarget::Buffer(buffer.to_string());
 
         self
     }
@@ -71,9 +89,18 @@ impl Barrier {
         self
     }
 
-    pub fn memory(mut self, src_scope: BarrierSyncScope, dst_scope: BarrierSyncScope) -> Self {
+    pub fn full(mut self, src_scope: BarrierSyncScope, dst_scope: BarrierSyncScope) -> Self {
         self.src_scope = src_scope;
         self.dst_scope = dst_scope;
+        self.ty = BarrierType::Full;
+
+        self
+    }
+
+    pub fn transition(mut self, src_scope: BarrierSyncScope, dst_scope: BarrierSyncScope) -> Self {
+        self.src_scope = src_scope;
+        self.dst_scope = dst_scope;
+        self.ty = BarrierType::Transition;
 
         self
     }
@@ -85,6 +112,7 @@ impl Barrier {
     ) -> Self {
         self.src_scope = src_scope.stage_only(); // no flush
         self.dst_scope = dst_scope;
+        self.ty = BarrierType::Invalidate;
 
         self
     }
@@ -92,6 +120,7 @@ impl Barrier {
     pub fn flush(mut self, src_scope: BarrierSyncScope, dst_scope: BarrierSyncScope) -> Self {
         self.src_scope = src_scope;
         self.dst_scope = dst_scope.stage_only(); // no invalidate
+        self.ty = BarrierType::Flush;
 
         self
     }
@@ -99,6 +128,7 @@ impl Barrier {
     pub fn execution(mut self, src_scope: BarrierSyncScope, dst_scope: BarrierSyncScope) -> Self {
         self.src_scope = src_scope.stage_only(); // no flush
         self.dst_scope = dst_scope.stage_only(); // no invalidate
+        self.ty = BarrierType::Execution;
 
         self
     }

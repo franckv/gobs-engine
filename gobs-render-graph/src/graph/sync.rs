@@ -1,4 +1,4 @@
-use std::collections::{HashMap, hash_map::Entry};
+use std::collections::HashMap;
 
 use gobs_render_hal::{BarrierAccess, BarrierStage, BarrierSyncScope, ImageLayout};
 
@@ -12,22 +12,15 @@ pub struct SyncStatus {
 impl SyncStatus {
     pub fn new(scope: BarrierSyncScope, layout: ImageLayout) -> Self {
         let mut status = Self {
-            last_write: Self::filter_writes(scope),
+            last_write: scope.writes_only(),
             last_layout: layout,
-            // false if first access is a write
-            flushed: scope.access.writes().is_empty(),
+            flushed: true,
             invalidates: HashMap::new(),
         };
 
-        status.invalidate(scope);
+        status.update(scope, layout);
 
         status
-    }
-
-    fn filter_writes(mut scope: BarrierSyncScope) -> BarrierSyncScope {
-        scope.access = scope.access.writes();
-
-        scope
     }
 
     pub fn last_write(&self) -> BarrierSyncScope {
@@ -39,31 +32,21 @@ impl SyncStatus {
     }
 
     pub fn update(&mut self, scope: BarrierSyncScope, layout: ImageLayout) {
-        self.last_write = Self::filter_writes(scope);
         self.last_layout = layout;
-        // false if current update is a write
-        self.flushed = scope.access.writes().is_empty();
-    }
 
-    pub fn flush(&mut self) {
-        self.flushed = true;
-    }
+        if scope.access.is_write() {
+            self.last_write = scope.writes_only();
+            self.flushed = false;
+            self.invalidates.clear();
+        } else {
+            self.flushed = true;
 
-    pub fn invalidate(&mut self, scope: BarrierSyncScope) {
-        let access = scope.access.reads();
-
-        if access.is_empty() {
-            return;
-        }
-
-        for stage in scope.stage {
-            match self.invalidates.entry(stage) {
-                Entry::Occupied(mut e) => {
-                    *e.get_mut() |= access;
-                }
-                Entry::Vacant(e) => {
-                    e.insert(access);
-                }
+            let access = scope.access.reads();
+            for stage in scope.stage {
+                self.invalidates
+                    .entry(stage)
+                    .and_modify(|a| *a |= access)
+                    .or_insert(access);
             }
         }
     }
@@ -93,9 +76,5 @@ impl SyncStatus {
 
     pub fn is_flushed(&self) -> bool {
         self.flushed
-    }
-
-    pub fn clear_invalidates(&mut self) {
-        self.invalidates.clear();
     }
 }

@@ -15,7 +15,7 @@ use crate::{
             stats::GpuStats,
         },
     },
-    barrier::BarrierType,
+    barrier::BarrierTarget,
     bindings::BindingLifetime,
     command::CommandBuffer,
 };
@@ -326,9 +326,9 @@ impl CommandBuffer for VkCommandBuffer {
     fn set_image_barrier(&mut self, hal: &mut dyn RenderHAL, barrier: &Barrier, image: Handle) {
         let mut hal = hal.get_mut();
 
-        match barrier.ty {
-            BarrierType::Global => todo!(),
-            BarrierType::Image(_) => {
+        match barrier.target {
+            BarrierTarget::Global => todo!(),
+            BarrierTarget::Image(_) => {
                 let image = hal.registry.images.get_mut(image).unwrap();
                 self.command.image_memory_barrier(
                     image,
@@ -341,7 +341,7 @@ impl CommandBuffer for VkCommandBuffer {
                 );
                 image.layout = barrier.dst_layout;
             }
-            BarrierType::Buffer(_) => todo!(),
+            BarrierTarget::Buffer(_) => todo!(),
         }
     }
 

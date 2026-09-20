@@ -21,7 +21,7 @@ pub use gobs_vulkan::{
     sync::{BarrierAccess, BarrierStage},
 };
 
-pub use barrier::{Barrier, BarrierSyncScope, BarrierType};
+pub use barrier::{Barrier, BarrierSyncScope, BarrierTarget, BarrierType};
 pub use bindings::{BindResource, BindingGroupLayout, BindingGroupType, BindingId};
 pub use command::{CommandBuffer, CommandQueueType};
 pub use config::RenderHalConfig;

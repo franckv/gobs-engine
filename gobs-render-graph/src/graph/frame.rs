@@ -7,7 +7,7 @@ use crate::{
 };
 use gobs_core::{ImageExtent2D, logger};
 use gobs_render_hal::{
-    Barrier, BarrierAccess, BarrierStage, BarrierSyncScope, BarrierType, GfxContext, ImageLayout,
+    Barrier, BarrierAccess, BarrierStage, BarrierSyncScope, BarrierTarget, GfxContext, ImageLayout,
 };
 
 #[derive(Clone)]
@@ -164,13 +164,9 @@ impl FrameGraph {
                         let barrier = Barrier::new(attachment_name)
                             .image(attachment_name)
                             .layouts(status.last_layout(), layout)
-                            .memory(status.last_write(), scope);
+                            .transition(status.last_write(), scope);
 
                         self.add_barrier(pass_id, barrier);
-
-                        status.update(scope, layout);
-                        status.clear_invalidates();
-                        status.invalidate(scope);
                     } else {
                         match access {
                             AttachmentAccess::Read => {
@@ -179,11 +175,9 @@ impl FrameGraph {
                                     let barrier = Barrier::new(attachment_name)
                                         .image(attachment_name)
                                         .layouts(status.last_layout(), layout)
-                                        .memory(status.last_write(), scope);
+                                        .full(status.last_write(), scope);
 
                                     self.add_barrier(pass_id, barrier);
-                                    status.invalidate(scope);
-                                    status.flush();
                                 } else if !status.is_invalidated(scope) {
                                     // RAW, already flushed ->  invalidate
                                     let barrier = Barrier::new(attachment_name)
@@ -192,7 +186,6 @@ impl FrameGraph {
                                         .invalidation(status.last_write(), scope);
 
                                     self.add_barrier(pass_id, barrier);
-                                    status.invalidate(scope);
                                 } else {
                                     // RAR, invalidated -> no barrier
                                 }
@@ -206,7 +199,6 @@ impl FrameGraph {
                                         .flush(status.last_write(), scope);
 
                                     self.add_barrier(pass_id, barrier);
-                                    status.flush();
                                 } else {
                                     // WAR -> execution barrier only
                                     let barrier = Barrier::new(attachment_name)
@@ -216,9 +208,6 @@ impl FrameGraph {
 
                                     self.add_barrier(pass_id, barrier);
                                 }
-
-                                status.update(scope, layout);
-                                status.clear_invalidates();
                             }
                             AttachmentAccess::ReadWrite => {
                                 if !status.is_flushed() {
@@ -226,10 +215,9 @@ impl FrameGraph {
                                     let barrier = Barrier::new(attachment_name)
                                         .image(attachment_name)
                                         .layouts(status.last_layout(), layout)
-                                        .memory(status.last_write(), scope);
+                                        .full(status.last_write(), scope);
 
                                     self.add_barrier(pass_id, barrier);
-                                    status.flush();
                                 } else if !status.is_invalidated(scope) {
                                     // WAR -> invalidate
                                     let barrier = Barrier::new(attachment_name)
@@ -247,18 +235,17 @@ impl FrameGraph {
 
                                     self.add_barrier(pass_id, barrier);
                                 }
-
-                                status.update(scope, layout);
-                                status.clear_invalidates();
                             }
                         }
                     }
+
+                    status.update(scope, layout);
                 } else {
                     // first resource usage: do a transition from UNDEFINED
                     let barrier = Barrier::new(attachment_name)
                         .image(attachment_name)
                         .layouts(ImageLayout::Undefined, layout)
-                        .memory(
+                        .transition(
                             BarrierSyncScope {
                                 stage: BarrierStage::TopOfPipe,
                                 access: BarrierAccess::empty(),
@@ -317,7 +304,7 @@ impl FrameGraph {
 
         if let Some(barriers) = barriers.get(&pass.id) {
             for barrier in barriers {
-                if let BarrierType::Image(label) = &barrier.ty {
+                if let BarrierTarget::Image(label) = &barrier.target {
                     tracing::debug!(target: logger::SYNC, "Insert image barrier image={}, pass={}", label, &pass.name);
                     let handle = resource_manager.image(label);
 
