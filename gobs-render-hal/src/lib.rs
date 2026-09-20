@@ -18,9 +18,10 @@ pub use gobs_vulkan::{
     pipelines::{
         BlendMode, CompareOp, CullMode, DynamicStateElem, FrontFace, PolygonMode, Rect2D, Viewport,
     },
+    sync::{BarrierAccess, BarrierStage},
 };
 
-pub use barrier::{Barrier, BarrierAccess, BarrierStage, BarrierSyncScope, BarrierType};
+pub use barrier::{Barrier, BarrierSyncScope, BarrierType};
 pub use bindings::{BindResource, BindingGroupLayout, BindingGroupType, BindingId};
 pub use command::{CommandBuffer, CommandQueueType};
 pub use config::RenderHalConfig;

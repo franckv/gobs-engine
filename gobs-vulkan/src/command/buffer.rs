@@ -15,7 +15,7 @@ use crate::images::{Image, ImageLayout};
 use crate::pipelines::{Pipeline, PipelineLayout, PipelineStage};
 use crate::query::QueryPool;
 use crate::queue::Queue;
-use crate::sync::{Fence, Semaphore};
+use crate::sync::{BarrierAccess, BarrierStage, Fence, Semaphore};
 use crate::{Wrap, debug};
 
 pub trait IndexType: Copy {
@@ -582,11 +582,16 @@ impl CommandBuffer {
         }
     }
 
+    #[allow(clippy::too_many_arguments)]
     pub fn image_memory_barrier(
         &mut self,
         image: &mut Image,
         src_layout: ImageLayout,
         dst_layout: ImageLayout,
+        src_stage: BarrierStage,
+        dst_stage: BarrierStage,
+        src_access: BarrierAccess,
+        dst_access: BarrierAccess,
     ) {
         tracing::trace!(target: logger::SYNC,
             "Memory barrier",
@@ -596,10 +601,10 @@ impl CommandBuffer {
             .old_layout(src_layout.into())
             .new_layout(dst_layout.into())
             .image(image.raw())
-            .src_access_mask(vk::AccessFlags2::MEMORY_WRITE)
-            .dst_access_mask(vk::AccessFlags2::MEMORY_WRITE | vk::AccessFlags2::MEMORY_READ)
-            .src_stage_mask(vk::PipelineStageFlags2::ALL_COMMANDS)
-            .dst_stage_mask(vk::PipelineStageFlags2::ALL_COMMANDS)
+            .src_access_mask(src_access.into())
+            .dst_access_mask(dst_access.into())
+            .src_stage_mask(src_stage.into())
+            .dst_stage_mask(dst_stage.into())
             .subresource_range(
                 vk::ImageSubresourceRange::default()
                     .aspect_mask(image.usage.into())

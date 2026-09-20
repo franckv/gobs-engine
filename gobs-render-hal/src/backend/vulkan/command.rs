@@ -330,8 +330,15 @@ impl CommandBuffer for VkCommandBuffer {
             BarrierType::Global => todo!(),
             BarrierType::Image(_) => {
                 let image = hal.registry.images.get_mut(image).unwrap();
-                self.command
-                    .image_memory_barrier(image, barrier.src_layout, barrier.dst_layout);
+                self.command.image_memory_barrier(
+                    image,
+                    barrier.src_layout,
+                    barrier.dst_layout,
+                    barrier.src_scope.stage,
+                    barrier.dst_scope.stage,
+                    barrier.src_scope.access,
+                    barrier.dst_scope.access,
+                );
                 image.layout = barrier.dst_layout;
             }
             BarrierType::Buffer(_) => todo!(),

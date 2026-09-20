@@ -1,7 +1,9 @@
+mod barrier;
 mod fence;
 mod semaphore;
 mod timeline_semaphore;
 
-pub use self::fence::Fence;
-pub use self::semaphore::Semaphore;
-pub use self::timeline_semaphore::TimeLineSemaphore;
+pub use barrier::{BarrierAccess, BarrierStage};
+pub use fence::Fence;
+pub use semaphore::Semaphore;
+pub use timeline_semaphore::TimeLineSemaphore;
