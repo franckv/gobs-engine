@@ -159,84 +159,62 @@ impl FrameGraph {
                 let scope = Self::barrier_scope(ty, access);
 
                 if let Some(status) = attachments_status.get_mut(attachment_name) {
+                    let mut barrier = None;
+
                     if status.last_layout() != layout {
                         // image layout transition barrier
-                        let barrier = Barrier::new(attachment_name)
-                            .image(attachment_name)
-                            .layouts(status.last_layout(), layout)
-                            .transition(status.last_write(), scope);
+                        barrier = Some(
+                            Barrier::new(attachment_name)
+                                .image(attachment_name)
+                                .layouts(status.last_layout(), layout)
+                                .transition(status.last_write(), scope),
+                        );
+                    } else if !status.is_flushed() {
+                        // flush previous writes
 
-                        self.add_barrier(pass_id, barrier);
-                    } else {
-                        match access {
-                            AttachmentAccess::Read => {
-                                if !status.is_flushed() {
-                                    // RAW -> flush + invalidate
-                                    let barrier = Barrier::new(attachment_name)
-                                        .image(attachment_name)
-                                        .layouts(status.last_layout(), layout)
-                                        .full(status.last_write(), scope);
-
-                                    self.add_barrier(pass_id, barrier);
-                                } else if !status.is_invalidated(scope) {
-                                    // RAW, already flushed ->  invalidate
-                                    let barrier = Barrier::new(attachment_name)
-                                        .image(attachment_name)
-                                        .layouts(status.last_layout(), layout)
-                                        .invalidation(status.last_write(), scope);
-
-                                    self.add_barrier(pass_id, barrier);
-                                } else {
-                                    // RAR, invalidated -> no barrier
-                                }
-                            }
-                            AttachmentAccess::Write => {
-                                if !status.is_flushed() {
-                                    // WAW -> flush
-                                    let barrier = Barrier::new(attachment_name)
-                                        .image(attachment_name)
-                                        .layouts(status.last_layout(), layout)
-                                        .flush(status.last_write(), scope);
-
-                                    self.add_barrier(pass_id, barrier);
-                                } else {
-                                    // WAR -> execution barrier only
-                                    let barrier = Barrier::new(attachment_name)
-                                        .image(attachment_name)
-                                        .layouts(status.last_layout(), layout)
-                                        .execution(status.last_write(), scope);
-
-                                    self.add_barrier(pass_id, barrier);
-                                }
-                            }
-                            AttachmentAccess::ReadWrite => {
-                                if !status.is_flushed() {
-                                    // WAW -> flush + invalidate
-                                    let barrier = Barrier::new(attachment_name)
-                                        .image(attachment_name)
-                                        .layouts(status.last_layout(), layout)
-                                        .full(status.last_write(), scope);
-
-                                    self.add_barrier(pass_id, barrier);
-                                } else if !status.is_invalidated(scope) {
-                                    // WAR -> invalidate
-                                    let barrier = Barrier::new(attachment_name)
-                                        .image(attachment_name)
-                                        .layouts(status.last_layout(), layout)
-                                        .invalidation(status.last_write(), scope);
-
-                                    self.add_barrier(pass_id, barrier);
-                                } else {
-                                    // WAR -> execution barrier only
-                                    let barrier = Barrier::new(attachment_name)
-                                        .image(attachment_name)
-                                        .layouts(status.last_layout(), layout)
-                                        .execution(status.last_write(), scope);
-
-                                    self.add_barrier(pass_id, barrier);
-                                }
-                            }
+                        if scope.access.has_reads() {
+                            // RAW, flush + invalidate before reading
+                            barrier = Some(
+                                Barrier::new(attachment_name)
+                                    .image(attachment_name)
+                                    .layouts(status.last_layout(), layout)
+                                    .full(status.last_write(), scope),
+                            );
+                        } else {
+                            // WAW, flush only
+                            barrier = Some(
+                                Barrier::new(attachment_name)
+                                    .image(attachment_name)
+                                    .layouts(status.last_layout(), layout)
+                                    .flush(status.last_write(), scope),
+                            );
                         }
+                    } else {
+                        // previous write already flushed
+
+                        if scope.access.has_reads() && !status.is_invalidated(scope) {
+                            // invalidate before reading
+                            barrier = Some(
+                                Barrier::new(attachment_name)
+                                    .image(attachment_name)
+                                    .layouts(status.last_layout(), layout)
+                                    .invalidation(status.last_write(), scope),
+                            );
+                        } else if scope.access.is_write() {
+                            // WAR -> execution only
+                            barrier = Some(
+                                Barrier::new(attachment_name)
+                                    .image(attachment_name)
+                                    .layouts(status.last_layout(), layout)
+                                    .execution(status.last_write(), scope),
+                            );
+                        } else {
+                            // RAR: no barrier
+                        }
+                    }
+
+                    if let Some(barrier) = barrier {
+                        self.add_barrier(pass_id, barrier);
                     }
 
                     status.update(scope, layout);

@@ -32,6 +32,10 @@ impl BarrierAccess {
         self.intersects(ALL_WRITES)
     }
 
+    pub fn has_reads(&self) -> bool {
+        self.intersects(ALL_READS)
+    }
+
     pub fn reads(&self) -> BarrierAccess {
         self.intersection(ALL_READS)
     }
