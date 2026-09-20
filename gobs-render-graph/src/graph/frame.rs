@@ -189,28 +189,24 @@ impl FrameGraph {
                                     .flush(status.last_write(), scope),
                             );
                         }
+                    } else if scope.access.has_reads() && !status.is_invalidated(scope) {
+                        // invalidate before reading
+                        barrier = Some(
+                            Barrier::new(attachment_name)
+                                .image(attachment_name)
+                                .layouts(status.last_layout(), layout)
+                                .invalidation(status.last_write(), scope),
+                        );
+                    } else if scope.access.is_write() {
+                        // WAR -> execution only
+                        barrier = Some(
+                            Barrier::new(attachment_name)
+                                .image(attachment_name)
+                                .layouts(status.last_layout(), layout)
+                                .execution(status.last_write(), scope),
+                        );
                     } else {
-                        // previous write already flushed
-
-                        if scope.access.has_reads() && !status.is_invalidated(scope) {
-                            // invalidate before reading
-                            barrier = Some(
-                                Barrier::new(attachment_name)
-                                    .image(attachment_name)
-                                    .layouts(status.last_layout(), layout)
-                                    .invalidation(status.last_write(), scope),
-                            );
-                        } else if scope.access.is_write() {
-                            // WAR -> execution only
-                            barrier = Some(
-                                Barrier::new(attachment_name)
-                                    .image(attachment_name)
-                                    .layouts(status.last_layout(), layout)
-                                    .execution(status.last_write(), scope),
-                            );
-                        } else {
-                            // RAR: no barrier
-                        }
+                        // RAR: no barrier
                     }
 
                     if let Some(barrier) = barrier {
