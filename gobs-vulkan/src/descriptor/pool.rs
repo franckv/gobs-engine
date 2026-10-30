@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use ash::vk::{self, DescriptorPoolResetFlags};
+use ash::vk;
 
 use gobs_core::logger;
 
@@ -54,9 +54,16 @@ impl DescriptorSetPool {
             })
             .collect();
 
+        let pool_flags = if descriptor_layout.is_bindless {
+            vk::DescriptorPoolCreateFlags::UPDATE_AFTER_BIND
+        } else {
+            vk::DescriptorPoolCreateFlags::empty()
+        };
+
         let pool_info = vk::DescriptorPoolCreateInfo::default()
             .pool_sizes(&pool_size)
-            .max_sets(max_sets as u32);
+            .max_sets(max_sets as u32)
+            .flags(pool_flags);
 
         unsafe {
             device
@@ -97,7 +104,7 @@ impl DescriptorSetPool {
         unsafe {
             device
                 .raw()
-                .reset_descriptor_pool(pool, DescriptorPoolResetFlags::empty())
+                .reset_descriptor_pool(pool, vk::DescriptorPoolResetFlags::empty())
                 .unwrap();
         }
     }

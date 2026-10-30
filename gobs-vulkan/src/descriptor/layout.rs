@@ -96,6 +96,7 @@ pub struct DescriptorSetLayout {
     device: Arc<Device>,
     pub(crate) layout: vk::DescriptorSetLayout,
     pub bindings: Vec<DescriptorSetLayoutBinding>,
+    pub is_bindless: bool,
     pub set: u32,
 }
 
@@ -128,11 +129,16 @@ impl DescriptorSetLayout {
             })
             .collect();
 
+        let mut is_bindless = false;
+
         let vk_binding_flags: Vec<vk::DescriptorBindingFlags> = bindings
             .iter()
             .map(|binding| {
                 if binding.count > 1 {
+                    is_bindless = true;
+
                     vk::DescriptorBindingFlags::PARTIALLY_BOUND
+                        | vk::DescriptorBindingFlags::UPDATE_AFTER_BIND
                 } else {
                     vk::DescriptorBindingFlags::empty()
                 }
@@ -150,6 +156,10 @@ impl DescriptorSetLayout {
 
         if !vk_binding_flags.is_empty() {
             descriptor_info = descriptor_info.push_next(&mut binding_flags_info);
+            if is_bindless {
+                descriptor_info = descriptor_info
+                    .flags(vk::DescriptorSetLayoutCreateFlags::UPDATE_AFTER_BIND_POOL);
+            }
         }
 
         if push {
@@ -168,6 +178,7 @@ impl DescriptorSetLayout {
             device,
             layout,
             bindings,
+            is_bindless,
             set,
         })
     }

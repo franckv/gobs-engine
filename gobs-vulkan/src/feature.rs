@@ -76,6 +76,7 @@ impl Features {
             Feature::DescriptorIndexing,
             features12.descriptor_indexing == 1
                 && features12.descriptor_binding_partially_bound == 1
+                && features12.descriptor_binding_sampled_image_update_after_bind == 1
                 && features12.shader_sampled_image_array_non_uniform_indexing == 1,
         );
         enabled_features.set(
@@ -113,6 +114,9 @@ impl Features {
                 self.enabled_features.contains(Feature::DescriptorIndexing),
             )
             .shader_sampled_image_array_non_uniform_indexing(
+                self.enabled_features.contains(Feature::DescriptorIndexing),
+            )
+            .descriptor_binding_sampled_image_update_after_bind(
                 self.enabled_features.contains(Feature::DescriptorIndexing),
             )
             .scalar_block_layout(self.enabled_features.contains(Feature::ScalarBlockLayout))
