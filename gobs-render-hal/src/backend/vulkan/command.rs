@@ -330,6 +330,20 @@ impl CommandBuffer for VkCommandBuffer {
             BarrierTarget::Global => todo!(),
             BarrierTarget::Image(_) => {
                 let image = hal.registry.images.get_mut(image).unwrap();
+
+                let src_queue = match barrier.src_queue {
+                    Some(CommandQueueType::Graphics) => Some(hal.device.graphics_family.index),
+                    Some(CommandQueueType::Compute) => Some(hal.device.graphics_family.index),
+                    Some(CommandQueueType::Transfer) => Some(hal.device.transfer_family.index),
+                    None => None,
+                };
+                let dst_queue = match barrier.dst_queue {
+                    Some(CommandQueueType::Graphics) => Some(hal.device.graphics_family.index),
+                    Some(CommandQueueType::Compute) => Some(hal.device.graphics_family.index),
+                    Some(CommandQueueType::Transfer) => Some(hal.device.transfer_family.index),
+                    None => None,
+                };
+
                 self.command.image_memory_barrier(
                     image,
                     barrier.src_layout,
@@ -338,6 +352,8 @@ impl CommandBuffer for VkCommandBuffer {
                     barrier.dst_scope.stage,
                     barrier.src_scope.access,
                     barrier.dst_scope.access,
+                    src_queue,
+                    dst_queue,
                 );
                 image.layout = barrier.dst_layout;
             }

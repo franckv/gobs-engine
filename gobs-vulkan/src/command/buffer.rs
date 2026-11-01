@@ -592,12 +592,14 @@ impl CommandBuffer {
         dst_stage: BarrierStage,
         src_access: BarrierAccess,
         dst_access: BarrierAccess,
+        src_queue: Option<u32>,
+        dst_queue: Option<u32>,
     ) {
         tracing::trace!(target: logger::SYNC,
             "Memory barrier",
         );
 
-        let barrier_info = vk::ImageMemoryBarrier2::default()
+        let mut barrier_info = vk::ImageMemoryBarrier2::default()
             .old_layout(src_layout.into())
             .new_layout(dst_layout.into())
             .image(image.raw())
@@ -614,6 +616,13 @@ impl CommandBuffer {
                     .layer_count(vk::REMAINING_ARRAY_LAYERS),
             );
 
+        if let Some(src_queue) = src_queue {
+            barrier_info = barrier_info.src_queue_family_index(src_queue);
+        }
+        if let Some(dst_queue) = dst_queue {
+            barrier_info = barrier_info.dst_queue_family_index(dst_queue);
+        }
+
         let dep_info = vk::DependencyInfo::default()
             .image_memory_barriers(std::slice::from_ref(&barrier_info));
 
@@ -629,7 +638,7 @@ impl CommandBuffer {
             "Transition [{}] from {:?} to {:?}",
             &image.label,
             image.layout,
-            dst_layout
+            dst_layout,
         );
 
         let barrier_info = vk::ImageMemoryBarrier2::default()

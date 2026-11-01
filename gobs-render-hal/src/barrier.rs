@@ -3,6 +3,8 @@ use gobs_vulkan::{
     sync::{BarrierAccess, BarrierStage},
 };
 
+use crate::CommandQueueType;
+
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Hash)]
 pub struct BarrierSyncScope {
     pub stage: BarrierStage,
@@ -50,6 +52,8 @@ pub struct Barrier {
     pub dst_layout: ImageLayout,
     pub src_scope: BarrierSyncScope,
     pub dst_scope: BarrierSyncScope,
+    pub src_queue: Option<CommandQueueType>,
+    pub dst_queue: Option<CommandQueueType>,
 }
 
 impl Barrier {
@@ -67,6 +71,8 @@ impl Barrier {
             dst_layout: ImageLayout::Undefined,
             src_scope: empty,
             dst_scope: empty,
+            src_queue: None,
+            dst_queue: None,
         }
     }
 

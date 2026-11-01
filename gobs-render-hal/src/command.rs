@@ -2,6 +2,7 @@ use gobs_core::ImageExtent2D;
 
 use crate::{Barrier, BindResource, Handle, ImageLayout, RenderHAL};
 
+#[derive(Clone, Debug)]
 pub enum CommandQueueType {
     Graphics,
     Compute,
