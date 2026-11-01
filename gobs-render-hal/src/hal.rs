@@ -8,6 +8,7 @@ use gobs_core::{
     data::data_buffer::{DataBuffer, SliceBuffer},
 };
 use gobs_graphics::VertexAttribute;
+use gobs_vulkan::images::ImageLayout;
 
 use crate::{
     BindingGroupLayout, BindingGroupType, CommandQueueType, ImageUsage, ObjectDataLayout,
@@ -74,6 +75,7 @@ pub trait RenderHAL {
     ) -> Handle;
     fn invalidate_image(&mut self, image: Handle);
     fn get_image_extent(&self, image: Handle) -> ImageExtent2D;
+    fn get_image_layout(&self, image: Handle) -> ImageLayout;
     fn destroy_image(&mut self, image: Handle);
     fn capture_image(
         &mut self,

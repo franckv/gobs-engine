@@ -209,6 +209,12 @@ impl RenderHAL for VulkanHAL {
         image.extent
     }
 
+    fn get_image_layout(&self, image: Handle) -> ImageLayout {
+        let image = self.registry.images.get(image).unwrap();
+
+        image.layout
+    }
+
     fn destroy_image(&mut self, image: Handle) {
         let _ = self.registry.images.remove(image);
     }

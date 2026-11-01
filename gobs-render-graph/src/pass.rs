@@ -25,6 +25,7 @@ pub enum AttachmentAccess {
     ReadWrite,
 }
 
+// TODO: separate type (ex. Color) from usage (ex. Transfer)
 #[allow(dead_code)]
 #[derive(Clone, Copy, Debug, Default)]
 pub enum AttachmentType {
@@ -32,6 +33,7 @@ pub enum AttachmentType {
     Color,
     Depth,
     ImageStorage,
+    Transfer,
 }
 
 #[allow(dead_code)]

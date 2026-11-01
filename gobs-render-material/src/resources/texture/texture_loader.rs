@@ -4,8 +4,8 @@ use pollster::FutureExt;
 
 use gobs_core::{Color, ImageExtent2D, logger};
 use gobs_render_hal::{
-    BufferPool, BufferType, CommandBuffer, CommandQueueType, GfxContext, ImageLayout, ImageUsage,
-    RenderHAL,
+    Barrier, BarrierAccess, BarrierStage, BarrierSyncScope, BufferPool, BufferType, CommandBuffer,
+    CommandQueueType, GfxContext, ImageLayout, ImageUsage, RenderHAL,
 };
 use gobs_resource::{
     ResourceRegistry,
@@ -234,11 +234,43 @@ impl ResourceLoader<Texture, GfxContext> for TextureLoader {
         let sampler =
             hal.create_sampler(properties.format.mag_filter, properties.format.min_filter);
 
-        self.cmd
-            .transition_image_layout(hal, image, ImageLayout::TransferDst);
+        let barrier = Barrier::new("Upload texture")
+            .image("texture")
+            .layouts(ImageLayout::Undefined, ImageLayout::TransferDst)
+            .transition(
+                BarrierSyncScope {
+                    stage: BarrierStage::TopOfPipe,
+                    access: BarrierAccess::empty(),
+                },
+                BarrierSyncScope {
+                    stage: BarrierStage::Transfer,
+                    access: BarrierAccess::TransferWrite,
+                },
+            );
+        self.cmd.set_image_barrier(hal, &barrier, image);
+
         self.cmd.copy_buffer_to_image(hal, staging.buffer, image, 0);
+
         self.cmd
             .transition_image_layout(hal, image, ImageLayout::Shader);
+
+        // TODO: need queue ownership transfer
+        /*
+        let barrier = Barrier::new("Transition texture")
+            .image("texture")
+            .layouts(ImageLayout::TransferDst, ImageLayout::Shader)
+            .transition(
+                BarrierSyncScope {
+                    stage: BarrierStage::Transfer,
+                    access: BarrierAccess::TransferWrite,
+                },
+                BarrierSyncScope {
+                    stage: BarrierStage::FragmentShader,
+                    access: BarrierAccess::ShaderSampledRead,
+                },
+            );
+        self.cmd.set_image_barrier(hal, &barrier, image);
+        */
 
         Ok(TextureData {
             format: image_format,

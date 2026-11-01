@@ -13,6 +13,8 @@ bitflags! {
         const ShaderSampledRead = 1 << 6;
         const ShaderStorageRead = 1 << 7;
         const ShaderStorageWrite = 1 << 8;
+        const TransferRead = 1 << 9;
+        const TransferWrite = 1 << 10;
     }
 }
 
@@ -20,12 +22,14 @@ const ALL_READS: BarrierAccess = BarrierAccess::ShaderRead
     .union(BarrierAccess::ColorAttachmentRead)
     .union(BarrierAccess::DepthStencilAttachmentRead)
     .union(BarrierAccess::ShaderStorageRead)
-    .union(BarrierAccess::ShaderSampledRead);
+    .union(BarrierAccess::ShaderSampledRead)
+    .union(BarrierAccess::TransferRead);
 
 const ALL_WRITES: BarrierAccess = BarrierAccess::ShaderWrite
     .union(BarrierAccess::ColorAttachmentWrite)
     .union(BarrierAccess::DepthStencilAttachmentWrite)
-    .union(BarrierAccess::ShaderStorageWrite);
+    .union(BarrierAccess::ShaderStorageWrite)
+    .union(BarrierAccess::TransferWrite);
 
 impl BarrierAccess {
     pub fn is_write(&self) -> bool {
@@ -65,6 +69,8 @@ impl From<BarrierAccess> for vk::AccessFlags2 {
             BarrierAccess::ShaderSampledRead => access |= vk::AccessFlags2::SHADER_SAMPLED_READ,
             BarrierAccess::ShaderStorageRead => access |= vk::AccessFlags2::SHADER_STORAGE_READ,
             BarrierAccess::ShaderStorageWrite => access |= vk::AccessFlags2::SHADER_STORAGE_WRITE,
+            BarrierAccess::TransferRead => access |= vk::AccessFlags2::TRANSFER_READ,
+            BarrierAccess::TransferWrite => access |= vk::AccessFlags2::TRANSFER_WRITE,
             _ => unimplemented!(),
         });
 
@@ -80,7 +86,8 @@ bitflags! {
         const FragmentShader = 1 << 2;
         const FragmentTests = 1 << 3;
         const ColorAttachmentOutput = 1 << 4;
-        const BottomOfPipe = 1 << 5;
+        const Transfer = 1 << 5;
+        const BottomOfPipe = 1 << 6;
         }
 }
 
@@ -100,6 +107,7 @@ impl From<BarrierStage> for vk::PipelineStageFlags2 {
                 stage |= vk::PipelineStageFlags2::COLOR_ATTACHMENT_OUTPUT
             }
             BarrierStage::BottomOfPipe => stage |= vk::PipelineStageFlags2::BOTTOM_OF_PIPE,
+            BarrierStage::Transfer => stage |= vk::PipelineStageFlags2::ALL_TRANSFER,
             _ => unimplemented!(),
         });
 

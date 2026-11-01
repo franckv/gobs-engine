@@ -1,6 +1,8 @@
 use gobs_core::logger;
-use gobs_render_graph::{FrameData, GraphResourceManager};
-use gobs_render_hal::ImageLayout;
+use gobs_render_graph::{
+    AttachmentAccess, AttachmentType, FrameData, FrameGraph, GraphResourceManager,
+};
+use gobs_render_hal::{Barrier, BarrierAccess, BarrierStage, BarrierSyncScope, ImageLayout};
 
 use crate::{GfxContext, RenderError};
 
@@ -29,20 +31,32 @@ impl PresentPass {
 
         let cmd = &mut frame.command;
 
+        let image = resource_manager.image(&pass_data.render_target);
+        let layout = ctx.get_image_layout(image);
+
         if let Some(render_target) = ctx.get_render_target() {
-            cmd.transition_image_layout(
-                ctx,
-                resource_manager.image(&pass_data.render_target),
-                ImageLayout::TransferSrc,
-            );
+            let barrier = Barrier::new("transfer src")
+                .image(&pass_data.render_target)
+                .layouts(layout, ImageLayout::TransferSrc)
+                .transition(
+                    FrameGraph::barrier_scope(AttachmentType::Color, AttachmentAccess::Write),
+                    FrameGraph::barrier_scope(AttachmentType::Transfer, AttachmentAccess::Read),
+                );
+            cmd.set_image_barrier(ctx, &barrier, image);
 
-            cmd.transition_image_layout(ctx, render_target, ImageLayout::TransferDst);
+            let barrier = Barrier::new("transfer dst")
+                .image("swapchain")
+                .layouts(ImageLayout::Undefined, ImageLayout::TransferDst)
+                .transition(
+                    BarrierSyncScope {
+                        stage: BarrierStage::TopOfPipe,
+                        access: BarrierAccess::empty(),
+                    },
+                    FrameGraph::barrier_scope(AttachmentType::Transfer, AttachmentAccess::Write),
+                );
+            cmd.set_image_barrier(ctx, &barrier, render_target);
 
-            cmd.copy_image_to_image(
-                ctx,
-                resource_manager.image(&pass_data.render_target),
-                render_target,
-            );
+            cmd.copy_image_to_image(ctx, image, render_target);
         }
 
         Ok(())

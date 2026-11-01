@@ -99,7 +99,7 @@ impl FrameGraph {
         }
     }
 
-    fn barrier_scope(ty: AttachmentType, access: AttachmentAccess) -> BarrierSyncScope {
+    pub fn barrier_scope(ty: AttachmentType, access: AttachmentAccess) -> BarrierSyncScope {
         match (ty, access) {
             (AttachmentType::Color, AttachmentAccess::Read) => BarrierSyncScope {
                 stage: BarrierStage::ColorAttachmentOutput,
@@ -137,6 +137,18 @@ impl FrameGraph {
             (AttachmentType::ImageStorage, AttachmentAccess::ReadWrite) => BarrierSyncScope {
                 stage: BarrierStage::ComputeShader,
                 access: BarrierAccess::ShaderStorageRead | BarrierAccess::ShaderStorageWrite,
+            },
+            (AttachmentType::Transfer, AttachmentAccess::Read) => BarrierSyncScope {
+                stage: BarrierStage::Transfer,
+                access: BarrierAccess::TransferRead,
+            },
+            (AttachmentType::Transfer, AttachmentAccess::Write) => BarrierSyncScope {
+                stage: BarrierStage::Transfer,
+                access: BarrierAccess::TransferWrite,
+            },
+            (AttachmentType::Transfer, AttachmentAccess::ReadWrite) => BarrierSyncScope {
+                stage: BarrierStage::Transfer,
+                access: BarrierAccess::TransferRead | BarrierAccess::TransferWrite,
             },
         }
     }
@@ -313,7 +325,20 @@ impl FrameGraph {
         let cmd = &mut frame.command;
 
         if let Some(render_target) = ctx.get_render_target() {
-            cmd.transition_image_layout(ctx, render_target, ImageLayout::Present);
+            // cmd.transition_image_layout(ctx, render_target, ImageLayout::Present);
+            let layout = ctx.get_image_layout(render_target);
+
+            let barrier = Barrier::new("present")
+                .image("swapchain")
+                .layouts(layout, ImageLayout::Present)
+                .transition(
+                    FrameGraph::barrier_scope(AttachmentType::Transfer, AttachmentAccess::Write),
+                    BarrierSyncScope {
+                        stage: BarrierStage::BottomOfPipe,
+                        access: BarrierAccess::empty(),
+                    },
+                );
+            cmd.set_image_barrier(ctx, &barrier, render_target);
         } else {
             tracing::debug!(target: logger::RENDER, "No render target to present");
         }
