@@ -3,11 +3,10 @@ use gobs_core::logger;
 use gobs_graphics::AttributeData;
 use gobs_render_graph::{FrameData, GraphResourceManager, PassMetaData};
 use gobs_render_hal::{
-    BindingGroupLayout, BindingGroupType, CommandBuffer, Handle, RenderHAL, UniformBuffer,
-    UniformData as _,
+    BindingGroupLayout, BindingGroupType, CommandBuffer, DescriptorStage, DescriptorType, Handle,
+    RenderHAL, UniformBuffer, UniformData as _,
 };
 use gobs_render_material::{RenderFlags, SceneData, SceneDataLayout, SceneDataProp};
-use gobs_vulkan::{DescriptorStage, DescriptorType};
 
 use crate::render_object::RenderObject;
 use crate::{GfxContext, RenderError, job::RenderJob};

@@ -13,7 +13,6 @@ gobs-resource = { workspace = true }
 gobs-render-graph = { workspace = true }
 gobs-render-material = { workspace = true }
 gobs-render-hal = { workspace = true }
-gobs-vulkan = { workspace = true }
 ron = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
