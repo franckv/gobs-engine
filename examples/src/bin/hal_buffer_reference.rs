@@ -9,6 +9,7 @@ use gobs::{
         GfxContext, Handle, ImageLayout, ObjectDataLayout, ObjectDataProp, Rect2D, RenderConfig,
         RenderError, RenderHalConfig, UniformData, Viewport,
     },
+    resource::load,
 };
 
 struct App<Context: GobsContext> {
@@ -173,9 +174,12 @@ impl<Context: GobsContext> App<Context> {
     }
 
     fn create_pipeline(gfx: &mut GfxContext) -> Handle {
+        let shader =
+            load::get_asset_dir("color_buffer_reference.spv", load::AssetType::SHADER).unwrap();
+
         gfx.create_graphics_pipeline("color")
-            .vertex_shader("color_buffer_reference.spv", "vertex_main")
-            .fragment_shader("color_buffer_reference.spv", "fragment_main")
+            .vertex_shader(&shader, "vertex_main")
+            .fragment_shader(&shader, "fragment_main")
             .push_constants(ObjectDataLayout::new(false).prop(ObjectDataProp::VertexBufferAddress))
             .attachments(Some(ImageFormat::B8g8r8a8Srgb), None)
             .depth_test_disable()

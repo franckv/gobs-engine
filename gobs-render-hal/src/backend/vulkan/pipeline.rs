@@ -1,11 +1,9 @@
-use std::any::Any;
-use std::sync::Arc;
+use std::{any::Any, fmt::Debug, path::Path, sync::Arc};
 
 use indexmap::IndexMap;
 
 use gobs_core::{ImageFormat, logger};
 use gobs_graphics::{AlignMode, VertexAttribute};
-use gobs_resource::load;
 use gobs_vulkan as vk;
 use gobs_vulkan::pipelines::VertexAttributeFormat;
 
@@ -34,14 +32,17 @@ pub(crate) struct VkComputePipelineBuilder {
 }
 
 impl ComputePipelineBuilder for VkComputePipelineBuilder {
-    fn shader(mut self: Box<Self>, filename: &str, entry: &str) -> Box<dyn ComputePipelineBuilder> {
-        let compute_file = load::get_asset_dir(filename, load::AssetType::SHADER).unwrap();
+    fn shader(
+        mut self: Box<Self>,
+        filename: &Path,
+        entry: &str,
+    ) -> Box<dyn ComputePipelineBuilder> {
         let compute_shader = vk::pipelines::Shader::from_file(
-            compute_file,
+            filename,
             self.device.clone(),
             vk::pipelines::ShaderType::Compute,
         )
-        .unwrap();
+        .unwrap_or_else(|e| panic!("Failed to load shader {:?}: {}", filename, e));
 
         self.builder = self.builder.compute_shader(entry, compute_shader);
 
@@ -110,17 +111,15 @@ pub(crate) struct VkGraphicsPipelineBuilder {
 impl GraphicsPipelineBuilder for VkGraphicsPipelineBuilder {
     fn vertex_shader(
         mut self: Box<Self>,
-        filename: &str,
+        filename: &Path,
         entry: &str,
     ) -> Box<dyn GraphicsPipelineBuilder> {
-        let shader_file = load::get_asset_dir(filename, load::AssetType::SHADER).unwrap();
-
         let shader = vk::pipelines::Shader::from_file(
-            shader_file,
+            filename,
             self.device.clone(),
             vk::pipelines::ShaderType::Vertex,
         )
-        .unwrap_or_else(|e| panic!("Failed to load shader {}: {}", filename, e));
+        .unwrap_or_else(|e| panic!("Failed to load shader {:?}: {}", filename, e));
 
         self.builder = self.builder.vertex_shader(entry, shader);
 
@@ -129,17 +128,15 @@ impl GraphicsPipelineBuilder for VkGraphicsPipelineBuilder {
 
     fn fragment_shader(
         mut self: Box<Self>,
-        filename: &str,
+        filename: &Path,
         entry: &str,
     ) -> Box<dyn GraphicsPipelineBuilder> {
-        let shader_file = load::get_asset_dir(filename, load::AssetType::SHADER).unwrap();
-
         let shader = vk::pipelines::Shader::from_file(
-            shader_file,
+            filename,
             self.device.clone(),
             vk::pipelines::ShaderType::Fragment,
         )
-        .unwrap();
+        .unwrap_or_else(|e| panic!("Failed to load shader {:?}: {}", filename, e));
 
         self.builder = self.builder.fragment_shader(entry, shader);
 

@@ -1,7 +1,7 @@
 use gobs_core::logger;
 use gobs_render_hal::{DynamicStateElem, GfxContext, Rect2D, RenderHAL, Viewport};
 use gobs_resource::{
-    ResourceRegistry, {ResourceError, ResourceHandle, ResourceLoader, ResourceProperties},
+    ResourceError, ResourceHandle, ResourceLoader, ResourceProperties, ResourceRegistry, load,
 };
 
 use crate::resources::pipeline::{
@@ -24,7 +24,8 @@ impl PipelineLoader {
         let mut pipeline = hal.create_compute_pipeline(&properties.name);
 
         if let Some(shader) = &properties.compute_shader {
-            pipeline = pipeline.shader(shader, &properties.compute_entry);
+            let shader = load::get_asset_dir(shader, load::AssetType::SHADER).unwrap();
+            pipeline = pipeline.shader(&shader, &properties.compute_entry);
         }
 
         for binding_group_layout in &properties.binding_groups {
@@ -63,13 +64,15 @@ impl PipelineLoader {
         if let Some(shader) = &properties.vertex_shader
             && let Some(entry) = &properties.vertex_entry
         {
-            pipeline = pipeline.vertex_shader(shader, entry);
+            let shader = load::get_asset_dir(shader, load::AssetType::SHADER).unwrap();
+            pipeline = pipeline.vertex_shader(&shader, entry);
         }
 
         if let Some(shader) = &properties.fragment_shader
             && let Some(entry) = &properties.fragment_entry
         {
-            pipeline = pipeline.fragment_shader(shader, entry);
+            let shader = load::get_asset_dir(shader, load::AssetType::SHADER).unwrap();
+            pipeline = pipeline.fragment_shader(&shader, entry);
         }
 
         if properties.depth_test_enable {

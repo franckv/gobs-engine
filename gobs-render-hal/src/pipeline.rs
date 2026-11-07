@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::{path::Path, sync::Arc};
 
 use gobs_core::ImageFormat;
 use gobs_graphics::VertexAttribute;
@@ -9,7 +9,7 @@ use crate::{
 };
 
 pub trait ComputePipelineBuilder {
-    fn shader(self: Box<Self>, filename: &str, entry: &str) -> Box<dyn ComputePipelineBuilder>;
+    fn shader(self: Box<Self>, filename: &Path, entry: &str) -> Box<dyn ComputePipelineBuilder>;
     fn binding_group(
         self: Box<Self>,
         binding_group_layout: Arc<BindingGroupLayout>,
@@ -20,12 +20,12 @@ pub trait ComputePipelineBuilder {
 pub trait GraphicsPipelineBuilder {
     fn vertex_shader(
         self: Box<Self>,
-        filename: &str,
+        filename: &Path,
         entry: &str,
     ) -> Box<dyn GraphicsPipelineBuilder>;
     fn fragment_shader(
         self: Box<Self>,
-        filename: &str,
+        filename: &Path,
         entry: &str,
     ) -> Box<dyn GraphicsPipelineBuilder>;
     fn instance_layout(
