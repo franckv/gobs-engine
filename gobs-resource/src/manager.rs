@@ -169,7 +169,7 @@ impl Drop for SharedResourceManagerGuard<'_> {
 
 #[derive(Clone)]
 pub struct SharedResourceManager {
-    pub inner: Arc<Mutex<ResourceManager>>,
+    inner: Arc<Mutex<ResourceManager>>,
 }
 
 impl SharedResourceManager {
