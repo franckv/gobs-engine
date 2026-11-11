@@ -8,7 +8,7 @@ use gobs::{
         GfxContext, MaterialInstance, Model, RenderBatch, RenderError, RenderFlags, RenderType,
         Renderable,
     },
-    resource::{ResourceError, ResourceHandle, ResourceManager},
+    resource::{ResourceError, ResourceHandle, SharedResourceManager},
     scene::voxel::{chunk::Chunks, map::VoxelFace, ray::RayCast as _},
 };
 
@@ -92,11 +92,12 @@ impl<Context: GobsContext> World<Context> {
     }
 }
 
+// TODO: move to engine
 impl<Context: GobsContext> Renderable for World<Context> {
     fn draw(
         &self,
         ctx: &mut GfxContext,
-        resource_manager: &mut ResourceManager,
+        resource_manager: SharedResourceManager,
         batch: &mut RenderBatch,
         _transform: Option<Transform>,
         _bounding_box: Option<BoundingBox>,
@@ -113,7 +114,7 @@ impl<Context: GobsContext> Renderable for World<Context> {
 
             batch.add_model(
                 ctx,
-                resource_manager,
+                &mut resource_manager.lock(),
                 mesh.clone(),
                 Transform::from_translation(offset.into()),
                 Some(mesh.bounding_box),
@@ -131,7 +132,7 @@ impl<Context: GobsContext> Renderable for World<Context> {
 
             batch.add_model(
                 ctx,
-                resource_manager,
+                &mut resource_manager.lock(),
                 self.selection.clone(),
                 transform,
                 None,

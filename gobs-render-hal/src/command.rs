@@ -9,7 +9,7 @@ pub enum CommandQueueType {
     Transfer,
 }
 
-pub trait CommandBuffer {
+pub trait CommandBuffer: Send {
     fn begin(&mut self, frame_number: usize);
     fn end(&mut self);
     fn begin_label(&mut self, label: &str);

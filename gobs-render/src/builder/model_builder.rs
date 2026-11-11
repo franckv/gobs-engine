@@ -2,13 +2,13 @@ use std::sync::Arc;
 
 use gobs_graphics::{Bounded as _, BoundingBox, VertexAttribute};
 use gobs_render_material::Material;
-use gobs_resource::{ResourceHandle, ResourceManager};
+use gobs_resource::{ResourceHandle, SharedResourceManager};
 
 use crate::{MaterialInstance, Mesh, Model, ModelId, resources::MeshPath};
 
 pub struct RenderModelBuilder<'a> {
     name: &'a str,
-    resource_manager: &'a mut ResourceManager,
+    resource_manager: SharedResourceManager,
     meshes: Vec<(
         ResourceHandle<Mesh>,
         Option<ResourceHandle<MaterialInstance>>,
@@ -17,7 +17,7 @@ pub struct RenderModelBuilder<'a> {
 }
 
 impl<'a> RenderModelBuilder<'a> {
-    pub fn new(resource_manager: &'a mut ResourceManager, name: &'a str) -> Self {
+    pub fn new(resource_manager: SharedResourceManager, name: &'a str) -> Self {
         Self {
             name,
             resource_manager,
@@ -27,22 +27,25 @@ impl<'a> RenderModelBuilder<'a> {
     }
 
     pub fn with_mesh(mut self, mesh: ResourceHandle<Mesh>) -> Self {
-        let mesh_properties = &self
-            .resource_manager
-            .get(&mesh)
-            .expect("Mesh not registered")
-            .properties;
+        {
+            let resource_manager = &self.resource_manager.lock();
 
-        match &mesh_properties.path {
-            MeshPath::Mesh(geometry) => {
-                self.bounding_box.extends_box(geometry.boundings());
+            let mesh_properties = &resource_manager
+                .get(&mesh)
+                .expect("Mesh not registered")
+                .properties;
+
+            match &mesh_properties.path {
+                MeshPath::Mesh(geometry) => {
+                    self.bounding_box.extends_box(geometry.boundings());
+                }
+                // TODO: not needed for UI
+                MeshPath::Bytes(_) => {}
+                _ => unimplemented!(),
             }
-            // TODO: not needed for UI
-            MeshPath::Bytes(_) => {}
-            _ => unimplemented!(),
-        }
 
-        self.meshes.push((mesh, None));
+            self.meshes.push((mesh, None));
+        }
 
         self
     }
@@ -50,17 +53,20 @@ impl<'a> RenderModelBuilder<'a> {
     pub fn with_material(mut self, material: ResourceHandle<MaterialInstance>) -> Self {
         let vertex_attributes = self.get_vertex_attributes(material);
 
-        if let Some((mesh, material_instance)) = self.meshes.last_mut() {
-            *material_instance = Some(material);
+        {
+            let resource_manager = &self.resource_manager.lock();
 
-            let mesh_properties = &self
-                .resource_manager
-                .get(mesh)
-                .expect("Mesh not registered")
-                .properties;
-            debug_assert_eq!(mesh_properties.vertex_attributes, vertex_attributes);
-        } else {
-            panic!("Missing mesh in model");
+            if let Some((mesh, material_instance)) = self.meshes.last_mut() {
+                *material_instance = Some(material);
+
+                let mesh_properties = &resource_manager
+                    .get(mesh)
+                    .expect("Mesh not registered")
+                    .properties;
+                debug_assert_eq!(mesh_properties.vertex_attributes, vertex_attributes);
+            } else {
+                panic!("Missing mesh in model");
+            }
         }
         self
     }
@@ -78,12 +84,12 @@ impl<'a> RenderModelBuilder<'a> {
         &self,
         material_instance: ResourceHandle<MaterialInstance>,
     ) -> VertexAttribute {
-        let material_instance = self
-            .resource_manager
+        let resource_manager = self.resource_manager.lock();
+
+        let material_instance = resource_manager
             .get::<MaterialInstance>(&material_instance)
             .expect("Material instance not registered");
-        let material = self
-            .resource_manager
+        let material = resource_manager
             .get::<Material>(&material_instance.properties.material)
             .expect("Material not registered");
 

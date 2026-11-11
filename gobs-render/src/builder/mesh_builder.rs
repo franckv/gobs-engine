@@ -2,13 +2,13 @@ use std::sync::Arc;
 
 use gobs_graphics::{MeshGeometry, VertexAttribute};
 use gobs_render_material::Material;
-use gobs_resource::{ResourceHandle, ResourceLifetime, ResourceManager};
+use gobs_resource::{ResourceHandle, ResourceLifetime, SharedResourceManager};
 
 use crate::{MaterialInstance, Mesh, MeshProperties};
 
 pub struct RenderMeshBuilder<'a> {
     name: &'a str,
-    resource_manager: &'a mut ResourceManager,
+    resource_manager: SharedResourceManager,
     geometry: Option<Arc<MeshGeometry>>,
     bytes: Option<(Vec<u8>, Vec<u32>)>,
     vertex_attributes: VertexAttribute,
@@ -17,7 +17,7 @@ pub struct RenderMeshBuilder<'a> {
 }
 
 impl<'a> RenderMeshBuilder<'a> {
-    pub fn new(resource_manager: &'a mut ResourceManager, name: &'a str) -> Self {
+    pub fn new(resource_manager: SharedResourceManager, name: &'a str) -> Self {
         Self {
             name,
             resource_manager,
@@ -86,19 +86,21 @@ impl<'a> RenderMeshBuilder<'a> {
             _ => panic!("Invalid mesh data"),
         };
 
-        self.resource_manager.add(properties, self.lifetime, false)
+        self.resource_manager
+            .lock()
+            .add(properties, self.lifetime, false)
     }
 
     fn get_vertex_attributes(
         &self,
         material_instance: ResourceHandle<MaterialInstance>,
     ) -> VertexAttribute {
-        let material_instance = self
-            .resource_manager
+        let resource_manager = self.resource_manager.lock();
+
+        let material_instance = resource_manager
             .get::<MaterialInstance>(&material_instance)
             .expect("Material instance not registered");
-        let material = self
-            .resource_manager
+        let material = resource_manager
             .get::<Material>(&material_instance.properties.material)
             .expect("Material not registered");
 

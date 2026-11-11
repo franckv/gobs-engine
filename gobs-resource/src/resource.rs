@@ -26,7 +26,7 @@ pub enum ResourceLifetime {
 #[derive(Hash, Eq, PartialEq, Serialize)]
 pub struct ResourceHandle<R: ResourceType> {
     pub id: ResourceId,
-    pub(crate) ty: PhantomData<R>,
+    pub(crate) ty: PhantomData<fn() -> R>,
 }
 
 impl<R: ResourceType> Clone for ResourceHandle<R> {
@@ -55,7 +55,7 @@ impl<R: ResourceType> ResourceHandle<R> {
 }
 
 pub trait ResourceType: Copy + Debug {
-    type ResourceData;
+    type ResourceData: Send;
     type ResourceProperties: ResourceProperties + Clone;
 }
 
@@ -99,11 +99,11 @@ pub enum ResourceError {
     InvalidData,
 }
 
-pub trait ResourceProperties {
+pub trait ResourceProperties: Send {
     fn name(&self) -> &str;
 }
 
-pub trait ResourceLoader<R: ResourceType, B: ?Sized> {
+pub trait ResourceLoader<R: ResourceType, B: ?Sized>: Send {
     fn load(
         &mut self,
         backend: &mut B,

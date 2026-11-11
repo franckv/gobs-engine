@@ -1,3 +1,11 @@
+use std::{
+    ops::{Deref, DerefMut},
+    panic::Location,
+    sync::Arc,
+};
+
+use parking_lot::{Mutex, MutexGuard};
+
 use gobs_core::{
     data::{
         anymap::AnyMap,
@@ -135,6 +143,51 @@ impl ResourceRegistry {
     }
 }
 
+pub struct SharedResourceManagerGuard<'a> {
+    inner: MutexGuard<'a, ResourceManager>,
+}
+
+impl Deref for SharedResourceManagerGuard<'_> {
+    type Target = ResourceManager;
+
+    fn deref(&self) -> &Self::Target {
+        &self.inner
+    }
+}
+
+impl DerefMut for SharedResourceManagerGuard<'_> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.inner
+    }
+}
+
+impl Drop for SharedResourceManagerGuard<'_> {
+    fn drop(&mut self) {
+        tracing::debug!(target: logger::SYNC, "Release resource manager");
+    }
+}
+
+#[derive(Clone)]
+pub struct SharedResourceManager {
+    pub inner: Arc<Mutex<ResourceManager>>,
+}
+
+impl SharedResourceManager {
+    pub fn new(frames_in_flight: usize) -> Self {
+        Self {
+            inner: Arc::new(Mutex::new(ResourceManager::new(frames_in_flight))),
+        }
+    }
+
+    #[track_caller]
+    pub fn lock(&self) -> SharedResourceManagerGuard<'_> {
+        tracing::debug!(target: logger::SYNC, "Locking resource manager by {}", Location::caller());
+        SharedResourceManagerGuard {
+            inner: self.inner.lock(),
+        }
+    }
+}
+
 pub struct ResourceManager {
     frames_in_flight: usize,
     registry: ResourceRegistry,
@@ -142,7 +195,7 @@ pub struct ResourceManager {
 }
 
 impl ResourceManager {
-    pub fn new(frames_in_flight: usize) -> Self {
+    fn new(frames_in_flight: usize) -> Self {
         Self {
             frames_in_flight,
             registry: ResourceRegistry::default(),

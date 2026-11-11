@@ -4,7 +4,7 @@ use std::{
 };
 
 pub struct AnyMap {
-    map: HashMap<TypeId, Box<dyn Any>>,
+    map: HashMap<TypeId, Box<dyn Any + Send>>,
 }
 
 impl AnyMap {
@@ -14,11 +14,11 @@ impl AnyMap {
         }
     }
 
-    pub fn values(&self) -> impl Iterator<Item = &Box<dyn Any>> {
+    pub fn values(&self) -> impl Iterator<Item = &Box<dyn Any + Send>> {
         self.map.values()
     }
 
-    pub fn insert<T: Any>(&mut self, value: T) -> Option<T> {
+    pub fn insert<T: Any + Send>(&mut self, value: T) -> Option<T> {
         match self.map.entry(TypeId::of::<T>()) {
             Entry::Occupied(mut e) => {
                 let old_value = e.insert(Box::new(value)).downcast::<T>().ok()?;

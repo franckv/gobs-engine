@@ -1,17 +1,17 @@
 use gobs_core::{Color, ImageExtent2D, ImageFormat};
-use gobs_resource::{ResourceHandle, ResourceLifetime, ResourceManager};
+use gobs_resource::{ResourceHandle, ResourceLifetime, SharedResourceManager};
 
 use crate::{Texture, TextureProperties, TextureType};
 
 pub struct RenderTextureBuilder<'a> {
     name: &'a str,
-    resource_manager: &'a mut ResourceManager,
+    resource_manager: SharedResourceManager,
     lifetime: ResourceLifetime,
     properties: Option<TextureProperties>,
 }
 
 impl<'a> RenderTextureBuilder<'a> {
-    pub fn new(resource_manager: &'a mut ResourceManager, name: &'a str) -> Self {
+    pub fn new(resource_manager: SharedResourceManager, name: &'a str) -> Self {
         Self {
             name,
             resource_manager,
@@ -79,6 +79,7 @@ impl<'a> RenderTextureBuilder<'a> {
 
     pub fn build(self) -> ResourceHandle<Texture> {
         self.resource_manager
+            .lock()
             .add(self.properties.unwrap(), ResourceLifetime::Static, false)
     }
 }

@@ -1,6 +1,5 @@
 use std::fmt::Debug;
 
-use gobs_render_hal::create_hal;
 use winit::window::Window;
 
 use gobs_assets::gltf_load;
@@ -12,7 +11,8 @@ use gobs_render::{
     RenderMaterialBuilder, RenderMeshBuilder, RenderModelBuilder, RenderTextureBuilder, Renderer,
     Texture, TextureLoader,
 };
-use gobs_resource::{ResourceHandle, ResourceManager, load};
+use gobs_render_hal::create_hal;
+use gobs_resource::{ResourceHandle, ResourceManager, SharedResourceManager, load};
 use gobs_scene::{SceneBuilder, graph::scenegraph::SceneGraph};
 
 #[derive(Clone, Debug)]
@@ -63,7 +63,7 @@ pub trait GobsContext {
 pub struct GameContext {
     app_info: AppInfo,
     config: GobsConfig,
-    resource_manager: ResourceManager,
+    resource_manager: SharedResourceManager,
     renderer: Renderer,
     ui: UIRenderer,
 }
@@ -71,27 +71,31 @@ pub struct GameContext {
 impl GobsContext for GameContext {
     fn new(name: &str, config: GobsConfig, window: Option<Window>, validation: bool) -> Self {
         let mut gfx = create_hal(name, window, config.clone(), validation);
-        let mut resource_manager = ResourceManager::new(gfx.frames_in_flight());
+        let resource_manager = SharedResourceManager::new(gfx.frames_in_flight());
 
-        let texture_loader = TextureLoader::new(gfx.as_mut());
-        resource_manager.register_resource::<Texture, GfxContext>(texture_loader);
+        {
+            let mut resource_manager = resource_manager.lock();
 
-        let mesh_loader = MeshLoader::new(gfx.as_mut());
-        resource_manager.register_resource::<Mesh, GfxContext>(mesh_loader);
+            let texture_loader = TextureLoader::new(gfx.as_mut());
+            resource_manager.register_resource::<Texture, GfxContext>(texture_loader);
 
-        let pipeline_loader = PipelineLoader::new();
-        resource_manager.register_resource::<Pipeline, GfxContext>(pipeline_loader);
+            let mesh_loader = MeshLoader::new(gfx.as_mut());
+            resource_manager.register_resource::<Mesh, GfxContext>(mesh_loader);
 
-        let material_loader = MaterialLoader::new();
-        resource_manager.register_resource::<Material, GfxContext>(material_loader);
+            let pipeline_loader = PipelineLoader::new();
+            resource_manager.register_resource::<Pipeline, GfxContext>(pipeline_loader);
 
-        let material_instance_loader = MaterialInstanceLoader::new();
-        resource_manager
-            .register_resource::<MaterialInstance, GfxContext>(material_instance_loader);
+            let material_loader = MaterialLoader::new();
+            resource_manager.register_resource::<Material, GfxContext>(material_loader);
 
-        let ui = UIRenderer::new(gfx.as_ref(), config.clone(), &mut resource_manager);
+            let material_instance_loader = MaterialInstanceLoader::new();
+            resource_manager
+                .register_resource::<MaterialInstance, GfxContext>(material_instance_loader);
+        }
 
-        let renderer = Renderer::new(gfx, config.clone(), &mut resource_manager);
+        let ui = UIRenderer::new(gfx.as_ref(), config.clone(), &mut resource_manager.lock());
+
+        let renderer = Renderer::new(gfx, config.clone(), &mut resource_manager.lock());
 
         Self {
             app_info: AppInfo {
@@ -115,22 +119,21 @@ impl GobsContext for GameContext {
     fn pre_update(&mut self, delta: f32) {
         self.renderer.update(delta);
 
-        self.resource_manager
-            .update::<Texture, GfxContext>(self.renderer.gfx.as_mut());
-        self.resource_manager
-            .update::<Mesh, GfxContext>(self.renderer.gfx.as_mut());
-        self.resource_manager
-            .update::<Pipeline, GfxContext>(self.renderer.gfx.as_mut());
-        self.resource_manager
-            .update::<Material, GfxContext>(self.renderer.gfx.as_mut());
-        self.resource_manager
-            .update::<MaterialInstance, GfxContext>(self.renderer.gfx.as_mut());
+        let mut resource_manager = self.resource_manager.lock();
+
+        resource_manager.update::<Texture, GfxContext>(self.renderer.gfx.as_mut());
+        resource_manager.update::<Mesh, GfxContext>(self.renderer.gfx.as_mut());
+        resource_manager.update::<Pipeline, GfxContext>(self.renderer.gfx.as_mut());
+        resource_manager.update::<Material, GfxContext>(self.renderer.gfx.as_mut());
+        resource_manager.update::<MaterialInstance, GfxContext>(self.renderer.gfx.as_mut());
     }
 
     #[tracing::instrument(target = "profile", skip_all, level = "trace")]
     fn post_update(&mut self, _delta: f32) {
-        self.ui
-            .update(self.renderer.gfx.as_mut(), &mut self.resource_manager);
+        self.ui.update(
+            self.renderer.gfx.as_mut(),
+            &mut self.resource_manager.lock(),
+        );
     }
 
     fn close(&mut self) {
@@ -138,7 +141,7 @@ impl GobsContext for GameContext {
     }
 
     fn render(&mut self) -> Result<RenderBuilder<'_>, RenderError> {
-        RenderBuilder::new(&mut self.renderer, &mut self.resource_manager)
+        RenderBuilder::new(&mut self.renderer, self.resource_manager.clone())
             .with_renderable(&self.ui, gobs_render::RenderType::Ui)
     }
 
@@ -190,7 +193,7 @@ impl GobsContext for GameContext {
             callback(
                 ui,
                 &self.app_info,
-                &mut self.resource_manager,
+                &mut self.resource_manager.lock(),
                 &mut self.renderer,
             )
         });
@@ -205,19 +208,19 @@ impl GobsContext for GameContext {
     }
 
     fn new_model<'a>(&'a mut self, name: &'a str) -> RenderModelBuilder<'a> {
-        RenderModelBuilder::new(&mut self.resource_manager, name)
+        RenderModelBuilder::new(self.resource_manager.clone(), name)
     }
 
     fn new_material<'a>(&'a mut self, name: &'a str) -> RenderMaterialBuilder<'a> {
-        RenderMaterialBuilder::new(&mut self.resource_manager, name)
+        RenderMaterialBuilder::new(self.resource_manager.clone(), name)
     }
 
     fn new_mesh<'a>(&'a mut self, name: &'a str) -> RenderMeshBuilder<'a> {
-        RenderMeshBuilder::new(&mut self.resource_manager, name)
+        RenderMeshBuilder::new(self.resource_manager.clone(), name)
     }
 
     fn new_texture<'a>(&'a mut self, name: &'a str) -> RenderTextureBuilder<'a> {
-        RenderTextureBuilder::new(&mut self.resource_manager, name)
+        RenderTextureBuilder::new(self.resource_manager.clone(), name)
     }
 
     fn free_material(
@@ -225,38 +228,44 @@ impl GobsContext for GameContext {
         material_handle: ResourceHandle<MaterialInstance>,
         delete_textures: bool,
     ) {
-        if let Ok(material) = self.resource_manager.get(&material_handle) {
+        let resource_manager = &mut self.resource_manager.lock();
+
+        if let Ok(material) = resource_manager.get(&material_handle) {
             if delete_textures {
                 let textures = material.properties.textures.clone();
 
                 for texture in textures {
-                    self.resource_manager.schedule_removal(&texture);
+                    resource_manager.schedule_removal(&texture);
                 }
             }
-            self.resource_manager.schedule_removal(&material_handle);
+            resource_manager.schedule_removal(&material_handle);
         }
     }
 
     fn free_mesh(&mut self, mesh: ResourceHandle<Mesh>) {
-        self.resource_manager.schedule_removal(&mesh);
+        self.resource_manager.lock().schedule_removal(&mesh);
     }
 
     fn free_texture(&mut self, texture: ResourceHandle<Texture>) {
-        self.resource_manager.schedule_removal(&texture);
+        self.resource_manager.lock().schedule_removal(&texture);
     }
 
     async fn load_material(&mut self, filename: &str) {
-        MaterialsConfig::load_resources(self.config.clone(), filename, &mut self.resource_manager)
-            .await;
+        MaterialsConfig::load_resources(
+            self.config.clone(),
+            filename,
+            &mut self.resource_manager.lock(),
+        )
+        .await;
     }
 
     fn load_gltf(&mut self, filename: &str) -> SceneGraph {
         let filename = load::get_asset_dir(filename, load::AssetType::MODEL).unwrap();
         let mut gltf_loader =
-            gltf_load::GLTFLoader::new(self.config.clone(), &mut self.resource_manager).unwrap();
+            gltf_load::GLTFLoader::new(self.config.clone(), self.resource_manager.clone()).unwrap();
 
         gltf_loader
-            .load(self.config(), &mut self.resource_manager, filename)
+            .load(self.config(), filename)
             .expect("Load gltf");
 
         gltf_loader.scene

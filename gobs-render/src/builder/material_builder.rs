@@ -1,11 +1,11 @@
 use gobs_render_material::{Material, MaterialDataPropData};
-use gobs_resource::{ResourceHandle, ResourceLifetime, ResourceManager};
+use gobs_resource::{ResourceHandle, ResourceLifetime, SharedResourceManager};
 
 use crate::{MaterialInstance, MaterialInstanceProperties, Texture};
 
 pub struct RenderMaterialBuilder<'a> {
     name: &'a str,
-    resource_manager: &'a mut ResourceManager,
+    resource_manager: SharedResourceManager,
     material: Option<ResourceHandle<Material>>,
     textures: Vec<ResourceHandle<Texture>>,
     material_data: Vec<MaterialDataPropData>,
@@ -13,7 +13,7 @@ pub struct RenderMaterialBuilder<'a> {
 }
 
 impl<'a> RenderMaterialBuilder<'a> {
-    pub fn new(resource_manager: &'a mut ResourceManager, name: &'a str) -> Self {
+    pub fn new(resource_manager: SharedResourceManager, name: &'a str) -> Self {
         Self {
             name,
             resource_manager,
@@ -25,7 +25,7 @@ impl<'a> RenderMaterialBuilder<'a> {
     }
 
     pub fn from_base(mut self, name: &str) -> Self {
-        self.material = Some(self.resource_manager.get_by_name(name).unwrap());
+        self.material = Some(self.resource_manager.lock().get_by_name(name).unwrap());
 
         self
     }
@@ -67,6 +67,7 @@ impl<'a> RenderMaterialBuilder<'a> {
         }
 
         self.resource_manager
+            .lock()
             .add(material_instance_properties, self.lifetime, false)
     }
 }

@@ -1,7 +1,7 @@
 use gobs_core::logger;
 use gobs_render_graph::RenderError;
 use gobs_render_material::RenderFlags;
-use gobs_resource::ResourceManager;
+use gobs_resource::SharedResourceManager;
 
 use crate::{RenderBatch, Renderable, Renderer};
 
@@ -23,11 +23,11 @@ impl From<RenderType> for RenderFlags {
 pub struct RenderBuilder<'a> {
     batch: RenderBatch,
     renderer: &'a mut Renderer,
-    resource_manager: &'a mut ResourceManager,
+    resource_manager: SharedResourceManager,
 }
 
 impl<'a> RenderBuilder<'a> {
-    pub fn new(renderer: &'a mut Renderer, resource_manager: &'a mut ResourceManager) -> Self {
+    pub fn new(renderer: &'a mut Renderer, resource_manager: SharedResourceManager) -> Self {
         tracing::trace!(target: logger::RENDER, "Render frame {}", renderer.frame_number());
 
         Self {
@@ -46,7 +46,7 @@ impl<'a> RenderBuilder<'a> {
         renderable
             .draw(
                 self.renderer.gfx.as_mut(),
-                self.resource_manager,
+                self.resource_manager.clone(),
                 &mut self.batch,
                 None,
                 None,
@@ -72,7 +72,7 @@ impl<'a> RenderBuilder<'a> {
 
     pub fn build(mut self) -> Result<(), RenderError> {
         self.batch
-            .finish(self.renderer.gfx.as_mut(), self.resource_manager);
+            .finish(self.renderer.gfx.as_mut(), self.resource_manager.clone());
 
         self.renderer.submit(&mut self.batch)?;
 

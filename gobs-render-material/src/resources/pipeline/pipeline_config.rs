@@ -227,7 +227,7 @@ mod tests {
     use gobs_render_hal::{
         CompareOp, CullMode, FrontFace, PolygonMode, RenderHalConfig, create_hal,
     };
-    use gobs_resource::ResourceManager;
+    use gobs_resource::SharedResourceManager;
 
     use crate::resources::{
         PipelinesConfig,
@@ -254,9 +254,9 @@ mod tests {
 
         let data = include_str!("../../../../examples/resources/pipelines.ron");
 
-        let mut resource_manager = ResourceManager::new(ctx.frames_in_flight());
+        let resource_manager = SharedResourceManager::new(ctx.frames_in_flight());
 
-        PipelinesConfig::load_resources_with_data(ctx.as_ref(), data, &mut resource_manager)
+        PipelinesConfig::load_resources_with_data(ctx.as_ref(), data, &mut resource_manager.lock())
             .unwrap();
     }
 

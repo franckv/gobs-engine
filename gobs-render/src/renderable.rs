@@ -2,7 +2,7 @@ use gobs_core::Transform;
 use gobs_graphics::BoundingBox;
 use gobs_render_hal::GfxContext;
 use gobs_render_material::RenderFlags;
-use gobs_resource::{ResourceError, ResourceManager};
+use gobs_resource::{ResourceError, SharedResourceManager};
 
 use crate::RenderBatch;
 
@@ -10,7 +10,7 @@ pub trait Renderable {
     fn draw(
         &self,
         ctx: &mut GfxContext,
-        resource_manager: &mut ResourceManager,
+        resource_manager: SharedResourceManager,
         batch: &mut RenderBatch,
         transform: Option<Transform>,
         bounding_box: Option<BoundingBox>,

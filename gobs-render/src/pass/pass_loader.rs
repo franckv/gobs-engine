@@ -145,7 +145,7 @@ mod tests {
     use gobs_core::{ConfigWriter as _, GobsConfig};
     use gobs_render_graph::RenderPassType;
     use gobs_render_hal::{RenderHalConfig, create_hal};
-    use gobs_resource::ResourceManager;
+    use gobs_resource::SharedResourceManager;
     use tracing::Level;
     use tracing_subscriber::{FmtSubscriber, fmt::format::FmtSpan};
 
@@ -168,7 +168,7 @@ mod tests {
         config.register::<RenderHalConfig>();
 
         let mut ctx = create_hal("test", None, config, false);
-        let mut resource_manager = ResourceManager::new(ctx.frames_in_flight());
+        let resource_manager = SharedResourceManager::new(ctx.frames_in_flight());
 
         let data = include_str!("../../../examples/resources/pass_config.ron");
 
@@ -176,7 +176,7 @@ mod tests {
 
         let pass_data = PassConfig::load_pass_data(
             ctx.as_mut(),
-            &mut resource_manager,
+            &mut resource_manager.lock(),
             &pass_config,
             "ui",
             RenderPassType::Material,

@@ -9,7 +9,7 @@ use slotmap::{DefaultKey, SlotMap};
 pub type Key = DefaultKey;
 
 pub struct ObjectArena {
-    registry: HashMap<TypeId, SlotMap<Key, Box<dyn Any>>>,
+    registry: HashMap<TypeId, SlotMap<Key, Box<dyn Any + Send>>>,
 }
 
 impl ObjectArena {
@@ -37,14 +37,14 @@ impl ObjectArena {
             })
     }
 
-    pub fn insert<T: Any>(&mut self, value: T) -> Key {
+    pub fn insert<T: Any + Send>(&mut self, value: T) -> Key {
         match self.registry.entry(TypeId::of::<T>()) {
             Entry::Occupied(mut e) => e.get_mut().insert(Box::new(value)),
             Entry::Vacant(e) => e.insert(SlotMap::new()).insert(Box::new(value)),
         }
     }
 
-    pub fn insert_with_key<F, T: Any>(&mut self, f: F) -> Key
+    pub fn insert_with_key<F, T: Any + Send>(&mut self, f: F) -> Key
     where
         F: FnOnce(Key) -> T,
     {

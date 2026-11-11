@@ -1,6 +1,7 @@
 use gobs_core::Transform;
 use gobs_graphics::BoundingBox;
 use gobs_render::{RenderFlags, Renderable};
+use gobs_resource::SharedResourceManager;
 
 use crate::components::{BaseComponent, BoundingComponent, NodeId, NodeValue};
 
@@ -69,7 +70,7 @@ impl Renderable for Node {
     fn draw(
         &self,
         ctx: &mut gobs_render::GfxContext,
-        resource_manager: &mut gobs_resource::ResourceManager,
+        resource_manager: SharedResourceManager,
         batch: &mut gobs_render::RenderBatch,
         _transform: Option<gobs_core::Transform>,
         _bounding_box: Option<BoundingBox>,

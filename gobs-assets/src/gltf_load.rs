@@ -15,7 +15,7 @@ use gobs_render::{
     BlendMode, MaterialInstance, Mesh, Model, RenderMeshBuilder, RenderModelBuilder,
     TextureProperties, TextureType,
 };
-use gobs_resource::{ResourceHandle, ResourceLifetime, ResourceManager};
+use gobs_resource::{ResourceHandle, ResourceLifetime, SharedResourceManager};
 use gobs_scene::{
     components::{NodeId, NodeValue},
     graph::scenegraph::SceneGraph,
@@ -25,6 +25,7 @@ use crate::{AssetError, config::GltfConfig, manager::MaterialManager};
 
 pub struct GLTFLoader {
     material_manager: MaterialManager,
+    resource_manager: SharedResourceManager,
     pub models: Vec<Arc<Model>>,
     pub scene: SceneGraph,
 }
@@ -32,31 +33,26 @@ pub struct GLTFLoader {
 impl GLTFLoader {
     pub fn new(
         config: GobsConfig,
-        resource_manager: &mut ResourceManager,
+        resource_manager: SharedResourceManager,
     ) -> Result<Self, AssetError> {
-        let material_manager = MaterialManager::new(config, resource_manager)?;
+        let material_manager = MaterialManager::new(config, &mut resource_manager.lock())?;
 
         Ok(Self {
             material_manager,
+            resource_manager,
             models: vec![],
             scene: SceneGraph::new(),
         })
     }
 
-    pub fn load<P>(
-        &mut self,
-        config: GobsConfig,
-        resource_manager: &mut ResourceManager,
-        file: P,
-    ) -> Result<(), AssetError>
+    pub fn load<P>(&mut self, config: GobsConfig, file: P) -> Result<(), AssetError>
     where
         P: AsRef<Path> + Debug,
     {
         let (doc, buffers, images) = gltf::import(&file)?;
 
-        self.load_material(config, resource_manager, &doc, &images);
-
-        self.load_models(resource_manager, &doc, &buffers);
+        self.load_material(config, &doc, &images);
+        self.load_models(&doc, &buffers);
         self.load_scene(&doc);
 
         Ok(())
@@ -89,12 +85,7 @@ impl GLTFLoader {
         }
     }
 
-    fn load_models(
-        &mut self,
-        resource_manager: &mut ResourceManager,
-        doc: &Document,
-        buffers: &[buffer::Data],
-    ) {
+    fn load_models(&mut self, doc: &Document, buffers: &[buffer::Data]) {
         for m in doc.meshes() {
             let name = m.name().unwrap_or_default();
             tracing::debug!(target: logger::RESOURCES,
@@ -191,7 +182,7 @@ impl GLTFLoader {
                         }
                     }
 
-                    let mesh = RenderMeshBuilder::new(resource_manager, &name)
+                    let mesh = RenderMeshBuilder::new(self.resource_manager.clone(), &name)
                         .with_geometry(mesh_data.build())
                         .for_material(material)
                         .build();
@@ -200,7 +191,7 @@ impl GLTFLoader {
                 })
                 .collect::<Vec<(ResourceHandle<Mesh>, ResourceHandle<MaterialInstance>)>>();
 
-            let mut model = RenderModelBuilder::new(resource_manager, name);
+            let mut model = RenderModelBuilder::new(self.resource_manager.clone(), name);
             for (mesh, material) in meshes {
                 model = model.with_mesh(mesh).with_material(material);
             }
@@ -211,13 +202,7 @@ impl GLTFLoader {
         tracing::info!(target: logger::RESOURCES, "{} meshes loaded", self.models.iter().map(|m| m.meshes.len()).sum::<usize>());
     }
 
-    fn load_textures(
-        &mut self,
-        config: GobsConfig,
-        resource_manager: &mut ResourceManager,
-        doc: &Document,
-        images: &[image::Data],
-    ) {
+    fn load_textures(&mut self, config: GobsConfig, doc: &Document, images: &[image::Data]) {
         tracing::trace!(target: logger::RESOURCES, "Reading {} images", images.len());
 
         for t in doc.textures() {
@@ -277,7 +262,11 @@ impl GLTFLoader {
                     properties.format.mag_filter = mag_filter;
                     properties.format.min_filter = min_filter;
 
-                    let handle = resource_manager.add(properties, ResourceLifetime::Static, false);
+                    let handle = self.resource_manager.lock().add(
+                        properties,
+                        ResourceLifetime::Static,
+                        false,
+                    );
 
                     self.material_manager.add_texture(handle);
                 }
@@ -299,7 +288,11 @@ impl GLTFLoader {
                     properties.format.mag_filter = mag_filter;
                     properties.format.min_filter = min_filter;
 
-                    let handle = resource_manager.add(properties, ResourceLifetime::Static, false);
+                    let handle = self.resource_manager.lock().add(
+                        properties,
+                        ResourceLifetime::Static,
+                        false,
+                    );
 
                     self.material_manager.add_texture(handle);
                 }
@@ -321,7 +314,11 @@ impl GLTFLoader {
                     properties.format.mag_filter = mag_filter;
                     properties.format.min_filter = min_filter;
 
-                    let handle = resource_manager.add(properties, ResourceLifetime::Static, false);
+                    let handle = self.resource_manager.lock().add(
+                        properties,
+                        ResourceLifetime::Static,
+                        false,
+                    );
 
                     self.material_manager.add_texture(handle);
                 }
@@ -345,14 +342,8 @@ impl GLTFLoader {
         }
     }
 
-    fn load_material(
-        &mut self,
-        config: GobsConfig,
-        resource_manager: &mut ResourceManager,
-        doc: &Document,
-        images: &[image::Data],
-    ) {
-        self.load_textures(config, resource_manager, doc, images);
+    fn load_material(&mut self, config: GobsConfig, doc: &Document, images: &[image::Data]) {
+        self.load_textures(config, doc, images);
 
         for mat in doc.materials() {
             let name = mat.name().unwrap_or_default();
@@ -377,7 +368,7 @@ impl GLTFLoader {
                                 tracing::debug!(target: logger::RESOURCES, "Using normal texture: {}", normal_texture);
                                 self.material_manager.add_texture_normal_instance(
                                     name,
-                                    resource_manager,
+                                    &mut self.resource_manager.lock(),
                                     Self::into_blend_mode(mat.alpha_mode()),
                                     color,
                                     texture,
@@ -389,7 +380,7 @@ impl GLTFLoader {
                                 tracing::debug!(target: logger::RESOURCES, "Using diffuse texture with alpha: {:?}", alpha);
                                 self.material_manager.add_texture_instance(
                                     name,
-                                    resource_manager,
+                                    &mut self.resource_manager.lock(),
                                     Self::into_blend_mode(mat.alpha_mode()),
                                     color,
                                     texture,
@@ -400,8 +391,11 @@ impl GLTFLoader {
                     None => {
                         let alpha = Self::into_blend_mode(mat.alpha_mode());
                         tracing::debug!(target: logger::RESOURCES, "Using color material: {:?}, alpha={:?}", color, alpha);
-                        self.material_manager
-                            .add_color_instance(resource_manager, alpha, color);
+                        self.material_manager.add_color_instance(
+                            &mut self.resource_manager.lock(),
+                            alpha,
+                            color,
+                        );
                     }
                 }
             } else {

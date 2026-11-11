@@ -3,7 +3,7 @@ use glam::{Vec3, Vec4};
 use gobs_core::Transform;
 use gobs_graphics::{BoundingBox, Camera, Light};
 use gobs_render::{GfxContext, RenderBatch, RenderFlags, Renderable};
-use gobs_resource::{ResourceError, ResourceManager};
+use gobs_resource::{ResourceError, SharedResourceManager};
 
 use crate::components::{NodeId, NodeValue};
 use crate::graph::scenegraph::SceneGraph;
@@ -133,7 +133,7 @@ impl Renderable for Scene {
     fn draw(
         &self,
         ctx: &mut GfxContext,
-        resource_manager: &mut ResourceManager,
+        resource_manager: SharedResourceManager,
         batch: &mut RenderBatch,
         transform: Option<Transform>,
         bounding_box: Option<BoundingBox>,
@@ -142,7 +142,7 @@ impl Renderable for Scene {
         self.graph.visit(self.graph.root, &mut |node| {
             node.draw(
                 ctx,
-                resource_manager,
+                resource_manager.clone(),
                 batch,
                 transform,
                 bounding_box,

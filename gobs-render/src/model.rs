@@ -8,9 +8,7 @@ use gobs_core::{Transform, logger};
 use gobs_graphics::{Bounded, BoundingBox};
 use gobs_render_hal::GfxContext;
 use gobs_render_material::RenderFlags;
-use gobs_resource::{
-    ResourceManager, {ResourceError, ResourceHandle},
-};
+use gobs_resource::{ResourceError, ResourceHandle, SharedResourceManager};
 
 use crate::{MaterialInstance, Mesh, Renderable, batch::RenderBatch};
 
@@ -42,7 +40,7 @@ impl Renderable for Arc<Model> {
     fn draw(
         &self,
         ctx: &mut GfxContext,
-        resource_manager: &mut ResourceManager,
+        resource_manager: SharedResourceManager,
         batch: &mut RenderBatch,
         transform: Option<Transform>,
         bounding_box: Option<BoundingBox>,
@@ -51,7 +49,7 @@ impl Renderable for Arc<Model> {
         if let Some(transform) = transform {
             batch.add_model(
                 ctx,
-                resource_manager,
+                &mut resource_manager.lock(),
                 self.clone(),
                 transform,
                 bounding_box,

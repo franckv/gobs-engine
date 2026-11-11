@@ -3,27 +3,32 @@ mod tests {
     use gobs_core::{ConfigWriter as _, GobsConfig, ImageExtent2D, ImageFormat};
     use gobs_render_hal::{GfxContext, ImageUsage, RenderHalConfig, create_hal};
     use gobs_render_material::{Material, MaterialLoader, Pipeline, PipelineLoader};
-    use gobs_resource::ResourceManager;
+    use gobs_resource::SharedResourceManager;
 
     use crate::{MaterialInstance, MaterialInstanceLoader, RenderConfig, Texture, TextureLoader};
 
-    fn setup() -> (Box<GfxContext>, ResourceManager) {
+    fn setup() -> (Box<GfxContext>, SharedResourceManager) {
         let mut config = GobsConfig::default();
         config.register::<RenderConfig>();
         config.register::<RenderHalConfig>();
 
         let mut ctx = create_hal("harness", None, config, true);
 
-        let mut resource_manager = ResourceManager::new(ctx.frames_in_flight());
-        let texture_loader = TextureLoader::new(ctx.as_mut());
-        resource_manager.register_resource::<Texture, GfxContext>(texture_loader);
-        let pipeline_loader = PipelineLoader::new();
-        resource_manager.register_resource::<Pipeline, GfxContext>(pipeline_loader);
-        let material_loader = MaterialLoader::new();
-        resource_manager.register_resource::<Material, GfxContext>(material_loader);
-        let material_instance_loader = MaterialInstanceLoader::new();
-        resource_manager
-            .register_resource::<MaterialInstance, GfxContext>(material_instance_loader);
+        let resource_manager = SharedResourceManager::new(ctx.frames_in_flight());
+
+        {
+            let mut resource_manager = resource_manager.lock();
+
+            let texture_loader = TextureLoader::new(ctx.as_mut());
+            resource_manager.register_resource::<Texture, GfxContext>(texture_loader);
+            let pipeline_loader = PipelineLoader::new();
+            resource_manager.register_resource::<Pipeline, GfxContext>(pipeline_loader);
+            let material_loader = MaterialLoader::new();
+            resource_manager.register_resource::<Material, GfxContext>(material_loader);
+            let material_instance_loader = MaterialInstanceLoader::new();
+            resource_manager
+                .register_resource::<MaterialInstance, GfxContext>(material_instance_loader);
+        }
 
         (ctx, resource_manager)
     }

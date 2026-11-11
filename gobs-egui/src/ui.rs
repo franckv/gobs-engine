@@ -18,7 +18,7 @@ use gobs_render::{
     TextureProperties, TextureUpdate,
 };
 use gobs_resource::{
-    ResourceManager, {ResourceError, ResourceHandle, ResourceLifetime},
+    ResourceError, ResourceHandle, ResourceLifetime, ResourceManager, SharedResourceManager,
 };
 
 const PIXEL_PER_POINT: f32 = 1.;
@@ -430,7 +430,7 @@ impl UIRenderer {
     #[tracing::instrument(target = "profile", skip_all, level = "trace")]
     fn load_model(
         &self,
-        resource_manager: &mut ResourceManager,
+        resource_manager: SharedResourceManager,
         output: FullOutput,
     ) -> Option<Arc<Model>> {
         tracing::debug!(target: logger::UI, "Loading model");
@@ -491,7 +491,7 @@ impl UIRenderer {
                 let vertices = bytemuck::cast_slice(&vertices).to_vec();
 
                 let material = self.font_texture.get(&m.texture_id).cloned().unwrap();
-                let mesh = RenderMeshBuilder::new(resource_manager, "ui")
+                let mesh = RenderMeshBuilder::new(resource_manager.clone(), "ui")
                     .with_bytes(vertices, m.indices.clone())
                     .for_material(material)
                     .with_layer(layer)
@@ -508,7 +508,7 @@ impl UIRenderer {
             span.exit();
         }
 
-        let mut model = RenderModelBuilder::new(resource_manager, "ui");
+        let mut model = RenderModelBuilder::new(resource_manager.clone(), "ui");
 
         for (mesh, material) in meshes {
             model = model.with_mesh(mesh).with_material(material);
@@ -527,7 +527,7 @@ impl Renderable for UIRenderer {
     fn draw(
         &self,
         ctx: &mut GfxContext,
-        resource_manager: &mut ResourceManager,
+        resource_manager: SharedResourceManager,
         batch: &mut RenderBatch,
         transform: Option<Transform>,
         bounding_box: Option<BoundingBox>,
@@ -539,10 +539,10 @@ impl Renderable for UIRenderer {
                 None => Transform::IDENTITY,
             };
 
-            if let Some(model) = self.load_model(resource_manager, output) {
+            if let Some(model) = self.load_model(resource_manager.clone(), output) {
                 batch.add_model(
                     ctx,
-                    resource_manager,
+                    &mut resource_manager.lock(),
                     model,
                     transform,
                     bounding_box,

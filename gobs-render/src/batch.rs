@@ -8,7 +8,7 @@ use gobs_render_hal::GfxContext;
 use gobs_render_material::{
     Material, MaterialRenderData, MaterialSystem, Pipeline, RenderFlags, SceneData,
 };
-use gobs_resource::{ResourceError, ResourceHandle, ResourceManager};
+use gobs_resource::{ResourceError, ResourceHandle, ResourceManager, SharedResourceManager};
 
 use crate::{
     MaterialInstance, Mesh, RenderMeshBuilder, RenderModelBuilder, Texture, model::Model,
@@ -237,24 +237,24 @@ impl RenderBatch {
     }
 
     #[tracing::instrument(target = "profile", skip_all, level = "trace")]
-    pub fn finish(&mut self, ctx: &mut GfxContext, resource_manager: &mut ResourceManager) {
+    pub fn finish(&mut self, ctx: &mut GfxContext, resource_manager: SharedResourceManager) {
         let bb = self.bounding_geometry.take();
 
         if let Some(bb) = bb {
             let bb = bb.build();
 
-            let mesh = RenderMeshBuilder::new(resource_manager, "box")
+            let mesh = RenderMeshBuilder::new(resource_manager.clone(), "box")
                 .with_geometry(bb)
                 .transient(true)
                 .build();
 
-            let model = RenderModelBuilder::new(resource_manager, "box")
+            let model = RenderModelBuilder::new(resource_manager.clone(), "box")
                 .with_mesh(mesh)
                 .build();
 
             self.add_model(
                 ctx,
-                resource_manager,
+                &mut resource_manager.lock(),
                 model,
                 Transform::IDENTITY,
                 None,
@@ -273,11 +273,14 @@ impl RenderBatch {
         self.recording = false;
 
         tracing::debug!(target: logger::RENDER, "Flush resource loaders");
-        resource_manager.flush::<Texture, GfxContext>();
-        resource_manager.flush::<Mesh, GfxContext>();
-        resource_manager.flush::<Pipeline, GfxContext>();
-        resource_manager.flush::<Material, GfxContext>();
-        resource_manager.flush::<MaterialInstance, GfxContext>();
+        {
+            let mut resource_manager = resource_manager.lock();
+            resource_manager.flush::<Texture, GfxContext>();
+            resource_manager.flush::<Mesh, GfxContext>();
+            resource_manager.flush::<Pipeline, GfxContext>();
+            resource_manager.flush::<Material, GfxContext>();
+            resource_manager.flush::<MaterialInstance, GfxContext>();
+        }
 
         tracing::debug!(target: logger::RENDER, "<<< Finish render batch");
     }
@@ -298,7 +301,7 @@ mod tests {
     use tracing_subscriber::{EnvFilter, FmtSubscriber, fmt::format::FmtSpan};
 
     use gobs_core::{Color, ConfigWriter as _, GobsConfig, Transform, logger, utils::timer::Timer};
-    use gobs_resource::ResourceManager;
+    use gobs_resource::SharedResourceManager;
 
     use crate::{
         Mesh, MeshLoader, RenderBatch, RenderConfig, RenderMeshBuilder, RenderModelBuilder,
@@ -324,18 +327,20 @@ mod tests {
         config.register::<RenderHalConfig>();
 
         let mut ctx = create_hal("test", None, config, false);
-        let mut resource_manager = ResourceManager::new(ctx.frames_in_flight());
+        let resource_manager = SharedResourceManager::new(ctx.frames_in_flight());
 
         let mesh_loader = MeshLoader::new(ctx.as_mut());
-        resource_manager.register_resource::<Mesh, GfxContext>(mesh_loader);
+        resource_manager
+            .lock()
+            .register_resource::<Mesh, GfxContext>(mesh_loader);
 
-        let mesh = RenderMeshBuilder::new(&mut resource_manager, "triangle")
+        let mesh = RenderMeshBuilder::new(resource_manager.clone(), "triangle")
             .with_geometry(Shapes::triangle(
                 &[Color::RED, Color::GREEN, Color::BLUE],
                 1.,
             ))
             .build();
-        let triangle = RenderModelBuilder::new(&mut resource_manager, "triangle")
+        let triangle = RenderModelBuilder::new(resource_manager.clone(), "triangle")
             .with_mesh(mesh)
             .build();
 
@@ -343,15 +348,18 @@ mod tests {
 
         let mut timer = Timer::new();
 
-        for _ in 0..30000 {
-            let _ = batch.add_model(
-                ctx.as_mut(),
-                &mut resource_manager,
-                triangle.clone(),
-                Transform::IDENTITY,
-                None,
-                RenderFlags::empty(),
-            );
+        {
+            let mut resource_manager = resource_manager.lock();
+            for _ in 0..30000 {
+                let _ = batch.add_model(
+                    ctx.as_mut(),
+                    &mut resource_manager,
+                    triangle.clone(),
+                    Transform::IDENTITY,
+                    None,
+                    RenderFlags::empty(),
+                );
+            }
         }
 
         batch.sort();
